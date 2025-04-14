@@ -60,6 +60,7 @@
 (autoload file.util home-directory expand-path)
 (autoload text.pager with-output-to-pager)
 (autoload text.line-edit default-keymap command-name->keystroke-string)
+(autoload text.multicolumn display-multicolumn)
 
 ;; toplevel-commands
 ;; Map from symbol to (parser help-message proc)
@@ -430,15 +431,17 @@
                (slices kvs 2)))])
     (let1 c (print-mode)
       (format #t "Current print mode:\n")
-      (format #t "        length : ~3d\n"  (~ c'length))
-      (format #t "         level : ~3d\n"  (~ c'level))
-      (format #t "        pretty : ~3@a\n" (~ c'pretty))
-      (format #t "         width : ~3d\n"  (~ c'width))
-      (format #t "          base : ~3d\n"  (~ c'base))
-      (format #t "         radix : ~3d\n"  (~ c'radix))
-      (format #t " string-length : ~3d\n"  (~ c'string-length))
-      (format #t "    bytestring : ~3@a\n" (~ c'bytestring))
-      (format #t " exact-decimal : ~3d\n"  (~ c'exact-decimal)))
+      (display-multicolumn
+       (list (format "       length : ~3d"  (~ c'length))
+             (format "        level : ~3d"  (~ c'level))
+             (format "       pretty : ~3@a" (~ c'pretty))
+             (format "        width : ~3d"  (~ c'width))
+             (format "         base : ~3d"  (~ c'base))
+             (format "        radix : ~3d"  (~ c'radix))
+             (format "string-length : ~3d"  (~ c'string-length))
+             (format "   bytestring : ~3@a" (~ c'bytestring))
+             (format "exact-decimal : ~3d"  (~ c'exact-decimal)))
+       ))
     *no-value*))
 
 (define-toplevel-command (print-all pa) :read
