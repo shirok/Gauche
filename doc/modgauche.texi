@@ -31115,7 +31115,29 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Apply @var{pred} on the @var{i}-th elements of given uvectors,
+from the first eleement to the last element.  For @code{@@vector-any},
+as soon as @var{pred} returns a true value, it returns that value.  If
+no elements satisfy @var{pred}, returns @code{#f}.
+For @code{@@vector-every}, as soon as @var{pred} returns @code{#f},
+it returns @code{#f}.  If every element satisfies @var{pred}, returns
+the last result of @var{pred}.
 @c JP
+述語@var{pred}を、引数の各ユニフォームベクタの@var{i}番目の要素
+(0 <= i < vecの長さ)に順に適用します。
+@code{@@vector-any}では、@var{pred}が真の値を返したら直ちにその
+値を返します。どの要素も@var{pred}満たさなければ@code{#f}を返します。
+@code{@@vector-every}では、@var{pred}が@code{#f}を返したら
+直ちに@code{#f}を返します。どの要素も@var{pred}を満たした場合は
+最後の@var{pred}の値を返します。
+@c COMMON
+
+@c EN
+If the lengths of given uvectors differ, it stops at the end
+of the shortest one.
+@c JP
+もし与えられたユニフォームベクタの長さが異なる場合は、
+一番短いベクタの最後に到達した時点で評価を打ち切ります。
 @c COMMON
 @end deffn
 
