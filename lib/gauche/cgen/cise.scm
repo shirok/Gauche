@@ -617,8 +617,15 @@
   (define (gen-cvar var type quals has-init? init)
     `(,@(gen-qualifiers quals) " "
       ,(cise-render-typed-var type var env)
-      ,@(cond-list [has-init? `(" = ",(render-rec init (expr-env env)))])
+      ,@(cond-list [has-init? `(" = ",(gen-init init (expr-env env)))])
       ";"))
+
+  (define (gen-init init env)
+    (if (vector? init)
+      `("{"
+        ,(intersperse ", " (map (cut render-rec <> env) (vector->list init)))
+        "}")
+      (render-rec init env)))
 
   (define (check-quals var type quals init-and-quals)
     (match init-and-quals
