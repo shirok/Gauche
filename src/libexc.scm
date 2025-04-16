@@ -255,12 +255,11 @@
      (Scm_Printf port "#<terminated-thread-exception: %S terminated by %S>"
                  (SCM_OBJ_SAFE (-> exc thread)) (-> exc data))))
 
- "static ScmClass *thread_exception_cpa[] = {
-   SCM_CLASS_STATIC_PTR(Scm_ThreadExceptionClass),
-   SCM_CLASS_STATIC_PTR(Scm_ConditionClass),
-   SCM_CLASS_STATIC_PTR(Scm_TopClass),
-   NULL
- };"
+ (define-cvar thread-exception-cpa::(.array ScmClass* (*)) :static
+   #((SCM_CLASS_STATIC_PTR Scm_ThreadExceptionClass)
+     (SCM_CLASS_STATIC_PTR Scm_ConditionClass)
+     (SCM_CLASS_STATIC_PTR Scm_TopClass)
+     NULL))
 
  (define-cclass <thread-exception>
    "ScmThreadException*" "Scm_ThreadExceptionClass"
@@ -360,12 +359,11 @@
 
 (select-module gauche)
 (inline-stub
- "static ScmClass *mixin_condition_cpa[] = {
-   SCM_CLASS_STATIC_PTR(Scm_MixinConditionClass),
-   SCM_CLASS_STATIC_PTR(Scm_ConditionClass),
-   SCM_CLASS_STATIC_PTR(Scm_TopClass),
-   NULL
-  };"
+ (define-cvar mixin-condition-cpa::(.array ScmClass* (*)) :static
+   #((SCM_CLASS_STATIC_PTR Scm_MixinConditionClass)
+     (SCM_CLASS_STATIC_PTR Scm_ConditionClass)
+     (SCM_CLASS_STATIC_PTR Scm_TopClass)
+     NULL))
 
  (define-cfn condition-continuation-mixin-allocate (klass::ScmClass* _) :static
    (let* ([c::ScmConditionContinuationMixin* (SCM_NEW_INSTANCE ScmConditionContinuationMixin klass)])
@@ -425,14 +423,13 @@
      (set! (-> c filename) SCM_FALSE)
      (return (SCM_OBJ c))))
 
- "static ScmClass *filename_condition_cpa[] = {
-   SCM_CLASS_STATIC_PTR(Scm_FileProtectionErrorMixinClass),
-   SCM_CLASS_STATIC_PTR(Scm_FilenameErrorMixinClass),
-   SCM_CLASS_STATIC_PTR(Scm_MixinConditionClass),
-   SCM_CLASS_STATIC_PTR(Scm_ConditionClass),
-   SCM_CLASS_STATIC_PTR(Scm_TopClass),
-   NULL
-  };"
+ (define-cvar filename-condition-cpa::(.array ScmClass* (*)) :static
+   #((SCM_CLASS_STATIC_PTR Scm_FileProtectionErrorMixinClass)
+     (SCM_CLASS_STATIC_PTR Scm_FilenameErrorMixinClass)
+     (SCM_CLASS_STATIC_PTR Scm_MixinConditionClass)
+     (SCM_CLASS_STATIC_PTR Scm_ConditionClass)
+     (SCM_CLASS_STATIC_PTR Scm_TopClass)
+     NULL))
 
  (define-cclass <io-filename-error>
    "ScmFilenameErrorMixin*" "Scm_FilenameErrorMixinClass"
