@@ -31041,6 +31041,19 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Returns an integer
+index of the first (@code{*-index}) or last (@code{*-index-right})
+element that sastisfies @var{pred}, or @code{#f} if no element satisfies
+@var{pred}.
+@c JP
+@var{pred}を満たす最初(@code{*-index})もしくは最後(@code{*-index-right})の
+要素の整数インデックスを返します。@var{pred}を満たす要素がなければ@code{#f}
+が返ります。
+@c COMMON
+
+@c EN
+(u8vector-index odd? '#u8(10 11 12 13 14 15 16)) @result{} 1
+(u8vector-index-right odd? '#u8(10 11 12 13 14 15 16)) @result{} 5
 @c JP
 @c COMMON
 @end deffn
@@ -31078,8 +31091,20 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Returns an integer
+index of the first (@code{*-index}) or last (@code{*-index-right})
+element that @emph{does not} sastisfy @var{pred},
+or @code{#f} if all elements satisfiy @var{pred}.
 @c JP
+@var{pred}を満たさない最初(@code{*-index})もしくは最後(@code{*-index-right})の
+要素の整数インデックスを返します。全ての要素が@var{pred}を満たした場合は@code{#f}
+が返ります。
 @c COMMON
+
+@example
+(u8vector-skip > '#u8(8 3 2 9) '#u8(1 4 5 6)) @result{} 1
+(u8vector-skip-right > '#u8(8 3 2 9) '#u8(1 4 5 6)) @result{} 2
+@end example
 @end deffn
 
 @deffn {Function} @@vector-any pred vec vec2 @dots{}
