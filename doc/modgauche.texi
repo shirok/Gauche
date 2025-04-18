@@ -31051,11 +31051,10 @@ element that sastisfies @var{pred}, or @code{#f} if no element satisfies
 が返ります。
 @c COMMON
 
-@c EN
+@example
 (u8vector-index odd? '#u8(10 11 12 13 14 15 16)) @result{} 1
 (u8vector-index-right odd? '#u8(10 11 12 13 14 15 16)) @result{} 5
-@c JP
-@c COMMON
+@end example
 @end deffn
 
 @deffn {Function} @@vector-skip pred vec vec2 @dots{}
