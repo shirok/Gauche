@@ -100,7 +100,7 @@ static ScmPrimitiveParameter *defaultReadContext;
  *   The lock is removed if reader routine signals an error.  It is OK
  *   to call read routine recursively.
  */
-ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx)
+ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext * volatile ctx)
 {
     ScmVM *vm = Scm_VM();
 
