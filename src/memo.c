@@ -339,7 +339,7 @@ ScmObj Scm_MemoTablePutv(ScmMemoTable *tab, ScmObj *keys, int nkeys, ScmObj val)
         extend_table(tab);
         st = tab->storage;
     }
-    Scm_Warn("extending memo table failed.\n");
+    Scm_Warn("Extending memo table failed.\n");
     return SCM_FALSE;
 }
 

@@ -20314,6 +20314,8 @@ b @result{} #<box 2>
 (push! (unbox b) 'y)
 b @result{} #<box (y x)>
 @end example
+@c COMMON
+
 @end defun
 
 @defun unbox-value box i
@@ -20334,6 +20336,22 @@ NB: This can be used with generalized setters.  This is Gauche's extension.
 (define mb (box 10 20 30))
 (inc! (unbox-value mb 1)
 mb @result{} #<mv-box[3] 10 21 30>
+@end example
+
+@c EN
+Generic referencer also works with boxes.
+@c JP
+boxaにｈジェネリックな参照も使えます。
+@c COMMON
+
+@example
+(define mb (box 10 20 30))
+(inc! (~ mb 1))
+mb @result{} #<mv-box[3] 10 21 30>
+
+(define b (box 10))
+(inc! (~ mb 0))
+b @result{} #<box 11>
 @end example
 @end defun
 

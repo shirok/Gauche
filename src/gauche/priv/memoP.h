@@ -38,7 +38,7 @@
 
 /* Memotable is a mapping specialized for memoization.
    It has several characteristics we can take advantage of, and
-   several specific requrements, than the generic hashtables.
+   several specific requirements, than the generic hashtables.
 
    - Must be thread-safe.
    - No explicit deletion.
@@ -130,12 +130,14 @@
             && all keys match
           STORE(value) (*2)
        - otherwise, advance to the next entry and re-probe
-         - If maximum re-probe count reaches.
+         - If maximum re-probe count reaches, extend the table and retry (*3)
 
       (*1) This can cause duplicate entries if the other thread is inserting
            the same key&value there, but it's ok.
       (*2) This is idempotent.  However, if value reference is weak,
            the value slot can be 0.  We can safely reuse the entry.
+      (*3) Currently we limit this retry up to 3.  If all the retry is failed,
+           we warn 'extending memo tabile failed' and give up.
 
   Dissapearing pointers
 
@@ -188,7 +190,7 @@ enum {
 
 typedef struct ScmMemoTableStorageRec {
     u_long capacity;            /* read only */
-    ScmAtomicVar *vec;         /* [capacity*entry_size] */
+    ScmAtomicVar *vec;          /* [capacity*entry_size] */
 } ScmMemoTableStorage;
 
 /* Fields other than storage are read-only */
