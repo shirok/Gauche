@@ -1,3 +1,4 @@
+;;; -*- coding:utf-8 -*-
 ;;;
 ;;; tools/docprep - prepare document
 ;;;
@@ -94,7 +95,9 @@
         (display #"@{@t{~|module|}@}\n")
         (in (read-line) 'mod)]
       [#/^@c DEPRECATED$/ ()
-        (display "@b{Deprecated. }\n")
+        (display (if (eq? (lang) 'en)
+                   "@b{Deprecated. }\n"
+                   "@b{非推奨。}\n"))
         (in (read-line) modtag)]
       [#/^\[SRFI/ (#f)
         (when (eq? modtag 'mod)
