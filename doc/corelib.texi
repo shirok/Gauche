@@ -1702,7 +1702,7 @@ can ever be hashed.
 @code{default-hash}から呼ばれた場合は@code{hash-salt}に依存します。
 それ以外の場合は固定値です)。
 これは、オブジェクトの等価性が自由に設定できるからで、
-等価性を知らずに意味のあるハッシュ値を計算できないあらです。
+等価性を知らずに意味のあるハッシュ値を計算できないからです。
 
 この振る舞いは最後の安全ネットと考えるべきで、一般には自分で定義したクラスのインスタンスが
 ハッシュされる可能性があるなら、必ず@code{object-hash}メソッドを定義するように
@@ -1715,15 +1715,9 @@ can ever be hashed.
 @c EN
 These two methods are defined by the system and ensures the
 backward compatibility and the behavior of @code{default-comparator}.
-Be careful not to replace these methods by defining the exactly same
-specializers.  In future versions of Gauche, attempts to replace
-these methods will raise an error.
 @c JP
 これら二つのメソッドはシステムで定義されており、
 後方互換性および@code{default-comparator}の正しい振る舞いを保証しています。
-全く同じスペシャライザを持つメソッドを定義することでこれらを置き換えてしまわないように
-注意してください。将来のバージョンでは、これらのメソッドを置き換えるのは
-エラーになる予定です。
 @c COMMON
 @end deffn
 
@@ -1743,8 +1737,9 @@ This is useful to write user-defined @code{object-hash} method.
 @end defun
 
 @defun hash obj
+@c DEPRECATED
 @c EN
-This function is deprecated.
+Kept for the backward compatibility.
 
 Calculate a hash value of @var{obj} suitable for @code{equal?} hash.
 By default, it returns the same value as @code{legacy-hash}.  However,
@@ -1769,7 +1764,7 @@ code calls @code{hash}, it calls proper function.
 The new code shouldn't rely on this behavior, and must use
 the second argument of @code{object-hash} instead.
 @c JP
-この関数は非推奨となりました。
+後方互換性のために残されています。
 
 @code{equal?}ハッシュとして使える、@var{obj}のハッシュ値を返します。
 デフォルトでは、この関数は@code{legacy-hash}と同じ値を返します。
