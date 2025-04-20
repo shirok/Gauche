@@ -171,7 +171,7 @@
 ;; NB: We 'catch-all' on one-arg object-hash, for two arg object-hash will
 ;; delegate to one-arg in order to maintain the backward compatibility.
 ;; See below for two-arg object-has base method.
-(define-method object-hash (a)
+(define-method object-hash :locked (a)
   (or (and-let* ([c (%choose-comparator-1 a)]
                  [ (comparator-hashable? c) ])
         (comparator-hash c a))
@@ -232,7 +232,7 @@
   (object-hash obj (if salt (^o (hash o salt)) hash)))
 
 ;; This is the fallback in case we have legacy one-argument object-hash.
-(define-method object-hash (obj hash)
+(define-method object-hash :locked (obj hash)
   (let1 h (%current-recursive-hash)
     (if (eq? h hash)
       (object-hash obj) ; shortcut
@@ -241,14 +241,14 @@
 
 ;; Make hashtable hashable.  For the time being, we ignore hashtable's
 ;; comparators.
-(define-method object-hash ((h <hash-table>) hash)
+(define-method object-hash :locked ((h <hash-table>) hash)
   (hash-table-fold h (^[k v r] (logxor (logxor (hash k) (hash v)) r)) 0))
 
-(define-method object-equal? ((a <hash-table>) (b <hash-table>))
+(define-method object-equal? :locked ((a <hash-table>) (b <hash-table>))
   (hash-table=? default-comparator a b))
 
 ;; Make charset hashable
-(define-method object-hash ((c <char-set>) _) (char-set-hash c))
+(define-method object-hash :locked ((c <char-set>) _) (char-set-hash c))
 
 ;;;
 ;;; Read-edit mode flag

@@ -1,3 +1,9 @@
+2025-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/libomega.scm (object-hash): Lock predefined object-hash methods
+	  for builtin objects.  If these methods are replaced by the user
+	  it'll be a disaster.
+
 2025-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (expand-cvar): Allow aggregate initializer
