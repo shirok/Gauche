@@ -113,31 +113,37 @@
     (hash-table-put! (rp-shared c) obj (- n))
     (set! (~ c'counter) (+ n 1))))
 
-;; Creates a layouter that takes width and try to find the best
-;; layout of obj.  A layouter returns a pair of two values---a formatted
-;; string tree (FSTree), and the width the layout occupies.  The width may
-;; be #f if the layout spills to more than one lines.  FSTree is a
-;; tree of strings, with a symbol 's or 'b, indicating inter-datum space
-;; and line break.   A layouter may be called more than once on
-;; the same object if the layout is "retried".
+;; The sescond phase takes a Scheme object and creates a "layouter"
+;; procedure, which determines the optimal layout of presentation
+;; of the object.
 ;;
-;; Because of retrying, running layouter might cost exponential time
-;; in the worst case, when leaf layouter is invoked again and again with
-;; the same width parameter.  So we also carry aronud a hashtable to
-;; memoize the result. The table uses (cons Width Layouter) as key, and
-;; (cons FStree Width) as result.
-
-;; Layouter = Integer, Memo -> (FSTree . Integer)
+;; A layouter procedure takes three arguments:
+;;  - size - the entire width of rendering area
+;;  - room - the remaining width of rendering area of the current line
+;;  - memo - memoized table; see belo.
+;; And it returns a pair of FSTree and the width the element occupies.
+;;
+;; Layouter = (Integer, Integer, Memo) -> (FSTree . Integer))
 ;; FSTree = String | 's | 'b | (FSTree ...)
+;;
+;; FSTree is a tree of strings, with a symbol 's or 'b, indicating
+;; inter-datum space and line break.
+;;
+;; A layouter may be called more than once on the same object if the
+;; layout is "retried".  Because of retrying, running layouter might cost
+;; exponential time in the worst case, when leaf layouter is invoked
+;; again and again with the same width parameter.  So we also carry
+;; aronud a hashtable to memoize the result. The table uses (cons Width
+;; Layouter) as key, and (cons FStree Width) as result.
 
 ;; Memoizing lambda
 (define-syntax memo^
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ (w m) . body)
+       [(_ (s w m) . body)
         (quasirename r
-          `(rec (fn ,w ,m)
+          `(rec (fn ,s ,w ,m)
              (or (hash-table-get ,m (cons ,w fn) #f)
                  (rlet1 p (begin ,@body)
                    (hash-table-put! ,m (cons ,w fn) p)))))]))))
@@ -224,11 +230,11 @@
 (define dots
   (let* ([elli (with-module gauche.internal (string-ellipsis))]
          [val (cons elli (string-length elli))])
-    (^[w m] val)))
-(define dot  (^[w m] '("." . 1)))
+    (^[s w m] val)))
+(define dot  (^[s w m] '("." . 1)))
 
 ;; layout-simple :: String -> Layouter
-(define (layout-simple str) (^[w m] (cons str (string-length str))))
+(define (layout-simple str) (^[s w m] (cons str (string-length str))))
 
 ;; layout-ref :: Object -> Layouter
 (define (layout-ref obj c)
@@ -251,8 +257,8 @@
          [inner (if (has-label? (cadr form) c)
                   (layout-ref (cadr form) c)
                   (rec (cadr form)))])
-    (memo^ [room memo]
-           (match-let1 (s . w) (inner (-* room plen) memo)
+    (memo^ [size room memo]
+           (match-let1 (s . w) (inner (-* size plen) (-* room plen 1) memo)
              (cons (list pfx s) (and w (+ w plen)))))))
 
 (define (may-layout-shorthand? obj c)
@@ -265,8 +271,9 @@
 ;; layout-list :: (String, [Layouter], Context) -> Layouter
 (define (layout-list prefix elts c)
   (let1 plen (string-length prefix)
-    (memo^ [room memo]
-           (match-let1 (s . w) (do-layout-elements (-* room plen) memo elts)
+    (memo^ [size room memo]
+           (match-let1 (s . w)
+               (do-layout-elements (-* size plen) (-* room plen) memo elts)
              (cons (cons prefix (reverse s)) (and w (+ w plen)))))))
 
 ;; layout-dict :: (Dict, [Layouter], Context) -> Layouter
@@ -281,9 +288,9 @@
          [tag-layouter (layout-simple tag)]
          [prefix "#<"]
          [plen (string-length prefix)])
-    (memo^ [room memo]
+    (memo^ [size room memo]
            (match-let1 (s . w)
-               (do-layout-elements (-* room plen 1) memo
+               (do-layout-elements size (-* room plen 1) memo
                                    (cons tag-layouter content-layouters))
              (cons `(,prefix ,@(reverse s) ">")
                    (and w (+ w plen 1)))))))
@@ -298,31 +305,34 @@
 ;; This is the core of layout&retry algorithm.  Invoke layouters to
 ;; find out best fit.  Each layouter may be invoked more than once,
 ;; when retry happens.
-(define (do-layout-elements room memo elts)
+(define (do-layout-elements size room memo elts)
   (define (do-oneline r es strs first?)
     (match es
       [() (cons strs (-* room r))]
-      [(e . es) (match-let1 (s . w) (e r memo)
-                  (cond [(not w) (do-linear room elts)] ;giveup
+      [(e . es) (match-let1 (s . w) (e size r memo)
+                  (cond [(not w) (if r
+                                   (do-fill size (cons e es) `(b ,@strs))
+                                   (do-linear size elts))] ;giveup
                         [(>* w room)                            ;too big
-                         (do-fill room es (list* 'b s 'b strs))]
+                         (do-fill size es (list* 'b s 'b strs))]
                         [(and first? (>* r w))
                          (do-oneline (-*  r w) es (list* s 's strs) #f)]
                         [(>* w (-* r 1))
-                         (do-fill (-* room w) es (list* s 'b strs))]
+                         (do-fill (-* size w) es (list* s 'b strs))]
                         [else
                          (do-oneline (-* r w 1) es (list* s 's strs) #f)]))]))
   (define (do-fill r es strs)
     (match es
       [() (cons strs #f)]
-      [(e . es) (match-let1 (s . w) (e r memo)
-                  (cond [(not w) (do-linear room elts)]
+      [(e . es) (match-let1 (s . w) (e size r memo)
+                  (cond [(and (not r) (not w)) (do-linear room elts)]
                         [(>* w (-* r 1))
-                         (do-fill (-* room w) es (list* s 'b strs))]
+                         (do-fill (-* size w) es (list* s 'b strs))]
                         [else
                          (do-fill (-* r w 1) es (list* s 's strs))]))]))
   (define (do-linear r es)
-    (cons (fold (^[e strs] (match-let1 (s . w) (e room memo) (list* s 'b strs)))
+    (cons (fold (^[e strs] (match-let1 (s . w) (e size room memo)
+                             (list* s 'b strs)))
                 '() es)
           #f))
 
@@ -360,9 +370,8 @@
                   :shared shared-table)
     (let* ([layouter (layout obj 0 context)]
            [memo (make-memo-hash)]
-           [fstree (car (layouter (-* (rp-width context)
-                                      (rp-indent context))
-                                  memo))])
+           [size (-* (rp-width context) (rp-indent context))]
+           [fstree (car (layouter size size memo))])
       (render fstree (rp-indent context) port))))
 
 ;; Write controls used by pprint
