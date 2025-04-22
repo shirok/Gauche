@@ -835,6 +835,21 @@
                        foo)
               :port <>)))
 
+(let ((data (alist->hash-table
+             (make-list 5 '(a . 1))
+             (make-comparator #t (constantly #f) #f eq-hash))))
+  (test* "recursive do-layout-elements"
+         "#<hash-table custom[5]( (a . 1)\
+        \n  (a . 1) (a . 1) (a . 1) (a . 1))>\n"
+         (call-with-output-string
+           (cut pprint data :width 35 :port <>)))
+  (test* "recursive do-layout-elements"
+         "#<hash-table custom[5]( (a . 1) (a . 1)\
+        \n  (a . 1) (a . 1) (a . 1))>\n"
+         (call-with-output-string
+           (cut pprint data :width 45 :port <>)))
+  )
+
 ;;===============================================================
 ;; utf-8 with BOM
 ;;
