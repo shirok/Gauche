@@ -30334,6 +30334,39 @@ argument order (@pxref{Octet vectors}).
 @c COMMON
 @end deffn
 
+
+@defun uvector-copy! target tstart source :optional sstart send
+@c MOD gauche.uvector
+@c EN
+This is a generic version of @code{@@vector-copy!}.
+The destination @var{target} and the source @var{source} can be
+any type of uniform vectors, and they don't need to match.
+The copy is done bit-by-bit.  So if you copy to a different type
+of uvector, the result depends on how the numbers are represented
+internally.  This is mainly to manipulate binary data.
+
+@var{Tstart} is interpreted according to the type of @var{target},
+and @var{sstart} and @var{send} are interpreted according to the
+type of @var{source}.
+@c JP
+これは@code{@@vector-copy!}の汎用バージョンです。
+コピー元@var{source}とコピー先@var{target}はユニフォームベクタであれば
+どの型でも許され、また両者の型が異なっていても構いません。
+ビット表現がそのままコピーされます。従って異なる型のユニフォームベクタ間で
+コピーした場合は、結果は数値の内部表現に依存します。
+そのような用法は、バイナリデータを扱う時には便利でしょう。
+
+@var{tstart}は@var{target}の型によって解釈され、
+@var{sstart}と@var{send}は@var{source}の型によって解釈されます。
+@c COMMON
+
+@example
+(rlet1 v (make-u8vector 6 0)
+  (uvector-copy! v 1 '#u32(0 #x01020304 0) 1 2))
+ @result{} #u8(0 1 2 3 4 0) or #u8(0 4 3 2 1 0)
+@end example
+@end defun
+
 @deffn {Function} @@vector-reverse! vec :optional start end
 @findex u8vector-reverse!
 @findex s8vector-reverse!
@@ -30352,8 +30385,31 @@ argument order (@pxref{Octet vectors}).
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+The argument @var{vec} must be mutable.
+Reverses contents of @var{vec} in-place, and returns an undefined value.
+If the optional integer index @var{start} and @var{end} are given,
+only the elements in the range (including @var{start}, excluding @var{end})
+are modified.
+
+(Note: This is not a ``linear update'' version.  It is guaranteed that
+@var{vec} is modified.)
 @c JP
+@var{vec}は変更可能でなければなりません。
+@var{vec}の要素の順序を逆転させて書き込み、未定義値を返します。
+省略可能な整数インデックス@var{start}と@var{end}が与えられた場合は、
+@var{start}番目(含む)から@var{end}番目(含まない)までの要素に限って
+変更します。
+
+(注: これは「線形更新」バージョンとは異なり、
+@var{vec}が変更されることは保証されています)。
 @c COMMON
+
+@example
+(define v (u8vector 1 2 3 4 5 6))
+
+(u8vector-reverse! v 1 5) @result{} #<undef>
+v @result{} #u8(1 5 4 3 2 6)
+@end example
 @end deffn
 
 @deffn {Function} @@vector-reverse-copy! target tstart source :optional start end
@@ -30513,39 +30569,6 @@ various operations on the homogeneous vectors.
 
 (subseq #u32(1 4 3 4 5) 2 4) @result{} #u32(3 4)
 @end example
-
-
-@defun uvector-copy! target tstart source :optional sstart send
-@c MOD gauche.uvector
-@c EN
-This is a generic version of @code{@@vector-copy!}.
-The destination @var{target} and the source @var{source} can be
-any type of uniform vectors, and they don't need to match.
-The copy is done bit-by-bit.  So if you copy to a different type
-of uvector, the result depends on how the numbers are represented
-internally.  This is mainly to manipulate binary data.
-
-@var{Tstart} is interpreted according to the type of @var{target},
-and @var{sstart} and @var{send} are interpreted according to the
-type of @var{source}.
-@c JP
-これは@code{@@vector-copy!}の汎用バージョンです。
-コピー元@var{source}とコピー先@var{target}はユニフォームベクタであれば
-どの型でも許され、また両者の型が異なっていても構いません。
-ビット表現がそのままコピーされます。従って異なる型のユニフォームベクタ間で
-コピーした場合は、結果は数値の内部表現に依存します。
-そのような用法は、バイナリデータを扱う時には便利でしょう。
-
-@var{tstart}は@var{target}の型によって解釈され、
-@var{sstart}と@var{send}は@var{source}の型によって解釈されます。
-@c COMMON
-
-@example
-(rlet1 v (make-u8vector 6 0)
-  (uvector-copy! v 1 '#u32(0 #x01020304 0) 1 2))
- @result{} #u8(0 1 2 3 4 0) or #u8(0 4 3 2 1 0)
-@end example
-@end defun
 
 
 @deffn {Function} @@vector-append vec @dots{}
@@ -30786,64 +30809,26 @@ length of @var{vec} is not a multiple of @var{n}.
 @findex c32vector-fold
 @findex c64vector-fold
 @findex c128vector-fold
-@findex u8vector-unfold
-@findex s8vector-unfold
-@findex u16vector-unfold
-@findex s16vector-unfold
-@findex u32vector-unfold
-@findex s32vector-unfold
-@findex u64vector-unfold
-@findex s64vector-unfold
-@findex f16vector-unfold
-@findex f32vector-unfold
-@findex f64vector-unfold
-@findex c32vector-unfold
-@findex c64vector-unfold
-@findex c128vector-unfold
+@findex u8vector-fold-right
+@findex s8vector-fold-right
+@findex u16vector-fold-right
+@findex s16vector-fold-right
+@findex u32vector-fold-right
+@findex s32vector-fold-right
+@findex u64vector-fold-right
+@findex s64vector-fold-right
+@findex f16vector-fold-right
+@findex f32vector-fold-right
+@findex f64vector-fold-right
+@findex c32vector-fold-right
+@findex c64vector-fold-right
+@findex c128vector-fold-right
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
 @c JP
 @c COMMON
 @end deffn
-
-@deffn {Function} @@vector-unfold! f vec start end seed
-@deffnx {Function} @@vector-unfold-right! f vec start end seed
-@findex u8vector-unfold!
-@findex s8vector-unfold!
-@findex u16vector-unfold!
-@findex s16vector-unfold!
-@findex u32vector-unfold!
-@findex s32vector-unfold!
-@findex u64vector-unfold!
-@findex s64vector-unfold!
-@findex f16vector-unfold!
-@findex f32vector-unfold!
-@findex f64vector-unfold!
-@findex c32vector-unfold!
-@findex c64vector-unfold!
-@findex c128vector-unfold!
-@findex u8vector-unfod-right!
-@findex s8vector-unfod-right!
-@findex u16vector-unfod-right!
-@findex s16vector-unfod-right!
-@findex u32vector-unfod-right!
-@findex s32vector-unfod-right!
-@findex u64vector-unfod-right!
-@findex s64vector-unfod-right!
-@findex f16vector-unfod-right!
-@findex f32vector-unfod-right!
-@findex f64vector-unfod-right!
-@findex c32vector-unfod-right!
-@findex c64vector-unfod-right!
-@findex c128vector-unfod-right!
-[R7RS vector.@@]
-@c MOD gauche.uvector
-@c EN
-@c JP
-@c COMMON
-@end deffn
-
 
 @deffn {Function} @@vector-map f vec vec2 @dots{}
 @deffnx {Function} @@vector-map! f vec vec2 @dots{}
@@ -30937,8 +30922,35 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Returns a fresh uvector of the same type and legnth as @var{vec}.
+Each element of returned vector is computed as follows:
+
+@itemize @bullet
+@item
+The first item is @code{(f knil (~ vec 0))}.
+@item
+The second item is @code{(f previous-result (~ vec 1))}.
+@item
+@dots{} and so on.
+@end itemize
 @c JP
+@var{vec}と同じ型、長さの新たなユニフォームベクタを作って返します。
+返されるユニフォームベクタの要素は次のとおり決定されます。
+
+@itemize @bullet
+@item
+最初の要素は@code{(f knil (~ vec 0))}
+@item
+次の要素は@code{(f previous-result (~ vec 1))}.
+@item
+@dots{} 以下同様
+@end itemize
 @c COMMON
+
+@example
+(s8vector-cumulate + 1 '#s8(1 2 3 4 5)) @result{} #s8(2 4 7 11 16)
+(s8vector-cumulate - 1 '#s8(1 2 3 4 5)) @result{} #s8(0 -2 -5 -9 -14)
+@end example
 @end deffn
 
 @deffn {Function} @@vector-take-while pred vec
@@ -31004,7 +31016,38 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Return a fresh uvector of the same type as @var{vec}, containing
+a subset of original elements computed as follows:
+@table @code
+@item @@vector-take-while
+The consecutive elements from the beginning of @var{vec} satisfying
+@var{pred}.
+@item @@vector-take-while-right
+The consecutive elements from the end of @var{vec} satisfying
+@var{pred}.
+@item @@vector-drop-while
+The elements except the consecutive elements from the beginning of
+@var{vec} satisfying @var{pred}.
+@item @@vector-drop-while-right
+The elements except the consecutive elements from the end of
+@var{vec} satisfying.
+@var{pred}.
+@end table
 @c JP
+@var{vec}と同じ型の新たなユニフォームベクタを返します。その要素は
+@var{vec}のサブセットで、次のとおり決定されます。
+@table @code
+@item @@vector-take-while
+@var{vec}の最初から、@var{pred}を満たす限りの連続する要素
+@item @@vector-take-while-right
+@var{vec}の最後から、@var{pred}を満たす限りの連続する要素
+@var{pred}.
+@item @@vector-drop-while
+@var{vec}の要素のうち、その最初から@var{pred}を満たす限りの連続する要素を除いたもの
+@item @@vector-drop-while-right
+@var{vec}の要素のうち、その最後から@var{pred}を満たす限りの連続する要素を除いたもの
+The elements except the consecutive elements from the end of
+@end table
 @c COMMON
 @end deffn
 
