@@ -113,7 +113,7 @@
     (hash-table-put! (rp-shared c) obj (- n))
     (set! (~ c'counter) (+ n 1))))
 
-;; The sescond phase takes a Scheme object and creates a "layouter"
+;; The second phase takes a Scheme object and creates a "layouter"
 ;; procedure, which determines the optimal layout of presentation
 ;; of the object.
 ;;
