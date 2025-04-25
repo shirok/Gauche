@@ -38,6 +38,7 @@
            "gauche/vminsn.h"
            "gauche/exception.h"
            "gauche/priv/portP.h"
+           "gauche/priv/readerP.h"
            "gauche/priv/writerP.h"
            <stdlib.h>
            <fcntl.h>))
@@ -556,7 +557,6 @@
 (define-cproc char-ready? (:optional (port::<input-port> (current-input-port)))
   ::<boolean> Scm_CharReady)
 
-
 (select-module gauche)
 
 (define-cproc eof-object () :constant (return SCM_EOF)) ;R6RS
@@ -599,6 +599,28 @@
             (eof-object)
             (get-output-string o))
           (begin (write-char c o) (loop (+ i 1))))))))
+
+;; Read context
+;;   The <read-context> instance carries internal state, so we don't
+;;   want to make it totally transparent in Scheme.  For now, we
+;;   provide a specialized constructor just for internal use.
+;;
+;;   read-context-for-source
+;;      Creates a <read-context> with flags suitable to read a source code.
+;;      Other parametrs are inherited from the current read context.
+;;      This is used by load and repl reader.
+
+(select-module gauche.internal)
+
+(define-cproc read-context-for-source ()
+  (let* ([ctx::ScmReadContext* (Scm_MakeReadContext NULL)])
+    (set! (-> ctx flags)
+          (logior (-> ctx flags)
+                  (logior RCTX_LITERAL_IMMUTABLE
+                          RCTX_SOURCE_INFO)))
+    (return (SCM_OBJ ctx))))
+
+(select-module gauche)
 
 (define (write-string string :optional (port (current-output-port))
                                        (start 0)

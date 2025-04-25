@@ -164,7 +164,7 @@
        (when (eqv? (peek-char port) #\ufeff)
          (read-char port))
        (generator-for-each (^s (eval s #f))
-                           (cute read port (%new-read-context-for-load)))))
+                           (cute read port (read-context-for-source)))))
     (restore-load-context)
     #t))
 
@@ -181,14 +181,6 @@
                 (Scm_Cons
                  (?: (SCM_FALSEP path) t (Scm_Cons path t))
                  (ref (-> vm stat) loadStat))))))))
-
-(define-cproc %new-read-context-for-load ()
-  (let* ([ctx::ScmReadContext* (Scm_MakeReadContext NULL)])
-    (set! (-> ctx flags)
-          (logior (-> ctx flags)
-                  (logior RCTX_LITERAL_IMMUTABLE
-                          RCTX_SOURCE_INFO)))
-    (return (SCM_OBJ ctx))))
 
 (define-cproc %load-verbose? () ::<boolean>
   (return (SCM_VM_RUNTIME_FLAG_IS_SET (Scm_VM) SCM_LOAD_VERBOSE)))
