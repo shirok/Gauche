@@ -337,11 +337,11 @@
   (if (null? vecs)
     (let1 len (${t}vector-length vec)
       (do ([i 0 (+ i 1)])
-          [(= i len) vec]
+          [(= i len) (undefined)]
         (${t}vector-set! vec i (proc (${t}vector-ref vec i)))))
     (let1 len (%minlen vec vecs)
       (do ([i 0 (+ i 1)])
-          [(= i len) vec]
+          [(= i len) (undefined)]
         (${t}vector-set! vec i (apply proc (%vecrefs i vec vecs)))))))
 (define (${t}vector-for-each proc vec . vecs)
   (if (null? vecs)

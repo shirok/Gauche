@@ -1,5 +1,9 @@
 2025-04-25  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvlib.scm.tmpl (@vector-map!): Change return value
+	  to #<undef>, so that the caller accidentally depends on the
+	  return value.  (If the code depends on its return value, it breaks).
+
 	* src/libio.scm (read-code): Instead of exposing <read-context>,
 	  provide an alternative reader API with LITERAL_IMMUTABLE flag on.
 	  So far, we use this for load and REPL interactive reader, so
