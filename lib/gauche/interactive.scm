@@ -357,7 +357,9 @@
   ;; fallback reader when we don't use editable repl.  We sill handle
   ;; toplevel commands.
   (define vanilla-reader
-    (make-repl-reader read read-line consume-trailing-whitespaces))
+    (make-repl-reader (with-module gauche.internal read-code)
+                      read-line
+                      consume-trailing-whitespaces))
 
   ;; Returns a prompt string.
   (define prompt-string-editable

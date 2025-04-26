@@ -85,7 +85,7 @@
               x))))
       (when hist-file
         (load-line-edit-history ctx (expand-path hist-file)))
-      (values (read-1 read)
+      (values (read-1 (with-module gauche.internal read-code))
               (read-1 read-line)
               (^[] (consume-trailing-whitespaces buffer))
               ctx))

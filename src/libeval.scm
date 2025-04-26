@@ -163,8 +163,7 @@
        ;; Discard BOM
        (when (eqv? (peek-char port) #\ufeff)
          (read-char port))
-       (generator-for-each (^s (eval s #f))
-                           (cute read port (read-context-for-source)))))
+       (generator-for-each (^s (eval s #f)) (cut read-code port))))
     (restore-load-context)
     #t))
 
@@ -431,7 +430,7 @@
                                                          (evaluator #f)
                                                          (printer #f)
                                                          (prompter #f))
-  (let ([reader    (or reader read)]
+  (let ([reader    (or reader read-code)]
         [evaluator (or evaluator eval)]
         [printer   (or printer %repl-print)]
         [prompter  (or prompter %repl-prompt)])

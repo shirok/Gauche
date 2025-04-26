@@ -536,9 +536,8 @@
 
 (select-module scheme)
 
-(define-cproc read (:optional (port::<input-port> (current-input-port))
-                              (ctx::<read-context>? #f))
-  (return (Scm_ReadWithContext (SCM_OBJ port) ctx)))
+(define-cproc read (:optional (port::<input-port> (current-input-port)))
+  (return (Scm_ReadWithContext (SCM_OBJ port) NULL)))
 
 (define-cproc read-char (:optional (port::<input-port> (current-input-port)))
   (inliner READ-CHAR)
@@ -612,13 +611,13 @@
 
 (select-module gauche.internal)
 
-(define-cproc read-context-for-source ()
+(define-cproc read-code (:optional (port::<input-port> (current-input-port)))
   (let* ([ctx::ScmReadContext* (Scm_MakeReadContext NULL)])
     (set! (-> ctx flags)
           (logior (-> ctx flags)
                   (logior RCTX_LITERAL_IMMUTABLE
                           RCTX_SOURCE_INFO)))
-    (return (SCM_OBJ ctx))))
+    (return (Scm_ReadWithContext (SCM_OBJ port) (SCM_OBJ ctx)))))
 
 (select-module gauche)
 
