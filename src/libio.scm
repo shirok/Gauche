@@ -617,7 +617,7 @@
           (logior (-> ctx flags)
                   (logior RCTX_LITERAL_IMMUTABLE
                           RCTX_SOURCE_INFO)))
-    (return (Scm_ReadWithContext (SCM_OBJ port) (SCM_OBJ ctx)))))
+    (return (Scm_ReadWithContext (SCM_OBJ port) ctx))))
 
 (select-module gauche)
 
