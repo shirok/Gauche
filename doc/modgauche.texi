@@ -30826,8 +30826,27 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Like @var{fold}/@var{fold-right} (@pxref{Walking over lists})
+and @var{vector-fold}/@var{vector-fold-right (@pxref{R7RS vectors}},
+these procedures apply @var{kons} over each element of input uvectors,
+carrying around the previous result of @var{kons} as the state value,
+whose default is @var{knil}.
 @c JP
+@var{fold}/@var{fold-right} (@ref{Walking over lists}参照)や
+@var{vector-fold}/@var{vector-fold-right (@ref{R7RS vectors}参照}と
+同じように、これらの手続きは@var{kons}を、入力ユニフォームベクタの各要素と
+状態値(一つ前の@var{kons}の戻り値)に適用してゆきます。
+@var{knil}は最初の状態値になります。
 @c COMMON
+
+@example
+(u8vector-fold + 0 '#u8(1 2 3 4))
+  @result{} 10
+(u8vector-fold cons '() '#u8(1 2 3 4))
+  @result{} ((((() . 1) . 2) . 3) . 4)
+(u8vector-fold-right cons '() '#u8(1 2 3 4))
+  @result{} (1 2 3 4)
+@end example
 @end deffn
 
 @deffn {Function} @@vector-map f vec vec2 @dots{}
@@ -30878,8 +30897,50 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+The procedur @var{f} is applied on each @var{i}-th elements from
+@var{vec} @dots{}.  @code{@@vector-map} collects the results of @code{f}
+into a fresh uniform vector of the same type and length of the
+input uvector and returns it.
+@code{@@vector-map!} uses the first @var{vec} to store the results
+of @code{f} and returns @code{#<undef>} (it is not a ``linear-update''
+procedure, which may or may not modify the input and you need to use
+the returned value.)
+@code{@@vector-for-each} calls @var{f} for side-effects and
+discards its results.
+
+The order how @var{f} is applied on elements of input isn't specified
+for @code{@@vector-map} and @code{@@vector-map!}, while @code{@@vector-for-each}
+is guaranteed to appli @var{f} in order.
+
+If lengths of input vectors differ, only the portions of the length
+of shortest vector are considered.
 @c JP
+手続き@var{f}を、入力ユニフォームベクタの@var{i}番目の要素にそれぞれ適用します。
+@code{@@vector-map}は@var{f}の結果を、入力ユニフォームベクタと同じ型、長さの
+新しいユニフォームベクタに格納します。
+@code{@@vector-map!}は@var{f}の結果を最初の引数に格納し、
+@code{#<undef>}を返します。
+(この手続きは「線形更新」版ではありません。線形更新版では引数が変更されることは
+保証されず、呼び出し側は返り値を使わなければなりませんが、
+この手続きは引数が変更されることが保証されています。)
+@code{@@vector-for-each}は@var{f}を副作用のために呼び出し、結果は捨てます。
+
+@var{f}が適用される順番は、@code{@@vector-map}と@code{@@vector-map!}については
+保証されていません。
+@code{@@vector-for-each}は@var{f}をインデックスの順に適用します。
+
+入力ユニフォームベクタの長さが異なる場合は、最も短いユニフォームベクタの
+長さの部分だけが考慮されます。
 @c COMMON
+
+@example
+(u8vector-map + '#u8(1 2 3) '#u8(4 5 6))
+  @result{} #u8(5 7 9)
+
+(define v (u8vector 1 2 3 4))
+(u8vector-map! + v '#u8(4 5 6)) @result{} #<undef>
+v  @result{} #u8(5 7 9 4)
+@end example
 @end deffn
 
 @deffn {Function} @@vector-count pred vec vec2 @dots{}
@@ -30900,8 +30961,21 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Calls @var{pred} with each @var{i}-th elements from @var{vec} @dots{},
+from @var{i}=0 and up,
+and returns the number of times @var{pred} returns true.
+If lengths of input uvectors differ, iteration stops at the end of
+the shortest uvector.
 @c JP
+@var{vec} @dots{}の各@var{i}番目の要素を引数にして@var{pred}を呼び出し、
+それが真の値を返した回数を返します。
+入力のユニフォームベクタの長さが同じでない場合は、
+繰り返しは一番短いユニフォームベクタの終端で止まります。
 @c COMMON
+
+@example
+(u8vector-count <= '#u8(3 3 3 3 3) '#u8(1 2 3 4 5)) @result{} 3
+@end example
 @end deffn
 
 @deffn {Function} @@vector-cumulate f knil vec
