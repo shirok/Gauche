@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (use scheme.list)
+(use util.match)
 
 (test-start "uniform vector and array")
 (use gauche.uvector)
@@ -303,6 +304,138 @@
 (test* "u8vector=?" (test-error) (u8vector=? '#u8(1 2 3) '#s8(1 2 3)))
 (test* "u8vector-compare" -1 (u8vector-compare '#u8(2 2) '#u8(1 2 3)))
 (test* "u8vector-compare" (test-error) (u8vector-compare '#s8(2 2) '#u8(1 2 3)))
+
+;;-------------------------------------------------------------------
+(test-section "element check")
+
+(let ()
+  (define-syntax t
+    (er-macro-transformer
+     (^[f r c]
+       (match f
+         [(_ tag val expect)
+          (let* ([tag? (symbol-append tag '?)]
+                 [class (symbol-append '< tag 'vector>)]
+                 [t1 `(,tag? ,val)]
+                 [t2 `(,(r'uvector-class-valid-element?) ,class ,val)])
+          (quasirename r
+            `(begin
+               (test* ',t1 ,expect ,t1)
+               (test* ',t2 ,expect ,t2))))]))))
+
+  (t u8 0 #t)
+  (t u8 255 #t)
+  (t u8 256 #f)
+  (t u8 -1 #f)
+  (t u8 0.0 #f)
+  (t u8 0+i #f)
+  (t u8 'a #f)
+
+  (t s8 0 #t)
+  (t s8 127 #t)
+  (t s8 128 #f)
+  (t s8 -128 #t)
+  (t s8 -129 #f)
+  (t s8 0.0 #f)
+  (t s8 0+i #f)
+  (t s8 'a #f)
+
+  (t u16 0 #t)
+  (t u16 65535 #t)
+  (t u16 65536 #f)
+  (t u16 -1 #f)
+  (t u16 0.0 #f)
+  (t u16 0+i #f)
+  (t u16 'a #f)
+
+  (t s16 0 #t)
+  (t s16 32767 #t)
+  (t s16 32768 #f)
+  (t s16 -32768 #t)
+  (t s16 -32769 #f)
+  (t s16 0.0 #f)
+  (t s16 0+i #f)
+  (t s16 'a #f)
+
+  (t u32 0 #t)
+  (t u32 (- (expt 2 32) 1) #t)
+  (t u32 (expt 2 32) #f)
+  (t u32 -1 #f)
+  (t u32 0.0 #f)
+  (t u32 0+i #f)
+  (t u32 'a #f)
+
+  (t s32 0 #t)
+  (t s32 (- (expt 2 31) 1) #t)
+  (t s32 (expt 2 31) #f)
+  (t s32 (- (expt 2 31)) #t)
+  (t s32 (- (- (expt 2 31)) 1) #f)
+  (t s32 0.0 #f)
+  (t s32 0+i #f)
+  (t s32 'a #f)
+
+  (t u64 0 #t)
+  (t u64 (- (expt 2 64) 1) #t)
+  (t u64 (expt 2 64) #f)
+  (t u64 -1 #f)
+  (t u64 0.0 #f)
+  (t u64 0+i #f)
+  (t u64 'a #f)
+
+  (t s64 0 #t)
+  (t s64 (- (expt 2 63) 1) #t)
+  (t s64 (expt 2 63) #f)
+  (t s64 (- (expt 2 63)) #t)
+  (t s64 (- (- (expt 2 63)) 1) #f)
+  (t s64 0.0 #f)
+  (t s64 0+i #f)
+  (t s64 'a #f)
+
+  (t f16 0 #t)
+  (t f16 0.0 #t)
+  (t f16 1e300 #t)
+  (t f16 -1e300 #t)
+  (t f16 +nan.0 #t)
+  (t f16 0+i #f)
+  (t f16 'a #f)
+
+  (t f32 0 #t)
+  (t f32 0.0 #t)
+  (t f32 1e300 #t)
+  (t f32 -1e300 #t)
+  (t f32 +nan.0 #t)
+  (t f32 0+i #f)
+  (t f32 'a #f)
+
+  (t f64 0 #t)
+  (t f64 0.0 #t)
+  (t f64 1e300 #t)
+  (t f64 -1e300 #t)
+  (t f64 +nan.0 #t)
+  (t f64 0+i #f)
+  (t f64 'a #f)
+
+  (t c32 0 #t)
+  (t c32 0.0 #t)
+  (t c32 1e300 #t)
+  (t c32 +nan.0 #t)
+  (t c32 0+i #t)
+  (t c32 'a #f)
+
+  (t c64 0 #t)
+  (t c64 0.0 #t)
+  (t c64 1e300 #t)
+  (t c64 +nan.0 #t)
+  (t c64 0+i #t)
+  (t c64 'a #f)
+
+  (t c128 0 #t)
+  (t c128 0.0 #t)
+  (t c128 1e300 #t)
+  (t c128 +nan.0 #t)
+  (t c128 0+i #t)
+  (t c128 'a #f)
+  )
 
 ;;-------------------------------------------------------------------
 (test-section "copying and filling")

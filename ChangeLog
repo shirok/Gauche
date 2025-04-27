@@ -1,3 +1,8 @@
+2025-04-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (uvector-class-valid-element?): Added.
+	  (u32?, s32?, u64?, s64?): There's a bug that reversed the condition.
+
 2025-04-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.scm.tmpl (@vector-map!): Change return value
