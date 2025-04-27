@@ -29530,7 +29530,7 @@ The @code{@@} part is actually one of @code{u8}, @code{s8}, @code{u16},
 @code{s16}, @code{u32}, @code{s32}, @code{u64}, @code{s64},
 @code{f16}, @code{f32}, @code{f64}, @code{c32}, @code{c64} or @code{c128}.
 @c JP
-@code{@@}の部分は実際には要素の型を示す次タグのいずれかです:
+@code{@@}の部分は実際には要素の型を示す次のタグのいずれかです:
 @code{u8}, @code{s8}, @code{u16},
 @code{s16}, @code{u32}, @code{s32}, @code{u64}, @code{s64},
 @code{f16}, @code{f32}, @code{f64}, @code{c32}, @code{c64}, @code{c128}。
@@ -29657,7 +29657,7 @@ On the other hand, using @code{gauche.uvector} imports all the bindings.
 あるいは @code{(import (scheme vector u8))} (R7RS式)
 のようにする必要があります。
 
-一方、@code{gauche.uvector}使った場合は全ての手続きがインポートされます。
+一方、@code{gauche.uvector}を使った場合は全ての手続きがインポートされます。
 @c COMMON
 
 @menu
@@ -29708,7 +29708,39 @@ Returns @code{#t} iff @var{obj} can be an element of @code{@@vector}.
 @c JP
 引数が@@ベクタの要素に収まるなら@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
+
+@example
+(u8? 3)    @result{} #t
+(u8? -1)   @result{} #f
+(u8? 256)  @result{} #f
+(u16? 256) @result{} #t
+(s8? -1)   @result{} #t
+(s8? 128)  @result{} #f
+@end example
 @end deffn
+
+@defun uvector-class-valid-element? class obj
+@c MOD gauche.uvector
+@c EN
+Generic version of @code{u8?} etc.  Takes a @var{class}, which must
+be one of subclasses of @code{<uvector>}, and returns @code{#t}
+if @var{obj} is suitable as an element of the instance of @var{class},
+or @var{#f} otherwise.
+@c JP
+@code{u8?}等のジェネリックなバージョンです。
+@var{class}は@code{<uvector>}のサブクラスでなければなりません。
+@var{obj}が@var{class}のインスタンスの要素として有効であれば
+@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+
+@example
+(uvector-class-valid-element? <u16vector> 65535) @result{} #t
+(uvector-class-valid-element? <u16vector> 65536) @result{} #f
+(uvector-class-valid-element? <s16vector> 32768) @result{} #f
+(uvector-class-valid-element? <s16vector> 'a) @result{} #f
+@end example
+@end defun
+
 
 @deffn {Function} @@vector-empty? obj
 @findex u8vector-empty?
@@ -29893,7 +29925,7 @@ are generated from right (@var{end}-1) to left (@var{start}).
 If @var{start} >= @var{end}, @var{f} is never called and @var{vec} isn't
 altered.  It is an error if the index falls out of range of @var{vec}.
 
-Return an unspecified vlaue.
+Return an unspecified value.
 @c JP
 @@vectorである@var{vec}の、@var{start}要素目(含む)から@var{end}要素目(含まない)
 までを、@var{f}の呼び出し結果で埋めてゆきます。@var{f}は整数のインデックスと
@@ -30430,8 +30462,18 @@ v @result{} #u8(1 5 4 3 2 6)
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Similar to @code{@@vector-copy!}, but the source elements are copied in
+reverse order.
 @c JP
+@code{@@vector-copy!}とほぼ同じですが、@var{source}ベクタの要素が
+逆順でコピーされます。
 @c COMMON
+
+@example
+(rlet1 v (s8vector 0 1 2 3 4 5 6 7)
+  (s8vector-reverse-copy! v 1 '#s8(0 -1 -2 -3 -4 -5) 1 5))
+  @result{} #s8(0 -4 -3 -2 -1 5 6 7)
+@end example
 @end deffn
 
 
