@@ -31162,7 +31162,6 @@ The elements except the consecutive elements from the end of
 @var{vec}の要素のうち、その最初から@var{pred}を満たす限りの連続する要素を除いたもの
 @item @@vector-drop-while-right
 @var{vec}の要素のうち、その最後から@var{pred}を満たす限りの連続する要素を除いたもの
-The elements except the consecutive elements from the end of
 @end table
 @c COMMON
 @end deffn

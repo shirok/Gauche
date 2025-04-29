@@ -13919,7 +13919,7 @@ An infinite lazy sequence of primes.
 @c MOD math.prime
 @c EN
 Once you take a very large prime out of @code{*primes*}, all primes
-before that has been calculated remains in memory, since the
+before that has been calculated remain in memory, since the
 head of sequence is held in @code{*primes*}.  Sometimes you know
 you need no more prime numbers and you wish those calculated ones
 to be garbage-collected.  Calling @code{reset-primes} rebinds

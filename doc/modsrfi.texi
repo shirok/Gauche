@@ -4932,7 +4932,7 @@ which has different argument orders (unfortunate historical artifacts).
 There's no reason to use this srfi except porting code that relies
 on @code{srfi.66}.
 @c JP
-@var{srfi.66}に依存するコードを移植するのでなければ、
+@code{srfi.66}に依存するコードを移植するのでなければ、
 このモジュールを使う場面は無いでしょう。
 @c COMMON
 
