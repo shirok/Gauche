@@ -195,6 +195,9 @@
     (SCM_SET_CLASS z (& Scm_WinConsoleScreenBufferInfoClass))
     (return (SCM_OBJ z))))
 
+(define-cfn allocate-console-screen-buffer-info (_::ScmClass* _) :static
+  (return (make-console-screen-buffer-info)))
+
 (declare-stub-type <win:console-screen-buffer-info>
   "ScmWinConsoleScreenBufferInfo*" "CONSOLE_SCREEN_BUFFER_INFO"
   "SCM_WIN_CONSOLE_SCREEN_BUFFER_INFO_P"
@@ -213,7 +216,7 @@
    (window.bottom :c-name "info.srWindow.Bottom" :type <short>)
    (maximum-window-size.x :c-name "info.dwMaximumWindowSize.X" :type <short>)
    (maximum-window-size.y :c-name "info.dwMaximumWindowSize.Y" :type <short>))
-  (allocator (c "make_console_screen_buffer_info")))
+  (allocator (c "allocate_console_screen_buffer_info")))
 
 (define-enum FOREGROUND_BLUE)
 (define-enum FOREGROUND_GREEN)
@@ -259,6 +262,9 @@
     (SCM_SET_CLASS z (& Scm_WinInputRecordClass))
     (return (SCM_OBJ z))))
 
+(define-cfn allocate-input-record (_::ScmClass* _) :static
+  (return (make-input-record)))
+
 (declare-stub-type <win:input-record>
   "ScmWinInputRecord*" "INPUT_RECORD"
   "SCM_WIN_INPUT_RECORD_P"
@@ -299,7 +305,7 @@
                             :type <uint>)
    (focus.set-focus         :c-name "rec.Event.FocusEvent.bSetFocus"
                             :type <boolean>))
-  (allocator (c "make_input_record")))
+  (allocator (c "allocate_input_record")))
 
 (define-cproc sys-get-number-of-console-input-events (h) ::<uint>
   (let* ([num::DWORD 0])
