@@ -41,7 +41,8 @@
 (in-module os.windows)
 
 (inline-stub
-(.include "gauche/extend.h")
+(.include "gauche/extend.h"
+          "gauche/class.h")
 (.when (defined GAUCHE_WINDOWS)
 
 ;; ConsoleBufferHandle
@@ -178,16 +179,17 @@
 ;;
 ;; Console Screen Buffer Info
 ;;
-(declcode "#include <gauche/class.h>"
-          "typedef struct ScmWinConsoleScreenBufferInfoRec {"
-          "  SCM_HEADER;"
-          "  CONSOLE_SCREEN_BUFFER_INFO info;"
-          "} ScmWinConsoleScreenBufferInfo;"
-          "SCM_CLASS_DECL(Scm_WinConsoleScreenBufferInfoClass);"
-          "#define SCM_WIN_CONSOLE_SCREEN_BUFFER_INFO_P(obj) \
-             SCM_XTYPEP(obj, &Scm_WinConsoleScreenBufferInfoClass)"
-          "#define SCM_WIN_CONSOLE_SCREEN_BUFFER_INFO(obj) \
-             ((ScmWinConsoleScreenBufferInfo*)obj)")
+(define-ctype ScmWinConsoleScreenBufferInfo
+  ::(.struct ScmWinConsoleScreenBufferInfoRec
+             (SCM_HEADER::||
+              info::CONSOLE_SCREEN_BUFFER_INFO)))
+
+(declcode (SCM_CLASS_DECL Scm_WinConsoleScreenBufferInfoClass))
+
+(.define SCM_WIN_CONSOLE_SCREEN_BUFFER_INFO_P (obj)
+         (SCM_XTYPEP obj (& Scm_WinConsoleScreenBufferInfoClass)))
+(.define SCM_WIN_CONSOLE_SCREEN_BUFFER_INFO (obj)
+         (cast ScmWinConsoleScreenBufferInfo* obj))
 
 (define-cfn make-console-screen-buffer-info () :static
   (let* ([z::ScmWinConsoleScreenBufferInfo*
@@ -247,15 +249,17 @@
 ;; Console input
 ;;
 
-(declcode "typedef struct ScmWinInputRecordRec {"
-          "  SCM_HEADER;"
-          "  INPUT_RECORD rec;"
-          "} ScmWinInputRecord;"
-          "SCM_CLASS_DECL(Scm_WinInputRecordClass);"
-          "#define SCM_WIN_INPUT_RECORD_P(obj) \
-              SCM_XTYPEP(obj, &Scm_WinInputRecordClass)"
-          "#define SCM_WIN_INPUT_RECORD(obj) \
-              ((ScmWinInputRecord*)obj)")
+(define-ctype ScmWinInputRecord
+  ::(.struct ScmWinInputRecordRec
+             (SCM_HEADER::||
+              rec::INPUT_RECORD)))
+
+(declcode (SCM_CLASS_DECL Scm_WinInputRecordClass))
+
+(.define SCM_WIN_INPUT_RECORD_P (obj)
+         (SCM_XTYPEP obj (& Scm_WinInputRecordClass)))
+(.define SCM_WIN_INPUT_RECORD (obj)
+         (cast ScmWinInputRecord* obj))
 
 (define-cfn make-input-record () :static
   (let* ([z::ScmWinInputRecord* (SCM_NEW ScmWinInputRecord)])
