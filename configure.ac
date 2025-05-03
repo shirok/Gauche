@@ -720,7 +720,7 @@ AS_CASE([$host],
       [darwin9.8.*], [],           dnl Leopard doesn't like -no_pie
                      [SHLIB_MAIN_LDFLAGS="-Wl,-no_pie"])
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
-    SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
+    SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined dynamic_lookup -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_DYLIB_LDFLAGS='-framework CoreServices -framework CoreFoundation -dynamiclib -o'
     AS_IF([test "$ac_gauche_framework" = yes], [
