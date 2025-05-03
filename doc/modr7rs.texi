@@ -6460,7 +6460,7 @@ the literal rlist.  @code{(quote (a (b c)))} becomes a literal
 rlist consists of elements @code{a}, and an rlist consists
 of @code{b} and @code{c}.
 @c JP
-このモジュールはまた、リテラルのrlistを書くめの@code{quote}という構文もエクスポートします。
+このモジュールはまた、リテラルのrlistを書くための@code{quote}という構文もエクスポートします。
 @code{(quote (a (b c)))}は、
 @code{a}および、「@code{b}と@code{c}を要素に持つrlist」のrlistになります。
 @c COMMON
