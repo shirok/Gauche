@@ -34,13 +34,13 @@
 ;; This must be the first form to prevent generation of *.sci file
 (declare)
 
-;; In Gauche, types are a data structure that appears in both compile-time
-;; and run-time, describes metalevel properties of run-time data.
+;; In Gauche, types are a data structure that appear in both compile-time
+;; and run-time, and describe metalevel properties of run-time data.
 ;;
 ;; Gauche has two kinds of types--prescriptive types and descriptive types.
-;; Prescriptive types are the types that are actually used to generate the
+;; Prescriptive types are the types that are used to generate
 ;; actual data---we also call it classes.  Descriptive types are, otoh,
-;; used only to descrive the nature of data at the certain point of program
+;; used only to describe the nature of data at the certain point of program
 ;; execution---for example, you may say the argument must be either <integer>
 ;; or <boolean>.  The descriptive type can't be used to generate an instance,
 ;; only to be used to validate and/or infer the actual (generative) type of
