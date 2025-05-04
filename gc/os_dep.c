@@ -5056,7 +5056,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 }
 #undef FWD
 
-#ifndef NO_DESC_CATCH_EXCEPTION_RAISE
+#if (__clang_major__ < 15) && !defined(NO_DESC_CATCH_EXCEPTION_RAISE)
   /* These symbols should have REFERENCED_DYNAMICALLY (0x10) bit set to */
   /* let strip know they are not to be stripped.                        */
   __asm__(".desc _catch_exception_raise, 0x10");
