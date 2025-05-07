@@ -599,15 +599,8 @@
             (get-output-string o))
           (begin (write-char c o) (loop (+ i 1))))))))
 
-;; Read context
-;;   The <read-context> instance carries internal state, so we don't
-;;   want to make it totally transparent in Scheme.  For now, we
-;;   provide a specialized constructor just for internal use.
-;;
-;;   read-context-for-source
-;;      Creates a <read-context> with flags suitable to read a source code.
-;;      Other parametrs are inherited from the current read context.
-;;      This is used by load and repl reader.
+;; Special reader for code. This reads input with modified <read-context>,
+;; so that the literal objects are read as immutable.
 
 (select-module gauche.internal)
 
