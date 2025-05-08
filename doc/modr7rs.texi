@@ -6985,21 +6985,28 @@ of given ideques (@pxref{Walking over lists}, for the semantics of
 を参照してください)。
 @c COMMON
 
-@c EN
-Note that R7RS @code{(scheme ideque)} only defines
-these procedures to take exactly one @var{idq} argument.
-Allowing more than one @var{idq} arguments is Gauche's extension.
-@c JP
-R7RS @code{(scheme ideque)} はこれらの手続きが@var{idq}引数を1つだけ
-取ると定義しています。２つ以上のidequeを取れるのはGaucheの拡張です。
-@c COMMON
-
 @example
 (ideque-fold cons '() (ideque 1 2 3))
   @result{} (3 2 1)
 (ideque-fold-right cons '() (ideque 1 2 3))
   @result{} (1 2 3)
 @end example
+
+@c EN
+Note that R7RS ideque only supports single @var{idq} argument.
+It is Gauche's extension to allow more than one @var{idq} arguments;
+in that case, @var{proc} gets as many arguments
+as the given ideques, each argument taken from each ideque.
+If the lengths of input ideques differ,
+only the length up to the shortest of input ideques is considered.
+@c JP
+R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義しています。
+@var{idq}が二つ以上の場合はGaucheの拡張としてサポートされます。
+@var{idq}が二つ以上の場合、@var{proc}は入力の@var{idq}の数だけ引数を取ります。
+引数のidequeの長さが異なっていた場合は、
+最も短いidequeの長さの分だけが考慮されます。
+@c COMMON
+
 @end defun
 
 @defun ideque-append-map proc idq @dots{}
@@ -7014,12 +7021,18 @@ posibbly more efficiently.
 @c COMMON
 
 @c EN
-Note that R7RS @code{(scheme ideque)} only defines
-these procedures to take exactly one @var{idq} argument.
-Allowing more than one @var{idq} arguments is Gauche's extension.
+Note that R7RS ideque only supports single @var{idq} argument.
+It is Gauche's extension to allow more than one @var{idq} arguments;
+in that case, @var{proc} gets as many arguments
+as the given ideques, each argument taken from each ideque.
+If the lengths of input ideques differ,
+only the length up to the shortest of input ideques is considered.
 @c JP
-R7RS @code{(scheme ideque)} はこれらの手続きが@var{idq}引数を1つだけ
-取ると定義しています。２つ以上のidequeを取れるのはGaucheの拡張です。
+R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義しています。
+@var{idq}が二つ以上の場合はGaucheの拡張としてサポートされます。
+@var{idq}が二つ以上の場合、@var{proc}は入力の@var{idq}の数だけ引数を取ります。
+引数のidequeの長さが異なっていた場合は、
+最も短いidequeの長さの分だけが考慮されます。
 @c COMMON
 
 @example
