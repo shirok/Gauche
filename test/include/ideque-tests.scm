@@ -11,7 +11,7 @@
        (ideque->list (ideque-unfold-right zero? values (lambda (n) (- n 1)) 10)))
  (test '(0 2 4 6 8 10)
        (ideque->list (ideque-tabulate 6 (lambda (n) (* n 2)))))
- 
+
  ;; corner cases
  (test '() (ideque->list
             (ideque-unfold (lambda (n) #t) values (lambda (n) (+ n 1)) 0)))
@@ -55,7 +55,7 @@
    (set! id (ideque-remove-front (ideque-add-back id 1)))
    (set! id (ideque-remove-front (ideque-add-back id 1)))
    (set! id (ideque-remove-front (ideque-add-back id 1)))
-   (test #f (ideque-front (ideque-take-right id 12)))) 
+   (test #f (ideque-front (ideque-take-right id 12))))
  )
 
 (test-group "ideque/other-accessors"
@@ -155,7 +155,7 @@
        (ideque-fold cons* 'z (ideque 1 2 3 4 5) (ideque 'a 'b 'c)))
  (test '(1 2 3 4 5 . z)
        (ideque-fold-right cons 'z (ideque 1 2 3 4 5)))
- (test '(1 a 2 b 3 c . z)
+ (test '(3 a 4 b 5 c . z)
        (ideque-fold-right cons* 'z (ideque 1 2 3 4 5) (ideque 'a 'b 'c)))
  (test '(1 a 2 b 3 c)
        (ideque->list (ideque-append-map list
@@ -243,4 +243,3 @@
  )
 
 ) ;; end test-group "ideque"
-

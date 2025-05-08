@@ -40,6 +40,7 @@
   (use gauche.record)
   (use gauche.generator)
   (use gauche.lazy)
+  (use gauche.collection :only (find-min))
   (use util.match)
   (use scheme.list)
   (export <ideque>
@@ -326,8 +327,12 @@
   (case-lambda
     [(proc knil dq)
      (fold-right proc (fold-right proc knil (reverse (dq-r dq))) (dq-f dq))]
+    [(proc knil) (ideque)]              ;just elimate special case
     [(proc knil . dqs)
-     (apply fold-right proc knil (map ideque->list dqs))]))
+     ;; not optimal
+     (let* ([len (find-min (map ideque-length dqs))]
+            [xss (map (^[idq] (ideque->list (ideque-take-right idq len))) dqs)])
+       (apply fold-right proc knil xss))]))
 
 ;; API [SRFI-134]
 (define (ideque-append-map proc . dqs)
