@@ -6974,11 +6974,58 @@ R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義して�
 @defunx ideque-fold-right proc knil idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Run @code{fold}/@code{fold-right} over the series of elements
+of given ideques (@pxref{Walking over lists}, for the semantics of
+@code{fold} etc.).
+@c JP
+@code{fold}/@code{fold-right}を与えられたidequeの
+要素の列に対して適用します
+(@code{fold}等のセマンティクスについては@ref{Walking over lists}
+を参照してください)。
+@c COMMON
+
+@c EN
+Note that R7RS @code{(scheme ideque)} only defines
+these procedures to take exactly one @var{idq} argument.
+Allowing more than one @var{idq} arguments is Gauche's extension.
+@c JP
+R7RS @code{(scheme ideque)} はこれらの手続きが@var{idq}引数を1つだけ
+取ると定義しています。２つ以上のidequeを取れるのはGaucheの拡張です。
+@c COMMON
+
+@example
+(ideque-fold cons '() (ideque 1 2 3))
+  @result{} (3 2 1)
+(ideque-fold-right cons '() (ideque 1 2 3))
+  @result{} (1 2 3)
+@end example
 @end defun
 
 @defun ideque-append-map proc idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Works like @code{(apply ideque-append (ideque-map proc idq @dots{})}, but
+posibbly more efficiently.
+@c JP
+@code{(apply ideque-append (ideque-map proc idq @dots{})}と同じように
+動作しますが、より効率が良いです。
+@c COMMON
+
+@c EN
+Note that R7RS @code{(scheme ideque)} only defines
+these procedures to take exactly one @var{idq} argument.
+Allowing more than one @var{idq} arguments is Gauche's extension.
+@c JP
+R7RS @code{(scheme ideque)} はこれらの手続きが@var{idq}引数を1つだけ
+取ると定義しています。２つ以上のidequeを取れるのはGaucheの拡張です。
+@c COMMON
+
+@example
+(ideque->list (ideque-append-map (^e (list e e)) (ideque 1 2 3)))
+  @result{} (1 1 2 2 3 3)
+@end example
 @end defun
 
 @defun ideque-filter pred idq
