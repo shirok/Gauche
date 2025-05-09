@@ -155,7 +155,7 @@
        (ideque-fold cons* 'z (ideque 1 2 3 4 5) (ideque 'a 'b 'c)))
  (test '(1 2 3 4 5 . z)
        (ideque-fold-right cons 'z (ideque 1 2 3 4 5)))
- (test '(3 a 4 b 5 c . z)
+ (test '(1 a 2 b 3 c . z)
        (ideque-fold-right cons* 'z (ideque 1 2 3 4 5) (ideque 'a 'b 'c)))
  (test '(1 a 2 b 3 c)
        (ideque->list (ideque-append-map list

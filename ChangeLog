@@ -1,10 +1,3 @@
-2025-05-08  Shiro Kawai  <shiro@acm.org>
-
-	* lib/data/ideque.scm (ideque-fold-right): Make it consistent with
-	  ideque-for-each-right when multiple ideques with different lengths
-	  are given.  This is techinically an incompatible change, though
-	  the behavior of that case hasn't been documented.
-
 2025-04-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm (uvector-class-valid-element?): Added.

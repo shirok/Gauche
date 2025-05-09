@@ -6998,15 +6998,20 @@ It is Gauche's extension to allow more than one @var{idq} arguments;
 in that case, @var{proc} gets as many arguments
 as the given ideques, each argument taken from each ideque.
 If the lengths of input ideques differ,
-only the length up to the shortest of input ideques is considered.
+only the length up to the shortest of input ideques from the left end
+is considered.
 @c JP
 R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義しています。
 @var{idq}が二つ以上の場合はGaucheの拡張としてサポートされます。
 @var{idq}が二つ以上の場合、@var{proc}は入力の@var{idq}の数だけ引数を取ります。
 引数のidequeの長さが異なっていた場合は、
-最も短いidequeの長さの分だけが考慮されます。
+各idequeの左側から最も短いidequeの長さの分だけが考慮されます。
 @c COMMON
 
+@example
+(ideque-fold-right cons* '() (ideque 1 2 3 4 5) (ideque 'a 'b 'c))
+  @result{} (1 a 2 b 3 c)
+@end example
 @end defun
 
 @defun ideque-append-map proc idq @dots{}
@@ -7027,7 +7032,7 @@ in that case, @var{proc} gets as many arguments
 as the given ideques, each argument taken from each ideque.
 If the lengths of input ideques differ,
 only the length up to the shortest of input ideques is considered.
-@c JP
+！@c JP
 R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義しています。
 @var{idq}が二つ以上の場合はGaucheの拡張としてサポートされます。
 @var{idq}が二つ以上の場合、@var{proc}は入力の@var{idq}の数だけ引数を取ります。
