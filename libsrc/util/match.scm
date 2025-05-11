@@ -1103,56 +1103,36 @@
 (define match:expanders
   (list genmatch genletrec gendefine pattern-var?))
 
-(define-macro (match . args)
-  (cond
-    ((and (list? args)
-          (<= 1 (length args))
-          (match:every
-            (lambda (y) (and (list? y) (<= 2 (length y))))
-            (cdr args))) (let* ((exp (car args))
-                                (clauses (cdr args))
-                                (e (if (identifier? exp) exp (gensym))))
-                           (if (identifier? exp)
-                               ((car match:expanders)
-                                e
-                                clauses
-                                `(,match. ,@args))
-                               `(let ((,e ,exp))
-                                  ,((car match:expanders)
-                                    e
-                                    clauses
-                                    `(,match. ,@args))))))
-    (else (match:syntax-err `(match ,@args) "syntax error in"))))
+(define-syntax match
+  (er-macro-transformer
+   (^[f r c]
+     (let ([expr (cadr f)]
+           [clauses (cddr f)]
+           [e (gensym)])
+       (unless (and (length>=? clauses 1)
+                    (every (^c (list? c) (length>=? c 2)) clauses))
+         (error "Malformed match:" f))
+       (quasirename r
+         `(let ((,e ,expr))
+            ,((car match:expanders) e clauses f)))))))
 
-(define-macro (match-lambda . args)
-  (if (and (list? args)
-           (match:every
-             (lambda (g126)
-               (if (and (pair? g126) (list? (cdr g126)))
-                   (pair? (cdr g126))
-                   #f))
-             args))
-      ((lambda ()
-         (let ((e (gensym))) `(,lambda. (,e) (,match. ,e ,@args)))))
-      ((lambda ()
-         (match:syntax-err
-           `(match-lambda ,@args)
-           "syntax error in")))))
+(define-syntax match-lambda
+  (er-macro-transformer
+   (^[f r c]
+     (let1 clauses (cdr f)
+       (unless (every (^c (and (pair? c) (list? (cdr c)))) clauses)
+         (error "Malformed match-lambda:" f))
+       (quasirename r
+         `(lambda (e) (match e ,@clauses)))))))
 
-(define-macro (match-lambda* . args)
-  (if (and (list? args)
-           (match:every
-             (lambda (g134)
-               (if (and (pair? g134) (list? (cdr g134)))
-                   (pair? (cdr g134))
-                   #f))
-             args))
-      ((lambda ()
-         (let ((e (gensym))) `(,lambda. ,e (,match. ,e ,@args)))))
-      ((lambda ()
-         (match:syntax-err
-           `(match-lambda* ,@args)
-           "syntax error in")))))
+(define-syntax match-lambda*
+  (er-macro-transformer
+   (^[f r c]
+     (let1 clauses (cdr f)
+       (unless (every (^c (and (pair? c) (list? (cdr c)))) clauses)
+         (error "Malformed match-lambda*:" f))
+       (quasirename r
+         `(lambda e (match e ,@clauses)))))))
 
 (define-macro (match-let . args)
   (let ((g158 (lambda (pat exp body)

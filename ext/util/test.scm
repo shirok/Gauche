@@ -119,6 +119,20 @@
                     Y))))
           )))
 
+(let ()
+  (define f
+    (match-lambda*
+      [(a) (list 1 a)]
+      [(a (x . y)) (list 2 a x y)]
+      [(a b) (list 3 a b)]
+      [(a b . c) (list 4 a b c)]))
+  (dolist [d '(((p)         (1 p))
+               ((p (q r s)) (2 p q (r s)))
+               ((p q)       (3 p q))
+               ((p q r s)   (4 p q (r s))))]
+    (test* #"match-lambda* ~(car d)" (cadr d) (apply f (car d))))
+  )
+
 ;; interference with hygienic macro
 (let ()
   (define-syntax define-registrar
