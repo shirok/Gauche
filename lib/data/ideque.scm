@@ -279,7 +279,7 @@
 (define ideque-count
   (case-lambda
     [(pred dq) (+ (count pred (dq-f dq)) (count pred (dq-r dq)))]
-    [(pred . dqs) (apply count pred (map ideque->list dqs))]))
+    [(pred dq . dqs) (apply count pred (map ideque->list (cons dq dqs)))]))
 
 ;; API [SRFI-134]
 (define (ideque-zip dq . dqs)
@@ -290,7 +290,8 @@
   (case-lambda
     [(proc dq) (%make-dq (dq-lenf dq) (map proc (dq-f dq))
                          (dq-lenr dq) (map proc (dq-r dq)))]
-    [(proc . dqs) (list->ideque (apply map proc (map ideque->list dqs)))]))
+    [(proc dq . dqs)
+     (list->ideque (apply map proc (map ideque->list (cons dq dqs))))]))
 
 ;; API [SRFI-134]
 (define ideque-filter-map
@@ -298,38 +299,39 @@
     [(proc dq) (let ([f (filter-map proc (dq-f dq))]
                      [r (filter-map proc (dq-r dq))])
                  (check (length f) f (length r) r))]
-    [(proc . dqs)
-     (list->ideque (apply filter-map proc (map ideque->list dqs)))]))
+    [(proc dq . dqs)
+     (list->ideque (apply filter-map proc (map ideque->list (cons dq dqs))))]))
 
 ;; API [SRFI-134]
 (define ideque-for-each
   (case-lambda
     [(proc dq) (for-each proc (dq-f dq)) (for-each proc (reverse (dq-r dq)))]
-    [(proc . dqs) (apply for-each proc (map ideque->list dqs))]))
+    [(proc dq . dqs) (apply for-each proc (map ideque->list (cons dq dqs)))]))
 
 ;; API [SRFI-134]
 (define ideque-for-each-right
   (case-lambda
     [(proc dq) (for-each proc (dq-r dq)) (for-each proc (reverse (dq-f dq)))]
-    [(proc . dqs)
+    [(proc dq . dqs)
      (apply for-each proc (map (lambda (dq)
                                  (ideque->list (ideque-reverse dq)))
-                               dqs))]))
+                               (cons dq dqs)))]))
 
 ;; API [SRFI-134]
 (define ideque-fold
   (case-lambda
     [(proc knil dq) (fold proc (fold proc knil (dq-f dq)) (reverse (dq-r dq)))]
-    [(proc knil . dqs) (apply fold proc knil (map ideque->list dqs))]))
+    [(proc knil dq . dqs)
+     (apply fold proc knil (map ideque->list (cons dq dqs)))]))
 
 ;; API [SRFI-134]
 (define ideque-fold-right
   (case-lambda
     [(proc knil dq)
      (fold-right proc (fold-right proc knil (reverse (dq-r dq))) (dq-f dq))]
-    [(proc knil . dqs)
+    [(proc knil dq . dqs)
      ;; not optimal
-     (apply fold-right proc knil (map ideque->list dqs))]))
+     (apply fold-right proc knil (map ideque->list (cons dq dqs)))]))
 
 ;; API [SRFI-134]
 (define (ideque-append-map proc . dqs)

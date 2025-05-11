@@ -6837,6 +6837,26 @@ Returns an ideque that concatenates contents of given ideques.
 @c COMMON
 @end defun
 
+@defun ideque-count pred idq idq2 @dots{}
+[R7RS ideque]
+@c MOD scheme.ideque
+@c EN
+Returns the number of elements of @var{idq} that satisfied @var{pred}.
+@c JP
+@var{idq}の要素のうち@var{pred}を満たしたものの数を返します。
+@c COMMON
+
+@c EN
+It is Gauche's extension to pass more than one ideques. In that case,
+@var{pred} receives as mnay arguments as the input ideques.
+Iteration stops at the end of the shortest ideque.
+@c JP
+2つ以上のidequeを取るのはGaucheの拡張です。その場合、@var{pred}は
+入力のidequeの数ぶんの引数を取ります。繰り返しは最短のidequeを
+見終わったら止まります。
+@c COMMON
+@end defun
+
 @defun ideque-zip idq idq2 @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
@@ -6856,7 +6876,7 @@ idequeを返します。元のidequeの要素数が異なる場合は、最も�
 @end example
 @end defun
 
-@defun ideque-map proc idq @dots{}
+@defun ideque-map proc idq idq2 @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
 @c EN
@@ -6892,7 +6912,7 @@ R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義して�
 @end example
 @end defun
 
-@defun ideque-filter-map proc idq @dots{}
+@defun ideque-filter-map proc idq idq2 @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
 @c EN
@@ -6920,8 +6940,8 @@ R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義して�
 @c COMMON
 @end defun
 
-@defun ideque-for-each proc idq @dots{}
-@defunx ideque-for-each-right proc idq @dots{}
+@defun ideque-for-each proc idq idq2 @dots{}
+@defunx ideque-for-each-right proc idq idq2 @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
 @c EN
@@ -6970,8 +6990,8 @@ R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義して�
 @end example
 @end defun
 
-@defun ideque-fold proc knil idq @dots{}
-@defunx ideque-fold-right proc knil idq @dots{}
+@defun ideque-fold proc knil idq idq2 @dots{}
+@defunx ideque-fold-right proc knil idq idq2 @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
 @c EN
