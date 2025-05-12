@@ -7070,29 +7070,67 @@ R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義して�
 @defunx ideque-remove pred idq
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Returns a new ideque that containts elements of @var{idq}
+that satisfy or dissatisfy @var{pred}, respectively.
+@c JP
+@var{idq}の要素のうち、それぞれ@var{pred}を満たす、及び満たさない
+ものだけを含むidequeを作って返します。
+@c COMMON
 @end defun
 
 @defun ideque-partition pred idq
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Like @code{(values (ideque-filter pred idq) (ideque-remoev pred idq))},
+but more efficient.
+@c JP
+@code{(values (ideque-filter pred idq) (ideque-remoev pred idq))}
+のように動作しますが、より効率的です。
+@c COMMON
 @end defun
 
 @defun ideque-find pred idq :optional failure
 @defunx ideque-find-right pred idq :optional failure
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Returns the leftmost and rightmost element in @var{idq} that
+satisfy @var{pred}, respectively.  If there's no element satsifying
+@var{pred}, a thunk @var{failure} is called, whose default is
+@code{(lambda () #f)}.
+@c JP
+それぞれ、@var{idq}の要素のうち@var{pred}を満たす最も左、および最も右の
+要素を返します。@var{pred}を満たす要素が無かった場合は手続き@var{failure}
+を引数なしで呼び出します。@var{failure}のデフォルトは@code{(lambda () #f)}です。
+@c COMMON
 @end defun
 
 @defun ideque-take-while pred idq
 @defunx ideque-take-while-right pred idq
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Returns a new ideque that contains consecutive elements from left/right
+of @var{idq} that satisfy @var{pred}, respectively.
+@c JP
+@var{idq}の要素のうち、それぞれ左/右から@var{pred}を満たす連続する要素だけからなる
+idequewを作って返します。
+@c COMMON
 @end defun
 
 @defun ideque-drop-while pred idq
 @defunx ideque-drop-while-right pred idq
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Returns a new ideque that contains consecutive elements from left/right
+of @var{idq} that don't satisfy @var{pred}, respectively.
+@c JP
+@var{idq}の要素のうち、それぞれ左/右から@var{pred}を満たさない連続する要素だけからなる
+idequewを作って返します。
+@c COMMON
 @end defun
 
 @defun ideque-span pred idq
