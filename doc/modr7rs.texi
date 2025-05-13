@@ -7137,24 +7137,65 @@ idequewを作って返します。
 @defunx ideque-break pred idq
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Returns two ideques.  For @code{ideque-span}, those two are
+equivalent to @code{(ideque-take-while @var{pred} @var{idq})} and
+@code{(ideque-drop-while @var{pred} @var{idq})}.
+For @code{ideque-break}, the sense of @var{pred} is inverted.
+@c JP
+２つのidequeを返します。
+@code{ideque-span}ではそれらは@code{(ideque-take-while @var{pred} @var{idq})}
+および@code{(ideque-drop-while @var{pred} @var{idq})}と等価です。
+@code{ideque-break}は@var{pred}の意味を逆転させます。
+@c COMMON
 @end defun
 
-@defun ideque-any pred idq @dots{}
-@defunx ideque-every pred idq @dots{}
+@defun ideque-any pred idq idq2 @dots{}
+@defunx ideque-every pred idq idq2 @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Apply @var{pred} on each element in @var{idq} in order, and returns the
+first true / false result.  If no elements satisfy/dissatisfy @var{pred},
+the result of last application of @var{pred} is returned.
+If input is empty, @code{#f}/@code{#t} is returned.
+
+Taking more than one ideques is Gauche's extension.  In that case,
+@var{pred} must take as many arguments as the number of ideques, and
+receives corresponding elements from each ideque.  The iteration stops
+when the shortest ideque is exhausted.
+@c JP
+@var{pred}を@var{idq}の各要素に順に適用し、最初の真/偽の結果をそれぞれ
+返します。
+どの要素も@var{pred}を満たさなかった/満たした場合は最後の結果が返されます。
+入力が空の場合はそれぞれ@code{#f}/@code{#t}が返されます。
+
+2つ以上のidequeを取るのはGaucheの拡張です。その場合、@var{pred}は入力の
+idequeと同じ数の引数を取らねばならず、各idequeからひとつづつ要素を受け取ります。
+繰り返しは最も短いidequeが空になった時点で終わります。
+@c COMMON
 @end defun
 
 @defun ideque->list idq
 @defunx list->ideque list
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Convert between ideque and list.
+@c JP
+idequeとリストの間の変換を行います。
+@c COMMON
 @end defun
 
 @defun ideque->generator idq
 @defunx generator->ideque gen
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
+Convert between ideque and generator.
+@c JP
+idequeとジェネレータの間の変換を行います。
+@c COMMON
 @end defun
 
 @node R7RS immutable texts, R7RS generators, R7RS immutable deques, R7RS large
