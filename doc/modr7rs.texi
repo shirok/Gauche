@@ -6381,12 +6381,14 @@ make-ipair-comparator
 @c EN
 This module provides an alternative datatype for pairs and lists,
 which are immutable and allows O(log n) random access, while
-maintaining O(1) @code{car} and @code{cdr} operations.
+maintaining O(1) @code{car} and @code{cons} operations,
+and O(log n) for @code{cdr} operation.
 This is originally defined as @code{srfi.101}.  We call this datatype
 @emph{rlist} in the following explanation.
 @c JP
 このモジュールは、変更不可で、ランダムアクセスがO(log n)であるような、
-ペアとリストに替わるデータ構造を提供します。@code{car}と@code{cdr}はO(1)です。
+ペアとリストに替わるデータ構造を提供します。@code{car}と@code{cons}はO(1)、
+@code{cdr}はO(log n)です。
 元は@code{srfi.101}として定められました。
 ここでは、このデータ型を@emph{rlist}と呼ぶことにします。
 @c COMMON
