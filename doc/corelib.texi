@@ -30686,18 +30686,21 @@ gosh> (describe (sys-stat "gauche.h"))
 #<<sys-stat> 0x815af70> is an instance of class <sys-stat>
 slots:
   type      : regular
-  perm      : 420
-  mode      : 33188
-  ino       : 845140
-  dev       : 774
+  perm      : 436
+  mode      : 33204
+  ino       : 28704826
+  dev       : 2049
   rdev      : 0
   nlink     : 1
-  uid       : 400
-  gid       : 100
-  size      : 79549
-  atime     : 1020155914
-  mtime     : 1020152005
-  ctime     : 1020152005
+  uid       : 500
+  gid       : 500
+  size      : 68857
+  atime     : 1747126496
+  mtime     : 1745056721
+  ctime     : 1745056721
+  atim      : #<time-utc 1747126496.478966778>
+  mtim      : #<time-utc 1745056721.769596817>
+  ctim      : #<time-utc 1745056721.769596817>
 @end example
 
 @defun sys-stat->mode stat
