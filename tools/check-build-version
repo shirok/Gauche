@@ -14,7 +14,7 @@
   #"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\
   \n\
   \n   To build Gauche from scratch, you need the latest release of Gauche\
-  \n   on your machine.  You seem to have ~(gauche-version)\
+  \n   on your machine.  You seem to have ~(gauche-version).\
   \n   Update it to ~|target-version| before proceeding.\
   \n\
   \n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
