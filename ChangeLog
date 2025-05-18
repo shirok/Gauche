@@ -1,3 +1,9 @@
+2025-05-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm (compile-includes): Fix precomp
+	  failure on include; pass1/open-include-file requires includer
+	  file path, but compile-includes passed dirname of the includer.
+
 2025-04-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm (uvector-class-valid-element?): Added.

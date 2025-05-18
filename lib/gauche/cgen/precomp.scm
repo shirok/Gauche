@@ -692,7 +692,7 @@
     (with-input-from-port
         ($ (with-module gauche.internal pass1/open-include-file)
            filename
-           (sys-dirname (port-name (current-input-port))))
+           (port-name (current-input-port)))
       (^[]
         (set! ((with-module gauche.internal port-case-fold)
                (current-input-port))
