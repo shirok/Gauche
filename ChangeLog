@@ -3,6 +3,9 @@
 	* lib/gauche/cgen/precomp.scm (compile-includes): Fix precomp
 	  failure on include; pass1/open-include-file requires includer
 	  file path, but compile-includes passed dirname of the includer.
+	* libsrc/util/match.scm, libsrc/util/match-impl.scm: Split
+	  implementation of match from module business.  Preparation
+	  to implement util.match using util.match.
 
 2025-04-26  Shiro Kawai  <shiro@acm.org>
 
