@@ -1,3 +1,7 @@
+2025-05-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmisc.scm (add-cond-feature!): Added for internal use.
+
 2025-05-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (compile-includes): Fix precomp

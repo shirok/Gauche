@@ -88,8 +88,22 @@
 ;; Static configuration
 ;;
 
+;; We intentionally hide runtime access to the cond-feature identifiers.
+;; Cond-features work at compile time, and manipulating them at runtime
+;; may lead confusing behavior.  The set of feature identifiers should
+;; be fixed before compiling/loading any external libraries.
 (select-module gauche.internal)
 (define-cproc cond-features () Scm_GetFeatures)
+(define-cproc add-cond-feature! (feature::<symbol>
+                                 :optional (module::<symbol>? #f))
+  ::<void>
+  (let* ([cfeature::(const char*)
+                    (Scm_GetStringConst (SCM_SYMBOL_NAME feature))]
+         [cmod::(const char*)
+                (?: module
+                    (Scm_GetStringConst (SCM_SYMBOL_NAME module))
+                    NULL)])
+  (Scm_AddFeature cfeature cmod)))
 
 (inline-stub
  (define-constant SLIB_DIR (c (SCM_MAKE_STR_IMMUTABLE SLIB_DIR))))
