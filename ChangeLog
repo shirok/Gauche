@@ -1,3 +1,7 @@
+2025-05-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_DeleteFeature): Added for completeness.
+
 2025-05-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmisc.scm (add-cond-feature!): Added for internal use.

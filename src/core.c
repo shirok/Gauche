@@ -572,7 +572,12 @@ Scm_AddFeature(const char *feature, const char *module)
 
 /*
  * Disables FEATURE.  If FEATURE is already enabled, it is removed
- * from the features alist.
+ * from the features alist.  It also prevents FEATURE to be added
+ * in the future.
+ *
+ * Disabling takes precedence of AddFeature; there's no way to make
+ * the FEATURE available once it is disabled.
+ *
  * Mainly used by gosh's -F-feature command-line option.
  */
 void
@@ -581,6 +586,18 @@ Scm_DisableFeature(const char *feature)
     ScmObj f = SCM_INTERN(feature);
     (void)SCM_INTERNAL_MUTEX_LOCK(cond_features.mutex);
     cond_features.dlist = Scm_Cons(f, cond_features.dlist);
+    cond_features.alist = Scm_AssocDelete(f, cond_features.alist, SCM_CMP_EQ);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(cond_features.mutex);
+}
+
+/*
+ * Remove FEATURE from the feature list.
+ */
+void
+Scm_DeleteFeature(const char *feature)
+{
+    ScmObj f = SCM_INTERN(feature);
+    (void)SCM_INTERNAL_MUTEX_LOCK(cond_features.mutex);
     cond_features.alist = Scm_AssocDelete(f, cond_features.alist, SCM_CMP_EQ);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(cond_features.mutex);
 }
