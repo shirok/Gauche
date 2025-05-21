@@ -11262,7 +11262,7 @@ Like @code{maybe-filter}/@code{either-filter}, but the meaning of
 @defunx either-sequence mappable cmap :optional aggregator
 [SRFI-189]
 @c MOD srfi.189
-This converts a collection of Maybes/Eithers to a Mayber/an Either of
+This converts a collection of Maybes/Eithers to a Maybe/an Either of
 a collection.  The input collection and the collection in the output can
 be of different type.
 
