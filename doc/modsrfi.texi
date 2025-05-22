@@ -10965,6 +10965,14 @@ valid value(s), while Nothing indicates there's no meaningful values.
 Either is a union of two types, Right and Left.  Right wraps
 valid value(s), while Left indicates an error, carrying some information
 as its payload.
+
+Unlike other languages, though, Just, Right and Left can carry
+arbitrary number of values, reflecting Scheme's multiple values.
+Suppose you have a procedure @code{f} that returns two values.
+When you lift @code{f} to Maybe monad, the lifted procedure @code{mf}
+may return @code{Just} with two values or @code{Nothing}.
+Although most of the time we use single value in practice, keep
+that in mind to read the reference.
 @end deftp
 
 @menu
