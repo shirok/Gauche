@@ -104,6 +104,9 @@
                     (Scm_GetStringConst (SCM_SYMBOL_NAME module))
                     NULL)])
   (Scm_AddFeature cfeature cmod)))
+(define-cproc delete-cond-feature! (feature::<symbol>)
+  ::<void>
+  (Scm_DeleteFeature (Scm_GetStringConst (SCM_SYMBOL_NAME feature))))
 
 (inline-stub
  (define-constant SLIB_DIR (c (SCM_MAKE_STR_IMMUTABLE SLIB_DIR))))
