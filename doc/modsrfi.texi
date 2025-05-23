@@ -10948,24 +10948,47 @@ SRFI-118 (@ref{Simple adjustable-size strings}参照)を使っているコード
 
 @deftp {Module} srfi.189
 @mdindex srfi.189
+@c EN
 Maybe and Either types are immutable container types
 that can ``wrap'' zero or more values.  Maybe can be used
 in the context where the value(s) may be missing (as opposed to
 ``zero values'').  Either can be used in the context where
 the value(s) can be correct ones or erroneous ones.
+@c JP
+MaybeとEitherは、任意個の値を「ラップ」する変更不可なコンテナ型です。
+Maybeは値が「有効な値が無い」という状況で使えます
+(これは「ゼロ個の値を生成する」とは異なります)。
+Eitherは「正常動作の時の値」と「エラー時の値」を区別したい状況で使えます。
+@c COMMON
 
+@c EN
 If you're familiar with functional languages like Haskell, you may
 already know them.  They are useful when used in the monadic pattern; that is,
 you can code as if the chain of calculations never fails,
 yet whenever the calculation fail at one place,
 the rest of chain is canceled and just the failure is returned.
+@c JP
+Haskellyのような関数型言語に親しんでいるなら、これらの型については既に
+ご存知でしょう。これらの型はモナドで使うととても便利です。
+例えば、処理の連なりをまるで失敗が起きないかのように書きながら、
+もし失敗が起きたら自動的に残りの処理がキャンセルされて失敗情報が帰ってくる、
+というふうにできます。
+@c COMMON
 
+@c EN
 Maybe is a union of two types, Just and Nothing.  Just wraps
 valid value(s), while Nothing indicates there's no meaningful values.
 Either is a union of two types, Right and Left.  Right wraps
 valid value(s), while Left indicates an error, carrying some information
 as its payload.
+@c JP
+Maybeは2つの型、JustとNothingのユニオン型です。
+Justは有効な値(複数可)をラップし、Nothingは「有効な値がない」ことを示します。
+Eitherhは2つの型、RightとLeftのユニオン型です。
+Rightは有効な値(複数可)をラップしLeftはエラー時の情報をラップします。
+@c COMMON
 
+@c EN
 Unlike other languages, though, Just, Right and Left can carry
 arbitrary number of values, reflecting Scheme's multiple values.
 Suppose you have a procedure @code{f} that returns two values.
@@ -10973,6 +10996,14 @@ When you lift @code{f} to Maybe monad, the lifted procedure @code{mf}
 may return @code{Just} with two values or @code{Nothing}.
 Although most of the time we use single value in practice, keep
 that in mind to read the reference.
+@c JP
+Schemeには多値があるので、他の言語と違ってJust、Right、Leftは
+任意個の値を持てることに注意してください。
+例えば2つの値を返す手続き@code{f}をMaybeモナドの圏に持ち上げた手続き@code{mf}は、
+2つの値を持つ@code{Just}か@code{Nothing}を返すようになります。
+ほとんどの場合は単一の値を扱うことになるでしょうが、
+リファレンスを読む際には多値の場合の可能性を頭に置いておいてください。
+@c COMMON
 @end deftp
 
 @menu
@@ -10987,6 +11018,7 @@ that in mind to read the reference.
 
 @node Maybe and Either types and predicates, Maybe and Either constructors, Maybe and Either optional container types, Maybe and Either optional container types
 @subsection Types and predicates
+@c NODE 型と述語, MaybeとEither - 型と述語
 
 @deftp {Class} <maybe>
 @deftpx {Class} <just>
