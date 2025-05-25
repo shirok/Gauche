@@ -11111,43 +11111,66 @@ respectively.
 @defun maybe= elt= maybe1 maybe @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Equality predicate of Maybes.  It returns @code{#t} iff
 all of @var{maybe1} @var{maybe} @dots{} are Nothings,
 or Justs with their respective payload objects are the same
 using @var{elt=}.
+@c JP
+Maybeについての等価判定述語です。NothingはNothingのみと等価であり、
+Justはその対応するペイロード同士が全て@code{elt=}で比較して等価な場合にのみ
+等価です。
+@c COMMON
 @end defun
 
 @defun either= elt= either1 either @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Equality predicate of Eithers.  It returns @code{#t} iff
 all of @var{either11} @var{either} @dots{} are the same
 types (all Rights, or all Lefts), with
 respective payload objects are the same
 using @var{elt=}.
+@c JP
+Eitherについての等価判定述語です。
+@c COMMON
 @end defun
 
 @node Maybe and Either constructors, Maybe and Either accessors, Maybe and Either types and predicates, Maybe and Either optional container types
 @subsection Constructors
+@c NODE MaybeとEither - コンストラクタ, コンストラクタ
 
 @defun just obj @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Returns a Just with @var{obj} @dots{} as its payload.
+@c JP
+@var{obj} @dots{}をペイロードに持つJustのインスタンスを返します。
+@c COMMON
 @end defun
 
 @defun nothing
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Returns a Nothing.
+@c JP
+Nothingのインスタンスを返します。
+@c COMMON
 @end defun
 
 @defun right obj @dots{}
 @defunx left obj @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Returns a Right or a Left respectively, with @var{obj} @dots{}
 as its payload.
+@c JP
+@var{obj} @dots{}をペイロードに持つ、それぞれRightとLeftのインスタンスを返します。
+@c COMMON
 @end defun
 
 @defun list->just objs
@@ -11155,41 +11178,65 @@ as its payload.
 @defunx list->left objs
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Returns a Just, Right or Left respectively, with
 @var{objs} as its payload.
+@c JP
+リストで与えられるオブジェクトをペイロードに持つ、Just、Right、Left
+のインスタンスをそれぞれ返します。
+@c COMMON
 @end defun
 
 @defun maybe->either maybe obj @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The @var{maybe} argument must be a Maybe.
 If it is a Just, then a Right with the same payload is returned.
 If it is a Nothing, a Left with @var{obj} @dots{} as its payload.
+@c JP
+@var{maybe}引数はMaybeでなければなりません。
+引数がJustの場合は。同じペイロードを持つRightが、
+Nothingの場合は、@var{obj} @dots{}をペイロードに持つLeftが返されます。
+@c COMMON
 @end defun
 
 @defun either->maybe either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The @var{either} argument must be an Either.
 If it is a Right, then a Just with the same payload is returned.
 If it is a Left, a Nothing is returned.
+@c JP
+@var{either}引数はEitherでなければなりません。
+引数がRightの場合は。同じペイロードを持つJustが、
+Leftの場合はNothingが返されます。
+@c COMMON
 @end defun
 
 @defun either-swap either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The @var{either} argument must be an Either.
 If it is a Right, a Left with the same payload argument is returned.
 If it is a Left, a Right with the same payload argument is returned.
+@c JP
+@var{either}引数はEitherでなければなりません。
+引数がRightの場合は。同じペイロードを持つLeftが、
+Leftの場合は同じペイロードを持つRightが返されます。、
+@c COMMON
 @end defun
 
 @node Maybe and Either accessors, Maybe and Either sequence operations, Maybe and Either constructors, Maybe and Either optional container types
 @subsection Accessors
+@c NODE MaybeとEither - アクセサ, アクセサ
 
 @defun maybe-ref maybe failure :optional success
 [SRFI-189]
 @c MOD srfi.189
-The @var{maybe} arugment must be a Maybe.  If it's a Nothing,
+The @var{maybe} argument must be a Maybe.  If it's a Nothing,
 a procedure @var{failure} is tail-called with no arguments.
 If it's Just, a procedure @var{success} is tail-called with its
 payload object(s).  If @var{success} is omitted, @code{values} is used.
