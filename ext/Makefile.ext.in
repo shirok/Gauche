@@ -23,7 +23,6 @@ LIBS         = $(XLIBS) @LIBS@
 CFLAGS       = @CFLAGS@ @SHLIB_SO_CFLAGS@ $(XCFLAGS)
 CPPFLAGS     = @CPPFLAGS@ $(XCPPFLAGS)
 LDFLAGS      = $(LOCAL_LFLAGS) $(XLDFLAGS) @SHLIB_SO_LDFLAGS@
-BUILD_GOSH_FLAGS =
 
 # These are set by configure
 DEFS     = @DEFS@
@@ -32,7 +31,15 @@ INCLUDES = -I. -I$(srcdir) -I$(top_srcdir)/src -I$(top_builddir)/src -I$(top_src
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
 SOEXT    = @SHLIB_SO_SUFFIX@
-BUILD_GOSH = "@BUILD_GOSH@" `cat $(top_builddir)/src/features.flags`
+# NB: This must align with the definition in src/Makefile.in.
+BUILD_GOSH_VERSION = @BUILD_GOSH_VERSION@
+BUILD_GOSH_FLAGS = -v:$(BUILD_GOSH_VERSION)
+BUILD_GOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
+	      "@BUILD_GOSH@" $(BUILD_GOSH_FLAGS) \
+	      -l$(top_srcdir)/src/preload \
+	      -I$(top_srcdir)/src -I$(top_srcdir)/lib \
+	      -I$(top_builddir)/lib \
+	      `cat $(top_builddir)/src/features.flags`
 
 # Main definition of compilation commands
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
@@ -41,7 +48,7 @@ LINK      = $(CCLD) $(CFLAGS) $(LDFLAGS)
 MODLINK   = $(CCLD) $(CFLAGS) $(LDFLAGS)
 
 @CROSS_COMPILING_no@GOSH           = "$(top_builddir)/src/gosh" -ftest
-@CROSS_COMPILING_yes@GOSH           = $(BUILD_GOSH) $(BUILD_GOSH_FLAGS)
+@CROSS_COMPILING_yes@GOSH           = $(BUILD_GOSH)
 GAUCHE_INSTALL = $(GOSH) "$(top_srcdir)/src/gauche-install.in" -C
 GAUCHE_PACKAGE = $(GOSH) "$(top_srcdir)/src/gauche-package.in"
 PRECOMP        = $(GOSH) "$(top_srcdir)/lib/tools/precomp"
