@@ -23,6 +23,6 @@ util--match.$(SOEXT) : $(util_match_OBJECTS)
 	$(MODLINK) util--match.$(SOEXT) $(util_match_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 util--match.c match.sci : $(top_srcdir)/libsrc/util/match.scm $(top_srcdir)/libsrc/util/match-impl.scm
-	$(PRECOMP) -e -P -o util--match $(top_srcdir)/libsrc/util/match.scm
+	$(BUILD_GOSH) "$(top_srcdir)/lib/tools/precomp" -e -P -o util--match $(top_srcdir)/libsrc/util/match.scm
 
 install : install-std
