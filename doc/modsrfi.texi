@@ -11236,10 +11236,17 @@ Leftの場合は同じペイロードを持つRightが返されます。、
 @defun maybe-ref maybe failure :optional success
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The @var{maybe} argument must be a Maybe.  If it's a Nothing,
 a procedure @var{failure} is tail-called with no arguments.
 If it's Just, a procedure @var{success} is tail-called with its
 payload object(s).  If @var{success} is omitted, @code{values} is used.
+@c JP
+@var{maybe}引数はMaybeeでなければなりません。
+それがNothingなら、手続き@var{failure}が引数なしで末尾呼び出しされます。
+Justの場合は手続き@var{success}が、Justのペイロードを引数として末尾呼び出しされます。
+@var{success}が省略された場合は@code{values}が使われます。
+@c COMMON
 
 @example
 (maybe-ref (just 1 2) (^[] (error 'huh?)) +)
@@ -11250,54 +11257,108 @@ payload object(s).  If @var{success} is omitted, @code{values} is used.
 @defun either-ref either failure :optional success
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The @var{either} argument must be an Either.
 If it's a Left, a procedure @var{failure} is called with
 its payload object(s).  If it's a Right, a procedure
 @var{success} is called with its payload object(s).
 If @var{success} is omitted, @code{values} is used.
+@c JP
+@var{either}引数はEitherでなければなりません。
+それがLeftなら、手続き@var{failure}が、
+Rightの場合は手続き@var{success}がペイロードを引数として末尾呼び出しされます。
+@var{success}が省略された場合は@code{values}が使われます。
+@c COMMON
 @end defun
 
 @defun maybe-ref/default maybe default @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The @var{maybe} argument must be a Maybe.  If it's a Nothing,
 @var{default} @dots{} are returned as multiple values.
 If it's a Just, its payload object(s) is/are returned as multiple values.
+@c JP
+@var{maybe}引数はMaybeでなければなりません。
+それがNothingなら、@var{default} @dots{}が値として返されます。
+Justの場合はそのペイロードが値として返されます。
+@c COMMON
+
+@example
+(maybe-ref/default maybe obj @dots{})
+ @equiv{} (maybe-ref maybe (^[] (values obj @dots{})))
+@end example
 @end defun
 
 @defun either-ref/default maybe default @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The @var{either} argument must be an Either.  If it's a Left,
 @var{default} @dots{} are returned as multiple values (the Left's payload
 is discarded).
 If it's a Right, its payload object(s) is/are returned as multiple values.
+@c JP
+@var{either}引数はEitherでなければなりません。
+それがLeftなら、そのペイロードは捨てられ、
+@var{default} @dots{}が値として返されます。
+Rightの場合はそのペイロードが値として返されます。
+@c COMMON
+
+@example
+(either-ref/default either obj @dots{})
+ @equiv{} (either-ref maybe (^ _ (values obj @dots{})))
+@end example
 @end defun
 
 @defun maybe-join maybe
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe} is a Nothing,
-it is returned.  If it's a Maybe and its only payload is a Maybe,
+it is returned.  If it's a Just and its only payload is a Maybe,
 the inner Maybe is returned.  Other cases raise an error.
+@c JP
+@var{maybe}がNothingならそのまま返されます。
+それがJustで、一つだけの値を持ち、その値がMaybeならそれが返されます。
+それ以外の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun either-join either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{either} is a Left, it is returned.
 If it is a Right and its only payload is an Either,
 the inner Either is returned.  Other cases raise an error.
+@c JP
+@var{either}がLeftならそのまま返されます。
+それがRightで、一つだけの値を持ち、その値がEitherならそれが返されます。
+それ以外の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun maybe-bind maybe mproc mproc2 @dots{}
 [SRFI-189]
 @c MOD srfi.189
-Monadic @var{bind} operation.  The @var{maybe} argument must be a Maybe.
-If it is a Nothing, it is returned.
+@c EN
+Monadic @var{bind} operation.  The @var{maybe} argument must be a Maybe,
+and each @var{mproc} @var{mproc2} @dots{} must be a procedure that returns
+a Maybe.
+
+If @var{maybe} is a Nothing, it is returned.
 If it is a Just, its payload object(s) is/are applied to a procedure
 @var{mproc}, which must return a Maybe.  If @var{mproc2} @dots{} are
 given, the same operation is repeated on them.
+@c JP
+モナドの@var{bind}です。@var{maybe}はMaybeでなければならず、
+@var{mproc} @var{mproc2} @dots{}のそれぞれはMaybeを返す手続きでなければなりません。
+
+@var{maybe}がNothingならそれがそのまま返されます。
+Justの場合は、そのペイロードを引数として@var{mproc}が呼ばれます。
+@var{mproc2} @dots{}があれば同様に操作が繰り返されます。
+@c COMMON
 
 @example
 (maybe-bind m p p2)
