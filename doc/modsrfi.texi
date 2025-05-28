@@ -10968,7 +10968,7 @@ you can code as if the chain of calculations never fails,
 yet whenever the calculation fail at one place,
 the rest of chain is canceled and just the failure is returned.
 @c JP
-Haskellyのような関数型言語に親しんでいるなら、これらの型については既に
+Haskellのような関数型言語に親しんでいるなら、これらの型については既に
 ご存知でしょう。これらの型はモナドで使うととても便利です。
 例えば、処理の連なりをまるで失敗が起きないかのように書きながら、
 もし失敗が起きたら自動的に残りの処理がキャンセルされて失敗情報が帰ってくる、
@@ -10984,7 +10984,7 @@ as its payload.
 @c JP
 Maybeは2つの型、JustとNothingのユニオン型です。
 Justは有効な値(複数可)をラップし、Nothingは「有効な値がない」ことを示します。
-Eitherhは2つの型、RightとLeftのユニオン型です。
+Eitherは2つの型、RightとLeftのユニオン型です。
 Rightは有効な値(複数可)をラップしLeftはエラー時の情報をラップします。
 @c COMMON
 
@@ -11242,7 +11242,7 @@ a procedure @var{failure} is tail-called with no arguments.
 If it's Just, a procedure @var{success} is tail-called with its
 payload object(s).  If @var{success} is omitted, @code{values} is used.
 @c JP
-@var{maybe}引数はMaybeeでなければなりません。
+@var{maybe}引数はMaybeでなければなりません。
 それがNothingなら、手続き@var{failure}が引数なしで末尾呼び出しされます。
 Justの場合は手続き@var{success}が、Justのペイロードを引数として末尾呼び出しされます。
 @var{success}が省略された場合は@code{values}が使われます。
