@@ -110,14 +110,14 @@ AS_IF([test $use_mbed = yes], [
     LIBS_SAVE=${LIBS}
     LDFLAGS="${LDFLAGS} ${MBEDTLS_LDFLAGS}"
     MBEDTLS_LIBS=""
-    AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto],
-     [MBEDTLS_LIBS="-lmbedcrypto ${MBEDTLS_LIBS}"],
+    AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto-3 mbedcrypto],
+     [MBEDTLS_LIBS="$ac_cv_search_mbedtls_ctr_drbg_init ${MBEDTLS_LIBS}"],
      [mbedtls_unavailable=yes])
-    AC_SEARCH_LIBS([mbedtls_x509_crt_init], [mbedx509],
-     [MBEDTLS_LIBS="-lmbedx509 ${MBEDTLS_LIBS}"],
+    AC_SEARCH_LIBS([mbedtls_x509_crt_init], [mbedx509-3 mbedx509],
+     [MBEDTLS_LIBS="$ac_cv_search_mbedtls_x509_crt_init ${MBEDTLS_LIBS}"],
      [mbedtls_unavailable=yes])
-    AC_SEARCH_LIBS([mbedtls_ssl_init], [mbedtls],
-     [MBEDTLS_LIBS="-lmbedtls ${MBEDTLS_LIBS}"],
+    AC_SEARCH_LIBS([mbedtls_ssl_init], [mbedtls-3 mbedtls],
+     [MBEDTLS_LIBS="$ac_cv_search_mbedtls_ssl_init ${MBEDTLS_LIBS}"],
      [mbedtls_unavailable=yes])
     LDFLAGS=${LDFLAGS_SAVE}
     LIBS=${LIBS_SAVE}
