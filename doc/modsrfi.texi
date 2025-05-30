@@ -11134,6 +11134,9 @@ respective payload objects are the same
 using @var{elt=}.
 @c JP
 Eitherについての等価判定述語です。
+Rightは同じペイロードを持つRightのみと、
+Leftは同じペイロードを持つLeftのみと等価です。
+ペイロード同士は@code{elt=}で比較されます。
 @c COMMON
 @end defun
 
@@ -11369,11 +11372,23 @@ Justの場合は、そのペイロードを引数として@var{mproc}が呼ば�
 @defun either-bind either mproc mproc2 @dots{}
 [SRFI-189]
 @c MOD srfi.189
-Monadic @var{bind} operation.  The @var{either} argument must be an Either.
-If it is a Left, it is returned as is.
+@c EN
+Monadic @var{bind} operation.  The @var{either} argument must be an Either,
+and each @var{mproc} @var{mproc2} @dots{} must be a procedure
+that returns an Either.
+
+If @var{either} is a Left, it is returned as is.
 If it is a Right, its payload object(s) is/are applied to a procedure
 @var{mproc}, which must return an Either.  If @var{mproc2} @dots{} are
 given, the same operation is repeated on them.
+@c JP
+モナドの@var{bind}です。@var{either}はEithereでなければならず、
+@var{mproc} @var{mproc2} @dots{}のそれぞれはEitherを返す手続きでなければなりません。
+
+@var{either}がLeftならそれがそのまま返されます。
+Rightの場合は、そのペイロードを引数として@var{mproc}が呼ばれます。
+@var{mproc2} @dots{}があれば同様に操作が繰り返されます。
+@c COMMON
 
 @example
 (either-bind e p p2)
@@ -11385,14 +11400,27 @@ given, the same operation is repeated on them.
 @defunx either-compose mproc mproc2 @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Each argument must be a procedure taking zero or more arguments
 and return a Maybe/an Either.   Returns a procedure that accepts zero or more
 arguments and returns a Maybe/an Either.
+@c JP
+@var{mproc} @var{mproc2} @dots{} はそれぞれ、ゼロ個以上の引数を取り
+Maybe/Eitherを返す手続きでなければなりません。
+返り値は、ゼロ個以上の引数を取りMaybe/Eitherを返す手続きになります。
+@c COMMON
 
+@c EN
 When the returned procedure is called, it first calls @var{mproc};
 if it returns a Nothing/Left, or there's no more mprocs, the result is
 returned.  If the result is a Just, its payload is applied
 to the next mproc, and so on.
+@c JP
+作られた手続きが呼ばれると、まず@var{mproc}が呼ばれます。それがNothing/Left
+を返した場合、あるいはもう@var{mproc}が無い場合はそれがそのまま返されます。
+Just/Rightの場合は、そのペイロードを引数として次の@var{mproc}が呼ばれ、
+それが繰り返されます。
+@c COMMON
 
 @example
 (maybe-bind m p p2 ...)
@@ -11404,13 +11432,22 @@ to the next mproc, and so on.
 
 @node Maybe and Either sequence operations, Maybe and Either protocol converters, Maybe and Either accessors, Maybe and Either optional container types
 @subsection Sequence operations
+@c NODE MaybeとEither - シーケンス操作, シーケンス操作
 
+@c EN
 A Maybe and an Either can be a container of zero or one element, and
 we have several procedures that employ this view.
 (Note: For this purpose, we treat multiple payload values as a whole,
 since they are processed in one step---as if we don't regard
 multiple procedure arguments and multiple return values as a sequence
 of individual values.)
+@c JP
+MaybeとEitherは、0個または1個の要素を持つシーケンスとみなせます。
+この視点からMaybe/Eitherを扱う手続きがいくつかあります
+(註: この用途においては、複数のペイロードはひとまとめにして1要素と
+して扱われます。手続き呼び出しや手続きからのリターンが、いくつ引数や返り値が
+あってもワンステップと考えられるのと同様です)。
+@c COMMON
 
 @defun maybe-length maybe
 @defunx either-length either
