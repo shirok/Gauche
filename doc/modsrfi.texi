@@ -11453,15 +11453,22 @@ MaybeとEitherは、0個または1個の要素を持つシーケンスとみな�
 @defunx either-length either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Returns 0 if @var{maybe}/@var{either} is a Nothing/Left, and
 1 if it is a Just/Right.  An error is thrown if the argument
 isn't a Maybe/an Either.
+@c JP
+@var{maybe}/@var{either}がNothing/Leftなら0を、
+Just/Rightなら1を返します。
+引数がMaybe/Eitherでなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun maybe-filter pred maybe
 @defunx either-filter pred either obj @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe}/@var{either} is a Nothing/Left,
 returns a Nothing/a Left of @var{obj} @dots{}.
 If @var{maybe}/@var{either} is a Just/a Right, apply @var{pred} on
@@ -11470,28 +11477,54 @@ its payload value(s).  If @var{pred} returns a true value,
 a Nothing/a Left of @var{obj} @dots{} is returned.
 
 An error is thrown if @var{maybe}/@var{either} isn't a Maybe/an Either.
+@c JP
+@var{maybe}/@var{either}がNothing/Leftなら、
+それぞれNothingもしくは@var{obj} @dots{}をペイロードに持つLeftを返します。
+@var{maybe}/@var{either}がJust/Rightなら、そのペイロードを引数として
+@var{pred}を呼び、それが真の値を返したら
+@var{maybe}/@var{either}がそのまま返されます。
+そうでなければNothingもしくは@var{obj} @dots{}をペイロードに持つLeftが返されます。
+@c COMMON
 @end defun
 
 @defun maybe-remove pred maybe
 @defunx either-remove pred either obj @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Like @code{maybe-filter}/@code{either-filter}, but the meaning of
 @var{pred} is reversed.
+@c JP
+@var{pred}の意味が逆になることを除いて、
+@code{maybe-filter}/@code{either-filter}と同じです。
+@c COMMON
 @end defun
 
 @defun maybe-sequence mappable cmap :optional aggregator
 @defunx either-sequence mappable cmap :optional aggregator
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 This converts a collection of Maybes/Eithers to a Maybe/an Either of
 a collection.  The input collection and the collection in the output can
 be of different type.
+@c JP
+この手続きは、Maybe/Eitherのコレクションを、
+コレクションのMaybe/Eitherへと変換します。
+入力となるコレクションと出力となるコレクションの型は違っていても構いません。
+@c COMMON
 
+@c EN
 It's easier to explain using Haskell-ish type signatures, although
 it's not precisely specified.  Suppose @code{Container x} is
 some kind of a collection of
-type @var{x}, and @code{a*} is multiple values of arbitrary types.
+type @code{x}, and @code{a*} is multiple values of arbitrary types.
+@c JP
+これは、Haskell的なタイプシグネチャを使った方が(厳密ではありませんが)
+わかりやすいでしょう。
+@code{Container x}を何らかの型@var{x}のオブジェクトのコレクション、
+@code{a*}を任意の型の多値とします。
+@c COMMON
 
 @example
 Mappable   = Container Maybe a*
@@ -11501,17 +11534,60 @@ Aggregator = a* -> b
 maybe-sequence :: Mappable -> CMap -> Aggregator -> Container' b
 @end example
 
-The @var{cmap} maps @var{proc} over the input container (@var{mappable}),
+@c EN
+If all the elements in the input is Justs,
+the @var{cmap} maps the first argument procedure
+over the input container (@var{mappable}),
 and gathers the result into another container.  It can be any containers,
 as long as it matches the @var{mappable} argument.  For example, @var{mappable}
 may be a vector of Maybes, and @var{cmap} can be @code{vector-map}--in that case,
-both @code{Container} and @code{Container'} are @code{Vector}.
+both @code{Container} and @code{Container'} are vectors.
 Or, @var{mappable} may be a list of Maybes, and @var{cmap} can be
 @code{(cut map-to <string> <> <>)}, then @code{Container} is a list and
 @code{Container'} is a string.
+@c JP
+入力コンテナの要素が全てJustであれば、
+@var{cmap}は最初の引数である手続き入力のコンテナ@var{mappable}の各要素に適用し、
+結果を別のコンテナに集積します。@var{mappable}と型があってさえいれば、
+各コンテナの型は任意です。
+例えば@var{mappable}にMaybeのベクタ、@var{cmap}に@code{vector-map}を
+渡すことができます。この場合、@code{Container}と@code{Container'}の型は
+どちらもベクタです。あるいは、@var{mappable}はMaybeのリストで、
+@var{cmap}に@code{(cut map-to <string> <> <>)}を渡すこともできます。
+この場合、@code{Container}はリスト、@code{Container'}は文字列となります。
+@c COMMON
 
+@c EN
 The types @code{a*} and @code{b} is determined by the @var{aggregator}
 procedure, whose default value is @code{list}.
+@c JP
+@code{a*}と@code{b}の型は@var{aggregator}手続きにより決定されます。
+デフォルトの値は@code{list}です。
+@c COMMON
+
+@example
+(use gauche.sequence) ; generic map
+(map-sequence (vector (just 'a 'b) (just 'c 'd 'e) (just 'f))
+              map
+              vector)
+  @result{} #<Just (#(a b) #(c d e) #(f))>
+@end example
+
+@c EN
+If there's Nothing in the input container, it is returned.
+@c JP
+入力コンテナの中にNothingがあればそれがそのまま返されます。
+@c COMMON
+
+@c EN
+The operation of @code{either-sequence} is similar, with replacing
+Just/Nothing with Right/Left.  If input sequence contains Lefts,
+the first Left is returned as is.
+@c JP
+@code{either-sequence}の動作も、Just/NothingをRight/Leftに入れ替える
+だけで同様です。入力シーケンスにLeftが含まれていた場合は
+最初のLeftがそのまま返されます。
+@c COMMON
 @end defun
 
 @defun maybe-map proc maybe
