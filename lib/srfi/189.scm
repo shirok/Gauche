@@ -33,6 +33,7 @@
 
 (define-module srfi.189
   (use scheme.list)
+  (use gauche.sequence)
   (use util.match)
   (export just nothing right left either-swap
           maybe? either? just? nothing? right? left? maybe-ref-error?
@@ -70,7 +71,7 @@
   )
 (select-module srfi.189)
 
-(define-class <maybe> () ())
+(define-class <maybe> (<sequence>) ())
 (define-method initialize ((obj <maybe>) initargs)
   (when (eq? (class-of obj) <maybe>)
     (error "You can't instantiate <maybe> directly."))
@@ -80,7 +81,7 @@
   ((objs :init-keyword :objs)))
 (define-class <nothing> (<maybe>) ())
 
-(define-class <either> () ())
+(define-class <either> (<sequence>) ())
 (define-method initialize ((obj <either>) initargs)
   (when (eq? (class-of obj) <either>)
     (error "You can't instantiate <either> directly."))
@@ -629,3 +630,53 @@
           (rec maybes)
           maybe))))
   (rec maybes))
+
+;;
+;; Sequence protocol
+;;
+;;  SRFI-189 frames Maybe and Either as sequences of 0 or 1 elements.
+;;  The protocol is a bit peculiar because of multiple values, though.
+;;  Our sequence protocol assumes single-value-per-element, so we just
+;;  deal with the case.
+
+(define (%maybe-payload-error obj)
+  (error "Only a Maybe with 1 payload objects is allowed:" obj))
+(define (%either-payload-error obj)
+  (error "Only a Either with 1 payload objects is allowed:" obj))
+
+(define-method call-with-iterator ((coll <maybe>) proc)
+  (if (nothing? coll)
+    (proc (constantly #t) (constantly (undefined)))
+    (let1 payload (~ coll'objs)
+      (unless (length=? payload 1) (%maybe-payload-error coll))
+      (proc (^[] (not payload))
+            (^[] (begin0 (car payload) (set! payload #f)))))))
+(define-method call-with-iterator ((coll <either>) proc)
+  (if (left? coll)
+    (proc (constantly #t) (constantly (undefined)))
+    (let1 payload (~ coll'objs)
+      (unless (length=? payload 1) (%either-payload-error coll))
+      (proc (^[] (not payload))
+            (^[] (begin0 (car payload) (set! payload #f)))))))
+
+(define-method size-of ((coll <maybe>))
+  (if (nothing? coll) 0 1))
+(define-method size-of ((coll <either>))
+  (if (left? coll) 0 1))
+
+(define-method referencer ((seq <maybe>))
+  (^[obj ind]
+    (if (and (just? obj) (zero? ind))
+      (let1 payload (~ obj'objs)
+        (if (length=? payload 1)
+          (car payload)
+          (%maybe-payload-error obj)))
+      (errorf "index out of range for ~s: ~s" obj ind))))
+(define-method referencer ((seq <either>))
+  (^[obj ind]
+    (if (and (right? obj) (zero? ind))
+      (let1 payload (~ obj'objs)
+        (if (length=? payload 1)
+          (car payload)
+          (%either-payload-error obj)))
+      (errorf "index out of range for ~s: ~s" obj ind))))

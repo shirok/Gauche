@@ -2887,7 +2887,31 @@
   (use gauche.test)
   (use srfi.189)
   (test-module 'srfi.189)
-  (test-include-r7 "include/srfi-189-tests"))
+  (test-include-r7 "include/srfi-189-tests")
+
+  (use gauche.sequence)
+  (test* "sequence protocol (Maybe)" 0 (size-of (nothing)))
+  (test* "sequence protocol (Maybe)" 1 (size-of (just 'a)))
+  (test* "sequence protocol (Maybe)" '() (coerce-to <list> (nothing)))
+  (test* "sequence protocol (Maybe)" '(a) (coerce-to <list> (just 'a)))
+  (test* "sequence protocol (Maybe)"
+         (test-error) (coerce-to <list> (just 'a 'b)))
+  (test* "sequence protocol (Maybe)" (test-error) (~ (nothing) 0))
+  (test* "sequence protocol (Maybe)" 'a (~ (just 'a) 0))
+  (test* "sequence protocol (Maybe)" (test-error) (~ (just 'a) 1))
+  (test* "sequence protocol (Maybe)" (test-error) (~ (just 'a 'b) 0))
+
+  (test* "sequence protocol (Either)" 0 (size-of (left 'a)))
+  (test* "sequence protocol (Either)" 1 (size-of (right 'a)))
+  (test* "sequence protocol (Either)" '() (coerce-to <list> (left 'a)))
+  (test* "sequence protocol (Either)" '(a) (coerce-to <list> (right 'a)))
+  (test* "sequence protocol (Either)"
+         (test-error) (coerce-to <list> (right 'a 'b)))
+  (test* "sequence protocol (Either)" (test-error) (~ (left 'a) 0))
+  (test* "sequence protocol (Either)" 'a (~ (right 'a) 0))
+  (test* "sequence protocol (Either)" (test-error) (~ (right 'a) 1))
+  (test* "sequence protocol (Either)" (test-error) (~ (right'a 'b) 0))
+  )
 
 ;;-----------------------------------------------------------------------
 ;; Coroutine generators

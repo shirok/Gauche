@@ -1,3 +1,10 @@
+2025-06-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/189.scm: Implmenet sequence protocol for Maybe/Either,
+	  b/c srfi-189 treats them as 0-or-1-element sequence.
+	  Our protocol doens't cover "multiple values in an element",
+	  so the adaptation is partial.
+
 2025-05-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm_DeleteFeature): Added for completeness.
