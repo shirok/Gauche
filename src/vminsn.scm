@@ -1546,7 +1546,9 @@
 ;;   'Extended instruction' - JIT compiled instruction handler.
 ;;   The operand is an address of native code vector.
 (define-insn XINSN 0 obj+native #f
-  (.if (and SCM_TARGET_X86_64 (not GAUCHE_WINDOWS))
+  (.if (and SCM_TARGET_X86_64
+            (>= SIZEOF_LONG 8)
+            (not GAUCHE_WINDOWS))
     (let* ([jitcode::void*])
       INCR_PC
       (FETCH_LOCATION jitcode)
