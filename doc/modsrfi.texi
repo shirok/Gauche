@@ -11435,14 +11435,14 @@ Just/Rightの場合は、そのペイロードを引数として次の@var{mproc
 @c NODE MaybeとEither - シーケンス操作, シーケンス操作
 
 @c EN
-A Maybe and an Either can be a container of zero or one element, and
+A Maybe and an Either can be a container of @emph{zero or one element}, and
 we have several procedures that employ this view.
 (Note: For this purpose, we treat multiple payload values as a whole,
 since they are processed in one step---as if we don't regard
 multiple procedure arguments and multiple return values as a sequence
 of individual values.)
 @c JP
-MaybeとEitherは、0個または1個の要素を持つシーケンスとみなせます。
+MaybeとEitherは、@emph{0個または1個の要素を持つ}シーケンスとみなせます。
 この視点からMaybe/Eitherを扱う手続きがいくつかあります
 (註: この用途においては、複数のペイロードはひとまとめにして1要素と
 して扱われます。手続き呼び出しや手続きからのリターンが、いくつ引数や返り値が
@@ -11594,51 +11594,112 @@ the first Left is returned as is.
 @defunx either-map proc either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe}/@var{either} is a Nothing/Left, it is returned as is.
 If it is a Just/Right, its payload value(s) is/are passed to @var{proc},
 and the result is returned.
+@c JP
+@var{maybe}/@var{either}がNothing/Leftならばそれがそのまま返されます。
+Just/Rightである場合は、そのペイロードが@var{proc}に渡され、結果が
+Just/Rightにくるんで返されます。
+@c COMMON
+
+@example
+(maybe-map quotient&remainder (just 18 4))
+ @result{} #<Just 4 2>
+@end example
 @end defun
 
 @defun maybe-for-each proc maybe
 @defunx either-for-each proc either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe}/@var{either} is a Nothing/Left, these procedures do nothing.
 Otherwise, @var{proc} is applied to the argument's payload values.
-The result of @var{proc} is discarded.  Returns an unspecified vlaue.
+The result of @var{proc} is discarded.  Returns an unspecified value.
+@c JP
+@var{maybe}/@var{either}がNothing/Leftならば何もしません。
+Just/Rightならば、そのペイロードを引数として@var{proc}が呼ばれます。
+@var{proc}の結果は捨てられます。
+@c COMMON
 @end defun
 
 @defun maybe-fold kons knil maybe
 @defunx either-fold kons knil either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe}/@var{either} is a Nothing/Left, @var{knil} is returned.
 Otherwise, @var{kons} is called with the argument's payload values, plus
 @var{knil}.  What @var{kons} returns becomes the result.
+@c JP
+@var{maybe}/@var{either}がNothing/Leftなら@var{knil}が返されます。
+Just/Rightならそのペイロードおよび@var{knil}を引数として@var{kons}が呼ばれ、
+その結果が返されます。
+@c COMMON
+
+@example
+(maybe-fold vector 'z (just 'a 'b))
+  @result{} #(a b z)
+@end example
 @end defun
 
 @defun maybe-unfold p f g seed @dots{}
 @defunx either-unfold p f g seed @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 First, the stop predicate @var{p} is applied to @var{seed} @dots{}.
 If it returns a true value, a Nothing / a Left of @var{seed} @dots{} is
-returned.  Otherwise, @var{g} is applied to @var{seed} @dots{},
+returned.  Otherwise, next seed generator @var{g} is applied to
+@var{seed} @dots{},
 which should return the same number of values as seeds, and passed
-to @var{p}.  If @var{p} returns false, it is an error.
-If @var{p} returns true, @var{mapper} is applied to @var{seed} @dots{},
+to @var{p}.  If @var{p} returns false, it is an error
+(since Maybe/Either as a sequence can have at most 1 element).
+If @var{p} returns true, @var{f} is applied to @var{seed} @dots{},
 then the results are wrapped in a Just/Right to be returned.
+@c JP
+まず、終了述語@var{p}が@var{seed} @dots{}を引数として呼ばれます。
+それが真の値を返したら、Nothingおよび@var{seed} @dots{}をペイロードとする
+Leftがそれぞれ返されます。
+そうでなければ次のシードを生成する@var{g}が@var{seed} @dots{}を引数として
+呼ばれます。@var{g}は引数と同じ数の値を返さねばなりません。
+@var{g}の戻り値は@var{p}に渡され終了条件がチェックされます。
+もし@var{p}が真の値を返さなかったらエラーが投げられます
+(シーケンスとしてのMaybe/Eitherはたかだか1個の要素しか持てないので)。
+そうでなければ、@var{seed} @dots{}が値生成手続き@var{f}に渡され、
+その結果がJust/Rightにラップされて返されます。
+@c COMMON
 @end defun
 
 
 @node Maybe and Either protocol converters, Maybe and Either syntactic utilities, Maybe and Either sequence operations, Maybe and Either optional container types
 @subsection Protocol converters
+@c NODE MaybeとEither - プロトコル変換, プロトコル変換
 
 @defun maybe->list maybe
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe} is a Just, returns a list of its payload values.
 If it is a Nothing, an empty list is retured.
+@c JP
+@var{maybe}がJustならば、そのペイロードのリストが返されます。
+Nothingrならば空リストが返されます。
+@c COMMON
+
+@c EN
+Note that this is not a convertion from ``Maybe as a sequence''
+to a list.  Regarded as a sequence, a Just always contain
+one element, which can have multiple values.  This procedure
+conceptually resembles to @code{values->list}.
+@c JP
+これは「シーケンスとしてのMaybe」をリストに変換するものではないことに
+注意してください。シーケンスとして見た場合、Justはつねに一つだけの
+要素を持ちます。ただ、その要素が多値である場合があります。
+この手続きは概念的には@code{values->list}に似ています。
+@c COMMON
 @end defun
 
 @defun list->maybe lis
