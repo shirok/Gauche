@@ -11310,7 +11310,7 @@ Rightの場合はそのペイロードが値として返されます。
 
 @example
 (either-ref/default either obj @dots{})
- @equiv{} (either-ref maybe (^ _ (values obj @dots{})))
+ @equiv{} (either-ref either (^ _ (values obj @dots{})))
 @end example
 @end defun
 
@@ -11684,9 +11684,13 @@ Leftがそれぞれ返されます。
 @c EN
 If @var{maybe} is a Just, returns a list of its payload values.
 If it is a Nothing, an empty list is retured.
+(When the return value is an empty list, it can be either
+@var{maybe} is Nothing, or a Just with no value.)
 @c JP
 @var{maybe}がJustならば、そのペイロードのリストが返されます。
-Nothingrならば空リストが返されます。
+Nothingならば空リストが返されます。
+(戻り値が空リストになるのは、@var{maybe}がNothingである場合と
+ゼロ個のペイロードを持つJustである場合があります)
 @c COMMON
 
 @c EN
@@ -11705,39 +11709,87 @@ conceptually resembles to @code{values->list}.
 @defun list->maybe lis
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{lis} is an empty list, a Nothing is returned.
 Otherwise, a Just that has elements in @var{lis} as payload values
 is returned.
+@c JP
+@var{lis}が空リストならNothingが、そうでなければ
+@var{lis}の各要素をペイロードとして持つJustが返されます。
+@c COMMON
 
+@c EN
 Note that @code{(list->maybe (maybe->list x))} isn't an identity
 mapping---if @var{x} is a Just with zero payload values, you'll get
 a Nothing.
+@c JP
+@code{(list->maybe (maybe->list x))}は恒等関数ではないことに
+注意して下さい。@var{x}がゼロ個のペイロードを持つJustの場合、
+この式はNothingを返します。
+@c COMMON
 @end defun
 
 @defun either->list either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{either} is a Right, returns a list of its payload values.
-If it is a Left, returns an empty string.
+If it is a Left, returns an empty list.
+(When the return value is an empty list, it can be either
+@var{either} is Left, or a Right with no value.)
+@c JP
+@var{maybe}がRightならば、そのペイロードのリストが返されます。
+Leftならば空リストが返されます。
+(戻り値が空リストになるのは、@var{either}がLeftである場合と
+ゼロ個のペイロードを持つRightである場合があります)
+@c COMMON
 @end defun
 
 @defun list->either lis obj @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{lis} is an empty list, a Left of @var{obj} @dots{} is returned.
 Otherwise, a Right that has elements in @var{lis} as payload values
 is returned.
+@c JP
+@var{lis}が空リストなら@var{obj} @dots{}をペイロードとして持つLeftが、
+そうでなければ@var{lis}の各要素をペイロードとして持つRightが返されます。
+@c COMMON
 @end defun
 
 @defun maybe->truth maybe
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe} is a Nothing, @code{#f} is returned.
 Otherwise, it must be a Just with one value, and its value is returned.
-
 If @var{maybe} is a Just and it doesn't have exactly one value, an error
 is thrown.  If you want to deal with arbitrary number of payload values,
 use @code{maybe->list-truth}.
+
+Note that if you get @code{#f}, you can't distinguish if the input
+is @code{(nothing)} or @code{(just #f)}.    This procedure can be seen as
+an adaptor between Maybe interface and the traditional ``quasi-maybe''
+pattern used in place
+of true maybe type---e.g. @code{find} returns @code{#f} if no elements
+satisfied the predicate, but can't handle if the element that satisfies
+the predicate is @code{#f}.
+
+@c JP
+@var{maybe}がNothingなら@code{#f}が、ペイロードとして値をひとつだけ持つJustなら
+その値が返されます。ペイロードに1つ以外の値を持つJustだった場合は
+エラーが投げられます。任意のペイロードを扱いたい場合は
+下の@code{maybe->list-truth}を使って下さい。
+
+@code{#f}が帰って来た場合に、元がNothingだったのか@code{#f}を値として
+持つJustだったのか区別できないことに注意してください。
+この手続きは、Maybeインタフェースと、従来の「Maybe的な」インタフェースとの
+橋渡しをします。例えば@code{find}は述語を満たす要素が無かった場合に
+@code{#f}を返しますが、「述語を満たす要素」が@code{#f}である場合を扱えません。
+その意味で「Maybe的な」インタフェースは不完全なんですが、それを期待している
+従来のコードにMaybeを使った結果を返したい場合にこの手続きが使えます。
+@c COMMON
 @end defun
 
 @defun truth->maybe obj
