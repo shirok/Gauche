@@ -11775,7 +11775,6 @@ pattern used in place
 of true maybe type---e.g. @code{find} returns @code{#f} if no elements
 satisfied the predicate, but can't handle if the element that satisfies
 the predicate is @code{#f}.
-
 @c JP
 @var{maybe}がNothingなら@code{#f}が、ペイロードとして値をひとつだけ持つJustなら
 その値が返されます。ペイロードに1つ以外の値を持つJustだった場合は
@@ -11795,30 +11794,56 @@ the predicate is @code{#f}.
 @defun truth->maybe obj
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{obj} is @code{#f}, returns a Nothing.
 Otherwise, returns a Just with @var{obj} as its payload.
+@c JP
+@var{obj}が@code{#f}ならNothingを、そうでなければ
+@var{obj}をペイロードに持つJustを返します。
+@c COMMON
 
+@c EN
 Note that @code{(truth->maybe (maybe->truth x))} isn't an identity mapping---
 if @var{x} is a Just wrapping @code{#f}, you'll get a Nothing.
+@c JP
+@code{(truth->maybe (maybe->truth x))}は恒等関数ではないことに注意して下さい。
+@var{x}が@code{(just #f)}だった場合、この式の値はNothingになります。
+@c COMMON
 @end defun
 
 @defun either->truth either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{either} is a Left, @code{#f} is returned.
 Otherwise, it must be a Right with one value, and its value is returned.
+@c JP
+@var{either}がLeftなら@code{#f}が、
+ひとつの値を持つRightならその値が返されます。
+@c COMMON
 
+@c EN
 If @var{either} is a Right and it doesn't have exactly one value, an error
 is thrown.  If you want to deal with arbitrary number of payload values,
 use @code{either->list-truth}.
+@c JP
+@var{either}が一つ以外の値を持つRightであった場合はエラーが投げられます。
+任意個のペイロードを持つRightを扱いたい場合は
+@code{either->list-truth}が使えます。
+@c COMMON
 @end defun
 
 @defun truth->either obj fail-obj @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{obj} is @code{#f}, returns a Left with @var{fail-obj} @dots{} is
 returned.
 Otherwise, returns a Right with @var{obj} as its payload.
+@c JP
+@var{obj}が@code{#f}なら@var{fail-obj} @dots{}をペイロードに持つLeftが、
+そうでなければ@var{obj}をペイロードに持つRightが返されます。
+@c COMMON
 @end defun
 
 @defun maybe->list-truth maybe
