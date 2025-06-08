@@ -11849,66 +11849,114 @@ Otherwise, returns a Right with @var{obj} as its payload.
 @defun maybe->list-truth maybe
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Like @code{maybe->list}, it returns @code{#f} if @var{maybe} is a Nothing.
 If @var{maybe} is a Just, however, it returns a list of its payload values.
+@c JP
+@code{maybe->list}と同じように、@var{maybe}がNothingの場合は@code{#f}を
+返しますが、Justの場合はペイロードのリストを返します。
+@c COMMON
 @end defun
 
 @defun list-truth->maybe lis-or-false
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The argument must be @code{#f} of a list.  If it is @code{#f}, a Nothing
 is returned.  If it is a list, a Just with elements of the list is
 returned.
 
 @code{(list-truth->maybe (maybe->list-truth x))} is an identity mapping.
+@c JP
+引数はリストか@code{#f}でなければなりません。
+引数が@code{#f}ならばNothingが返されます。
+引数がリストの場合は、それらの各要素をペイロードとするJustが返されます。
+
+@code{(list-truth->maybe (maybe->list-truth x))}はxの恒等写像です。
+@c COMMON
 @end defun
 
 @defun either->list-truth either
 [SRFI-189]
 @c MOD srfi.189
-Like @code{either->list}, it returns @code{#f} if @var{either} is a Left.
-If @var{either} is a Right, however, it returns a list of its payload values.
+@c EN
+Like @code{either->list}, it returns a list of payload values if
+@var{either} is a Right.  If @var{either} is a Left,
+however, it returns @code{#f}.
+@c JP
+@code{either->list}と同じように、@var{either}がRightならば
+そのペイロードの値のリストが返されます。
+しかし@var{either}がLeftの場合は@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun list-truth->either lis-or-false fail-objs @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The @var{list-or-false} argument must be @code{#f} of a list.
 If it is @code{#f}, a Left with @var{fail-objs} @dots{}
 is returned.  If it is a list, a Right with elements of the list is
 returned.
+@c JP
+@var{list-or-false}引数はリストか@code{#f}でなければなりません。
+@code{#f}の場合は、@var{fail-objs} @dots{}をペイロードとするLeftが、
+リストの場合はその各要素をペイロードとするRightが返されます。
+@c COMMON
 @end defun
 
 @defun maybe->generation maybe
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe} is a Nothing, an EOF object is returned.
 Otherwise, it must be a Just with one value, and its value is returned.
 If @var{maybe} is a Just and it doesn't have exactly one value, an error
 is thrown.
+@c JP
+@var{maybe}がNothingならEOFを、
+ペイロードをひとつ持つJustならその値を返します。
+それ以外の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun generation->maybe obj
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{obj} is an EOF value, a Nothing is returned.
 Otherwise, a Just wrapping @var{obj} is returned.
+@c JP
+@var{obj}がEOFならNothingが、
+そうでなければ@var{obj}をペイロードとするJustが返されます。
+@c COMMON
 @end defun
 
 @defun either->generation either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{either} is a Left, an EOF object is returned.
 Otherwise, it must be a Right with one value, and its value is returned.
 If @var{either} is a Right and it doesn't have exactly one value, an error
 is thrown.
+@c JP
+@var{either}がLeftならEOFを、
+ペイロードをひとつ持つRightならその値を返します。
+それ以外の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun generation->either obj fail-objs @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{obj} is an EOF value, a Left with @var{fail-objs} @dots{} is returned.
 Otherwise, a Right wrapping @var{obj} is returned.
+@c JP
+@var{obj}がEOなら@var{fail-objs} @dots{}をペイロードに持つLeftが、
+そうでなければ@var{obj}をペイロードに持つRightが返されます。
+@c COMMON
 @end defun
 
 @defun maybe->values maybe
