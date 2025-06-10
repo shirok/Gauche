@@ -39264,8 +39264,8 @@ pathname).
 @deftp {Module} www.cgi.test
 @mdindex www.cgi.test
 @c EN
-This module defines a useful procedures to test CGI script.
-The test actually runs the named script, with specified environment
+This module defines useful procedures to test CGI scripts.
+The test runs the named script, with specified environment
 variable settings, and retrieve the output.  Your test procedure
 then examine whether the output is as expected or not.
 @c JP
