@@ -11962,59 +11962,104 @@ Otherwise, a Right wrapping @var{obj} is returned.
 @defun maybe->values maybe
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe} is a Just, returns its payload as multiple values.
 If it is a Nothing, returns no values.
 (Note that a Just with zero values also returns no values.)
+@c JP
+@var{maybe}がJustなら、そのペイロードを多値で返します。
+Nothingならゼロ個の値を返します。
+(ゼロ個のペイロードを持つJustだった場合もゼロ個の値が返されることに注意してください)。
+@c COMMON
 @end defun
 
 @defun values->maybe producer
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 It first invokes a procedure @var{producer} with no values.
 If it returns zero values, a Nothing is returned; otherwise,
 a Just with those values are returned.
+@c JP
+まず手続き@var{producer}を引数なしで呼び出します。
+それがゼロ個の値を返した場合はNothingが、そうでなければ
+値をペイドーロとするJustが返されます。
+@c COMMON
 @end defun
 
 @defun either->values either
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{either} is a Right, returns its payload as multiple values.
 If it is a Left, returns no values.
 (Note that a Right with zero values also returns no values.)
+@c JP
+@var{either}がRightなら、そのペイロードを多値で返します。
+Leftならゼロ個の値を返します。
+(ゼロ個のペイロードを持つRightだった場合もゼロ個の値が返されることに注意してください)。
+@c COMMON
 @end defun
 
 @defun values->either producer fail-obj @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 It first invokes a procedure @var{producer} with no values.
 If it returns zero values, a Left with @var{fail-obj} @dots{} as
 its payload is returned.
 If it returns one or more values,
 a Right with those values are returned.
+@c JP
+まず手続き@var{producer}を引数なしで呼び出します。
+それがゼロ個の値を返した場合は、@var{fail-obj} @dots{}をペイロードとする
+Leftが、そうでなければ値をペイドーロとするRightが返されます。
+@c COMMON
 @end defun
 
 @defun maybe->two-values maybe
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If @var{maybe} is a Just with exactly one value, the value and @code{#t}
 is returned.  If @var{maybe} is a Nothing, two @code{#f} is returned.
 An error is thrown if @var{maybe} has a Just with zero or more than two
 values.
+
+The second value allows the caller to distinguish whether the input is
+a Nothing or a Just with @code{#f} in the payload.
+@c JP
+@var{maybe}がひとつのペイロードを持つJustであれば、その値と@code{#t}を
+2つの値として返します。
+@var{maybe}がNothingならば、2つの@code{#f}を返します。
+@var{maybe}がそれ以外の場合はエラーが投げられます。
+
+2つ目の値によって、呼び出し側は引数がNothingだったのか
+@code{#f}をペイロードに持つJustだったのかを区別できます。
+@c COMMON
 @end defun
 
 @defun two-values->maybe producer
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The inverse of @code{maybe->two-values}.  A procedure @var{producer}
 is called with no arguments.  It must return two values, a possible
 payload value, and a boolean.  If the second value is true,
 a Just with the first value is returned.  If the second value is @code{#f},
 a Nothing is returned (the first return value is ignored).
+@c JP
+@code{maybe->two-values}の逆です。
+手続き@var{producer}が引数無しで呼ばれます。それは2つの値を返さねばなりません。
+2つ目の値が真ならば、1つ目の値をペイロードとするJustが、
+そうでなければNothingが返されます(1つ目の値は捨てられます)。
+@c COMMON
 @end defun
 
 @defun exception->either pred thunk
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 A procedure @var{thunk} is called without argument, wrapped by an
 exception handler.  If @var{thunk} raises a condition, it is
 examined by @var{pred}.  If @var{pred} returns true on the condition,
@@ -12022,6 +12067,14 @@ the exception is wrapped by a Left and returned.
 If @var{pred} returns @code{#f}, the exception is reraised.
 If no exception is raised, the result(s) of @var{thunk} is wrapped
 by a Right and returned.
+@c JP
+例外ハンドラを設定したうえで、手続き@var{thunk}が引数なしで呼ばれます。
+@var{thunk}が例外を投げた場合、そのコンディションオブジェクトが@var{pred}に
+渡されます。@var{pred}が真を返した場合は、コンディションがLeftにラップされて
+返されます。@var{pred}が@code{#f}を返した場合は同じ例外が再び投げられます。
+例外が投げられなかった場合は、@var{thunk}の戻り値がRightにラップされて
+返されます。
+@c COMMON
 @end defun
 
 @node Maybe and Either syntactic utilities, Trivalent logic, Maybe and Either protocol converters, Maybe and Either optional container types
