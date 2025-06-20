@@ -3382,4 +3382,15 @@
          (us? (generate-uninterned-symbol 'Foo)))
   )
 
+;;-----------------------------------------------------------------------
+;; Tagged procedures with type safety
+
+(test-section "SRFI-259")
+
+(define-module srfi-259-tests
+  (use gauche.test)
+  (use srfi.259)
+  (test-module 'srfi.259)
+  )
+
 (test-end)
