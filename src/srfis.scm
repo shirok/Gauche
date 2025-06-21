@@ -1772,3 +1772,13 @@ Supported by the module @code{srfi.258}
 インターンされないシンボル
 @code{srfi.258}でサポートされます
 (@ref{インターンされないシンボル}参照)。
+
+
+srfi-259, srfi-259
+()
+
+Tagged procedures with type safety
+Supported by the module @code{srfi.259}
+
+型安全な手続きタグ
+@code{srfi.259}でサポートされます
