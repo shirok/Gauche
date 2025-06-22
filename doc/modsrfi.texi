@@ -16938,7 +16938,7 @@ Retrieves the value of atomic fxbox @var{fxbox}, calculates
 @code{(+ prev-val fxval)}, @code{(- prev-val fxval)},
 @code{(logand prev-val fxval)}, @code{(logior prev-val fxval}),
 or @code{(logxor prev-val fxval)}, respectively,
-then store the result to @var{fxbox}, and returns the previsou value.
+then store the result to @var{fxbox}, and returns the previous value.
 The entire sequence of operations are done atomically.
 
 This does not check the numerical overflow.
@@ -17002,7 +17002,7 @@ the @var{memory-order} argument.
 @c MOD srfi.230
 Compare two values in atomic box @var{abox} with @var{expected1} and
 @var{expected2}, respectively.  If each corresponding values are
-the same (in @code{eq?} sense), store @var{desired1} and @code{desired2}
+the same (in @code{eq?} sense), store @var{desired1} and @var{desired2}
 to @var{abox}.  Always returns teh original values.
 The whole operations are done atomically.
 

@@ -3393,7 +3393,7 @@
   (test-module 'srfi.259)
   (use srfi.64)
 
-  ;; From examples of srfi ducoment
+  ;; From examples of srfi document
   (define-procedure-tag make-a-tagged a-tagged? a-tag)
   (define (greet whom) (list 'hello whom))
   (define greet-a (make-a-tagged 12 greet))
