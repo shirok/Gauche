@@ -42,7 +42,7 @@
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
-                             assume assume-type ineq ineq/comparator
+                             assume assume-type assert ineq ineq/comparator
                              dotimes dolist do-plist doplist
                              ecase typecase etypecase cond-list
                              define-condition-type condition
@@ -921,6 +921,18 @@
              (if (of-type? v ,type)
                v
                (error <assertion-violation> ,msg ,@objs))))]))))
+
+;; R6RS
+(define-syntax assert
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ expr)
+        (quasirename r
+          `(or ,expr
+               (error <assertion-violation>
+                      (format "Assertion failed: ~s" ',expr))))]
+       [_ (error "Malformed assert:" f)]))))
 
 ;;; comparison chaining
 

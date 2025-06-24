@@ -1,3 +1,8 @@
+2025-06-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/libexc.scm (assertion-violation), src/libmacro.scm (assert):
+	  Added for R6RS compatibility.
+
 2025-06-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c, src/gauche/exception.h: Add <assertion-violation>

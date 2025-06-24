@@ -223,6 +223,21 @@
   (~ condition 'prompt-tag))
 
 ;;;
+;;; R6RS compatibility
+;;;;
+
+;; NB: libmacro defines 'assert'
+
+(select-module gauche)
+(define (assertion-violation who msg . irritants)
+  ;; TODO: We might want to store irritants in a separate slot.
+  (error <assertion-violation>
+         (if who
+           (format "~a: ~a" who msg)
+           msg)
+         irritants))
+
+;;;
 ;;; Thread exception classes
 ;;;
 
