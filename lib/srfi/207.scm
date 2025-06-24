@@ -62,7 +62,7 @@
   )
 (select-module srfi.207)
 
-(define-condition-type <bytestring-error> <error> bytestring-error?)
+(define-condition-type <bytestring-error> <assertion-violation> bytestring-error?)
 
 ;; TODO: We create intermediate u8vectors to concatenate.  It is debatable
 ;; whether filling individual elements may be faster.  U8vector-concatenate

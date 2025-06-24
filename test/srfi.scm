@@ -3448,6 +3448,7 @@
   (test-eqv (c-tag greet-c) 'alpha)
   (test-eqv (d-tag greet-d) 'beta)
 
+  ;; Object system
   )
 
 (test-end)

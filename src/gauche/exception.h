@@ -43,8 +43,9 @@
     +- <message-condition> ; srfi-35
     |    +- <error>             ; srfi-35, also inherits <serious-condition>
     |         +- <system-error>
+    |         +- <assertion-violation> ; R6RS &assertion
     |         +- <unhandled-signal-error>
-    |         +- <unbound-varaible-error>
+    |         +- <unbound-variable-error>
     |         +- <read-error> ; srfi-36
     |         +- <io-error>   ; srfi-36
     |         |    +- <port-error> ; srfi-36
@@ -160,6 +161,14 @@ SCM_CLASS_DECL(Scm_SystemErrorClass);
 #define SCM_SYSTEM_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_SYSTEM_ERROR)
 
 SCM_EXTERN ScmObj Scm_MakeSystemError(ScmObj message, int error_num);
+
+/* <assertion-violation>: failed assertion or assumptions */
+typedef ScmError ScmAssertionViolation;
+
+SCM_CLASS_DECL(Scm_AssertionViolationClass);
+#define SCM_CLASS_ASSERTION_VIOLATION  (&Scm_AssertionViolationClass)
+#define SCM_ASSERTION_VIOLATION(obj)   ((ScmAssertionViolation*)(obj))
+#define SCM_ASSERTION_VIOLATION_P(obj) SCM_ISA(obj, SCM_CLASS_ASSERTION_VIOLATION
 
 /* <unhandled-signal-error>: unhandled signal */
 typedef struct ScmUnhandledSignalErrorRec {

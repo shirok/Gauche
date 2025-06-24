@@ -891,11 +891,17 @@
        [(_ expr)
         (quasirename r
           `(or ,expr
-               (error (format "Invalid assumption: ~s" ',expr))))]
+               (error <assertion-violation>
+                      (format "Invalid assumption: ~s" ',expr))))]
        [(_ expr msg . objs)
         (quasirename r
           `(or ,expr
-               (error ,msg ,@objs)))]))))
+               (let ((m ,msg))
+                 ;; This is a kluge to allow assume to raise
+                 ;; user-specified condition.
+                 (if (subclass? m <condition>)
+                   (error m ,@objs)
+                   (error <assertion-violation> m ,@objs)))))]))))
 
 ;; This will eventually folded into the compiler.  The argumet must be
 ;; a literal <type>.
@@ -914,7 +920,7 @@
           `(let1 v ,expr
              (if (of-type? v ,type)
                v
-               (error ,msg ,@objs))))]))))
+               (error <assertion-violation> ,msg ,@objs))))]))))
 
 ;;; comparison chaining
 

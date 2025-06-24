@@ -212,6 +212,9 @@ SCM_DEFINE_BASE_CLASS(Scm_ErrorClass, ScmError,
 SCM_DEFINE_BASE_CLASS(Scm_SystemErrorClass, ScmSystemError,
                       Scm_MessageConditionPrint, NULL, NULL,
                       syserror_allocate, error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_AssertionViolationClass, ScmAssertionViolation,
+                      Scm_MessageConditionPrint, NULL, NULL,
+                      message_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_UnhandledSignalErrorClass, ScmUnhandledSignalError,
                       Scm_MessageConditionPrint, NULL, NULL,
                       sigerror_allocate, error_cpl);
@@ -913,8 +916,17 @@ void Scm_SysError(const char *msg, ...)
  */
 void Scm_TypeError(const char *what, const char *expected, ScmObj got)
 {
-    Scm_Error("%s is supposed to be of type %s, but got %S",
-              what, expected, got);
+    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
+    Scm_Printf(SCM_PORT(ostr),
+               "%s is supposed to be of type %s, but got %S",
+               what, expected, got);
+    ScmObj msg = Scm_GetOutputString(SCM_PORT(ostr), TRUE);
+    ScmAssertionViolation *e =
+        SCM_ASSERTION_VIOLATION(message_allocate(SCM_CLASS_ASSERTION_VIOLATION,
+                                                 SCM_NIL));
+    e->message = SCM_LIST2(msg, got);
+    Scm_VMThrowException(Scm_VM(), SCM_OBJ(e), SCM_RAISE_NON_CONTINUABLE);
+    Scm_Panic("Scm_TypeError: Scm_VMThrowException returned.  something wrong.");
 }
 
 
@@ -1234,6 +1246,10 @@ void Scm__InitExceptions(void)
                                 "<system-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 syserror_slots, 0);
+    Scm_InitStaticClassWithMeta(SCM_CLASS_ASSERTION_VIOLATION,
+                                "<assertion-violation>",
+                                mod, cond_meta, SCM_FALSE,
+                                message_slots, 0);
     Scm_InitStaticClassWithMeta(SCM_CLASS_UNHANDLED_SIGNAL_ERROR,
                                 "<unhandled-signal-error>",
                                 mod, cond_meta, SCM_FALSE,
