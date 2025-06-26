@@ -21933,6 +21933,31 @@ The second form can be used to raise an error other than an
 @c COMMON
 @end defun
 
+@defun assertion-violation who message obj @dots{}
+[R6RS]
+@c EN
+Throws an @code{<assertion-violation>} condition.  This is provided for
+R6RS compatiblity.  It si roughly equivalent to the following:
+@c JP
+@code{<assertion-violation>}コンディションを投げます。
+これはR6RSとの互換性のために提供されており、
+だいたい以下の等価性が成り立ちます。
+@c COMMON
+
+@example
+(assertion-violation who msg obj @dots{})
+ @equiv{} (error <assertion-violation> #"~|who|: ~|msg|" (list obj @dots{}))
+@end example
+
+@c EN
+If you give @code{#f} to @var{who}, however, the error message
+only consists with @var{msg}.
+@c JP
+但し、@var{who}に@code{#f}を与えた場合は、@var{msg}のみがエラーメッセージとして
+使われます。
+@c COMMON
+@end defun
+
 @c EN
 @subsubheading Signaling generic conditions
 @c JP
@@ -22800,6 +22825,7 @@ SRFI condition type, the class has the SRFI name as well.
     +- <message-condition>
          +- <error>                      ; also inherits <serious-condition>
               +- <system-error>
+              +- <assertion-violation>
               +- <unhandled-signal-error>
               +- <continuation-violation>
               +- <read-error>
@@ -23041,6 +23067,29 @@ types, like @code{<io-read-error>}.
 OSの生のエラーコードを取得するのに重要です。いくつかのケースで
 このタイプのコンディションは他の、たとえば @code{<io-read-error>}
 のようなコンディションと合成されます。
+@c COMMON
+@end deftp
+
+@deftp {Class} <assertion-violation>
+@clindex assertion-violation
+@c EN
+This is a subclass of @code{<error>}, and thrown when a program
+detects a condition that supposed to be satisfied is not satisfied.
+
+It is thrown by macros @code{assert}, @code{assume}, and
+@code{assume-type} (@pxref{Conditionals}), and also
+a procedure @code{assertion-violation} (@pxref{Signaling exceptions}).
+It is also thrown when the built-in procedures detect runtime type errors.
+@c JP
+これは@code{<error>}のサブクラスで、
+満たされるべき条件が満たされていないことをプログラムが発見した場合に
+投げられます。
+
+このコンディションを投げるマクロには@code{assert}、@code{assume}、
+@code{assume-type}が(@ref{Conditionals}参照)、
+手続きには@code{assertion-violation}があります
+(@ref{Signaling exceptions}参照)。
+また、組み込み手続きが実行時型エラーを検出した場合にも投げられます。
 @c COMMON
 @end deftp
 

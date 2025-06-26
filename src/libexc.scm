@@ -232,9 +232,7 @@
 (define (assertion-violation who msg . irritants)
   ;; TODO: We might want to store irritants in a separate slot.
   (error <assertion-violation>
-         (if who
-           (format "~a: ~a" who msg)
-           msg)
+         (if who #"~|who|: ~|msg|" msg)
          irritants))
 
 ;;;

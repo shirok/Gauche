@@ -2336,6 +2336,32 @@ that the check is performed, nor @var{expr} is evaluated.
 @c COMMON
 @end defmac
 
+@defmac assert test-expr
+[R6RS]
+@c EN
+Evaluates @var{test-expr}.  If it evaluates a true value, it is
+returned.  If it evaluates @code{#f}, an @code{<assertion-violation>}
+condition is thrown.
+
+This is defined in R6RS, and we provide this to make it easier
+to port R6RS code.  In Gauche, you can use @code{assume} (SRFI-145) as well;
+Gauche's @code{assume} also raises an condition when the given expression
+evaluates to @code{#f}.
+(But note that SRFI-145 does not require @code{assume} to raise an error when
+the expression returns @code{#f}.)
+@c JP
+@var{test-expr}を評価し、それが真の値を返したらその値をそのまま返します。
+@code{#f}を返した場合は@code{<assertion-violation>}コンディションを投げます。
+
+これはR6RSで定義されており、R6RSこーどの移植を簡単にするために提供されています。
+Gaucheでは@code{assume}を使うこともできます(SRFI-145)。
+Gaucheの@code{assume}は式が@code{#f}を返した場合はエラーを投げるからです。
+(但し、SRFI-145では@code{assume}はエラーを投げなくても良いとされていることに
+注意してください。)
+@c COMMON
+@end defmac
+
+
 @node Binding constructs, Grouping, Conditionals, Core syntax
 @section Binding constructs
 @c NODE 変数束縛
