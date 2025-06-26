@@ -1,3 +1,8 @@
+2025-06-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm: Use Scm_TypeError in unboxing, so that
+	  it throws <assertion-violation>.
+
 2025-06-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/libexc.scm (assertion-violation), src/libmacro.scm (assert):

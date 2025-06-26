@@ -21937,23 +21937,24 @@ The second form can be used to raise an error other than an
 [R6RS]
 @c EN
 Throws an @code{<assertion-violation>} condition.  This is provided for
-R6RS compatiblity.  It si roughly equivalent to the following:
+R6RS compatiblity.  Gauche's implementation can be described
+roughly as the following equivalence:
 @c JP
 @code{<assertion-violation>}コンディションを投げます。
 これはR6RSとの互換性のために提供されており、
-だいたい以下の等価性が成り立ちます。
+Gaucheでの実装はおよそ以下の等価性で説明できます。
 @c COMMON
 
 @example
-(assertion-violation who msg obj @dots{})
- @equiv{} (error <assertion-violation> #"~|who|: ~|msg|" (list obj @dots{}))
+(assertion-violation who message obj @dots{})
+ @equiv{} (error <assertion-violation> #"~|who|: ~|message|" (list obj @dots{}))
 @end example
 
 @c EN
 If you give @code{#f} to @var{who}, however, the error message
-only consists with @var{msg}.
+only consists with @var{message}.
 @c JP
-但し、@var{who}に@code{#f}を与えた場合は、@var{msg}のみがエラーメッセージとして
+但し、@var{who}に@code{#f}を与えた場合は、@var{message}のみがエラーメッセージとして
 使われます。
 @c COMMON
 @end defun

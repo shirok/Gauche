@@ -664,6 +664,15 @@ ScmObj Scm_MakeSystemError(ScmObj message, int en)
     return SCM_OBJ(e);
 }
 
+ScmObj Scm_MakeAssertionViolation(ScmObj message, ScmObj irritants)
+{
+    ScmAssertionViolation *e =
+        SCM_ASSERTION_VIOLATION(message_allocate(SCM_CLASS_ASSERTION_VIOLATION,
+                                                 SCM_NIL));
+    e->message = Scm_Cons(message, irritants);
+    return SCM_OBJ(e);
+}
+
 ScmObj Scm_MakeUnboundVariableError(ScmObj identifier)
 {
     static ScmString *prefix = NULL;
@@ -921,10 +930,7 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
                "%s is supposed to be of type %s, but got %S",
                what, expected, got);
     ScmObj msg = Scm_GetOutputString(SCM_PORT(ostr), TRUE);
-    ScmAssertionViolation *e =
-        SCM_ASSERTION_VIOLATION(message_allocate(SCM_CLASS_ASSERTION_VIOLATION,
-                                                 SCM_NIL));
-    e->message = SCM_LIST2(msg, got);
+    ScmObj e = Scm_MakeAssertionViolation(msg, SCM_LIST1(got));
     Scm_VMThrowException(Scm_VM(), SCM_OBJ(e), SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_TypeError: Scm_VMThrowException returned.  something wrong.");
 }

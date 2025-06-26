@@ -1414,9 +1414,11 @@
   (p "  int "(get-c-name "" (~ arg'count-var))";"))
 
 (define (emit-arg-unbox-rec arg)
-  (f "  if (!~a) Scm_Error(\"~a required, but got %S\", ~a);"
+  (f "  if (!~a) Scm_TypeError(~a, ~a, ~a);"
      (cgen-pred-expr (~ arg'type) (~ arg'scm-name))
-     (~ arg'type'description) (~ arg'scm-name))
+     (cgen-safe-string (x->string (~ arg'name)))
+     (cgen-safe-string (x->string (~ arg'type'description)))
+     (~ arg'scm-name))
   (p "  "(~ arg'c-name)" = "(cgen-unbox-expr (~ arg'type) (~ arg'scm-name))";"))
 
 (define-method emit-arg-unbox ((arg <required-arg>))

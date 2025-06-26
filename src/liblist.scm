@@ -267,7 +267,7 @@
   (setter list-set!)
     ;; Better error message for the common mistake
   (when (and (SCM_UNBOUNDP fallback) (not (SCM_LISTP lis)))
-    (Scm_Error "list-ref: argument must be a list, but got: %S" lis))
+    (SCM_TYPE_ERROR lis "list"))
   (return (Scm_ListRef (SCM_OBJ lis) k fallback)))
 
 (define-cproc memq (obj list::<list>) :constant (inliner MEMQ) Scm_Memq)

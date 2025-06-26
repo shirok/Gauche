@@ -77,7 +77,7 @@
   (test-foreign-call dlo "_foo_o_cb" '(d c b a)
                      `((o ,reverse) (o (a b c d))) 'o)
   (test-foreign-call dlo "_foo_o_cb"
-                     (test-error <error> "list required, but got zzz")
+                     (test-error <error> "list is supposed to be of type list, but got zzz")
                      `((o ,reverse) (o zzz)) 'o)
 
   (test-section "spill-to-stack case")

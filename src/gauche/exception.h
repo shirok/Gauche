@@ -170,6 +170,8 @@ SCM_CLASS_DECL(Scm_AssertionViolationClass);
 #define SCM_ASSERTION_VIOLATION(obj)   ((ScmAssertionViolation*)(obj))
 #define SCM_ASSERTION_VIOLATION_P(obj) SCM_ISA(obj, SCM_CLASS_ASSERTION_VIOLATION
 
+SCM_EXTERN ScmObj Scm_MakeAssertionViolation(ScmObj message, ScmObj irritants);
+
 /* <unhandled-signal-error>: unhandled signal */
 typedef struct ScmUnhandledSignalErrorRec {
     ScmError common;
