@@ -827,15 +827,25 @@ SCM_CLASS_DECL(Scm_NullClass);
 #define SCM_LIST4(a,b,c,d)       Scm_Cons(a, SCM_LIST3(b, c, d))
 #define SCM_LIST5(a,b,c,d,e)     Scm_Cons(a, SCM_LIST4(b, c, d, e))
 
-/* special return value of Scm_Length */
+/* flag bit for Scm_Length2 */
 enum {
-    SCM_LIST_DOTTED = -1,       /* dotted list */
-    SCM_LIST_CIRCULAR = -2      /* circular list */
+    SCM_LENGTH_LAZY = 1L<<0     /* don't realize lazy pairs */
 };
 
-#define SCM_PROPER_LIST_P(obj)   (Scm_Length(obj) >= 0)
-#define SCM_DOTTED_LIST_P(obj)   (Scm_Length(obj) == SCM_LIST_DOTTED)
-#define SCM_CIRCULAR_LIST_P(obj) (Scm_Length(obj) == SCM_LIST_CIRCULAR)
+/* special return value of Scm_Length */
+#define SCM_LIST_DOTTED   (-1)       /* dotted list */
+#define SCM_LIST_CIRCULAR (-2)     /* circular list */
+#define SCM_LIST_LAZY     (SCM_SMALL_INT_MAX) /* proper list but length unknown
+                                                 (can be infinite) */
+
+#define SCM_PROPER_LIST_P(obj) (Scm_Length2(obj, SCM_LENGTH_LAZY) >= 0)
+#define SCM_DOTTED_LIST_P(obj) \
+    (Scm_Length2(obj, SCM_LENGTH_LAZY) == SCM_LIST_DOTTED)
+#define SCM_CIRCULAR_LIST_P(obj) \
+    (Scm_Length2(obj, SCM_LENGTH_LAZY) == SCM_LIST_CIRCULAR)
+
+SCM_EXTERN ScmSize Scm_Length2(ScmObj obj, u_long flags);
+SCM_EXTERN ScmSize Scm_Length(ScmObj obj);
 
 SCM_EXTERN ScmObj Scm_Cons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr);
@@ -861,7 +871,6 @@ SCM_EXTERN int    Scm_ImmutablePairP(ScmObj obj);
 SCM_EXTERN void   Scm_SetCar(ScmObj pair, ScmObj value);
 SCM_EXTERN void   Scm_SetCdr(ScmObj pair, ScmObj value);
 
-SCM_EXTERN ScmSize Scm_Length(ScmObj obj);
 SCM_EXTERN ScmObj Scm_CopyList(ScmObj list);
 SCM_EXTERN ScmObj Scm_MakeList(ScmSmallInt len, ScmObj fill);
 SCM_EXTERN ScmObj Scm_AlistCopy(ScmObj alist);

@@ -1,3 +1,12 @@
+2025-06-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_Length2): Add an option not to realize lazy
+	  pairs during length count.  When it hits a lazy pair, it
+	  returns SCM_SMALL_INT_MAX.
+	* src/liblist.scm (list?, proper-list?, dotted-list?, circular-list?):
+	  Make them work with lseqs without realizing them.  Notably, they
+	  no longer diverge on infinite lseqs.
+
 2025-06-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm: Use Scm_TypeError in unboxing, so that

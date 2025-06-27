@@ -178,7 +178,11 @@
 (test* "lazyness" (test-error) (cadddr (generator->lseq 0 (gerr 3))))
 (test* "lazyness string?" #f (string? (generator->lseq 0 (gerr 0))))
 (test* "lazyness pair?" (test-error) (pair? (generator->lseq 0 (gerr 0))))
-(test* "lazyness list?" (test-error) (list? (generator->lseq 0 (gerr 10))))
+
+(test* "lazyness list?" #t (list? (generator->lseq 0 (gerr 1))))
+(test* "lazyness proper-list?" #t (proper-list? (generator->lseq 0 (gerr 1))))
+(test* "lazyness dotted-list?" #f (dotted-list? (generator->lseq 0 (gerr 1))))
+(test* "lazyness circular-list?" #f (circular-list? (generator->lseq 0 (gerr 1))))
 
 (test* "apply robustness" '(0) (apply list (generator->lseq 0 gnull)))
 (test* "apply robustness" '(0 1) (apply list 0 (generator->lseq 1 gnull)))

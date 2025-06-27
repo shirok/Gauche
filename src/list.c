@@ -249,18 +249,21 @@ void Scm_SetCdr(ScmObj pair, ScmObj obj)
    If the argument is a dotted list, return -1.
    If the argument is a circular list, return -2. */
 
-ScmSize Scm_Length(ScmObj obj)
+ScmSize Scm_Length2(ScmObj obj, u_long flags)
 {
     ScmObj slow = obj;
     ScmSize len = 0;
+    _Bool leave_lazy = flags & SCM_LENGTH_LAZY;
 
     for (;;) {
         if (SCM_NULLP(obj)) break;
+        if (leave_lazy && SCM_LAZY_PAIR_P(obj)) return SCM_LIST_LAZY;
         if (!SCM_PAIRP(obj)) return SCM_LIST_DOTTED;
 
         obj = SCM_CDR(obj);
         len++;
         if (SCM_NULLP(obj)) break;
+        if (leave_lazy && SCM_LAZY_PAIR_P(obj)) return SCM_LIST_LAZY;
         if (!SCM_PAIRP(obj)) return SCM_LIST_DOTTED;
 
         obj = SCM_CDR(obj);
@@ -269,6 +272,12 @@ ScmSize Scm_Length(ScmObj obj)
         len++;
     }
     return len;
+}
+
+/* for the compatibility */
+ScmSize Scm_Length(ScmObj obj)
+{
+    return Scm_Length2(obj, 0);
 }
 
 /* Scm_CopyList(list)
