@@ -935,6 +935,21 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
     Scm_Panic("Scm_TypeError: Scm_VMThrowException returned.  something wrong.");
 }
 
+/*
+ * A convenience function to raise <assertion-violation> with printf-style
+ * message formatting.
+ */
+void Scm_AssertionViolationError(ScmObj irritants, const char *msg, ...)
+{
+    ScmVM *vm = Scm_VM();
+    ScmObj ostr;
+    SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
+    ScmObj e =
+        Scm_MakeAssertionViolation(Scm_GetOutputString(SCM_PORT(ostr), TRUE),
+                                   irritants);
+    Scm_VMThrowException(vm, e, SCM_RAISE_NON_CONTINUABLE);
+    Scm_Panic("Scm_AssertionViolationError: Scm_VMThrowException returned.  something wrong.");
+}
 
 /*
  * A convenience function to raise port-related errors.

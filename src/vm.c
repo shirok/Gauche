@@ -999,16 +999,12 @@ static void wna(ScmVM *vm SCM_UNUSED,
     if (SCM_PROCEDURE_CURRYING(proc) && ngiven < reqargs && ngiven > 0) {
         VAL0 = Scm_CurryProcedure(proc, ARGP, ngiven, foldlen);
         /*TODO: how should we count this path for profiling? */
-    } else {
-        Scm_Error("wrong number of arguments for %S (required %d, got %d)",
-
-                  proc, reqargs, ngiven);
-        /*NOTREACHED*/
     }
-#else
-    Scm_Error("wrong number of arguments for %S (required %d, got %d)",
-              proc, reqargs, ngiven);
 #endif
+    /* TODO: We may want to pass the actual argument as irritants. */
+    Scm_AssertionViolationError(SCM_NIL,
+                                "wrong number of arguments for %S (required %d, got %d)",
+                                proc, reqargs, ngiven);
 }
 
 /* local_env_shift

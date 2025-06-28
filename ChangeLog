@@ -1,3 +1,9 @@
+2025-06-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_AssertionViolationError): Added C convenience API
+	* src/vm.c (wna): Make 'wrong number of arguments' error
+	  an <assertion-violation>.
+
 2025-06-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_Length2): Add an option not to realize lazy
