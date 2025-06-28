@@ -1002,9 +1002,9 @@ static void wna(ScmVM *vm SCM_UNUSED,
     }
 #endif
     /* TODO: We may want to pass the actual argument as irritants. */
-    Scm_AssertionViolationError(SCM_NIL,
-                                "wrong number of arguments for %S (required %d, got %d)",
-                                proc, reqargs, ngiven);
+    Scm_AssertionError(SCM_NIL,
+                       "wrong number of arguments for %S (required %d, got %d)",
+                       proc, reqargs, ngiven);
 }
 
 /* local_env_shift

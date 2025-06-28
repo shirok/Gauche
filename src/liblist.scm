@@ -160,7 +160,7 @@
 
 (define-cproc length (list) ::<long> :constant (inliner LENGTH)
   (let* ([len::long (Scm_Length list)])
-    (when (< len 0) (Scm_Error "bad list: %S" list))
+    (when (< len 0) (SCM_TYPE_ERROR list "proper list"))
     (return len)))
 
 (select-module gauche)
@@ -215,7 +215,7 @@
   (cond
    [(SCM_LISTP lis-or-k) (return (length-cmp-lis lis lis-or-k))]
    [(not (and (SCM_REALP lis-or-k) (Scm_FiniteP lis-or-k)))
-    (Scm_Error "A pair or a finite real number expected, but got: %S" lis-or-k)]
+    (SCM_TYPE_ERROR lis-or-k "pair or finite real number")]
    [(< (Scm_Sign lis-or-k) 0) (return 1)]
    [(SCM_INTP lis-or-k) (return (length-cmp-k lis (SCM_INT_VALUE lis-or-k)))]
    [(SCM_BIGNUMP lis-or-k) (return (length-cmp-big lis))]
@@ -932,7 +932,7 @@
     (unless (SCM_NULLP attrs)
       (for-each (lambda (p)
                   (unless (SCM_PAIRP p)
-                    (Scm_Error "Assoc list required, but got: %S" attrs))
+                    (SCM_TYPE_ERROR attrs "assoc list"))
                   (Scm_PairAttrSet (SCM_PAIR z) (SCM_CAR p) (SCM_CDR p)))
                 (Scm_Reverse attrs)))
     (return z)))

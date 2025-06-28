@@ -1,6 +1,6 @@
 2025-06-27  Shiro Kawai  <shiro@acm.org>
 
-	* src/error.c (Scm_AssertionViolationError): Added C convenience API
+	* src/error.c (Scm_AssertionError): Added C convenience API
 	* src/vm.c (wna): Make 'wrong number of arguments' error
 	  an <assertion-violation>.
 

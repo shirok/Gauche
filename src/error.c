@@ -939,7 +939,7 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
  * A convenience function to raise <assertion-violation> with printf-style
  * message formatting.
  */
-void Scm_AssertionViolationError(ScmObj irritants, const char *msg, ...)
+void Scm_AssertionError(ScmObj irritants, const char *msg, ...)
 {
     ScmVM *vm = Scm_VM();
     ScmObj ostr;
@@ -948,7 +948,7 @@ void Scm_AssertionViolationError(ScmObj irritants, const char *msg, ...)
         Scm_MakeAssertionViolation(Scm_GetOutputString(SCM_PORT(ostr), TRUE),
                                    irritants);
     Scm_VMThrowException(vm, e, SCM_RAISE_NON_CONTINUABLE);
-    Scm_Panic("Scm_AssertionViolationError: Scm_VMThrowException returned.  something wrong.");
+    Scm_Panic("Scm_AssertionError: Scm_VMThrowException returned.  something wrong.");
 }
 
 /*
