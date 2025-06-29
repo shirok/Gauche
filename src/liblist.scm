@@ -262,7 +262,8 @@
   (let* ([p (Scm_ListTail (SCM_OBJ lis) k SCM_FALSE)])
     (if (SCM_PAIRP p)
       (Scm_SetCar p v)
-      (Scm_Error "list-set!: index out of bound: %d" k))))
+      (Scm_AssertionError SCM_NIL       ;better to be more meaningful info
+                          "list-set!: index out of bound: %d" k))))
 (define-cproc list-ref (lis k::<fixnum> :optional fallback) :constant
   (setter list-set!)
     ;; Better error message for the common mistake
@@ -344,7 +345,7 @@
         (break))
       (SCM_APPEND h t (SCM_CAR cp))
       (unless (or (SCM_NULLP t) (SCM_NULLP (SCM_CDR t)))
-        (Scm_Error "proper list required, but got %S" (SCM_CAR cp))))
+        (Scm_TypeError "argument" "proper list" (SCM_CAR cp))))
     (return h)))
 
 (define-cproc reverse! (list :optional (tail ())) Scm_Reverse2X)
@@ -357,7 +358,7 @@
     (let loop ([xs lis] [r '()])
       (cond [(pair? xs) (loop (cdr xs) (cons (proc (car xs)) r))]
             [(null? xs) (reverse r)]
-            [else (error "improper list not allowed:" lis)]))
+            [else (error <asserion-violation> "improper list not allowed:" lis)]))
     (let loop ([xss (cons lis more)] [r '()])
       (receive (cars cdrs) (%zip-nary-args xss)
         (if (not cars)
@@ -411,7 +412,9 @@
     [(or (SCM_UNBOUNDP opt) (SCM_EQ opt 'equal?)) (return SCM_CMP_EQUAL)]
     [(SCM_EQ opt 'eq?) (return SCM_CMP_EQ)]
     [(SCM_EQ opt 'eqv?) (return SCM_CMP_EQV)]
-    [else (Scm_Error "unrecognized compare mode: %S" opt) (return 0)]))
+    [else (Scm_AssertionError (SCM_LIST1 opt)
+                              "unrecognized compare mode: %S" opt)
+          (return 0)]))
  )
 
 (define-cproc %delete (obj list::<list> :optional cmpmode)
