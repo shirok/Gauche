@@ -358,7 +358,7 @@
     (let loop ([xs lis] [r '()])
       (cond [(pair? xs) (loop (cdr xs) (cons (proc (car xs)) r))]
             [(null? xs) (reverse r)]
-            [else (error <asserion-violation> "improper list not allowed:" lis)]))
+            [else (error <assertion-violation> "improper list not allowed:" lis)]))
     (let loop ([xss (cons lis more)] [r '()])
       (receive (cars cdrs) (%zip-nary-args xss)
         (if (not cars)

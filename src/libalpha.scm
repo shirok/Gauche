@@ -199,9 +199,9 @@
           [p (SCM_VECTOR_ELEMENT (-> d dispatch_vector)
                                  (- nargs (-> d min_reqargs) 1))])
      (when (SCM_FALSEP p)
-       (Scm_Error "wrong number of arguments to case lambda: %S"
-                  (Scm_ArrayToListWithTail args (- nargs 1)
-                                           (aref args (- nargs 1)))))
+       (let* ([s (Scm_ArrayToListWithTail args (- nargs 1)
+                                          (aref args (- nargs 1)))])
+         (Scm_AssertionError s "wrong number of arguments to case lambda: %S" s)))
      (if (SCM_NULLP rarg)
        (case (- nargs 1)
          [(0) (return (Scm_VMApply0 p))]

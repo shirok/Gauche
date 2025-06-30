@@ -102,23 +102,20 @@
   (cond
    [(SCM_BOXP b)
     (unless (and (SCM_PAIRP vs) (SCM_NULLP (SCM_CDR vs)))
-      (Scm_Error "Wrong number of values to set to a single-value box %S: %S"
-                 b vs))
+      (Scm_AssertionError vs "Wrong number of values to set to a single-value box %S: %S" b vs))
     (SCM_BOX_SET b (SCM_CAR vs))]
    [(SCM_MVBOXP b)
     (let* ([argc::ScmSmallInt (Scm_Length vs)]
            [i::ScmSmallInt 0])
       (unless (== argc (SCM_MVBOX_SIZE b))
-        (Scm_Error "Wrong number of values to set to a multi-value box %S: %S"
-                   b vs))
+        (Scm_AssertionError vs "Wrong number of values to set to a multi-value box %S: %S" b vs))
       (for (() (< i argc) (begin (post++ i) (set! vs (SCM_CDR vs))))
         (set! (aref (SCM_MVBOX_VALUES b) i) (SCM_CAR vs))))]
    [(SCM_SHARED_BOX_P b)
     (let* ([argc::ScmSmallInt (Scm_Length vs)]
            [i::ScmSmallInt 0])
       (unless (== argc (SCM_SHARED_BOX_SIZE b))
-        (Scm_Error "Wrong number of values to set to a shared box %S: %S"
-                   b vs))
+        (Scm_AssertionError vs "Wrong number of values to set to a shared box %S: %S" b vs))
       (for (() (< i argc) (begin (post++ i) (set! vs (SCM_CDR vs))))
         (set! (aref (SCM_SHARED_BOX_VALUES b) i) (SCM_CAR vs))))]
    [else (SCM_TYPE_ERROR b "<box>, <mv-box>, or <shared-box>")]))
