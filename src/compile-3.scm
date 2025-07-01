@@ -47,6 +47,13 @@
 (define-inline (pass3/rec iform labels)
   ((vector-ref *pass3-dispatch-table* (iform-tag iform)) iform labels))
 
+;; When one or more procedures are inlined during pass3, we run the pass
+;; again, for the inline expansion may enable other optimization opportunities.
+;; It becomes an issue, however, if inlining occurs recursively.
+;; There can be multiple strategies to prevent infinite expansion; we employ
+;; an easiest solution---we limit application of pass3 up to this value.
+(define-constant *max-pass3-repetition* 16)
+
 ;; Pass 3 entry point
 ;;  This pass may prune the subtree of iform because of constant
 ;; folding.  It may further allow pruning of other subtrees.  So, when
@@ -60,7 +67,8 @@
       (when show? (pass3-dump iform count))
       (let* ([label-dic (make-label-dic #f)]
              [iform. (pass3/rec (reset-lvars iform) label-dic)])
-        (if (label-dic-info label-dic)
+        (if (and (label-dic-info label-dic)
+                 (< count *max-pass3-repetition*))
           (loop iform. (+ count 1))
           iform.)))))
 

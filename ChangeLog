@@ -1,3 +1,8 @@
+2025-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-3.scm (pass3): Limit # of repetetion of pass3 applications
+	  to catch infinite recursion of inline expansion.
+
 2025-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c (Scm_AssertionError): Added C convenience API
