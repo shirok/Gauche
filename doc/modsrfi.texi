@@ -11382,7 +11382,7 @@ If it is a Right, its payload object(s) is/are applied to a procedure
 @var{mproc}, which must return an Either.  If @var{mproc2} @dots{} are
 given, the same operation is repeated on them.
 @c JP
-モナドの@var{bind}です。@var{either}はEithereでなければならず、
+モナドの@var{bind}です。@var{either}はEitherでなければならず、
 @var{mproc} @var{mproc2} @dots{}のそれぞれはEitherを返す手続きでなければなりません。
 
 @var{either}がLeftならそれがそのまま返されます。
