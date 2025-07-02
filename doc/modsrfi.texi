@@ -12079,20 +12079,28 @@ by a Right and returned.
 
 @node Maybe and Either syntactic utilities, Trivalent logic, Maybe and Either protocol converters, Maybe and Either optional container types
 @subsection Syntactic utilities
+@c NODE MaybeとEither - 構文ユーティリティ, 構文ユーティリティ
 
 @defmac maybe-if mtest then else
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 If the @var{mtest} expression yields a Just, evaluates @var{then}.
 If the @var{mtest} expression yeilds a Nothing, evaluates @var{else}.
 If the @var{mtest} expression doesn't produce a Maybe, an error
 is thrown.
+@c JP
+@var{mtest}を評価し、それがJustだった場合は@var{then}を、
+Nothingだった場合は@var{else}を評価します。
+@var{etest}がMaybeを生成しなかった場合はエラーが投げられます。
+@c COMMON
 @end defmac
 
 @defmac maybe-and maybe @dots{}
 @defmacx either-and either @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Evaluates @var{maybe}/@var{either} from left to right, as far as
 each yields a Just/Right.  If every expression yields a Just/Right,
 the last one is returned.  If it encounters an expression that
@@ -12100,6 +12108,8 @@ yields a Nothing/Left, it stops evaluating the rest of expressions and
 returns the Nothing/Left.
 
 If expressions yield something other than Maybe/Either, an error is thrown.
+@c JP
+@c COMMON
 @end defmac
 
 @defmac maybe-or maybe @dots{}
