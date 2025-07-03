@@ -358,10 +358,15 @@
 (select-module gauche.internal)
 ;; Make the environment the closure closes into a list and return it.
 ;; Used from gauche.test.
-(define-cproc %closure-env->list (clo::<closure>)
-  (let* ([env::ScmEnvFrame* (SCM_CLOSURE_ENV clo)]
+(define-cproc %procedure-env->list (clo::<procedure>)
+  (let* ([env::ScmEnvFrame* NULL]
          [h SCM_NIL]
          [t SCM_NIL])
+    ;; Only <closure> or <method> can have closed env.  Other procedures just
+    ;; returns an empty list.
+    (cond
+     [(SCM_CLOSUREP clo) (set! env (SCM_CLOSURE_ENV clo))]
+     [(SCM_METHODP clo)  (set! env (SCM_METHOD_ENV clo))])
     (when (== env NULL)
       (return SCM_NIL))
     (dotimes [i (-> env size)]

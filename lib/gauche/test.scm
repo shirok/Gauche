@@ -374,7 +374,7 @@
                  (append-map closure-grefs
                              (cons closure
                                    (filter closure?
-                                           ((with-module gauche.internal %closure-env->list) closure))))))
+                                           ((with-module gauche.internal %procedure-env->list) closure))))))
      (toplevel-closures mod))
     ;; report discrepancies
     (unless (null? bad-autoload)

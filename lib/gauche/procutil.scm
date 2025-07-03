@@ -235,7 +235,7 @@
   (cond
    [(closure? proc) (print "CLOSURE " proc)
     (dump (closure-code proc))
-    (dolist [e ((with-module gauche.internal %closure-env->list) proc)]
+    (dolist [e ((with-module gauche.internal %procedure-env->list) proc)]
       (let1 e (if (promise? e)
                 (force e)
                 e)

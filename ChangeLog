@@ -1,3 +1,10 @@
+2025-07-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libproc.scm (%procedure-env->list): Changed from
+	  %closure-env->list for it now handles methods, too.
+	  It accepts any <procedure>, and returns () if the arg is
+	  neither <closure> nor <method>.
+
 2025-06-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-3.scm (pass3): Limit # of repetition of pass3 applications

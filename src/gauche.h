@@ -1366,6 +1366,7 @@ SCM_CLASS_DECL(Scm_MethodClass);
 #define SCM_METHOD(obj)            ((ScmMethod*)obj)
 #define SCM_METHOD_LOCKED(obj)     SCM_METHOD(obj)->common.locked
 #define SCM_METHOD_LEAF_P(obj)     SCM_METHOD(obj)->common.leaf
+#define SCM_METHOD_ENV(obj)        SCM_METHOD(obj)->env
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
