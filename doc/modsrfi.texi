@@ -12109,6 +12109,11 @@ returns the Nothing/Left.
 
 If expressions yield something other than Maybe/Either, an error is thrown.
 @c JP
+@var{maybe}/@var{either}を左から順に、結果がJust/Rightである限り評価してゆきます。
+全ての引数がJust/Rightに評価されたなら、最後の値が返されます。
+途中でNothing/Leftが得られた場合はそこで評価を打ち切り、そのNothing/Leftを返します。
+
+式がMaybe/Eitherを生成しなかった場合はエラーが投げられます。
 @c COMMON
 @end defmac
 
@@ -12116,20 +12121,33 @@ If expressions yield something other than Maybe/Either, an error is thrown.
 @defmacx either-or either @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Evaluates @var{maybe}/@var{either} from left to right, as far as
 each yields a Nothing/Left.   If it encounters an expression that
 yields a Just/Right, it stops evaluating the rest of expressions and
 returns it.
 
 If expressions yield something other than Maybe/Either, an error is thrown.
+@c JP
+@var{maybe}/@var{either}を左から順に、結果がNothing/Leftである限り評価してゆきます。
+全ての引数がNothing/Leftに評価されたなら、最後の値が返されます。
+途中でJust/Rightが得られた場合はそこで評価を打ち切り、そのJust/Rightを返します。
+
+式がMaybe/Eitherを生成しなかった場合はエラーが投げられます。
+@c COMMON
 @end defmac
 
 @defmac maybe-let* ( claw @dots{} ) body @dots{}
 @defmacx either-let* ( claw @dots{} ) body @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 This is a Maybe/Either version of @code{and-let*}.
+@c JP
+これは@code{and-let*}のMaybe/Eitherバージョンです。
+@c COMMON
 
+@c EN
 Each @var{claw} can be either one of the following forms:
 @table @code
 @item @var{identifier}
@@ -12153,17 +12171,51 @@ If it is a Just/Right, evaluation proceeds to the next claw.
 If it is a Nothing/Left, evaluation stops and the value is returned
 immediately.
 @end table
+@c JP
+各@var{claw}は次のいずれかの形式です。
+@table @code
+@item @var{identifier}
+@var{identifier}の値が取り出されます。
+それがMaybe/Eitherでなければエラーが投げられます。
+それがJust/Rightである場合は、次のclawに評価が進みます。
+Nothing/Leftだった場合は評価がそこで打ち切られ、その値が直ちに返されます。
+@item (@var{identifier} @var{expression})
+@var{expression}が評価されます。
+それがMaybe/Eitherでなければエラーが投げられます。
+それがJust/Rightである場合は、@var{identifier}がそのペイロードに束縛され、
+その束縛が見える環境で残りの@var{claw}と@var{body}が評価されます。
+Nothing/Leftだった場合は評価がそこで打ち切られ、その値が直ちに返されます。
+@var{expression}が生成するJust/Rightは、ペイロードとして値をひとつ持つ
+ものでなければなりません。そうでなければエラーが投げられます。
+@item ( @var{expression} )
+@var{expression}が評価されます。
+それがMaybe/Eitherでなければエラーが投げられます。
+それがJust/Rightである場合は、次のclawに評価が進みます。
+Nothing/Leftだった場合は評価がそこで打ち切られ、その値が直ちに返されます。
+@end table
+@c COMMON
 
+@c EN
 After all @var{claws} are processed and none yields a Nothing/Left,
-@var{body} @dots{} are evaluated.
+@var{body} @dots{} are evaluated, and the result of the last @var{body}
+becomes the result of the form.
+@c JP
+全ての@var{claw}が評価されいずれもNothing/Leftでなかった場合は、@var{body} @dots{}
+が評価され、最後の@var{body}の評価値がこのフォームの結果となります。
+@c COMMON
 @end defmac
 
 @defmac maybe-let*-values ( mv-claw @dots{} ) body @dots{}
 @defmacx either-let*-values ( mv-claw @dots{} ) body @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 Multi-value payload version of @code{maybe-let*}/@code{either-let*}.
+@c JP
+多値ペイロードを使える@code{maybe-let*}/@code{either-let*}です。
+@c COMMON
 
+@c EN
 Each @var{claw} can be either one of the following forms:
 @table @code
 @item @var{identifier}
@@ -12192,20 +12244,59 @@ If it is a Just/Right, evaluation proceeds to the next claw.
 If it is a Nothing/Left, evaluation stops and the value is returned
 immediately.
 @end table
+@c JP
+各@var{claw}は次のいずれかの形式です。
+@table @code
+@item @var{identifier}
+@var{identifier}の値が取り出されます。
+それがMaybe/Eitherでなければエラーが投げられます。
+それがJust/Rightである場合は、次のclawに評価が進みます。
+Nothing/Leftだった場合は評価がそこで打ち切られ、その値が直ちに返されます。
+@item (@var{formals} @var{expression})
+@var{formals}はlambdaの引数リストと同じ形式、すなわち、
+識別子の正式なリストかドットリストです。
 
+@var{expression}が評価されます。
+それがMaybe/Eitherでなければエラーが投げられます。
+それがJust/Rightである場合は、@var{formals}の各がそのペイロードに束縛され、
+その束縛が見える環境で残りの@var{claw}と@var{body}が評価されます。
+Nothing/Leftだった場合は評価がそこで打ち切られ、その値が直ちに返されます。
+Just/Rightのペイロードと@var{formals}がマッチしない場合はエラーが投げられます。
+@item ( @var{expression} )
+@var{expression}が評価されます。
+それがMaybe/Eitherでなければエラーが投げられます。
+それがJust/Rightである場合は、次のclawに評価が進みます。
+Nothing/Leftだった場合は評価がそこで打ち切られ、その値が直ちに返されます。
+@end table
+@c COMMON
+
+@c EN
 After all @var{claws} are processed and none yields a Nothing/Left,
-@var{body} @dots{} are evaluated.
+@var{body} @dots{} are evaluated, and the result of the last @var{body}
+becomes the result of the form.
+@c JP
+全ての@var{claw}が評価されいずれもNothing/Leftでなかった場合は、@var{body} @dots{}
+が評価され、最後の@var{body}の評価値がこのフォームの結果となります。
+@c COMMON
 @end defmac
 
 @defmac either-guard pred body @dots{}
 [SRFI-189]
 @c MOD srfi.189
+@c EN
 The @var{body} @dots{} is evaluated, and the value(s) it produces
 are wrapped in a Right and returned.  If an exception occurs in
 @var{body} @dots{}, the thrown condition is passed to a predicate @var{pred}.
 If the condition satisfies the predicate, it is wrapped in a Left
 and returned.  Otherwise, the condition is reraised with
 @code{raise-continuable.}
+@c JP
+@var{body} @dots{} が評価され、その結果がRightにラップされて返されます。
+もし@var{body} @dots{}の実行中にエラーが起きた場合、
+投げられたコンディションが@var{pred}に渡されます。@var{pred}が真の値を返した場合は
+それがLeftにラップされて返されます。@var{pred}が@code{#f}を返した場合は
+コンディションが@code{raise-continuable}で再び投げられます。
+@c COMMON
 @end defmac
 
 @node Trivalent logic,  , Maybe and Either syntactic utilities, Maybe and Either optional container types
