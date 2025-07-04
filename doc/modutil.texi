@@ -30629,6 +30629,7 @@ displayed only once, at the beginning.
 出力されます。
 @c COMMON
 
+@c EN
 This is handy when you display definition-list like document, e.g.
 command-line option description.
 @c JP
@@ -32764,19 +32765,19 @@ for @var{word} to have more segments than @var{pattern}.
 @c COMMON
 
 @example
-(segmented-match? "a-b-c" "alpha-bravo-charlie") @result{} #t
-(segmented-match? "a-b" "alpha-bravo-charlie") @result{} #t
-(segmented-match? "al-br-char" "alpha-bravo-charlie") @result{} #t
-(segmented-match? "a-b" "alpha-delta-charlie") @result{} #t
+(segmented-prefix? "a-b-c" "alpha-bravo-charlie") @result{} #t
+(segmented-prefix? "a-b" "alpha-bravo-charlie") @result{} #t
+(segmented-prefix? "al-br-char" "alpha-bravo-charlie") @result{} #t
+(segmented-prefix? "a-b" "alpha-delta-charlie") @result{} #f
 @end example
 @end defun
 
 @defun make-segmented-prefix-matcher pattern separator
 @c MOD text.segmented-match
 @c EN
-This is a subfunction of @code{segmented-match?}.
+This is a subfunction of @code{segmented-prefix?}.
 @c JP
-@code{segmented-match?}の下請け手続きです。
+@code{segmented-prefix?}の下請け手続きです。
 @c COMMON
 
 @c EN
