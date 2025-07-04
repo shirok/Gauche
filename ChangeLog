@@ -1,5 +1,7 @@
 2025-07-03  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/procutil.scm (disasm): Show lifted closures from
+	  method body as well (thye were missing previously).
 	* src/libproc.scm (%procedure-env->list): Changed from
 	  %closure-env->list for it now handles methods, too.
 	  It accepts any <procedure>, and returns () if the arg is

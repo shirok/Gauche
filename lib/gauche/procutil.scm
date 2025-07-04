@@ -221,7 +221,20 @@
 ;; I'm not sure whether this should be here or not, but for the time being...
 
 (define (disasm proc)
-  (define dump (with-module gauche.internal vm-dump-code))
+  (define dump-1 (with-module gauche.internal vm-dump-code))
+  (define (dump proc code)
+    (dump-1 code)
+    (dolist [e ((with-module gauche.internal %procedure-env->list) proc)]
+      (let1 e (if (promise? e)
+                (force e)
+                e)
+        (when (and (closure? e)
+                   ;; method definition encloses body closure binding in its
+                   ;; environment, so the following prevents the same
+                   ;; body is disassembled twice.
+                   (not (eq? (closure-code e) code)))
+          (print "LIFTED CLOSURE " e)
+          (dump-1 (closure-code e))))))
   (define (dump-case-lambda infos)
     (print "CASE-LAMBDA")
     (dolist [info infos]
@@ -230,28 +243,22 @@
                  (if optarg
                    (print ";;; numargs > " reqargs)
                    (print ";;; numargs = " reqargs))
-                 (dump (closure-code proc)))]
+                 (dump proc (closure-code proc)))]
              info)))
+  (define (dump-method proc)
+    (cond [(method-code proc) => (^c (dump proc c))]
+          [else (print "(defined in C)")]))
   (cond
    [(closure? proc) (print "CLOSURE " proc)
-    (dump (closure-code proc))
-    (dolist [e ((with-module gauche.internal %procedure-env->list) proc)]
-      (let1 e (if (promise? e)
-                (force e)
-                e)
-        (when (closure? e)
-          (print "LIFTED CLOSURE " e)
-          (dump (closure-code e)))))]
+    (dump proc (closure-code proc))]
    [(is-a? proc <method>)
     (print "METHOD " proc)
-    (cond [(method-code proc) => dump]
-          [else (print "(defined in C)")])]
+    (dump-method proc)]
    [(is-a? proc <generic>)
     (print "GENERIC FUNCTION " proc)
     (dolist [m (~ proc'methods)]
       (print ">> method " m)
-    (cond [(method-code m) => dump]
-          [else (print "(defined in C)")]))]
+      (dump-method m))]
    [(case-lambda-decompose proc) => dump-case-lambda]
    [else (print "Disassemble not applicable for " proc)])
   (values))
