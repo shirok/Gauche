@@ -219,6 +219,8 @@
 
 ;; disassembler ------------------------------------------------
 ;; I'm not sure whether this should be here or not, but for the time being...
+;; The main part of disassembler (vm-dump-code) is written in C, in order
+;; to ensure it works even when basic part of the system is broken.
 
 (define (disasm proc)
   (define dump-1 (with-module gauche.internal vm-dump-code))
@@ -269,18 +271,3 @@
 (define port-fold-right generator-fold-right)
 (define port-for-each generator-for-each)
 (define port-map generator-map)
-
-;; Experimental code
-
-;; 'Runs'
-;;   A 'run' of code is a sequence of instructions without making external
-;;   function calls. It can contain branches, so a run have a single
-;;   entry point and one or more exit points.  It can have loops in it.
-
-;; (define (code->runs code)
-;;   (assume-type code <compiled-code>)
-;;   (let loop ([insns (vm-code->list code)]
-;;              [runs '()])
-;;     (if (null? insns)
-;;       (reverse runs)
-;;       (let1 insn (car insns)
