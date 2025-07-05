@@ -1779,6 +1779,8 @@ srfi-259, srfi-259
 
 Tagged procedures with type safety
 Supported by the module @code{srfi.259}
+(@pxref{Tagged procedures with type safety}).
 
 型安全な手続きタグ
 @code{srfi.259}でサポートされます
+(@ref{型安全な手続きタグ}参照)。

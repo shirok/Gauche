@@ -110,6 +110,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Syntactic monads::            srfi.247
 * Property testing::            srfi.252
 * Uninterned symbols::          srfi.258
+* Tagged procedures with type safety::
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -18966,7 +18967,7 @@ any number of arguments and returns a value generated with
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Uninterned symbols,  , Property testing, Library modules - SRFIs
+@node Uninterned symbols, Tagged procedures with type safety, Property testing, Library modules - SRFIs
 @section @code{srfi.258} - Uninterned symbols
 @c NODE インターンされないシンボル, @code{srfi.258} - インターンされないシンボル
 
@@ -19054,6 +19055,66 @@ and string in @var{prefix}.
 (@xref{Symbols}参照)。
 @c COMMON
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Tagged procedures with type safety,  , Uninterned symbols, Library modules - SRFIs
+@section @code{srfi.259} - Tagged procedures with type safety
+@c NODE 型安全な手続きタグ, @code{srfi.259} - 型安全な手続きタグ
+
+@deftp {Module} srfi.259
+@mdindex srfi.259
+This is an extension of the concept of tagged procedures
+introduced by SRFI-229 (@pxref{Tagged procedures}).
+SRFI-229 allows to attach arbitrary object to a procedure.
+
+SRFI-229 opens possibilities to implement interesting features
+on top of a very simple primitive.  However, since the type and
+use of tag object is totally up to the user, it can be difficult
+to compose libraries that relies on procedure tags.  What if two
+libraries chose to use the same type of tags (e.g. symbols)?
+What if one library wants to add a tag to a procedure that is already
+tagged by another library?
+
+This SRFI addresses that issue.  It creates a unique kind of procedure
+tags that can only be attached and queried by the designated procedures,
+so it won't intefere with other libraries' use of tags.
+
+The reference implementation of this SRFI is implemented on top of
+SRFI-229, allowing users to peek under the hood if they use SRFI-229
+@code{procedure-tag}.  In Gauche, we implement this SRFI directly
+in the Gauche's native mechanism, so SRFI-259 procedure tags are orthogonal
+to SRFI-229 procedure tags.
+@end deftp
+
+@defmac define-procedure-tag tagger pred accessor
+[SRFI-259]
+@c MOD srfi.259
+Construct a unique procedure tag type, orthogonal to any other
+procedure tags.  Arguments @var{tagger}, @var{pred}, and @var{accessor}
+must be identifiers, and are bound to procedures to utilize the new
+procedure tag type.
+
+The identifier @var{tagger} is bound to a procedure that takes
+a value and a procedure, and returns a tagged procedure that works
+the same as the given procedure, associating the given value to the
+given procedure with this specific tag type.
+If the given procedure is already tagged by other tag types, the
+returned procedure has both tag types, keeping values of each type
+separately.
+
+The identifier @var{pred} is bound to a predicate, that returns
+@code{#t} if the argument is a procedure with this tag type, @code{#f}
+otherwise.
+
+The identifier @var{accessor} is bound to a procedure that takes
+a procedure with this tag type, and returns the associated value.
+It is an error to pass objects other than procedures with this tag type.
+
+A tag type created by this macro is conceptually anonymous,
+but for the debugging aid, Gauche uses @var{tagger} as a part of
+tag type name.
+@end defmac
+
 
 
 @c Local variables:
