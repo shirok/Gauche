@@ -2398,11 +2398,11 @@ and @var{num-outlets} should be a positive exact integer.  If omitted,
 @c COMMON
 
 @c EN
-If there are more than one outlets, data is duplicated; each consumer
+If there are more than one outlets, data stream is duplicated; each consumer
 reads the same data.  Buffers are attached to each outlet, so each
 consumer can read the outlet in its own pace.
 @c JP
-outletが複数ある場合、データは複製されます。つまり、それぞれの消費者は
+outletが複数ある場合、データストリームは複製されます。つまり、それぞれの消費者は
 同じデータを読み出します。それぞれのoutletが独立したバッファを持つので、
 各消費者はそれぞれのペースで読み出すことができます。
 @c COMMON
