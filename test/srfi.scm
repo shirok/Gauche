@@ -2414,6 +2414,19 @@
   (test-include-r7 "include/srfi-135-tests.scm"))
 
 ;;-----------------------------------------------------------------------
+;; Minimal unique types
+
+(test-section "SRFI-137")
+
+(define-module srfi-137-tests
+  (use gauche.test)
+  (use srfi.137)
+  (test-module 'srfi.137)
+  (use srfi.64)
+  (test-include-r7 "include/srfi-137-tests")
+  (run-tests))
+
+;;-----------------------------------------------------------------------
 ;; Syntax parameters
 
 (test-section "SRFI-139")

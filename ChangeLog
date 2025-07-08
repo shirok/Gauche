@@ -1,3 +1,7 @@
+2025-07-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/137.scm: Added SRFI-137.
+
 2025-07-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/procutil.scm (disasm): Show lifted closures from
