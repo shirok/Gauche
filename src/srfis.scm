@@ -1072,6 +1072,19 @@ textは単に「変更不可でインデクスされた文字列」にすぎま�
 文字列のインデクシングについては@ref{String indexing}を参照してください。
 APIは@ref{R7RS immutable texts}で説明しています。
 
+
+srfi-137, srfi-137
+()
+
+Minimal unique types
+Supported by the module @code{srfi.137}
+(@pxref{Minimal unique types}).
+
+最小限の一意の型
+モジュール@code{srfi.137}でサポートされます。
+@ref{Minimal unique types}参照。
+
+
 srfi-138
 ()
 

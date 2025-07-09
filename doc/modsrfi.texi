@@ -42,75 +42,76 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 @menu
 * Testing availability of SRFIs::
 * SRFIs that have become R7RS-large::
-* Homogeneous vectors::         srfi.4
+* Homogeneous vectors::            srfi.4
 * A compatible let form with signatures and rest arguments::  srfi.5
 * Feature-based program configuration language::  srfi.7
-* String library::              srfi.13
-* Time data types and procedures::  srfi.19
-* Sources of random bits::      srfi.27
-* Localization::                srfi.29
-* A program argument processor::  srfi.37
-* Eager comprehensions::        srfi.42
-* Vector library (Legacy)::     srfi.43
-* Requiring extensions::        srfi.55
-* Integers as bits::            srfi.60
-* A Scheme API for test suites::  srfi.64
-* Octet vectors::               srfi.66
-* Basic hash tables::           srfi.69
+* String library::                 srfi.13
+* Time data types and procedures:: srfi.19
+* Sources of random bits::         srfi.27
+* Localization::                   srfi.29
+* A program argument processor::   srfi.37
+* Eager comprehensions::           srfi.42
+* Vector library (Legacy)::        srfi.43
+* Requiring extensions::           srfi.55
+* Integers as bits::               srfi.60
+* A Scheme API for test suites::   srfi.64
+* Octet vectors::                  srfi.66
+* Basic hash tables::              srfi.69
 * Octet-addressed binary blocks::  srfi.74
-* Lightweight testing::         srfi.78
+* Lightweight testing::            srfi.78
 * Accessing environment variables::  srfi.98
 * Purely functional random-access pairs and lists::  srfi.101
-* Basic socket interface::      srfi.106
+* Basic socket interface::         srfi.106
 * Portable runtime environment inquiry::  srfi.112
-* Comparators::                 srfi.114
-* Simple adjustable-size strings::  srfi.118
-* Timer APIs::                  srfi.120
-* Titlecase procedures::        srfi.129
-* Cursor-based string library::  srfi.130
-* String library (reduced)::    srfi.152
-* First-class dynamic extents::  srfi.154
+* Comparators::                    srfi.114
+* Simple adjustable-size strings:: srfi.118
+* Timer APIs::                     srfi.120
+* Titlecase procedures::           srfi.129
+* Cursor-based string library::    srfi.130
+* Minimal unique types::           srfi.137
+* String library (reduced)::       srfi.152
+* First-class dynamic extents::    srfi.154
 * Homogeneous numeric vector libraries::  srfi.160
-* Comparator sublibrary::       srfi.162
-* POSIX API::                   srfi.170
-* Two safer subsets of R7RS::   srfi.172
-* Hooks (srfi)::                srfi.173
-* POSIX timespecs::             srfi.174
-* ASCII character library::     srfi.175
-* Bitvector library::           srfi.178
-* JSON::                        srfi.180
-* Custom ports::                srfi.181
+* Comparator sublibrary::          srfi.162
+* POSIX API::                      srfi.170
+* Two safer subsets of R7RS::      srfi.172
+* Hooks (srfi)::                   srfi.173
+* POSIX timespecs::                srfi.174
+* ASCII character library::        srfi.175
+* Bitvector library::              srfi.178
+* JSON::                           srfi.180
+* Custom ports::                   srfi.181
 * Linear adjustable-length strings::  srfi.185
 * Maybe and Either optional container types::  srfi.189
-* Coroutine generators::        srfi.190
-* Port positioning::            srfi.192
-* Command line::                srfi.193
+* Coroutine generators::           srfi.190
+* Port positioning::               srfi.192
+* Command line::                   srfi.193
 * Random data generators (SRFI)::  srfi.194
-* Range objects::               srfi.196
-* Pipeline operators::          srfi.197
-* String-notated bytevectors::  srfi.207
-* Enums and enum sets::         srfi.209
+* Range objects::                  srfi.196
+* Pipeline operators::             srfi.197
+* String-notated bytevectors::     srfi.207
+* Enums and enum sets::            srfi.209
 * Procedures and syntax for multiple values::  srfi.210
-* Central log exchange::        srfi.215
-* SICP prerequisites::          srfi.216
-* Integer sets::                srfi.217
-* Define higher-order lambda::  srfi.219
+* Central log exchange::           srfi.215
+* SICP prerequisites::             srfi.216
+* Integer sets::                   srfi.217
+* Define higher-order lambda::     srfi.219
 * Generator/accumulator sub-library::  srfi.221
-* Compound objects::            srfi.222
-* Control features::            srfi.226
-* Optional arguments::          srfi.227
-* Composing comparators::       srfi.228
-* Tagged procedures::           srfi.229
-* Atomic operations::           srfi.230
-* Flexible curried procedures::  srfi.232
-* Topological sorting::         srfi.234
-* Combinators (SRFI)::          srfi.235
-* Codesets::                    srfi.238
-* Destructuring lists::         srfi.239
-* Syntactic monads::            srfi.247
-* Property testing::            srfi.252
-* Uninterned symbols::          srfi.258
-* Tagged procedures with type safety::
+* Compound objects::               srfi.222
+* Control features::               srfi.226
+* Optional arguments::             srfi.227
+* Composing comparators::          srfi.228
+* Tagged procedures::              srfi.229
+* Atomic operations::              srfi.230
+* Flexible curried procedures::    srfi.232
+* Topological sorting::            srfi.234
+* Combinators (SRFI)::             srfi.235
+* Codesets::                       srfi.238
+* Destructuring lists::            srfi.239
+* Syntactic monads::               srfi.247
+* Property testing::               srfi.252
+* Uninterned symbols::             srfi.258
+* Tagged procedures with type safety::  srfi.259
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -7461,7 +7462,7 @@ string-titlecase
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Cursor-based string library, String library (reduced), Titlecase procedures, Library modules - SRFIs
+@node Cursor-based string library, Minimal unique types, Titlecase procedures, Library modules - SRFIs
 @section @code{srfi.130} - Cursor-based string library
 @c NODE カーソルを使う文字列ライブラリ, @code{srfi.130} - カーソルを使う文字列ライブラリ
 
@@ -7719,9 +7720,59 @@ SRFI-13の@code{string-for-each-index}の文字列カーソル版です。
 @end example
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Minimal unique types, String library (reduced), Cursor-based string library, Library modules - SRFIs
+@section @code{srfi.137} - Minimal unique types
+@c NODE 最小限の一意の型, @code{srfi.137} - 最小限の一意の型
+
+@deftp {Module} srfi.137
+@mdindex srfi.137
+This SRFI provides a simple way to create disjoint types.
+It's so simple that it's easy to write a portable implementation.
+It can also be a basis of libraries that requires objects with their own
+distinct types.
+
+The system is minimal, both in a way that it can be implemented
+on the very basic features of Scheme, and in a way that it provides
+a single API.  If you're writing Gauche code, or even portable R7RS,
+you may choose fancier abstraction utilities such as Gauche classes
+or R7RS records.  This SRFI is useful for code that can only
+assume rudimental Scheme implementation, and this module comes handy
+when you want to run such code in Gauche.
+
+(In Gauche, this module is implemented on top of Gauche's object system.)
+@end deftp
+
+@defun make-type type-payload
+[SRFI-137]
+@c MOD srfi.137
+Returns 5 procedures.  They collectively define a conceptual unique type.
+
+@table @var
+@item (type-accessor)
+Returns @var{type-payload}.
+@item (constructor instance-payload)
+Returns a newly allocated instance of this type, holding @var{instance-payload}
+in it.  The returned object is of a type disjoint to any other existing types.
+@item (predicate obj)
+Returns @code{#t} if @var{obj} is an object created by @var{constructor}.
+@item (accessor instance)
+Returns @var{instance-payload} of @var{instance}.
+The argument must be an object created by @var{constructor}.
+@item (make-subtype type-payload)
+Returns 5 procedures, associated to a newly created type which is
+subtype of the originaltype.
+@end table
+
+In our implementation, @code{make-type} creates a fresh new class,
+and @var{constructor} creats an instance of the class.
+The SRFI does not provide the means to access the underlying class,
+but in Gauche you can use @code{class-of} on the instance to obtain it.
+(Of course, messing with the underlying class is inherently unportable.)
+@end defun
 
 @c ----------------------------------------------------------------------
-@node String library (reduced), First-class dynamic extents, Cursor-based string library, Library modules - SRFIs
+@node String library (reduced), First-class dynamic extents, Minimal unique types, Library modules - SRFIs
 @section @code{srfi.152} - String library (reduced)
 @c NODE 文字列ライブラリ(簡略版), @code{srfi.152} - 文字列ライブラリ(簡略版)
 
