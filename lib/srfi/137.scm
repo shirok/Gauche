@@ -39,22 +39,22 @@
 
 (define (%make-type type-payload super)
   (define name (string->symbol (format "[~,,,,30:a]" type-payload)))
-  (define type-slot (gensym #"type-~name"))
-  (define instance-slot (gensym #"instance-~name"))
   (define class
     (make <srfi-137-class-meta>
       :name name
       :supers (list super)
-      :slots `((,type-slot :init-value ,type-payload)
-               (,instance-slot))))
+      ;; Type payload can be retrieved by type-accessor without accessing
+      ;; class slot.  However, it may come handy for introspection.
+      :slots '((type-payload :init-value ,type-payload
+                             :allocation :each-subclass)
+               (instance-payload :init-keyword :instance-payload))))
   (define (type-accessor) type-payload)
   (define (constructor instance-payload)
-    (rlet1 instance (make class)
-      (set! (slot-ref instance instance-slot) instance-payload)))
+    (make class :instance-payload instance-payload))
   (define (predicate obj) (is-a? obj class))
   (define (accessor obj)
     (assume (is-a? obj class))
-    (slot-ref obj instance-slot))
+    (slot-ref obj 'instance-payload))
   (define (make-subtype type-payload)
     (%make-type type-payload class))
   (values type-accessor
