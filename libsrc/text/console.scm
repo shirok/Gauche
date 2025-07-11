@@ -41,7 +41,8 @@
   (export <vt100> <windows-console>
 
           call-with-console
-          putch putstr getch get-raw-chars chready? canonical-mode? beep
+          putch putstr putstr/link
+          getch get-raw-chars chready? canonical-mode? beep
           query-screen-size query-cursor-position move-cursor-to
           hide-cursor show-cursor cursor-down/scroll-up cursor-up/scroll-down
           reset-terminal clear-screen clear-to-eol clear-to-eos
@@ -65,10 +66,14 @@
 ;; See https://github.com/shirok/Gauche/issues/179 about 'screen'.
 (define-constant *vt100-compatible-terminals*
   #/^(vt10[02]|vt220|xterm.*|rxvt.*|screen.*|tmux.*|linux.*)$/)
+(define-constant *hyperlinkable-terminals*
+  #/^(xterm.*)$/)
 
 ;; Convenience API
 (define (vt100-compatible? term)
   (boolean (*vt100-compatible-terminals* term)))
+(define (hyperlink-capable? term)
+  (boolean (*hyperlinkable-terminals* term)))
 
 ;; Convenience API
 ;; Inspect the runtime environment and returns a console object with
@@ -78,18 +83,17 @@
 ;; We use some heuristics to recognize vt100 compatible terminals.
 (define (make-default-console :key (if-not-available :error))
   (define (e s) (and (eq? if-not-available :error) (error s)))
+  (define TERM (sys-getenv "TERM"))
   (cond [(not (memv if-not-available '(#f :error)))
          (error "if-not-available argument must be either #f or :error, \
                  but got:" if-not-available)]
         [(has-windows-console?) (make <windows-console>)]
-        [(and-let1 t (sys-getenv "TERM")
-           (vt100-compatible? t))
+        [(and TERM (vt100-compatible? TERM))
          (if (or (sys-isatty 0)
                  ((with-module gauche.internal %sys-mintty?) 0))
-           (make <vt100>)
+           (make <vt100> :hyperlink-capable (hyperlink-capable? TERM))
            (e "Stdin isn't a console"))]
-        [(sys-getenv "TERM")
-         => (^t (e #"Unsupported terminal type: ~t"))]
+        [TERM (e #"Unsupported terminal type: ~TERM")]
         [else
          (e "TERM isn't set and we don't know how to control the terminal.")]))
 
@@ -157,6 +161,7 @@
    (current-attrs :init-form (make <char-attrs>))
    (input-buffer :init-form (make-queue))
    (screen-size :init-value #f)   ; (width . height)
+   (hyperlink-capable :init-value #f :init-keyword :hyperlink-capable)
    ))
 
 (define-method call-with-console ((con <vt100>) proc :key (mode 'rare))
@@ -170,6 +175,13 @@
   (display c (~ con'oport)) (flush (~ con'oport)))
 (define-method putstr ((con <vt100>) s)
   (display s (~ con'oport)) (flush (~ con'oport)))
+(define-method putstr/link ((con <vt100>) s url)
+  (if (~ con'hyperlink-capable)
+    (format (~ con'oport) "\x1b;]8;;~a\x1b;\\~a\x1b;]8;;\x1b;\\"
+            url s)
+    (display s (~ con'oport)))
+  (flush (~ con'oport)))
+
 (define-method chready? ((con <vt100>))
   (or (not (queue-empty? (~ con'input-buffer)))
       (char-ready? (~ con'iport))))

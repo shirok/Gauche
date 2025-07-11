@@ -1,3 +1,8 @@
+2025-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/console.scm (putstr/link): Add capability to
+	  display hyperlinked text
+
 2025-07-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/137.scm: Added SRFI-137.

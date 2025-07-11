@@ -90,6 +90,9 @@
   (sys-write-console (get-ohandle) (string c)))
 (define-method putstr ((con <windows-console>) s)
   (sys-write-console (get-ohandle) s))
+(define-method putstr/link ((con <windows-console>) s url)
+  ;; for now, ignore url
+  (sys-write-console (get-ohandle) s))
 
 ;; some keyboard event constants
 (define-constant KEY_EVENT 1)
