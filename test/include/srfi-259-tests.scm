@@ -1,8 +1,11 @@
 (import (scheme base)
+        (scheme case-lambda)
         (srfi 64)
         (srfi 259))
 
 (test-begin "Tagged procedues with type safety")
+
+;; Trivial example from the SRFI
 
 (define-procedure-tag make-a-tagged a-tagged? a-tag)
 (define (greet whom) (list 'hello whom))
@@ -57,5 +60,79 @@
 (test-eqv (d-tagged? greet-d) #t)
 (test-eqv (c-tag greet-c) 'alpha)
 (test-eqv (d-tag greet-d) 'beta)
+
+;; YASOS implementation
+
+(define-procedure-tag make-object object? object-vtable)
+
+(define-syntax object
+  (syntax-rules ()
+    ((_ proc-expr ((operation . formals) body_0 body_1 ...) ...)
+     (letrec*
+         ((proc
+           (cond (proc-expr)
+                 (else (lambda ignored
+                         (error "object not callable" proc)))))
+          (obj
+           (make-object
+            (lambda (op)
+              (cond ((eqv? op operation)
+                     (lambda formals body_0 body_1 ...)) ...
+                    (else #f)))
+            proc)))
+       obj))))
+
+(define-syntax operation
+  (syntax-rules ()
+    ((_ default-expr ((operation . formals) body_0 body_1 ...) ...)
+     (letrec
+         ((default default-expr)
+          (op
+           (object
+            (case-lambda
+              (()
+               (if default
+                 (default)
+                 (error "operation not defined")))
+              ((obj . args)
+               (cond ((and (object? obj)
+                           ((object-vtable obj) op))
+                      => (lambda (method)
+                           (apply method obj args)))
+                     (default (apply default obj args))
+                     (else (error "operation not defined")))))
+            ((operation? self) #t)
+            ((operation . formals) body_0 body_1 ...) ...)))
+       op))))
+
+(define operation? (operation (lambda obj #f)))
+
+(define get-x (operation #f))
+(define get-y (operation #f))
+(define move! (operation #f))
+(define point? (operation (lambda _ #f)))
+
+(define (make-point x y)
+  (object (lambda () (cons x y))
+          ((point? self) #t)
+          ((get-x self) x)
+          ((get-y self) y)
+          ((move! self dx dy)
+           (set! x (+ x dx))
+           (set! y (+ y dy))
+           self)))
+
+(define point1 (make-point 0 0))
+(define point2 (make-point 1 2))
+
+(test-assert (object? point1) #t)
+(test-assert (point? point1) #t)
+(test-eqv (point? 'a) #f)
+
+(test-equal (point1) '(0 . 0))
+(test-equal (point2) (cons (get-x point2) (get-y point2)))
+
+(test-assert (point? (move! point2 0.5 -0.25)))
+(test-equal (point2) '(1.5 . 1.75))
 
 (test-end "Tagged procedues with type safety")
