@@ -60,7 +60,10 @@
    (multi-value :init-keyword :multi-value) ; can result multiple values
    (fold-lref :init-keyword :fold-lref)   ; if #t, allow LREFnm + INSN
                                           ; sequence to be combined into
-                                          ; LREF-INSN(n,m).  This
+                                          ; LREF-INSN(n,m).
+   (terminal :init-keyword :terminal)     ; if #t, the control unconditionally
+                                          ; transfers to elsewhere except
+                                          ; the next insn, e.g. JUMP
 
    (base-variant :init-form #f)           ; 'base' variant of this insn
    (push-variant :init-form #f)           ; 'push' variant of this insn

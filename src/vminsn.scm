@@ -83,6 +83,9 @@
 ;;;                         separately, we'll have LREF-SOMETHING(0,0) and
 ;;;                         LREF-SOMETHING(2,1), respectively.
 ;;;           :multi-value - Can result multiple values.
+;;;           :terminal   - the control unconditinoally transfers to
+;;;                         elsewhere except the next insn, after
+;;;                         executing this insn.
 
 ;;;==============================================================
 ;;; Common Cise macros
@@ -405,9 +408,9 @@
 (define-insn CONSTI-PUSH 1 none  (CONSTI PUSH))
 (define-insn CONSTN-PUSH 0 none  (CONSTN PUSH))
 (define-insn CONSTF-PUSH 0 none  (CONSTF PUSH))
-(define-insn CONST-RET   0 obj   (CONST RET))
-(define-insn CONSTF-RET  0 none  (CONSTF RET))
-(define-insn CONSTU-RET  0 none  (CONSTU RET))
+(define-insn CONST-RET   0 obj   (CONST RET)  #f :terminal)
+(define-insn CONSTF-RET  0 none  (CONSTF RET) #f :terminal)
+(define-insn CONSTU-RET  0 none  (CONSTU RET) #f :terminal)
 
 ;; push
 ;;  Push value of val0 to the stack top
@@ -452,7 +455,7 @@
     (label tail_apply_entry)
     ($define APPLY_CALL)
     ($include "./vmcall.c"))
-  :multi-value)
+  :multi-value :terminal)
 
 ;; TAIL-CALL(nargs)
 ;;  Call procedure in val0.  Same as CALL except this discards the
@@ -468,20 +471,21 @@
                                   (- (-> ct size) 1)))))
     (DISCARD-ENV)
     ($goto-insn CALL))
-  :multi-value)
+  :multi-value :terminal)
 
 ;; JUMP <addr>
 ;;  Jump to <addr>.
 ;;
 (define-insn JUMP      0 label #f
-  (begin (FETCH-LOCATION PC) CHECK-INTR NEXT))
+  (begin (FETCH-LOCATION PC) CHECK-INTR NEXT)
+  :terminal)
 
 ;; RET
 ;;  Pop the continuation stack.
 ;;
 (define-insn RET       0 none #f
   (begin (RETURN-OP) CHECK-INTR NEXT)
-  :multi-value)
+  :multi-value :terminal)
 
 ;; DEFINE(flag) <symbol>
 ;;  Defines global binding of SYMBOL in the current module.
@@ -576,7 +580,8 @@
     (local_env_shift vm (SCM_VM_INSN_ARG code))
     (FETCH-LOCATION PC)
     CHECK-INTR
-    NEXT))
+    NEXT)
+  :terminal)
 
 ;; LOCAL-ENV-CALL(depth)
 ;; LOCAL-ENV-TAIL-CALL(depth)
@@ -604,7 +609,7 @@
     CHECK-INTR
     (SCM_PROF_COUNT_CALL vm (SCM_OBJ (-> vm base)))
     NEXT)
-  :multi-value)
+  :multi-value :terminal)
 
 (define-insn LOCAL-ENV-TAIL-CALL 1 none #f
   (let* ([nargs::int (cast int (- SP ARGP))] [to::ScmObj*])
@@ -619,7 +624,7 @@
     (set! ARGP to)
     (set! SP (+ to nargs))
     ($goto-insn LOCAL-ENV-CALL))
-  :multi-value)
+  :multi-value :terminal)
 
 ;; BF <else-offset>          ; branch if VAL0 is false
 ;; BT <else-offset>          ; branch if VAL0 is true
@@ -681,13 +686,13 @@
 ;; RNEQ
 ;; RNEQV
 ;;   Conditional returns.
-(define-insn RF          0 none #f ($retc (SCM_CHECKED_FALSEP VAL0)))
-(define-insn RT          0 none #f ($retc (not (SCM_CHECKED_FALSEP VAL0))))
+(define-insn RF          0 none #f ($retc (SCM_CHECKED_FALSEP VAL0)) :terminal)
+(define-insn RT          0 none #f ($retc (not (SCM_CHECKED_FALSEP VAL0))) :terminal)
 (define-insn RNEQ        0 none #f ($w/argp v
-                                     ($retc* (not (SCM_EQ VAL0 v)))))
+                                     ($retc* (not (SCM_EQ VAL0 v)))) :terminal)
 (define-insn RNEQV       0 none #f ($w/argp v
-                                     ($retc* (not (Scm_EqvP VAL0 v)))))
-(define-insn RNNULL      0 none #f ($retc* (not (SCM_NULLP VAL0))))
+                                     ($retc* (not (Scm_EqvP VAL0 v)))) :terminal)
+(define-insn RNNULL      0 none #f ($retc* (not (SCM_NULLP VAL0))) :terminal)
 
 ;;
 ;; Common stuff for RECEIVE and TAIL-RECEIVE.
@@ -893,12 +898,12 @@
 ;;  very frequent operation, during instruction combining.
 
 (define-insn GREF-PUSH   0 obj   (GREF PUSH))
-(define-insn GREF-CALL   1 obj   (GREF CALL))
-(define-insn GREF-TAIL-CALL 1 obj (GREF TAIL-CALL))
+(define-insn GREF-CALL   1 obj   (GREF CALL) #f  :terminal)
+(define-insn GREF-TAIL-CALL 1 obj (GREF TAIL-CALL) #f :terminal)
 
 (define-insn PUSH-GREF   0 obj      (PUSH GREF))
-(define-insn PUSH-GREF-CALL 1 obj   (PUSH GREF CALL))
-(define-insn PUSH-GREF-TAIL-CALL 1 obj (PUSH GREF TAIL-CALL))
+(define-insn PUSH-GREF-CALL 1 obj   (PUSH GREF CALL) #f :terminal)
+(define-insn PUSH-GREF-TAIL-CALL 1 obj (PUSH GREF TAIL-CALL) #f :terminal)
 
 ;; PROMISE
 ;;  Delay syntax emits this instruction.  Wrap a procedure into a promise
@@ -925,7 +930,7 @@
         (break))
       (PUSH-ARG (aref (-> vm vals) i)))
     ($goto-insn TAIL-CALL))
-  :multi-value)
+  :multi-value :terminal)
 
 ;; Inlined operators
 ;;  They work the same as corresponding Scheme primitives, but they are
@@ -1083,7 +1088,7 @@
     (set! (* (post++ SP)) rest)
     (DISCARD-ENV)
     (goto tail_apply_entry))
-  :multi-value)
+  :multi-value :terminal)
 
 (define-insn IS-A        0 none #f      ; is-a?
   ($w/argp obj

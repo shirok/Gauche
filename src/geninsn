@@ -93,6 +93,7 @@
     (format #t "  :obsoleted ~s\n" (~ insn'obsoleted))
     (format #t "  :multi-value ~s\n" (~ insn'multi-value))
     (format #t "  :fold-lref ~s\n" (~ insn'fold-lref))
+    (format #t "  :terminal ~s\n" (~ insn'terminal))
     (format #t "  :combined '~s\n" (~ insn'combined))
     (format #t "  :body '~s)\n\n" (~ insn'body)))
   (make-directory* "../lib/gauche/vm")
@@ -343,7 +344,10 @@
   (define (generate-lrefx insn nparams operand comb seed)
     (fold (^[lrefx seed]
             `((define-insn ,(lref-replace insn lrefx) ,nparams ,operand
-                ,(lref-replace comb lrefx))
+                ,(lref-replace comb lrefx) #f
+                ;; Kludge
+                ,@(cond-list
+                   [(eq? (last comb) 'RET) :terminal]))
               ,@seed))
           seed .lrefx.))
   (fold (^[form seed]
@@ -384,7 +388,8 @@
          :body body
          :obsoleted (boolean (memq :obsoleted flags))
          :multi-value (boolean (memq :multi-value flags))
-         :fold-lref (boolean (memq :fold-lref flags))))]
+         :fold-lref (boolean (memq :fold-lref flags))
+         :terminal (boolean (memq :terminal flags))))]
     [else (errorf "unrecognized define-insn form: ~s" definsn)]))
 
 ;; opcmap :: ((NAME . CODE) ...)

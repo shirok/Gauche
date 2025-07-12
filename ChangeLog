@@ -1,3 +1,8 @@
+2025-07-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/insn-core.scm: Added :terminal attribute to insn-info,
+	  showing that the insn unconditionally transfer control.
+
 2025-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/console.scm (putstr/link): Add capability to
