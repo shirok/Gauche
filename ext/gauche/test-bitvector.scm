@@ -17,7 +17,7 @@
   (use srfi.78)
   (use srfi.178)
   (test-module 'srfi.178)
-  (test-include-r7 "../../test/include/srfi-178-tests"))
+  (test-include-r7 "../../tests/include/srfi-178-tests"))
 
 (test-section "extra procedures")
 
@@ -66,7 +66,7 @@
 
   (use srfi.64)
   (test-begin "srfi-298-tests") ; needed to set up test-runner
-  (include "../../test/include/srfi-209-tests")
+  (include "../../tests/include/srfi-209-tests")
   (test-end)
   )
 

@@ -11,6 +11,6 @@
   (test-module 'srfi.194.zipf-zri)
   (test-module 'srfi.194.sphere)
 
-  (test-include-r7 "../../test/include/srfi-194-test"))
+  (test-include-r7 "../../tests/include/srfi-194-test"))
 
 (test-end)

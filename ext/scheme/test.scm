@@ -200,7 +200,7 @@
 (use srfi.11)
 
 (chibi-test
- (include "../../test/include/vectors-test.scm"))
+ (include "../../tests/include/vectors-test.scm"))
 
 ;;;
 ;;; scheme.charset (SRFI-14)
@@ -588,7 +588,7 @@
          (test* #"~'expr (approx)" expected expr
                 (cut approx=? <> <> rel-tolerance 1e-15))])))
   (use scheme.base)
-  (include "../../test/include/srfi-144-tests.scm")
+  (include "../../tests/include/srfi-144-tests.scm")
   (with-module tests.scheme.flonum
     (run-flonum-tests))
   )

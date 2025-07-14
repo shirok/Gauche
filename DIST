@@ -140,7 +140,7 @@ do_self_host_test () {
      PATH=$XPATH make -s check && PATH=$XPATH make install || exit 1)
     mkdir -p $destdir/standalone
     (cd $destdir/standalone; \
-     PATH=$XPATH gosh $srcdir/test/standalone.scm || exit 1)
+     PATH=$XPATH gosh $srcdir/tests/standalone.scm || exit 1)
 }
 
 case $1 in

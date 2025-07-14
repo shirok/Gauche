@@ -994,7 +994,7 @@ fuga
               :imports '(text.tree)
               :bindings `(title "Test"
                                 body ,(html:p (html:a :href "foo" "bar") "baz")))
-             '("../test/data")))
+             '("../tests/data")))
 
 ;;-------------------------------------------------------------------
 (test-section "tree")

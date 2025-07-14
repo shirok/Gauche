@@ -3,8 +3,8 @@
 
 (test-start "text.gettext")
 
-(add-load-path "../../test")
-(define *test-locale-dirs* '("../../test/data/locale"))
+(add-load-path "../../tests")
+(define *test-locale-dirs* '("../../tests/data/locale"))
 
 ;; This hack is to avoid conversion errors due to supported encodings.
 ;; If you compile Gauche with utf8, most encodings should be OK.

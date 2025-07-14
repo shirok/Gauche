@@ -347,7 +347,7 @@
 (let ()
   ;; Each test data countains a list of (<count> <seq> <comment>)
   ;; where <seq> is <bool> (<code> <bool>)*
-  (include "../../test/include/unicode-test-data.scm")
+  (include "../../tests/include/unicode-test-data.scm")
   (define (data->codes seq) ; extract codes
     (remove boolean? seq))
   (define (data->clusters seq) ; group unbreakable codes

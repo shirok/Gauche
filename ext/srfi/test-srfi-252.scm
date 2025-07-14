@@ -13,7 +13,7 @@
   (use gauche.test)
   (use srfi.64)
   (use srfi.252)
-  (test-include-r7 "../../test/include/srfi-252-tests"
+  (test-include-r7 "../../tests/include/srfi-252-tests"
                    (exclude (property-test))))
 
 (test-end)

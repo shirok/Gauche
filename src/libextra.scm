@@ -67,7 +67,7 @@
 ;;   thread-terminate! first flags target VM with a termination request,
 ;;   but if thread doesn't terminate with it (either busy executing a subr
 ;;   or blocked), it sends a signal.
-;;   The test (test/thread-termination.scm) kicks busy loop in a thread,
+;;   The test (tests/thread-termination.scm) kicks busy loop in a thread,
 ;;   and call thread-terminate!.  If thread is really terminated,
 ;;   it stops incrementing busy-loop-counter.
 (inline-stub

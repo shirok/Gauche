@@ -1,6 +1,6 @@
 ;; Testing autoload subtleties part 2
-;; This is splitted from test/load.scm, since these tests here uses
-;; object system, so we want them to run after test/object.scm.
+;; This is splitted from tests/load.scm, since these tests here uses
+;; object system, so we want them to run after tests/object.scm.
 
 (use gauche.test)
 
@@ -135,10 +135,10 @@
          (cond-expand
           [gauche.os.windows
            (let1 gosh (or (sys-getenv "TESTGOSH") ".\\gosh")
-             (sys-system #"~gosh -ftest ..\\test\\relative-load-path > test.o"))]
+             (sys-system #"~gosh -ftest ..\\tests\\relative-load-path > test.o"))]
           [else
            (let1 gosh (or (sys-getenv "TESTGOSH") "./gosh")
-             (sys-system #"~gosh -ftest ../test/relative-load-path > test.o"))])
+             (sys-system #"~gosh -ftest ../tests/relative-load-path > test.o"))])
          (rlet1 r (with-input-from-file "test.o" read-line)
            (sys-unlink "test.o"))))
 

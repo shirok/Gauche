@@ -368,7 +368,7 @@ Content-Disposition: form-data; name=bbb
 
 ;; NB: this assumes the test is run either under src/ or test/
 (define (run-css-test)
-  (dolist [infile (glob "../test/data/css-*.css")]
+  (dolist [infile (glob "../tests/data/css-*.css")]
     (define sxcss
       (call-with-input-file (path-swap-extension infile "sxcss") read))
     (test* #"css parser ~infile"

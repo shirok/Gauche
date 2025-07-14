@@ -396,7 +396,7 @@ char_attr.c : unicode-data.scm gen-unicode.scm
 
 char-data : gen-unicode.scm
 	@if test "$(UNICODEDATA)" = ""; then echo "Set UNICODEDATA to the path to the UnicodeData directory."; exit 1; fi
-	$(BUILD_GOSH) $(srcdir)/gen-unicode.scm --import $(UNICODEDATA) unicode-data.scm $(top_srcdir)/test/include/unicode-test-data.scm
+	$(BUILD_GOSH) $(srcdir)/gen-unicode.scm --import $(UNICODEDATA) unicode-data.scm $(top_srcdir)/tests/include/unicode-test-data.scm
 
 char.$(OBJEXT) : char_attr.c
 
@@ -467,8 +467,8 @@ staticinit.c : all gen-staticinit.scm
 	$(STATIC_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir) $(GAUCHE_ABI_VERSION)
 
 # tests -----------------------------------------------
-TESTFILES  = `cat ../test/TESTS`
-TEST2FILES = `cat ../test/TESTS2`
+TESTFILES  = `cat ../tests/TESTS`
+TEST2FILES = `cat ../tests/TESTS2`
 
 TESTRECORD = "$(top_builddir)/test.record"
 
@@ -481,20 +481,20 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEX
 	@for testfile in $(TESTFILES); do \
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
-	  ./gosh -ftest -I$(top_srcdir)/test $(top_srcdir)/test/$$testfile >> test.log; \
+	  ./gosh -ftest -I$(top_srcdir)/tests $(top_srcdir)/tests/$$testfile >> test.log; \
 	done
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
-	 ./test-extra $(top_srcdir)/test/capi.scm >> test.log
+	 ./test-extra $(top_srcdir)/tests/capi.scm >> test.log
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
-	 ./test-extra $(top_srcdir)/test/thread-termination.scm >> test.log
+	 ./test-extra $(top_srcdir)/tests/thread-termination.scm >> test.log
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
-	 ./gosh -ftest -e "(define *case-fold* #f)" $(top_srcdir)/test/symcase.scm >> test.log
+	 ./gosh -ftest -e "(define *case-fold* #f)" $(top_srcdir)/tests/symcase.scm >> test.log
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
-	 ./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" $(top_srcdir)/test/symcase.scm >> test.log
+	 ./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" $(top_srcdir)/tests/symcase.scm >> test.log
 	@echo "See test.log for details."
 
 # tests run after ext/* tests
@@ -503,7 +503,7 @@ test2 : gosh$(EXEEXT)
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
 	  top_builddir=$(top_builddir) \
-	  ./gosh -ftest -I$(top_srcdir)/test $(top_srcdir)/test/$$testfile >> test.log; \
+	  ./gosh -ftest -I$(top_srcdir)/tests $(top_srcdir)/tests/$$testfile >> test.log; \
 	done
 
 # test-summary-check is called at the end of all tests and set up exit status.
@@ -521,10 +521,10 @@ test-arith.$(OBJEXT) : gauche/priv/arith.h
 
 install-check :
 	@echo "Install check :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::" >> test.log
-	@for f in `cat ../test/TESTS ../test/TESTS2`; do \
+	@for f in `cat ../tests/TESTS ../tests/TESTS2`; do \
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
-	  "${bindir}/gosh" ../test/$$f install-check >> test.log; \
+	  "${bindir}/gosh" ../tests/$$f install-check >> test.log; \
 	done
 
 # PushCC benchmark code.  Not build by default.

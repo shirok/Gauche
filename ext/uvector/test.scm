@@ -2951,6 +2951,6 @@
 (use srfi.207)
 (test-module 'srfi.207)
 
-(test-include-r7 "../../test/include/srfi-207-test.scm")
+(test-include-r7 "../../tests/include/srfi-207-test.scm")
 
 (test-end)

@@ -620,7 +620,7 @@
 
   (test-module 'srfi.181)
   (test-module 'srfi.192)
-  (test-include-r7 "../../test/include/srfi-181-192-tests.scm")
+  (test-include-r7 "../../tests/include/srfi-181-192-tests.scm")
   )
 
 ;; Auxiliary SRFI-181 tests

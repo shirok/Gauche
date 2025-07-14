@@ -378,8 +378,8 @@ Content-Length: 4349
 
 ;; NB: this assumes the test is run in-place
 (define (mime-message-tester num headers)
-  (let ((src #"../../test/data/rfc-mime-~|num|.txt")
-        (res (call-with-input-file #"../../test/data/rfc-mime-~|num|.res.txt"
+  (let ((src #"../../tests/data/rfc-mime-~|num|.txt")
+        (res (call-with-input-file #"../../tests/data/rfc-mime-~|num|.res.txt"
                read)))
     (call-with-input-file src
       (lambda (inp)
@@ -452,7 +452,7 @@ Content-Length: 4349
       [(ctype _ children ...)
        `(,(mime-parse-content-type ctype) '()
          (subparts ,@(map gen-parts children)))]))
-  (let1 src (call-with-input-file #"../../test/data/rfc-mime-~|num|.res.txt" read)
+  (let1 src (call-with-input-file #"../../tests/data/rfc-mime-~|num|.res.txt" read)
     (receive (composed boundary)
         (mime-compose-message-string (list (gen-parts src)))
       (test* #"mime-roundtrip (~num)"

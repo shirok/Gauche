@@ -46,5 +46,5 @@ for f in `(cd $top_srcdir; find lib \( -name '*.scm' -o -name '*.sld' -o -name '
     $LN_S $top_srcdir/$f $f
   fi
 done
-rm -rf test
-$LN_S $top_srcdir/test test
+rm -rf tests
+$LN_S $top_srcdir/tests tests

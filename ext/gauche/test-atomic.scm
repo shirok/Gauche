@@ -10,6 +10,6 @@
 
 (define-module srfi-230-tests
   (use gauche.test)
-  (test-include-r7 "../../test/include/srfi-230-tests"))
+  (test-include-r7 "../../tests/include/srfi-230-tests"))
 
 (test-end)

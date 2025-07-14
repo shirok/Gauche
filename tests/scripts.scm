@@ -738,12 +738,12 @@
 
 (define (do-precomp! files extra-options)
   (do-process! `("../../src/gosh" "-ftest"
-                 ,#"-I~|*top-srcdir*|/test/test-precomp"
+                 ,#"-I~|*top-srcdir*|/tests/test-precomp"
                  ,(build-path *top-srcdir* "lib/tools/precomp")
                  "--strip-prefix"
-                 ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
+                 ,(fix-path (build-path *top-srcdir* "tests/test-precomp"))
                  ,@extra-options
-                 ,@(map (^[file] (fix-path (build-path *top-srcdir* "test/test-precomp" file)))
+                 ,@(map (^[file] (fix-path (build-path *top-srcdir* "tests/test-precomp" file)))
                         files))
                :directory "test.o"))
 
@@ -964,7 +964,7 @@
          (dynload-and-eval
           "macros"
           (begin
-            (load (build-path *top-srcdir* "test" "test-precomp" "macros-user"))
+            (load (build-path *top-srcdir* "tests" "test-precomp" "macros-user"))
             `(("compiled macro (er)"
                ,(map er-aif-test '(apple banana dragonfruit)))
               ("compiled macro (id-macro)"
@@ -986,7 +986,7 @@
 (define (run-build-static opts args)
   (do-process `("../../src/gosh" "-ftest"
                 ,(build-path *top-srcdir* "lib/tools/build-standalone")
-                ,#"-I=~|*top-srcdir*|/test/test-static"
+                ,#"-I=~|*top-srcdir*|/tests/test-static"
                 ,#"--header-dir=~|*top-srcdir*|/src"
                 ,#"--header-dir=~|*top-builddir*|/src"
                 ,#"--header-dir=~|*top-srcdir*|/gc/include"
@@ -998,9 +998,9 @@
 (define (static-test-1)
   (test* "static link test" #t
          (run-build-static `("-o" "staticmain"
-                             "-I" ,(build-path *top-srcdir* "test/test-static"))
+                             "-I" ,(build-path *top-srcdir* "tests/test-static"))
                            `(,(fix-path (build-path *top-srcdir*
-                                                    "test/test-static/main.scm"))
+                                                    "tests/test-static/main.scm"))
                              "foo/bar.scm"
                              "foo/bar-impl.scm"
                              "foo/baz.scm")))
