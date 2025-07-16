@@ -4805,7 +4805,7 @@ Operations concerning
 associations of keys and values are done through dictionary generic
 functions (@pxref{Generic functions for dictionaries}).
 @c JP
-@code{<ordered-dictioary>}を継承し、ディクショナリプロトコルを実装しています。
+@code{<ordered-dictionary>}を継承し、ディクショナリプロトコルを実装しています。
 キーから値へのマッピングに関わる操作は、ディクショナリのジェネリック関数を
 使ってください(@ref{Generic functions for dictionaries}参照)。
 @c COMMON
