@@ -8159,11 +8159,19 @@ Returns the value of the last call of @var{proc}.
 @defun sparse-vector-for-each sv proc
 @defunx sparse-vector-map sv proc
 @c MOD data.sparse
+@c EN
 Calls @code{proc} with index and value, e.g. @code{(proc k value)},
 for each element of @var{sv}.
 
 The results of @var{proc} are discarded by @code{sparse-vector-for-each},
 and gathered to a list and returned by @code{sparse-vector-map}.
+@c JP
+@var{sv}の各要素について、@var{proc}をインデックスと値を引数にして
+@code{(proc k value)}のように呼び出します。
+
+@code{sparse-vector-for-each}では@var{proc}の結果は捨てられ、
+@code{sparse-vector-map}では結果がリストに集められて返されます。
+@c COMMON
 @end defun
 
 @defun sparse-vector-keys sv
