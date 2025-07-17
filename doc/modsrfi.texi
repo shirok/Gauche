@@ -19114,37 +19114,73 @@ and string in @var{prefix}.
 
 @deftp {Module} srfi.259
 @mdindex srfi.259
-This is an extension of the concept of tagged procedures
+@c EN
+This SRFI is an extension of the concept of tagged procedures
 introduced by SRFI-229 (@pxref{Tagged procedures}).
-SRFI-229 allows to attach arbitrary object to a procedure.
+@c JP
+このSRFIは、SRFI-229 (@ref{Tagged procedures}参照)で導入された
+タグ付き手続きの概念を拡張するものです。
+@c COMMON
 
-SRFI-229 opens possibilities to implement interesting features
+@c EN
+SRFI-229 allows to attach arbitrary object to a procedure.
+It opened possibilities to implement interesting features
 on top of a very simple primitive.  However, since the type and
 use of tag object is totally up to the user, it can be difficult
 to compose libraries that relies on procedure tags.  What if two
 libraries chose to use the same type of tags (e.g. symbols)?
 What if one library wants to add a tag to a procedure that is already
 tagged by another library?
+@c JP
+SRFI-229では手続きに任意のオブジェクトをタグとして付加することができました。
+それは非常に単純なメカニズムの上に興味深い機能を実装する可能性を開きましたが、
+タグオブジェクトの型や使い方は完全にユーザ任せのため、
+手続きタグを違う形で活用しているライブラリ同士の組み合わせが
+困難になる場合があります。
+例えば、別々のライブラリがともに同じ型(例:シンボル)をタグとして使っていたら?
+あるいは、既に他のライブラリがタグ付けしている手続きにさらにタグをつけたかったら?
+@c COMMON
 
+@c EN
 This SRFI addresses that issue.  It creates a unique kind of procedure
 tags that can only be attached and queried by the designated procedures,
 so it won't intefere with other libraries' use of tags.
+@c JP
+このSRFIはその問題を解決するものです。
+特定の手続きからだけ、タグ付けし、検査し、アクセスできるようにするユニークな
+手続きタグ型を導入できるようにします。
+異なる型の手続きタグ同士は干渉しません。
+@c COMMON
 
+@c EN
 The reference implementation of this SRFI is implemented on top of
 SRFI-229, allowing users to peek under the hood if they use SRFI-229
 @code{procedure-tag}.  In Gauche, we implement this SRFI directly
 in the Gauche's native mechanism, so SRFI-259 procedure tags are orthogonal
 to SRFI-229 procedure tags.
+@c JP
+このSRFIの参照実装はSRFI-229の手続きタグの上に作られていたので、
+ユーザがSRFI-229の@code{procedure-tag}を使って中身を覗くことができました。
+Gaucheの実装では、このSRFIをGaucheのネイティブな機構の上に直接実装していて、
+SRFI-229の手続きタグとは直交するものになっています。
+@c COMMON
 @end deftp
 
 @defmac define-procedure-tag tagger pred accessor
 [SRFI-259]
 @c MOD srfi.259
+@c EN
 Construct a unique procedure tag type, orthogonal to any other
 procedure tags.  Arguments @var{tagger}, @var{pred}, and @var{accessor}
 must be identifiers, and are bound to procedures to utilize the new
 procedure tag type.
+@c JP
+他の手続きタグ型と直交する、一意の手続きタグ型を作ります。
+引数@var{tagger}、@var{pred}、@var{accessor}はそれぞれ識別子で、
+新たな手続き型タグを使うための次のような手続きに束縛されます。
+@c COMMON
 
+@c EN
 The identifier @var{tagger} is bound to a procedure that takes
 a value and a procedure, and returns a tagged procedure that works
 the same as the given procedure, associating the given value to the
@@ -19152,18 +19188,40 @@ given procedure with this specific tag type.
 If the given procedure is already tagged by other tag types, the
 returned procedure has both tag types, keeping values of each type
 separately.
+@c JP
+@var{tagger}は値と手続きを取り、元の手続きと同様に動作し、
+かつ与えられた値をこの手続きタグ型の値として持つ手続きを返します。
+与えられた手続きが既に他の型の手続きタグでタグ付けされていた場合、
+返される手続きは両方の手続きタグを持ちます。
+@c COMMON
 
+@c EN
 The identifier @var{pred} is bound to a predicate, that returns
 @code{#t} if the argument is a procedure with this tag type, @code{#f}
 otherwise.
+@c JP
+@var{pred}は引数がこの手続きタグ型でタグづけされた手続きであれば@code{#t}を、
+そうでなければ@code{#f}を返す述語に束縛されます。
+@c COMMON
 
+@c EN
 The identifier @var{accessor} is bound to a procedure that takes
 a procedure with this tag type, and returns the associated value.
 It is an error to pass objects other than procedures with this tag type.
+@c JP
+@var{accessor}はこの手続きタグ型でタグづけされた手続きを取り、そのタグ型の
+値を返します。引数がこの手続きタグ型でタグづけされた手続きでない場合は
+エラーが投げられます。
+@c COMMON
 
+@c EN
 A tag type created by this macro is conceptually anonymous,
 but for the debugging aid, Gauche uses @var{tagger} as a part of
 tag type name.
+@c JP
+このマクロで作られる手続きタグ型は概念的には無名の型ですが、
+デバッグの助けのために、Gaucheは@var{tagger}を型名の一部に使います。
+@c COMMON
 @end defmac
 
 
