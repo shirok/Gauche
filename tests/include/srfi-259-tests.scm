@@ -107,16 +107,21 @@
 
 (define operation? (operation (lambda obj #f)))
 
+;;
+
 (define get-x (operation #f))
 (define get-y (operation #f))
 (define move! (operation #f))
 (define point? (operation (lambda _ #f)))
+(define triangle? (operation (lambda _ #f)))
+(define area (operation #f))
 
 (define (make-point x y)
-  (object (lambda () (cons x y))
+  (object (lambda () `(point (,x ,y)))
           ((point? self) #t)
           ((get-x self) x)
           ((get-y self) y)
+          ((area self) 0)
           ((move! self dx dy)
            (set! x (+ x dx))
            (set! y (+ y dy))
@@ -125,14 +130,42 @@
 (define point1 (make-point 0 0))
 (define point2 (make-point 1 2))
 
-(test-assert (object? point1) #t)
-(test-assert (point? point1) #t)
-(test-eqv (point? 'a) #f)
+(test-assert (object? point1))
+(test-assert (point? point1))
+(test-eqv #f (point? 'a))
 
-(test-equal (point1) '(0 . 0))
-(test-equal (point2) (cons (get-x point2) (get-y point2)))
+(test-equal '(point (0 0)) (point1))
+(test-equal `(point (,(get-x point2) ,(get-y point2))) (point2))
 
 (test-assert (point? (move! point2 0.5 -0.25)))
-(test-equal (point2) '(1.5 . 1.75))
+(test-equal '(point (1.5 1.75)) (point2))
+(test-equal 0 (area point1))
+
+(define (make-triangle p1 p2 p3)
+  (object (lambda () `(triangle (,(get-x p1) ,(get-y p1))
+                                (,(get-x p2) ,(get-y p2))
+                                (,(get-x p3) ,(get-y p3))))
+          ((triangle? self) #t)
+          ((area self)
+           (* 1/2 (abs (+ (* (get-x p1) (- (get-y p2) (get-y p3)))
+                          (* (get-x p2) (- (get-y p3) (get-y p1)))
+                          (* (get-x p3) (- (get-y p1) (get-y p2)))))))
+          ((move! self dx dy)
+           (move! p1 dx dy)
+           (move! p2 dx dy)
+           (move! p3 dx dy)
+           self)))
+
+(define point3 (make-point 2 0))
+(define point4 (make-point 2 2))
+(define tri (make-triangle point1 point3 point4))
+
+(test-assert (triangle? tri))
+(test-assert (not (point? tri)))
+(test-assert (not (triangle? point1)))
+(test-equal '(triangle (0 0) (2 0) (2 2)) (tri))
+(test-equal 2 (area tri))
+(move! tri -2 0)
+(test-equal '(triangle (-2 0) (0 0) (0 2)) (tri))
 
 (test-end "Tagged procedues with type safety")
