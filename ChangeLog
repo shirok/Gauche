@@ -1,3 +1,8 @@
+2025-07-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (check-arg): Fix bug that argument name
+	  isn't correctly passed to the error message.
+
 2025-07-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/insn-core.scm: Added :terminal attribute to insn-info,

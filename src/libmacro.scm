@@ -547,7 +547,7 @@
         (quasirename r
           `(let ((tmp ,arg))
              (unless (,test tmp)
-               (errorf "bad type of argument for ~s: ~s" 'arg tmp))))]
+               (errorf "bad type of argument for ~s: ~s" ',arg tmp))))]
        [_ (error "malformed check-arg:" f)]))))
 
 ;;; bind construct
