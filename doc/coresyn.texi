@@ -611,10 +611,6 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @end multitable
 
-@menu
-* Hash-bang token::
-@end menu
-
 @node Hash-bang token,  , Sharp syntax, Lexical structure
 @subsection Hash-bang token
 @c NODE Hash-bangトークン
