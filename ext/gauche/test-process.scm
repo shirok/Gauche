@@ -508,11 +508,19 @@
 (test* "call-with-output-process (redirect/error - handle)" (test-one-of 1 2)
        (let/cc k
          (call-with-output-process (cmd "cat" 'NoSuchFile)
-           port->string
+           (^o (display "foo" o))
            :error "test1.o"
            :on-abnormal-exit (lambda (p)
                                (k (sys-wait-exit-status
                                    (process-exit-status p)))))))
+
+;; Ensure Scheme error in the thunk is propagated
+;; https://github.com/shirok/Gauche/issues/1145
+(test* "call-with-output-process (thunk error)"
+       (test-error <error> #/oops/)
+       (call-with-output-process (cmd "cat" ">" "test2.o")
+         (^_ (error "oops"))
+         :on-abnormal-exit :error))
 
 (rmrf "test1.o" "test2.o")
 

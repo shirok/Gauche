@@ -639,27 +639,45 @@
 (define-syntax %with-handling-abnormal-exit
   (syntax-rules ()
     [(_ process closer on-abnormal-exit body ...)
-     (let ([p process]
-           [on-abnormal-exit on-abnormal-exit])
-       (guard (e [else
-                  (closer)
-                  (process-wait p)
-                  (case on-abnormal-exit
-                    [(:error) (%check-normal-exit p) (raise e)]
-                    [(:ignore) (raise e)]
-                    [(#f) #f]
-                    [else (unless (zero? (process-exit-status p))
-                            (on-abnormal-exit p))])])
-         (receive r (begin body ...)
-           (closer)
-           (process-wait p)
-           (case on-abnormal-exit
-             [(:error) (%check-normal-exit p) (apply values r)]
-             [(:ignore) (apply values r)]
-             [(#f) (and (zero? (process-exit-status p))
-                        (apply values r))]
-             [else (unless (zero? (process-exit-status p))
-                     (on-abnormal-exit p))]))))]))
+     (let/cc k
+       (let ([p process]
+             [on-abnormal-exit on-abnormal-exit]
+             [r #f])
+         ;; Make sure we cleanup the process when body rases an error.
+         ;; It is a bit complicated, for it can be one of two ways:
+         ;; Scheme-side error causes the process to die, or the process'
+         ;; exit causes Scheme error.
+         (guard (e [else
+                    (cond [(process-wait p #t)
+                           ;; process is dead, so we check abnormal exit
+                           (closer)
+                           (process-wait p)
+                           (case on-abnormal-exit
+                             [(:error) (%check-normal-exit p) (raise e)]
+                             [(:ignore) (raise e)]
+                             [(#f) (k #f)]
+                             [else (if (zero? (process-exit-status p))
+                                     (raise e)
+                                     (k (on-abnormal-exit p)))])]
+                          [else
+                           ;; Scheme-side issue.  We finish the process,
+                           ;; but don't blame the process's abnormal exit.
+                           (closer)
+                           (process-wait p)
+                           (raise e)])])
+           (set!-values r (begin body ...)))
+         ;; Normal cleanup
+         (closer)
+         (process-wait p)
+         (case on-abnormal-exit
+           [(:error) (%check-normal-exit p) (apply values r)]
+           [(:ignore) (apply values r)]
+           [(#f) (and (zero? (process-exit-status p))
+                      (apply values r))]
+           [else (if (zero? (process-exit-status p))
+                   (apply values r)
+                   (on-abnormal-exit p))])))]))
+
 
 (define (call-with-input-process command proc :key (input *nulldev*)
                                  ((:error err) #f) (host #f)
