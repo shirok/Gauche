@@ -240,4 +240,20 @@
     ;; parameter arg
     (thread                    SCM_SYM_THREAD)
     (shared                    SCM_SYM_SHARED)
+
+    ;; Numeric type symbol
+    (u8                        SCM_SYM_U8)
+    (s8                        SCM_SYM_S8)
+    (u16                       SCM_SYM_U16)
+    (s16                       SCM_SYM_S16)
+    (u32                       SCM_SYM_U32)
+    (s32                       SCM_SYM_S32)
+    (u64                       SCM_SYM_U64)
+    (s64                       SCM_SYM_S64)
+    (f16                       SCM_SYM_F16)
+    (f32                       SCM_SYM_F32)
+    (f64                       SCM_SYM_F64)
+    (c32                       SCM_SYM_C32)
+    (c64                       SCM_SYM_C64)
+    (c128                      SCM_SYM_C128)
     ))
