@@ -518,7 +518,7 @@
 ;; https://github.com/shirok/Gauche/issues/1145
 (test* "call-with-output-process (thunk error)"
        (test-error <error> #/oops/)
-       (call-with-output-process (cmd "cat" ">" "test2.o")
+       (call-with-output-process (cmd "cat")
          (^_ (error "oops"))
          :on-abnormal-exit :error))
 
