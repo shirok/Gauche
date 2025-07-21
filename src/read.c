@@ -51,6 +51,8 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_item(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
 static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
+static ScmObj read_array(ScmPort *port, int rank, ScmObj element_type,
+                         ScmReadContext *ctx);
 static ScmObj read_string(ScmPort *port, int incompletep, ScmReadContext *ctx);
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx);
 static ScmObj read_char(ScmPort *port, ScmReadContext *ctx);
@@ -531,6 +533,8 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case 'e':; case 'E':; case 'i':; case 'I':;
                 Scm_UngetcUnsafe(c1, port);
                 return read_number(port, c, 0, ctx); /* let StringToNumber handle radix prefix */
+            case 'a':
+                return read_array(port, -1, SCM_FALSE, ctx);
             case '!':
                 /* #! is either a script shebang or a reader directive */
                 return read_shebang(port, ctx);
@@ -1033,6 +1037,22 @@ static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     r = Scm_ListToVector(r, 0, -1);
     if (has_ref) ref_push(ctx, r, SCM_FALSE);
     return r;
+}
+
+static ScmObj read_array(ScmPort *port, int rank, ScmObj element_type,
+                         ScmReadContext *ctx)
+{
+    ScmLoadPacket lpak;
+    ScmObj modname_s = SCM_MAKE_STR("gauche/array");
+    ScmObj modname_y = SCM_INTERN("gauche.array");
+    Scm_Require(modname_s, SCM_LOAD_PROPAGATE_ERROR, &lpak);
+
+    ScmModule *mod = Scm_FindModule(SCM_SYMBOL(modname_y), 0);
+
+    static ScmObj read_array_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(read_array_proc, "%read-array-literal", mod);
+    return Scm_ApplyRec4(read_array_proc, SCM_OBJ(port), SCM_MAKE_INT(rank),
+                         element_type, SCM_OBJ(ctx));
 }
 
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)

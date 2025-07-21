@@ -212,6 +212,17 @@
     :backing-storage (%xvector-copy (backing-storage-of a))))
 
 ;;-------------------------------------------------------------
+;; Literal array reader
+;; This is not exported API, but called from read.c when it sees #a(...).
+;; The port
+
+(define (%read-array-literal port rank element-type ctx)
+  (let ((line (port-current-line port)))
+    (read port)                         ;skip contents
+    (error <read-error> :port port :line (port-current-line port)
+           "Array literal #a(...) is not yet supported")))
+
+;;-------------------------------------------------------------
 ;; Affine mapper
 ;;
 ;;  Given begin-vector Vb = #s32(b0 b1 ... bN)
