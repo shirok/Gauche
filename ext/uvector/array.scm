@@ -217,8 +217,68 @@
 ;; The port
 
 (define (%read-array-literal port rank element-type ctx)
-  (let ((line (port-current-line port)))
-    (read port)                         ;skip contents
+  (define line (port-current-line port))
+  (define chars '())                    ; for error message
+  (define (bad)
+    (error <read-error> :port port :line line
+           "Invalid array literal prefix: #~aa~a"
+           (if (< rank 0) "" rank)
+           (list->string (reverse chars))))
+  (define (read-dimensions r)
+    (case (peek-char port)
+      [(#\() (reverse r)]
+      [(#\@) (push! chars (read-char)) (read-start r)]
+      [(#\:) (push! chars (read-char)) (read-length 0 r)]
+      [else (bad)]))
+  (define (read-digits)
+    (let loop ((ch (peek-char port))
+               (ds '()))
+      (cond
+       [(#[0-9] ch)
+        (push! chars (read-char))
+        (loop (peek-char port) (cons ch ds))]
+       [(#[+-] ch)
+        (push! chars (read-char))
+        (if (null? ds)
+          (loop (peek-char port) (cons ch ds))
+          (bad))]
+       [else ($ string->number $ list->string $ reverse ds)])))
+  (define (read-start r)
+    (let* ([n (read-digits)]
+           [ch (peek-char port)])
+      (case ch
+        [(#\:) (push! chars (read-char)) (read-length n r)]
+        [(#\@) (push! chars (read-char)) (read-start `((,n #f) ,@r))]
+        [(#\() (reverse `((,n #f) ,@r))]
+        [else (bad)])))
+  (define (read-length start r)
+    (let* ([n (read-digits)]
+           [ch (peek-char port)])
+      (case ch
+        [(#\:) (push! chars (read-char)) (read-length 0 `((,start ,n) ,@r))]
+        [(#\@) (push! chars (read-char)) (read-start `((,start ,n) ,@r))]
+        [(#\() (reverse `((,start ,n) ,@r))]
+        [else (bad)])))
+  (define (shape-check suggested content) ;returns #f when bad shape
+    (let* ([start (if (pair? suggested) (car suggested) 0)]
+           [actual (length content)]
+           [len (or (and (pair? suggested) (cadr suggested)) actual)])
+      (and (= actual len) `(,start ,len))))
+  (define (shape-check-all dims contents)
+    (if (null? dims)
+      (if (pair? contents)
+        (shape-check-all '((0 #f)) contents)
+        '())
+      (and-let* ([sh (shape-check (car dims) contents)]
+                 [shs (fold (^[content shs]
+                              (shape-check-all shs content))
+                            (cdr dims) contents)])
+        (cons sh shs))))
+
+  (let* ([dims (read-dimensions '())]
+         [contents (read port)]
+         [shape (shape-check-all dims contents)])
+    (print shape)
     (error <read-error> :port port :line (port-current-line port)
            "Array literal #a(...) is not yet supported")))
 
