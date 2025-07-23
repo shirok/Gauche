@@ -220,10 +220,10 @@
   (define line (port-current-line port))
   (define chars '())                    ; for error message
   (define (bad)
-    (error <read-error> :port port :line line
-           "Invalid array literal prefix: #~aa~a"
-           (if (< rank 0) "" rank)
-           (list->string (reverse chars))))
+    (errorf <read-error> :port port :line line
+            "Invalid array literal prefix: #~aa~a"
+            (if (< rank 0) "" rank)
+            (list->string (reverse chars))))
   (define (read-dimensions r)
     (case (peek-char port)
       [(#\() (reverse r)]
@@ -271,16 +271,27 @@
         '())
       (and-let* ([sh (shape-check (car dims) contents)]
                  [shs (fold (^[content shs]
-                              (shape-check-all shs content))
+                              (and shs (shape-check-all shs content)))
                             (cdr dims) contents)])
         (cons sh shs))))
+  (define (flatten contents depth rest)
+    (if (< depth 0)
+      (cons contents rest)
+      (fold-right (cute flatten <> (- depth 1) <>) rest contents)))
 
   (let* ([dims (read-dimensions '())]
          [contents (read port)]
-         [shape (shape-check-all dims contents)])
-    (print shape)
-    (error <read-error> :port port :line (port-current-line port)
-           "Array literal #a(...) is not yet supported")))
+         [dim-list (shape-check-all dims contents)])
+    (unless dim-list
+      (errorf <read-error> :port port :lone line
+              "Array literal has inconsistent shape: #~aa~a~s"
+              (if (< rank 0) "" rank)
+              (list->string (reverse chars))
+              contents))
+    (list-fill-array!
+     (make-array-internal <array>
+                          (apply shape (flatten dim-list 1 '())))
+     (flatten contents (- (length dim-list) 1) '()))))
 
 ;;-------------------------------------------------------------
 ;; Affine mapper
