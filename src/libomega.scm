@@ -82,23 +82,22 @@
   (let* ([src (port-name (~ c'port))]
          [line (~ c'line)])
     (when (or src line)
-      (format port "    At ~s~@[:~d~]\n" (or src "(unknown source)") line))))
+      (format port "    At ~s~@[:~d~]\n" (or src "(unknown source)") line)))
+  (next-method))
 
 (define-method report-additional-condition ((c <unbound-variable-error>) port)
   ;; Show potentially missed modules to be imported.
-  ;; NB: This is inefficient, for export lists are built for all modules.
-  ;; It'd be better to have a predicate that directly queries if a binding
-  ;; is exported from a module.
   ;; NB: We may also search non-exported bindings, to detect a binding
   ;; that are missed in the export list.
   (let* ([name (~ c'identifier)]
-         [xs (filter (^m (memq name (module-exports m))) (all-modules))]
+         [xs (filter (cut module-exports? <> name) (all-modules))]
          [num-xs (length xs)])
     (unless (null? xs)
       (format port
               "    NOTE: `~s' is exported from the following module~p:\n"
               name num-xs)
-      (dolist [m xs] (format port "     - ~s\n" (module-name m))))))
+      (dolist [m xs] (format port "     - ~s\n" (module-name m)))))
+  (next-method))
 
 ;;;
 ;;; Comparator finish-up
