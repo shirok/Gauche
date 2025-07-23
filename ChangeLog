@@ -1,3 +1,8 @@
+2025-07-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libomega.scm (report-additional-condition): Report file/line
+	  of <read-error> condition.
+
 2025-07-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (check-arg): Fix bug that argument name

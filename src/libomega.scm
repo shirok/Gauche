@@ -78,6 +78,12 @@
 (define-method report-additional-condition ((c <include-condition-mixin>) port)
   (format port "    While including ~s\n" (~ c'includee)))
 
+(define-method report-additional-condition ((c <read-error>) port)
+  (let* ([src (port-name (~ c'port))]
+         [line (~ c'line)])
+    (when (or src line)
+      (format port "    At ~s~@[:~d~]\n" (or src "(unknown source)") line))))
+
 (define-method report-additional-condition ((c <unbound-variable-error>) port)
   ;; Show potentially missed modules to be imported.
   ;; NB: This is inefficient, for export lists are built for all modules.
