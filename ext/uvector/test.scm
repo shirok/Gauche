@@ -1752,6 +1752,19 @@
             (array (shape 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8) *)
             #t))
 
+(test-section "array literals")
+
+(let ()
+  (define (t input expect)
+    (test* input expect (read-from-string input)))
+
+  (t "#a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
+  (t "#2a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
+  (t "#a:2:3((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
+  (t "#a@1:2@-1((1 2 3) (4 5 6))" (array (shape 1 3 -1 2) 1 2 3 4 5 6))
+  )
+
+
 (test-section "array-rank")
 (test* "array-rank (shape)" 2
        (array-rank (shape)))

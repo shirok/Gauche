@@ -259,21 +259,25 @@
         [(#\@) (push! chars (read-char)) (read-start `((,start ,n) ,@r))]
         [(#\() (reverse `((,start ,n) ,@r))]
         [else (bad)])))
-  (define (shape-check suggested content) ;returns #f when bad shape
+  (define (dim-check suggested content) ;returns #f when bad shape
     (let* ([start (if (pair? suggested) (car suggested) 0)]
            [actual (length content)]
            [len (or (and (pair? suggested) (cadr suggested)) actual)])
       (and (= actual len) `(,start ,len))))
-  (define (shape-check-all dims contents)
+  (define (dim-check-all dims contents)
     (if (null? dims)
       (if (pair? contents)
-        (shape-check-all '((0 #f)) contents)
+        (dim-check-all '((0 #f)) contents)
         '())
-      (and-let* ([sh (shape-check (car dims) contents)]
+      (and-let* ([sh (dim-check (car dims) contents)]
                  [shs (fold (^[content shs]
-                              (and shs (shape-check-all shs content)))
+                              (and shs (dim-check-all shs content)))
                             (cdr dims) contents)])
         (cons sh shs))))
+  (define (dim->shape dim-list)
+    ;; ((start len) (start2 len2) ...)
+    ;;   => (start end start2 end2 ...)
+    (apply shape (append-map (^p `(,(car p) ,(+ (car p) (cadr p)))) dim-list)))
   (define (flatten contents depth rest)
     (if (< depth 0)
       (cons contents rest)
@@ -281,7 +285,7 @@
 
   (let* ([dims (read-dimensions '())]
          [contents (read port)]
-         [dim-list (shape-check-all dims contents)])
+         [dim-list (dim-check-all dims contents)])
     (unless dim-list
       (errorf <read-error> :port port :line line
               "Array literal has inconsistent shape: #~aa~a~s"
@@ -293,8 +297,7 @@
               "Array literal has inconsistent rank: #~aa~a~s"
               rank (list->string (reverse chars)) contents))
     (list-fill-array!
-     (make-array-internal <array>
-                          (apply shape (flatten dim-list 1 '())))
+     (make-array-internal <array> (dim->shape dim-list))
      (flatten contents (- (length dim-list) 1) '()))))
 
 ;;-------------------------------------------------------------
