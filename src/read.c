@@ -631,7 +631,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             }
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
-                /* #N#, #N= or #Nr form */
+                /* #N#, #N=, #Nr, or #Na form */
                 return read_num_prefixed(port, c1, ctx);
             case '*': {
                 reject_in_r7(port, ctx, "#*");
@@ -1638,6 +1638,12 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
             }
             return read_number(port, ch, prefix, ctx);
         }
+    case 'a': case 'A':
+        /* #digitA - array */
+        if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
+            Scm_ReadError(port, "Array literal isn't allowed in strict R7RS mode.");
+        }
+        return read_array(port, prefix, SCM_FALSE, ctx);
     default:
         Scm_ReadError(port, "invalid numeric prefix (#, =, r or R is expected) : #%d%A", prefix, SCM_MAKE_CHAR(ch2));
         return SCM_UNDEFINED;
