@@ -272,7 +272,7 @@
       (and (= actual len) `(,start ,len))))
   (define (dim-check-all dims contents)
     (if (null? dims)
-      (if (pair? contents)
+      (if (list? contents)
         (dim-check-all '((0 #f)) contents)
         '())
       (and-let* ([sh (dim-check (car dims) contents)]
@@ -300,7 +300,7 @@
               contents))
     (when (and (>= rank 0) (not (= rank (length dim-list))))
       (errorf <read-error> :port port :line line
-              "Array literal has inconsistent rank: #~a~aa~a~s"
+              "Array literal has inconsistent rank: #~a~a~a~s"
               rank type-tag (list->string (reverse chars)) contents))
     (list-fill-array!
      (make-array-internal <array> (dim->shape dim-list))

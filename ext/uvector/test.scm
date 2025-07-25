@@ -1758,10 +1758,21 @@
   (define (t input expect)
     (test* input expect (read-from-string input)))
 
+  (t "#a(1 2 3 4 5 6)" (array (shape 0 6) 1 2 3 4 5 6))
+
   (t "#a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
   (t "#2a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
   (t "#a:2:3((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
   (t "#a@1:2@-1((1 2 3) (4 5 6))" (array (shape 1 3 -1 2) 1 2 3 4 5 6))
+
+  ;; Some boundary case
+  ;; Emptylist in the content introduces ambiguousity to the shape,
+  ;; since () is "zero element of _anything_", where anything can
+  ;; take arbitrary shape.
+  (t "#a()" (array (shape 0 0)))
+  (t "#a(())" (array (shape 0 1 0 0)))
+  (t "#a(() ())" (array (shape 0 2 0 0)))
+  (t "#a((()))" (array (shape 0 1 0 1 0 0)))
   )
 
 
