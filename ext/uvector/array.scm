@@ -270,16 +270,19 @@
            [actual (length content)]
            [len (or (and (pair? suggested) (cadr suggested)) actual)])
       (and (= actual len) `(,start ,len))))
-  (define (dim-check-all dims contents)
-    (if (null? dims)
-      (if (list? contents)
-        (dim-check-all '((0 #f)) contents)
-        '())
-      (and-let* ([sh (dim-check (car dims) contents)]
-                 [shs (fold (^[content shs]
-                              (and shs (dim-check-all shs content)))
-                            (cdr dims) contents)])
-        (cons sh shs))))
+  (define (dim-check-all dims depth contents) ;returns #f when bad shape
+    (cond [(= depth rank) '()]
+          [(null? dims)
+           (if (list? contents)
+             (dim-check-all '((0 #f)) depth contents) ;retry with default dims
+             '())]
+          [else
+           (and-let* ([sh (dim-check (car dims) contents)]
+                      [shs (fold (^[content shs]
+                                   (and shs
+                                        (dim-check-all shs (+ depth 1) content)))
+                                 (cdr dims) contents)])
+             (cons sh shs))]))
   (define (dim->shape dim-list)
     ;; ((start len) (start2 len2) ...)
     ;;   => (start end start2 end2 ...)
@@ -300,8 +303,12 @@
     (errorf <read-error> :port port :line line
             "Array literal's rank and dimensions don't match:#~a~a~a~s"
             rank type-tag (list->string (reverse chars)) contents))
+  (when (and (< rank 0)
+             (not (null? given-dims)))
+    ;; If rank isn't given but dimensions are, set the rank.
+    (set! rank (length given-dims)))
 
-  (let ([dim-list (dim-check-all given-dims contents)])
+  (let ([dim-list (dim-check-all given-dims 0 contents)])
     (unless dim-list
       ;; Given dimensions and the contents doesn't match.
       (errorf <read-error> :port port :line line

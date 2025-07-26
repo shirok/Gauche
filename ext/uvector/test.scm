@@ -1763,7 +1763,14 @@
   (t "#a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
   (t "#2a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
   (t "#a:2:3((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
+  (t "#a:2((1 2 3) (4 5 6))" (array (shape 0 2) '(1 2 3) '(4 5 6)))
   (t "#a@1:2@-1((1 2 3) (4 5 6))" (array (shape 1 3 -1 2) 1 2 3 4 5 6))
+
+  ;; Explicit rank
+  (t "#1a(1 2 3 4 5 6)" (array (shape 0 6) 1 2 3 4 5 6))
+  (t "#1a((1 2) 3 (4 5 6))" (array (shape 0 3) '(1 2) 3 '(4 5 6)))
+  (t "#2a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
+  (t "#2a((1 (2) 3) (4 (5) 6))" (array (shape 0 2 0 3) 1 '(2) 3 4 '(5) 6))
 
   ;; Some boundary case
   ;; Emptylist in the content introduces ambiguousity to the shape,
@@ -1773,6 +1780,14 @@
   (t "#a(())" (array (shape 0 1 0 0)))
   (t "#a(() ())" (array (shape 0 2 0 0)))
   (t "#a((()))" (array (shape 0 1 0 1 0 0)))
+
+  ;; Error cases
+  (t "#a((1 2 3) (4 5))" (test-error <read-error> #/inconsistent shape/))
+  (t "#3a((1 2 3) (4 5 6))" (test-error <read-error> #/inconsistent shape/))
+  (t "#a:2(1 2 3)" (test-error <read-error> #/inconsistent shape/))
+  (t "#a:2:2((1 2) (3))" (test-error <read-error> #/inconsistent shape/))
+  (t "#1a:2:2(1 2 3 4)" (test-error <read-error> #/rank and dimensions don't match/))
+  (t "#3a:2:2(1 2 3 4)" (test-error <read-error> #/rank and dimensions don't match/))
   )
 
 
