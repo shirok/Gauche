@@ -289,19 +289,35 @@
       (cons contents rest)
       (fold-right (cute flatten <> (- depth 1) <>) rest contents)))
 
-  (let* ([dims (read-dimensions '())]
-         [contents (read port)]
-         [dim-list (dim-check-all dims contents)])
+  ;; Start parsing
+  (define given-dims (read-dimensions '()))
+  (define contents (read port))
+
+  ;; If both dimensions and rank are given, they must match.
+  (when (and (>= rank 0)
+             (not (null? given-dims))
+             (not (= rank (length given-dims))))
+    (errorf <read-error> :port port :line line
+            "Array literal's rank and dimensions don't match:#~a~a~a~s"
+            rank type-tag (list->string (reverse chars)) contents))
+
+  (let ([dim-list (dim-check-all given-dims contents)])
     (unless dim-list
+      ;; Given dimensions and the contents doesn't match.
       (errorf <read-error> :port port :line line
               "Array literal has inconsistent shape: #~a~a~a~s"
               (if (< rank 0) "" rank) type-tag
               (list->string (reverse chars))
               contents))
-    (when (and (>= rank 0) (not (= rank (length dim-list))))
+    (when (and (>= rank 0)
+               (< (length dim-list) rank))
+      ;; Deduced dimensions doesn't match the given rank.
       (errorf <read-error> :port port :line line
-              "Array literal has inconsistent rank: #~a~a~a~s"
-              rank type-tag (list->string (reverse chars)) contents))
+              "Array literal has inconsistent shape: #~a~a~a~s"
+              (if (< rank 0) "" rank) type-tag
+              (list->string (reverse chars))
+              contents))
+
     (list-fill-array!
      (make-array-internal <array> (dim->shape dim-list))
      (flatten contents (- (length dim-list) 1) '()))))
