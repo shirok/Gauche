@@ -220,16 +220,18 @@
   (define line (port-current-line port))
   (define chars '())                     ; for error message
   (define type-tag (or element-type 'a)) ; a/u8/s8/.../f32/f64/...
+  (define (err msg content)
+    (errorf <read-error> :port port :line line
+            (string-append msg ": #~a~a~a~@[~s~]")
+            (if (< rank 0) "" rank) type-tag
+            (list->string (reverse chars)) content))
   (define (bad-prefix)
     ;; We read up to the delimiter so that the subsequent read won't be
     ;; tripped.
     (let loop ((ch (peek-char)))
       (unless (or (eof-object? ch) (#[\s\(\[\{#\"'`,] ch))
         (push! chars (read-char)) (loop (peek-char))))
-    (errorf <read-error> :port port :line line
-            "Invalid array literal prefix: #~a~a~a"
-            (if (< rank 0) "" rank) type-tag
-            (list->string (reverse chars))))
+    (err "Invalid array literal prefix" #f))
   (define (read-dimensions r)
     (case (peek-char port)
       [(#\() (reverse r)]
@@ -248,7 +250,10 @@
         (if (null? ds)
           (loop (peek-char port) (cons ch ds))
           (bad-prefix))]
-       [else ($ string->number $ list->string $ reverse ds)])))
+       [else
+        (if (null? ds)
+          (bad-prefix)
+          ($ string->number $ list->string $ reverse ds))])))
   (define (read-start r)
     (let* ([n (read-digits)]
            [ch (peek-char port)])
@@ -300,9 +305,7 @@
   (when (and (>= rank 0)
              (not (null? given-dims))
              (not (= rank (length given-dims))))
-    (errorf <read-error> :port port :line line
-            "Array literal's rank and dimensions don't match:#~a~a~a~s"
-            rank type-tag (list->string (reverse chars)) contents))
+    (err "Array literal's rank and dimensions don't match" contents))
   (when (and (< rank 0)
              (not (null? given-dims)))
     ;; If rank isn't given but dimensions are, set the rank.
@@ -311,19 +314,11 @@
   (let ([dim-list (dim-check-all given-dims 0 contents)])
     (unless dim-list
       ;; Given dimensions and the contents doesn't match.
-      (errorf <read-error> :port port :line line
-              "Array literal has inconsistent shape: #~a~a~a~s"
-              (if (< rank 0) "" rank) type-tag
-              (list->string (reverse chars))
-              contents))
+      (err "Array literal has inconsistent shape" contents))
     (when (and (>= rank 0)
                (< (length dim-list) rank))
       ;; Deduced dimensions doesn't match the given rank.
-      (errorf <read-error> :port port :line line
-              "Array literal has inconsistent shape: #~a~a~a~s"
-              (if (< rank 0) "" rank) type-tag
-              (list->string (reverse chars))
-              contents))
+      (err "Array literal has inconsistent rank" contents))
 
     (list-fill-array!
      (make-array-internal <array> (dim->shape dim-list))

@@ -1782,8 +1782,11 @@
   (t "#a((()))" (array (shape 0 1 0 1 0 0)))
 
   ;; Error cases
+  (t "#a33" (test-error <read-error> "Invalid array literal prefix: #a33"))
+  (t "#a::1()" (test-error <read-error> "Invalid array literal prefix: #a::1"))
+  (t "#a@:1()" (test-error <read-error> "Invalid array literal prefix: #a@:1"))
   (t "#a((1 2 3) (4 5))" (test-error <read-error> #/inconsistent shape/))
-  (t "#3a((1 2 3) (4 5 6))" (test-error <read-error> #/inconsistent shape/))
+  (t "#3a((1 2 3) (4 5 6))" (test-error <read-error> #/inconsistent rank/))
   (t "#a:2(1 2 3)" (test-error <read-error> #/inconsistent shape/))
   (t "#a:2:2((1 2) (3))" (test-error <read-error> #/inconsistent shape/))
   (t "#1a:2:2(1 2 3 4)" (test-error <read-error> #/rank and dimensions don't match/))
