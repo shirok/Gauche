@@ -213,13 +213,17 @@
 
 ;;-------------------------------------------------------------
 ;; Literal array reader
-;; This is not exported API, but called from read.c when it sees #a(...).
-;; The port
+;; This is not exported API, but called from read.c when it sees #a(...) etc.
+;; The reader has already read the optional RANK, then the subsequent character
+;; which must be in #[asu].  That character is passed as TYPE-CHAR.
 
-(define (%read-array-literal port rank element-type ctx)
+(define (%read-array-literal port rank type-char ctx)
   (define line (port-current-line port))
   (define chars '())                     ; for error message
-  (define type-tag (or element-type 'a)) ; a/u8/s8/.../f32/f64/...
+  (define type-tag
+    (case type-char
+      [(#\a #\A) 'a]
+      [else (error "Uniform numeric array literal isn't supported yet.")]))
   (define (err msg content)
     (errorf <read-error> :port port :line line
             (string-append msg ": #~a~a~a~@[~s~]")

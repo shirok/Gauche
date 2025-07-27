@@ -51,7 +51,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_item(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
 static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
-static ScmObj read_array(ScmPort *port, int rank, ScmObj element_type,
+static ScmObj read_array(ScmPort *port, int rank, ScmChar type_char,
                          ScmReadContext *ctx);
 static ScmObj read_string(ScmPort *port, int incompletep, ScmReadContext *ctx);
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx);
@@ -534,7 +534,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 Scm_UngetcUnsafe(c1, port);
                 return read_number(port, c, 0, ctx); /* let StringToNumber handle radix prefix */
             case 'a':
-                return read_array(port, -1, SCM_FALSE, ctx);
+                return read_array(port, -1, 'a', ctx);
             case '!':
                 /* #! is either a script shebang or a reader directive */
                 return read_shebang(port, ctx);
@@ -1039,7 +1039,7 @@ static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     return r;
 }
 
-static ScmObj read_array(ScmPort *port, int rank, ScmObj element_type,
+static ScmObj read_array(ScmPort *port, int rank, ScmChar type_char,
                          ScmReadContext *ctx)
 {
     ScmLoadPacket lpak;
@@ -1052,7 +1052,7 @@ static ScmObj read_array(ScmPort *port, int rank, ScmObj element_type,
     static ScmObj read_array_proc = SCM_UNDEFINED;
     SCM_BIND_PROC(read_array_proc, "%read-array-literal", mod);
     return Scm_ApplyRec4(read_array_proc, SCM_OBJ(port), SCM_MAKE_INT(rank),
-                         element_type, SCM_OBJ(ctx));
+                         SCM_MAKE_CHAR(type_char), SCM_OBJ(ctx));
 }
 
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
@@ -1643,7 +1643,7 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
         if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
             Scm_ReadError(port, "Array literal isn't allowed in strict R7RS mode.");
         }
-        return read_array(port, prefix, SCM_FALSE, ctx);
+        return read_array(port, prefix, 'a', ctx);
     default:
         Scm_ReadError(port, "invalid numeric prefix (#, =, r or R is expected) : #%d%A", prefix, SCM_MAKE_CHAR(ch2));
         return SCM_UNDEFINED;
