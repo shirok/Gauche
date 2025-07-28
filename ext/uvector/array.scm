@@ -219,38 +219,68 @@
 
 (define (%read-array-literal port rank type-char ctx)
   (define line (port-current-line port))
-  (define chars '())                     ; for error message
-  (define type-tag
-    (case type-char
-      [(#\a #\A) 'a]
-      [else (error "Uniform numeric array literal isn't supported yet.")]))
+  (define chars `(,type-char))          ; for error message
+  (define (save-char!)
+    (let1 ch (read-char)
+      (unless (eof-object? ch) (push! chars ch))))
+  (define (prefix) (list->string (reverse chars)))
   (define (err msg content)
     (errorf <read-error> :port port :line line
-            (string-append msg ": #~a~a~a~@[~s~]")
-            (if (< rank 0) "" rank) type-tag
-            (list->string (reverse chars)) content))
+            (string-append msg ": #~a~a~@[~s~]")
+            (if (< rank 0) "" rank) (prefix) content))
   (define (bad-prefix)
     ;; We read up to the delimiter so that the subsequent read won't be
     ;; tripped.
     (let loop ((ch (peek-char)))
       (unless (or (eof-object? ch) (#[\s\(\[\{#\"'`,] ch))
-        (push! chars (read-char)) (loop (peek-char))))
+        (save-char!) (loop (peek-char))))
     (err "Invalid array literal prefix" #f))
+  (define (make-type-tag nbits)
+    (string->symbol (format "~c~d" (char-down-case type-char) nbits)))
+  (define type-class
+    (if (#[aA] type-char)
+      <array>
+      (case (read-digits #f)
+        [(8)  (case type-char
+                [(#\s #\S) <s8array>]
+                [(#\u #\U) <u8array>]
+                [else (bad-prefix)])]
+        [(16) (case type-char
+                [(#\f #\F) <f16array>]
+                [(#\s #\S) <s16array>]
+                [(#\u #\U) <u16array>]
+                [else (bad-prefix)])]
+        [(32) (case type-char
+                ;;[(#\c #\C) <c32array>]
+                [(#\f #\F) <f32array>]
+                [(#\s #\S) <s32array>]
+                [(#\u #\U) <u32array>]
+                [else (bad-prefix)])]
+        [(64) (case type-char
+                ;;[(#\c #\C) <c64array>]
+                [(#\f #\F) <f64array>]
+                [(#\s #\S) <s64array>]
+                [(#\u #\U) <u64array>]
+                [else (bad-prefix)])]
+        ;; [(128) (case type-char
+        ;;         [(#\c #\C) <c128array>]
+        ;;         [else (bad-prefix)])]
+        [else (bad-prefix)])))
   (define (read-dimensions r)
     (case (peek-char port)
       [(#\() (reverse r)]
-      [(#\@) (push! chars (read-char)) (read-start r)]
-      [(#\:) (push! chars (read-char)) (read-length 0 r)]
-      [else  (push! chars (read-char)) (bad-prefix)]))
-  (define (read-digits)
-    (let loop ((ch (peek-char port))
-               (ds '()))
+      [(#\@) (save-char!) (read-start r)]
+      [(#\:) (save-char!) (read-length 0 r)]
+      [else  (save-char!) (bad-prefix)]))
+  (define (read-digits allow-sign?)
+    (let loop ([ch (peek-char port)]
+               [ds '()])
       (cond
        [(#[0-9] ch)
-        (push! chars (read-char))
+        (save-char!)
         (loop (peek-char port) (cons ch ds))]
-       [(#[+-] ch)
-        (push! chars (read-char))
+       [(and allow-sign? (#[+-] ch))
+        (save-char!)
         (if (null? ds)
           (loop (peek-char port) (cons ch ds))
           (bad-prefix))]
@@ -259,21 +289,21 @@
           (bad-prefix)
           ($ string->number $ list->string $ reverse ds))])))
   (define (read-start r)
-    (let* ([n (read-digits)]
+    (let* ([n (read-digits #t)]
            [ch (peek-char port)])
       (case ch
-        [(#\:) (push! chars (read-char)) (read-length n r)]
-        [(#\@) (push! chars (read-char)) (read-start `((,n #f) ,@r))]
+        [(#\:) (save-char!) (read-length n r)]
+        [(#\@) (save-char!) (read-start `((,n #f) ,@r))]
         [(#\() (reverse `((,n #f) ,@r))]
-        [else  (push! chars (read-char)) (bad-prefix)])))
+        [else  (save-char!) (bad-prefix)])))
   (define (read-length start r)
-    (let* ([n (read-digits)]
+    (let* ([n (read-digits #t)]
            [ch (peek-char port)])
       (case ch
-        [(#\:) (push! chars (read-char)) (read-length 0 `((,start ,n) ,@r))]
-        [(#\@) (push! chars (read-char)) (read-start `((,start ,n) ,@r))]
+        [(#\:) (save-char!) (read-length 0 `((,start ,n) ,@r))]
+        [(#\@) (save-char!) (read-start `((,start ,n) ,@r))]
         [(#\() (reverse `((,start ,n) ,@r))]
-        [else  (push! chars (read-char)) (bad-prefix)])))
+        [else  (save-char!) (bad-prefix)])))
   (define (dim-check suggested content) ;returns #f when bad shape
     (let* ([start (if (pair? suggested) (car suggested) 0)]
            [actual (length content)]
@@ -325,7 +355,7 @@
       (err "Array literal has inconsistent rank" contents))
 
     (list-fill-array!
-     (make-array-internal <array> (dim->shape dim-list))
+     (make-array-internal type-class (dim->shape dim-list))
      (flatten contents (- (length dim-list) 1) '()))))
 
 ;;-------------------------------------------------------------
