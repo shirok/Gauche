@@ -292,10 +292,13 @@ Shapeが@var{shape}である配列を作成します。
 @findex make-u64array
 @findex make-s64array
 @findex make-f16array
+@findex make-f32array
+@findex make-f64array
+@findex make-c32array
 @dots{}
 @end defun
-@defun make-f32array shape :optional init
-@defunx make-f64array shape :optional init
+@defun make-c64array shape :optional init
+@defunx make-c128array shape :optional init
 @c MOD gauche.array
 @c EN
 Like @code{make-array}, but creates and returns an uniform numeric array.
@@ -360,10 +363,13 @@ Shapeが@var{shape}であるような配列を作成し、
 @findex u64array
 @findex s64array
 @findex f16array
+@findex f32array
+@findex f64array
+@findex c32array
 @dots{}
 @end defun
-@defun f32array shape init @dots{}
-@defunx f64array shape init @dots{}
+@defun c64array shape init @dots{}
+@defunx c128array shape init @dots{}
 @c MOD gauche.array
 @c EN
 Like @code{array}, but creates and returns an uniform numeric array
@@ -5351,7 +5357,7 @@ A collection.  Each element is a pair of a key and a value.
 @c JP
 コレクション。各要素はキーと値のペア。
 @c COMMON
-@item <s8vector>, <u8vector>, @dots{} <f64vector>
+@item <s8vector>, <u8vector>, @dots{} <c128vector>
 @c EN
 A sequence (methods defined in @code{gauche.uvector} module,
 @pxref{Uniform vectors}).
