@@ -162,6 +162,9 @@ you should use one of the following concrete array classes.
 @deftpx {Class} <f16array>
 @deftpx {Class} <f32array>
 @deftpx {Class} <f64array>
+@deftpx {Class} <c32array>
+@deftpx {Class} <c64array>
+@deftpx {Class} <c128array>
 @clindex array
 @clindex u8array
 @clindex s8array
@@ -174,19 +177,22 @@ you should use one of the following concrete array classes.
 @clindex f16array
 @clindex f32array
 @clindex f64array
+@clindex c32array
+@clindex c64array
+@clindex c128array
 @c MOD gauche.array
 @c EN
 Concrete array classes.  The @code{<array>} class implements SRFI-25
 compatible array, i.e. an array that can store any Scheme objects.
-The @code{<u8array>} class through @code{<f64array>} classes uses
-a @code{<u8vector>} through @code{<f64vector>} as a backing storage,
+The @code{<u8array>} class through @code{<c128array>} classes uses
+a @code{<u8vector>} through @code{<c128vector>} as a backing storage,
 and can only store a limited range of integers or inexact real numbers,
 but they are space efficient.
 @c JP
 具体配列クラスです。@code{<array>}クラスはSRFI-25互換の配列、
 すなわち、任意のSchemeオブジェクトを格納できる配列を実装します。
-@code{<u8array>}から@code{<f64array>}までは、
-それぞれ@code{<u8vector>}から@code{<f64vector>}をバッキングストレージとして
+@code{<u8array>}から@code{<c128array>}までは、
+それぞれ@code{<u8vector>}から@code{<c128vector>}をバッキングストレージとして
 用いる配列を実装し、制限された範囲の整数もしくは非正確な実数のみを
 効率良く格納することができます。
 @c COMMON

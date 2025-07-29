@@ -25,6 +25,7 @@
   (export <array-meta> <array>
           <u8array> <s8array> <u16array> <s16array> <u32array> <s32array>
           <u64array> <s64array> <f16array> <f32array> <f64array>
+          <c32array> <c64array> <c128array>
           array? make-array array-copy shape array array-rank
           array-start array-end array-ref array-set!
           share-array subarray array-equal?
@@ -38,8 +39,10 @@
           make-u8array make-s8array make-u16array make-s16array
           make-u32array make-s32array make-u64array make-s64array
           make-f16array make-f32array make-f64array
+          make-c32array make-c64array make-c128array
           u8array s8array u16array s16array u32array s32array
           u64array s64array f16array f32array f64array
+          c32array c64array c128array
           array-concatenate array-transpose array-rotate-90
           array-flip array-flip!
           identity-array array-inverse determinant determinant!
@@ -197,6 +200,27 @@
   :backing-storage-setter f64vector-set!
   :backing-storage-length f64vector-length)
 
+(define-class <c32array> (<array-base>)
+  ()
+  :backing-storage-creator make-c32vector
+  :backing-storage-getter c32vector-ref
+  :backing-storage-setter c32vector-set!
+  :backing-storage-length c32vector-length)
+
+(define-class <c64array> (<array-base>)
+  ()
+  :backing-storage-creator make-c64vector
+  :backing-storage-getter c64vector-ref
+  :backing-storage-setter c64vector-set!
+  :backing-storage-length c64vector-length)
+
+(define-class <c128array> (<array-base>)
+  ()
+  :backing-storage-creator make-c128vector
+  :backing-storage-getter c128vector-ref
+  :backing-storage-setter c128vector-set!
+  :backing-storage-length c128vector-length)
+
 ;; internal
 (define-inline (%xvector-copy v)
   (cond [(vector? v) (vector-copy v)]
@@ -251,20 +275,20 @@
                 [(#\u #\U) <u16array>]
                 [else (bad-prefix)])]
         [(32) (case type-char
-                ;;[(#\c #\C) <c32array>]
+                [(#\c #\C) <c32array>]
                 [(#\f #\F) <f32array>]
                 [(#\s #\S) <s32array>]
                 [(#\u #\U) <u32array>]
                 [else (bad-prefix)])]
         [(64) (case type-char
-                ;;[(#\c #\C) <c64array>]
+                [(#\c #\C) <c64array>]
                 [(#\f #\F) <f64array>]
                 [(#\s #\S) <s64array>]
                 [(#\u #\U) <u64array>]
                 [else (bad-prefix)])]
-        ;; [(128) (case type-char
-        ;;         [(#\c #\C) <c128array>]
-        ;;         [else (bad-prefix)])]
+        [(128) (case type-char
+                [(#\c #\C) <c128array>]
+                [else (bad-prefix)])]
         [else (bad-prefix)])))
   (define (read-dimensions r)
     (case (peek-char port)
@@ -509,7 +533,7 @@
         (list-fill-array! (,maker shape) inits))))
   `(begin ,@(append-map build-ctor-def pfxs)))
 
-(define-array-ctors || u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64)
+(define-array-ctors || u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
 
 (define (subarray ar sh)
   (receive (Vb Ve) (shape->start/end-vector sh)
