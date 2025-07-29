@@ -1772,6 +1772,25 @@
   (t "#2a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
   (t "#2a((1 (2) 3) (4 (5) 6))" (array (shape 0 2 0 3) 1 '(2) 3 4 '(5) 6))
 
+  ;; uniform array
+  (t "#1s8(1 2 3 4 5)" (s8array (shape 0 5) 1 2 3 4 5))
+  (t "#1u8(1 2 3 4 5 6)" (u8array (shape 0 6) 1 2 3 4 5 6))
+  (t "#1s16(-1 -2 -3)" (s16array (shape 0 3) -1 -2 -3))
+  (t "#1u16(4 5 6)" (u16array (shape 0 3) 4 5 6))
+  (t "#2s32((-1 -2) (-3 -4))" (s32array (shape 0 2 0 2) -1 -2 -3 -4))
+  (t "#3u32(((4) (5) (6)) ((7) (8) (9)))" (u32array (shape 0 2 0 3 0 1) 4 5 6 7 8 9))
+  (t "#4s64((((-1))))" (s64array (shape 0 1 0 1 0 1 0 1) -1))
+  (t "#4u64((((0))))" (u64array (shape 0 1 0 1 0 1 0 1) 0))
+  (t "#1f16(0.25 0.75)" (f16array (shape 0 2) 0.25 0.75))
+  (t "#1f32(0.25 0.75)" (f32array (shape 0 2) 0.25 0.75))
+  (t "#1f64(0.25 0.75)" (f64array (shape 0 2) 0.25 0.75))
+  (t "#1c32(0.25+0.75i)" (c32array (shape 0 1) 0.25+0.75i))
+  (t "#1c64(0.25+0.75i)" (c64array (shape 0 1) 0.25+0.75i))
+  (t "#1c128(0.25+0.75i)" (c128array (shape 0 1) 0.25+0.75i))
+
+  (t "#1u8:5(1 2 3 4 5)" (u8array (shape 0 5) 1 2 3 4 5))
+  (t "#2u16@2@3((1 2 3) (4 5 6))" (u16array (shape 2 4 3 6) 1 2 3 4 5 6))
+
   ;; Some boundary case
   ;; Emptylist in the content introduces ambiguousity to the shape,
   ;; since () is "zero element of _anything_", where anything can
@@ -1791,6 +1810,14 @@
   (t "#a:2:2((1 2) (3))" (test-error <read-error> #/inconsistent shape/))
   (t "#1a:2:2(1 2 3 4)" (test-error <read-error> #/rank and dimensions don't match/))
   (t "#3a:2:2(1 2 3 4)" (test-error <read-error> #/rank and dimensions don't match/))
+
+  (t "#1u" (test-error <read-error> "Invalid array literal prefix: #1u"))
+  (t "#1s0" (test-error <read-error> "Invalid array literal prefix: #1s0"))
+  (t "#1f11" (test-error <read-error> "Invalid array literal prefix: #1f11"))
+  (t "#1c123" (test-error <read-error> "Invalid array literal prefix: #1c123"))
+  (t "#1u+8" (test-error <read-error> "Invalid array literal prefix: #1u+8"))
+  (t "#1u8:2(1 2 3)" (test-error <read-error> #/inconsistent shape/))
+  (t "#1u8:2:1(1 2 3)" (test-error <read-error> #/rank and dimensions/))
   )
 
 

@@ -300,6 +300,7 @@
     (let loop ([ch (peek-char port)]
                [ds '()])
       (cond
+       [(eof-object? ch) (bad-prefix)]
        [(#[0-9] ch)
         (save-char!)
         (loop (peek-char port) (cons ch ds))]
