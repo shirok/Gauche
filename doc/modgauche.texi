@@ -5322,7 +5322,7 @@ you can retrieve its element by index.
 これらの操作は、@emph{コレクション}とそのサブクラスである
 @emph{シーケンス}に対して動作します。コレクションは、その要素を全て
 訪れる方法が用意されているようなオブジェクトの集合です。
-シーケンスは、要素間に全順序関係が定義されておりインデックスで要素を取り出すことが
+シーケンスは、要素を訪れる順序が定義されており、インデックスで要素を取り出すことが
 できるようなコレクションです。
 @c COMMON
 
@@ -8575,7 +8575,7 @@ to add ``connect'' operation, for example, so the concrete class
 is encouraged to use objects that can be used to create connections.
 @c JP
 今のところ、アドレスはロギング用途にのみ使われています。
-しかし、将来、``connect'' 操作もこのフレームワークで提供することになるかもしれまえｓん。
+しかし、将来、``connect'' 操作もこのフレームワークで提供することになるかもしれません。
 新たな具体クラスを実装する場合は、可能ならコネクションを作るために渡せるオブジェクトを
 アドレスにするのが良いでしょう。
 @c COMMON
@@ -9286,13 +9286,13 @@ This is the default behavior.  Duplicate relations are silently
 removed in order to maintain one-to-one mapping.  For example,
 suppose a bimap between strings and numbers has had
 @code{("foo", 1)} and @code{("bar", 2)}.  When you try to
-put @code{("bar", 2)} with this option, the first two entries
+put @code{("bar", 1)} with this option, the first two entries
 are removed.  Returns @code{#t}.
 @c JP
 デフォルトの振る舞いです。重複するエントリは、1対1対応を維持するために取り除かれます。
 例えば文字列と数値のbimapが、@code{("foo", 1)}および@code{("bar", 2)}という
-組み合わせを保持していたとします。ここで@code{("bar", 2)}を追加しようとすると、
-最初の2つのエントリは黙って削除され、@code{("bar", 2)}だけがbimapに残ります。
+組み合わせを保持していたとします。ここで@code{("bar", 1)}を追加しようとすると、
+最初の2つのエントリは黙って削除され、@code{("bar", 1)}だけがbimapに残ります。
 このオプションを与えた場合、変更手続きは常に@code{#t}を返します。
 @c COMMON
 
