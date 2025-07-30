@@ -1,3 +1,8 @@
+2025-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm, ext/uvector/matrix.scm: Add support of
+	  <c32array>, <c64array>, and <c128array>.
+
 2025-07-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/libomega.scm (report-additional-condition): Report file/line

@@ -16,6 +16,48 @@
 
 (select-module gauche.array)
 
+;; Some useful inquiries
+
+(define-class <array-attr> ()
+  ((signed :init-keyword :signed)
+   (integral :init-keyword :integral)
+   (real :init-keyword :real)
+   (element-size :init-keyword :element-size)))
+
+(define (aattr . attrs)
+  (let ([signed (boolean (memq 'signed attrs))]
+        [integral (boolean (memq 'integral attrs))]
+        [real (boolean (memq 'real attrs))]
+        [element-size (find number? attrs)])
+    (make <array-attr> :signed signed :integral integral :real real
+          :element-size element-size)))
+
+(define *array-attrs*
+  ($ hash-table-r7 eq-comparator
+     <s8array>   (aattr 8  'signed 'integral 'real)
+     <s16array>  (aattr 16 'signed 'integral 'real)
+     <s32array>  (aattr 32 'signed 'integral 'real)
+     <s64array>  (aattr 64 'signed 'integral 'real)
+     <u8array>   (aattr 8  'integral 'real)
+     <u16array>  (aattr 16 'integral 'real)
+     <u32array>  (aattr 32 'integral 'real)
+     <u64array>  (aattr 64 'integral 'real)
+     <f16array>  (aattr 16 'real)
+     <f32array>  (aattr 32 'real)
+     <f64array>  (aattr 64 'real)
+     <c32array>  (aattr 32)
+     <c64array>  (aattr 64)
+     <c128array> (aattr 128)
+     <array>     (aattr 0)))
+
+(define (non-numeric? class) (eq? class <array>))
+(define (non-real? class) (not (~ *array-attrs* class 'real)))
+(define (non-integral? class) (not (~ *array-attrs* class 'integral)))
+(define (inexact-numeric? class) (and (not (non-numeric? class))
+                                      (non-integral? class)))
+(define (signed-integral? class) (~ *array-attrs* class 'signed))
+(define (element-size class) (~ *array-attrs* class 'element-size))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; general array manipulation
 
@@ -210,9 +252,9 @@
     (unless (= n m)
       (error "can only compute inverses of square matrices"))
     (let* ([class (class-of a)]
-           [id (identity-array n (if (or (eq? class <f32array>)
-                                         (eq? class <f64array>))
-                                   class <array>))]
+           [id (identity-array n (if (inexact-numeric? class)
+                                   class
+                                   <array>))]
            [tmp (array-concatenate a id 1)])
       (array-solve-left-identity! tmp)
       (and (= 1 (array-ref tmp (- (s32vector-ref end 0) 1)
@@ -236,9 +278,8 @@
 
 (define (determinant a)
   (let1 class (class-of a)
-    (if (or (eq? class <f32array>)
-            (eq? class <f64array>)
-            (eq? class <array>))
+    (if (or (non-numeric? class)
+            (inexact-numeric? class))
       (determinant! (array-copy a))
       (let* ([rank (s32vector-length (start-vector-of a))]
              [b (tabulate-array (array-shape a)
@@ -630,44 +671,40 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; internal utility to keep arrays uniform when possible
 
-(define *signed-arrays*
-  (list <s64array> <s32array> <s16array> <s8array>))
-
 (define (make-minimal-backend-array ls sh . args)
   (define (return class)
     (apply make-array-internal class sh args))
-  (define (signed? x)
-    (member x *signed-arrays*))
-  (define (size x)
-    (cond [(or (eq? x <s64array>) (eq? x <u64array>)) 64]
-          [(or (eq? x <s32array>) (eq? x <u32array>)) 32]
-          [(or (eq? x <s16array>) (eq? x <u16array>)) 16]
-          [(or (eq? x <s8array>) (eq? x <u8array>)) 8]
-          [else 0]))
-  (define (backend signed? size)
-    (if signed?
-      (case size
-        [(64) <s64array>] [(32) <s32array>] [(16) <s16array>] [(8) <s8array>] [else <array>])
-      (case size
-        [(64) <u64array>] [(32) <u32array>] [(16) <u16array>] [(8) <u8array>] [else <array>])))
   (define (join a b)
-    (cond [(or (eq? a <array>) (eq? b <array>)) <array>]
-          [(or (eq? a <f32array>) (eq? a <f64array>))
-           (if (or (eq? b <f32array>) (eq? b <f64array>))
-             (if (eq? a b) a <f64array>)
-             <array>)]
+    (cond [(or (non-numeric? a) (non-numeric? b)) <array>]
+          [(or (non-real? a) (non-real? b))
+           (ecase (max (element-size a) (element-size b))
+             [(32) <c32array>]
+             [(64) <c64array>]
+             [(128) <c128array>])]
+          [(or (non-integral? a) (non-integral? b))
+           (ecase (if (non-integral? a) (element-size a) (element-size b))
+             [(16) <f16array>]
+             [(32) <f32array>]
+             [(64) <f64array>])]
+          [(and (signed-integral? a) (signed-integral? b))
+           (ecase (max (element-size a) (element-size b))
+             [(8)  <s8array>]
+             [(16) <s16array>]
+             [(32) <s32array>]
+             [(64) <s64array>])]
+          [(and (not (signed-integral? a)) (not (signed-integral? b)))
+           (ecase (max (element-size a) (element-size b))
+             [(8)  <u8array>]
+             [(16) <u16array>]
+             [(32) <u32array>]
+             [(64) <u64array>])]
           [else
-           (let ([a-s? (signed? a)]
-                 [a-size (size a)]
-                 [b-s? (signed? b)]
-                 [b-size (size b)])
-             (if (or (zero? a-size) (zero? b-size))
-               <array>
-               (let1 res-size (max a-size b-size)
-                 (backend (or a-s? b-s?)
-                          (if (if a-s? (not b-s?) b-s?)
-                            (* 2 res-size) ; signs differ, double size
-                            res-size)))))]))
+           ;; both integral, but signs differ.  try double size
+           (ecase (max (element-size a) (element-size b))
+             [(8)  <s16array>]
+             [(16) <s32array>]
+             [(32) <s64array>]
+             [(64) <array>])]))
   (let loop ([class (class-of (car ls))] [l ls])
     (if (null? l)
       (return class)
