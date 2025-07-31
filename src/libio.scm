@@ -912,6 +912,27 @@
 (inline-stub
  (define-cfn write_controls_allocate (_::ScmClass* _) :static
    (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
+ (define-cfn write-controls-array-format-get (arg) :static
+   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
+     (case (-> obj arrayFormat)
+       [(SCM_WRITE_ARRAY_COMPACT) (return 'compact)]
+       [(SCM_WRITE_ARRAY_DIMENSIONS) (return 'dimensions)]
+       [(SCM_WRITE_ARRAY_READER_CTOR) (return 'raeder-ctor)]
+       [else (Scm_Panic "Invalid value in ScmWriteControls.arrayFormat: ~S"
+                        (-> obj arrayFormat))])))
+
+ (define-cfn write-controls-array-format-set (arg value) ::void :static
+   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
+     (cond
+      [(SCM_EQ value 'compact)
+       (set! (-> obj arrayFormat) SCM_WRITE_ARRAY_COMPACT)]
+      [(SCM_EQ value 'dimensions)
+       (set! (-> obj arrayFormat) SCM_WRITE_ARRAY_DIMENSIONS)]
+      [(SCM_EQ value 'reader-ctor)
+       (set! (-> obj arrayFormat) SCM_WRITE_ARRAY_READER_CTOR)]
+      [else (Scm_Error "Invalid array-format, must be \
+                        one of compact, dimensions or \
+                        reader-ctor, but got %S" value)])))
 
  ;; TODO: We want to treat <write-controls> as immutable structure, but
  ;; define-cclass doesn't yet handle a slot that's immutable but allowing
@@ -963,14 +984,19 @@
                             else obj->stringLength = -1;")
     (exact-decimal :type <boolean> :c-name "exactDecimal"
                    :setter "obj->exactDecimal = !SCM_FALSEP(value);")
+    (array-format  :type <symbol> :c-name "arrayFormat"
+                   :getter (c "write_controls_array_format_get")
+                   :setter (c "write_controls_array_format_set"))
     )
    (allocator (c "write_controls_allocate")))
+
  ;; NB: Printer is defined in libobj.scm via write-object method
  )
 
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (make-write-controls :key length level width base radix pretty indent
                                   bytestring string-length exact-decimal
+                                  array-format
                                   print-length print-level print-width
                                   print-base print-radix print-pretty)
   (define (arg k k-alt) (if (undefined? k-alt) k k-alt))
@@ -984,7 +1010,8 @@
     :bytestring bytestring
     :string-length string-length
     :indent indent
-    :exact-decimal exact-decimal))
+    :exact-decimal exact-decimal
+    :array-format array-format))
 
 ;; Returns fresh write-controls where the specified slot value is replaced
 ;; from the original WC.
@@ -994,6 +1021,7 @@
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (write-controls-copy wc :key length level width base radix pretty indent
                                      bytestring string-length exact-decimal
+                                     array-format
                                      print-length print-level print-width
                                      print-base print-radix print-pretty)
   (let-syntax [(select
@@ -1017,7 +1045,8 @@
           [indent (select indent)]
           [bytestring    (select bytestring)]
           [string-length (select string-length)]
-          [exact-decimal (select exact-decimal)])
+          [exact-decimal (select exact-decimal)]
+          [array-format  (select array-format)])
       (if (and (eqv? length (slot-ref wc 'length))
                (eqv? level  (slot-ref wc 'level))
                (eqv? width  (slot-ref wc 'width))
@@ -1027,7 +1056,8 @@
                (eqv? indent (slot-ref wc 'indent))
                (eqv? bytestring    (slot-ref wc 'bytestring))
                (eqv? string-length (slot-ref wc 'string-length))
-               (eqv? exact-decimal (slot-ref wc 'exact-decimal)))
+               (eqv? exact-decimal (slot-ref wc 'exact-decimal))
+               (eqv? array-format  (slot-ref wc 'array-format)))
         wc
         (make <write-controls>
           :length length
@@ -1039,7 +1069,8 @@
           :indent indent
           :bytestring bytestring
           :string-length string-length
-          :exact-decimal exact-decimal)))))
+          :exact-decimal exact-decimal
+          :array-format array-format)))))
 
 ;;;
 ;;; With-something

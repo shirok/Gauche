@@ -50,12 +50,19 @@ struct ScmWriteControlsRec {
     int stringLength;           /* -1 for no limit.  Length of literal string */
     int exactDecimal;           /* #t to use decimal point for exact numbers
                                    whenever possible. */
+    int arrayFormat;            /* enum ScmWriteArrayFormat */
 };
 
 SCM_CLASS_DECL(Scm_WriteControlsClass);
 #define SCM_CLASS_WRITE_CONTROLS  (&Scm_WriteControlsClass)
 #define SCM_WRITE_CONTROLS(obj)   ((ScmWriteControls*)(obj))
 #define SCM_WRITE_CONTROLS_P(obj) SCM_XTYPEP(obj, SCM_CLASS_WRITE_CONTROLS)
+
+enum ScmWriteArrayFormat {
+    SCM_WRITE_ARRAY_COMPACT,     /* #2a(...) */
+    SCM_WRITE_ARRAY_DIMENSIONS,  /* #2a:3:3(...) */
+    SCM_WRITE_ARRAY_READER_CTOR, /* #,(<array> (0 3 0 3) ...) */
+};
 
 /*
  * NB: Flip the following condition to use ellipsis (U+2026) to indicate
@@ -79,7 +86,7 @@ SCM_CLASS_DECL(Scm_WriteControlsClass);
    WriteState is created at the root of write-family call and carried
    around during the entire write operation.
 
-   WriteState is and ScmObj and will be accessed from Scheme world as well.
+   WriteState is ScmObj and will be accessed from Scheme world as well.
  */
 
 struct ScmWriteContextRec {
