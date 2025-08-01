@@ -758,7 +758,7 @@
   (^[argptr port ctl]
     (if-let1 arg (fr-peek-arg fmtstr argptr)
       (csq-formatter argptr port ctl)
-      (begin (fr-jump-arg! argptr 1)
+      (begin (fr-jump-arg-relative! argptr 1)
              (^[argptr port ctl] argptr)))))
 
 ;; Tree -> Formatter

@@ -1,5 +1,7 @@
 2025-08-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/libfmt.scm (make-format-maybe): Fix argument skipping
+	  of ~@[ directive.
 	* ext/uvector/array.scm (array->nested-list, array->nested-vector):
 	  Added.
 

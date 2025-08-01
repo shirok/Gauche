@@ -876,6 +876,10 @@
 (test* "format ~: + newline" "abc   \n   def"
        (format "abc~:\n   \n   def"))
 
+(test* "format ~@[" '("12<3>4" "124")
+       (map (cut apply format "~a~a~@[<~a>~]~a" <>)
+            '((1 2 3 4) (1 2 #f 4))))
+
 (test* "format incomplete tilde sequence" (test-error)
        (format "~"))
 (test* "format incomplete tilde sequence" (test-error)
