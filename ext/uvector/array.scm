@@ -36,6 +36,7 @@
           array-for-each array-every array-any
           tabulate-array array-retabulate!
           array-map array-map! array->vector array->list
+          array->nested-list array->nested-vector
           make-u8array make-s8array make-u16array make-s16array
           make-u32array make-s32array make-u64array make-s64array
           make-f16array make-f32array make-f64array
@@ -876,3 +877,39 @@
       (^[ind] (add! (array-ref ar ind)))
       (make-vector (array-rank ar)))
     (get)))
+
+(define (array->nested-list ar)
+  (define rank (array-rank ar))
+  (define ind (make-vector rank 0))
+  (define (rec axis)
+    (define dim (array-length ar axis))
+    (define start (array-start ar axis))
+    (define get
+      (if (= axis (- rank 1))
+        (^i (vector-set! ind axis i)
+            (array-ref ar ind))
+        (^i (vector-set! ind axis i)
+            (rec (+ axis 1)))))
+    (do ([i (- (array-end ar axis) 1) (- i 1)]
+         [r '() (cons (get i) r)])
+        [(< i start) r]))
+  (rec 0))
+
+(define (array->nested-vector ar)
+  (define rank (array-rank ar))
+  (define ind (make-vector rank 0))
+  (define (rec axis)
+    (define dim (array-length ar axis))
+    (define start (array-start ar axis))
+    (define storage (make-vector dim))
+    (define fill!
+      (if (= axis (- rank 1))
+        (^[i j] (vector-set! ind axis i)
+          (vector-set! storage j (array-ref ar ind)))
+        (^[i j] (vector-set! ind axis i)
+          (vector-set! storage j (rec (+ axis 1))))))
+    (do ([i (- (array-end ar axis) 1) (- i 1)]
+         [j (- dim 1) (- j 1)])
+        [(< i start) storage]
+      (fill! i j)))
+  (rec 0))

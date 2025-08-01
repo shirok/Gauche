@@ -2260,6 +2260,43 @@
     ))
 
 ;;----------------------------------------------------------------
+(test-section "array-conversion")
+
+(test* "array->list" '(1 2 3 4 5 6)
+       (array->list (array (shape 0 2 0 3) 1 2 3 4 5 6)))
+(test* "array->list" '()
+       (array->list (array (shape 0 0 0 3))))
+(test* "array->vector" '#(1 2 3 4 5 6)
+       (array->vector (array (shape 0 2 0 3) 1 2 3 4 5 6)))
+(test* "array->vector" '#()
+       (array->vector (array (shape 0 0 0 3))))
+
+(test* "array->nested-list" '(1 2 3 4 5 6)
+       (array->nested-list (array (shape 0 6) 1 2 3 4 5 6)))
+(test* "array->nested-list" '((1 2 3) (4 5 6))
+       (array->nested-list (array (shape 0 2 0 3) 1 2 3 4 5 6)))
+(test* "array->nested-list" '(((1 2) (3 4) (5 6)) ((7 8) (9 10) (11 12)))
+       (array->nested-list (array (shape 0 2 0 3 0 2)
+                                  1 2 3 4 5 6 7 8 9 10 11 12)))
+(test* "array->nested-list" '()
+       (array->nested-list (array (shape 0 0 0 2))))
+(test* "array->nested-list (non-zero-base)" '((1 2 3) (4 5 6))
+       (array->nested-list (array (shape -1 1 3 6) 1 2 3 4 5 6)))
+(test* "array->nested-vector" '#(1 2 3 4 5 6)
+       (array->nested-vector (array (shape 0 6) 1 2 3 4 5 6)))
+(test* "array->nested-vector" '#(#(1 2 3) #(4 5 6))
+       (array->nested-vector (array (shape 0 2 0 3) 1 2 3 4 5 6)))
+(test* "array->nested-vector"'#(#(#(1 2) #(3 4) #(5 6)) #(#(7 8) #(9 10) #(11 12)))
+       (array->nested-vector (array (shape 0 2 0 3 0 2)
+                                    1 2 3 4 5 6 7 8 9 10 11 12)))
+(test* "array->nested-vector" '#(#() #())
+       (array->nested-vector (array (shape 0 2 0 0))))
+(test* "array->nested-vector" '#()
+       (array->nested-vector (array (shape 0 0 0 2))))
+(test* "array->nested-vector (non-zero-base)" '#(#(1 2 3) #(4 5 6))
+       (array->nested-vector (array (shape -1 1 3 6) 1 2 3 4 5 6)))
+
+;;----------------------------------------------------------------
 (test-section "array-iteration")
 
 (test* "array-for-each-index (list)" '((0 0) (0 1) (1 0) (1 1))

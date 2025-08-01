@@ -1,3 +1,8 @@
+2025-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm (array->nested-list, array->nested-vector):
+	  Added.
+
 2025-07-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c, src/libio.scm: Add array-format slot to
