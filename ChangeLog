@@ -1,3 +1,8 @@
+2025-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (port-walking?): Added to expose writer pass
+	  to the custom object writers.
+
 2025-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm (make-format-maybe): Fix argument skipping

@@ -494,6 +494,10 @@
 (define-cproc %port-unlock! (port::<port>) ::<void>
   (PORT_UNLOCK port))
 
+;; Read-only accessor for user code.
+(define-in-module gauche (port-walking? port)
+  (%port-walking? port))
+
 ;; Passing extra args is unusual for with-* style, but it can allow avoiding
 ;; closure allocation and may be useful for performance-sensitive parts.
 (define-in-module gauche (with-port-locking port proc . args)
@@ -502,6 +506,9 @@
              (apply proc args))
     (%port-unlock! port)))
 
+;; This is functionally equivalent to write_ss() in write.c, but we
+;; need to define it in Scheme to be called from format (see libfmt.scm).
+;; Eventually we want to consolidate the two.
 (define-in-module gauche.internal ; used by two-pass output
   (%with-2pass-setup port walker emitter . args)
   ;; The caller guarantees to call this when port isn't in two-pass
