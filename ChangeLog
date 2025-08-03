@@ -1,3 +1,8 @@
+2025-08-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/scheme/set.scm (size-of): Specialize this, for the fallback
+	  method is slow when the set is large.
+
 2025-08-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (port-walking?): Added to expose writer pass

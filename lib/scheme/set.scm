@@ -144,6 +144,8 @@
                                    (car current)))))
        (proc over? get))))
 
+(define-method size-of ((obj <sob>)) (sob-size obj))
+
 ;; TODO: To impelment call-with-builder, we need some way to specify
 ;; comparator argument for the constructor.
 
