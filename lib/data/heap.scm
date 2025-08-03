@@ -111,14 +111,7 @@
   (unless (comparator-ordered? comparator)
     (error "make-binary-heap requires ordered comparator, \
             but got:" comparator))
-  (receive (<: >:)
-      ;; skip extra closure if possible
-      (if (and (eq? (comparator-flavor comparator) 'ordering)
-               (eq? key identity))
-        (values (comparator-ordering-predicate comparator)
-                (^[a b] (>? comparator (key a) (key b))))
-        (values (^[a b] (<? comparator (key a) (key b)))
-                (^[a b] (>? comparator (key a) (key b)))))
+  (receive (<: >:) (%derive-comparer comparator key)
     (make <binary-heap> :comparator comparator
           :storage (if (or (vector? storage) (uvector? storage)
                            (is-a? storage <sparse-vector-base>))
@@ -154,18 +147,30 @@
                      [else
                       (error "invalid num-entries value for build-binary-heap:"
                              num-entries)])])
-    (receive (<: >:)
-        (ecase (comparator-flavor comparator)
-          [(ordering) (values (comparator-ordering-predicate comparator)
-                              (^[a b] (>? comparator a b)))]
-          [(comparison) (values (^[a b] (<? comparator a b))
-                                (^[a b] (>? comparator a b)))])
+    (receive (<: >:) (%derive-comparer comparator key)
       (bh-heapify! storage <: >: size)
       (make <binary-heap> :comparator comparator :storage storage :key key
             :<: <: :>: >: :next-leaf (+ size 1)
             :capacity (cond [(vector? storage) (vector-length storage)]
                             [(uvector? storage) (uvector-length storage)]
                             [else +inf.0])))))
+
+;; Returns less-than and greater-than closures from comparator.
+;; We skip come layerings if comparator and key satisfy certain condition.
+;; This isn't recommended as a general technique.  It should be gone
+;; once we have "sufficiently smart compiler".
+(define (%derive-comparer comparator key)
+  (if (eq? key identity)
+    (if (eq? (comparator-flavor comparator) 'ordering)
+      (values (comparator-ordering-predicate comparator)
+              (^[a b] (>? comparator a b)))
+      (values (^[a b] (<? comparator a b))
+              (^[a b] (>? comparator a b))))
+    (if (eq? (comparator-flavor comparator) 'ordering)
+      (values (comparator-ordering-predicate comparator)
+              (^[a b] (>? comparator (key a) (key b))))
+      (values (^[a b] (<? comparator (key a) (key b)))
+              (^[a b] (>? comparator (key a) (key b)))))))
 
 (define (binary-heap-copy hp)
   (make <binary-heap>
