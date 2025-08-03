@@ -128,6 +128,12 @@
   (test* "binary-heap-find (old)" '11
          (binary-heap-find h odd?)))
 
+;; key comparison customization
+(let ((h (make-binary-heap :key (^x (- (car x))))))
+  (binary-heap-push! h (cons 1 'a))
+  (binary-heap-push! h (cons 3 'b))
+  (test* "heap with :key (min)" (binary-heap-find-min h) '(3 . b))
+  (test* "heap with :key (max)" (binary-heap-find-max h) '(1 . a)))
 
 (let ()
   (define (test-swap source actions)

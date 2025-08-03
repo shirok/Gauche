@@ -112,11 +112,13 @@
     (error "make-binary-heap requires ordered comparator, \
             but got:" comparator))
   (receive (<: >:)
-      (ecase (comparator-flavor comparator)
-        [(ordering) (values (comparator-ordering-predicate comparator)
-                            (^[a b] (>? comparator a b)))]
-        [(comparison) (values (^[a b] (<? comparator a b))
-                              (^[a b] (>? comparator a b)))])
+      ;; skip extra closure if possible
+      (if (and (eq? (comparator-flavor comparator) 'ordering)
+               (eq? key identity))
+        (values (comparator-ordering-predicate comparator)
+                (^[a b] (>? comparator (key a) (key b))))
+        (values (^[a b] (<? comparator (key a) (key b)))
+                (^[a b] (>? comparator (key a) (key b)))))
     (make <binary-heap> :comparator comparator
           :storage (if (or (vector? storage) (uvector? storage)
                            (is-a? storage <sparse-vector-base>))

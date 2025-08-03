@@ -1,5 +1,9 @@
 2025-08-03  Shiro Kawai  <shiro@acm.org>
 
+	* lib/data/heap.scm (make-binary-heap): Fix a regression introduced
+	  by https://github.com/shirok/Gauche/commit/7a06722333db554073ecb8186eba29a666304c07
+	  It ignored key arguments.
+
 	* lib/scheme/set.scm (size-of): Specialize this, for the fallback
 	  method is slow when the set is large.
 
