@@ -929,7 +929,7 @@
      (case (-> obj arrayFormat)
        [(SCM_WRITE_ARRAY_COMPACT) (return 'compact)]
        [(SCM_WRITE_ARRAY_DIMENSIONS) (return 'dimensions)]
-       [(SCM_WRITE_ARRAY_READER_CTOR) (return 'raeder-ctor)]
+       [(SCM_WRITE_ARRAY_READER_CTOR) (return 'reader-ctor)]
        [else (Scm_Panic "Invalid value in ScmWriteControls.arrayFormat: ~S"
                         (-> obj arrayFormat))])))
 
