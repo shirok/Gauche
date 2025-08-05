@@ -414,7 +414,10 @@
   \n  exact-decimal <boolean>\
   \n                      - If true, use decimal notation for exact rational\
   \n                        numbers if they can be written out exactly.\
-  \n                        [default: ~(~ default-pm'exact-decimal)]"
+  \n                        [default: ~(~ default-pm'exact-decimal)]\
+  \n  array-format <symbol>\
+  \n                      - Can be 'compact, 'dimensions or 'reader-ctor.\
+  \n                        [default: ~(~ default-pm'array-format)]"
   (^[args]
     (match args
       [() #f]
@@ -427,7 +430,8 @@
                (^[kv]
                  `(,(if (memq (car kv)
                               '(pretty length level width base radix
-                                string-length bytestring exact-decimal))
+                                string-length bytestring exact-decimal
+                                array-format))
                       (make-keyword (car kv))
                       (error "print-mode: unrecognized key:" (car kv)))
                    ,(cadr kv)))
@@ -443,7 +447,8 @@
              (format "        radix : ~3d"  (~ c'radix))
              (format "string-length : ~3d"  (~ c'string-length))
              (format "   bytestring : ~3@a" (~ c'bytestring))
-             (format "exact-decimal : ~3d"  (~ c'exact-decimal)))
+             (format "exact-decimal : ~3d"  (~ c'exact-decimal))
+             (format " array-format : ~a"   (~ c'array-format)))
        ))
     *no-value*))
 

@@ -1,5 +1,7 @@
 2025-08-04  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/array.scm: Switch array printer based on write controls
+	* lib/gauche/interactive/toplevel.scm: Support array-format in print-mode
 	* src/libio.scm (%port-write-controls): Allow extracting
 	  write-controls during recursive write-object call.
 

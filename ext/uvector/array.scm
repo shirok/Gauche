@@ -112,10 +112,32 @@
     (set! (slot-ref self 'setter) (^[index value] (set store index value)))))
 
 (define-method write-object ((self <array-base>) port)
-  (format port "#,(~A ~S" (class-name (class-of self))
-          (array->list (array-shape self)))
-  (array-for-each (cut format port " ~S" <>) self)
+  (ecase (~ ((with-module gauche.internal %port-write-controls) port)
+           'array-format)
+    [(compact dimensions) => (cut format-array/srfi-163 self port <>)]
+    [(reader-ctor) (format-array/reader-ctor self port)]))
+
+(define (format-array/reader-ctor array port)
+  (format port "#,(~A ~S" (class-name (class-of array))
+          (array->list (array-shape array)))
+  (array-for-each (cut format port " ~S" <>) array)
   (format port ")"))
+
+;; #<rank>a style.  FMT can be 'compact or 'dimensions
+(define (format-array/srfi-163 array port fmt)
+  (define (dims)
+    (with-output-to-string
+      (^[] (dotimes [i (array-rank array)]
+             (let ([s (array-start array i)]
+                   [e (array-end array i)])
+               (cond [(= s 0) (begin (display #\:) (display (- e s)))]
+                     [else (begin (display #\@) (display s)
+                                  (display #\:) (display (- e s)))]))))))
+  (format port "#~a~a~@[~a~]~s"
+          (array-rank array)
+          (array-tag (class-of array))
+          (and (eq? fmt 'dimensions) (dims))
+          (array->nested-list array)))
 
 (define-class <array> (<array-base>)
   ()
@@ -221,6 +243,50 @@
   :backing-storage-getter c128vector-ref
   :backing-storage-setter c128vector-set!
   :backing-storage-length c128vector-length)
+
+;; Utility to inquire array-type attributes
+
+(define-class <array-attr> ()
+  ((tag :init-keyword :tag)
+   (signed :init-keyword :signed)
+   (integral :init-keyword :integral)
+   (real :init-keyword :real)
+   (element-size :init-keyword :element-size)))
+
+(define (aattr tag . attrs)
+  (let ([signed (boolean (memq 'signed attrs))]
+        [integral (boolean (memq 'integral attrs))]
+        [real (boolean (memq 'real attrs))]
+        [element-size (find number? attrs)])
+    (make <array-attr> :tag tag :signed signed :integral integral :real real
+          :element-size element-size)))
+
+(define *array-attrs*
+  ($ hash-table-r7 eq-comparator
+     <s8array>   (aattr 's8   8  'signed 'integral 'real)
+     <s16array>  (aattr 's16  16 'signed 'integral 'real)
+     <s32array>  (aattr 's32  32 'signed 'integral 'real)
+     <s64array>  (aattr 's64  64 'signed 'integral 'real)
+     <u8array>   (aattr 'u8   8  'integral 'real)
+     <u16array>  (aattr 'u16  16 'integral 'real)
+     <u32array>  (aattr 'u32  32 'integral 'real)
+     <u64array>  (aattr 'u64  64 'integral 'real)
+     <f16array>  (aattr 'f16  16 'real)
+     <f32array>  (aattr 'f32  32 'real)
+     <f64array>  (aattr 'f64  64 'real)
+     <c32array>  (aattr 'c32  32)
+     <c64array>  (aattr 'c64  64)
+     <c128array> (aattr 'c128 128)
+     <array>     (aattr 'a    0)))
+
+(define (array-tag class) (~ *array-attrs* class 'tag))
+(define (non-numeric? class) (eq? class <array>))
+(define (non-real? class) (not (~ *array-attrs* class 'real)))
+(define (non-integral? class) (not (~ *array-attrs* class 'integral)))
+(define (inexact-numeric? class) (and (not (non-numeric? class))
+                                      (non-integral? class)))
+(define (signed-integral? class) (~ *array-attrs* class 'signed))
+(define (element-size class) (~ *array-attrs* class 'element-size))
 
 ;; internal
 (define-inline (%xvector-copy v)

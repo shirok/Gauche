@@ -16,48 +16,6 @@
 
 (select-module gauche.array)
 
-;; Some useful inquiries
-
-(define-class <array-attr> ()
-  ((signed :init-keyword :signed)
-   (integral :init-keyword :integral)
-   (real :init-keyword :real)
-   (element-size :init-keyword :element-size)))
-
-(define (aattr . attrs)
-  (let ([signed (boolean (memq 'signed attrs))]
-        [integral (boolean (memq 'integral attrs))]
-        [real (boolean (memq 'real attrs))]
-        [element-size (find number? attrs)])
-    (make <array-attr> :signed signed :integral integral :real real
-          :element-size element-size)))
-
-(define *array-attrs*
-  ($ hash-table-r7 eq-comparator
-     <s8array>   (aattr 8  'signed 'integral 'real)
-     <s16array>  (aattr 16 'signed 'integral 'real)
-     <s32array>  (aattr 32 'signed 'integral 'real)
-     <s64array>  (aattr 64 'signed 'integral 'real)
-     <u8array>   (aattr 8  'integral 'real)
-     <u16array>  (aattr 16 'integral 'real)
-     <u32array>  (aattr 32 'integral 'real)
-     <u64array>  (aattr 64 'integral 'real)
-     <f16array>  (aattr 16 'real)
-     <f32array>  (aattr 32 'real)
-     <f64array>  (aattr 64 'real)
-     <c32array>  (aattr 32)
-     <c64array>  (aattr 64)
-     <c128array> (aattr 128)
-     <array>     (aattr 0)))
-
-(define (non-numeric? class) (eq? class <array>))
-(define (non-real? class) (not (~ *array-attrs* class 'real)))
-(define (non-integral? class) (not (~ *array-attrs* class 'integral)))
-(define (inexact-numeric? class) (and (not (non-numeric? class))
-                                      (non-integral? class)))
-(define (signed-integral? class) (~ *array-attrs* class 'signed))
-(define (element-size class) (~ *array-attrs* class 'element-size))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; general array manipulation
 
