@@ -1,3 +1,8 @@
+2025-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (%port-write-controls): Allow extracting
+	  write-controls during recursive write-object call.
+
 2025-08-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/heap.scm (make-binary-heap): Fix a regression introduced

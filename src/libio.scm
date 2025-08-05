@@ -488,6 +488,11 @@
   (let* ([r::ScmWriteState* (Scm_PortWriteState port)])
     (return (?: r (SCM_OBJ r) SCM_FALSE))))
 
+(define-cproc %port-write-controls (port::<port>)
+  (let* ([c::(const ScmWriteControls*)
+             (Scm_GetWriteControls NULL (Scm_PortWriteState port))])
+    (return (?: c (SCM_OBJ c) (SCM_OBJ (Scm_DefaultWriteControls))))))
+
 (define-cproc %port-lock! (port::<port>) ::<void>
   (let* ([vm::ScmVM* (Scm_VM)])
     (PORT_LOCK port vm)))
