@@ -1820,6 +1820,62 @@
   (t "#1u8:2:1(1 2 3)" (test-error <read-error> #/rank and dimensions/))
   )
 
+(let ()
+  (define (t arr ex-compact ex-dimensions ex-reader-ctor)
+    (define (tt mode expect)
+      (test* #"array writer: ~mode" expect
+             (let ((ctrl (make-write-controls :array-format mode)))
+               (write-to-string arr (cut write <> ctrl)))))
+    (tt 'compact ex-compact)
+    (tt 'dimensions ex-dimensions)
+    (tt 'reader-ctor ex-reader-ctor))
+
+  (t (array (shape 0 2 0 3) 1 2 3 4 5 6)
+     "#2a((1 2 3) (4 5 6))"
+     "#2a:2:3((1 2 3) (4 5 6))"
+     "#,(<array> (0 2 0 3) 1 2 3 4 5 6)")
+
+  (t (array (shape 0 2 -1 2) 1 2 3 4 5 6)
+     "#2a@0@-1((1 2 3) (4 5 6))"
+     "#2a:2@-1:3((1 2 3) (4 5 6))"
+     "#,(<array> (0 2 -1 2) 1 2 3 4 5 6)")
+
+  (t (array (shape 1 3 0 3) 1 2 3 4 5 6)
+     "#2a@1@0((1 2 3) (4 5 6))"
+     "#2a@1:2:3((1 2 3) (4 5 6))"
+     "#,(<array> (1 3 0 3) 1 2 3 4 5 6)")
+
+  (t (u8array (shape 0 3) 1 2 3)
+     "#1u8(1 2 3)"
+     "#1u8:3(1 2 3)"
+     "#,(<u8array> (0 3) 1 2 3)")
+
+  (t (s16array (shape -1 0 0 1) 1)
+     "#2s16@-1@0((1))"
+     "#2s16@-1:1:1((1))"
+     "#,(<s16array> (-1 0 0 1) 1)")
+
+  (t (c32array (shape 0 2 1 3) 1 +i -i 1+i)
+     "#2c32@0@1((1.0 0.0+1.0i) (0.0-1.0i 1.0+1.0i))"
+     "#2c32:2@1:2((1.0 0.0+1.0i) (0.0-1.0i 1.0+1.0i))"
+     "#,(<c32array> (0 2 1 3) 1.0 0.0+1.0i 0.0-1.0i 1.0+1.0i)")
+
+  (t (array (shape 0 0 0 1))
+     "#2a()"
+     "#2a:0:1()"
+     "#,(<array> (0 0 0 1))")
+
+  (t (array (shape 0 1 0 0))
+     "#2a(())"
+     "#2a:1:0(())"
+     "#,(<array> (0 1 0 0))")
+
+  (t (array (shape -1 -1 1 1))
+     "#2a@-1@1()"
+     "#2a@-1:0@1:0()"
+     "#,(<array> (-1 -1 1 1))")
+  )
+
 
 (test-section "array-rank")
 (test* "array-rank (shape)" 2

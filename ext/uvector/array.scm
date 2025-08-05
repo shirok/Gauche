@@ -124,19 +124,29 @@
   (format port ")"))
 
 ;; #<rank>a style.  FMT can be 'compact or 'dimensions
+;;  If compact,
+;;    - If all dimensions start from 0, we omit dimensions altogether.
+;;    - Otherwise, we show start index for every dimension
+;;  If dimensions
+;;    - We show start if it's not 0
+;;    - We show length for all dimensions
 (define (format-array/srfi-163 array port fmt)
-  (define (dims)
+  (define (dims full?)
     (with-output-to-string
       (^[] (dotimes [i (array-rank array)]
              (let ([s (array-start array i)]
                    [e (array-end array i)])
-               (cond [(= s 0) (begin (display #\:) (display (- e s)))]
-                     [else (begin (display #\@) (display s)
-                                  (display #\:) (display (- e s)))]))))))
+               (unless (and full? (= s 0)) (display #\@) (display s))
+               (when full? (begin (display #\:) (display (- e s)))))))))
+
   (format port "#~a~a~@[~a~]~s"
           (array-rank array)
           (array-tag (class-of array))
-          (and (eq? fmt 'dimensions) (dims))
+          (cond [(eq? fmt 'dimensions) (dims #t)]
+                [(not (every (^i (zero? (array-start array i)))
+                             (iota (array-rank array))))
+                 (dims #f)]
+                [else #f])
           (array->nested-list array)))
 
 (define-class <array> (<array-base>)
