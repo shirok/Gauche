@@ -59,15 +59,18 @@ Besides a generic SRFI-25 array that can store any Scheme objects,
 this module also provides array classes that stores numeric objects
 efficiently, backed up by
 homogeneous numeric vectors (@pxref{Uniform vectors}).
-An external representation of arrays, using SRFI-10 mechanism,
-is also provided.
+
+External representations of arrays, one with srfi-163 and
+another using srfi-10, are also provided.
 @c JP
 このモジュールは多次元配列のデータタイプとそれに関する操作を提供します。
 プリミティブなAPIはSRFI-25で定義されているものに従います。
 任意のSchemeオブジェクトを保持できるSRFI-25の汎用配列の他に、
 均一な数値ベクタ(@ref{Uniform vectors}参照)を使って
 数値要素を効率良く保持する配列型も提供されます。
-また、SRFI-10を使った配列の外部表現も実装されます。
+
+また、配列の外部表現も実装されます。ひとつはSRFI-163準拠のもの、
+もうひとつはSRFI-10を利用したいものです。
 @c COMMON
 
 @c EN
@@ -137,6 +140,18 @@ returns a scalar index into the backing storage.
 @c COMMON
 @end deftp
 
+@menu
+* Array classes::
+* Array literal syntax::
+* Array predicate and constructors::
+* Array accessors and modifiers::
+* Whole array operations::
+@end menu
+
+@node Array classes, Array literal syntax, Arrays, Arrays
+@subsection Array classes
+@c NODE 配列クラス
+
 @deftp {Class} <array-base>
 @clindex array-base
 @c MOD gauche.array
@@ -198,11 +213,114 @@ but they are space efficient.
 @c COMMON
 @end deftp
 
+@node Array literal syntax, Array predicate and constructors, Array classes, Arrays
+@subsection Array literal syntax
+@c NODE 配列のリテラル構文
+
+Gauche now supports array literals defined in srfi-163.  Its compact
+representation begins with a hash sign, followed by the array's rank,
+@code{a} for general array, then a nested list of elements:
+
+@example
+;; A 3x2 general array
+;;
+;;   1 2 3
+;;   4 5 6
+
+#2a((1 2 3) (4 5 6))
+@end example
+
+Array lengths for each dimension can be explicit:
+
+@example
+#2a:3:2((1 2 3) (4 5 6))
+@end example
+
+Gauche used to read/write arrays using srfi-10 reader constructor
+syntax.  For the backward compatibity, this syntax is also supported:
+
+@example
+#,(<array> (0 3 0 2) 1 2 3 4 5 6)
+@end example
+
+When an array is printed, the write control parameter @code{array-format}
+determines which format is used.  If it is @code{compact} (default),
+the srfi-163 representation without array lengths is used.
+it may show start indexes if the array has non-zero start index.
+If it is @code{dimensions}, the srfi-163 representation with array lengths
+is used.  If it is @code{reader-ctor}, srfi-10 read-time constructor
+is used.  The precise syntax of those literals are described below.
+
+@deftp {Reader Syntax} @code{# @var{rank} a @var{start/length}* (@var{elements} @dots{})}
+@deftpx {Reader Syntax} @code{# @var{rank} s8 @var{start/length}* (@var{elements} @dots{})}
+@deftpx {Reader Syntax} @code{# @var{rank} u8 @var{start/length}* (@var{elements} @dots{})}
+@dots{}
+@end deftp
+@deftp {Reader Syntax} @code{# @var{rank} c64 @var{start/length}* (@var{elements} @dots{})}
+@deftpx {Reader Syntax} @code{# @var{rank} c128 @var{start/length}* (@var{elements} @dots{})}
+[SRFI-163]
+A literal array.  @var{Rank} is a decimal digit to specify the rank
+of the array. What follows is a tag that specify arrays' type: @code{a} for
+general array that can contain any Scheme values,
+and @code{s8} @dots{} @code{c128} are uniform numeric arrays, corresponds
+to uniform vectors.
+
+Next come start/length specifications.  They're optional as long as the
+info can be derived from the array elements.  If given, each start/length
+spec takes one of the following form, to specify the array's start
+index and length of the correponsing dimension.
+
+@table @code
+@item @@@var{start}:@var{length}
+The index starts from @var{start} and runs for @var{length}.
+@item :@var{length}
+The index starts from zero and runs for @var{length}.
+@item @@@var{start}
+The index starts from @var{start}.  Length is determined by the given elements.
+@end table
+
+If the array has non-zero start index, or a zero length dimension,
+start/length specs can't be omitted.
+
+Lastly come the array elements, in the form of nested list.  Rank 1 array
+has a flat list, rank 2 array has a list of lists, and so on.
+Each corresponding dimension must be uniform, e.g.
+@code{#2a((1 2) (3))} isn't allowed b/c the second level list has different
+lengths.  If the literal has start/length specs, they should match the
+given elements as well.
+
+@example
+@c EN
+; an array such that:
+@c JP
+; 次のような配列：
+@c COMMON
+;   8 3 4
+;   1 5 9
+;   6 7 2
+#2a((8 3 4) (1 5 9) (6 7 2))
+#2a:3:3((8 3 4) (1 5 9) (6 7 2))
+
+@c EN
+; a 4x4 identity matrix
+@c JP
+; 4x4の単位行列
+@c COMMON
+#2a((1 0 0 0) (0 1 0 0) (0 0 1 0) (0 0 0 1))
+#2a:4:4((1 0 0 0) (0 1 0 0) (0 0 1 0) (0 0 0 1))
+@end example
+@end deftp
+
 
 @deftp {Reader Syntax} @code{#,(<array> @var{shape} @var{obj} @dots{})}
 @c EN
-An array is written out in this format.  (Substitute @code{<array>} for
+This is an alternative array literal syntax.  Up to Gauche 0.9.15, this was
+the only array external representation.  We can still read this format,
+and you can print an array with this format by setting
+@code{array-format} parameter of write controls to @code{reader-ctor}.
+(Substitute @code{<array>} for
 @code{<u8array>} if the array is @code{<u8array>}, etc.)
+
 @var{shape} is a list
 of even number of integers, and each 2@var{n}-th integer
 and 2@var{n}+1-th integer specifies the
@@ -210,20 +328,17 @@ inclusive lower-bound and exclusive upper-bound of @var{n}-th dimension,
 respectively.  The following @var{obj} @dots{} are the values in the array
 listed in row-major order.
 @c JP
-配列はこの形式で書き出されます。
+これは配列のリテラル構文の別形式です。Gauche 0.9.15まではこれが唯一の
+配列の外部表現でした。今のGaucheでもこの形式を読むことができ、
+またwrite controlsの@code{array-format}パラメータを@code{reader-ctor}に
+することで書き出すことができます。
 (配列が例えば@code{<u8array>}であるなら、@code{<array>}の部分は@code{<u8array>}
 となります。)
+
 @var{shape}は偶数個の整数のリストで、
 2@var{n}番目の整数が@var{n}次元目のインデックスの下限を、2@var{n}+1番目の
 整数が@var{n}次元目のインデックスの上限(+1)を表します。
 その後に、配列の要素がrow-majorの順で書き出されます。
-@c COMMON
-
-@c EN
-When read back, this syntax is read as an array with the same shape
-and content, so it is @code{equal?} to the original array.
-@c JP
-この構文が読み込まれると、もとの配列と@code{equal?}である配列が作成されます。
 @c COMMON
 
 @example
@@ -245,6 +360,10 @@ and content, so it is @code{equal?} to the original array.
 #,(<array> (0 4 0 4) 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1)
 @end example
 @end deftp
+
+@node Array predicate and constructors, Array accessors and modifiers, Array literal syntax, Arrays
+@subsection Array constructors and predicates
+@c NODE 配列の述語とコンストラクタ
 
 @defun array? obj
 [SRFI-25]
@@ -279,7 +398,7 @@ Shapeが@var{shape}である配列を作成します。
 
 @example
 (make-array (shape 0 2 0 2 0 2) 5)
- @result{} #,(<array> (0 2 0 2 0 2) 5 5 5 5 5 5 5 5)
+ @result{} #3a(((5 5) (5 5)) ((5 5) (5 5)))
 @end example
 @end defun
 
@@ -330,10 +449,10 @@ of an array.
 
 @example
 (shape 0 2 1 3 3 5)
- @result{} #,(<array> (0 3 0 2) 0 2 1 3 3 5)
+ @result{} #2a((0 2) (1 3) (3 5))
 
 (shape)
- @result{} #,(<array> (0 0 0 2))
+ @result{} #2a()
 @end example
 @end defun
 
@@ -350,7 +469,7 @@ Shapeが@var{shape}であるような配列を作成し、
 
 @example
 (array (shape 0 2 1 3) 'a 'b 'c 'd)
- @result{} #,(<array> (0 2 1 3) a b c d)
+ @result{} #2a@@0@@1((a b) (c d))
 @end example
 @end defun
 
@@ -381,9 +500,84 @@ initialized by @var{init} @dots{}.
 
 @example
 (u8array (shape 0 2 0 2) 1 2 3 4)
- @result{} #,(<u8array> (0 2 0 2) 1 2 3 4)
+ @result{} #2u8((1 2) (3 4))
 @end example
 @end defun
+
+@defun share-array array shape proc
+[SRFI-25]
+@c MOD gauche.array
+@c EN
+Creates and returns a new array of shape @var{shape}, that shares
+the backing storage with the given array @var{array}.
+The procedure @var{proc} maps the indices of the new array to
+the indices to the original array, i.e. @var{proc} must be a @var{n}-ary
+procedure that returns @var{m} values, where @var{n} is the dimension
+of the new array and @var{m} is the one of the original array.
+Furthermore, @var{proc} must be an affine function; each mapping
+has to be a linear combination of input arguments plus optional constant.
+(@code{Share-array} optimizes the mapping function based on the affinity
+assumption, so @var{proc} won't be called every time the new array
+is accessed).
+@c JP
+Shapeが@var{shape}であり、与えられた配列@var{array}とバッキングストレージを
+共有する新しい配列を作成して返します。
+@var{proc}は、新しい配列へのインデックスを古い配列へのインデックスへ
+マップする手続きです。新しい配列の次元数を@var{n}、古い配列の次元数を@var{m}と
+した時、@var{proc}は@var{n}個の引数を取り@var{m}個の値を返す手続きでなければ
+なりません。さらに、各マッピングはaffineマッピング、すなわち、
+出力は入力の線形合成(プラス定数)でなければなりません。
+(@code{share-array}は@var{proc}がaffineマッピングであるという事実に基づいた
+最適化を行います。新しい配列にアクセスする度に@var{proc}が呼ばれるというわけでは
+ありません)。
+@c COMMON
+@end defun
+
+@defun tabulate-array shape proc :optional index
+@c MOD gauche.array
+@c EN
+Calls @var{proc} over each index represented by the shape @var{shape},
+and creates an array from the result of @var{proc}.  The optional
+index object can be used in the same way as @code{array-for-each-index}.
+The following example creates an identity matrix of the given shape:
+@c JP
+@var{shape}が表現する各インデックスについて@var{proc}を呼び出し、
+その戻り値から配列を構築して返します。省略可能なインデックスオブジェクトの用途は
+@code{array-for-each-index}と同じです。
+次の例は与えられたシェイプに対する単位行列を生成します:
+@c COMMON
+
+@example
+(tabulate-array (shape 0 3 0 3) (^(i j) (if (= i j) 1 0)))
+  @result{} #2a((1 0 0) (0 1 0) (0 0 1))
+@end example
+@end defun
+
+@defun identity-array dimension :optional class
+@c MOD gauche.array
+@c EN
+Returns a fresh identity array of rank 2, with the given dimension.
+You can pass one of array classes to @var{class} to make the result
+the instance of the class; the default class is @code{<array>}.
+@c JP
+ランク2で行列ともに@var{dimension}である単位行列を作って返します。
+配列のクラスを@var{class}に渡せば、結果はそのインスタンスになります。
+デフォルトは@code{<array>}クラスです。
+@c COMMON
+
+@example
+(identity-array 3)
+ @result{} #2a((1 0 0) (0 1 0) (0 0 1))
+
+(identity-array 3 <f32array>)
+ @result{} #2f32((1.0 0.0 0.0) (0.0 1.0 0.0) (0.0 0.0 1.0))
+@end example
+@end defun
+
+
+@node Array accessors and modifiers, Whole array operations, Array predicate and constructors, Arrays
+@subsection Array accessors and modifiers
+@c NODE 配列のアクセサと変更
 
 @defun array-rank array
 [SRFI-25]
@@ -489,34 +683,9 @@ In the second form, the element is specified by an index object
 @c COMMON
 @end defun
 
-@defun share-array array shape proc
-[SRFI-25]
-@c MOD gauche.array
-@c EN
-Creates and returns a new array of shape @var{shape}, that shares
-the backing storage with the given array @var{array}.
-The procedure @var{proc} maps the indices of the new array to
-the indices to the original array, i.e. @var{proc} must be a @var{n}-ary
-procedure that returns @var{m} values, where @var{n} is the dimension
-of the new array and @var{m} is the one of the original array.
-Furthermore, @var{proc} must be an affine function; each mapping
-has to be a linear combination of input arguments plus optional constant.
-(@code{Share-array} optimizes the mapping function based on the affinity
-assumption, so @var{proc} won't be called every time the new array
-is accessed).
-@c JP
-Shapeが@var{shape}であり、与えられた配列@var{array}とバッキングストレージを
-共有する新しい配列を作成して返します。
-@var{proc}は、新しい配列へのインデックスを古い配列へのインデックスへ
-マップする手続きです。新しい配列の次元数を@var{n}、古い配列の次元数を@var{m}と
-した時、@var{proc}は@var{n}個の引数を取り@var{m}個の値を返す手続きでなければ
-なりません。さらに、各マッピングはaffineマッピング、すなわち、
-出力は入力の線形合成(プラス定数)でなければなりません。
-(@code{share-array}は@var{proc}がaffineマッピングであるという事実に基づいた
-最適化を行います。新しい配列にアクセスする度に@var{proc}が呼ばれるというわけでは
-ありません)。
-@c COMMON
-@end defun
+@node Whole array operations,  , Array accessors and modifiers, Arrays
+@subsection Whole array operations
+@c NODE 配列全体に対する操作
 
 @defun array-for-each-index array proc :optional index
 @c MOD gauche.array
@@ -539,7 +708,7 @@ latter dimension is incremented faster.
 gosh> (define a (array (shape 0 2 0 2) 1 2 3 4))
 a
 gosh> a
-#,(<array> (0 2 0 2) 1 2 3 4)
+#2a((1 2) (3 4))
 gosh> (array-for-each-index a (^(i j) (print i","j)))
 0,0
 0,1
@@ -615,26 +784,6 @@ gosh> (shape-for-each (shape 0 2 0 2) (^(i j) (print i","j)))
 @end example
 @end defun
 
-@defun tabulate-array shape proc :optional index
-@c MOD gauche.array
-@c EN
-Calls @var{proc} over each index represented by the shape @var{shape},
-and creates an array from the result of @var{proc}.  The optional
-index object can be used in the same way as @code{array-for-each-index}.
-The following example creates an identity matrix of the given shape:
-@c JP
-@var{shape}が表現する各インデックスについて@var{proc}を呼び出し、
-その戻り値から配列を構築して返します。省略可能なインデックスオブジェクトの用途は
-@code{array-for-each-index}と同じです。
-次の例は与えられたシェイプに対する単位行列を生成します:
-@c COMMON
-
-@example
-(tabulate-array (shape 0 3 0 3) (^(i j) (if (= i j) 1 0)))
-  @result{} #,(<array> (0 3 0 3) 1 0 0 0 1 0 0 0 1)
-@end example
-@end defun
-
 @defun array-retabulate! array proc :optional index
 @defunx array-retabulate! array shape proc :optional index
 @c MOD gauche.array
@@ -684,7 +833,7 @@ optimization in future in case @var{shape} is a literal.
 
 @example
 (array-map - (array (shape 0 2 0 2) 1 2 3 4))
-  @result{} #,(<array> (0 2 0 2) -1 -2 -3 -4)
+  @result{} #2a((-1 -2) (-3 -4))
 @end example
 @end defun
 
@@ -737,28 +886,26 @@ match.
 ;;  [a b]              [a b]
 ;;  [c d] (+)       => [c d]
 ;;            [e f]    [e f]
-(array-concatenate
- (array (shape 0 2 0 2) 'a 'b 'c 'd)
- (array (shape 0 1 0 2) 'e 'f))
- @result{} #,(<array> (0 3 0 2) a b c d e f)
+(array-concatenate '#2a((a b) (c d))
+                   '#2a((e f)))
+ @result{} #2a((a b) (c d) (e f))
 
 ;;  [a b]     [e]    [a b e]
 ;;  [c d] (+) [f] => [c d f]
-(array-concatenate
- (array (shape 0 2 0 2) 'a 'b 'c 'd)
- (array (shape 0 2 0 1) 'e 'f)
- 1)
- @result{} #,(<array> (0 2 0 3) a b e c d f)
+(array-concatenate '#2a((a b) (c d))
+                   '#2a((e) (f))
+                    1)
+ @result{} #2a((a b e) (c d f))
 
 @c EN
 ;; The index range can differ, as far as the sizes match
 @c JP
 ;; 結合次元の大きさが同じであればインデックスの範囲は異なっていてもよい
 @c COMMON
-(array-concatenate
- (array (shape 0 2 0 2) 'a 'b 'c 'd)
- (array (shape 1 3 0 1) 'e 'f) 1)
- @result{} #,(<array> (0 2 0 3) a b e c d f)
+(array-concatenate '#2a((a b) (c d))
+                   '#2a@@1@@0((e) (f))
+                   1)
+ @result{} #2a((a b e) (c d f))
 @end example
 @end defun
 
@@ -794,8 +941,8 @@ a fresh array whose content is filled by @emph{rotating}
 ;; [1 2 3]      [4 1]
 ;; [4 5 6]  =>  [5 2]
 ;;              [6 3]
-(array-rotate-90 (array (shape 0 2 0 3) 1 2 3 4 5 6))
- @result{} #,(<array> (0 3 0 2) 4 1 5 2 6 3)
+(array-rotate-90 '#2a((1 2 3) (4 5 6)))
+ @result{} #2a((4 1) (5 2) (6 3))
 @end example
 
 @c EN
@@ -824,34 +971,13 @@ a fresh array with the flipped content and returns it.
 @example
 ;; [1 2 3]  =>  [4 5 6]
 ;; [4 5 6]      [1 2 3]
-(array-flip (array (shape 0 2 0 3) 1 2 3 4 5 6))
- @result{} #,(<array> (0 2 0 3) 4 5 6 1 2 3)
+(array-flip '#2a((1 2 3) (4 5 6)))
+ @result{} #2a((4 5 6) (1 2 3))
 
 ;; [1 2 3]  =>  [3 2 1]
 ;; [4 5 6]      [6 5 4]
-(array-flip (array (shape 0 2 0 3) 1 2 3 4 5 6) 1)
- @result{} #,(<array> (0 2 0 3) 3 2 1 6 5 4)
-@end example
-@end defun
-
-@defun identity-array dimension :optional class
-@c MOD gauche.array
-@c EN
-Returns a fresh identity array of rank 2, with the given dimension.
-You can pass one of array classes to @var{class} to make the result
-the instance of the class; the default class is @code{<array>}.
-@c JP
-ランク2で行列ともに@var{dimension}である単位行列を作って返します。
-配列のクラスを@var{class}に渡せば、結果はそのインスタンスになります。
-デフォルトは@code{<array>}クラスです。
-@c COMMON
-
-@example
-(identity-array 3)
- @result{} #,(<array> (0 3 0 3) 1 0 0 0 1 0 0 0 1)
-
-(identity-array 3 <f32array>)
- @result{} #,(<f32array> (0 3 0 3) 1.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0)
+(array-flip '#2a((1 2 3) (4 5 6)) 1)
+ @result{} #2a((3 2 1) (6 5 4))
 @end example
 @end defun
 
@@ -911,9 +1037,9 @@ and the number of columns of @var{b} must match.
 ;; [1 2 3] x [4 3] => [20 14]
 ;; [4 5 6]   [2 1]    [56 41]
 
-(array-mul (array (shape 0 2 0 3) 1 2 3 4 5 6)
-           (array (shape 0 3 0 2) 6 5 4 3 2 1))
- @result{} #,(<array> (0 2 0 2) 20 14 56 41)
+(array-mul '#2a((1 2 3) (4 5 6))
+           '#2a((6 5) (4 3) (2 1)))
+ @result{} #2a((20 14) (56 41))
 @end example
 @end defun
 
@@ -985,15 +1111,15 @@ value instead of counting on the side effects.
 @c COMMON
 
 @example
-(array-add-elements (array (shape 0 2 0 2) 1 2 3 4)
-                    (array (shape 0 2 0 2) 5 6 7 8)
+(array-add-elements '#2a((1 2) (3 4))
+                    '#2a((5 6) (7 8))
                     10)
- @result{} #,(<array> (0 2 0 2) 16 18 20 22)
+ @result{} #2a((16 18) (20 22))
 
-(array-div-elements (array (shape 0 2 0 2) 1 3 5 7)
+(array-div-elements '#2a((1 3) (5 7))
                     100
-                    (array (shape 0 2 0 2) 2 4 6 8))
- @result{} #,(<array> (0 2 0 2) 1/200 3/400 1/120 7/800)
+                    '#2a((2 4) (6 8)))
+ @result{} #2a((1/200 3/400) (1/120 7/800))
 @end example
 
 @c EN
@@ -1013,8 +1139,8 @@ the same.  The result is the same type as the first argument.
 
 @example
 (array-mul-elements (make-u8array (shape 0 2 0 2) 3)
-                    (array (shape 0 2 0 2) 1 3 5 7))
- @result{} #,(<u8array> (0 2 0 2) 3 9 15 21)
+                    '#2a((1 3) (5 7)))
+ @result{} #2u8((3 9) (15 21))
 @end example
 @end defun
 
@@ -1031,8 +1157,8 @@ elements in the original array.
 @c COMMON
 
 @example
-(array-negate-elements (array (shape 0 2 0 2) 1 2 3 4))
-  @result{} #,(<array> (0 2 0 2) -1 -2 -3 -4)
+(array-negate-elements '#2a((1 2) (3 4)))
+  @result{} #2a((-1 -2) (-3 -4))
 @end example
 @end defun
 
@@ -1048,8 +1174,8 @@ elements in the original array.
 @c COMMON
 
 @example
-(array-reciprocate-elements (array (shape 0 2 0 2) 1 2 3 4))
-  @result{} #,(<array> (0 2 0 2) 1 1/2 1/3 1/4)
+(array-reciprocate-elements '#2a((1 2) (3 4)))
+  @result{} #2a((1 1/2) (1/3 1/4))
 @end example
 @end defun
 
