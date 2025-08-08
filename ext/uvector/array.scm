@@ -139,7 +139,7 @@
                (unless (and full? (= s 0)) (display #\@) (display s))
                (when full? (begin (display #\:) (display (- e s)))))))))
 
-  (format port "#~a~a~@[~a~]~s"
+  (format port "#~a~a~@[~a~]~a~s"
           (array-rank array)
           (array-tag (class-of array))
           (cond [(eq? fmt 'dimensions) (dims #t)]
@@ -147,6 +147,7 @@
                              (iota (array-rank array))))
                  (dims #f)]
                 [else #f])
+          (if (zero? (array-rank array)) " " "") ; need this for zero-dim array
           (array->nested-list array)))
 
 (define-class <array> (<array-base>)
@@ -969,7 +970,9 @@
     (do ([i (- (array-end ar axis) 1) (- i 1)]
          [r '() (cons (get i) r)])
         [(< i start) r]))
-  (rec 0))
+  (if (zero? rank)
+    (array-ref ar)
+    (rec 0)))
 
 (define (array->nested-vector ar)
   (define rank (array-rank ar))

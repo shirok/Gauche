@@ -1874,6 +1874,11 @@
      "#2a@-1@1()"
      "#2a@-1:0@1:0()"
      "#,(<array> (-1 -1 1 1))")
+
+  (t (array (shape) 'zero-dim)
+     "#0a zero-dim"
+     "#0a zero-dim"
+     "#,(<array> () zero-dim)")
   )
 
 
