@@ -77,7 +77,8 @@
                    $* slices strs (ceiling->exact (/ num-items rows)) #t "")]
       [(column) (slices strs rows #t "")]))
   (define (column-widths tr-matrix)
-    (map (^[ss] (apply max (map (^s (+ 2 (string-length s))) ss))) tr-matrix))
+    (map (^[ss] (apply max minimum-width (map (^s (+ 2 (string-length s))) ss)))
+         tr-matrix))
 
   ;; Packers - Returns tr-matrix and column-widths
   ;;
