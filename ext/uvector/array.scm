@@ -370,7 +370,7 @@
         [else (bad-prefix)])))
   (define (read-dimensions r)
     (case (peek-char port)
-      [(#\() (reverse r)]
+      [(#\( #\space) (reverse r)]
       [(#\@) (save-char!) (read-start r)]
       [(#\:) (save-char!) (read-length 0 r)]
       [else  (save-char!) (bad-prefix)]))
@@ -397,7 +397,7 @@
       (case ch
         [(#\:) (save-char!) (read-length n r)]
         [(#\@) (save-char!) (read-start `((,n #f) ,@r))]
-        [(#\() (reverse `((,n #f) ,@r))]
+        [(#\( #\space) (reverse `((,n #f) ,@r))]
         [else  (save-char!) (bad-prefix)])))
   (define (read-length start r)
     (let* ([n (read-digits #t)]
@@ -405,7 +405,7 @@
       (case ch
         [(#\:) (save-char!) (read-length 0 `((,start ,n) ,@r))]
         [(#\@) (save-char!) (read-start `((,start ,n) ,@r))]
-        [(#\() (reverse `((,start ,n) ,@r))]
+        [(#\( #\space) (reverse `((,start ,n) ,@r))]
         [else  (save-char!) (bad-prefix)])))
   (define (dim-check suggested content) ;returns #f when bad shape
     (let* ([start (if (pair? suggested) (car suggested) 0)]
