@@ -449,7 +449,7 @@
              (format "   bytestring : ~3@a" (~ c'bytestring))
              (format "exact-decimal : ~3d"  (~ c'exact-decimal))
              (format " array-format : ~a"   (~ c'array-format)))
-       ))
+       :style 'packed))
     *no-value*))
 
 (define-toplevel-command (print-all pa) :read
