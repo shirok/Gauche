@@ -32007,7 +32007,7 @@ Various options are provided to customize the output.
 @c COMMON
 @end deftp
 
-@defun display-multicolumn strs :key width minimum-width max-columns order indent
+@defun display-multicolumn strs :key width minimum-width max-columns order indent style
 @c MOD text.multicolumn
 @c EN
 Display items in a list of strings @var{strs} in multicolumn format,
@@ -32063,9 +32063,39 @@ area of text becomes narrower by @var{indent} characters.
 @var{width}で指定される幅はこのインデントを含んだものとなります。つまり
 テキストの表示領域の幅はこの引数の分だけ狭くなります。
 @c COMMON
+
+@c EN
+The @var{style} argument may take either one of the symbols @code{even}
+or @code{packed}.  If it is @code{even} (default), all columnts have
+even width, based on the longest item.
+If it is @code{packed}, each column gets a width that's enough to contain
+that particular column.  It may allow more columns to fit.
+@c JP
+@var{style}引数はシンボル@code{even}か@code{packed}のどちらかです。
+@code{even}の場合(デフォルト)、全てのカラムは等幅で、最も長い項目が
+収まるように配置されます。@code{packed}の場合は、各カラムの幅は
+そのカラムの項目だけを収めるのに必要な分が取られます。
+これにより、より多くのカラムを幅に収めて表示できるかもしれません。
+@c COMMON
+
+@c EN
+The @code{packed} style is particulary effective when you have mostly
+short items and just a few long items.  With @code{even} style,
+columns that do not contain long items still gets the same width,
+resulting lots of whitespaces.  @code{Packed} style takes width only for
+columns that contain long items, leading to more columns, fewer rows,
+and more uniform text density.
+@c JP
+@code{packed}スタイルは、ほとんどの項目が短い中にごく少数の長い項目が含まれている
+ような場合にとりわけ有効です。@code{even}スタイルだとそういう場合、
+短い項目だけが含まれるカラムにも同じ幅が割当てられるため、空白が多い、
+スカスカな表示になってしまいます。@code{packed}スタイルでは
+長い項目を含んでいるカラムだけに広い幅を与えるので、より少ない行、
+より多くのカラムを使って、見た目のテキストの密度がより一様な表示になります。
+@c COMMON
 @end defun
 
-@defun layout-multicolumn strs :key width minimum-width max-columns order
+@defun layout-multicolumn strs :key width minimum-width max-columns order style
 @c MOD text.multicolumn
 @c EN
 This is an underlying procedure of @code{display-multicolumn}.  It returns
