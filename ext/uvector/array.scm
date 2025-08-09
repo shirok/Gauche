@@ -373,6 +373,7 @@
       [(#\( #\space) (reverse r)]
       [(#\@) (save-char!) (read-start r)]
       [(#\:) (save-char!) (read-length 0 r)]
+      [(#\" #\| #\[ #\{) (bad-prefix)]  ; not to trip subsequent read
       [else  (save-char!) (bad-prefix)]))
   (define (read-digits allow-sign?)
     (let loop ([ch (peek-char port)]
@@ -398,6 +399,7 @@
         [(#\:) (save-char!) (read-length n r)]
         [(#\@) (save-char!) (read-start `((,n #f) ,@r))]
         [(#\( #\space) (reverse `((,n #f) ,@r))]
+        [(#\" #\| #\[ #\{) (bad-prefix)]  ; not to trip subsequent read
         [else  (save-char!) (bad-prefix)])))
   (define (read-length start r)
     (let* ([n (read-digits #t)]
@@ -406,6 +408,7 @@
         [(#\:) (save-char!) (read-length 0 `((,start ,n) ,@r))]
         [(#\@) (save-char!) (read-start `((,start ,n) ,@r))]
         [(#\( #\space) (reverse `((,start ,n) ,@r))]
+        [(#\" #\| #\[ #\{) (bad-prefix)]  ; not to trip subsequent read
         [else  (save-char!) (bad-prefix)])))
   (define (dim-check suggested content) ;returns #f when bad shape
     (let* ([start (if (pair? suggested) (car suggested) 0)]
