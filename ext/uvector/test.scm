@@ -1758,16 +1758,13 @@
   (define (t input expect)
     (test* input expect (read-from-string input)))
 
-  (t "#a(1 2 3 4 5 6)" (array (shape 0 6) 1 2 3 4 5 6))
-
-  (t "#a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
-  (t "#2a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
-  (t "#a:2:3((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
-  (t "#a:2((1 2 3) (4 5 6))" (array (shape 0 2) '(1 2 3) '(4 5 6)))
-  (t "#a@1:2@-1((1 2 3) (4 5 6))" (array (shape 1 3 -1 2) 1 2 3 4 5 6))
-
-  ;; Explicit rank
   (t "#1a(1 2 3 4 5 6)" (array (shape 0 6) 1 2 3 4 5 6))
+
+  (t "#2a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
+  (t "#2a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
+  (t "#2a:2:3((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
+  (t "#1a:2((1 2 3) (4 5 6))" (array (shape 0 2) '(1 2 3) '(4 5 6)))
+  (t "#2a@1:2@-1((1 2 3) (4 5 6))" (array (shape 1 3 -1 2) 1 2 3 4 5 6))
   (t "#1a((1 2) 3 (4 5 6))" (array (shape 0 3) '(1 2) 3 '(4 5 6)))
   (t "#2a((1 2 3) (4 5 6))" (array (shape 0 2 0 3) 1 2 3 4 5 6))
   (t "#2a((1 (2) 3) (4 (5) 6))" (array (shape 0 2 0 3) 1 '(2) 3 4 '(5) 6))
@@ -1795,19 +1792,20 @@
   ;; Emptylist in the content introduces ambiguousity to the shape,
   ;; since () is "zero element of _anything_", where anything can
   ;; take arbitrary shape.
-  (t "#a()" (array (shape 0 0)))
-  (t "#a(())" (array (shape 0 1 0 0)))
-  (t "#a(() ())" (array (shape 0 2 0 0)))
-  (t "#a((()))" (array (shape 0 1 0 1 0 0)))
+  (t "#1a()" (array (shape 0 0)))
+  (t "#1a(())" (array (shape 0 1) '()))
+  (t "#2a(())" (array (shape 0 1 0 0)))
+  (t "#2a(() ())" (array (shape 0 2 0 0)))
+  (t "#3a((()))" (array (shape 0 1 0 1 0 0)))
 
   ;; Error cases
-  (t "#a33" (test-error <read-error> "Invalid array literal prefix: #a33"))
-  (t "#a::1()" (test-error <read-error> "Invalid array literal prefix: #a::1"))
-  (t "#a@:1()" (test-error <read-error> "Invalid array literal prefix: #a@:1"))
-  (t "#a((1 2 3) (4 5))" (test-error <read-error> #/inconsistent shape/))
+  (t "#1a33" (test-error <read-error> "Invalid array literal prefix: #1a33"))
+  (t "#1a::1()" (test-error <read-error> "Invalid array literal prefix: #1a::1"))
+  (t "#1a@:1()" (test-error <read-error> "Invalid array literal prefix: #1a@:1"))
+  (t "#2a((1 2 3) (4 5))" (test-error <read-error> #/inconsistent shape/))
   (t "#3a((1 2 3) (4 5 6))" (test-error <read-error> #/inconsistent rank/))
-  (t "#a:2(1 2 3)" (test-error <read-error> #/inconsistent shape/))
-  (t "#a:2:2((1 2) (3))" (test-error <read-error> #/inconsistent shape/))
+  (t "#1a:2(1 2 3)" (test-error <read-error> #/inconsistent shape/))
+  (t "#2a:2:2((1 2) (3))" (test-error <read-error> #/inconsistent shape/))
   (t "#1a:2:2(1 2 3 4)" (test-error <read-error> #/rank and dimensions don't match/))
   (t "#3a:2:2(1 2 3 4)" (test-error <read-error> #/rank and dimensions don't match/))
 
@@ -1818,6 +1816,11 @@
   (t "#1u+8" (test-error <read-error> "Invalid array literal prefix: #1u+8"))
   (t "#1u8:2(1 2 3)" (test-error <read-error> #/inconsistent shape/))
   (t "#1u8:2:1(1 2 3)" (test-error <read-error> #/rank and dimensions/))
+
+  ;; Zero dimensional array
+  (t "#0a 3" (array (shape) 3))
+  (t "#0a (1 2 3)" (array (shape) '(1 2 3)))
+  (t "#0a(1 2 3)" (array (shape) '(1 2 3)))  ; not srfi-163
   )
 
 (let ()

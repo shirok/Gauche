@@ -533,8 +533,14 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case 'e':; case 'E':; case 'i':; case 'I':;
                 Scm_UngetcUnsafe(c1, port);
                 return read_number(port, c, 0, ctx); /* let StringToNumber handle radix prefix */
+#if 0
+                /* For now, we do not allow array literal without explicit
+                   rank.  It is allowed in some CL implementation, and
+                   also srfi-58, but there are some incompatible differences
+                   so we'd better be conesrvative. */
             case 'a':
                 return read_array(port, -1, 'a', ctx);
+#endif
             case '!':
                 /* #! is either a script shebang or a reader directive */
                 return read_shebang(port, ctx);
