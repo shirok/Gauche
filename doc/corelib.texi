@@ -26563,6 +26563,7 @@ and falls back to fractional form.
 (@ref{Lexical structure}参照)。ただし、循環部の長さが長くなりすぎる
 場合は諦めて分数表記になります。
 @c COMMON
+
 @example
 (define wc (make-write-controls :exact-decimal #t))
 
@@ -26577,6 +26578,19 @@ and falls back to fractional form.
 @end example
 @end defivar
 
+@defivar <write-controls> array
+@c EN
+This slot can have one of the symbols @code{compact} (default),
+@code{dimensions}, or @code{reader-ctor}.
+It controls how arrays are printed.
+@xref{Array literal syntax}, for the details.
+@c JP
+このスロットはシンボル@code{compact} (デフォルト)、
+@code{dimensions}、@code{reader-ctor}のいずれかを持ち、
+配列の表示方式を制御します。
+詳しくは@ref{Array literal syntax}を参照してください。
+@c COMMON
+@end defivar
 
 @c EN
 A write-controls object is immutable.  If you need a controls object

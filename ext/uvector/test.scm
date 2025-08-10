@@ -1827,7 +1827,7 @@
   (define (t arr ex-compact ex-dimensions ex-reader-ctor)
     (define (tt mode expect)
       (test* #"array writer: ~mode" expect
-             (let ((ctrl (make-write-controls :array-format mode)))
+             (let ((ctrl (make-write-controls :array mode)))
                (write-to-string arr (cut write <> ctrl)))))
     (tt 'compact ex-compact)
     (tt 'dimensions ex-dimensions)

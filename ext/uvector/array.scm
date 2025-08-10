@@ -112,8 +112,7 @@
     (set! (slot-ref self 'setter) (^[index value] (set store index value)))))
 
 (define-method write-object ((self <array-base>) port)
-  (ecase (~ ((with-module gauche.internal %port-write-controls) port)
-           'array-format)
+  (ecase (~ ((with-module gauche.internal %port-write-controls) port) 'array)
     [(compact dimensions) => (cut format-array/srfi-163 self port <>)]
     [(reader-ctor) (format-array/reader-ctor self port)]))
 

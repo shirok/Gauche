@@ -260,7 +260,7 @@ syntax.  For the backward compatibity, this syntax is also supported:
 @end example
 
 @c EN
-When an array is printed, the write control parameter @code{array-format}
+When an array is printed, the write control parameter @code{array}
 determines which format is used (@pxref{Output controls}).  It can take
 one of the following symbols.
 
@@ -282,7 +282,7 @@ The srfi-10 reader constructor is used:
 or @code{#,(<array> (0 3 -1 1) 1 2 3 4 5 6)}.
 @end table
 @c JP
-配列が印字される時は、出力制御パラメータの@code{array-format}の値により
+配列が印字される時は、出力制御パラメータの@code{array}の値により
 どの形式を使うかが決まります (@ref{Output controls}参照)。
 この値は次の3つのシンボルのいずれかを取ります。
 
@@ -459,7 +459,7 @@ a whitespace.
 This is an alternative array literal syntax.  Up to Gauche 0.9.15, this was
 the only array external representation.  We can still read this format,
 and you can print an array with this format by setting
-@code{array-format} parameter of write controls to @code{reader-ctor}.
+@code{array} parameter of write controls to @code{reader-ctor}.
 
 @var{shape} is a list
 of even number of integers, and each 2@var{n}-th integer
@@ -470,7 +470,7 @@ listed in row-major order.
 @c JP
 これは配列のリテラル構文の別形式です。Gauche 0.9.15まではこれが唯一の
 配列の外部表現でした。今のGaucheでもこの形式を読むことができ、
-またwrite controlsの@code{array-format}パラメータを@code{reader-ctor}に
+またwrite controlsの@code{array}パラメータを@code{reader-ctor}に
 することで書き出すことができます。
 
 @var{shape}は偶数個の整数のリストで、

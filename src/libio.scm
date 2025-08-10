@@ -924,16 +924,16 @@
 (inline-stub
  (define-cfn write_controls_allocate (_::ScmClass* _) :static
    (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
- (define-cfn write-controls-array-format-get (arg) :static
+ (define-cfn write-controls-array-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (case (-> obj arrayFormat)
        [(SCM_WRITE_ARRAY_COMPACT) (return 'compact)]
        [(SCM_WRITE_ARRAY_DIMENSIONS) (return 'dimensions)]
        [(SCM_WRITE_ARRAY_READER_CTOR) (return 'reader-ctor)]
-       [else (Scm_Panic "Invalid value in ScmWriteControls.arrayFormat: ~S"
+       [else (Scm_Panic "Invalid value in ScmWriteControls.array: ~S"
                         (-> obj arrayFormat))])))
 
- (define-cfn write-controls-array-format-set (arg value) ::void :static
+ (define-cfn write-controls-array-set (arg value) ::void :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (cond
       [(SCM_EQ value 'compact)
@@ -942,7 +942,7 @@
        (set! (-> obj arrayFormat) SCM_WRITE_ARRAY_DIMENSIONS)]
       [(SCM_EQ value 'reader-ctor)
        (set! (-> obj arrayFormat) SCM_WRITE_ARRAY_READER_CTOR)]
-      [else (Scm_Error "Invalid array-format, must be \
+      [else (Scm_Error "Invalid ScmWriteControls.array, must be \
                         one of compact, dimensions or \
                         reader-ctor, but got %S" value)])))
 
@@ -996,9 +996,9 @@
                             else obj->stringLength = -1;")
     (exact-decimal :type <boolean> :c-name "exactDecimal"
                    :setter "obj->exactDecimal = !SCM_FALSEP(value);")
-    (array-format  :type <symbol> :c-name "arrayFormat"
-                   :getter (c "write_controls_array_format_get")
-                   :setter (c "write_controls_array_format_set"))
+    (array  :type <symbol> :c-name "arrayFormat"
+            :getter (c "write_controls_array_get")
+            :setter (c "write_controls_array_set"))
     )
    (allocator (c "write_controls_allocate")))
 
@@ -1008,7 +1008,7 @@
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (make-write-controls :key length level width base radix pretty indent
                                   bytestring string-length exact-decimal
-                                  array-format
+                                  array
                                   print-length print-level print-width
                                   print-base print-radix print-pretty)
   (define (arg k k-alt) (if (undefined? k-alt) k k-alt))
@@ -1023,7 +1023,7 @@
     :string-length string-length
     :indent indent
     :exact-decimal exact-decimal
-    :array-format array-format))
+    :array array))
 
 ;; Returns fresh write-controls where the specified slot value is replaced
 ;; from the original WC.
@@ -1033,7 +1033,7 @@
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (write-controls-copy wc :key length level width base radix pretty indent
                                      bytestring string-length exact-decimal
-                                     array-format
+                                     array
                                      print-length print-level print-width
                                      print-base print-radix print-pretty)
   (let-syntax [(select
@@ -1058,7 +1058,7 @@
           [bytestring    (select bytestring)]
           [string-length (select string-length)]
           [exact-decimal (select exact-decimal)]
-          [array-format  (select array-format)])
+          [array  (select array)])
       (if (and (eqv? length (slot-ref wc 'length))
                (eqv? level  (slot-ref wc 'level))
                (eqv? width  (slot-ref wc 'width))
@@ -1069,7 +1069,7 @@
                (eqv? bytestring    (slot-ref wc 'bytestring))
                (eqv? string-length (slot-ref wc 'string-length))
                (eqv? exact-decimal (slot-ref wc 'exact-decimal))
-               (eqv? array-format  (slot-ref wc 'array-format)))
+               (eqv? array  (slot-ref wc 'array)))
         wc
         (make <write-controls>
           :length length
@@ -1082,7 +1082,7 @@
           :bytestring bytestring
           :string-length string-length
           :exact-decimal exact-decimal
-          :array-format array-format)))))
+          :array array)))))
 
 ;;;
 ;;; With-something
