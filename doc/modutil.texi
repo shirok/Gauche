@@ -14148,13 +14148,9 @@ Note that @code{(naive-factorize 1)} is @code{()}.
 @c EN
 Although this is pretty naive method, this works well as far as
 any of @var{n}'s factors are up to the order of around @code{1e7}.
-For example, the following example runs in about 0.4sec on 2.4GHz Core2
-machine.
-(The first time will take about 1.3sec to realize lazy prime sequences.)
 @c JP
 この方法は極めてナイーブなものですが、目安としてどの素因数も@code{1e7}程度以下であれば
-それなりに使えます。例えば次の例は2.4GHz Core2マシンで0.4秒で答えが返ります
-(ただし、初回の実行は遅延素数シーケンスの実現化があるので1.3秒ほどかかりますが)。
+それなりに使えます。
 @c COMMON
 
 @example
@@ -14240,6 +14236,25 @@ up factorization and the result may contain a possibly composite numbers.
 @c COMMON
 @end defun
 
+@defun grouped-factorize n :optional factorizer
+@c EN
+Factorize @var{n}, and returns
+@code{((p_1 . k_1) ... (p_n . k_n))}, where
+@code{n = p_1^@{k_1@} * ... * p_n^@{k_n@}}.
+The actual factorization is done by @var{factorizer}, whose
+default is @code{mc-factorize}.
+@c JP
+@var{n}を素因数分解し、結果を@code{((p_1 . k_1) ... (p_n . k_n))}の
+形で返します。ここで@code{n = p_1^@{k_1@} * ... * p_n^@{k_n@}}です。
+実際の素因数分解は@var{factorizer}が行います。省略時には
+@code{mc-factorize}が使われます。
+@c COMMON
+
+@example
+(grouped-factorize 636787224)
+ @result{} ((2 . 3) (3 . 3) (17 . 2) (101 . 2))
+@end example
+@end defun
 
 @c EN
 @subheading Miscellaneous

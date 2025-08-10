@@ -321,7 +321,7 @@ Gaucheは歴史的に2種類のエスケープを使ってきました。
 @c COMMON
 
 @c EN
-@item Extended sharp syntax
+@item Extended hash syntax
 Many more special tokens begins with '@code{#}' are defined.
 See the table below.
 @c JP
@@ -332,16 +332,16 @@ See the table below.
 @end table
 
 @menu
-* Sharp syntax::
+* Hash syntax::
 * Hash-bang token::
 @end menu
 
-@node Sharp syntax, Hash-bang token, Lexical structure, Lexical structure
-@subsection Sharp syntax
+@node Hash syntax, Hash-bang token, Lexical structure, Lexical structure
+@subsection Hash syntax
 @c NODE #構文
 
 @c EN
-The table below lists sharp-syntaxes.
+The table below lists hash-syntaxes.
 @c JP
 以下の表はシャープ構文のリストです。
 @c COMMON
@@ -414,10 +414,12 @@ The table below lists sharp-syntaxes.
 @item @code{#0} @dots{} @code{#9}
 @c EN
  @tab @code{#@var{n}#}, @code{#@var{n}=}: [SRFI-38] Shared substructure definition and reference.@*
-@code{#@var{n}R}, @code{#@var{n}r}: Radix prefixed numeric literals.
+@code{#@var{n}R}, @code{#@var{n}r}: Radix prefixed numeric literals. @*
+@code{#@var{n}a}, @code{#@var{n}s8}, @code{#@var{n}u8}, @dots{} @code{#@var{n}c128}: [SRFI-163] Array literals.  @xref{Array literal syntax}.
 @c JP
  @tab @code{#@var{n}#}, @code{#@var{n}=}: [SRFI-38] 共有サブストラクチャの定義と参照。@*
-@code{#@var{n}R}, @code{#@var{n}r}: 基数を明示した数値リテラル。
+@code{#@var{n}R}, @code{#@var{n}r}: 基数を明示した数値リテラル。@*
+@code{#@var{n}a}, @code{#@var{n}s8}, @code{#@var{n}u8}, @dots{} @code{#@var{n}c128}: [SRFI-163] 配列リテラル。 @ref{Array literal syntax}参照。
 @c COMMON
 @item @code{#:}
 @c EN
@@ -611,7 +613,7 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @end multitable
 
-@node Hash-bang token,  , Sharp syntax, Lexical structure
+@node Hash-bang token,  , Hash syntax, Lexical structure
 @subsection Hash-bang token
 @c NODE Hash-bangトークン
 @lxindex #!

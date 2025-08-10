@@ -217,9 +217,16 @@ but they are space efficient.
 @subsection Array literal syntax
 @c NODE 配列のリテラル構文
 
+@c EN
 Gauche now supports array literals defined in srfi-163.  Its compact
 representation begins with a hash sign, followed by the array's rank,
-@code{a} for general array, then a nested list of elements:
+then a tag to specify the array's type (@code{a} for general array),
+then a nested list of elements:
+@c JP
+Gaucheはsrfi-163で定義された配列リテラルをサポートするようになりました。
+短い表記では、@code{#}の後に配列のランク、続いて配列の型を示すタグ
+(一般配列の場合は@code{a})、その後に要素の入れ子になったリストが続きます。
+@c COMMON
 
 @example
 ;; A 3x2 general array
@@ -230,26 +237,80 @@ representation begins with a hash sign, followed by the array's rank,
 #2a((1 2 3) (4 5 6))
 @end example
 
+@c EN
 Array lengths for each dimension can be explicit:
+@c JP
+配列の各次元の長さを明示することもできます。
+@c COMMON
 
 @example
 #2a:3:2((1 2 3) (4 5 6))
 @end example
 
+@c EN
 Gauche used to read/write arrays using srfi-10 reader constructor
 syntax.  For the backward compatibity, this syntax is also supported:
+@c JP
+以前のGaucheは、srfi-10のリーダ構築子構文を使って配列を書き出していました。
+互換性のため、その構文もサポートされます。
+@c COMMON
 
 @example
 #,(<array> (0 3 0 2) 1 2 3 4 5 6)
 @end example
 
+@c EN
 When an array is printed, the write control parameter @code{array-format}
-determines which format is used.  If it is @code{compact} (default),
-the srfi-163 representation without array lengths is used.
-it may show start indexes if the array has non-zero start index.
-If it is @code{dimensions}, the srfi-163 representation with array lengths
-is used.  If it is @code{reader-ctor}, srfi-10 read-time constructor
-is used.  The precise syntax of those literals are described below.
+determines which format is used (@pxref{Output controls}).  It can take
+one of the following symbols.
+
+@table @code
+@item compact
+This is the default.
+The srfi-163 representation without array lengths is used,
+e.g. @code{#2a((0 1) (2 3) (4 5))}.
+If the array has non-zero start index, it shows start indexes of
+all dimensions, e.g. @code{#2a@@0@@-1((0 1) (2 3) (4 5))}.
+@item dimensions
+The srfi-163 representation with array lengths is used:
+@code{#2a:3:2((0 1) (2 3) (4 5))}.
+If the array has non-zero start index, it is shown in the dimension:
+@code{#2a:3@@-1:2((0 1) (2 3) (4 5))}.
+@item reader-ctor
+The srfi-10 reader constructor is used:
+@code{#,(<array> (0 3 0 2) 1 2 3 4 5 6)},
+or @code{#,(<array> (0 3 -1 1) 1 2 3 4 5 6)}.
+@end table
+@c JP
+配列が印字される時は、出力制御パラメータの@code{array-format}の値により
+どの形式を使うかが決まります (@ref{Output controls}参照)。
+この値は次の3つのシンボルのいずれかを取ります。
+
+@table @code
+@item compact
+これがデフォルトです。
+配列の長さを省略したsrfi-163表記が使われます。
+例: @code{#2a((0 1) (2 3) (4 5))}。
+ただし、配列にゼロ始点でない次元があれば、全ての始点が表示されます:
+@code{#2a@@0@@-1((0 1) (2 3) (4 5))}。
+@item dimensions
+配列の長さを示すsrfi-163表記が使われます:
+@code{#2a:3:2((0 1) (2 3) (4 5))}。
+配列にゼロ始点でない次元があれば、その次元だけ始点も表示されます:
+@code{#2a:3@@-1:2((0 1) (2 3) (4 5))}。
+@item reader-ctor
+srfi-10表記が使われます:
+@code{#,(<array> (0 3 0 2) 1 2 3 4 5 6)}や、
+@code{#,(<array> (0 3 -1 1) 1 2 3 4 5 6)}等。
+@end table
+@c COMMON
+
+@c EN
+See the following description for the precise specification of those
+notations.
+@c JP
+これらの表記の正確な仕様については以下に説明します。
+@c COMMON
 
 @deftp {Reader Syntax} @code{# @var{rank} a @var{start/length}* (@var{elements} @dots{})}
 @deftpx {Reader Syntax} @code{# @var{rank} s8 @var{start/length}* (@var{elements} @dots{})}
@@ -259,35 +320,80 @@ is used.  The precise syntax of those literals are described below.
 @deftp {Reader Syntax} @code{# @var{rank} c64 @var{start/length}* (@var{elements} @dots{})}
 @deftpx {Reader Syntax} @code{# @var{rank} c128 @var{start/length}* (@var{elements} @dots{})}
 [SRFI-163]
+@c EN
 A literal array.  @var{Rank} is a decimal digit to specify the rank
 of the array. What follows is a tag that specify arrays' type: @code{a} for
 general array that can contain any Scheme values,
 and @code{s8} @dots{} @code{c128} are uniform numeric arrays, corresponds
-to uniform vectors.
+to uniform vectors (@pxref{Uniform vectors}).
+@c JP
+配列リテラルです。@var{rank}は配列のランク(次元数)を示す数値です。
+その後に配列の型を示すタグが続きます。@code{a}が任意のSchemeオブジェクトを
+要素に持てる一般配列で、その他に特定の数値型を格納する配列があります。
+数値型の配列はユニフォームベクタ(@ref{Uniform vectors}参照)と同じ、
+@code{s8} @dots{} @code{c128}のタグを使います。
+@c COMMON
 
+@c EN
 Next come start/length specifications.  They're optional as long as the
 info can be derived from the array elements.  If given, each start/length
 spec takes one of the following form, to specify the array's start
 index and length of the correponsing dimension.
+@c JP
+続いて、始点/長さの指定が来ます。これは要素のリストから推測可能な場合は
+省略できます。与えられた場合、各次元に対する始点/長さ指定は以下の
+いずれかの形式をとります。
+@c COMMON
 
 @table @code
 @item @@@var{start}:@var{length}
+@c EN
 The index starts from @var{start} and runs for @var{length}.
+@c JP
+インデックスは@var{start}を始点とし、長さ@var{length}。
+@c COMMON
 @item :@var{length}
+@c EN
 The index starts from zero and runs for @var{length}.
+@c JP
+インデックスは0を始点とし、長さ@var{length}。
+@c COMMON
 @item @@@var{start}
+@c EN
 The index starts from @var{start}.  Length is determined by the given elements.
+@c JP
+インデックスは@var{start}を始点とし、長さは要素のリストで決定される。
+@c COMMON
 @end table
 
+@c EN
 If the array has non-zero start index, or a zero length dimension,
 start/length specs can't be omitted.
+@c JP
+配列がゼロ以外の始点のインデックスを持つか、いずれかの次元の長さが0である
+場合、始点/長さ指定は省略できません。
+@c COMMON
 
+@c EN
 Lastly come the array elements, in the form of nested list.  Rank 1 array
 has a flat list, rank 2 array has a list of lists, and so on.
+(Note that a rank-1 array can hold lists in its elements, in that
+case you see nested list in rank 1 array contens. That's why you need
+rank to avoid ambiguity).
 Each corresponding dimension must be uniform, e.g.
 @code{#2a((1 2) (3))} isn't allowed b/c the second level list has different
 lengths.  If the literal has start/length specs, they should match the
 given elements as well.
+@c JP
+最後にネストしたリストで配列の要素を指定します。ランク1の配列はフラットなリスト、
+ランク2の配列はリストのリスト、という具合です。
+(ランク1の配列が要素にリストを持つことは可能で、
+その場合はランク1配列の要素にネストしたリストが現れます。
+ランクの数値が必要なのはこの曖昧姓を排除するためです。)
+要素の、対応する次元の長さは一様でなければなりません。
+例えば@code{#2a((1 2) (3))}は、二番目の次元の長さが異なるので許されません。
+リテラルが始点/長さ指定を持っていた場合、要素リストもその指定と一致しなければなりません。
+@c COMMON
 
 @example
 @c EN
@@ -308,18 +414,52 @@ given elements as well.
 @c COMMON
 #2a((1 0 0 0) (0 1 0 0) (0 0 1 0) (0 0 0 1))
 #2a:4:4((1 0 0 0) (0 1 0 0) (0 0 1 0) (0 0 0 1))
+
+@c EN
+; Arrays with non-zero start index
+@c JP
+; ゼロ始点でないインデックスを持つ配列
+@c COMMON
+; (array (shape -1 1 -2 0) 1 2 3 4)
+ @result{}
+#2a@-1@-2((1 2) (3 4))
+#2a@-1:2@-2:2((1 2) (3 4))
+@end example
+
+@c EN
+As a corner case, rank-0 array can contain one value.
+The value is written after the array prefix (e.g. @code{#0a}) and
+a whitespace.
+@c JP
+特殊なケースとして、ランク0の配列はひとつだけ値を保持できます。
+値は、配列プレフィクス(例: @code{#0a})、およびひとつの空白の後に
+表示されます。
+@c COMMON
+
+@example
+@c EN
+; Two rank-0 array, containing #f and (1), respectively
+@c JP
+; ランク0の二つの配列。それぞれ#fと(1)を値に持つ。
+@c COMMON
+#0a #f
+#0a (1)
 @end example
 @end deftp
 
 
 @deftp {Reader Syntax} @code{#,(<array> @var{shape} @var{obj} @dots{})}
+@deftpx {Reader Syntax} @code{#,(<s8array> @var{shape} @var{obj} @dots{})}
+@deftpx {Reader Syntax} @code{#,(<s8array> @var{shape} @var{obj} @dots{})}
+@dots{}
+@end deftp
+@deftp {Reader Syntax} @code{#,(<c64array> @var{shape} @var{obj} @dots{})}
+@deftpx {Reader Syntax} @code{#,(<c128array> @var{shape} @var{obj} @dots{})}
 @c EN
 This is an alternative array literal syntax.  Up to Gauche 0.9.15, this was
 the only array external representation.  We can still read this format,
 and you can print an array with this format by setting
 @code{array-format} parameter of write controls to @code{reader-ctor}.
-(Substitute @code{<array>} for
-@code{<u8array>} if the array is @code{<u8array>}, etc.)
 
 @var{shape} is a list
 of even number of integers, and each 2@var{n}-th integer
@@ -332,8 +472,6 @@ listed in row-major order.
 配列の外部表現でした。今のGaucheでもこの形式を読むことができ、
 またwrite controlsの@code{array-format}パラメータを@code{reader-ctor}に
 することで書き出すことができます。
-(配列が例えば@code{<u8array>}であるなら、@code{<array>}の部分は@code{<u8array>}
-となります。)
 
 @var{shape}は偶数個の整数のリストで、
 2@var{n}番目の整数が@var{n}次元目のインデックスの下限を、2@var{n}+1番目の
@@ -358,6 +496,20 @@ listed in row-major order.
 ; 4x4の単位行列
 @c COMMON
 #,(<array> (0 4 0 4) 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1)
+
+@c EN
+; Arrays with non-zero start index
+@c JP
+; ゼロ始点でないインデックスを持つ配列
+@c COMMON
+#,(<array> (-1 1 -2 0) 1 2 3 4)
+
+@c EN
+; Rank-0 array
+@c JP
+; ランク0の配列
+@c COMMON
+#,(<array> () 3)
 @end example
 @end deftp
 
