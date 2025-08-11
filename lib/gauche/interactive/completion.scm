@@ -47,15 +47,23 @@
 ;; Some questions to consider
 ;;   - Should we build a trie for quick access to prefix-matching symbols?
 ;;     If we do so, how to keep it updated?
-;;   - Do we want to complete w-i-f-f to with-input-from-file?
 ;;   - We need to access runtime 'current-module' info, which currently isn't
 ;;     a public API.  Should we have an official API for that?
 ;;   - The routine is pretty similar to apropos.  Should we refactor?
+
+;; Public API.
+;;   Returns the complemetion candidate(s) of the WORD.  If ther's only
+;;   one definitive candidate, returns it as a string.  Otherwise, returns
+;;   a list of strings (including zero or one cases).  See text.line-edit,
+;;   `completion-lister` slot explanation for the details.
+;;   GBUF is a gap buffer, and START/END is the WORD's start and end
+;;   position within GBUF.
 (define (list-completions word gbuf start end)
   (match (%toplevel-command gbuf start)
     ["" (%complete-toplevel-command word)]
     [(or "l" "load") (%complete-path word)]
     [(or "u" "use" "r" "reload") (%complete-module-name word)]
+    [(or "pm" "print-mode") (%complete-print-mode word)]
     [_ (%complete-symbol word)]))
 
 ;; See if we're in a toplevel command.
@@ -143,3 +151,10 @@
   (match (map x->string (hash-table-keys found))
     [(w) w]                             ;single final completion result
     [ws (sort ws)]))
+
+(define (%complete-print-mode word)
+  (let ([candidates (map slot-definition-name (class-slots <write-controls>))])
+    (match (filter (cut string-prefix? word <>)
+                   (map symbol->string candidates))
+      [(w) w]
+      [(ws ...) (sort ws)])))
