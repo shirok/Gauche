@@ -28860,7 +28860,7 @@ codepoints represented as a sequence of integers.
 
 Gaucheは以前、内部文字エンコーディングとしてUnicode以外も選べるようになっていました。
 その場合、文字列に対して完全にUnicode互換の動作を提供できない場合があったため、
-そこで、本モジュールの多くの操作は、文字列を対象にするものと、
+本モジュールの多くの操作は、文字列を対象にするものと、
 コードポイントの数値のシーケンスを対象にするものの両方で提供されます。
 @c COMMON
 @end deftp
@@ -28969,7 +28969,7 @@ for invalid codepoints.
 入力が@code{#xd800}と@code{#xdfff}の間か、@code{#x110000}以上の場合は
 エラーを投げます。
 @var{strictness}が@code{replace}であれば、そのような入力に対しては
-utf8シーケンス@code{#xef, #xbf, #xbd} (@code{U+FFFD}) がせ生成されます。
+utf8シーケンス@code{#xef, #xbf, #xbd} (@code{U+FFFD}) が生成されます。
 @var{strictness}が@code{permissive}の場合は、
 @code{0}から@code{#x7fffffff}までの入力が許されます。
 入力が大きい場合はエンコードされた出力は5〜6オクテットになるでしょう
@@ -29104,7 +29104,7 @@ range of the input.
 @c COMMON
 
 @c EN
-If Gauche's native encoding is utf8, this procedure first tries
+This procedure first tries
 @code{u8vector->string} (@pxref{Uniform vectors}).
 If the input utf8 sequence is valid, this is the fastest way.
 If the input contains invalid utf8 sequence, the procedure falls
@@ -29114,7 +29114,6 @@ Hence it always returns a complete string.
 To know if the input contains invalid utf8 sequence, you can use
 @code{u8vector->string} directly.
 @c JP
-Gaucheのネイティブエンコーディングがutf8の場合、
 この手続きはまず@code{u8vector->string}を試します
 (@ref{Uniform vectors}参照)。
 もし入力がutf8シーケンスとして有効であれば、それが最も速いです。
@@ -29124,15 +29123,6 @@ Gaucheのネイティブエンコーディングがutf8の場合、
 従って戻り値は常に完全な文字列です。
 入力に不正なuft8シーケンスが含まれていたかどうかを知りたい場合は
 @code{u8vector->string}を直接呼んでください。
-@c COMMON
-
-@c EN
-If Gauche's native encoding is other than utf8,
-there's no @code{U+FFFD} so invalid utf8 sequence throws an error.
-@c JP
-Gaucheのネイティブエンコーディングがutf8以外の場合、
-@code{U+FFFD}に相当するコードがないので、無効なutf8シーケンスに出会うと
-エラーが投げられます。
 @c COMMON
 @end defun
 
@@ -29149,16 +29139,12 @@ range of the input.
 @c COMMON
 
 @c EN
-If Gauche's native encoding is utf8, this procedure
-just calls @code{string->u8vector} (@pxref{Uniform vectors}).
-Otherwise, it first converts the input string to utf-8, then
-@code{string->u8vector} is called.
+Now that Gauche always uses utf8 in the internal encoding,
+this procedure just calls @code{string->u8vector} (@pxref{Uniform vectors}).
 @c JP
-Gaucheのネイティブエンコーディングがutf8であれば、この手続きは
-単に@code{string->u8vector}を呼び出すだけです。
+現在はGaucheは常にutf8を内部エンコーディングとして使うので、
+この手続きは単に@code{string->u8vector}を呼び出すだけです。
 (@ref{Uniform vectors}参照)。
-そうでなければまず入力文字列がutf8に変換されてから
-@code{string->u8vector}が呼ばれます。
 @c COMMON
 @end defun
 
@@ -29410,8 +29396,13 @@ R7RSの@code{scheme.bytevector}では@var{endian}引数だけを認めていま�
 @node Unicode text segmentation, Full string case conversion, Unicode transfer encodings, Unicode utilities
 @subsection Unicode text segmentation
 
+@c EN
 These procedures implements grapheme-cluster and
 word breaking algorithms defined in UAX #29: Unicode Text Segmentation.
+@c JP
+以下の手続きはUAX #29: Unicode Text Segmentationに定義されている
+graphemeクラスタへの分割および単語への分割アルゴリズムを実装します。
+@c COMMON
 
 @defun string->words string
 @defunx codepoints->words sequence
