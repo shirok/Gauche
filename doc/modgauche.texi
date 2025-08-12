@@ -4280,7 +4280,7 @@ C++ delete operator.  The second form is to delete an array.
 @subsection Stub generation
 @c NODE スタブの生成
 
-@deffn {Stub Form} define-stub-type NAME C-TYPE [DESC C-PREDICATE UNBOXER BOXER]
+@deffn {Stub Form} declare-stub-type NAME C-TYPE [DESC C-PREDICATE UNBOXER BOXER]
 Register a new type to be recognized.  This is rather a declaration
 than definition; no C code will be generated directly by this form.
 @end deffn
