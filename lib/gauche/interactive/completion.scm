@@ -60,16 +60,19 @@
 ;;   position within GBUF.
 (define (list-completions word gbuf start end)
   (match (%toplevel-command gbuf start)
-    ["" (%complete-toplevel-command word)]
-    [(or "l" "load") (%complete-path word)]
-    [(or "u" "use" "r" "reload") (%complete-module-name word)]
-    [(or "pm" "print-mode") (%complete-print-mode word)]
+    [("" "") (%complete-toplevel-command word)]
+    [((or "l" "load") "") (%complete-path word)]
+    [((or "u" "use" "r" "reload") "") (%complete-module-name word)]
+    [((or "pm" "print-mode") "") (%complete-print-mode word)]
+    [((or "pm" "print-mode") "array") (%complete-print-mode-array word)]
     [_ (%complete-symbol word)]))
 
 ;; See if we're in a toplevel command.
-;; LIMIT is the beginning position of the word to complete.
-;; If we're in a toplevel command, return <command>
-;; <command> may be "" if we're completing the toplevel command itself.
+;; Scan GBUF from the beginning up to LIMIT.  If we find a toplevel
+;; command ",<command>", returns the command and any string following
+;; the command (whitespaces trimmed).  LIMIT is supposed to be
+;; the beginning position of the word to complete, so the second
+;; string doesn't include the partial word to complete.
 ;; If we're not in a toplevel command, return #f.
 (define (%toplevel-command gbuf limit)
   (define (scan-comma i)
@@ -80,10 +83,11 @@
                  [else #f]))))
   (define (scan-command i cs)
     (if (= i limit)
-      (list->string (reverse cs))
+      (list (list->string (reverse cs)) "")
       (let1 c (gap-buffer-ref gbuf i)
         (if (char-whitespace? c)
-          (list->string (reverse cs))
+          (list (list->string (reverse cs))
+                (string-trim-both (gap-buffer->string gbuf i limit)))
           (scan-command (+ i 1) (cons c cs))))))
   (scan-comma 0))
 
@@ -154,6 +158,13 @@
 
 (define (%complete-print-mode word)
   (let ([candidates (map slot-definition-name (class-slots <write-controls>))])
+    (match (filter (cut string-prefix? word <>)
+                   (map symbol->string candidates))
+      [(w) w]
+      [(ws ...) (sort ws)])))
+
+(define (%complete-print-mode-array word)
+  (let ([candidates '(compact dimensions reader-ctor)])
     (match (filter (cut string-prefix? word <>)
                    (map symbol->string candidates))
       [(w) w]

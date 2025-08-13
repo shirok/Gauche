@@ -79,7 +79,7 @@
              (sort (trie-common-prefix t k) string<? car))))))
 
 ;; For gauche.interactive.completion
-;; Returns a lis tof commands that shares the given prefix
+;; Returns a list of commands that shares the given prefix
 (define (toplevel-command-matches key)
   ($ atomic *toplevel-commands*
      (^t (sort (map car (trie-common-prefix t key))))))
