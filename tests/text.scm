@@ -702,6 +702,27 @@ fuga
      :width 24 :style 'packed)
   )
 
+;; corner cases
+(test* "multicolumn corner case" '()
+       (layout-multicolumn '()))
+(test* "multicolumn corner case" '()
+       (layout-multicolumn '() :order 'row))
+(test* "multicolumn corner case" '()
+       (layout-multicolumn '() :style 'packed))
+(test* "multicolumn corner case" '(("a"))
+       (layout-multicolumn '("a")))
+(test* "multicolumn corner case" '(("a"))
+       (layout-multicolumn '("a") :order 'row))
+(test* "multicolumn corner case" '(("a"))
+       (layout-multicolumn '("a") :style 'packed))
+(test* "multicolumn corner case" '(("a       " "b       " "c"))
+       (layout-multicolumn '("a" "b" "c")))
+(test* "multicolumn corner case" '(("a       " "b       " "c"))
+       (layout-multicolumn '("a" "b" "c") :order 'row))
+(test* "multicolumn corner case" '(("a       " "b       " "c"))
+       (layout-multicolumn '("a" "b" "c") :style 'packed))
+
+
 ;;-------------------------------------------------------------------
 (test-section "parse")
 (use text.parse)

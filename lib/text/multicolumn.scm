@@ -86,7 +86,7 @@
   (define (even-packer rows)
     (let1 trm (make-tr-matrix rows)
       (values trm
-              (map (constantly max-col-width) (iota (length (car trm)))))))
+              (map (constantly max-col-width) (iota (length trm))))))
   ;; dense-packer - Try more rows if possible.
   (define (dense-packer rows)
     (let try ([rows rows])
