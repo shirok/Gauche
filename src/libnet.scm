@@ -479,7 +479,7 @@
          (socktype :type <int>)
          (protocol :type <int>)
          (addrlen :type <uint32>)
-         (canonname :type <string>)
+         (canonname :type <string>?)
          (addr :setter "  if (!SCM_SOCKADDRP(value)) Scm_Error(\"ScmSockAddr* required, but got %S\", value);
   obj->addr = SCM_SOCKADDR(value);"))
         (allocator (c "addrinfo_allocate")))
