@@ -1277,9 +1277,11 @@
   "Try to complete the (partial) word at the cursor."
   (receive (word start-pos end-pos)
       (buffer-find-word buf (~ ctx'completion-word-constituent?))
-    (or (and-let* ([ word ]
-                   [lister (~ ctx'completion-lister)]
-                   [words (lister word buf start-pos end-pos)])
+    ;; NB: Lister is called with the partial word to complete,
+    ;; the buffer, and start/end position of the partial word.
+    ;; Note taht the word can be "".
+    (or (and-let* ([lister (~ ctx'completion-lister)]
+                   [words (lister (or word "")  buf start-pos end-pos)])
           (match words
             [() #f]
             [(? string?)

@@ -146,6 +146,7 @@
   (define glob-pattern
     ;; We use glob feature to realize segmented prefix match.
     (match (string-split word #\.)
+      [() #"**.*"]
       [(w) #"{~|w|*,~|w|*.**.*}"]
       [ws (let1 xw (string-join (map (^w #"~|w|*") ws) ".")
             #"{~|xw|,~|xw|.**.*}")]))
