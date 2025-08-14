@@ -16795,6 +16795,22 @@ This is only available if gauche is compiled with --enable-ipv6 option.
 @c COMMON
 @end defun
 
+@defun sys-getnameinfo sockaddr :optional flags
+@c MOD gauche.net
+@c EN
+Lookup host and service name of the given socket address,
+and returns two strings for hostname and service.
+@c JP
+与えられたソケットアドレスのホスト名とサービス名を2つの文字列として返します。
+@c COMMON
+
+@example
+(sys-getnameinfo (make <sockaddr-in> :host "127.0.0.1" :port 80))
+ @result{} "localhost" @r{and} "http"
+@end example
+@end defun
+
+
 @defun sys-ntohs integer
 @defunx sys-ntohl integer
 @defunx sys-htons integer

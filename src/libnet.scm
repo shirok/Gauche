@@ -500,7 +500,7 @@
                                    (?: (SCM_FALSEP hints) NULL (& ai))))))
 
       (define-cproc sys-getnameinfo
-        (addr::<socket-address> :optional flags::<fixnum>)
+        (addr::<socket-address> :optional (flags::<fixnum> 0))
         Scm_GetNameinfo)
       ))
 )
