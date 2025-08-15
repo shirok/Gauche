@@ -1,3 +1,7 @@
+2025-08-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/netdb.c (make_hostent): Support ipv6 host entry.
+
 2025-08-04  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/array.scm: Switch array printer based on write controls

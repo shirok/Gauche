@@ -54,6 +54,12 @@ static struct netdb_data_rec {
     } SCM_END_PROTECT;                          \
     SCM_INTERNAL_MUTEX_UNLOCK(mutex)
 
+#ifdef HAVE_IPV6
+# define ADDRBUFLEN INET6_ADDRSTRLEN
+#else /*!HAVE_IPV6*/
+# define ADDRBUFLEN INET_ADDRSTRLEN
+#endif
+
 /*-------------------------------------------------------------
  * Hostent
  */
@@ -69,20 +75,12 @@ static ScmSysHostent *make_hostent(struct hostent *he)
     entry->name = SCM_MAKE_STR_COPYING(he->h_name);
     entry->aliases = Scm_CStringArrayToList((const char**)he->h_aliases, -1,
                                             SCM_STRING_COPYING);
-    if (he->h_addrtype == AF_INET) {
-        for (char **p = he->h_addr_list; *p; p++) {
-            char buf[50];
-            struct in_addr *addr = (struct in_addr*)*p;
-            unsigned long addrval = ntohl(addr->s_addr);
-            /* avoid using inet_ntoa, for it is not reentrant */
-            snprintf(buf, 50, "%ld.%ld.%ld.%ld",
-                     ((addrval >> 24)& 0xff), ((addrval >> 16) & 0xff),
-                     ((addrval >> 8) & 0xff), (addrval & 0xff));
-            SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(buf));
+    for (char **p = he->h_addr_list; *p; p++) {
+        char buf[ADDRBUFLEN+1];
+        if (inet_ntop(he->h_addrtype, *p, buf, ADDRBUFLEN) == NULL) {
+            Scm_SysError("invalid address while decoding hostent");
         }
-    } else {
-        /* soon AF_INET6 will be supported (hopefully) */
-        Scm_Error("unknown address type (%d)", he->h_addrtype);
+        SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(buf));
     }
     entry->addresses = h;
     return entry;
@@ -132,11 +130,16 @@ ScmObj Scm_GetHostByName(const char *name)
 
 ScmObj Scm_GetHostByAddr(const char *addr, int type)
 {
-    struct in_addr iaddr;
-    if (type != AF_INET) {
+    char iaddr[ADDRBUFLEN+1];
+
+    if (type != AF_INET
+#if HAVE_IPV6
+        && type != AF_INET6
+#endif
+        ) {
         Scm_Error("unsupported address type: %d", type);
     }
-    if (inet_pton(AF_INET, addr, &iaddr) <= 0) {
+    if (inet_pton(type, addr, iaddr) <= 0) {
         Scm_Error("bad inet address format: %s", addr);
     }
 
@@ -148,8 +151,8 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
         char staticbuf[DATA_BUFSIZ], *buf = staticbuf;
         for (;;) {
 #if GETHOSTBYADDR_R_NUMARGS == 7
-            if (gethostbyaddr_r((void *)&iaddr, sizeof(struct in_addr),
-                                AF_INET, &he, buf, bufsiz, &herr) != NULL) {
+            if (gethostbyaddr_r((void *)iaddr, sizeof(struct in_addr),
+                                type, &he, buf, bufsiz, &herr) != NULL) {
                 break;
             }
             if (herr != ERANGE) return SCM_FALSE;
@@ -157,8 +160,8 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
             buf = SCM_NEW_ATOMIC2(char*, bufsiz);
 #elif GETHOSTBYADDR_R_NUMARGS == 8
             struct hostent *rhe;
-            gethostbyaddr_r((void *)&iaddr, sizeof(struct in_addr),
-                            AF_INET, &he, buf, bufsiz, &rhe, &herr);
+            gethostbyaddr_r((void *)iaddr, sizeof(struct in_addr),
+                            type, &he, buf, bufsiz, &rhe, &herr);
             if (rhe != NULL) break;
             if (herr != ERANGE) return SCM_FALSE;
             bufsiz *= 2;
@@ -177,9 +180,9 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
 
         WITH_GLOBAL_LOCK(netdb_data.hostent_mutex,
                          do {
-                             he = gethostbyaddr((void*)&iaddr,
-                                                sizeof(struct in_addr),
-                                                AF_INET);
+                             he = gethostbyaddr((void*)iaddr,
+                                                sizeof(iaddr),
+                                                type);
                              if (he != NULL) {
                                  entry = SCM_OBJ(make_hostent(he));
                              }
