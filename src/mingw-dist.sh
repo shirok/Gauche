@@ -166,7 +166,7 @@ PATH=$distdir/bin:$PATH
 # Build GL
 if [ "$WITH_GL" = "yes" ]; then
   if [ "$SKIP_CONFIG" != yes ]; then
-    (cd ../Gauche-gl; ./DIST gen; ./configure --prefix=$distdir --with-glut=mingw-static $buildopt)
+    (cd ../Gauche-gl; ./DIST gen; ./configure --prefix=$distdir $buildopt)
   fi
   (cd ../Gauche-gl; make clean; make; make install install-examples)
 fi
