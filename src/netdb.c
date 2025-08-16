@@ -127,12 +127,24 @@ ScmObj Scm_GetHostByName(const char *name)
 ScmObj Scm_GetHostByAddr(const char *addr, int type)
 {
     char iaddr[ADDRBUFLEN+1];
+    socklen_t iaddr_len;
 
-    if (type != AF_INET && type != AF_INET6) {
+    switch (type) {
+    case AF_INET:
+        iaddr_len = sizeof(struct in_addr);
+        break;
+    case AF_INET6:
+        iaddr_len = sizeof(struct in6_addr);
+        break;
+    default:
         Scm_Error("unsupported address type: %d", type);
     }
-    if (inet_pton(type, addr, iaddr) <= 0) {
+
+    switch (inet_pton(type, addr, iaddr)) {
+    case 0:
         Scm_Error("bad inet address format: %s", addr);
+    case -1:
+        Scm_SysError("inet_pton failed for %s", addr);
     }
 
 #if defined(GETHOSTBYADDR_R_NUMARGS)
@@ -143,7 +155,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
         char staticbuf[DATA_BUFSIZ], *buf = staticbuf;
         for (;;) {
 #if GETHOSTBYADDR_R_NUMARGS == 7
-            if (gethostbyaddr_r((void *)iaddr, sizeof(struct in_addr),
+            if (gethostbyaddr_r((void *)iaddr, iaddr_len,
                                 type, &he, buf, bufsiz, &herr) != NULL) {
                 break;
             }
@@ -152,7 +164,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
             buf = SCM_NEW_ATOMIC2(char*, bufsiz);
 #elif GETHOSTBYADDR_R_NUMARGS == 8
             struct hostent *rhe;
-            gethostbyaddr_r((void *)iaddr, sizeof(struct in_addr),
+            gethostbyaddr_r((void *)iaddr, iaddr_len,
                             type, &he, buf, bufsiz, &rhe, &herr);
             if (rhe != NULL) break;
             if (herr != ERANGE) return SCM_FALSE;
@@ -173,7 +185,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
         WITH_GLOBAL_LOCK(netdb_data.hostent_mutex,
                          do {
                              he = gethostbyaddr((void*)iaddr,
-                                                sizeof(iaddr),
+                                                iaddr_len,
                                                 type);
                              if (he != NULL) {
                                  entry = SCM_OBJ(make_hostent(he));
