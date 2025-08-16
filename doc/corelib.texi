@@ -7080,7 +7080,7 @@ any object.
 @end defun
 
 @defun concatenate list-of-lists
-@defunx concatenate! list-of-lists!
+@defunx concatenate! list-of-lists
 [R7RS list]
 @c EN
 Equivalent to @code{(apply append @var{list-of-lists})} and
@@ -16710,10 +16710,10 @@ is strictly greater than @var{probe}.
 @c COMMON
 @end defun
 
-@defun tree-map-floor-key tree-map probe @var{optional} fallback-key
-@defunx tree-map-ceiling-key tree-map probe @var{optional} fallback-key
-@defunx tree-map-predecessor-key tree-map probe @var{optional} fallback-key
-@defunx tree-map-successor-key tree-map probe @var{optional} fallback-key
+@defun tree-map-floor-key tree-map probe :optional fallback-key
+@defunx tree-map-ceiling-key tree-map probe :optional fallback-key
+@defunx tree-map-predecessor-key tree-map probe :optional fallback-key
+@defunx tree-map-successor-key tree-map probe :optional fallback-key
 @c EN
 Like @code{tree-map-floor} etc., but only returns the key of
 the found entry (or @var{fallback-key} if there's no entry which satisfies
@@ -16725,10 +16725,10 @@ the criteria).
 @c COMMON
 @end defun
 
-@defun tree-map-floor-value tree-map probe @var{optional} fallback-value
-@defunx tree-map-ceiling-value tree-map probe @var{optional} fallback-value
-@defunx tree-map-predecessor-value tree-map probe @var{optional} fallback-value
-@defunx tree-map-successor-value tree-map probe @var{optional} fallback-value
+@defun tree-map-floor-value tree-map probe :optional fallback-value
+@defunx tree-map-ceiling-value tree-map probe :optional fallback-value
+@defunx tree-map-predecessor-value tree-map probe :optional fallback-value
+@defunx tree-map-successor-value tree-map probe :optional fallback-value
 @c EN
 Like @code{tree-map-floor} etc., but only returns the value of
 the found entry (or @var{fallback-value} if there's no entry which satisfies
