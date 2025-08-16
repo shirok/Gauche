@@ -30923,7 +30923,7 @@ Inserts @var{content}, which must be a character or a string,
 at the current cursor position of @var{gbuf}.
 The current cursor position is moved to the end of the inserted content.
 @c JP
-@var{content}は文字または文字列です。@var{content}wお@var{gbuf}の
+@var{content}は文字または文字列です。@var{content}を@var{gbuf}の
 現在のカーソル位置に挿入します。
 カーソルは、挿入された内容の末尾へと移動します。
 @c COMMON
@@ -31038,7 +31038,7 @@ Insert @var{string} at a position @var{pos}.
 @c EN
 Delete @var{length} characters from a position @var{pos}.
 @c JP
-@var{pos}位置から@var{length}j文字を削除 (<b>D</b>elete)。
+@var{pos}位置から@var{length}文字を削除 (<b>D</b>elete)。
 @c COMMON
 @item (c @var{pos} @var{length} @var{string})
 @c EN

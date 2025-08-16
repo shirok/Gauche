@@ -3698,12 +3698,12 @@ variables introduced by them.  On the other hand,
 @c COMMON
 
 @c EN
-@code{Fold-ec3} is almost the same but the initial value calculation.
-In @code{fold-ec3}, @var{seed} is only used when @var{qualifier}s
+@code{Fold3-ec} is almost the same but the initial value calculation.
+In @code{fold3-ec}, @var{seed} is only used when @var{qualifier}s
 makes no iteration.  Otherwise it calculates the following value:
 @c JP
-@code{fold-ec3}は初期値の計算以外は同じです。
-@code{fold-ec3}では、@var{seed}は@var{qualifier}が一度も繰り返しを行わなかった
+@code{fold3-ec}は初期値の計算以外は同じです。
+@code{fold3-ec}では、@var{seed}は@var{qualifier}が一度も繰り返しを行わなかった
 場合にのみ使われます。そうでなければ以下の値が計算されます:
 @c COMMON
 

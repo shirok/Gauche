@@ -13084,7 +13084,7 @@ Application of @var{proc} will be delayed as needed.
 @c EN
 ;; If you use map instead of lmap, this won't return
 @c JP
-p;; lmapのかわりにmapを使うとこの式の評価は終わらない
+;; lmapのかわりにmapを使うとこの式の評価は終わらない
 @c COMMON
 (use math.prime)
 (take (lmap (pa$ * 2) *primes*) 10)
