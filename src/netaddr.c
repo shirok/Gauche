@@ -113,11 +113,9 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
         case AF_INET:
             klass = SCM_CLASS_SOCKADDR_IN;
             break;
-#ifdef HAVE_IPV6
         case AF_INET6:
             klass = SCM_CLASS_SOCKADDR_IN6;
             break;
-#endif
         default:
             Scm_Error("unknown address family (%d)", saddr->sa_family);
             break;
@@ -270,8 +268,6 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrInClass, sockaddr_print,
  * Inet6 domain socket
  */
 
-#ifdef HAVE_IPV6
-
 static ScmObj sockaddr_in6_allocate(ScmClass *klass SCM_UNUSED, ScmObj initargs)
 {
     ScmObj host = Scm_GetKeyword(key_host, initargs, key_any);
@@ -350,8 +346,6 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrIn6Class, sockaddr_print,
                          sockaddr_in6_compare, NULL,
                          sockaddr_in6_allocate, Scm_SockAddrCPL);
 
-#endif /* HAVE_IPV6 */
-
 /*==================================================================
  * Parse internet addresses
  */
@@ -361,9 +355,8 @@ ScmObj Scm_InetStringToAddress(const char *s,
                                ScmUVector *buf /*out*/)
 {
     struct in_addr in4;
-#ifdef HAVE_IPV6
     struct in6_addr in6;
-#endif
+
     if (inet_pton(AF_INET, s, &in4) > 0) {
         *proto = AF_INET;
         if (buf) {
@@ -377,8 +370,6 @@ ScmObj Scm_InetStringToAddress(const char *s,
             return Scm_MakeIntegerU(ntohl(in4.s_addr));
         }
     }
-
-#ifdef HAVE_IPV6
     if (inet_pton(AF_INET6, s, &in6) > 0) {
         *proto = AF_INET6;
         if (buf) {
@@ -399,7 +390,6 @@ ScmObj Scm_InetStringToAddress(const char *s,
             return s;
         }
     }
-#endif
     return SCM_FALSE;
 }
 
@@ -425,9 +415,7 @@ ScmObj Scm_InetAddressToString(ScmObj addr,  /* integer or uvector */
         } else {
             Scm_SysError("inet_ntop failed for address %S", addr);
         }
-    }
-#ifdef HAVE_IPV6
-    if (proto == AF_INET6) {
+    } else if (proto == AF_INET6) {
         char buf[INET6_ADDRSTRLEN];
         struct in6_addr in6;
         if (SCM_INTEGERP(addr)) {
@@ -453,11 +441,10 @@ ScmObj Scm_InetAddressToString(ScmObj addr,  /* integer or uvector */
         } else {
             Scm_SysError("inet_ntop failed for address %S", addr);
         }
+    } else {
+        Scm_Error("unsupported protocol for inet-address->string: %d", proto);
     }
-#endif
-    Scm_Error("unsupported protocol for inet-address->string: %d", proto);
     return SCM_UNDEFINED;       /* dummy */
-#undef BUFLEN
 }
 
 /*==================================================================
@@ -478,7 +465,5 @@ void Scm__InitNetAddr(void)
     Scm_InitStaticClass(&Scm_SockAddrClass, "<sockaddr>", mod, NULL, 0);
     Scm_InitStaticClass(&Scm_SockAddrUnClass, "<sockaddr-un>", mod, NULL, 0);
     Scm_InitStaticClass(&Scm_SockAddrInClass, "<sockaddr-in>", mod, NULL, 0);
-#ifdef HAVE_IPV6
     Scm_InitStaticClass(&Scm_SockAddrIn6Class, "<sockaddr-in6>", mod, NULL, 0);
-#endif /* HAVE_IPV6 */
 }

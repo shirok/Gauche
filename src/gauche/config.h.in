@@ -209,9 +209,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define if you have IPv6 support */
-#undef HAVE_IPV6
-
 /* Define to 1 if you have the `isinf' function. */
 #undef HAVE_ISINF
 

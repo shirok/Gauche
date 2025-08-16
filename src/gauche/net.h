@@ -89,7 +89,6 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #endif /* !defined(InetNtopA) */
 
 #define MSG_WAITALL   0x8
-#ifdef HAVE_IPV6
 #define IPV6_V6ONLY   27
 #define AI_ALL        0x00000100
 #define AI_ADDRCONFIG 0x00000400
@@ -100,7 +99,6 @@ void WSAAPI freeaddrinfo(struct addrinfo*);
 int  WSAAPI getaddrinfo(const char*, const char*, const struct addrinfo*, struct addrinfo**);
 int  WSAAPI getnameinfo(const struct sockaddr*, socklen_t, char*, DWORD, char*, DWORD, int);
 #endif /* defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION >= 5) */
-#endif /* HAVE_IPV6 */
 #endif /*GAUCHE_WINDOWS*/
 
 /*==================================================================
@@ -187,8 +185,6 @@ typedef struct ScmSockAddrInRec {
 SCM_CLASS_DECL(Scm_SockAddrInClass);
 #define SCM_CLASS_SOCKADDR_IN   (&Scm_SockAddrInClass)
 
-#ifdef HAVE_IPV6
-
 typedef struct ScmSockAddrIn6Rec {
     SCM_HEADER;
     int addrlen;
@@ -197,8 +193,6 @@ typedef struct ScmSockAddrIn6Rec {
 
 SCM_CLASS_DECL(Scm_SockAddrIn6Class);
 #define SCM_CLASS_SOCKADDR_IN6   (&Scm_SockAddrIn6Class)
-
-#endif /* HAVE_IPV6 */
 
 #define SCM_SOCKADDR_MAXLEN    128
 
@@ -351,8 +345,6 @@ SCM_EXTERN ScmObj Scm_GetServByPort(int port, const char *proto);
  * Address information
  */
 
-#ifdef HAVE_IPV6
-
 typedef struct ScmSysAddrinfoRec {
     SCM_HEADER;
     int flags;
@@ -380,8 +372,6 @@ SCM_EXTERN ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags);
 #ifndef NI_MAXSERV
 #define NI_MAXSERV    32
 #endif
-
-#endif /* HAVE_IPV6 */
 
 SCM_DECL_END
 

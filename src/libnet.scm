@@ -38,7 +38,7 @@
           ;; NB: Many enum symbols are conditionally exported.  They're
           ;; handled specially in init routine.  Here's the ones
           ;; that are always exported.
-          PF_UNSPEC PF_UNIX PF_INET AF_UNSPEC AF_UNIX AF_INET
+          PF_UNSPEC PF_UNIX PF_INET PF_INET6 AF_UNSPEC AF_UNIX AF_INET AF_INET6
           SOCK_STREAM SOCK_DGRAM SOCK_RAW
           SHUT_RD SHUT_WR SHUT_RDWR
 
@@ -143,38 +143,37 @@
    (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)])
      (return (ntohs (ref (-> a addr) sin_port)))))
 
- (.when (defined HAVE_IPV6)
-   (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
-     (cast void addr)                     ; suppress unused var warning
-     (return 'inet6))
+ (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
+   (cast void addr)                     ; suppress unused var warning
+   (return 'inet6))
 
-   (define-cfn in6-addr (a::ScmSockAddrIn6*) :static
-     (let* ([p::uint32_t*
-             (cast uint32_t* (ref (-> a addr) sin6_addr s6_addr))]
-            [n (Scm_MakeIntegerFromUI (ntohl (* (post++ p))))])
-       (dotimes [i 3]
-         (set! n (Scm_LogIor (Scm_Ash n 32)
-                             (Scm_MakeIntegerFromUI (ntohl (* (post++ p)))))))
-       (return n)))
+ (define-cfn in6-addr (a::ScmSockAddrIn6*) :static
+   (let* ([p::uint32_t*
+           (cast uint32_t* (ref (-> a addr) sin6_addr s6_addr))]
+          [n (Scm_MakeIntegerFromUI (ntohl (* (post++ p))))])
+     (dotimes [i 3]
+       (set! n (Scm_LogIor (Scm_Ash n 32)
+                           (Scm_MakeIntegerFromUI (ntohl (* (post++ p)))))))
+     (return n)))
 
-   (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
-     (return (in6-addr (cast ScmSockAddrIn6* addr))))
+ (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
+   (return (in6-addr (cast ScmSockAddrIn6* addr))))
 
-   (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class")) ::<ushort>
-     (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)])
-       (return (ntohs (ref (-> a addr) sin6_port)))))
+ (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class")) ::<ushort>
+   (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)])
+     (return (ntohs (ref (-> a addr) sin6_port)))))
 
-   (define-cmethod sockaddr-name ((addr "Scm_SockAddrIn6Class"))
-     (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
-            [addr (in6-addr a)]
-            [port::u_short (ntohs (ref (-> a addr) sin6_port))]
-            [out (Scm_MakeOutputStringPort TRUE)])
-       (Scm_Printf (SCM_PORT out)
-                   "[%A]:%d"
-                   (Scm_InetAddressToString addr AF_INET6) port)
-       (return (Scm_GetOutputString (SCM_PORT out) 0))))
-   )
+ (define-cmethod sockaddr-name ((addr "Scm_SockAddrIn6Class"))
+   (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
+          [addr (in6-addr a)]
+          [port::u_short (ntohs (ref (-> a addr) sin6_port))]
+          [out (Scm_MakeOutputStringPort TRUE)])
+     (Scm_Printf (SCM_PORT out)
+                 "[%A]:%d"
+                 (Scm_InetAddressToString addr AF_INET6) port)
+     (return (Scm_GetOutputString (SCM_PORT out) 0))))
  )
+
 
 ;;----------------------------------------------------------
 ;; low-level socket routines
@@ -186,10 +185,12 @@
 (define-enum PF_UNSPEC)
 (define-enum PF_UNIX)
 (define-enum PF_INET)
+(define-enum PF_INET6)
 
 (define-enum AF_UNSPEC)
 (define-enum AF_UNIX)
 (define-enum AF_INET)
+(define-enum AF_INET6)
 
 (define-enum SOCK_STREAM)
 (define-enum SOCK_DGRAM)
@@ -469,44 +470,38 @@
 (inline-stub
  (declare-cfn addrinfo_allocate (klass::ScmClass* intargs))
 
- (.if (defined HAVE_IPV6)
-    (begin
-      (define-cclass <sys-addrinfo>
-        "ScmSysAddrinfo*" "Scm_SysAddrinfoClass"
-        ()
-        ((flags :type <int>)
-         (family :type <int>)
-         (socktype :type <int>)
-         (protocol :type <int>)
-         (addrlen :type <uint32>)
-         (canonname :type <string>?)
-         (addr :setter "  if (!SCM_SOCKADDRP(value)) Scm_Error(\"ScmSockAddr* required, but got %S\", value);
+ (define-cclass <sys-addrinfo>
+   "ScmSysAddrinfo*" "Scm_SysAddrinfoClass"
+   ()
+   ((flags :type <int>)
+    (family :type <int>)
+    (socktype :type <int>)
+    (protocol :type <int>)
+    (addrlen :type <uint32>)
+    (canonname :type <string>?)
+    (addr :setter "  if (!SCM_SOCKADDRP(value)) Scm_Error(\"ScmSockAddr* required, but got %S\", value);
   obj->addr = SCM_SOCKADDR(value);"))
-        (allocator (c "addrinfo_allocate")))
+   (allocator (c "addrinfo_allocate")))
 
-      (define-cproc sys-getaddrinfo (nodename::<const-cstring>?
-                                     servname::<const-cstring>?
-                                     hints)
-        (let* ([ai::(struct addrinfo)])
-          (unless (or (SCM_SYS_ADDRINFO_P hints) (SCM_FALSEP hints))
-            (SCM_TYPE_ERROR hints "<sys-addrinfo> or #f"))
-          (unless (SCM_FALSEP hints)
-            (memset (& ai) 0 (sizeof ai))
-            (set! (ref ai ai_flags)  (-> (SCM_SYS_ADDRINFO hints) flags)
-                  (ref ai ai_family) (-> (SCM_SYS_ADDRINFO hints) family)
-                  (ref ai ai_socktype) (-> (SCM_SYS_ADDRINFO hints) socktype)
-                  (ref ai ai_protocol) (-> (SCM_SYS_ADDRINFO hints) protocol)))
-          (return (Scm_GetAddrinfo nodename servname
-                                   (?: (SCM_FALSEP hints) NULL (& ai))))))
+ (define-cproc sys-getaddrinfo (nodename::<const-cstring>?
+                                servname::<const-cstring>?
+                                hints)
+   (let* ([ai::(struct addrinfo)])
+     (unless (or (SCM_SYS_ADDRINFO_P hints) (SCM_FALSEP hints))
+       (SCM_TYPE_ERROR hints "<sys-addrinfo> or #f"))
+     (unless (SCM_FALSEP hints)
+       (memset (& ai) 0 (sizeof ai))
+       (set! (ref ai ai_flags)  (-> (SCM_SYS_ADDRINFO hints) flags)
+             (ref ai ai_family) (-> (SCM_SYS_ADDRINFO hints) family)
+             (ref ai ai_socktype) (-> (SCM_SYS_ADDRINFO hints) socktype)
+             (ref ai ai_protocol) (-> (SCM_SYS_ADDRINFO hints) protocol)))
+     (return (Scm_GetAddrinfo nodename servname
+                              (?: (SCM_FALSEP hints) NULL (& ai))))))
 
-      (define-cproc sys-getnameinfo
-        (addr::<socket-address> :optional (flags::<fixnum> 0))
-        Scm_GetNameinfo)
-      ))
+ (define-cproc sys-getnameinfo
+   (addr::<socket-address> :optional (flags::<fixnum> 0))
+   Scm_GetNameinfo)
 )
-
-(define-enum-conditionally AF_INET6)
-(define-enum-conditionally PF_INET6)
 
 (define-enum-conditionally IPPROTO_IPV6)
 (define-enum-conditionally IPV6_UNICAST_HOPS)
@@ -582,7 +577,6 @@
     IFF_DYNAMIC
 
     ;; if ipv6 is supported, these symbols are defined in the C routine.
-    PF_INET6 AF_INET6
     <sockaddr-in6> <sys-addrinfo> sys-getaddrinfo make-sys-addrinfo
     AI_PASSIVE AI_CANONNAME AI_NUMERICHOST AI_NUMERICSERV
     AI_V4MAPPED AI_ALL AI_ADDRCONFIG
@@ -665,7 +659,7 @@
   (case (sockaddr-family addr)
     [(unix)  PF_UNIX]
     [(inet)  PF_INET]
-    [(inet6) PF_INET6] ;;this can't happen if !ipv6-capable
+    [(inet6) PF_INET6]
     [else (error "unknown family of socket address" addr)]))
 
 ;; API

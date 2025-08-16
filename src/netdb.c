@@ -54,11 +54,7 @@ static struct netdb_data_rec {
     } SCM_END_PROTECT;                          \
     SCM_INTERNAL_MUTEX_UNLOCK(mutex)
 
-#ifdef HAVE_IPV6
-# define ADDRBUFLEN INET6_ADDRSTRLEN
-#else /*!HAVE_IPV6*/
-# define ADDRBUFLEN INET_ADDRSTRLEN
-#endif
+# define ADDRBUFLEN  INET6_ADDRSTRLEN
 
 /*-------------------------------------------------------------
  * Hostent
@@ -132,11 +128,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
 {
     char iaddr[ADDRBUFLEN+1];
 
-    if (type != AF_INET
-#if HAVE_IPV6
-        && type != AF_INET6
-#endif
-        ) {
+    if (type != AF_INET && type != AF_INET6) {
         Scm_Error("unsupported address type: %d", type);
     }
     if (inet_pton(type, addr, iaddr) <= 0) {
@@ -467,8 +459,6 @@ static ScmClassStaticSlotSpec servent_slots[] = {
  * Addrinfo
  */
 
-#ifdef HAVE_IPV6
-
 ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmSysAddrinfo *info = SCM_NEW_INSTANCE(ScmSysAddrinfo, klass);
@@ -536,8 +526,6 @@ ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags)
 #endif /*GAUCHE_WINDOWS*/
     return Scm_Values2(SCM_MAKE_STR_COPYING(host), SCM_MAKE_STR_COPYING(serv));
 }
-
-#endif /* HAVE_IPV6 */
 
 /*-------------------------------------------------------------
  * Initialize

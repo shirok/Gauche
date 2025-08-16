@@ -6,46 +6,6 @@ dnl
 # ext/net -------------------------------------------------
 
 dnl
-dnl process --enable-ipv6
-dnl
-dnl   We assume --enable-ipv6=yes by default.
-dnl   we'll check if they are really available later anyway.
-dnl   Use --enable-ipv6=no if you explicitly turn it off.
-dnl
-AC_ARG_ENABLE(ipv6,
-  AS_HELP_STRING([--enable-ipv6], [enable IPv6 support]),
-  [
-    AS_CASE([$enableval],
-      [no], [enable_ipv6=no],
-            [enable_ipv6=yes])
-  ], [enable_ipv6=yes])
-
-dnl
-dnl Checks availability of ipv6 support
-dnl
-AS_IF([test $enable_ipv6 = yes], [
-  AC_CACHE_CHECK([for IPv6], ac_cv_ipv6, [
-    AS_CASE(["$target"],
-      [*mingw*], AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-[@%:@include <winsock2.h>
-@%:@include <ws2tcpip.h>], [
-socket(AF_INET6, SOCK_STREAM, 0);
-                 ])], [ac_cv_ipv6=yes], [ac_cv_ipv6=no]),
-                 AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-[@%:@ifdef HAVE_SYS_TYPES_H
-@%:@include <sys/types.h>
-@%:@endif
-@%:@include <sys/socket.h>], [
-  socket(AF_INET6, SOCK_STREAM, 0);
-                 ])], [ac_cv_ipv6=yes], [ac_cv_ipv6=no])
-    )
-  ])
-  AS_IF([test "$ac_cv_ipv6" = yes], [
-    AC_DEFINE(HAVE_IPV6,1,[Define if you have IPv6 support])
-  ])
-])
-
-dnl
 dnl Check to see if the system provides sockaddr_storage
 dnl
 AS_CASE(["$target"],
