@@ -1,3 +1,9 @@
+2025-08-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cond-expand-rt.scm: Added cond-expand/runtime.
+	  A runtime version of cond-expand, specifically for Gauche bundled
+	  libraries precompiled for distribution.
+
 2025-08-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmisc.scm (has-feature?): Added.  Sometimes we need to check

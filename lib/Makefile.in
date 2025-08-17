@@ -80,7 +80,8 @@ SCMFILES = \
        gauche/interactive/editable-reader.scm \
        gauche/interactive/completion.scm \
        gauche/selector.scm gauche/logger.scm \
-       gauche/common-macros.scm gauche/singleton.scm gauche/validator.scm \
+       gauche/common-macros.scm gauche/cond-expand-rt.scm \
+       gauche/singleton.scm gauche/validator.scm \
        gauche/version.scm gauche/version-alist.scm \
        gauche/partcont.scm gauche/partcont-meta.scm \
        gauche/lazy.scm gauche/base.scm \
