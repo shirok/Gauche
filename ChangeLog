@@ -1,3 +1,9 @@
+2025-08-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmisc.scm (has-feature?): Added.  Sometimes we need to check
+	  feature identifiers at runtime, especially if the Scheme source
+	  may be precompiled on different platforms.  Not for general use.
+
 2025-08-15  Shiro Kawai  <shiro@acm.org>
 
 	* ac/net.ac: Drop --enable-ipv6.  Now we can count on systems
