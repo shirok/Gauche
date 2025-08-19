@@ -7206,7 +7206,22 @@ Returns the number of current elements in the ring buffer @var{rb}.
 @c EN
 Returns the size of the current backing storage of the ring buffer @var{rb}.
 @c JP
-リングバッファの現在のバッキングストレージの容量(格納可能な要素数)を返します。
+リングバッファ@var{rb}の現在のバッキングストレージの容量(格納可能な要素数)を返します。
+@c COMMON
+@end defun
+
+@defun rinb-buffer-room rb
+@c MOD data.ring-buffer
+@c EN
+Returns the remaining room in the current backing storage of the ring buffer
+@var{rb}, before triggering the overflow handler.  It is the difference
+of @code{ring-buffer-capacity} and @code{ring-buffer-num-entries}.
+@c JP
+リングバッファ@var{rb}の現在のバッキングストレージに追加で格納可能な
+要素数を返します。この要素数を超えて要素を挿入しようとすると
+オーバーフローハンドラが呼ばれます。
+これは@code{ring-buffer-capacity}と@code{ring-buffer-num-entries}
+の差に等しいです。
 @c COMMON
 @end defun
 
