@@ -71,6 +71,8 @@
           ))
 (select-module gauche.process)
 
+(use gauche.cond-expand-rt)
+
 ;; Delay-load to avoid circular dependency
 (autoload gauche.charconv wrap-with-input-conversion wrap-with-output-conversion)
 (autoload gauche.uvector write-uvector)
@@ -136,7 +138,8 @@
             "inactive")))
 
 ;; null device (avoid depending on file.util)
-(define *nulldev* (cond-expand (gauche.os.windows "NUL") (else "/dev/null")))
+(define *nulldev*
+  (cond-expand/runtime (gauche.os.windows "NUL") (else "/dev/null")))
 
 ;; create process and run.
 (define (run-process command . args)
@@ -533,11 +536,11 @@
     (sys-kill (process-pid process) signal)))
 (define (process-kill process) (process-send-signal process SIGKILL))
 (define (process-stop process)
-  (cond-expand
+  (cond-expand/runtime
    [gauche.os.windows (undefined)]
    [else (process-send-signal process SIGSTOP)]))
 (define (process-continue process)
-  (cond-expand
+  (cond-expand/runtime
    [gauche.os.windows (undefined)]
    [else (process-send-signal process SIGCONT)]))
 
@@ -762,8 +765,9 @@
                  [(or (undefined? stderr) (not stderr)) rest]
                  [else (error "Invalid :error argument:" stderr)])))
   (cond [(string? command)
-         (rc (cond-expand [gauche.os.windows `("cmd.exe" "/c" ,command)]
-                          [else              `("/bin/sh" "-c" ,command)]))]
+         (rc (cond-expand/runtime
+              [gauche.os.windows `("cmd.exe" "/c" ,command)]
+              [else              `("/bin/sh" "-c" ,command)]))]
         [(and (list? command) (every list? command))
          (apply run-pipeline command
                 :input stdin :output stdout

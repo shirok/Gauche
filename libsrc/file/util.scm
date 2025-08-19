@@ -71,13 +71,15 @@
           ))
 (select-module file.util)
 
+(use gauche.cond-expand-rt)
+
 (autoload gauche.uvector port->uvector)
 
 ;; Common util.  Returns #f if PATH does not exist.
 
 (define (safe-stat path follow-link?)
-  (if (cond-expand [gauche.os.windows #t]
-                   [else follow-link?])
+  (if (cond-expand/runtime [gauche.os.windows #t]
+                           [else follow-link?])
     (and (sys-access path F_OK) (sys-stat path))
     ;; When we don't follow symlink, we can't use sys-access since it returns
     ;; #f if PATH is a dangling symlink.
@@ -98,7 +100,7 @@
     [_ (error "directory name should be a string" newdir)]))
 
 (define (home-directory :optional (user (sys-getuid)))
-  (cond-expand
+  (cond-expand/runtime
    [gauche.os.windows
     (unless (eqv? user (sys-getuid))
       (error "On windows native platforms, getting other user's home directory \
@@ -130,12 +132,12 @@
       (remove-directory* dir))))
 
 (define (null-device)
-  (cond-expand
+  (cond-expand/runtime
    [gauche.os.windows "NUL"]
    [else "/dev/null"]))
 
 (define (console-device)
-  (cond-expand
+  (cond-expand/runtime
    [gauche.os.windows "CON"]
    [else "/dev/tty"]))
 
@@ -341,7 +343,7 @@
           [(arg) (values (reverse r) arg)]
           [_ (error "invalid option list:" args)])))
     (define (mkpath dir name) (build-path dir (x->string name)))
-    (define chown (cond-expand
+    (define chown (cond-expand/runtime
                    [gauche.sys.lchown sys-lchown]
                    [else sys-chown]))
     (define (walk dir node do-file do-dir)
@@ -376,7 +378,7 @@
     (define (check-file path content
                         :key (mode #f) (owner -1) (group -1) (symlink #f))
       (if symlink
-        (cond-expand
+        (cond-expand/runtime
          [gauche.sys.symlink
           (and (file-is-symlink? path)
                (check-attrs path mode owner group)
@@ -456,7 +458,7 @@
           (cond [(>= count 8) ;; arbitrary upper bound to detect infinite loop
                  (error "possibly looping symlink" pat)]
                 [(eq? (file-type p :follow-link? #f) 'symlink)
-                 (cond-expand
+                 (cond-expand/runtime
                   [gauche.sys.symlink
                    (loop (+ count 1)
                          (let1 np (sys-readlink p)
@@ -483,7 +485,7 @@
             [else (values dir base #f)]))))
 
 (define (relative-path? path)
-  (cond-expand
+  (cond-expand/runtime
    [gauche.os.windows (not (#/^[\/\\]|^[A-Za-z]:/ path))]
    [else              (not (#/^\// path))]))
 
@@ -491,7 +493,7 @@
   (not (relative-path? path)))
 
 (define (path-separator)
-  (cond-expand
+  (cond-expand/runtime
    [gauche.os.windows #\\]
    [else #\/]))
 
@@ -560,22 +562,27 @@
 ;; We compare canonicalized pathnames (this doesn't work if there's
 ;; an alias.  We should call Windows API to check for sure in future).
 
-(cond-expand
- [gauche.os.windows
-  (define (%stat-compare s1 s2 f1 f2)
-    (let ([p1 (sys-normalize-pathname f1 :absolute #t :canonicalize #t)]
-          [p2 (sys-normalize-pathname f2 :absolute #t :canonicalize #t)])
-      (equal? p1 p2)))
-  (define (file-eq? f1 f2)  (%stat-compare #f #f f1 f2))
-  (define (file-eqv? f1 f2) (%stat-compare #f #f f1 f2))
-  ]
- [else
-  (define (%stat-compare s1 s2 f1 f2)
-    (and (eqv? (slot-ref s1 'dev) (slot-ref s2 'dev))
-         (eqv? (slot-ref s1 'ino) (slot-ref s2 'ino))))
-  (define (file-eq? f1 f2)  (%stat-compare (sys-lstat f1) (sys-lstat f2) f1 f2))
-  (define (file-eqv? f1 f2) (%stat-compare (sys-stat f1) (sys-stat f2) f1 f2))
-  ])
+(define-values [%stat-compare file-eq? file-eqv?]
+  (cond-expand/runtime
+   [gauche.os.windows
+    (let ()
+      (define (%stat-compare s1 s2 f1 f2)
+        (let ([p1 (sys-normalize-pathname f1 :absolute #t :canonicalize #t)]
+              [p2 (sys-normalize-pathname f2 :absolute #t :canonicalize #t)])
+          (equal? p1 p2)))
+      (define (file-eq? f1 f2) (%stat-compare #f #f f1 f2))
+      (define (file-eqv? f1 f2) (%stat-compare #f #f f1 f2))
+      (values %stat-compare file-eq? file-eqv?))]
+   [else
+    (let ()
+      (define (%stat-compare s1 s2 f1 f2)
+        (and (eqv? (slot-ref s1 'dev) (slot-ref s2 'dev))
+             (eqv? (slot-ref s1 'ino) (slot-ref s2 'ino))))
+      (define (file-eq? f1 f2)
+        (%stat-compare (sys-lstat f1) (sys-lstat f2) f1 f2))
+      (define (file-eqv? f1 f2)
+        (%stat-compare (sys-stat f1) (sys-stat f2) f1 f2))
+      (values %stat-compare file-eq? file-eqv?))]))
 
 (define (file-equal? f1 f2)
   (let ([s1 (sys-stat f1)]
@@ -729,7 +736,7 @@
       (map (cut slot-ref stat <>) '(atime mtime)))
     (define (do-symlink)
       (define (doit)
-        (cond-expand
+        (cond-expand/runtime
          [gauche.sys.symlink (sys-symlink (sys-readlink src) dst)]
          [else #f]));NB: if system doesn't support symlink, we can't be here.
       (when keeptime (set! times (get-times (sys-lstat src))))
