@@ -7,7 +7,10 @@
 (test-start "gauche.process")
 
 (use gauche.process)
-(test-module 'gauche.process)
+(cond-expand
+ [gauche.os.windows
+  (test-module 'gauche.process :allow-undefined '(SIGCONT SIGSTOP))]
+ [else (test-module 'gauche.process)])
 
 (define *nulldev*
   (cond-expand [gauche.os.windows "NUL"] [else "/dev/null"]))

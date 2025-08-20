@@ -13,7 +13,7 @@
 (use file.util)
 (cond-expand
  [gauche.os.windows
-  (test-module 'file.util :allow-undefined '(sys-symlink))]
+  (test-module 'file.util :allow-undefined '(sys-symlink sys-readlink))]
  [else
   (test-module 'file.util)])
 

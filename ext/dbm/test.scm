@@ -11,7 +11,16 @@
 (test-start "dbm")
 
 (use dbm)
-(test-module 'dbm)
+;; TRANSIENT:
+;; Autoload in dbm module inserts copy-file in the toplevel bindings of
+;; dbm module, which refers to those procedures.  Eventually this has to
+;; be addressed by the autoload mechanism (avoiding inserting toplevel
+;; bindings).  This is for temporary workaround.
+(cond-expand
+ [gauche.os.windows
+  (test-module 'dbm :allow-undefined '(sys-symlink sys-readlink))]
+ [else
+  (test-module 'dbm)])
 
 ;;
 ;; Common test suite
