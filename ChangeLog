@@ -1,3 +1,8 @@
+2025-08-19  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm (inverse-permuter): Support non-bijective
+	  mappings.
+
 2025-08-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cond-expand-rt.scm: Added cond-expand/runtime.

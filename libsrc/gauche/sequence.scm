@@ -635,23 +635,25 @@
 ;; specifying the i-th element of the original sequence to be mapped to X_i.
 ;; `inverse-permuter` returns a sequence of exact integers that does the
 ;; inverse, that is, X_i-th index contains i.
-;; For now, we only support surjective mappings.
+;; Permuter must be injective.  If it is not bijective,
 
-(define-method inverse-permuter ((permuter <sequence>))
-  (rlet1 r (subseq permuter)            ; generic copy
-    (with-iterator (permuter end? next)
-      (do ([i 0 (+ i 1)])
-          [(end?)]
-        (set! (~ r (next)) i)))))
-
-(define-method inverse-permuter ((permuter <list>))
-  ;; for list, avoid random access
-  (vector->list
-   (rlet1 r (make-vector (size-of permuter))
-     (with-iterator (permuter end? next)
-       (do ([i 0 (+ i 1)])
-           [(end?)]
-         (set! (~ r (next)) i))))))
+(define-method inverse-permuter ((permuter <sequence>) :optional fallback)
+  (if (zero? (size-of permuter))
+    (call-with-builder (class-of permuter) (^[add! get] (get))) ;empty
+    (let1 dom-size (+ (find-max permuter) 1)
+      (when (and (undefined? fallback)
+                 (> dom-size (size-of permuter)))
+        (error "inverse of non-bijective permuter requiers fallback value:"
+               permuter))
+      (let1 corr (sort-by (map-with-index cons permuter) cdr)
+        ($ call-with-builder (class-of permuter)
+           (^[add! get]
+             (let loop ([i 0] [corr corr])
+               (cond [(null? corr) (get)]
+                     [(eqv? i (cdar corr))
+                      (add! (caar corr)) (loop (+ i 1) (cdr corr))]
+                     [else
+                      (add! fallback) (loop (+ i 1) corr)]))))))))
 
 (define-method permute-to ((class <class>) (src <sequence>) (ord <sequence>)
                            . maybe-fallback)
