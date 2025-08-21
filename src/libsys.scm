@@ -53,11 +53,16 @@
     (.undef _SC_CLK_TCK)) ;; avoid undefined reference to sysconf
   )
 
+
 ;; Are we use Windows-style pathname?
-;;  We can't use cond-expand, for this file may be cross-precompiled.
+;;  We need delay since cond-features are not set up when toplevel forms
+;;  are evaluated here.
 (select-module gauche.internal)
+(use gauche.cond-expand-rt)
 (define windows-path?
-  (let1 r (delay (boolean (assq 'gauche.os.windows (cond-features))))
+  (let1 r (delay (cond-expand/runtime
+                  [gauche.os.windows #t]
+                  [else #f]))
     (^[] (force r))))
 
 ;;---------------------------------------------------------------------
@@ -1637,9 +1642,7 @@
 
 (define-in-module gauche (make-glob-fs-fold :key (root-path #f)
                                                  (current-path #f))
-  ;; NB: We don't use cond-expand, for precompilation may be done on
-  ;; different architecture.
-  (let1 separ (if (#/mingw/ (gauche-architecture)) "\\" "/")
+  (let1 separ (if (windows-path?) "\\" "/")
     (define (ensure-dirname s)
       (and s
            (or (and-let* ([len (string-length s)]

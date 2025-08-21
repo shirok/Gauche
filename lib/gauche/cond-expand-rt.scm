@@ -42,6 +42,10 @@
 ;; It is not for general use; typical libraries should use cond-expand.
 ;; If you use this from libsrc/*, put (use gauche.cond-expand-rt) outside
 ;; of define-module form.  It doesn't need to be loaded at runtime.
+;;
+;; When you use cond-expand/runtime in src/lib*.scm, keep in mind that
+;; features are initialized _after_ most runtime are initialized.  So
+;; make sure cond-expand/runtime is called after system is fully booted.
 
 (define-module gauche.cond-expand-rt
   (use util.match)
