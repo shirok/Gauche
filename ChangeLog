@@ -1,3 +1,7 @@
+2025-08-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnet.scm: Remove conditionals depending on ipv6 availability.
+
 2025-08-19  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/sequence.scm (inverse-permuter): Support non-bijective

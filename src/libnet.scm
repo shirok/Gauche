@@ -635,24 +635,12 @@
 ;; default backlog value for socket-listen
 (define-constant DEFAULT_BACKLOG 5)
 
-;; NB: we can't use (cond-expand (gauche.net.ipv6 ...) ) here, since
-;; cond-expand is expanded when netaux.scm is compiled, but at that time
-;; the feature 'gauche.net.ipv6' is not available since the gauche.net module
-;; is not yet built.  So we use a bit of kludge here.
-(define ipv6-capable (module-binds? 'gauche.net 'sys-getaddrinfo))
-
-;; NB: ipv4 preference setting for the compatibility to old windows installer.
-;; if #t, make-sockaddrs returns ipv4 socket addresses before ipv6 ones.
-(define ipv4-preferred (cond-expand [gauche.os.windows #t] [else #f]))
-
 ;; API
 (define (make-sys-addrinfo :key (flags 0) (family AF_UNSPEC)
                                 (socktype 0) (protocol 0))
-  (if ipv6-capable
-    (make <sys-addrinfo>
-      :flags (if (list? flags) (apply logior flags) flags)
-      :family family :socktype socktype :protocol protocol)
-    (error "make-sys-addrinfo is available on IPv6-enabled platform")))
+  (make <sys-addrinfo>
+    :flags (if (list? flags) (apply logior flags) flags)
+    :family family :socktype socktype :protocol protocol))
 
 ;; Utility
 (define (address->protocol-family addr)
@@ -842,29 +830,13 @@
 
 ;; API
 (define (make-sockaddrs host port :optional (proto 'tcp))
-  (if ipv6-capable
-    (let* ([socktype (case proto
-                       [(tcp) SOCK_STREAM]
-                       [(udp) SOCK_DGRAM]
-                       [else (error "unsupported protocol:" proto)])]
-           [port (x->string port)]
-           [hints (make-sys-addrinfo :flags AI_PASSIVE :socktype socktype)]
-           [ss (map (cut slot-ref <> 'addr) (sys-getaddrinfo host port hints))])
-      (if ipv4-preferred
-        (append (filter (^s (eq? (sockaddr-family s) 'inet)) ss)
-                (remove (^s (eq? (sockaddr-family s) 'inet)) ss))
-        ss))
-    (let1 port (cond [(number? port) port]
-                     [(sys-getservbyname port (symbol->string proto))
-                      => (cut slot-ref <> 'port)]
-                     [else
-                      (error "couldn't find a port number of service:" port)])
-      (if host
-        (let1 hh (sys-gethostbyname host)
-          (unless hh (error "couldn't find host: " host))
-          (map (cut make <sockaddr-in> :host <> :port port)
-               (slot-ref hh 'addresses)))
-        (list (make <sockaddr-in> :host :any :port port))))))
+  (let* ([socktype (case proto
+                     [(tcp) SOCK_STREAM]
+                     [(udp) SOCK_DGRAM]
+                     [else (error "unsupported protocol:" proto)])]
+         [port (x->string port)]
+         [hints (make-sys-addrinfo :flags AI_PASSIVE :socktype socktype)])
+    (map (cut slot-ref <> 'addr) (sys-getaddrinfo host port hints))))
 
 ;; API
 (define (call-with-client-socket socket proc
