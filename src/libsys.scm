@@ -54,16 +54,6 @@
   )
 
 
-;; Are we use Windows-style pathname?
-;;  We need delay since cond-features are not set up when toplevel forms
-;;  are evaluated here.
-(select-module gauche.internal)
-(use gauche.cond-expand-rt)
-(define windows-path?
-  (let1 r (delay (cond-expand/runtime
-                  [gauche.os.windows #t]
-                  [else #f]))
-    (^[] (force r))))
 
 ;;---------------------------------------------------------------------
 ;; dirent.h - read directory
@@ -76,6 +66,7 @@
 (define-cproc sys-dirname (pathname::<string>) Scm_DirName)
 
 (select-module gauche.internal)
+(use gauche.cond-expand-rt)
 
 ;; This isn't POSIX, but we need it in bootstrap so we have it here.
 (define-in-module gauche (sys-normalize-pathname pathname
@@ -83,15 +74,17 @@
                                                  (absolute #f)
                                                  (expand #f)
                                                  (canonicalize #f))
-  (define separator (if (windows-path?) "\\" "/"))
+  (define windows-path?
+    (cond-expand/runtime [gauche.os.windows #t] [else #f]))
+  (define separator (if windows-path? "\\" "/"))
   (define (expand-tilde path)
     (if-let1 m (and expand (rxmatch #/^~([^\\\/]*)/ path))
       (let* ([user (m 1)]
              [home (if (equal? user "")
-                     (if (windows-path?)
+                     (if windows-path?
                        (get-windows-home)
                        (get-unix-home (sys-getpwuid (sys-getuid))))
-                     (if (windows-path?)
+                     (if windows-path?
                        (error "'~user' expansil isn't supported on Windows:"
                               path)
                        (get-unix-home (sys-getpwnam (m 1)))))])
@@ -104,7 +97,7 @@
   (define (get-unix-home pw)
     (if pw (~ pw'dir) (error "Couldn't obtain username for :" pathname)))
   (define (absolute? path)
-    (if (windows-path?)
+    (if windows-path?
       (rxmatch #/^([A-Za-z]:)?[\\\/]/ path)
       (rxmatch #/^\// path)))
   (define (abs-path path)
@@ -113,7 +106,7 @@
       path))
   (define (root? comps)
     (or (equal? comps '(""))
-        (and (windows-path?)
+        (and windows-path?
              (length=? comps 1)
              (rxmatch #/^[A-Za-z]:$/ (car comps)))))
   (define (canon-path path)
@@ -131,7 +124,7 @@
                  (loop (cdr comps) (cons (car comps) r) #f)
                  (loop (cdr comps) (cdr r) #t))]
               [else (loop (cdr comps) (cons (car comps) r) #f)]))
-      (if (windows-path?)
+      (if windows-path?
         (string-join (string-split path #\/) "\\")
         path)))
   ($ canon-path $ abs-path $ expand-tilde pathname))
@@ -1490,7 +1483,9 @@
                                          (sorter sort)
                                          (prefix #f))
   (let* ([sep (or separator
-                  (if (windows-path?) #[/\\] #[/]))]
+                  (cond-expand/runtime
+                   [gauche.os.windows #[/\\]]
+                   [else #[/]]))]
          [r (fold (cut glob-fold-1 <> proc <> sep folder prefix) seed
                   (fold glob-expand-braces '()
                         (if (list? patterns) patterns (list patterns))))])
@@ -1519,7 +1514,9 @@
   (let1 comps (string-split pattern separator)
     (cond [(equal? (car comps) "")      ;absolute
            (cons #t (map f (cdr comps)))]
-          [(and (windows-path?) (#/^[a-zA-Z]:$/ (car comps)))
+          [(cond-expand/runtime
+            [gauche.os.windows (#/^[a-zA-Z]:$/ (car comps))]
+            [else #f])
            ;; Windows drive letter
            (cons #t (map f comps))]
           [else
@@ -1642,7 +1639,10 @@
 
 (define-in-module gauche (make-glob-fs-fold :key (root-path #f)
                                                  (current-path #f))
-  (let1 separ (if (windows-path?) "\\" "/")
+  (^[proc seed node regexp non-leaf?]
+    (define windows-path?
+      (cond-expand/runtime [gauche.os.windows #t] [else #f]))
+    (define separ (if windows-path? "\\" "/"))
     (define (ensure-dirname s)
       (and s
            (or (and-let* ([len (string-length s)]
@@ -1653,48 +1653,46 @@
                s)))
     (define root-path/    (ensure-dirname root-path))
     (define current-path/ (ensure-dirname current-path))
-    (^[proc seed node regexp non-leaf?]
-      (let1 prefix (case node
+    (define prefix (case node
                      [(#t) (or root-path/ separ)]
                      [(#f) (or current-path/ "")]
-                     [else (string-append node separ)])
-        ;; NB: we can't use filter, for it is not built-in.
-        ;; also we can't use build-path from the same reason.
-        ;; We treat fixed-regexp specially, since it allows
-        ;; us not to search the directory---sometimes the directory
-        ;; has 'x' permission but not 'r' permission, and it would be
-        ;; unreasonable if we fail to go down the path even if we know
-        ;; the exact name.
-        (cond [(eq? regexp 'dir?) (proc prefix seed)]
-              [(and-let* ([ (windows-path?) ]
-                          [ (equal? prefix separ) ]
-                          [s (fixed-regexp? regexp) ]
-                          [ (#/^[A-Za-z]:$/ s) ])
-                 ;; Windows drive letter handling.
-                 (if (sys-access s R_OK)
-                   (proc s seed)
-                   seed))]
-              [(fixed-regexp? regexp)
-               => (^s (let1 full (string-append prefix s)
-                        (if (and (file-exists? full)
-                                 (or (not non-leaf?)
-                                     (file-is-directory? full)))
-                          (proc full seed)
-                          seed)))]
-              [else
-               (fold (^[child seed]
-                       (or (and-let* ([ (regexp child) ]
-                                      [full (string-append prefix child)]
-                                      [ (or (not non-leaf?)
-                                            (file-is-directory? full)) ])
-                             (proc full seed))
-                           seed))
-                     seed
-                     (sys-readdir (case node
-                                    [(#t) (or root-path/ "/")]
-                                    [(#f) (or current-path/ ".")]
-                                    [else node])))])))
-    ))
+                     [else (string-append node separ)]))
+    ;; NB: we can't use filter, for it is not built-in.
+    ;; also we can't use build-path from the same reason.
+    ;; We treat fixed-regexp specially, since it allows
+    ;; us not to search the directory---sometimes the directory
+    ;; has 'x' permission but not 'r' permission, and it would be
+    ;; unreasonable if we fail to go down the path even if we know
+    ;; the exact name.
+    (cond [(eq? regexp 'dir?) (proc prefix seed)]
+          [(and-let* ([ windows-path? ]
+                      [ (equal? prefix separ) ]
+                      [s (fixed-regexp? regexp) ]
+                      [ (#/^[A-Za-z]:$/ s) ])
+             ;; Windows drive letter handling.
+             (if (sys-access s R_OK)
+               (proc s seed)
+               seed))]
+          [(fixed-regexp? regexp)
+           => (^s (let1 full (string-append prefix s)
+                    (if (and (file-exists? full)
+                             (or (not non-leaf?)
+                                 (file-is-directory? full)))
+                      (proc full seed)
+                      seed)))]
+          [else
+           (fold (^[child seed]
+                   (or (and-let* ([ (regexp child) ]
+                                  [full (string-append prefix child)]
+                                  [ (or (not non-leaf?)
+                                        (file-is-directory? full)) ])
+                         (proc full seed))
+                       seed))
+                 seed
+                 (sys-readdir (case node
+                                [(#t) (or root-path/ "/")]
+                                [(#f) (or current-path/ ".")]
+                                [else node])))])))
 
 (define glob-fs-folder (make-glob-fs-fold))
 
