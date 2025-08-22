@@ -166,11 +166,8 @@
               (^[a b] (>? comparator a b)))
       (values (^[a b] (<? comparator a b))
               (^[a b] (>? comparator a b))))
-    (if (eq? (comparator-flavor comparator) 'ordering)
-      (values (comparator-ordering-predicate comparator)
-              (^[a b] (>? comparator (key a) (key b))))
-      (values (^[a b] (<? comparator (key a) (key b)))
-              (^[a b] (>? comparator (key a) (key b)))))))
+    (values (^[a b] (<? comparator (key a) (key b)))
+            (^[a b] (>? comparator (key a) (key b))))))
 
 (define (binary-heap-copy hp)
   (make <binary-heap>
