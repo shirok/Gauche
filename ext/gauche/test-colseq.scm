@@ -445,6 +445,78 @@
 (test* "subseq (custom)" '("3" "4")
        (slot-ref (subseq (sseq 1 2 3 4 5) 2 4) 'strings))
 
+
+(let ()
+  (define (run-with-seqs expect original src proc)
+    (dolist (dst-class (list <list> <vector> <string>))
+      (dolist (src-class (list <vector> <string>))
+        (proc (if (is-a? expect <sequence>)
+                (coerce-to dst-class expect)
+                expect)
+              (subseq (coerce-to dst-class original)) ; fresh copy
+              (coerce-to src-class src)))))
+
+  ($ run-with-seqs "axyzzy" "abcdef" "xyzzy"
+     (^[expect original src]
+       (test* `(sequence-copy! ,original 1 ,src) expect
+              (begin (sequence-copy! original 1 src)
+                     original))))
+
+  ($ run-with-seqs "abczzy" "abcdef" "xyzzy"
+     (^[expect original src]
+       (test* `(sequence-copy! ,original 3 ,src 2) expect
+              (begin (sequence-copy! original 3 src 2)
+                     original))))
+
+  ($ run-with-seqs "ayzzef" "abcdef" "xyzzy"
+     (^[expect original src]
+       (test* `(sequence-copy! ,original 1 ,src 1 4) expect
+              (begin (sequence-copy! original 1 src 1 4)
+                     original))))
+
+  ($ run-with-seqs (test-error) "abcdef" "xyzzy"
+     (^[expect original src]
+       (test* `(sequence-copy! ,original 4 ,src) expect
+              (begin (sequence-copy! original 4 src)
+                     original))))
+  )
+
+
+(let ()
+  (define (run-with-seqs expect original proc)
+    (dolist (dst-class (list <list> <vector> <string>))
+      (proc (if (is-a? expect <sequence>)
+              (coerce-to dst-class expect)
+              expect)
+            (subseq (coerce-to dst-class original)) ; fresh copy
+            )))
+
+  ($ run-with-seqs "zzzzzz" "abcdef"
+     (^[expect original]
+       (test* `(sequence-fill! ,original #\z) expect
+              (begin (sequence-fill! original #\z) original))))
+
+  ($ run-with-seqs "abczzz" "abcdef"
+     (^[expect original]
+       (test* `(sequence-fill! ,original #\z 3) expect
+              (begin (sequence-fill! original #\z 3) original))))
+
+  ($ run-with-seqs "abczzz" "abcdef"
+     (^[expect original]
+       (test* `(sequence-fill! ,original #\z 3 6) expect
+              (begin (sequence-fill! original #\z 3 6) original))))
+
+  ($ run-with-seqs "abzzef" "abcdef"
+     (^[expect original]
+       (test* `(sequence-fill! ,original #\z 2 4) expect
+              (begin (sequence-fill! original #\z 2 4) original))))
+
+  ($ run-with-seqs (test-error) "abcdef"
+     (^[expect original]
+       (test* `(sequence-fill! ,original #\z 2 7) expect
+              (begin (sequence-fill! original #\z 2 7) original))))
+  )
+
 (test* "for-each-with-index (list)" '((2 . c) (1 . b) (0 . a))
        (rlet1 r '()
          (for-each-with-index (^[i e] (push! r (cons i e))) '(a b c))))

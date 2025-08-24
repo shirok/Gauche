@@ -145,13 +145,15 @@
 (define-method sequence-copy! ((dst <sequence>) dstart src
                                :optional (sstart 0) send)
   (define *set! (modifier dst))
+  (define *ref (referencer src))
   (define end_ (if (undefined? send) (size-of src) send))
-  (with-iterator (src end? next)
-    (do ([i dstart (+ i 1)]
-         [count sstart (+ count 1)])
-        [(>= count end_) (undefined)]
-      (when (end?) (error "source sequence too short:" src))
-      (*set! dst i (next)))))
+  (when (> (+ dstart (- end_ sstart)) (size-of dst))
+    (errorf "Source ~s [~s,~s] so too long to copy into ~s @~s"
+            src sstart end_ dst dstart))
+  (do ([i dstart (+ i 1)]
+       [j sstart (+ j 1)])
+      [(>= j end_) (undefined)]
+    (*set! dst i (*ref src j))))
 (define-method sequence-copy! ((dst <string>) dstart src
                                :optional (sstart 0) send)
   ;; NB: string-copy! is in srfi.13, For now, we avoid depending on it.
@@ -171,7 +173,7 @@
   (define *set! (modifier dst))
   (define end_ (if (undefined? end) (size-of dst) end))
   (do ([i start (+ i 1)])
-      [(>= i end) (undefined)]
+      [(>= i end_) (undefined)]
     (*set! dst i elt)))
 
 (define-method sequence-fill! ((dst <vector>) elt . opts)
