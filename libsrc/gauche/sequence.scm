@@ -44,6 +44,7 @@
           find-index find-with-index group-sequence group-contiguous-sequence
           delete-neighbor-dups
           delete-neighbor-dups! delete-neighbor-dups-squeeze!
+          sequence-copy! sequence-fill!
           sequence->kmp-stepper sequence-contains
           break-list-by-sequence! break-list-by-sequence
           common-prefix-to common-prefix
@@ -138,6 +139,45 @@
   (vector-copy! seq start vals 0 (- end start)))
 (define-method (setter subseq) ((seq <bitvector>) start end (vals <bitvector>))
   (bitvector-copy! seq start vals 0 (- end start)))
+
+;; sequence-copy! and sequence-fill!
+
+(define-method sequence-copy! ((dst <sequence>) dstart src
+                               :optional (sstart 0) send)
+  (define *set! (modifier dst))
+  (define end_ (if (undefined? send) (size-of src) send))
+  (with-iterator (src end? next)
+    (do ([i dstart (+ i 1)]
+         [count sstart (+ count 1)])
+        [(>= count end_) (undefined)]
+      (when (end?) (error "source sequence too short:" src))
+      (*set! dst i (next)))))
+(define-method sequence-copy! ((dst <string>) dstart src
+                               :optional (sstart 0) send)
+  ;; NB: string-copy! is in srfi.13, For now, we avoid depending on it.
+  (define src_ (if (string? src) src (coerce-to <string> src)))
+  (define end_ (if (undefined? send) (string-length src_) send))
+  ((with-module gauche.internal %string-replace-body!)
+   dst
+   (string-append (substring dst 0 dstart)
+                  (substring src_ sstart end_)
+                  (substring dst (+ dstart (- end_ sstart))
+                             (string-length dst))))
+  (undefined))
+(define-method sequence-copy! ((dst <vector>) dstart (src <vector>) . opts)
+  (apply vector-copy! dst dstart src opts))
+
+(define-method sequence-fill! ((dst <sequence>) elt :optional (start 0) end)
+  (define *set! (modifier dst))
+  (define end_ (if (undefined? end) (size-of dst) end))
+  (do ([i start (+ i 1)])
+      [(>= i end) (undefined)]
+    (*set! dst i elt)))
+
+(define-method sequence-fill! ((dst <vector>) elt . opts)
+  (apply vector-fill! dst elt opts))
+(define-method sequence-fill! ((dst <string>) elt . opts)
+  (apply string-fill! dst elt opts))
 
 ;; reverse iterator ------------------------------------
 
@@ -667,32 +707,32 @@
 (define-method permute ((src <sequence>) (ord <sequence>) . maybe-fallback)
   (apply permute-to (class-of src) src ord maybe-fallback))
 
-(define-method permute! ((seq <sequence>) (ord <sequence>))
-  ;; This implementation is really dumb.  If we assume ORD requests proper
-  ;; permutation (i.e. no "multicast" of elements) we need just a single
-  ;; variable to keep the element being swapped.   I'm not sure, at this
-  ;; moment, that we should force the proper permutation, or we should
-  ;; allow looser ORD and we choose optimal method on the fly.
-  ;; Let's see.  Just don't forget to replace this for better one > me.
-  (%permute!-arg-check seq ord)
-  (let ([permuted (permute seq ord)]
-        [*set     (modifier seq)])
-    (with-iterator (permuted end? next)
-      (do ([i 0 (+ i 1)])
-          [(end?) seq]
-        (*set seq i (next))))))
-
-(define-method permute! ((seq <string>) (ord <sequence>))
-  ;; for string, this one is faster.
-  (%permute!-arg-check seq ord)
-  ((with-module gauche.internal %string-replace-body!) seq (permute seq ord)))
+(define-method permute! ((seq <sequence>) (ord <sequence>) :optional fallback)
+  ;; If we know permutation is bijective, we can avoid creating intermediate
+  ;; results.  But I suspect the cost of checking bijectiveness nullifies
+  ;; the improvement.
+  (let ([permuted (permute seq ord fallback)]
+        [org-size (size-of seq)]
+        [perm-size (size-of ord)])
+    (when (> perm-size org-size)
+      (errorf "Permutation ~s doesn't fit in the original sequence ~s"
+              ord seq))
+    (sequence-copy! seq 0 permuted)
+    (unless (undefined? fallback)
+      (sequence-fill! seq fallback perm-size))
+    seq))
 
 (define-method unpermute-to ((class <class>) (src <sequence>) (ord <sequence>)
-                             . maybe-fallback)
-  (apply permute-to class src (inverse-permuter ord) maybe-fallback))
+                             :optional fallback)
+  (if (undefined? fallback)
+    (permute-to class src (inverse-permuter ord))
+    (permute-to class src (inverse-permuter ord -1) fallback)))
 
-(define-method unpermute ((src <sequence>) (ord <sequence>) . maybe-fallback)
-  (apply permute src (inverse-permuter ord) maybe-fallback))
+(define-method unpermute ((src <sequence>) (ord <sequence>)
+                          :optional fallback)
+  (if (undefined? fallback)
+    (permute src (inverse-permuter ord))
+    (permute src (inverse-permuter ord -1) fallback)))
 
 (define-method unpermute! ((seq <sequence>) (ord <sequence>))
   (permute! seq (inverse-permuter ord)))

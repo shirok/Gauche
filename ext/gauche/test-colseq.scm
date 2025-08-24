@@ -780,9 +780,14 @@
                   (coerce-to order-type order)
                   (map elt-coercer fallback)))
     (test* #"permute!~msg ~type by ~order-type"
-           (if (= (size-of source) (size-of expected))
-             (map-to type elt-coercer expected)
-             *test-error*)
+           (cond [(= (size-of source) (size-of expected))
+                  (map-to type elt-coercer expected)]
+                 [(< (size-of source) (size-of expected))
+                  *test-error*]
+                 [else
+                  (let ([res (list-copy source)])
+                    (set! (subseq res 0 (size-of expected)) expected)
+                    (map-to type elt-coercer res))])
            (let1 imp (map-to type elt-coercer source)
              (apply permute!
                     imp
@@ -799,6 +804,17 @@
 (permute-tester "" '(d a c b) '(a b c d) '(3 0 2 1))
 (permute-tester " (short)" '(d a) '(a b c d) '(3 0))
 (permute-tester " (long)"  '(d a z c b) '(a b c d) '(3 0 4 2 1) 'z)
+
+;; some permute! edge cases
+(test* "permute! no fallback" '#(c a a d e)
+       (rlet1 z (vector 'a 'b 'c 'd 'e)
+         (permute! z '(2 0 0))))
+(test* "permute! w/ fallback" '#(c a a z z)
+       (rlet1 z (vector 'a 'b 'c 'd 'e)
+         (permute! z '(2 0 0) 'z)))
+(test* "permute! w/ fallback" '#(c z a z z)
+       (rlet1 z (vector 'a 'b 'c 'd 'e)
+         (permute! z '(2 -1 0) 'z)))
 
 (test* "unpermute" '#(a b c d e f g)
        (unpermute (permute '#(a b c d e f g)

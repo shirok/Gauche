@@ -1,3 +1,8 @@
+2025-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm: Add sequence-copy! and sequence-fill!.
+	  Revised permute-family for consistent treatment of fallback argument.
+
 2025-08-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnet.scm: Remove conditionals depending on ipv6 availability.
