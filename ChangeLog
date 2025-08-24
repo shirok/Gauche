@@ -1,5 +1,7 @@
 2025-08-23  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvlib.scm.tmpl: Support sequence-copy!|fill!.
+
 	* libsrc/gauche/sequence.scm: Add sequence-copy! and sequence-fill!.
 	  Revised permute-family for consistent treatment of fallback argument.
 

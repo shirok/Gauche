@@ -603,7 +603,13 @@
   (${t}vector-copy v))
 (define-method subseq ((v <${t}vector>) . args)
   (apply ${t}vector-copy v args))
-
+(define-method sequence-copy! ((v <${t}vector>) dstart src . opts)
+  (define src_ (if (is-a? src <${t}vector>)
+                 src
+                 (coerce-to <${t}vector-meta> src)))
+  (apply ${t}vector-copy! v dstart src_ opts))
+(define-method sequence-fill! ((v <${t}vector>) elt . opts)
+  (apply ${t}vector-fill! v elt opts))
 
 ///)) ;; end of tmpl-body
 

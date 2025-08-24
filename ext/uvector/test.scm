@@ -574,7 +574,7 @@
         '#u64(#xefcdab8967452301 #x1032547698badcfe)))
 
 ;;-------------------------------------------------------------------
-(test-section "collection interface")
+(test-section "collection/sequence interface")
 
 (use gauche.collection)
 (use gauche.sequence)
@@ -613,6 +613,20 @@
                                   (coerce-to <list> vec))
                            '(1 0 3 4))
                (num-equal? (coerce-to <vector> (subseq vec 1 3)) '#(0 3))))))
+
+(test* "sequence-copy!" '#u8(0 1 2 99 98 97 96 95)
+       (rlet1 z (u8vector 0 1 2 3 4 5 6 7)
+         (sequence-copy! z 3 '#u8(99 98 97 96 95))))
+(test* "sequence-copy!" '#u8(0 1 2 98 97 96 6 7)
+       (rlet1 z (u8vector 0 1 2 3 4 5 6 7)
+         (sequence-copy! z 3 '#u8(99 98 97 96 95) 1 4)))
+
+(test* "sequence-fill!" '#s8(-1 -1 -1 -1 -1 -1 -1 -1)
+       (rlet1 z (s8vector 0 1 2 3 4 5 6 7)
+         (sequence-fill! z -1)))
+(test* "sequence-fill!" '#s8(0 1 -1 -1 -1 -1 6 7)
+       (rlet1 z (s8vector 0 1 2 3 4 5 6 7)
+         (sequence-fill! z -1 2 6)))
 
 ;;-------------------------------------------------------------------
 (test-section "arithmetic operations")
