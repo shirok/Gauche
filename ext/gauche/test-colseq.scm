@@ -859,8 +859,10 @@
        (inverse-permuter '#s8(5 3 0) -1))
 (test* "inverse-permuter" '(1 -1 -1 -1 -1 0)
        (inverse-permuter '(5 0) -1))
-(test* "inverse-permuter" (test-error)
+(test* "inverse-permuter" (test-error <error> #/non-bijective/)
        (inverse-permuter '#(5 0)))
+(test* "inverse-permuter" (test-error <error> #/non-injective/)
+       (inverse-permuter '#(3 3 3) -1))
 
 (define (permute-tester msg expected source order . fallback)
   (define (unit type elt-coercer order-type)

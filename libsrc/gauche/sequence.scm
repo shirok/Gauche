@@ -696,13 +696,17 @@
     (let1 dom-size (+ (find-max permuter) 1)
       (when (and (undefined? fallback)
                  (> dom-size (size-of permuter)))
-        (error "inverse of non-bijective permuter requiers fallback value:"
+        (error "inverse of non-bijective permuter requires fallback value:"
                permuter))
       (let1 corr (sort-by (map-with-index cons permuter) cdr)
         ($ call-with-builder (class-of permuter)
            (^[add! get]
              (let loop ([i 0] [corr corr])
                (cond [(null? corr) (get)]
+                     [(and (not (null? (cdr corr)))
+                           (= (cdar corr) (cdadr corr)))
+                      (error "can't inverse non-injective permutation:"
+                             permuter)]
                      [(eqv? i (cdar corr))
                       (add! (caar corr)) (loop (+ i 1) (cdr corr))]
                      [else
