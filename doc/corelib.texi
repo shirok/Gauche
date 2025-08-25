@@ -6225,7 +6225,7 @@ An error is signaled if @var{i} is past the end of list @var{x}.
 See @code{take*} and @code{drop*} below for more tolerant version.
 
 For generic subsequence extraction from any sequence, see @code{subseq}
-in @ref{Slicing sequence}.
+in @ref{Slicing and filling sequences}.
 @c JP
 @code{drop} は @var{x} に @var{i} 回 cdr 操作をおこなうのと全く
 同じです。返される値は、@var{x} と共通の末尾を共有します。一方、
@@ -6236,7 +6236,7 @@ take は、引数のリストが長さ0でないリストなら必ず新しい�
 より寛容な手続きについては、下の@code{take*}と@code{drop*}を見てください。
 
 あらゆる並びからの部分並びを抽出する汎用的な方法に関しては、
-@ref{Slicing sequence} にある @code{subseq} を参照してください。
+@ref{Slicing and filling sequences} にある @code{subseq} を参照してください。
 @c COMMON
 @end defun
 
@@ -6276,10 +6276,10 @@ when the input list is shorter than @var{k} elements.
 
 @c EN
 Note: For generic subsequence extraction from any sequence,
-see @code{subseq} in @ref{Slicing sequence}.
+see @code{subseq} in @ref{Slicing and filling sequences}.
 @c JP
 注意: 一般的な、いかなるシーケンスからのサブシーケンスの抽出については、
-@ref{Slicing sequence}の@code{subseq}を見て下さい。
+@ref{Slicing and filling sequences}の@code{subseq}を見て下さい。
 @c COMMON
 @end defun
 

@@ -22470,13 +22470,13 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文�
 
 @menu
 * Fundamental sequence accessors::
-* Slicing sequence::
+* Slicing and filling sequences::
 * Mapping over sequences::
 * Other operations over sequences::
 * Implementing sequences::
 @end menu
 
-@node Fundamental sequence accessors, Slicing sequence, Sequence framework, Sequence framework
+@node Fundamental sequence accessors, Slicing and filling sequences, Sequence framework, Sequence framework
 @subsection Fundamental sequence accessors
 @c NODE 基本的なシーケンスのアクセサ
 
@@ -22544,15 +22544,76 @@ or deleting elements.
 
 @deffn {Method} referencer (seq <sequence>)
 @c MOD gauche.sequence
+@c EN
+Returns a procedure @var{p} that can be invoked
+as @code{(@var{p} @var{s} @var{i})} or
+@code{(@var{p} @var{s} @var{i} @var{fallback})}.
+@var{s} is a sequence of the same class as @var{seq}, and
+@var{i} is an exact integer.  @var{p} must return the @var{i}-th
+element of @var{s}.  If @var{i} is out of bounds,
+it should return @var{fallback} if provided, or signals an error.
+
+For example, applying @code{referencer} to any list returns
+a procedure equivalent to @code{list-ref}.
+
+This is useful when you need to invoke a lot of @code{ref} method or
+@code{~} procedure on sequence objects;
+@code{ref} method needs runtime dispatch for every
+invocation, but if you take @code{referencer} once and use the
+returned procedure, you can avoid runtime dispatch.
+@c JP
+@code{(@var{p} @var{s} @var{i})}もしくは
+@code{(@var{p} @var{s} @var{i} @var{fallback})}と呼び出せる手続き@var{p}を
+返します。ここで、@var{s}は@var{seq}と同じクラスのシーケンス、
+@var{i}は正確な整数です。@var{p}は@var{s}の@var{i}番目の要素を返します。
+@var{i}が範囲外の場合、@var{fallback}が与えられればそれを返し、
+そうでなければエラーを投げます。
+
+例えば、リストに@code{referencer}を適用すると、
+@code{list-ref}相当の手続きが返されます。
+
+これは、シーケンスオブジェクトに@code{ref}メソッドや@code{~}手続きを
+頻繁に適用する場合に便利です。@code{ref}は一回の呼び出し毎に
+実行時ディスパッチのコストがかかります。一度@code{referencer}を取れば、
+返された手続きは実行時ディスパッチを行いません。
+@c COMMON
 @end deffn
 
 @deffn {Method} modifier (seq <sequence>)
 @c MOD gauche.sequence
+@c EN
+Returns a procedure @var{p} that can be invoked
+as @code{(@var{p} @var{s} @var{i} @var{obj})}, which sets @var{obj} to the
+@var{i}-th element of a sequence @var{s} of the same class of @var{seq}.
+If @var{i} is out of bounds, or @var{obj} is not suitable as an element
+of @var{s}, or @var{s} is immutable, an error is thrown.
+
+For example, applying @code{modifier} to any list returns
+a procedure equivalent to @code{list-set!}.
+
+This is useful when you need to set lots of places of sequence
+objects.  @code{(set! (ref s i) obj)} needs runtime dispatch,
+and calling a procedure returned by @code{modifier} avoid it.
+@c JP
+@code{(@var{p} @var{s} @var{i} @var{obj})}と呼び出せる手続き@var{p}を
+返します。ここで、@var{s}は@var{seq}と同じクラスのシーケンス、
+@var{i}は正確な整数で、@var{p}は@var{obj}を@var{s}の@var{i}番目の要素にセットします。
+@var{i}が範囲外の場合、@var{s}が変更不可の場合、
+あるいは@var{obj}が@var{s}の要素としてふさわしくない場合はエラーが投げられます。
+
+例えば、リストに@code{modifier}を適用すると、
+@code{list-set!}相当の手続きが返されます。
+
+シーケンスオブジェクトの多くの箇所を変更したい場合、
+@code{(set! (ref s i) obj)} で行うと呼び出しの度に実行時ディスパッチの
+オーバヘッドがありますが、@code{modifier}を呼んで返された手続きを使うと
+それを避けられます。
+@c COMMON
 @end deffn
 
-@node Slicing sequence, Mapping over sequences, Fundamental sequence accessors, Sequence framework
-@subsection Slicing sequence
-@c NODE シーケンスのスライス
+@node Slicing and filling sequences, Mapping over sequences, Fundamental sequence accessors, Sequence framework
+@subsection Slicing and filling sequences
+@c NODE シーケンスのスライス、フィル
 
 @deffn {Method} subseq (seq <sequence>) :optional start end
 @c MOD gauche.sequence
@@ -22604,7 +22665,60 @@ s @result{} #(#\a #\b 5 6 e)
 @end example
 @end deffn
 
-@node Mapping over sequences, Other operations over sequences, Slicing sequence, Sequence framework
+@deffn {Method} sequence-copy! (dst <sequence>) dstart (src <sequence>) :optional sstart send
+@c MOD gauche.sequence
+@c EN
+A generic version of @code{vector-copy!}, @code{string-copy!} etc.
+Copy the contents of @var{src} between @var{sstart} and @var{send}
+into a mutable sequence @var{dst} starting from @var{dstart}.
+The classes of @var{src} and @var{dst} can differ.
+The return value is undefined.
+
+If @var{sstart} and/or @var{send} are omitted, 0 and the length of @var{src}
+are assumed, respectively.
+
+If @var{dst} isn't large enough to hold the copied portion, or
+@var{dst} is immutable, an error is signaled.
+@c JP
+@code{vector-copy!}や@code{string-copy!}のジェネリック版です。
+@var{src}の@var{sstart}から@var{send}までを、@var{dst}の@var{dstart}位置へと
+コピーします。@var{src}と@var{dst}のクラスは異なっていても構いません。
+戻り値は未定義です。
+
+@var{ssart}、@var{send}が省略された場合はそれぞれ0と@var{src}の長さが使われます。
+
+@var{dst}の長さが必要な要素を書き込むのに足りなかったり、
+@var{dst}が変更不可の場合はエラーが投げられます。
+@c COMMON
+
+@example
+(rlet1 v (list 'a 'b 'c 'd 'e)
+  (sequence-copy! v 1 "pqr")) @result{} (a #\p #\q #\r e)
+@end example
+@end deffn
+
+@deffn {Method} sequence-fill! (dst <sequence>) elt :optional start end
+@c MOD gauche.sequence
+@c EN
+A generic version of @code{vector-fill!} etc.
+Fill @var{dst} with @var{elt}.  If the optional @var{start} and/or @var{end}
+indexes are given, they limit the portion of @var{dst} to be filled.
+@var{dst} must be a mutable sequence.
+@c JP
+@code{vector-fill!}等のジェネリック版です。
+@var{dst}を要素@var{elt}で埋めます。省略可能な@var{start}や@var{end}は
+変更対象となる@var{dst}の範囲を制限します。
+@var{dst}は変更可能でなければなりません。
+@c COMMON
+
+@example
+(rlet1 v (list 'a 'b 'c 'd 'e)
+  (sequence-fill! v 'Z 2)) @result{} (a b Z Z Z)
+@end example
+@end deffn
+
+
+@node Mapping over sequences, Other operations over sequences, Slicing and filling sequences, Sequence framework
 @subsection Mapping over sequences
 @c NODE シーケンス上のマップ
 
@@ -22711,17 +22825,19 @@ See also @code{list-index} in @code{scheme.list}
 @end deffn
 
 @deffn {Method} fold-right kons knil (seq <sequence>) @dots{}
+@deffnx {Method} fold-left kons knil (seq <sequence>) @dots{}
 @c MOD gauche.sequence
 @c EN
-Generalization of @code{fold-right} on lists.
+Generalization of @code{fold-right}/@code{fold-left} on lists.
 Like @code{fold}, this method applies a higher-order function
 @var{kons} over given sequence(s), passing the "seed" value
 whose default is @var{knil}.  The difference between @code{fold}
 and @code{fold-right} is the associative order of elements on
 which @var{kons} is applied.
 
-When we have one sequence, @code{[E0, E1, ..., En]}, @code{fold}
-and @code{fold-right} work as follows, respectively.
+When we have one sequence, @code{[E0, E1, ..., En]},
+@code{fold-right} and @code{fold-left} work compared to @code{fold}
+as follows, respectively.
 @c JP
 リストに対する@code{fold-right}の総称関数版です。
 @code{fold}と同じように、このメソッドは種となる値 (初期値は@var{knil})
@@ -22730,7 +22846,7 @@ and @code{fold-right} work as follows, respectively.
 要素間の結合の順序にあります。
 
 ひとつだけのシーケンス@code{[E0, E1, ..., En]}に適用する場合、
-@code{fold}と@code{fold-right}はそれぞれ以下のように動作します。
+@code{fold}に対して@code{fold-right}と@code{fold-left}はそれぞれ以下のように動作します。
 @c COMMON
 
 @example
@@ -22739,6 +22855,9 @@ fold:
 
 fold-right
   (kons E0 (kons E1 (kons ... (kons En-1 (kons En knil)) ...)))
+
+fold-left:
+  (kons (kons ... (kons (kons knil E1)  E2) ... En-2) En-1)
 @end example
 
 @c EN
@@ -23394,14 +23513,136 @@ instead of the class of @var{src}.
 @c MOD gauche.sequence
 @c EN
 Also like @code{permute}, but the result is stored back to @var{src}.
-@var{Src} must be a mutable sequence, and the length of @var{src} and
-@var{permuter} must be the same.
+@var{Src} must be a mutable sequence, and @var{permuter} must be equal length
+to or shorter than @var{src}.
 @c JP
 これも@code{permute}と似ていますが、結果は新たに作られるシーケンスではなく
 @var{src}を破壊的変更して格納されます。@var{src}は変更可能でなければならず、
-また@var{src}と@var{permuter}は同じ長さでなければなりません。
+@var{permuter}は@var{src}と同じ長さかそれより短くなければなりません。
 @c COMMON
+
+@c EN
+If @var{permuter} is shorter than @var{src}, the remaining elements
+of @var{src} is left alone if @var{fallback} isn't provided,
+or filled with @var{fallback} if provided.
+@c JP
+@var{permuter}が@var{src}より短い場合、@var{fallback}が与えられなければ
+@var{src}の残りの部分は変更されず、@var{fallback}が与えられた場合は
+それで埋められます。
+@c COMMON
+
+@example
+(rlet1 v (list 'a 'b 'c 'd 'e)
+  (permute! v '(2 1 0 4 3))) @result{} (c b a e d)
+
+(rlet1 v (list 'a 'b 'c 'd 'e)
+  (permute! v '(2 2 0))) @result{} (c c a d e)
+
+(rlet1 v (list 'a 'b 'c 'd 'e)
+  (permute! v '(2 2 0) 'z)) @result{} (c c a z z)
+@end example
+
+@c EN
+If @var{permuter} contains index outside of the valid range of @var{src},
+@var{fallback} must be provided, and it is set to the corresponding element.
+@c JP
+@var{permuter}が@var{src}の有効な範囲外のインデックスを含んでいた場合は
+@var{fallback}が与えられなければならず、対応する要素が@var{fallback}で
+埋められます。
+@c COMMON
+
+@example
+(rlet1 v (list 'a 'b 'c 'd 'e)
+  (permute! v '(5 4 3 -1 1) 'z)) @result{} (z e d z b)
+@end example
 @end deffn
+
+@deffn {Generic Function} inverse-permuter (permuter <sequence>) :optional fallback
+@c MOD gauche.sequence
+@c EN
+Computes and returns the inverse of
+@var{permuter}, which is a sequence of exact nonnegative integers,
+@code{[X_0 X_1 ... X_i ... X_n]},
+specifying the @code{i}-th element of the original sequence to be mapped to
+@code{X_i}.
+The inverse permuter is a sequence of exact integers of the same
+type as @code{permuter}, in which
+@code{X_i}-th index contains @code{i}.
+The sequence type of @var{permuter} must have a builder.
+@c JP
+@var{permuter}の逆写像を計算して返します。
+@var{permuter}は整数のシーケンス@code{[X_0 X_1 ... X_i ... X_n]}で、
+@code{i}番目の要素が@code{X_i}番目に写像されることを示します。
+その逆写像は、@code{X_i}番目の要素が@code{i}番目に写される写像です。
+返されるシーケンスは@var{permuter}と同じクラスになります。
+@var{permuter}のクラスはビルダーを実装していなければなりません。
+@c COMMON
+
+@example
+(inverse-permuter '#(3 0 1 4 2))
+ @result{} #(1 2 4 0 3)
+@end example
+
+@c EN
+@var{Permuter} must be injective, that is, every element in it
+must be unique; otherwise, an error is signaled.
+If @var{permuter} is not bijective, that is, there can be
+elements in the codomain that not eleemnts in the domain is mapped,
+the inverse permutation maps such codomain's elements to @var{fallback}
+if provided, or an error is signaled.
+@c JP
+@var{permuter}は単射、つまり定義域の要素の各々は終域の別の要素に写像されなければ
+なりません。そうでなければエラーが投げられます。
+@var{permuter}が全射でない場合、つまり終域の要素のうち定義域から写像されない
+ものがあった場合、@var{fallback}が与えられていれば逆写像はそのインデックスを使い、
+与えられていなければエラーが投げられます。
+@c COMMON
+
+@example
+(inverse-permuter '#s8(5 3 0) -1))
+  @result{} #s8(2 -1 -1 1 -1 0)
+@end example
+@end deffn
+
+@deffn {Generic function} unpermute (src <sequence>) (permuter <sequence>) :optional fallback
+@deffnx {Generic function} unpermute-to (class <class>) (src <sequence>) (permuter <sequence>) :optional fallback
+@deffnx {Generic function} unpermute! (src <sequence>) (permuter <sequence>) :optional fallback
+@c MOD gauche.sequence
+@c EN
+Inverse of @code{permute} etc. if the permutation is bijective.
+@c JP
+置換が全単射であれば、これらは@code{permute}の逆関数です。
+@c COMMON
+
+@example
+(permute '(a b c d) '(3 1 2 0)) @result{} (d b c a)
+(unpermute '(d b c a) '(3 1 2 0)) @result{} (a b c d)
+@end example
+
+@c EN
+If the permutation isn't surjective (but injective),
+those procedures try to fill the undeterminable element with @var{fallback}
+if provided, or signal an error if @var{fallback} isn't provided.
+Note that the length of result sequence of @code{unpermute}
+is the maximum index in the @var{permuter} plus one.  It doesn't fill
+the result beyond it.
+@c JP
+もし置換が全射でない(けれども単射ではある)場合、
+@var{fallback}が与えられていれば決定できない要素がそれで埋められます。
+@var{fallback}が与えられなければエラーが投げられます。
+但し、戻り値の大きさは@code{permuter}内の最大のインデックス+1になるので、
+それ以降の要素が埋められることはありません。
+@c COMMON
+
+@example
+(permute '(a b c d e) '(4 0 2)) @result{} (e a c)
+(unpermute '(e a c) '(4 0 2) 'Z) @result{} (a Z c Z e)
+
+(permute '(a b c d e) '(3 2 1)) @result{} (d c b)
+(unpermute '(d c b)) '(3 2 1) 'Z) @result{} (Z b c d)
+@end example
+@end deffn
+
 
 @deffn {Generic function} shuffle (src <sequence>) :optional random-source
 @c MOD gauche.sequence
