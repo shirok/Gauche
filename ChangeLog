@@ -1,3 +1,8 @@
+2025-08-24  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm (fold-left): Added.
+	  https://github.com/shirok/Gauche/issues/1159
+
 2025-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.scm.tmpl: Support sequence-copy!|fill!.

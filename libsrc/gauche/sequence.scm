@@ -39,7 +39,7 @@
   (extend gauche.collection)
   (export referencer modifier subseq
           call-with-reverse-iterator call-with-reverse-iterators
-          fold-right
+          fold-right fold-left
           fold-with-index map-with-index map-to-with-index for-each-with-index
           find-index find-with-index group-sequence group-contiguous-sequence
           delete-neighbor-dups
@@ -255,7 +255,7 @@
        (^[end? next]
          (loop (cdr colls) (cons end? eprocs) (cons next nprocs)))))))
 
-;; fold-right --------------------------------------------
+;; fold-right, fold-left ------------------------------------------
 
 ;;  (proc e1 (proc e2 ... (proc eN seed)))
 
@@ -311,6 +311,17 @@
 
 (define-method fold-right (proc seed (seq1 <vector>) (seq2 <vector>))
   (vector-fold-right (^ (r e1 e2) (proc e1 e2 r)) seed seq1 seq2))
+
+(define-method fold-left (proc seed (seq <sequence>) . more)
+  (if (null? more)
+    (fold (^[elt seed] (proc seed elt)) seed seq)
+    (let1 num-elts (+ 1 (length more))
+      (apply fold (^ args (receive (elts seed) (split-at args num-elts)
+                            (apply proc (car seed) elts)))
+             seed seq more))))
+
+(define-method fold-left (proc seed (seq <list>))
+  ((with-module gauche fold-left) proc seed seq))
 
 ;; mapping with index ------------------------------------
 

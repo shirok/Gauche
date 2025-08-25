@@ -20,6 +20,9 @@
   ((strings :initform '() :init-keyword :strings))
   :metaclass <string-seq-meta>)
 
+(define-method write-object ((obj <string-seq>) port)
+  (format port "#<sseq ~s>" (~ obj'strings)))
+
 (define-method call-with-iterator ((seq <string-seq>) proc :key (start #f)
                                    :allow-other-keys)
   (let* ([ss (slot-ref seq 'strings)]
@@ -484,7 +487,7 @@
 
 (let ()
   (define (run-with-seqs expect original proc)
-    (dolist (dst-class (list <list> <vector> <string>))
+    (dolist (dst-class (list <list> <vector> <string> <string-seq>))
       (proc (if (is-a? expect <sequence>)
               (coerce-to dst-class expect)
               expect)
@@ -636,26 +639,42 @@
 (test* "find-index (custom)" 2
        (find-index (cut equal? "c" <>) (sseq 'a 'b 'c 'd 'e)))
 
-(test* "fold-right (list)" '(a b c d e)
-       (fold-right cons '() '(a b c d e)))
-(test* "fold-right (vector)" '(a b c d e)
-       (fold-right cons '() '#(a b c d e)))
-(test* "fold-right (string)" '(#\a #\b #\c #\d #\e)
-       (fold-right cons '() "abcde"))
-(test* "fold-right (custom)" '("a" "b" "c" "d" "e")
-       (fold-right cons '() (sseq 'a 'b 'c 'd 'e)))
-(test* "fold-right (list+list)" '(a 0 b 1 c 2 d 3 e 4)
-       (fold-right cons* '() '(a b c d e) '(0 1 2 3 4)))
-(test* "fold-right (list+vector)" '(a 0 b 1 c 2 d 3 e 4)
-       (fold-right cons* '() '(a b c d e) '#(0 1 2 3 4)))
-(test* "fold-right (string+vector)" '(#\a 0 #\b 1 #\c 2 #\d 3 #\e 4)
-       (fold-right cons* '() "abcde" '#(0 1 2 3 4)))
-(test* "fold-right (different lengths)" '(#\a 0 x #\b 1 y #\c 2 z)
-       (fold-right cons* '() "abcd" '#(0 1 2 3 4) '(x y z)))
-(test* "fold-right (different lengths)" '(#\a 0 u #\b 1 v #\c 2 w #\d 3 x)
-       (fold-right cons* '() "abcdef" '#(0 1 2 3) '(u v w x y z)))
-(test* "fold-right (different lengths)" '(#\a 0 u #\b 1 v)
-       (fold-right cons* '() "ab" '#(0 1 2 3 4) '(u v w x y z)))
+(let ()
+  (define-syntax run-with-seqs
+    (syntax-rules ()
+      ([_ testproc fn seed arg args ...]
+         (dolist [cls (list <list> <vector> <string> <string-seq>)]
+           (let1 expect
+               ((with-module gauche testproc) fn seed
+                (coerce-to <list> (coerce-to cls arg))
+                (coerce-to <list> args) ...)
+           (let ([zarg (coerce-to cls arg)])
+             (test* `(testproc fn seed ,zarg args ...) expect
+                    (testproc fn seed zarg args ...))))))))
+
+  (run-with-seqs fold-right cons '() '(#\a #\b #\c #\d #\e))
+  (run-with-seqs fold-left cons '() '(#\a #\b #\c #\d #\e))
+
+  (run-with-seqs
+   fold-right list '() '(#\a #\b #\c #\d #\e) '(#\f #\g #\h #\i #\j))
+  (run-with-seqs
+   fold-left list '() '(#\a #\b #\c #\d #\e) '(#\f #\g #\h #\i #\j))
+
+  (run-with-seqs
+   fold-right list '() '(#\a #\b #\c) '(#\f #\g #\h #\i #\j))
+  (run-with-seqs
+   fold-left list '() '(#\a #\b #\c) '(#\f #\g #\h #\i #\j))
+
+  (run-with-seqs
+   fold-right cons* '() '(#\a #\b) '(#\c #\d) '(#\e #\f))
+  (run-with-seqs
+   fold-left cons* '() '(#\a #\b) '(#\c #\d) '(#\e #\f))
+
+  (run-with-seqs
+   fold-right list '() '(#\a #\b #\c) '())
+  (run-with-seqs
+   fold-left list '() '(#\a #\b #\c) '())
+  )
 
 ;; reverse iterator
 (define (generic-reverse seq start end)
