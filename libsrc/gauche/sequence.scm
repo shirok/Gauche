@@ -754,10 +754,6 @@
 (define-method unpermute! ((seq <sequence>) (ord <sequence>))
   (permute! seq (inverse-permuter ord)))
 
-(define (%permute!-arg-check seq ord)
-  (unless (= (size-of seq) (size-of ord))
-    (error "permute! needs the length of sequence and length of permuter the same: sequence is ~,,,,30:s, permuter is ~,,,,30:s" seq ord)))
-
 ;; shuffle, shuffle! ---------------------------------------------
 
 (define-method shuffle-to ((class <class>) (seq <sequence>) . args)
