@@ -20698,11 +20698,14 @@ Parses Content-disposition header field as specified in RFC2183.
 @c JP
 RFC2183に定められたContent-Dispositionヘッダフィールドをパーズします。
 @c COMMON
+
+@example
 (mime-parse-content-disposition "attachment; filename=genome.jpeg;\
   modification-date=\"Wed, 12 Feb 1997 16:29:51 -0500\";")
  @result{} ("attachment"
       ("filename" . "genome.jpeg")
       ("modification-date" . "Wed, 12 Feb 1997 16:29:51 -0500"))
+@end example
 @end defun
 
 
