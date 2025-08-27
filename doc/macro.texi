@@ -303,25 +303,25 @@ corresponding local identifiers as follows:
 @c COMMON
 
 @example
-(let ([f_1 (^x (* x x))])
-  (let-macro ([m (^[expr1 expr2] `(+ (f_1 ,expr1) (f_1 ,expr2)))])
-    (let ([f_2 (^x (+ x x))])
+(let ([f.1 (^x (* x x))])
+  (let-macro ([m (^[expr1 expr2] `(+ (f.1 ,expr1) (f.1 ,expr2)))])
+    (let ([f.2 (^x (+ x x))])
       (m 3 4))))
 @end example
 
 @c EN
 Then the naive expansion would correctly preserve scopes; that is,
-expansion of @code{m} refers @code{f_1}, which wouldn't conflict
-with inner name @code{f_2}:
+expansion of @code{m} refers @code{f.1}, which wouldn't conflict
+with inner name @code{f.2}:
 @c JP
 こうしておけばナイーブな展開でもスコープが正しく保たれます。つまり、
-@code{m}の展開結果に現れる@code{f_1}は内側の@code{f_2}と衝突しません。
+@code{m}の展開結果に現れる@code{f.1}は内側の@code{f.2}と衝突しません。
 @c COMMON
 
 @example
-(let ([f_1 (^x (* x x))])
-  (let ([f_2 (^x (+ x x))])
-    (+ (f_1 3) (f_1 4))))
+(let ([f.1 (^x (* x x))])
+  (let ([f.2 (^x (+ x x))])
+    (+ (f.1 3) (f.1 4))))
 @end example
 
 @c EN
@@ -334,12 +334,12 @@ lexical bindings with higher order functions.)
 
 @c EN
 The above example deal with avoiding @code{f} referred from the
-macro @emph{definition} (which is, in fact, @code{f_1}) from being
+macro @emph{definition} (which is, in fact, @code{f.1}) from being
 shadowed
-by the binding of @code{f} at the macro @emph{use} (which is @code{f_2}).
+by the binding of @code{f} at the macro @emph{use} (which is @code{f.2}).
 @c JP
-上の例ではマクロの@emph{定義時}に現れる@code{f}(リネーム後は@code{f_1})が
-マクロの@emph{使用時}に現れる@code{f} (リネーム後は@code{f_2}) によって
+上の例ではマクロの@emph{定義時}に現れる@code{f}(リネーム後は@code{f.1})が
+マクロの@emph{使用時}に現れる@code{f} (リネーム後は@code{f.2}) によって
 シャドウされることを避ける話でした。
 @c COMMON
 
@@ -382,9 +382,9 @@ We could rename @code{f}'s according to its lexical scope:
 @c COMMON
 
 @example
-(let ([f_1 (^x (* x x))])
-  (let-macro ([m (^[expr1] `(let ([f_2 (^x (+ x x))]) (f_2 ,expr1)))])
-    (m (f_1 3))))
+(let ([f.1 (^x (* x x))])
+  (let-macro ([m (^[expr1] `(let ([f.2 (^x (+ x x))]) (f.2 ,expr1)))])
+    (m (f.1 3))))
 @end example
 
 @c EN
@@ -394,16 +394,16 @@ Then expansion unambiguously distinguish two @code{f}'s.
 @c COMMON
 
 @example
-(let ([f_1 (^x (* x x))])
-  (let ([f_2 (^x (+ x x))])
-    (f_2 (f_1 3))))
+(let ([f.1 (^x (* x x))])
+  (let ([f.2 (^x (+ x x))])
+    (f.2 (f.1 3))))
 @end example
 
 @c EN
 This is, in principle, what hygienic macro is about (well, almost).
 In reality, we don't rename everything in batch.
 One caveat is in the latter example---we statically renamed
-@code{f} to @code{f_2}, but it is possible that the macro
+@code{f} to @code{f.2}, but it is possible that the macro
 recursively calls itself, and we have to distinguish @code{f}'s
 introduced in every individual expansion of @code{m}.
 So macro expansion and renaming should work together.
@@ -411,7 +411,7 @@ So macro expansion and renaming should work together.
 以上が、衛生的マクロの原理です (まあ、だいたいは)。
 ただし、実際の実装では、すべてを一気にリネームすることはありません。
 後者の例のようなケースで注意すべき点があります。後者の例では静的に
-@code{f}を@code{f_2}にリネームしましたが、より複雑な場合にマクロ展開器が
+@code{f}を@code{f.2}にリネームしましたが、より複雑な場合にマクロ展開器が
 再帰的に自分を呼ぶことがあり、その場合にはマクロの展開ごとに挿入される@code{f}を
 別のものとして扱う必要があります。
 従って、マクロの展開とリネームは協調して動作しなければなりません。
