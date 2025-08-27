@@ -14109,8 +14109,7 @@ a random integer from 0 to @var{k-1}, including.
 @c MOD math.prime
 @c EN
 Check if an exact integer @var{n} is a prime number, using
-Baillie-PSW primality test
-(@url{http://www.trnicely.net/misc/bpsw.html}).   It is deterministic,
+Baillie-PSW primality test.   It is deterministic,
 and returns the definitive answer below 2^64 (around 1.8e19).
 For larger integers this can return @code{#t} on a composite number,
 although such number hasn't been found yet.  This never returns @code{#f}
@@ -14119,8 +14118,7 @@ on a prime number.
 This is slower than Miller-Rabin but fast enough for casual use,
 so it is handy when you want a definitive answer below the above range.
 @c JP
-@var{n}が素数かどうかをBaillie-PSW法を用いて判定します
-(@url{http://www.trnicely.net/misc/bpsw.html})。
+@var{n}が素数かどうかをBaillie-PSW法を用いて判定します。
 このアルゴリズムは2^64 (約1.8e19) 以下の入力に対しては決定的であり、
 正しい答えを返します。入力がそれ以上の場合、合成数に対して@code{#t}が返る可能性が
 あります (具体的な数はまだ見つかっていませんが)。素数に対して@code{#f}が返ることは
@@ -14221,10 +14219,10 @@ things faster.
 @c EN
 Factorize a positive exact integer @var{n} using the algorithm
 described in
-R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184. @url{http://maths-people.anu.edu.au/~brent/pub/pub051.html}.
+R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184. @url{https://maths-people.anu.edu.au/~brent/pub/pub051.html}.
 @c JP
 正整数@var{n}をモンテカルロ素因数分解法
-(R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184. @url{http://maths-people.anu.edu.au/~brent/pub/pub051.html})により
+(R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184. @url{https://maths-people.anu.edu.au/~brent/pub/pub051.html})により
 素因数分解します。
 @c COMMON
 
@@ -14281,10 +14279,10 @@ default is @code{mc-factorize}.
 @c MOD math.prime
 @c EN
 Calculates Jacobi symbol @code{(@var{a}/@var{n})}
-(@url{http://en.wikipedia.org/wiki/Jacobi_symbol}).
+(@url{https://en.wikipedia.org/wiki/Jacobi_symbol}).
 @c JP
 Jacobi symbol @code{(@var{a}/@var{n})} を計算します
-(@url{http://en.wikipedia.org/wiki/Jacobi_symbol})。
+(@url{https://en.wikipedia.org/wiki/Jacobi_symbol})。
 @c COMMON
 @end defun
 
@@ -24070,14 +24068,14 @@ Adler32はCRC32と比較して高速に計算することが可能なアルゴ�
 This module is the interface to the Aubrey Jaffer's SLIB.
 To use SLIB, say @code{(use slib)}.   SLIB itself is not included
 in Gauche distribution.   If you don't have it on your system,
-get it from @uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}.
+get it from @uref{https://people.csail.mit.edu/jaffer/SLIB.html}.
 @c JP
 このモジュールはAubrey Jaffer氏のSLIBへのインタフェースです。
 SLIBがインストールされている場合、@code{(use slib)} とすれば
 SLIBの機能が使えるようになります。
 SLIBそのものはGaucheのディストリビューションには含まれていません。
 あなたのシステムにまだインストールされていない場合は
-@uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}から入手することができます。
+@uref{https://people.csail.mit.edu/jaffer/SLIB.html}から入手することができます。
 @c COMMON
 
 @c EN
@@ -24146,11 +24144,11 @@ introduce unexpected side effects; for example, Gauche's built-in
 @mdindex sxml.ssax
 @c EN
 @code{sxml.*} modules are the adaptation of
-Oleg Kiselyov's SXML framework (@uref{http://okmij.org/ftp/Scheme/xml.html}),
+Oleg Kiselyov's SXML framework (@uref{https://okmij.org/ftp/Scheme/xml.html}),
 which is based on S-expression representation of XML structure.
 @c JP
 @code{sxml.*}モジュールは、XML構造のS式表現に基づく
-Oleg KiselyovのSXMLフレームワーク(@uref{http://okmij.org/ftp/Scheme/xml.html})の適合です。
+Oleg KiselyovのSXMLフレームワーク(@uref{https://okmij.org/ftp/Scheme/xml.html})の適合です。
 @c COMMON
 
 @c EN
@@ -25073,10 +25071,10 @@ The last parameter @var{apply-default-ns?} determines if the default
 namespace applies (for instance, it does not for attribute names)
 
 Per @code{REC-xml-names/#nsc-NSDeclared}, "xml" prefix is considered pre-declared
-and bound to the namespace name "@url{http://www.w3.org/XML/1998/namespace}".
+and bound to the namespace name "@url{https://www.w3.org/XML/1998/namespace}".
 
 This procedure tests for the namespace constraints:
-@url{http://www.w3.org/TR/REC-xml-names/#nsc-NSDeclared}.
+@url{https://www.w3.org/TR/REC-xml-names/#nsc-NSDeclared}.
 @c JP
 与えられた適切な@var{namespaces}の宣言を用いて、@var{unres-name}を
 @var{res-name}に変換する。
@@ -25084,11 +25082,11 @@ This procedure tests for the namespace constraints:
 どうかを決めます(例えば、属性名には適用しないなど)。
 
 @code{REC-xml-names/#nsc-NSDeclared}によれば、接頭辞``xml''は
-名前空間名``@url{http://www.w3.org/XML/1998/namespace}''に定義済みで束縛されていると
+名前空間名``@url{https://www.w3.org/XML/1998/namespace}''に定義済みで束縛されていると
 されます。
 
 この手続きは、名前空間の制約をテストします:
-@url{http://www.w3.org/TR/REC-xml-names/#nsc-NSDeclared}。
+@url{https://www.w3.org/TR/REC-xml-names/#nsc-NSDeclared}。
 @c COMMON
 @end defun
 
@@ -28121,7 +28119,7 @@ This predicate yields @code{#t} for "non-terminated" HTML 4.0 tags.
 @c EN
 This module contains a full-featured serializer from SXML into XML and
 HTML, partially conforming to XSLT 2.0 and XQuery 1.0 Serialization
-(@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/}).
+(@uref{https://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/}).
 It's more powerful than sxml:sxml->xml and sxml:sxml->html from
 sxml.tools.
 
@@ -28130,7 +28128,7 @@ source code.
 @c JP
 このモジュールはSXMLからXMLとHTMLへの変換を行う、様々な機能を持つ
 シリアライザを提供します。XSLT2.0とXQuery1.0に部分的に適合しています。
-(@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/})。
+(@uref{https://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/})。
 sxml.toolsのsxml:sxml->xmlとsxml:sxml->htmlよりも強力です。
 
 マニュアルのエントリは主に、オリジナルのソースコードから取られてています。
@@ -28297,12 +28295,12 @@ described below:
 @c EN
 @code{method} - Either the symbol @code{xml} or @code{html}.  For a
 detailed explanation of the difference between XML and HTML methods,
-see XSLT 2.0 and XQuery 1.0 Serialization (@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/}).
+see XSLT 2.0 and XQuery 1.0 Serialization (@uref{https://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/}).
 @c JP
 @code{method} - シンボル@code{xml}か@code{html}のどちらか。XMLメソッド
 とHTMLメソッドの相違についての詳しい説明は、XSLT 2.0 と XQuery
 Serialization
-(@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/})
+(@uref{https://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/})
 を参照してください。
 @c COMMON
 
@@ -31537,11 +31535,11 @@ XHTML 1.1 DTD
 Construct an HTML element @var{element}.  Right now,
 the following elements are provided.
 (The elements defined in HTML 4.01 DTD,
-@uref{http://www.w3.org/TR/html4/sgml/dtd.html}).
+@uref{https://www.w3.org/TR/html4/sgml/dtd.html}).
 @c JP
 @var{element} の HTML 要素を構築します。現時点では以下の要素が
 サポートされています。
-(HTML 4.01 DTD @uref{http://www.w3.org/TR/html4/sgml/dtd.html}
+(HTML 4.01 DTD @uref{https://www.w3.org/TR/html4/sgml/dtd.html}
 に定義されている要素です)。
 @c COMMON
 @example
@@ -32254,9 +32252,9 @@ then show the buffered output using @code{display/pager}.
 @c EN
 A collection of utilities that does simple parsing from
 the input port.   The API is inspired, and compatible with
-Oleg Kiselyov's input parsing library (@uref{http://okmij.org/ftp/Scheme/parsing.html}).
+Oleg Kiselyov's input parsing library (@uref{https://okmij.org/ftp/Scheme/parsing.html}).
 His library is used in lots of other libraries, notably,
-a full-Scheme XML parser/generator SSAX (@uref{http://okmij.org/ftp/Scheme/xml.html}).
+a full-Scheme XML parser/generator SSAX (@uref{https://okmij.org/ftp/Scheme/xml.html}).
 
 You can use this module in place of his
 @code{input-parse.scm} and @code{look-for-str.scm}.
@@ -32271,10 +32269,10 @@ that is, they read from the port as much as they need, without
 buffering extra characters.
 @c JP
 入力ポートに対して単純な解析を行うユーティリティのコレクションです。
-API は Oleg Kiselyov 氏の入力解析ライブラリ (@uref{http://okmij.org/ftp/Scheme/parsing.html}) に
+API は Oleg Kiselyov 氏の入力解析ライブラリ (@uref{https://okmij.org/ftp/Scheme/parsing.html}) に
 触発され、互換性を持つものです。氏のライブラリは、他のたくさんの
 ライブラリで使われています。特に、Scheme のみで書かれたパーサ/ジェネレータ
-である SSAX (@uref{http://okmij.org/ftp/Scheme/xml.html}) が挙げられます。
+である SSAX (@uref{https://okmij.org/ftp/Scheme/xml.html}) が挙げられます。
 
 このモジュールは、氏の @code{input-parse.scm} や @code{look-for-str.scm}
 の代わりに使うことができます。
@@ -38546,7 +38544,7 @@ other modules, such as @code{rfc.uri} (@pxref{URI parsing and construction}),
 @code{text.tree} (@pxref{Lazy text construction}).
 
 Note: it seems that there is no active formal specification for CGI.
-See @uref{http://w3c.org/CGI/} for more information.
+See @uref{https://w3c.org/CGI/} for more information.
 @c JP
 CGIスクリプトを書くのに便利ないくつかの基本的な手続きを提供します。
 
@@ -38557,7 +38555,7 @@ CGIスクリプトを手軽に書くにはこのモジュールの他に、
 使うとよいでしょう。
 
 注：現在有効な、CGIに関する「正式な」仕様というのはどうも無いようです。
-@uref{http://w3c.org/CGI/}あたりを参照して下さい。
+@uref{https://w3c.org/CGI/}あたりを参照して下さい。
 @c COMMON
 @end deftp
 
