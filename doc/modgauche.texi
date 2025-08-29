@@ -9588,15 +9588,6 @@ When duplicate relations can occur, does nothing and returns @code{#f}.
 重複エントリが発生し得る場合は、何も変更を行わず、変更手続きは@code{#f}を返します。
 @c COMMON
 @end table
-
-@c EN
-Note: At this moment, an attempt to add a relation exactly same as the
-existing one is regarded as a conflict.  This limitation may be
-lifted in future.
-@c JP
-註: 今のところ、既に存在する関係とまったく同じ関係を追加しようとした場合は
-衝突とみなされます。これは将来変更されるかもしれません。
-@c COMMON
 @end defun
 
 @defun bimap-left bimap

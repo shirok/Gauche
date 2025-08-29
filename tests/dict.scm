@@ -92,6 +92,22 @@
            (bimap-put! bm 'a 3 :on-conflict :supersede)
            (bimap-left-get bm 'a))))
 
+(let1 bm (make-bimap (make-hash-table 'string=?)
+                     (make-hash-table 'eqv?))
+  ;; https://github.com/shirok/Gauche/issues/1160
+  (test* "bimap adding dupe entries 1" '(1 "foo")
+         (begin
+           (bimap-put! bm "foo" 1)
+           (bimap-put! bm "foo" 1)
+           (list (bimap-left-get bm "foo")
+                 (bimap-right-get bm 1))))
+  (test* "bimap adding dupe entries 2" '(1 "foo")
+         (begin
+           (bimap-put! bm "foo" 1 :on-conflict :error)
+           (bimap-put! bm "foo" 1 :on-conflict :error)
+           (list (bimap-left-get bm "foo")
+                 (bimap-right-get bm 1)))))
+
 (test-section "stacked map")
 
 (let* ([m0 (alist->hash-table '((a . 0) (b . 1) (c . 2)) 'eq?)]

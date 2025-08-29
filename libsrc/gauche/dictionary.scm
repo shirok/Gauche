@@ -227,30 +227,41 @@
 (define-bimap-ops left  bimap-left bimap-right)
 (define-bimap-ops right bimap-right bimap-left)
 
+(define *uniq* '#:nonexistent)
+
 (define (bimap-put! bm x y :key (on-conflict (~ bm 'on-conflict)))
-  (let ([x-exists? (dict-exists? (bimap-left bm) x)]
-        [y-exists? (dict-exists? (bimap-right bm) y)])
-    (if (or x-exists? y-exists?)
-      (case on-conflict
-        [(:error)
-         (if x-exists?
-           (error "attempt to insert duplicate left-key into bimap: " x)
-           (error "attempt to insert duplicate right-key into bimap: " y))]
-        [(#f) #f]
-        [(:supersede)
-         (when x-exists?
-           (dict-delete! (bimap-right bm) (dict-get (bimap-left bm) x)))
-         (when y-exists?
-           (dict-delete! (bimap-left bm) (dict-get (bimap-right bm) y)))
-         (dict-put! (bimap-left bm) x y)
-         (dict-put! (bimap-right bm) y x)
-         #t]
-        [else
-         (error "bimap-put!: on-conflict argument must be either one of \
-              :supersede, :error or #f, but got:" on-conflict)])
-      (begin
+  (let ([prev-y (dict-get (bimap-left bm) x *uniq*)]
+        [prev-x (dict-get (bimap-right bm) y *uniq*)])
+    (let ([x-exists? (not (eq? prev-y *uniq*))]
+          [y-exists? (not (eq? prev-x *uniq*))])
+      (cond
+       [(and x-exists? y-exists?
+             (=? (dict-comparator (bimap-left bm)) x prev-x)
+             (=? (dict-comparator (bimap-right bm)) y prev-y))
+        ;; The entry is already in the bimap.
+        #t]
+       [(or x-exists? y-exists?)
+        (case on-conflict
+          [(:error)
+           (if x-exists?
+             (error "attempt to insert duplicate left-key into bimap: " x)
+             (error "attempt to insert duplicate right-key into bimap: " y))]
+          [(#f) #f]
+          [(:supersede)
+           (when x-exists?
+             (dict-delete! (bimap-right bm) prev-y))
+           (when y-exists?
+             (dict-delete! (bimap-left bm) prev-x))
+           (dict-put! (bimap-left bm) x y)
+           (dict-put! (bimap-right bm) y x)
+           #t]
+          [else
+           (error "bimap-put!: on-conflict argument must be either one of \
+              :supersede, :error or #f, but got:" on-conflict)])]
+       [else
         (dict-put! (bimap-left bm) x y)
-        (dict-put! (bimap-right bm) y x)))))
+        (dict-put! (bimap-right bm) y x)
+        #t]))))
 
 ;; the normal ref/set! uses left map
 (define-method dict-get ((dict <bimap>) key . maybe-default)
