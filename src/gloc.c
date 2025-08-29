@@ -59,12 +59,13 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);
 
 ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
 {
-    return Scm_MakeGlocWithHooks(sym, module, NULL, NULL);
+    return Scm_MakeGlocWithHooks(sym, module, NULL, NULL, NULL);
 }
 
 ScmObj Scm_MakeGlocWithHooks(ScmSymbol *sym, ScmModule *module,
                              ScmObj (*get)(ScmGloc*),
-                             ScmObj (*set)(ScmGloc*, ScmObj))
+                             ScmObj (*set)(ScmGloc*, ScmObj),
+                             void *data)
 {
     ScmGloc *g = SCM_NEW(ScmGloc);
     SCM_SET_CLASS(g, &Scm_GlocClass);
@@ -74,6 +75,7 @@ ScmObj Scm_MakeGlocWithHooks(ScmSymbol *sym, ScmModule *module,
     g->hidden = FALSE;
     g->getter = get;
     g->setter = set;
+    g->data = data;
     return SCM_OBJ(g);
 }
 

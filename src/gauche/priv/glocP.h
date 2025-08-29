@@ -46,6 +46,7 @@ struct ScmGlocRec {
                                    see gloc.h. */
     ScmObj (*getter)(ScmGloc *);         /* see gloc.h */
     ScmObj (*setter)(ScmGloc *, ScmObj); /* see gloc.h */
+    void *data;                          /* to be used by getter/setter */
 };
 
 /* Use these macros only for performance cricical code.
@@ -63,7 +64,8 @@ struct ScmGlocRec {
 SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);
 SCM_EXTERN ScmObj Scm_MakeGlocWithHooks(ScmSymbol *sym, ScmModule *module,
                                         ScmObj (*get)(ScmGloc*),
-                                        ScmObj (*set)(ScmGloc*, ScmObj));
+                                        ScmObj (*set)(ScmGloc*, ScmObj),
+                                        void *data);
 /* flags may be 0, SCM_BINDING_CONST, or SCM_BINDING_INLINABLE. */
 SCM_EXTERN void   Scm_GlocMark(ScmGloc *g, int flags);
 SCM_EXTERN ScmObj Scm_GlocConstSetter(ScmGloc *g, ScmObj val);
