@@ -59,19 +59,28 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);
 
 ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
 {
+    return Scm_MakeGlocWithHooks(sym, module, NULL, NULL);
+}
+
+ScmObj Scm_MakeGlocWithHooks(ScmSymbol *sym, ScmModule *module,
+                             ScmObj (*get)(ScmGloc*),
+                             ScmObj (*set)(ScmGloc*, ScmObj))
+{
     ScmGloc *g = SCM_NEW(ScmGloc);
     SCM_SET_CLASS(g, &Scm_GlocClass);
     g->name = sym;
     g->module = module;
     g->value = SCM_UNBOUND;
     g->hidden = FALSE;
-    g->getter = NULL;
-    g->setter = NULL;
+    g->getter = get;
+    g->setter = set;
     return SCM_OBJ(g);
 }
 
+
+
 /* Public accessor/mutators
-   We don't allow Scm_GlocGetValues to return SCM_UNBOUND or SCM_UNINITIALIZED.
+   We don't allow Scm_GlocGetValue to return SCM_UNBOUND or SCM_UNINITIALIZED.
    (UNINITIALIZED only occurs temporarily during compilation, but we check
    it just in case.)
 */

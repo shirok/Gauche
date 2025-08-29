@@ -74,12 +74,11 @@
  *
  * Hooks (getter and setter)
  *   All reference and modification of toplevel binding go through
- *   SCM_GLOC_GET/SET macros, which check getter and setter handlers.
+ *   Scm_GlocGetValue()/Scm_GlocSetValue() API, which check getter
+ *   and setter handlers.
  *   These handlers allow to hook global variable reference.  They
- *   are reserved for internal use; its' not for application-level
- *   abstraction.  As of 0.9, getter is not used, and setter is only
- *   used to check the attempt of modifying constant bindings.
- *   Future plans include some kind of debugging facility.
+ *   are reserved for internal use; not for application-level
+ *   abstraction.
  */
 
 SCM_CLASS_DECL(Scm_GlocClass);

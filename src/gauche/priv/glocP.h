@@ -43,9 +43,9 @@ struct ScmGlocRec {
     ScmObj value;               /* The actual value.  Have to be accessed
                                    via SCM_GLOC_{GET|SET} macros. */
     char hidden;                /* TRUE if this is a "negative binding",
-                                   see below. */
-    ScmObj (*getter)(ScmGloc *);         /* see 'hooks' below */
-    ScmObj (*setter)(ScmGloc *, ScmObj); /* see 'hooks' below */
+                                   see gloc.h. */
+    ScmObj (*getter)(ScmGloc *);         /* see gloc.h */
+    ScmObj (*setter)(ScmGloc *, ScmObj); /* see gloc.h */
 };
 
 /* Use these macros only for performance cricical code.
@@ -61,6 +61,9 @@ struct ScmGlocRec {
 
 
 SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);
+SCM_EXTERN ScmObj Scm_MakeGlocWithHooks(ScmSymbol *sym, ScmModule *module,
+                                        ScmObj (*get)(ScmGloc*),
+                                        ScmObj (*set)(ScmGloc*, ScmObj));
 /* flags may be 0, SCM_BINDING_CONST, or SCM_BINDING_INLINABLE. */
 SCM_EXTERN void   Scm_GlocMark(ScmGloc *g, int flags);
 SCM_EXTERN ScmObj Scm_GlocConstSetter(ScmGloc *g, ScmObj val);
