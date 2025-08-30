@@ -815,29 +815,6 @@ static void vm_unregister(ScmVM *vm)
         }                                       \
     } while (0)
 
-/* global reference.  this piece of code is used for a few GREF-something
-   combined instruction.
-   NB: Unbound variable situation is detected and an error is thrown
-   in Scm_GlocGetValue or Scm_IdentifierGlobalRef.
- */
-#define GLOBAL_REF(v)                                                   \
-    do {                                                                \
-        ScmGloc *gloc;                                                  \
-        FETCH_OPERAND(v);                                               \
-        if (!SCM_GLOCP(v)) {                                            \
-            VM_ASSERT(SCM_IDENTIFIERP(v));                              \
-            v = Scm_IdentifierGlobalRef(SCM_IDENTIFIER(v), &gloc);      \
-            /* memorize gloc */                                         \
-            *PC = SCM_WORD(gloc);                                       \
-        } else {                                                        \
-            v = Scm_GlocGetValue(SCM_GLOC(v));                          \
-        }                                                               \
-        if (SCM_AUTOLOADP(v)) {                                         \
-            v = Scm_ResolveAutoload(SCM_AUTOLOAD(v), 0);                \
-        }                                                               \
-        INCR_PC;                                                        \
-    } while (0)
-
 /* for debug */
 #define VM_DUMP(delimiter)                      \
     fprintf(stderr, delimiter);                 \

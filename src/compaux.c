@@ -191,7 +191,7 @@ ScmGloc *Scm_IdentifierGlobalBinding(ScmIdentifier *id)
 }
 
 /* Runtime reference/mutation of global variables.  The are called
-   from VM instructoins GREF and GSET, and will also be used from
+   from VM instructions GREF and GSET, and will also be used from
    the AOT compiled code.
 
    We cache the result of global variable to GLOC lookup in VM instructions,

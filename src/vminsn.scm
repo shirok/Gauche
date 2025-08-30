@@ -890,7 +890,20 @@
 ;;  Retrieve global value in the current module.
 ;;
 (define-insn GREF        0 obj #f
-  (let* ((v)) (GLOBAL-REF v) ($result v)))
+  (let* ((v)
+         (gloc::ScmGloc* NULL))
+    (FETCH-OPERAND v)
+    (cond [(not (SCM_GLOCP v))
+           (VM-ASSERT (SCM_IDENTIFIERP v))
+           (set! v (Scm_IdentifierGlobalRef (SCM_IDENTIFIER v) (& gloc)))
+           ;; memoize gloc
+           (set! (* PC) (SCM_WORD gloc))]
+          [else
+           (set! v (Scm_GlocGetValue (SCM_GLOC v)))
+           (when (SCM_AUTOLOADP v)
+             (set! v (Scm_ResolveAutoload (SCM_AUTOLOAD v) 0)))])
+    INCR-PC
+    ($result v)))
 
 ;; combined instructions
 ;;  NB: PUSH-GREF itself isn't a very useful form, but it works as a
