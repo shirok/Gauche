@@ -5057,43 +5057,49 @@ Gaucheの内部エンコーディングが@code{utf-8}であることを示し�
 @c COMMON
 
 @item gauche.net.tls
-@itemx gauche.net.tls.axtls
 @itemx gauche.net.tls.mbedtls
 @c EN
 Defined if the runtime supports TLS in networking.
-The two sub feature identifiers, @code{gauche.net.tls.axtls} and
-@code{gauche.net.tls.mbedtls}, are defined if each subsystem
-@code{axTLS} and @code{mbedTLS} is supported, respectively.
+@code{gauche.net.tls} exists if some TLS support is available,
+and @code{gauche.net.tls.mbedtls} exists if the TLS support
+is provided by MbedTLS.  We use to have different TLS subsystems
+othet than MbedTLS.  We may have another in future.
 @c JP
-TLS/SSLサポートがあれば定義されます。サブ機能識別子@code{gauche.net.tls.axtls}と
-@code{gauche.net.tls.mbedtls}は、それぞれサブシステム@code{axTLS}
-と@code{mbedTLS}がサポートされていれば定義されます。
+TLS/SSLサポートがあれば定義されます。
+@code{gauche.net.tls}は何らかのTLSサポートがあること、
+@code{gauche.net.tls.mbedtls}はそれがMBedTLSで実装されていることを示します。
+以前は、MBedTLS以外のサブシステムがありました。また、今後別のサブシステムが
+追加されるかもしれません。
 @c COMMON
 
 @item gauche.net.ipv6
 @c EN
-Defined if the runtime supports IPv6.
-Note that this only indicates Gauche has been built with IPv6 support;
-the OS may not allow IPv6 features, in that case you'll get system error
-when you try to use IPv6.
+Indicates Gauche is compiled with ipv6 support.
+IPv6 support was optional before,  Now it is always enabled.
+This is kept for the backward compatibility.
 @c JP
-IPv6サポートが組み込まれていれば定義されます。
-ただし、これがGaucheがIPv6サポート込みでビルドされたことを示すだけです。
-OSがIPv6サポートをオフにしている場合、IPv6機能を使おうとするとシステムエラーが
-投げられます。
+IPv6サポートが組み込まれていることを示します。
+かつてはIPv6サポートはオプショナルでした。
+今では常に有効です。これは過去のコードとの互換性のために残されています。
 @c COMMON
 
 @item gauche.sys.threads
 @itemx gauche.sys.pthreads
 @itemx gauche.sys.wthreads
 @c EN
-If the runtime supports multithreading, @code{gauche.sys.threads} is
-defined (@pxref{Threads}).  Multithreading is based on either POSIX pthreads
+Indicates thread support, and which thread subsystem is used.
+Now that thread is always supported, the feature
+@code{gauche.sys.threads} always exists (@pxref{Threads}).
+
+Multithreading is based on either POSIX pthreads
 or Windows threads.  The former defines @code{gauche.sys.pthreads},
 and the latter defines @code{gauche.sys.wthreads}.
 @c JP
-マルチスレッドがサポートされていれば@code{gauche.sys.threads}が定義されます
-(@ref{Threads}参照)。また、マルチスレッドは内部ではプラットフォームによって
+マルチスレッドサポート及び、そのサブシステムを示します。
+現在はマルチスレッドは常にサポートされるので、@code{gauche.sys.threads}は
+常に存在します (@ref{Threads}参照)。
+
+マルチスレッドは内部ではプラットフォームによって
 POSIXスレッドかWindowsスレッドを利用しますが、前者の場合は
 @code{gauche.sys.pthreads}が、後者では@code{gauche.sys.wthreads}が
 併せて定義されます。
