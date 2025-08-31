@@ -52,8 +52,7 @@
                              define-class define-generic define-method
                              lcons lcons* llist*
                              rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
-                             independently
-                             define-compiler-macro))
+                             independently))
 
 ;; This file defines built-in macros.
 ;; We need the compiler to be initialized at this stage.
