@@ -21,7 +21,7 @@
        (build.configure ,@($ cdr $ shell-tokenize-string
                              $ gauche-config "--reconfigure"))
        (build.gosh-version ,((with-module gauche.internal %build-gosh-version)))
-       (scheme.path ,@*load-path*)
+       (scheme.path ,@(load-paths))
        (threads ,(cond
                   [(assq 'gauche.sys.pthreads fs) 'pthreads]
                   [(assq 'gauche.sys.wthreads fs) 'wthreads]

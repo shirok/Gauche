@@ -1981,13 +1981,13 @@
 ;; whenever possible.
 (define (pass1/open-include-file path includer-path)
   (let1 search-paths (if includer-path
-                       (cons (sys-dirname includer-path) *load-path*)
-                       *load-path*)
+                       (cons (sys-dirname includer-path) (load-paths))
+                       (load-paths))
     ;; find-load-file returns either (<found-path> <rest-of-search-paths>)
     ;; or (<pseudo-path> <rest-of-search-paths> <thunk-to-open-content>)
     ;; see libeval.scm for the details.
     (match (find-load-file path search-paths
-                           (cons "" *load-suffixes*)
+                           (cons "" (load-suffixes))
                            :allow-archive #t
                            :relative-dot-path #t)
       [(pseudo-path rest open-content)     ;archive hook is in effect

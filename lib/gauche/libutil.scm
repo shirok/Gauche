@@ -44,7 +44,7 @@
 ;;  This can be more involved once customized module mapping system
 ;;  is introduced; for now, we simply apply the default mapping rule.
 (define (library-fold pattern proc seed
-                      :key (paths *load-path*) (allow-duplicates? #f)
+                      :key (paths (load-paths)) (allow-duplicates? #f)
                            (strict? #t))
 
   (define search-module?
@@ -117,7 +117,7 @@
 
 ;; Just check existence of library.
 (define (library-exists? mod/path :key (force-search? #f)
-                         (strict? #t) (paths *load-path*))
+                         (strict? #t) (paths (load-paths)))
 
   (or (and (not force-search?)
            ;; see if specified mod/path is already loaded

@@ -72,7 +72,7 @@
                         [else '()])]
          [instpath (list (gauche-config "--infodir"))]
          [in-place (cond-expand
-                    [gauche.in-place (if (member "../../lib" *load-path*)
+                    [gauche.in-place (if (member "../../lib" (load-paths))
                                        '("../../doc")
                                        '("../doc"))]
                     [else '()])])

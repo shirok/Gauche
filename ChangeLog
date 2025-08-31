@@ -1,3 +1,10 @@
+2025-08-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c: Replaced *load-path*, *dynamic-load-path*, *load-suffixes*
+	  and *load-path-hooks* with parameters.  Since the first two are
+	  documented, we make them identifier macros for the backward
+	  compatibility but they're deprecated.
+
 2025-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/dictionary.scm (bimap-put!): Remove the restriction

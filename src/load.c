@@ -50,10 +50,10 @@
 /* Static parameters */
 static struct {
     /* Load path list */
-    ScmGloc *load_path_rec;      /* *load-path*         */
-    ScmGloc *dynload_path_rec;   /* *dynamic-load-path* */
-    ScmGloc *load_suffixes_rec;  /* *load-suffixes*     */
-    ScmGloc *load_path_hooks_rec; /* *load-path-hooks*   */
+    ScmPrimitiveParameter *load_paths;
+    ScmPrimitiveParameter *dynload_paths;
+    ScmPrimitiveParameter *load_suffixes;
+    ScmPrimitiveParameter *load_path_hooks;
     ScmInternalMutex path_mutex;
 
     /* Provided features */
@@ -259,16 +259,20 @@ int Scm_LoadFromCString(const char *program, u_long flags, ScmLoadPacket *p)
 
 ScmObj Scm_GetLoadPath(void)
 {
+    ScmVM *vm = Scm_VM();
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    ScmObj paths = Scm_CopyList(Scm_GlocGetValue(ldinfo.load_path_rec));
+    ScmObj paths =
+        Scm_CopyList(Scm_PrimitiveParameterRef(vm, ldinfo.load_paths));
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
     return paths;
 }
 
 ScmObj Scm_GetDynLoadPath(void)
 {
+    ScmVM *vm = Scm_VM();
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    ScmObj paths = Scm_CopyList(Scm_GlocGetValue(ldinfo.dynload_path_rec));
+    ScmObj paths =
+        Scm_CopyList(Scm_PrimitiveParameterRef(vm, ldinfo.dynload_paths));
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
     return paths;
 }
@@ -293,11 +297,13 @@ static ScmObj break_env_paths(const char *envname)
     }
 }
 
-static void add_gloc_list_item(ScmGloc *gloc, ScmObj item, int afterp)
+static ScmObj add_param_list_item(ScmVM *vm, ScmPrimitiveParameter *param,
+                                  ScmObj item, int afterp)
 {
-    ScmObj vs = Scm_GlocGetValue(gloc);
+    ScmObj vs = Scm_PrimitiveParameterRef(vm, param);
     ScmObj r = afterp? Scm_Append2(vs, SCM_LIST1(item)) : Scm_Cons(item, vs);
-    Scm_GlocSetValue(gloc, r);
+    Scm_PrimitiveParameterSet(vm, param, r);
+    return r;
 }
 
 /* Add CPATH to the current list of load path.  The path is
@@ -327,10 +333,10 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
         }
     }
 
+    ScmVM *vm = Scm_VM();
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    add_gloc_list_item(ldinfo.load_path_rec, spath, afterp);
-    add_gloc_list_item(ldinfo.dynload_path_rec, dpath, afterp);
-    ScmObj r = Scm_GlocGetValue(ldinfo.load_path_rec);
+    ScmObj r = add_param_list_item(vm, ldinfo.load_paths, spath, afterp);
+    add_param_list_item(vm, ldinfo.dynload_paths, dpath, afterp);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
 
     return r;
@@ -338,19 +344,21 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 
 void Scm_AddLoadPathHook(ScmObj proc, int afterp)
 {
+    ScmVM *vm = Scm_VM();
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    add_gloc_list_item(ldinfo.load_path_hooks_rec, proc, afterp);
+    add_param_list_item(vm, ldinfo.load_path_hooks, proc, afterp);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
 }
 
 void Scm_DeleteLoadPathHook(ScmObj proc)
 {
+    ScmVM *vm = Scm_VM();
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
     /* we should use Scm_Delete, instead of Scm_DeleteX,
        to avoid race with reader of the list */
-    Scm_GlocSetValue(ldinfo.load_path_hooks_rec,
-                     Scm_Delete(proc, Scm_GlocGetValue(ldinfo.load_path_hooks_rec),
-                                SCM_CMP_EQ));
+    ScmObj oldval = Scm_PrimitiveParameterRef(vm, ldinfo.load_path_hooks);
+    ScmObj r = Scm_Delete(proc, oldval, SCM_CMP_EQ);
+    Scm_PrimitiveParameterSet(vm, ldinfo.load_path_hooks, r);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
 }
 
@@ -1248,13 +1256,26 @@ void Scm__InitLoad(void)
     Scm_InitStaticClass(SCM_CLASS_DLOBJ, "<dlobj>",
                         m, dlobj_slots, 0);
 
-#define DEF(rec, sym, val) \
-    rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
-
-    DEF(ldinfo.load_path_rec,    SCM_SYM_LOAD_PATH, init_load_path);
-    DEF(ldinfo.dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH, init_dynload_path);
-    DEF(ldinfo.load_suffixes_rec, SCM_SYM_LOAD_SUFFIXES, init_load_suffixes);
-    DEF(ldinfo.load_path_hooks_rec, SCM_SYM_LOAD_PATH_HOOKS, SCM_NIL);
+    ldinfo.load_paths =
+        Scm_BindPrimitiveParameter(Scm_GaucheModule(),
+                                   "load-paths",
+                                   init_load_path,
+                                   SCM_PARAMETER_SHARED);
+    ldinfo.dynload_paths =
+        Scm_BindPrimitiveParameter(Scm_GaucheModule(),
+                                   "dynamic-load-paths",
+                                   init_dynload_path,
+                                   SCM_PARAMETER_SHARED);
+    ldinfo.load_suffixes =
+        Scm_BindPrimitiveParameter(Scm_GaucheModule(),
+                                   "load-suffixes",
+                                   init_load_suffixes,
+                                   SCM_PARAMETER_SHARED);
+    ldinfo.load_path_hooks =
+        Scm_BindPrimitiveParameter(Scm_GaucheModule(),
+                                   "load-path-hooks",
+                                   SCM_NIL,
+                                   SCM_PARAMETER_SHARED);
 
     /* NB: Some modules are built-in.  We'll register them to the
        provided list, in libomega.scm. */

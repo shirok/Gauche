@@ -54,6 +54,14 @@
 
 (autoload gauche.cgen.optimizer optimize-compiled-code)
 
+;; TRANSIENT
+;;  Up to 0.9.15, load path list is kept in a global variable instead
+;;  of a parameter.  This is only needed to compile 0.9.16 code with
+;;  0.9.15 precomp.
+(cond-expand
+ [gauche-0.9.15 (define load-paths (make-parameter *load-path*))]
+ [else])
+
 ;;================================================================
 ;; Main Entry point
 ;;
@@ -239,7 +247,7 @@
                                (initializer-name #f)
                                (sub-initializers '())
                                (predef-syms '())
-                               (load-paths '())
+                               ((:load-paths extra-load-paths) '())
                                (macros-to-keep '())
                                ((:target-parameters tparams) '())
                                (extra-optimization #f))
@@ -250,15 +258,10 @@
       (setup ext-initializer sub-initializers)
       (with-input-from-file src
         (^[]
-          ;; NB: *load-path* isn't a parameter (yet), so we hack it.
-          ;; This shouldn't be the way; do not copy it.
-          (define load-path-save *load-path*)
-          (unwind-protect
-              (begin
-                (set! *load-path* (fold cons *load-path* (reverse load-paths)))
-                (emit-toplevel-executor
-                 (reverse (generator-fold compile-toplevel-form '() read))))
-            (set! *load-path* load-path-save))))
+          (parameterize ([load-paths
+                          (fold cons (load-paths) (reverse extra-load-paths))])
+            (emit-toplevel-executor
+             (reverse (generator-fold compile-toplevel-form '() read))))))
       (finalize sub-initializers)
       (setup-debug-info)
       (show-debug-info-stat (cgen-current-unit))

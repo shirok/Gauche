@@ -141,7 +141,8 @@
 
 (autoload "gauche/sysutil"
           sys-realpath sys-fdset list->sys-fdset sys-fdset->list
-          sys-find-file)
+          sys-find-file
+          (:macro *load-path* *dynamic-load-path*))
 
 (autoload gauche.vecutil
           vector-tabulate vector-map vector-map! vector-for-each

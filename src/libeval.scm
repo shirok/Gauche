@@ -68,8 +68,8 @@
 (select-module gauche.internal)
 
 ;; API: Main entry of `load'
-(define-in-module scheme (load file :key (paths *load-path*)
-                                         (suffixes *load-suffixes*)
+(define-in-module scheme (load file :key (paths (load-paths))
+                                         (suffixes (load-suffixes))
                                          (error-if-not-found #t)
                                          (environment #f)
                                          (ignore-coding #f)
@@ -255,7 +255,7 @@
 
 ;; API
 ;; Load path needs to be dealt with at the compile time.  this is a
-;; hack to do so.   Don't modify *load-path* directly, since it causes
+;; hack to do so.   Don't modify (load-paths) directly, since it causes
 ;; weird compiler-evaluator problem.
 ;; I don't like the current name "add-load-path", though---looks like
 ;; more a procedure than a compiler syntax---any ideas?
@@ -297,7 +297,7 @@
 ;;
 ;;   PATHs may contain a regular file, or a path beginning with "@".
 ;;   If find-load-file steps on such a path, it calls procedures chained
-;;   in *load-path-hooks* in turn.  The procedure receives three arguments:
+;;   in (load-path-hooks) in turn.  The procedure receives three arguments:
 ;;   The path (of a regular file, or beginning with "@"), the partial
 ;;   filename given to the find-load-file, and the list of suffixes.
 ;;   The hook is mainly intended to allow loading
@@ -350,7 +350,7 @@
            (or (file-is-regular? (car ps))
                (equal? (car ps) "")     ; DEPRECATED USE
                (eqv? #\@ (string-ref (car ps) 0))))
-      (if-let1 r (any (^p (p (car ps) filename suffixes)) *load-path-hooks*)
+      (if-let1 r (any (^p (p (car ps) filename suffixes)) (load-path-hooks))
         (list (car r) (cdr ps) (cdr r))
         (do-relative (cdr ps)))]
      [else (do-relative (cdr ps))]))

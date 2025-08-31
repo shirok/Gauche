@@ -228,13 +228,13 @@
 (define (gauche-package-description-paths :key (all-versions #f))
   (let1 g (%gpd-path-generator (if all-versions
                                  (%get-all-version-paths)
-                                 *load-path*))
+                                 (load-paths)))
     (generator->lseq g)))
 
 ;; scan the directory to find older version of Gauche library directories.
 (define (%get-all-version-paths)
   (apply append
-         *load-path*
+         (load-paths)
          (filter-map
           (^p (and-let* ([m (#/\/\d+(\.\d+)*[^\/]*\/lib\/?$/ p)]
                          [base (m 'before)]
@@ -244,7 +244,7 @@
                                                :filter #/^\d+(\.\d+)*[^\/]*$/)]
                          [pdirs (map (cut string-append <> "/lib") dirs)])
                 (sort-by (delete p pdirs) sys-basename version>?)))
-          *load-path*)))
+          (load-paths))))
 
 (define (%gpd-path-generator paths)
   (let ([files '()]

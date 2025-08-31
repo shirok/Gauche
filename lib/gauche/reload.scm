@@ -121,7 +121,7 @@
            (and-let* ([name (module-name mod)]
                       [last-load (hash-table-get mod-times name init)]
                       [p1 (string-append (module-name->path name) ".scm")]
-                      [path (find-in-path p1 *load-path*)]
+                      [path (find-in-path p1 (load-paths))]
                       [last-mod (slot-ref (sys-stat path) 'mtime)]
                       [rule (find-rule (symbol->string name) rules)])
              (when (> last-mod last-load)
