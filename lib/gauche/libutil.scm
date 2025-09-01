@@ -226,12 +226,12 @@
   (make-id-transformer
    (er-macro-transformer
     (^[f r c]
-      (define (set!? x) (c (r'x) (r'set!)))
+      (define (set!? x) (c (r x) (r'set!)))
       (match f
         [((? set!?) _ expr)
          (warn "Set!-ing to *load-path* is deprecated and will be removed in \
-                near future.  Consider parameterization of load-paths: ~s"
-               f)
+                near future.  Consider parameterization of load-paths: ~s\n"
+               (unwrap-syntax f))
          (quasirename r `(load-paths ,expr))]
         [_ (quasirename r `(load-paths))])))))
 
@@ -239,11 +239,11 @@
   (make-id-transformer
    (er-macro-transformer
     (^[f r c]
-      (define (set!? x) (c (r'x) (r'set!)))
+      (define (set!? x) (c (r x) (r'set!)))
       (match f
         [((? set!?) _ expr)
          (warn "Set!-ing to *dynamic-load-path* is deprecated and will be removed in \
-                near future.  Consider parameterization of dynamic-load-paths: ~s"
-               f)
+                near future.  Consider parameterization of dynamic-load-paths: ~s\n"
+               (unwrap-syntax f))
          (quasirename r `(dynamic-load-paths ,expr))]
         [_ (quasirename r `(dynamic-load-paths))])))))
