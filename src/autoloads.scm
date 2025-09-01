@@ -17,18 +17,22 @@
 
 (define (register-autoload target path entries)
   (push! *autoloads*
-         (list target path
-               (fold (^[entry r]
-                       (match entry
-                         [(':macro . syms) (fold (cut acons <> #t <>) r syms)]
-                         [sym (acons sym #f r)]))
-                     '() entries))))
+         `(,target
+           ,path
+           ,(fold
+             (^[entry r]
+               (match entry
+                 [(':macro . syms) (fold (cut acons <> 'macro <>) r syms)]
+                 [(':id-macro . syms) (fold (cut acons <> 'id-macro <>) r syms)]
+                 [sym (acons sym 'var r)]))
+             '() entries))))
 
 ;; Emit code
 (define (main args)
   (cgen-decl "#define LIBGAUCHE_BODY"
              "#include <gauche.h>"
-             "#include <gauche/priv/configP.h>")
+             "#include <gauche/priv/configP.h>"
+             "#include <gauche/priv/macroP.h>")
   ;; init
   (cgen-init "  ScmModule *gauche = Scm_GaucheModule();"
              "  ScmSymbol *sym, *import_from;"
@@ -51,11 +55,14 @@
           (cgen-init
            #"  sym = SCM_SYMBOL(Scm_Intern(SCM_STRING(~(cgen-cexpr str)))); /* ~(cgen-safe-comment (car ent)) */"
            #"  al = Scm_MakeAutoload(SCM_CURRENT_MODULE(), sym, SCM_STRING(path), import_from);")
-          (if (cdr ent) ;; macro?
-            (cgen-init
-             #"  Scm_Define(~|where|, sym, Scm_MakeMacroAutoload(sym, SCM_AUTOLOAD(al)));")
-            (cgen-init
-             #"  Scm_Define(~|where|, sym, al);"))))
+          (case (cdr ent)
+            [(macro)
+             (cgen-init #"  Scm_Define(~|where|, sym, Scm__MakeMacroAutoload(sym, SCM_AUTOLOAD(al), 0));")]
+            [(id-macro)
+             (cgen-init #"  Scm_Define(~|where|, sym, Scm__MakeMacroAutoload(sym, SCM_AUTOLOAD(al), SCM_MACRO_IDENTIFIER));")]
+            [(var)
+             (cgen-init
+              #"  Scm_Define(~|where|, sym, al);")])))
       ))
   ;; emit
   (cgen-emit-c (cgen-current-unit))
@@ -142,7 +149,7 @@
 (autoload "gauche/sysutil"
           sys-realpath sys-fdset list->sys-fdset sys-fdset->list
           sys-find-file
-          (:macro *load-path* *dynamic-load-path*))
+          (:id-macro *load-path* *dynamic-load-path*))
 
 (autoload gauche.vecutil
           vector-tabulate vector-map vector-map! vector-for-each

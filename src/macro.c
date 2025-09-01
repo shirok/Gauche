@@ -235,7 +235,7 @@ static ScmObj macro_autoload(ScmObj *argv, int argc, void *data)
 
 #define AUTOLOAD_MACRO_SUFFIX " (autoload)"
 
-ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
+ScmObj Scm__MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata, u_long flags)
 {
     ScmObj transformer = Scm_MakeSubr(macro_autoload, adata,
                                       2, 0, SCM_FALSE);
@@ -244,7 +244,7 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
                                      sizeof(AUTOLOAD_MACRO_SUFFIX)-1,
                                      sizeof(AUTOLOAD_MACRO_SUFFIX)-1);
     return Scm_MakeMacro(Scm_MakeSymbol(SCM_STRING(name1), FALSE),
-                         transformer, SCM_NIL, 0);
+                         transformer, SCM_NIL, flags);
 }
 
 /*===================================================================

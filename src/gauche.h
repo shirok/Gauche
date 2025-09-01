@@ -1447,9 +1447,6 @@ SCM_EXTERN ScmObj Scm_MakeMacro(ScmObj name,
 SCM_EXTERN ScmObj Scm_MacroTransformer(ScmMacro *mac);
 SCM_EXTERN ScmObj Scm_MacroName(ScmMacro *mac);
 
-SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
-                                        ScmAutoload *al);
-
 #if GAUCHE_API_VERSION >= 98
 SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form, int immutablep);
 #define Scm_UnwrapSyntax2(form, imm) Scm_UnwrapSyntax(form, imm)

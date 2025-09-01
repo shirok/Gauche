@@ -38,6 +38,7 @@
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/readerP.h"
 #include "gauche/priv/portP.h"
+#include "gauche/priv/macroP.h"
 #include "gauche/priv/moduleP.h"
 
 #include <ctype.h>
@@ -92,6 +93,7 @@ static struct {
 /* keywords used for load and load-from-port surbs */
 static ScmObj key_error_if_not_found = SCM_UNBOUND;
 static ScmObj key_macro              = SCM_UNBOUND;
+static ScmObj key_id_macro           = SCM_UNBOUND;
 static ScmObj key_ignore_coding      = SCM_UNBOUND;
 static ScmObj key_paths              = SCM_UNBOUND;
 static ScmObj key_environment        = SCM_UNBOUND;
@@ -1090,13 +1092,19 @@ void Scm_DefineAutoload(ScmModule *where,
                        Scm_MakeAutoload(where, SCM_SYMBOL(entry),
                                         path, import_from));
         } else if (SCM_PAIRP(entry)
-                   && SCM_EQ(key_macro, SCM_CAR(entry))
+                   && (SCM_EQ(key_macro, SCM_CAR(entry))
+                       ||SCM_EQ(key_id_macro, SCM_CAR(entry)))
                    && SCM_PAIRP(SCM_CDR(entry))
                    && SCM_SYMBOLP(SCM_CADR(entry))) {
             ScmSymbol *sym = SCM_SYMBOL(SCM_CADR(entry));
             ScmObj autoload = Scm_MakeAutoload(where, sym, path, import_from);
+            u_long flags = 0;
+            if (SCM_EQ(key_id_macro, SCM_CAR(entry))) {
+                flags |= SCM_MACRO_IDENTIFIER;
+            }
             Scm_Define(where, sym,
-                       Scm_MakeMacroAutoload(sym, SCM_AUTOLOAD(autoload)));
+                       Scm__MakeMacroAutoload(sym, SCM_AUTOLOAD(autoload),
+                                              flags));
         } else {
             Scm_Error("autoload: bad autoload symbol entry: %S", entry);
         }
@@ -1248,6 +1256,7 @@ void Scm__InitLoad(void)
 
     key_error_if_not_found = SCM_MAKE_KEYWORD("error-if-not-found");
     key_macro = SCM_MAKE_KEYWORD("macro");
+    key_id_macro = SCM_MAKE_KEYWORD("id-macro");
     key_ignore_coding = SCM_MAKE_KEYWORD("ignore-coding");
     key_paths = SCM_MAKE_KEYWORD("paths");
     key_environment = SCM_MAKE_KEYWORD("environment");

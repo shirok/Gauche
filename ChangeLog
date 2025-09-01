@@ -1,3 +1,12 @@
+2025-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (Scm__MakeMacroAutoload),
+	  src/load.c (Scm_DefineAutoload): Support autoloading identifier macros.
+	  This also changes public C API - Scm_MakeMacroAutoload becomes
+	  an internal API Scm__MakeMacroAutoload(), with additional argument
+	  and only visible when you include priv/macroP.h.
+	  We think the function isn't used outside Gauche body.
+
 2025-08-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c: Replaced *load-path*, *dynamic-load-path*, *load-suffixes*

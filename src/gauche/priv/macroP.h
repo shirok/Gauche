@@ -82,6 +82,15 @@ SCM_EXTERN void Scm__SwapMacroTransformer(ScmMacro *m,
                                           ScmObj *pxformer,
                                           u_long *pflags);
 
+/* Autoloadable macro is just a macro but whose expander resolves the
+   autolaod and then calls the original expander.  It should have
+   SCM_MACRO_IDENTIFIER flag if the autoloaded macro is an id macro.
+   (SCM_MACRO_PARAMETERIZABLE flag is ignored).
+*/
+SCM_EXTERN ScmObj Scm__MakeMacroAutoload(ScmSymbol *name,
+                                         ScmAutoload *al,
+                                         u_long flags); /* SCM_MACRO_* */
+
 
 /*
  * SyntaxRules keeps a compiled rules of macro transformation.
