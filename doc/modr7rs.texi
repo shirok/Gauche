@@ -157,9 +157,9 @@ Suppose you have an R7RS library @code{(mylib foo)} with the following code:
 
 @c EN
 It should be saved as @file{mylib/foo.scm} in one of the directories in
-@code{*load-path*}.
+@code{(load-paths)}.
 @c JP
-このファイルは@code{*load-path*}にあるディレクトリのどれかの下に、
+このファイルは@code{(load-paths)}にあるディレクトリのどれかの下に、
 @file{mylib/foo.scm}という名前で保存されなければなりません。
 @c COMMON
 

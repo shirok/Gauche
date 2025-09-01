@@ -27964,7 +27964,7 @@ An extension ``@code{.scm}'' may be omitted from @var{file}.
 
 If @var{file} doesn't begin with ``/'' or ``./'' or ``../'',
 it is searched from the system file search list,
-stored in a variable @code{*load-path*}.
+stored in a parameter @code{(load-paths)}.
 Or you can explicitly specify the search path by passing
 a list of directory names to the keyword argument @var{paths}.
 
@@ -28002,7 +28002,7 @@ If you want to load a library file, it's better to use `@code{use}'
 評価します。@var{file}の拡張子 (``@code{.scm}'') は省略できます。
 
 @var{file}が ``/'', ``./'' または ``../'' で始まっていない場合は、
-システムファイルサーチパス (変数@code{*load-path*} に格納されています)
+システムファイルサーチパス (パラメータ@code{(load-paths)} に格納されています)
 の中から該当ファイルが探されます。あるいは、キーワード引数@var{paths}にディレクトリ名の
 リストを渡すことによりサーチパスを指定することもできます。
 
@@ -28036,21 +28036,48 @@ R7RSの@code{load}は省略可能引数が異なります。@ref{R7RS load}参�
 @c COMMON
 @end defun
 
-@defvar *load-path*
+@deffn {Parameter} load-paths
 @c EN
-Keeps a list of directories that are searched by @code{load} and
-@code{require}.
+A parameter keeping a list of directories that are searched by @code{load},
+@code{require}, @code{use}, and @code{include}.
 
-If you want to add other directories to the search path,
-do not modify this variable directly; use @code{add-load-path},
-described below, instead.
+It is important that the value of this parameter is consulted at the compile
+time by @code{require}, etc.  Changing it at runtime may not
+produce desired results.
+If you want to add other directories to the search path globally,
+do not modify the value of this parameter directly; use @code{add-load-path},
+described below, instead.  It is a special form recognized by the compiler.
+
+If you're writing a meta-compiler, e.g. your code kicks a compiler
+as a subcomponent, you may want to @code{parameterize} this value
+so that the effect is contained in the dynamic extent of the
+subordinate compiler.
 @c JP
-@code{load}と@code{require}がファイルを探すディレクトリのリストを保持しています。
+@code{load}、@code{require}、@code{use}、@code{include}
+がファイルを探すディレクトリのリストを保持しているパラメータです。
 
-もしサーチパスにディレクトリを追加したい場合は、この変数を直接変更せずに、下に説明する
-@code{add-load-path}を用いて下さい。
+このパラメータの値は、@code{require}等によってコンパイル時に
+参照されることに注意してください。
+実行時にこの値を変えても思うように動かないかもしれません。
+もしグローバルなサーチパスにディレクトリを追加したい場合は、
+この変数を直接変更せずに、下に説明する@code{add-load-path}を用いて下さい。
+
+もし、一種のメタコンパイラ、つまりコンパイラを構成要素として呼び出すようなコード
+を書いているなら、その下位のコンパイラの動的エクステントの間だけ
+ロードパスを変更するのに@code{parameterize}が使えます。
 @c COMMON
-@end defvar
+
+@c EN
+NB: We used to keep load paths in a global variable @code{*load-path*}.
+For the backward compatibility, it is now an identifier macro that expands
+into @code{(load-paths)}.  We encourage you to update such code.
+@c JP
+註: 以前は、ロードパスの情報はグローバル変数@code{*load-path*}に格納されていました。
+互換性のため、同名の識別子マクロが定義されていて、@code{(load-paths)}へと
+展開されます。古い名前を参照しているコードは@code{load-paths}へ書き換えることを
+推奨します。
+@c COMMON
+@end deffn
 
 @defspec add-load-path path flag @dots{}
 @c EN
@@ -28113,15 +28140,15 @@ the expression is read from a socket), this flag is ignored.
 @end table
 
 @c EN
-Use this form instead of changing @code{*load-path*} directly.
+Use this form instead of changing @code{load-paths} directly.
 This form is a special form and recognized by the compiler;
-if you change @code{*load-path*}, it is in effect at run time,
+if you change @code{load-paths}, it is in effect at run time,
 and that may be too late for ``use'' or ``require''.
 @c JP
-ロードパスを変更したい場合、@code{*load-path*}を直接替えずにこのフォームを
-使って下さい。このフォームはコンパイル時に解釈されるのに対し、@code{*load-path*}を
+ロードパスを変更したい場合、@code{load-paths}を直接替えずにこのフォームを
+使って下さい。このフォームはコンパイル時に解釈されるのに対し、@code{load-paths}を
 書き換えるコードは実行時に解釈されます。``@code{use}'' や ``@code{require}'' は
-コンパイル時のロードパスを使うので、@code{*load-path*}への変更は反映されないかもしれません。
+コンパイル時のロードパスを使うので、@code{load-paths}への変更は反映されないかもしれません。
 @c COMMON
 
 @c EN
@@ -28187,7 +28214,7 @@ and from its line 18 it loads @file{baz.scm}.   If you call
 @end example
 @item current-load-next
 Returns a list of remaining directories to be searched
-at the time this file is found.   Suppose the @code{*load-path*}
+at the time this file is found.   Suppose the @code{(load-paths)}
 is @code{("." "../lib" "/home/gauche/lib" "/share/gauche/lib")}
 and you load @file{foo.scm}, which happens to be in @file{../lib/}.
 Then, inside @file{foo.scm}, @code{current-load-next} returns:
@@ -28218,7 +28245,7 @@ When called outside of @code{load}, these procedures returns
 @end example
 @item current-load-next
 現在のファイルがロードされた時点での、ファイルサーチパスの残りを返します。
-例えば @code{*load-path*} が
+例えば @code{(load-paths)} が
 @code{("." "../lib" "/home/gauche/lib" "/share/gauche/lib")}で、
 あなたが@file{foo.scm}をロードしたところ、それが@file{../lib/}中に見つかったと
 しましょう。このとき、@file{foo.scm}中で@code{current-load-next}を呼べば
@@ -28603,7 +28630,7 @@ You can also use glob-like metacharacters @code{*} and
 A basic iterator for library/module files.
 This procedure searches Scheme program files which matches
 @var{pattern}, under directories listed in @var{paths}
-(the default is the standard file load paths, @code{*load-path*}).
+(the default is the standard file load paths, @code{(load-paths)}).
 For each matched file, it calls @var{proc} with three arguments:
 the matched module or library name, the full path of the program
 file, and the state value.  @var{Seed} is used as the initial
@@ -28614,7 +28641,7 @@ the last @var{proc} becomes the return value of @code{library-fold}.
 ライブラリ/モジュールファイルに対する基本イテレータ。この手続きは
 @var{pattern} にマッチする Scheme のプログラムファイルを検索します。
 検索は @var{paths} (デフォルトは標準のファイルロードパス、
-@code{*load-path*})にリストされたディレクトリ以下でおこなわれます。
+@code{load-paths})にリストされたディレクトリ以下でおこなわれます。
 マッチしたファイル毎に、@var{proc} が、そのマッチしたモジュール名あるいは
 ライブラリ名、そのプログラムファイルのフルパス、状態値、の3つの引数を
 ともなって呼びだされます。@var{seed}は、初期状態値として使われ、

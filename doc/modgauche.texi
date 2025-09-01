@@ -17226,13 +17226,13 @@ the slots of which is initialized with the given keyword arguments.
 @c EN
 Gather all the @code{gpd} file paths installed in the standard location
 on the system.  By default, it collects packages installed in
-@code{*load-path*}.  If you give a true value to @var{all-version},
+@code{(load-paths)}.  If you give a true value to @var{all-version},
 it attempts to collect packages installed for other versions of
 Gauche as well.
 @c JP
 システムの標準の場所にインストールされている全ての@var{gpd}ファイルのパスを
 探し、そのリストを返します。
-デフォルトでは@code{*load-path*}にあるパスにインストールされたパッケージを探します。
+デフォルトでは@code{(load-paths)}にあるパスにインストールされたパッケージを探します。
 @var{all-version}キーワード引数に真の値が指定された場合は、
 それ以外のGaucheバージョン向けにインストールされたパッケージも探します。
 @c COMMON
@@ -17254,11 +17254,11 @@ Returns @code{#f} if the named package isn't found.
 
 @c EN
 By default, it collects packages installed in
-@code{*load-path*}.  If you give a true value to @var{all-version},
+@code{(load-paths)}.  If you give a true value to @var{all-version},
 it attempts to collect packages installed for other versions of
 Gauche as well.
 @c JP
-デフォルトでは@code{*load-path*}に含まれるディレクトリにインストールされた
+デフォルトでは@code{(load-paths)}に含まれるディレクトリにインストールされた
 パッケージから探します。@var{all-version}キーワード引数に真の値が与えられた
 場合は、それに加えて他のGaucheバージョンのためにインストールされたパッケージも
 探します。

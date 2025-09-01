@@ -4552,12 +4552,12 @@ that file (@pxref{Multibyte scripts}).
 If @var{filename} is absolute, the file is just searched.  If it
 is relative, the file
 is first searched relative to the file containing the @code{include}
-form, then the directories in @code{*load-path*} are tried.
+form, then the directories in @code{(load-paths)} are tried.
 @c JP
 @var{filename}が絶対パスならば、そのパスに正確に合致するファイルが探されます。
 相対パスなら、まず@code{include}フォームが
 置かれていたファイルからの相対で探され、見つからなければ
-@code{*load-path*}にあるディレクトリからの相対パスが順に試されます。
+@code{(load-paths)}にあるディレクトリからの相対パスが順に試されます。
 @c COMMON
 
 @c EN
@@ -4661,12 +4661,12 @@ every place it appears.
 @c COMMON
 @item
 @c EN
-The file is searched from @code{*load-path*}.  The location
+The file is searched from @code{(load-paths)}.  The location
 of the file @code{require} form appears doesn't matter.
 (You can add directories relative to the requiring file
 using the @code{:relative} flag in @code{add-load-path}, though).
 @c JP
-ファイルは@code{*load-path*}から探され、@code{require}フォームが
+ファイルは@code{(load-paths)}から探され、@code{require}フォームが
 使われたファイルの位置は関係ありません (但し、@code{add-load-path}の
 @code{:relative}フラグを使うことで、
 @code{require}フォームを使っているファイルの位置をロードパスに加えることはできます。)
@@ -4727,14 +4727,14 @@ anywhere.
 @c COMMON
 @item
 @c EN
-The file is searched from @code{*load-path*}, except when the
+The file is searched from @code{(load-paths)}, except when the
 file begins with @code{./} or @code{../}, in which case it is
 first tried relative to the current directory before being searched
-from @code{*load-path*}.
+from @code{(load-paths)}.
 @c JP
-ファイルは@code{*load-path*}から探されます。
+ファイルは@code{(load-paths)}から探されます。
 但しファイルが@code{./}か@code{../}で始まっていた場合は、
-まずカレントディレクトリ相対で探され、それから@code{*load-path*}が探されます。
+まずカレントディレクトリ相対で探され、それから@code{(load-paths)}が探されます。
 @c COMMON
 @item
 @c EN

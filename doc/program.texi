@@ -3162,9 +3162,9 @@ Gaucheのライブラリで使われているテンプレートは次のよう�
 
 @c EN
 This file must be saved as ``foo.scm'' in some directory in the
-@code{*load-path*}.
+@code{(load-paths)}.
 @c JP
-このファイルは``foo.scm''という名で、@code{*load-path*}にあるディレクトリの
+このファイルは``foo.scm''という名で、@code{(load-paths)}にあるディレクトリの
 いずれかに置かれなければなりません。
 @c COMMON
 
