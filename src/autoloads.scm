@@ -148,8 +148,7 @@
 
 (autoload "gauche/sysutil"
           sys-realpath sys-fdset list->sys-fdset sys-fdset->list
-          sys-find-file
-          (:id-macro *load-path* *dynamic-load-path*))
+          sys-find-file)
 
 (autoload gauche.vecutil
           vector-tabulate vector-map vector-map! vector-for-each
@@ -193,7 +192,8 @@
 
 (autoload gauche.libutil  library-fold library-map library-for-each
                           library-exists? library-has-module?
-                          library-name->module-name)
+                          library-name->module-name
+                          (:id-macro *load-path* *dynamic-load-path*))
 
 (autoload gauche.generic-sortutil %generic-sorted?
                                   %generic-sort

@@ -167,24 +167,3 @@
                (or (any try (map (cute mkpath (car paths) <>) names))
                    (loop (cdr paths)))))
       (sys-normalize-pathname found :absolute #t))))
-
-;; TRANSIENT:
-;; For the backward compatibility.
-;; Those are replaced with parameters.  Since they have been around from
-;; the very beginning, we keep them for a while.
-
-(define-syntax *load-path*
-  (make-id-transformer
-   (syntax-rules ()
-     [(set! _ expr)
-      (syntax-error "You can't directly set! to *load-path*. \
-                     Use add-load-path.")]
-     [_ (load-paths)])))
-
-(define-syntax *dynamic-load-path*
-  (make-id-transformer
-   (syntax-rules ()
-     [(set! _ expr)
-      (syntax-error "You can't directly set! to *dynamic-load-path*. \
-                     Use add-load-path.")]
-     [_ (dynamic-load-paths)])))

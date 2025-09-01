@@ -33,9 +33,11 @@
 
 (define-module gauche.libutil
   (use scheme.list)
+  (use util.match)
   (use srfi.13)
   (export library-exists? library-fold library-map library-for-each
-          library-has-module? library-name->module-name))
+          library-has-module? library-name->module-name
+          *load-path* *dynamic-load-path*))
 (select-module gauche.libutil)
 
 ;; library-fold - iterate over the modules or libraries whose name matches
@@ -214,3 +216,34 @@
           [else (error "Bad name component in library name:" x)]))
   ($ string->symbol $ (cut string-join <> ".")
      $ map ($ (cut regexp-replace-all #/\./ <> "..") $ stringify $) libname))
+
+;; TRANSIENT:
+;; For the backward compatibility.
+;; Those are replaced with parameters.  Since they have been around from
+;; the very beginning, we keep them for a while.
+
+(define-syntax *load-path*
+  (make-id-transformer
+   (er-macro-transformer
+    (^[f r c]
+      (define (set!? x) (c (r'x) (r'set!)))
+      (match f
+        [((? set!?) _ expr)
+         (warn "Set!-ing to *load-path* is deprecated and will be removed in \
+                near future.  Consider parameterization of load-paths: ~s"
+               f)
+         (quasirename r `(load-paths ,expr))]
+        [_ (quasirename r `(load-paths))])))))
+
+(define-syntax *dynamic-load-path*
+  (make-id-transformer
+   (er-macro-transformer
+    (^[f r c]
+      (define (set!? x) (c (r'x) (r'set!)))
+      (match f
+        [((? set!?) _ expr)
+         (warn "Set!-ing to *dynamic-load-path* is deprecated and will be removed in \
+                near future.  Consider parameterization of dynamic-load-paths: ~s"
+               f)
+         (quasirename r `(dynamic-load-paths ,expr))]
+        [_ (quasirename r `(dynamic-load-paths))])))))
