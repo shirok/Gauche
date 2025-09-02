@@ -3612,7 +3612,7 @@ If the qualifiers makes no iteration, @code{#f} and @code{#t} are
 returned, respectively.
 @c JP
 繰り返しのたびに@var{test}を評価し、@code{any?-ec}では@var{test}が偽でない
-値を返したら直ちにその値を、@code{every?-ec}では@var{test}が偽を返したら
+値を返したら直ちに@code{#t}を、@code{every?-ec}では@var{test}が偽を返したら
 直ちに@code{#f}を、それぞれ返します。これまで上で説明してきた
 内包表記とは異なり、これらは@var{test}が条件を満たしたら繰り返しを打ち切ります。
 もし繰り返しが一度もなされなかった場合、それぞれ@code{#f}と@code{#t}が戻り値となります。
