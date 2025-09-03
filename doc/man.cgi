@@ -5,13 +5,13 @@
 ;;; GET request with p=<topic> query to appropriate page.
 ;;; <topic> can be a procedure/syntax/macro/variable name or a node name.
 
+(use srfi.13)
 (use file.util)
+(use util.match)
+(use text.html-lite)
+(use www.cgi)
 (use gauche.charconv)
 (use gauche.lazy)
-(use srfi.13)
-(use text.html-lite)
-(use util.match)
-(use www.cgi)
 
 (define (pick-from-file rx file)
   (call-with-input-file file
@@ -35,50 +35,57 @@
   (cond [(string-scan path "#" 'before)]
         [else path]))
 
-(define (file-path lang filename)
-  (build-path (if (memq lang '(ja jp)) "gauche-refj" "gauche-refe") filename))
+(define (file-path lang draft? filename)
+  (build-path (if (memq lang '(ja jp))
+                (if draft? "gauche-refj-draft" "gauche-refj")
+                (if draft? "gauche-refe-draft" "gauche-refe"))
+              filename))
 
-(define (get-indexed-uri lang index-file name)
+(define (get-indexed-uri lang draft? index-file name)
   (and-let* ([index-page (pick-initial (string-upcase (string-take name 1))
-                                       (file-path lang index-file))]
+                                       (file-path lang draft? index-file))]
              [target-file (let1 p (file-part index-page)
                             (if (string-null? p)
                               (file-part index-file)
                               p))])
-    (pick-index-item name (file-path lang target-file))))
+    (pick-index-item name (file-path lang draft? target-file))))
 
-(define (get-index-pages lang)
+(define (get-index-pages lang draft?)
   (let1 rx (if (eq? lang 'en)
-             #/<A HREF=\"([^\"]*)\">.*(?:Function and Syntax Index|Module Index|Class Index|Variable Index)<\/A>/i
-             #/<A HREF=\"([^\"]*)\">.*(?:Index - 手続きと構文索引|Index - モジュール索引|Index - クラス索引|Index - 変数索引)<\/A>/i)
+             #/<A HREF=\"([^\"]*)\"[^>]*>.*(?:Function and Syntax Index|Module Index|Class Index|Variable Index)<\/A>/i
+             #/<A HREF=\"([^\"]*)\"[^>]*>.*(?:Index - 手続きと構文索引|Index - モジュール索引|Index - クラス索引|Index - 変数索引)<\/A>/i)
     ($ map file-part
-       $ multi-pick-from-file rx (file-path lang "index.html"))))
+       $ multi-pick-from-file rx (file-path lang draft? "index.html"))))
 
-(define (search-from-index lang name)
-  (match-let1 (fn md cl va) (get-index-pages lang)
-    (or (get-indexed-uri lang fn name) ;; from function
-        (get-indexed-uri lang md name) ;; from module
-        (and-let1 m (#/^&lt\;(.*)&gt\;$/ name)
-          (get-indexed-uri lang cl (m 1))) ;; from class
-        (get-indexed-uri lang va name) ;; from variable
-        )))
+(define (search-from-index lang draft? name)
+  (match (get-index-pages lang draft?)
+    [(fn md cl va)
+     (or (get-indexed-uri lang draft? fn name) ;; from function
+         (get-indexed-uri lang draft? md name) ;; from module
+         (and-let1 m (#/^&lt\;(.*)&gt\;$/ name)
+           (get-indexed-uri draft? lang cl (m 1))) ;; from class
+         (get-indexed-uri lang draft? va name) ;; from variable
+         )]
+    [_ (error "Couldn't find index")]))
 
-(define (search-from-toc lang name)
-  (let1 picker #/<A NAME=\"toc-[^\"]*\" HREF=\"([^\"]*)\">\d+\.[.\d]*\s+(.*?)<\/A>/i
-    (call-with-input-file (file-path lang "index.html")
+(define (search-from-toc lang draft? name)
+  (let1 picker #/<A id=\"toc-[^\"]*\" HREF=\"([^\"]*)\">\d+(?:\.[.\d]*)?\s+(.*?)<\/A>/i
+    (call-with-input-file (file-path lang draft? "index.html")
       (^p (any (^l (and-let1 m (picker l)
                      (let1 sectitle (regexp-replace-all #/<\/?CODE>/i (m 2) "")
                        (and (equal? name sectitle)
                             (m 1)))))
                (port->string-lseq p))))))
 
-(define (main args)
+(define (main-1 args)
   (cgi-main
    (^[params]
      (let* ([lang (cgi-get-parameter "l" params
                                      :default 'en :convert string->symbol)]
             [enc  (cgi-get-parameter "en" params)]
-            [raw-name (cgi-get-parameter "p" params)]
+            [draft? (equal? (cgi-get-parameter "v" params) "draft")]
+            [raw-name (string-trim-both
+                       (cgi-get-parameter "p" params :default ""))]
             [name (html-escape-string
                    (cond [(and enc (ces-conversion-supported? enc #f))
                           (ces-convert raw-name enc)]
@@ -86,14 +93,27 @@
                           (ces-convert raw-name "*JP")]
                          [else raw-name]))]
             [uri  (file-path lang
+                             draft?
                              (or (and name
                                       (positive? (string-length name))
                                       (if (string-every #[\x21-\x7e] name)
-                                        (or (search-from-index lang name)
-                                            (search-from-toc lang name))
-                                        (search-from-toc lang name)))
+                                        (or (search-from-index lang draft? name)
+                                            (search-from-toc lang draft? name))
+                                        (search-from-toc lang draft? name)))
                                  "index.html"))])
        `("Status: 302 Moved\n" ,(cgi-header :location uri))))))
+
+(cond-expand
+ [(library www.cgi.throttle)
+  (use www.cgi.throttle)
+  (define (main args)
+    (cgi-throttle
+     "memcache:localhost:11211"
+     '((GET :window 30 :count 20))
+     (cut main-1 args)))]
+ [else
+  (define (main args)
+    (main-1 args))])
 
 ;; Local variables:
 ;; mode: scheme
