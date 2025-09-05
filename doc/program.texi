@@ -581,17 +581,6 @@ REPLのヒストリがセーブされるファイル名を指定します。
 @c COMMON
 @end deftp
 
-@deftp {Environment variable} GAUCHE_KEYWORD_DISJOINT
-@deftpx {Environment variable} GAUCHE_KEYWORD_IS_SYMBOL
-@c EN
-These two environment variables affect whether keywords are treated
-as symbols or not.  @xref{Keywords}, for the details.
-@c JP
-この二つの環境変数は、キーワードがシンボルとして扱われるかどうかに影響します。
-詳しくは@ref{Keywords}を参照してください。
-@c COMMON
-@end deftp
-
 @deftp {Environment variable} GAUCHE_LEGACY_DEFINE
 @c EN
 Make the behavior of toplevel @code{define} the same as

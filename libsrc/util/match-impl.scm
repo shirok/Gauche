@@ -309,11 +309,7 @@
 
 (define (validate-pattern pattern)
   (define (simple? x)
-    (or (string? x) (boolean? x) (char? x) (number? x) (null? x)
-        ;; This last term is to support both disjoint-keyword and
-        ;; keyword-is-symbol runtime.  After we fully migrated to
-        ;; keyword-is-symbol, just remove this term.
-        (and (not (symbol? :x)) (keyword? x))))
+    (or (string? x) (boolean? x) (char? x) (number? x) (null? x)))
   (define (ordinary p)
     (let ((cons-ordinary (lambda (x y) (cons (ordinary x) (ordinary y)))))
       (cond
@@ -616,15 +612,6 @@
                  (ks success))
         (cond
          ((eq? '_ p) (ks sf))
-         ;; The check of (symbol? :x) is to support both disjoint-keyword and
-         ;; keyword-is-symbol runtime.  Remove this clause once we fully
-         ;; migrated to keyword-is-symbol.
-         ((and (not (symbol? :x)) (keyword? p))
-          (warn "Unquoted keyword `~s' in match pattern: ~s.  \
-                 This would likely break in future versions of Gauche.  \
-                 See the ``Keyword and symbol integration'' section \
-                 of the manual for the details.\n" p x)
-          (emit `(equal? ,e ,p) sf kf ks))
          ((identifier? p) (set! v (cons (cons p e) v))
           (ks sf))
          ((null? p) (emit `(null? ,e) sf kf ks))

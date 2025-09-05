@@ -139,11 +139,6 @@ SCM_DECL_BEGIN
 /* Temporary - to test alignment of pairs */
 #define GAUCHE_CHECK_PAIR_ALIGNMENT 0
 
-/* Enable an option to make keywords and symbols disjoint.
-   (Transient: Will be gone once we completely migrate to
-   unified keyword-symbol system */
-#define GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION 1
-
 /* Experimental: Enable lightweight continuation capturing in exception
    handling. */
 #define GAUCHE_SPLIT_STACK 0

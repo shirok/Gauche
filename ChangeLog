@@ -1,3 +1,10 @@
+2025-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* Dropped disjoint keyword type support.  Now keywords are symbols,
+	  but automatically bound to itself in gauche.keyword module.
+	  Warns if GAUCHE_KEYWORD_DISJOINT env var is defined.
+	  https://github.com/shirok/Gauche/issues/1163
+
 2025-09-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (Scm__MakeMacroAutoload),

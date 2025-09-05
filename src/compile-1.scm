@@ -1034,7 +1034,7 @@
      ($const (compile-syntax-rules (cenv-exp-name cenv) form #t literal rule
                                    (cenv-module cenv)
                                    (cenv-frames cenv)))]
-    [(_ (? variable-or-keyword? elli) (literal ...) rule ...)
+    [(_ (? identifier? elli) (literal ...) rule ...)
      ;; NB: We allow keyword for ellipsis, so that something like ::: can be
      ;; used.
      ($const (compile-syntax-rules (cenv-exp-name cenv) form elli literal rule

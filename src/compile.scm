@@ -195,10 +195,6 @@
 ;; Maximum size of $LAMBDA node we allow to duplicate and inline.
 (define-constant SMALL_LAMBDA_SIZE 12)
 
-;; In case keyword is disjoint from symbols
-(define-inline (variable-or-keyword? arg)
-  (or (identifier? arg) (keyword? arg)))
-
 ;;============================================================
 ;; Data structures
 ;;

@@ -8203,29 +8203,10 @@ See @ref{Making procedures} for how Gauche supports keyword
 arguments, and @code{let-keywords} macro (@ref{Optional argument parsing})
 for parsing keyword-value list manually.
 
-Keywords used to be a disjoint type from symbols.
-Since it isn't conformant to R7RS, in which symbols can begin
-with @code{:}, we've introduced two modes since 0.9.5; keywords
-can be a disjoint type of its own, or it can be a subtype of symbols.
-
-The behavior can be switched by environment variables.  If the environment
-variable @code{GAUCHE_KEYWORD_DISJOINT} is defined when @code{gosh} starts
-up, keywords and symbols are disjoint.  Otherwise, if the environment
-variable @code{GAUCHE_KEYWORD_IS_SYMBOL} is defined, keywords are
-a subtype of symbols.
-
-The default behavior when neither environment variables are defined
-has been switched since 0.9.8.  @code{GAUCHE_KEYWORD_DISJOINT} was assumed
-in 0.9.7 and before, while @code{GAUCHE_KEYWORD_IS_SYMBOL} is assumed
-in 0.9.8 and after.
-
-Most typical code run in either mode, but there can be some code
-that behaves differently.  @xref{Keyword and symbol integration},
-for effect of the change.
-
-In future we'll stop supporting @code{GAUCHE_KEYWORD_DISJOINT},
-so we recommend you to ensure applications to run on the current
-default mode.
+NB: Keywords used to be a disjoint type from symbols.  We suppored
+that compatibility mode with a special environment variable up to 0.9.15,
+but no longer provide that mode.
+@xref{Keyword and symbol integration}, if you need to update your code.
 @c JP
 キーワードは、自動的に自分自身に束縛されるシンボルのサブタイプです。
 名前つき引数(キーワード引数)や、キーワード-値のリストで広く使われて
@@ -8235,29 +8216,11 @@ Gaucheにおけるキーワード引数のサポートについては@ref{Making
 また独自にキーワード-値リストをパーズする方法については
 @code{let-keywords} マクロ(@ref{Optional argument parsing}) も参照して下さい。
 
-キーワードはかつてはシンボルと独立した型でしたが、それは
-@code{:}で始まる識別子もシンボルとして読まれるR7RSとは非互換でした。
-そこで、0.9.5からGaucheは二つのモードを持つようになりました。
-キーワードとシンボルが別の型になるモードと、キーワードがシンボルのサブタイプになる
-モードです。
-
-これらのモードは環境変数によって切り替えられます。
-環境変数@code{GAUCHE_KEYWORD_DISJOINT}が@code{gosh}起動時に定義されていたら、
-キーワードとシンボルは別の型になります。
-そうでなく、環境変数@code{GAUCHE_KEYWORD_IS_SYMBOL}が定義されていたら、
-キーワードはシンボルのサブタイプになります。
-
-どちらの環境変数も定義されていない場合のデフォルトの動作は、0.9.8で変更になりました。
-0.9.7以前は@code{GAUCHE_KEYWORD_DISJOINT}の動作がデフォルトですが、
-0.9.8以降は@code{GAUCHE_KEYWORD_IS_SYMBOL}がデフォルトになっています。
-
-ほとんどの典型的なコードはどちらのモードでも動きますが、
-異なる振る舞いをするコードもあります。
-二つのモードの違いについては@ref{Keyword and symbol integration}を参照してください。
-
-将来的に、@code{GAUCHE_KEYWORD_DISJOINT}のサポートは無くなる予定です。
-今のうちに、現在のデフォルトモードでアプリケーションが走ることを
-確認しておくことをお勧めします。
+註: キーワードはかつてはシンボルと独立した型でした。互換性のために、
+0.9.15までは、環境変数によって以前の振る舞いに切り替えるモードがありましたが、
+そのモードはサポートされなくなりました。
+以前の振る舞いに依存しているコードがあれば@ref{Keyword and symbol integration}を
+参考にアップデートしてください。
 @c COMMON
 @end  deftp
 
@@ -8294,9 +8257,14 @@ The @var{name} argument can be a string or a symbol.
 
 @defun keyword->string keyword
 @c EN
-Returns the name (without the initial @code{:}) of the keyword @var{keyword}, in a string.
+Returns the name (without the initial @code{:}) of the keyword
+@var{keyword}, in a string.
+(This is mainly to support legacy code written when keywords are disjoint from
+symbols.)
 @c JP
 キーワード @var{keyword} の(先頭の@code{:}を除いた)名前を文字列で返します。
+(これは主に、キーワードとシンボルが別の型だった頃の古いコードをサポートする
+ためのものです。)
 @c COMMON
 @example
 (keyword->string :foo) @result{} "foo"
@@ -8446,44 +8414,23 @@ the key and the following value is removed from @var{kv-list}.
 In older versions of Gauche, keywords are of disjoint type
 from symbols, and they are self-evaluating objects.
 To maintain the compatibility, the current Gauche makes
-symbols that begins with @code{:} automatically bound to itself.
+symbols that begins with @code{:} automatically bound to itself,
+in @code{gauche.keyword} module.
 
-On the surface it won't make much difference;
-you can write a keyword @code{:key}, which evaluates to itself; so you
-can pass and receive keyword arguments just as they used to be.
-If you use @code{:key} as variables, however, e.g. @code{(define :key 3)},
-the value of @code{:key} in your module changes
-(it won't affect other modules, which refer to the binding of @code{:key}
-in @code{gauche.keyword} module).
-
-However, there are several subtle points that do make difference, that
-breaks compatibility of legacy code.
-We explain here how to change the code that works in both ways.
-
-If you find a problem in new mode and want to get the old behavior
-until you change the code, you can set the environment variable
-@code{GAUCHE_KEYWORD_DISJOINT.}
+The @code{gauche} module inherits @code{gauche.keyword}, so all the
+keyword look like self-evaluating objects.
+That allows most legacy Gauche code keep working, but there are some
+catches.
 @c JP
 以前のGaucheでは、キーワードはシンボルとは異なる型を持ち、自分自身に評価される
 オブジェクトでした。
 互換性を保つため、現在のGaucheでは@code{:}で始まるシンボルは自動的に
-自分自身に束縛されるようになっています。
+(@code{gauche.keyword}モジュール内に)自分自身に束縛されるようになっています。
 
-表面的にはこの変更はたいした違いをもたらさないでしょう。
-プログラム中に表記してあるキーワードはそれ自身に評価されるので、
-かつてと同じようにキーワード引数を渡すことができます。
-キーワードを変数として使い、例えば@code{(define :key 3)}のように
-新たな値に束縛することはできますが、その変更は
-そうしているモジュールの中だけに留まります。
-(他のモジュールは@code{gauche.keyword}モジュールにある@code{:key}の束縛を
-参照するので影響を受けません。)
-
-けれども、違いが現れるいくつかのわかりづらい場合が存在し、
-注意していないと古いコードの互換性を壊してしまうかもしれません。
-どちらのモードでも動くようにするコードの書き方をこれから説明します。
-
-新しいモードで問題が出て、コードを直すまで以前の動作で使いたければ、
-環境変数@code{GAUCHE_KEYWORD_DISJOINT}をセットしてください。
+@code{gauche}モジュールは@code{gauche.keyword}モジュールを継承しているので、
+キーワードはあたかも自己評価されるオブジェクトのように見えます。
+これにより、古いGaucheコードもほぼ変更なしで動作します。
+ただ、いくつか注意すべき点があります。
 @c COMMON
 
 @c EN
@@ -8594,14 +8541,6 @@ For @code{syntax-rules}, list the keywords as literals.
   [(_ :key z) (list :key z)])  ;etc.
 @end example
 @end itemize
-
-@c EN
-As of Gauche 0.9.5, @code{match} warns if you have unquoted
-keywords in match patterns.
-@c JP
-Gauche 0.9.5から、@code{match}はパターンにクオートされていないキーワードが
-現れると警告を発します。
-@c COMMON
 
 @c EN
 @subsubheading Displaying keywords
