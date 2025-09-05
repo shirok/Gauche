@@ -7927,7 +7927,7 @@ uninterned symbols are less needed than Common Lisp, but it comes handy
 when you want a unique object with some descriptive name.
 @c JP
 Common Lispのように、内部のテーブルに登録されない
-「インターンされない(uninterned)」シンボルを作ることができまｓ．
+「インターンされない(uninterned)」シンボルを作ることができます。
 このシンボルは、他の@code{string->symbol}や@code{read}が作るシンボルと
 決して@code{eq?}にならないことが保証されています。
 
@@ -8208,9 +8208,9 @@ Like @code{string->symbol}, but the created symbol is uninterned.
 @end example
 
 @c EN
-This is included in SRFI-258 (@pxref{Uninterned symbols}).
+This is included in SRFI-258 (@pxref{Uninterned symbols (SRFI)}).
 @c JP
-これはSRFI-258に含まれています(@ref{Uninterned symbols}参照)。
+これはSRFI-258に含まれています(@ref{Uninterned symbols (SRFI)}参照)。
 @c COMMON
 @end defun
 
