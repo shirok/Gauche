@@ -182,6 +182,7 @@ void usage(int errorp)
             "  GAUCHE_HISTORY_FILE\n"
             "      Specify alternative file to save history of what you typed in REPL\n"
             "      while you're using input editing.  By default, it is saved in\n"
+            "      '~/.gosh_history'.\n"
             "  GAUCHE_LEGACY_DEFINE\n"
             "      Keep the toplevel `define' behavior the same as 0.9.8 and before.\n"
             "      It allows certain legacy programs that aren't valid R7RS.  See\n"
