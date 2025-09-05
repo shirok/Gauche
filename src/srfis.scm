@@ -1780,11 +1780,11 @@ srfi-258, srfi-258
 
 Uninterned symbols
 Supported by the module @code{srfi.258}
-(@pxref{Uninterned symbols}.
+(@pxref{Uninterned symbols (SRFI)}.
 
 インターンされないシンボル
 @code{srfi.258}でサポートされます
-(@ref{インターンされないシンボル}参照)。
+(@ref{インターンされないシンボル(SRFI)}参照)。
 
 
 srfi-259, srfi-259

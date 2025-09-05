@@ -42,75 +42,75 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 @menu
 * Testing availability of SRFIs::
 * SRFIs that have become R7RS-large::
-* Homogeneous vectors::            srfi.4
+* Homogeneous vectors::         srfi.4
 * A compatible let form with signatures and rest arguments::  srfi.5
 * Feature-based program configuration language::  srfi.7
-* String library::                 srfi.13
-* Time data types and procedures:: srfi.19
-* Sources of random bits::         srfi.27
-* Localization::                   srfi.29
-* A program argument processor::   srfi.37
-* Eager comprehensions::           srfi.42
-* Vector library (Legacy)::        srfi.43
-* Requiring extensions::           srfi.55
-* Integers as bits::               srfi.60
-* A Scheme API for test suites::   srfi.64
-* Octet vectors::                  srfi.66
-* Basic hash tables::              srfi.69
+* String library::              srfi.13
+* Time data types and procedures::  srfi.19
+* Sources of random bits::      srfi.27
+* Localization::                srfi.29
+* A program argument processor::  srfi.37
+* Eager comprehensions::        srfi.42
+* Vector library (Legacy)::     srfi.43
+* Requiring extensions::        srfi.55
+* Integers as bits::            srfi.60
+* A Scheme API for test suites::  srfi.64
+* Octet vectors::               srfi.66
+* Basic hash tables::           srfi.69
 * Octet-addressed binary blocks::  srfi.74
-* Lightweight testing::            srfi.78
+* Lightweight testing::         srfi.78
 * Accessing environment variables::  srfi.98
 * Purely functional random-access pairs and lists::  srfi.101
-* Basic socket interface::         srfi.106
+* Basic socket interface::      srfi.106
 * Portable runtime environment inquiry::  srfi.112
-* Comparators::                    srfi.114
-* Simple adjustable-size strings:: srfi.118
-* Timer APIs::                     srfi.120
-* Titlecase procedures::           srfi.129
-* Cursor-based string library::    srfi.130
-* Minimal unique types::           srfi.137
-* String library (reduced)::       srfi.152
-* First-class dynamic extents::    srfi.154
+* Comparators::                 srfi.114
+* Simple adjustable-size strings::  srfi.118
+* Timer APIs::                  srfi.120
+* Titlecase procedures::        srfi.129
+* Cursor-based string library::  srfi.130
+* Minimal unique types::        srfi.137
+* String library (reduced)::    srfi.152
+* First-class dynamic extents::  srfi.154
 * Homogeneous numeric vector libraries::  srfi.160
-* Comparator sublibrary::          srfi.162
-* POSIX API::                      srfi.170
-* Two safer subsets of R7RS::      srfi.172
-* Hooks (srfi)::                   srfi.173
-* POSIX timespecs::                srfi.174
-* ASCII character library::        srfi.175
-* Bitvector library::              srfi.178
-* JSON::                           srfi.180
-* Custom ports::                   srfi.181
+* Comparator sublibrary::       srfi.162
+* POSIX API::                   srfi.170
+* Two safer subsets of R7RS::   srfi.172
+* Hooks (srfi)::                srfi.173
+* POSIX timespecs::             srfi.174
+* ASCII character library::     srfi.175
+* Bitvector library::           srfi.178
+* JSON::                        srfi.180
+* Custom ports::                srfi.181
 * Linear adjustable-length strings::  srfi.185
 * Maybe and Either optional container types::  srfi.189
-* Coroutine generators::           srfi.190
-* Port positioning::               srfi.192
-* Command line::                   srfi.193
+* Coroutine generators::        srfi.190
+* Port positioning::            srfi.192
+* Command line::                srfi.193
 * Random data generators (SRFI)::  srfi.194
-* Range objects::                  srfi.196
-* Pipeline operators::             srfi.197
-* String-notated bytevectors::     srfi.207
-* Enums and enum sets::            srfi.209
+* Range objects::               srfi.196
+* Pipeline operators::          srfi.197
+* String-notated bytevectors::  srfi.207
+* Enums and enum sets::         srfi.209
 * Procedures and syntax for multiple values::  srfi.210
-* Central log exchange::           srfi.215
-* SICP prerequisites::             srfi.216
-* Integer sets::                   srfi.217
-* Define higher-order lambda::     srfi.219
+* Central log exchange::        srfi.215
+* SICP prerequisites::          srfi.216
+* Integer sets::                srfi.217
+* Define higher-order lambda::  srfi.219
 * Generator/accumulator sub-library::  srfi.221
-* Compound objects::               srfi.222
-* Control features::               srfi.226
-* Optional arguments::             srfi.227
-* Composing comparators::          srfi.228
-* Tagged procedures::              srfi.229
-* Atomic operations::              srfi.230
-* Flexible curried procedures::    srfi.232
-* Topological sorting::            srfi.234
-* Combinators (SRFI)::             srfi.235
-* Codesets::                       srfi.238
-* Destructuring lists::            srfi.239
-* Syntactic monads::               srfi.247
-* Property testing::               srfi.252
-* Uninterned symbols::             srfi.258
+* Compound objects::            srfi.222
+* Control features::            srfi.226
+* Optional arguments::          srfi.227
+* Composing comparators::       srfi.228
+* Tagged procedures::           srfi.229
+* Atomic operations::           srfi.230
+* Flexible curried procedures::  srfi.232
+* Topological sorting::         srfi.234
+* Combinators (SRFI)::          srfi.235
+* Codesets::                    srfi.238
+* Destructuring lists::         srfi.239
+* Syntactic monads::            srfi.247
+* Property testing::            srfi.252
+* Uninterned symbols (SRFI)::   srfi.258
 * Tagged procedures with type safety::  srfi.259
 @end menu
 
@@ -18376,7 +18376,7 @@ arguments.
 
 
 @c ----------------------------------------------------------------------
-@node Property testing, Uninterned symbols, Syntactic monads, Library modules - SRFIs
+@node Property testing, Uninterned symbols (SRFI), Syntactic monads, Library modules - SRFIs
 @section @code{srfi.252} - Property testing
 @c NODE プロパティテスト, @code{srfi.252} - プロパティテスト
 
@@ -19018,9 +19018,9 @@ any number of arguments and returns a value generated with
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Uninterned symbols, Tagged procedures with type safety, Property testing, Library modules - SRFIs
-@section @code{srfi.258} - Uninterned symbols
-@c NODE インターンされないシンボル, @code{srfi.258} - インターンされないシンボル
+@node Uninterned symbols (SRFI), Tagged procedures with type safety, Property testing, Library modules - SRFIs
+@section @code{srfi.258} - Uninterned symbols (SRFI)
+@c NODE インターンされないシンボル(SRFI), @code{srfi.258} - インターンされないシンボル(SRFI)
 
 @deftp {Module} srfi.258
 @mdindex srfi.258
@@ -19087,9 +19087,9 @@ symbol-interned?
 @end example
 
 @c EN
-@xref{Symbols}, for the details.
+@xref{Uninterned symbols}, for the details.
 @c JP
-詳しくは@ref{Symbols}を参照してください。
+詳しくは@ref{Uninterned symbols}を参照してください。
 @c COMMON
 @end deftp
 
@@ -19098,17 +19098,17 @@ symbol-interned?
 @c MOD srfi.258
 @c EN
 Creates and returns a fresh uninterned symbol.  Similar to
-@code{gensym} (@pxref{Symbols}), but this allows both symbol
+@code{gensym} (@pxref{Uninterned symbols}), but this allows both symbol
 and string in @var{prefix}.
 @c JP
 新たなインターンされないシンボルを作って返します。
 @code{gensym}と似ていますが、こちらは@var{prefix}にシンボルも文字列も使えます
-(@xref{Symbols}参照)。
+(@xref{Uninterned symbols}参照)。
 @c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Tagged procedures with type safety,  , Uninterned symbols, Library modules - SRFIs
+@node Tagged procedures with type safety,  , Uninterned symbols (SRFI), Library modules - SRFIs
 @section @code{srfi.259} - Tagged procedures with type safety
 @c NODE 型安全な手続きタグ, @code{srfi.259} - 型安全な手続きタグ
 

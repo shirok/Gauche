@@ -11,7 +11,6 @@
 * Undefined values::
 * Pairs and lists::
 * Symbols::
-* Keywords::
 * Characters::
 * Character sets::
 * Strings::
@@ -7906,9 +7905,59 @@ are not supposed to be mutated frequently.
 
 
 @c ----------------------------------------------------------------------
-@node Symbols, Keywords, Pairs and lists, Core library
+@node Symbols, Characters, Pairs and lists, Core library
 @section Symbols
 @c NODE シンボル
+
+@c EN
+Gauche enhances Scheme symbols in a couple of ways:
+@c JP
+GaucheはSchemeシンボルを若干拡張しています。
+@c COMMON
+
+@table @b
+@item Uninterned symbols
+@c EN
+Like Common Lisp, you can create an @emph{uninterned} symbol, which is
+not registered to the internal table, so it is guaranteed not to be @code{eq?}
+to any other symbols created by @code{string->symbol} or @code{read}.
+
+Since Scheme's hygienic macro system automatically avoids name collisions,
+uninterned symbols are less needed than Common Lisp, but it comes handy
+when you want a unique object with some descriptive name.
+@c JP
+Common Lispのように、内部のテーブルに登録されない
+「インターンされない(uninterned)」シンボルを作ることができまｓ．
+このシンボルは、他の@code{string->symbol}や@code{read}が作るシンボルと
+決して@code{eq?}にならないことが保証されています。
+
+Schemeの衛生的マクロは名前の衝突を自動的に回避するので、Common Lispほど
+出番はありませんが、名前を持つユニークなオブジェクトが欲しい時には便利です。
+@c COMMON
+@item Keywords
+@c EN
+A symbol whose name begins with a colon (@code{:}) is automatically
+bound to itself in @code{gauche.keyword} module.  By importing or inheriting
+it, you can use such symbols as if they're self-evaluating object.  They're
+extensively used in Gauche for passing keyword arguments.
+@c JP
+名前がコロン@code{:}で始まるシンボルは自動的に、@code{gauche.keyword}モジュール内で
+自分自身に束縛されます。このモジュールをインポートするか継承すれば、
+そういったシンボルをまるで自己評価オブジェクトのように使うことができます。
+Gaucheではキーワード引数でこの機能を多用します。
+@c COMMON
+@end table
+
+@menu
+* Basic symbols::
+* Uninterned symbols::
+* Keywords::
+* Keyword and symbol integration::
+@end menu
+
+@node Basic symbols, Uninterned symbols, Symbols, Symbols
+@subsection Basic symbols
+@c NODE 基本的なシンボル
 
 @deftp {Builtin Class} <symbol>
 @clindex symbol
@@ -7959,50 +8008,6 @@ can be used to include uppercase characters in a symbol
 @c COMMON
 @end deftp
 
-@deftp {Reader Syntax} @code{#:@i{name}}
-@c EN
-Denotes @emph{uninterned} symbol.  Uninterned symbols can be created
-by @code{gensym} or @code{string->uninterned-symbol}.
-@c JP
-「インターンされていない」シンボルを表記します。インターンされていないシンボルは
-@code{gensym}か@code{string->uninterned-symbol}で作ることができます。
-@c COMMON
-
-@c EN
-Uninterned symbols are mainly for legacy macros to avoid
-variable conflicts.   They are not registered in the internal
-dictionary, so such symbols with the same name can't be @code{eq?}.
-@c JP
-インターンされていないシンボルは、良く伝統的なマクロで
-変数衝突を避けるために使われます。インターンされていないシンボルは
-内部のシンボルのテーブルに登録されないため、同じ名前のシンボルでも
-@code{eq?}になりません。
-@c COMMON
-
-@example
-(eq? '#:foo '#:foo) @result{} #f
-(eq? '#:foo 'foo) @result{} #f
-@end example
-
-@c EN
-To preserve @code{eq?}-ness of uninterened symbols,
-you need to use @code{write-shared} which
-shows shared structures.
-@c JP
-インターンされていないシンボルが含まれるS式を、
-シンボルの同一性を保って表示するには、
-@code{write-shared}を使います。
-@c COMMON
-
-@example
-(write-shared (let1 s '#:foo (list s s)))
-  @result{} @r{prints} (#0=#:foo #0#)
-
-(write-shared (let ((s '#:foo) (t '#:foo)) (list s t s t)))
-  @result{} @r{prints} (#0=#:foo #1=#:foo #0# #1#)
-@end example
-@end deftp
-
 
 @defun symbol? obj
 [R7RS base]
@@ -8020,23 +8025,6 @@ Returns true if and only if @var{obj} is a symbol.
 @end example
 @end defun
 
-@defun symbol-interned? symbol
-[SRFI-258]
-@c EN
-Returns @code{#t} if @var{symbol} is an interned symbol,
-@code{#f} if it is an uninterned symbol.   An error is signaled
-if @var{symbol} is not a symbol.
-@c JP
-シンボル@var{symbol}がインターンされていれば@code{#t}を、
-そうでなければ@code{#f}を返します。シンボルでないものが渡された場合はエラーとなります。
-@c COMMON
-
-@c EN
-This is included in SRFI-258 (@pxref{Uninterned symbols}).
-@c JP
-これはSRFI-258に含まれています(@ref{Uninterned symbols}参照)。
-@c COMMON
-@end defun
 
 @defun symbol=? a b c @dots{}
 [R7RS base]
@@ -8077,50 +8065,6 @@ Returns a symbol whose name is a string @var{string}.
 (string->symbol "A") @result{} A
 (string->symbol "weird symbol name") @result{} |weird symbol name|
 @end example
-@end defun
-
-@defun string->uninterned-symbol string
-[SRFI-258]
-@c EN
-Like @code{string->symbol}, but the created symbol is uninterned.
-@c JP
-@code{string->symbol}と似ていますが、作られたシンボルはインターンされません。
-@c COMMON
-
-@example
-(string->uninterned-symbol "a") @result{} #:a
-@end example
-
-@c EN
-This is included in SRFI-258 (@pxref{Uninterned symbols}).
-@c JP
-これはSRFI-258に含まれています(@ref{Uninterned symbols}参照)。
-@c COMMON
-@end defun
-
-
-@defun gensym :optional prefix
-@c EN
-Returns a fresh, uninterned symbol.  The returned symbol can never
-be @code{eq?} to other symbol within the process.
-If @var{prefix} is given, which must be a string, it is used
-as a prefix of the name of the generated symbol.  It is mainly for
-the convenience of debugging.
-@c JP
-インターンされてない、新しいシンボルを作って返します。
-返されるシンボルは、他のシンボルとは決して@code{eq?}にならないことが保証されます。
-@var{prefix}が与えられた場合は、それは文字列でなければならず、
-それが作られるシンボルのプレフィクスに使われます。これは主としてデバッグを
-容易にするためのものです。
-@c COMMON
-
-@c EN
-This is similar to SRFI-258's @code{generate-uninterned-symbol}
-(@pxref{Uninterned symbols}).
-@c JP
-これはSRFI-258の@code{generate-uninterned-symbol}と似ています
-(@ref{Uninterned symbols}参照)。
-@c COMMON
 @end defun
 
 @defun symbol-sans-prefix symbol prefix
@@ -8185,10 +8129,120 @@ only allows symbols as the arguments and the result is always interned.
 @end example
 @end defun
 
+@node Uninterned symbols, Keywords, Basic symbols, Symbols
+@subsection Uninterned symbols
+@c NODE インターンされないシンボル
 
-@c ----------------------------------------------------------------------
-@node Keywords, Characters, Symbols, Core library
-@section Keywords
+@deftp {Reader Syntax} @code{#:@i{name}}
+@c EN
+Denotes @emph{uninterned} symbol.  Uninterned symbols can be created
+by @code{gensym} or @code{string->uninterned-symbol}.
+@c JP
+「インターンされていない」シンボルを表記します。インターンされていないシンボルは
+@code{gensym}か@code{string->uninterned-symbol}で作ることができます。
+@c COMMON
+
+@c EN
+Uninterned symbols are mainly for legacy macros to avoid
+variable conflicts.   They are not registered in the internal
+dictionary, so such symbols with the same name can't be @code{eq?}.
+@c JP
+インターンされていないシンボルは、良く伝統的なマクロで
+変数衝突を避けるために使われます。インターンされていないシンボルは
+内部のシンボルのテーブルに登録されないため、同じ名前のシンボルでも
+@code{eq?}になりません。
+@c COMMON
+
+@example
+(eq? '#:foo '#:foo) @result{} #f
+(eq? '#:foo 'foo) @result{} #f
+@end example
+
+@c EN
+To preserve @code{eq?}-ness of uninterened symbols,
+you need to use @code{write-shared} which
+shows shared structures.
+@c JP
+インターンされていないシンボルが含まれるS式を、
+シンボルの同一性を保って表示するには、
+@code{write-shared}を使います。
+@c COMMON
+
+@example
+(write-shared (let1 s '#:foo (list s s)))
+  @result{} @r{prints} (#0=#:foo #0#)
+
+(write-shared (let ((s '#:foo) (t '#:foo)) (list s t s t)))
+  @result{} @r{prints} (#0=#:foo #1=#:foo #0# #1#)
+@end example
+@end deftp
+
+@defun symbol-interned? symbol
+[SRFI-258]
+@c EN
+Returns @code{#t} if @var{symbol} is an interned symbol,
+@code{#f} if it is an uninterned symbol.   An error is signaled
+if @var{symbol} is not a symbol.
+@c JP
+シンボル@var{symbol}がインターンされていれば@code{#t}を、
+そうでなければ@code{#f}を返します。シンボルでないものが渡された場合はエラーとなります。
+@c COMMON
+
+@c EN
+This is included in SRFI-258 (@pxref{Uninterned symbols (SRFI)}).
+@c JP
+これはSRFI-258に含まれています(@ref{Uninterned symbols (SRFI)}参照)。
+@c COMMON
+@end defun
+
+@defun string->uninterned-symbol string
+[SRFI-258]
+@c EN
+Like @code{string->symbol}, but the created symbol is uninterned.
+@c JP
+@code{string->symbol}と似ていますが、作られたシンボルはインターンされません。
+@c COMMON
+
+@example
+(string->uninterned-symbol "a") @result{} #:a
+@end example
+
+@c EN
+This is included in SRFI-258 (@pxref{Uninterned symbols}).
+@c JP
+これはSRFI-258に含まれています(@ref{Uninterned symbols}参照)。
+@c COMMON
+@end defun
+
+
+@defun gensym :optional prefix
+@c EN
+Returns a fresh, uninterned symbol.  The returned symbol can never
+be @code{eq?} to other symbol within the process.
+If @var{prefix} is given, which must be a string, it is used
+as a prefix of the name of the generated symbol.  It is mainly for
+the convenience of debugging.
+@c JP
+インターンされてない、新しいシンボルを作って返します。
+返されるシンボルは、他のシンボルとは決して@code{eq?}にならないことが保証されます。
+@var{prefix}が与えられた場合は、それは文字列でなければならず、
+それが作られるシンボルのプレフィクスに使われます。これは主としてデバッグを
+容易にするためのものです。
+@c COMMON
+
+@c EN
+This is similar to SRFI-258's @code{generate-uninterned-symbol}
+(@pxref{Uninterned symbols}).
+@c JP
+これはSRFI-258の@code{generate-uninterned-symbol}と似ています
+(@ref{Uninterned symbols}参照)。
+@c COMMON
+@end defun
+
+
+
+@node Keywords, Keyword and symbol integration, Uninterned symbols, Symbols
+@subsection Keywords
 @c NODE キーワード
 
 @deftp {Builtin Class} <keyword>
@@ -8406,7 +8460,7 @@ the key and the following value is removed from @var{kv-list}.
 * Keyword and symbol integration::
 @end menu
 
-@node Keyword and symbol integration,  , Keywords, Keywords
+@node Keyword and symbol integration,  , Keywords, Symbols
 @subsection Keyword and symbol integration
 @c NODE キーワードとシンボルの統合
 
@@ -8645,7 +8699,7 @@ list of @code{(gauche base)}.)
 
 
 @c ----------------------------------------------------------------------
-@node Characters, Character sets, Keywords, Core library
+@node Characters, Character sets, Symbols, Core library
 @section Characters
 @c NODE 文字
 
