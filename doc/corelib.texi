@@ -6783,13 +6783,13 @@ commutative, @code{fold} and @code{fold-left} produces the same result.
 @c COMMON
 
 @example
-(fold-left + 0 '(1 2 3 4 5) @result{} 15
+(fold-left + 0 '(1 2 3 4 5)) @result{} 15
 
 (fold-left cons 'z '(a b c d))
   @result{} ((((z . a) . b) . c) . d)
 
 (fold-left (^[a b] (cons b a)) 'z '(a b c d))
-  @result{} (a b c d z)
+  @result{} (d c b a . z)
 @end example
 
 @c EN
