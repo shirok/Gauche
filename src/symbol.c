@@ -421,10 +421,4 @@ void Scm__InitSymbol(void)
     SCM_INTERNAL_MUTEX_INIT(obtable_mutex);
     obtable = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 4096));
     init_builtin_syms();
-
-    if (Scm_GetEnv("GAUCHE_KEYWORD_DISJOINT") != NULL) {
-        Scm_Warn("GAUCHE_KEYWORD_DISJOINT is set, but disjoint keyword type is "
-                 "no longer supported.  If your code depends on a disjoint "
-                 "keyword type, please update your code.");
-    }
 }

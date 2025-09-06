@@ -279,6 +279,15 @@ void Scm_Init(const char *signature)
 #endif
 
     Scm__FinishModuleInitialization();
+
+    /* Warn users that the compatibility is broken.
+       This needs to be here after all initialization is done. */
+    if (Scm_GetEnv("GAUCHE_KEYWORD_DISJOINT") != NULL) {
+        Scm_Warn("GAUCHE_KEYWORD_DISJOINT is set, but disjoint keyword type is "
+                 "no longer supported.  See 'Keyword and symbol integration' "
+                 "in the reference manual for the details.");
+    }
+
     runtime_state = SCM_RUNTIME_INITIALIZED;
 }
 
