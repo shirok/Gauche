@@ -3372,21 +3372,23 @@ $ gauche-package install -C "--prefix=/usr/local" Package-1.0.tar.gz
 @end example
 
 @c EN
-If the package has adopted the new package description file,
-it can remember the configuration options you have specified, and
-it will automatically reuse them when you install the package
-again.  (If you're a package developer, check out
-@file{examples/spigot/README} file in the Gauche source tree
-to see how to cooperate with Gauche's package management system.)
+The installed package remembers the configration options you have specified
+in its package description file, and
+They can be applied when you update or reinstall the package.
+The configuration options and other information of the installed package
+can be viewed with @code{gauche-package info} command:
 @c JP
-もしパッケージがこの新しい記述ファイルを採用しているなら、
-以前に指定した設定オプションを記憶していて、そのパッケージを
-再度インストールするときには、自動的にそれを再利用します。
-(パッケージ開発者の方は、Gauche のソースツリーにある、
-@file{examples/spigot/README} ファイルをチェックアウトすれば、
-どのように Gauche のパッケージマネージメントシステムがやっているかを
-見られます。)
+インストールされたパッケージは与えられたconfigureオプションを
+パッケージ記述ファイル内に覚えていて、パッケージをアップデートしたり
+再インストールする際に適用できます。
+configureオプションを含む、インストールされたパッケージに関する情報は
+@code{gauche-package info}コマンドで見ることができます。
 @c COMMON
+
+@example
+$ gauche-package info Package
+@end example
+
 
 @c EN
 If you don't have a tarball in your local directory, but you know
