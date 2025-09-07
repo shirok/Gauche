@@ -2960,79 +2960,175 @@ It has several subcommands, which can be listed with
 @deftpx {Program} gauche-install -d [options] dir @dots{}
 @deftpx {Program} gauche-install -T dir [options] file @dots{}
 @deftpx {Program} gauche-install -U dir [options] file @dots{}
+@c EN
 This command can be used to install files.  It is upper-compatible
 to BSD @code{install} command and can be used as drop-in replacement.
 Notably, the first three command invocation format are compatible
 with BSD install.
 It has several more features that keeps @code{Makefile} concise.
+@c JP
+このコマンドはファイルをインストールするのに使えます。
+BSDの@code{install}コマンドの上位互換になっているので、
+@code{install}コマンドをそのまま置き換えることができます。
+最初の3つの形式は@code{install}コマンドと同じ動作です。
+@c COMMON
 
+@c EN
 The first and second invocation format copies @var{file}(s) to @var{dest}
 (a file pathname) or @var{dir} (an existing directory).  You can
 specify permissons, owners, etc.  Basically it's a fancier @code{cp}.
+@c JP
+1番目と2n番目の景色は、@var{file}を@var{dest}(ファイル名)もしくは
+@var{dir}(既存のディレクトリ)へとコピーします。
+パーミッションやオーナー情報も指定できます。
+@code{cp}の上位版と考えても良いでしょう。
+@c COMMON
 
+@c EN
 The third format creates @var{dir}(s) if they don't exist.  Basically
 it's a fancier @code{mkdir -p}.
+@c JP
+3つ目の形式は、@var{dir} @dots{}が無ければそれを作ります。
+@code{mkdir -p}の上位版と考えても良いでしょう。
+@c COMMON
 
+@c EN
 The fourth format copies @var{file} @dots{} to @var{dir}.  It differs
 from the second format in the sense that relative pathname of @var{file}
 is preserved.  That is, if you run the following command:
+@c JP
+4番目の形式は、@var{file} @dots{}を@var{dir}にコピーします。
+2番目の形式とおｎ大きな違いは、@var{file}が相対パスが指定された場合に、
+その相対パスが保存されることです。つまり、次のコマンドを実行すると:
+@c COMMON
 
 @example
 gauche-install -T /usr/local/mytool foo.scm bar/baz.scm
 @end example
 
+@c EN
 It creates @file{/usr/local/mytool/foo.scm} and
 @file{/usr/local/mytool/bar/baz.scm}.  With the second format, the
 subdirectory @code{bar} won't be created.  This format is handy
 when you want to install a bunch of subtrees.
+@c JP
+@file{/usr/local/mytool/foo.scm}と
+@file{/usr/local/mytool/bar/baz.scm}が作られます。
+2番目の形式では、インストール先にサブディレクトリ@code{bar}が作られません。
+この形式はサブディレクトリを持つファイルツリーをまるごとインストールするのに便利です。
+@c COMMON
 
+@c EN
 The fifth format uninstall files which would be installed with @code{-T}
 option.  Simply change @code{-T} option to @code{-U} option and you'll
 clean the files.
+@c JP
+5番目の形式は、@code{-T}でインストールされるであろうファイルを
+アンインストールします。@code{-T}を@code{-U}に変えるだけで
+アンインストールできます。
+@c COMMON
 
+@c EN
 The following command-line arguments are recognized.
+@c JP
+次のコマンドライン引数が認識されます。
+@c COMMON
 
 @table @option
 @item -C
 @itemx --canonical-suffix
+@c EN
 If installed file has a suffix @file{.sci}, replace
 it for @file{.scm}.   This is Gauche specific convention.
+@c JP
+インストールされるファイルが拡張子@file{.sci}を持っていた場合、
+それを@file{.scm}に置き換えます。これはGauche特有のオプションです。
+@c COMMON
 @item -T dir
 @itemx --target dir
+@c EN
 Installs files to the @var{dir}, creating paths if needed.
 Partial path of files are preserved. (4th format only)
+@c JP
+ファイルを@var{dir}以下にインストールします。ディレクトリがまだ無ければ作ります。
+ファイルの相対パスは保存されます (4番目の形式のみ)。
+@c COMMON
 @item -U dir
 @itemx --uninstall dir
+@c EN
 Reverse the effect of @code{-T}, e.g. removes files from its
 destination @var{dir}.
+@c JP
+@code{-T}の動作を元に戻します。つまり、指定のファイルを@var{dir}から
+取り除きます。
+@c COMMON
 @item -S dir
 @itemx --srcdir dir
+@c EN
 Look for @var{file} @dots{}  within @var{dir}; useful if @code{VPATH} is used.
+@c JP
+@var{file} @dots{}を@var{dir}の下から探します。
+@code{VPATH}を使う場合に便利です。
+@c COMMON
 @item --shebang path
+@c EN
 Adds @code{#!@var{path}} before the file contents.
 Useful to install scripts.
+@c JP
+ファイルの内容の先頭に@code{#!@var{path}}を追加します。
+スクリプトをインストールするのに便利です。
+@c COMMON
 @item -d
 @itemx --directory
+@c EN
 Creates directories.  (3rd format only).
+@c JP
+指定のディレクトリを作詞絵します (3番目の形式のみ。)
+@c COMMON
 @item -m mode
 @itemx --mode mode
+@c EN
 Change mode of the installed file.
+@c JP
+インストールするファイルのパーミッションを指定します。
+@c COMMON
 @item -p prefix
 @itemx --strip-prefix prefix
+@c EN
 Strip prefix dirs from @var{file} @dots{} before
 installation. (4th/5th format only).
+@c JP
+@var{file} @dots{}の相対パスから、@var{prefix}と一致するプレフィクスを
+取り除いてインストールします (4,5番目の形式のみ。)
+@c COMMON
 @item -o owner
 @itemx --owner owner
+@c EN
 Change owner of the installed file(s).
+@c JP
+インストールするファイルのオーナーを指定します。
+@c COMMON
 @item -g group
 @itemx --group group
+@c EN
 Change group of the installed file(s).
+@c JP
+インストールするファイルのグループを指定します。
+@c COMMON
 @item -v
 @itemx --verbose
+@c EN
 Work verbosely
+@c JP
+冗長なメッセージを出します。
+@c COMMON
 @item -d
 @itemx --dry-run
+@c EN
 Just prints what actions are to be done, but won't execute them.
+@c JP
+どういうアクションが実行されるかを出力しますが、実際に実行はしません。
+@c COMMON
 @end table
 @end deftp
 
