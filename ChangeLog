@@ -1,3 +1,8 @@
+2025-09-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/217.scm (iset-closed-interval): Fix missing boundary check
+	  https://github.com/shirok/Gauche/issues/1166
+
 2025-09-06  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/collection.scm (group-by-size, group-by-size-to):

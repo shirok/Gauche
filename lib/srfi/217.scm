@@ -651,6 +651,7 @@
                    [g (x->generator tmap)])
                (let loop ()
                  (match (g)
+                   [(? eof-object?) (%make-iset #f rmap)]
                    [(s . e)
                     (cond
                      [(< e lo) (loop)]               ;non overwrapping
