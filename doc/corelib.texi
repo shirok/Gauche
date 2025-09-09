@@ -21451,6 +21451,7 @@ SRFI-35にならって@emph{コンディション(condition)}を使います。
 * Signaling exceptions::
 * Handling exceptions::
 * Conditions::
+* Warnings::
 @end menu
 
 @node Exception handling overview, Signaling exceptions, Exceptions, Exceptions
@@ -22790,7 +22791,7 @@ the following conceptual Scheme code.
 @end example
 
 
-@node Conditions,  , Handling exceptions, Exceptions
+@node Conditions, Warnings, Handling exceptions, Exceptions
 @subsection Conditions
 @c NODE コンディション
 
@@ -23549,6 +23550,64 @@ A convenience macro to create a (possibly compound) condition.
   ...)
 @end example
 @end defmac
+
+@node Warnings,  , Conditions, Exceptions
+@subsection Warnings
+@c NODE 警告
+
+@c EN
+Issuing warnings isn't systematically connected to exceptions, but
+pragmatically it's used in unusual situations one step before
+exceptions.  So we list it here.
+@c JP
+警告を出すことは例外とシステム的には関係ありませんが、
+実際には「例外まではいかないけれど正常でない状態」の時に使われます。
+なのでここで説明します。
+@c COMMON
+
+@defun warn fmt arg @dots{}
+@c EN
+Display @code{"WARNING: "}, then
+the string obtained by @code{(format @var{fmt} @var{arg} @dots{})},
+to the current error port.
+(No extra newline is printed; it is recommended to end @var{fmt} with
+a newline.)
+
+It is to tell the user that @emph{something in the code}
+needs imminent attention, e.g. the new version of the library
+fixed a bug but detects the caller relies on the old buggy behavior.
+
+It should be used sparingly, though, for the user to see this warning
+message may not be the people who neeeds to read it (e.g. author of
+the program that triggers the warning).
+It shouldn't be used to warn to the end user's misuse of the software.
+In such cases, the program can take more adequate way to notify the user
+in the context.
+
+The warning message can be suppressed if the environment variable
+@code{GAUCHE_SUPPRESS_WARNING} is set.
+@c JP
+文字列@code{"WARNING: "}と、
+@code{(format @var{fmt} @var{arg} @dots{})}で生成される文字列を
+現在のエラーポートに出力します
+(最後に改行文字は自動的に出力されません。@var{fmt}を改行文字で終えることを
+推奨します。)
+
+これは、@emph{コードに関して}何か直ちに気をつけることをユーザに伝えるものです。
+例えば、ライブラリの新版がバグフィクスしたのだけれど、
+呼び出し側が以前のバグの振る舞いに依存した呼び出し方をしているのを検出した場合、等。
+
+この手続きは控え目に使ってください。警告を目にするユーザは、
+本来それを知るべき人々 (警告を発生させたプログラムの作者等)
+とは異なるかもしれません。
+ユーザがソフトウェアの使い方を誤ったことに対する警告に使うべきではありません。
+そういった場合は、ソフトウェアが状況に沿ったより適切な方法で
+ユーザに通知すべきです。
+
+警告メッセージは環境変数@code{GAUCHE_SUPPRESS_WARNING}が設定されている場合は
+出力されません。
+@c COMMON
+@end defun
 
 
 @c ----------------------------------------------------------------------

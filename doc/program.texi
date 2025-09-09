@@ -674,9 +674,11 @@ pretty-printing on REPL prompt.
 @c EN
 Suppress system warnings (@code{WARNING: ...}).  Not generally recommended;
 use only if you absolutely need to.
+@xref{Warnings}, for the details.
 @c JP
 システムの警告(@code{WARNING: ...})を抑止します。気軽に使うべきではありません。
 どうしても必要な場合のみ使ってください。
+詳しくは@ref{Warnings}参照。
 @c COMMON
 @end deftp
 
