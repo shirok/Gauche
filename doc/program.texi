@@ -1717,7 +1717,7 @@ The name of the history file can be changed by the environment variable
 @code{GAUCHE_HISTORY_FILE}.  If the environment variable is defined to an
 empty string, however, the history won't be saved.
 @c JP
-デフォルトでは、入力ヒストリはREPLが正常終了する際に@file{~/.gosh_history}され、
+デフォルトでは、入力ヒストリはREPLが正常終了する際に@file{~/.gosh_history}に保存され、
 次にREPLが起動する際に読み込まれます。
 ヒストリを保存するファイル名は環境変数@code{GAUCHE_HISTORY_FILE}で変更できます。
 また、この環境変数が空文字列にセットされていれば、ヒストリは保存されません。

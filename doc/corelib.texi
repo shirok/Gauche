@@ -22262,6 +22262,7 @@ systems have similar macros in different names, such as
 
 
 @defun with-error-handler handler thunk
+@c DEPRECATED
 @c EN
 Makes @var{handler} the active error handler and executes @var{thunk}.
 If @var{thunk} returns normally, the result(s) will be returned.
@@ -24375,12 +24376,11 @@ Returns @code{#t} iff the port supports @code{set-port-position!} procedure.
 
 
 @defun port-seek port offset :optional whence
+@c DEPRECATED
 @c EN
-(This procedure is deprecated.  Use @code{port-position} and
-@code{set-port-position!} for the new code.
+Use @code{port-position} and @code{set-port-position!} for the new code.
 @c JP
-(この手続きは非推奨です。新しいコードには@code{port-position}および
-@code{set-port-position!}を使ってください)。
+新しいコードには@code{port-position}および@code{set-port-position!}を使ってください。
 @c COMMON
 
 @c EN
@@ -25710,12 +25710,11 @@ input for @code{read-line}.  Hence, it is useful to consume trailing
 @end defun
 
 @defun read-block nbytes :optional iport
+@c DEPRECATED
 @c EN
-This procedure is deprecated - use @code{read-uvector} instead
-(@pxref{Uvector block I/O}).
+Use @code{read-uvector} instead (@pxref{Uvector block I/O}).
 @c JP
-この手続きは非推奨になりました。@code{read-uvector}を使ってください
-(@ref{Uvector block I/O}参照)。
+@code{read-uvector}を使ってください(@ref{Uvector block I/O}参照)。
 @c COMMON
 
 @c EN
