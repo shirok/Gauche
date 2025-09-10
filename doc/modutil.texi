@@ -29498,7 +29498,7 @@ passed to @code{lcs-edit-list} to calculate the edit list.
 The equality function @var{eq-fn} is also passed to @code{lcs-edit-list}.
 
 An edit list is a set of commands that turn the text sequence
-from @code{src-a} to the one from @code{src-b}.
+from @var{src-a} to the one from @var{src-b}.
 See the description of @code{lcs-edit-list} for
 the detailed explanation of the edit list.
 @c JP
@@ -29507,11 +29507,11 @@ the detailed explanation of the edit list.
 それぞれのテキストソース、@var{src-a}と@var{src-b}は入力ポートか文字列です。
 もし文字列であれば、それは内部的に文字列ポートに変換されます。
 そして、2つのソースからのテキストストリームは、それらに対して@var{reader}を繰り返し
-呼ぶことによってシーケンスに変換されます。デフォルトの@var{reader}は@var{read-line}で、
+呼ぶことによってシーケンスに変換されます。デフォルトの@var{reader}は@code{read-line}で、
 2つのシーケンスは編集リストを計算するために@code{lcs-edit-list}に渡されます。
 @code{lcs-edit-list}には、等値を検査する関数@var{eq-fn}も渡されます。
 
-編集リストとは、@code{src-a}から@code{src-b}へテキストシーケンスを
+編集リストとは、@var{src-a}から@var{src-b}へテキストシーケンスを
 変更するためのコマンドのセットです。編集リストの詳細な説明は、
 @code{lcs-edit-list}を参照してください。
 @c COMMON

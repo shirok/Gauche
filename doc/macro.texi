@@ -1377,7 +1377,7 @@ checks if both refer to the same binding.
 @end example
 @end defspec
 
-@defmac quasirename renamer quasiquoted-form
+@defmac quasirename rename quasiquoted-form
 @c EN
 It works like quasiquote, except that the symbols and identifiers
 that appear in the ``literal'' portion of @var{form} (i.e. outside
@@ -1423,11 +1423,11 @@ would be equivalent to write:
 @c COMMON
 
 @c EN
-This is not specifically tied to macros; the @var{renamer} can
+This is not specifically tied to macros; the @var{rename} can
 be any procedure that takes one symbol or identifier argument:
 @c JP
 この手続きはマクロ専用というわけではありません。
-@var{renamer}はシンボルか識別子を取る手続きであれば何でも構いません。
+@var{rename}はシンボルか識別子を取る手続きであれば何でも構いません。
 @c COMMON
 
 @example
