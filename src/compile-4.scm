@@ -87,6 +87,15 @@
 (define-inline (pass4/add-lvar lvar bound free)
   (if (or (memq lvar bound) (memq lvar free)) free (cons lvar free)))
 
+;; During scan, we track scope nestings. Each new scope, we push
+;; (<new-node> <current-scope-node>) onto label-dic-info.
+(define-inline (pass4/save-scope! dic node scope-node)
+  (label-dic-info-push! dic (cons node scope-node)))
+
+(define-inline (pass4/lambda-nodes dic)
+  (filter-map (^p (and (has-tag? (car p) $LAMBDA) (car p)))
+              (label-dic-info dic)))
+
 ;; Pass 4 entry point.  Returns IForm and list of lifted lvars
 ;; NB: If the toplevel iform is $seq, we process each form of its body
 ;; separately.  Sometimes such toplevel $seq is a result of macro expansion,
@@ -103,7 +112,7 @@
     ($seq (imap (cut pass4/top <> module) ($seq-body iform)))
     (let1 dic (make-label-dic '())
       (pass4/scan iform '() '() #f dic) ; Mark free variables
-      (let1 lambda-nodes (label-dic-info dic)
+      (let1 lambda-nodes (pass4/lambda-nodes dic)
         (if (or (null? lambda-nodes)
                 (and (null? (cdr lambda-nodes)) ; iform has only a toplevel lambda
                      ($lambda-lifted-var (car lambda-nodes))))
@@ -158,14 +167,18 @@
   [($RECEIVE)(let ([fs (pass4/scan ($receive-expr iform) bs fs es labels)]
                    [bs (append ($receive-lvars iform) bs)])
                (pass4/scan ($receive-body iform) bs fs iform labels))]
-  [($LAMBDA) (let1 inner-fs (pass4/scan ($lambda-body iform)
-                                        ($lambda-lvars iform) '() iform labels)
+  [($LAMBDA) (let* ([scope (if ($lambda-dissolved? iform)
+                             es
+                             iform)]
+                    [inner-fs (pass4/scan ($lambda-body iform)
+                                          ($lambda-lvars iform)
+                                          '() scope labels)])
                ;; If this $LAMBDA is outermost in the original expression,
                ;; we don't need to lift it, nor need to set free-lvars.
                ;; We just mark it by setting lifted-var to #t so that
                ;; pass4/lift phase can treat it specially.
                (unless ($lambda-dissolved? iform)
-                 (label-dic-info-push! labels iform) ;save the lambda node
+                 (pass4/save-scope! labels iform es) ;save the lambda node
                  (unless es                          ;mark this is toplevel
                    ($lambda-lifted-var-set! iform #t)))
                (cond [(not es) '()]
