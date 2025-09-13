@@ -619,6 +619,33 @@
    [else])
   )
 
+(let ()
+  (when (file-exists? "test.o")
+    (if (file-is-directory? "test.o")
+      (remove-directory* "test.o")
+      (sys-unlink "test.o")))
+  (create-directory-tree "."
+                         '(test.o ((a ((aa ())
+                                       (ab ())
+                                       (ac ((aca ())
+                                            (acb ())
+                                            (acc ())))))
+                                   (b ((ba ((baa ())
+                                            bab
+                                            (bac ())))
+                                       (bb ((bba ())
+                                            (bbb ()))))))))
+  (remove-empty-directories "test.o")
+  (test* "remove-empty-directories" '("test.o/b"
+                                      "test.o/b/ba"
+                                      "test.o/b/ba/bab")
+         (glob "test.o/**/*"))
+
+  (sys-unlink "test.o/b/ba/bab")
+  (remove-empty-directories "test.o")
+  (test* "remove-empty-directories" #f (file-exists? "test.o"))
+  )
+
 ;;
 ;; temporary file/dir
 ;;

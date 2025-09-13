@@ -1,3 +1,7 @@
+2025-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (remove-empty-directories): Added.
+
 2025-09-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/217.scm (iset-closed-interval): Fix missing boundary check

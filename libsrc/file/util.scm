@@ -44,7 +44,7 @@
   (export current-directory directory-list directory-list2 directory-fold
           home-directory temporary-directory
           make-directory* create-directory* remove-directory* delete-directory*
-          copy-directory*
+          copy-directory* remove-empty-directories
           call-with-temporary-file call-with-temporary-directory
           create-directory-tree check-directory-tree
           build-path resolve-path expand-path simplify-path decompose-path
@@ -251,6 +251,16 @@
       #f)))
 
 (define delete-directory* remove-directory*)
+
+;; Scan
+(define (remove-empty-directories dir)
+  (define (walk! dir) ; returns #t if dir is removed
+    (receive [subdirs others]
+        (directory-list2 dir :add-path? #t :follow-link? #f :children? #t)
+      (and (fold (^[sub removed?] (and (walk! sub) removed?)) #t subdirs)
+           (null? others)
+           (begin (sys-rmdir dir) #t))))
+  (walk! dir))
 
 ;; cp -r
 ;;   if-exists  - :error :supersede :backup :overwrite #f
