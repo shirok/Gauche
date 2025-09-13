@@ -133,6 +133,17 @@
                             (define xs (list a b c))
                             (apply f xs))))
 
+;; https://github.com/shirok/Gauche/issues/1167
+(let ()
+  (define (fm fn lis)
+    (let loop ([lis lis] [r '()])
+      (cond [(null-list? lis) (reverse r)]
+            [(fn (car lis)) => (^x (loop (cdr lis) (cons x r)))]
+            [else (loop (cdr lis) r)])))
+  (test* "pass2 inlining local recursive proc" '()
+         (filter-insn fm 'LOCAL-ENV-CLOSURES))
+  )
+
 ;; pass3/late-inline
 (define-inline (late-inline-test-1 ref) (cut ref <> 0))
 

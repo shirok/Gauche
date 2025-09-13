@@ -619,10 +619,10 @@
                ;; If this is the only reference of $LAMBDA and
                ;; not self-recursive, we can inline it.
                (if-let1 call-flag (cond [(pass2/self-recursing? initval penv)
-                                    (if tail? 'tail-rec 'rec)]
-                                   [(= (lvar-ref-count ($lref-lvar proc)) 1)
-                                    #f]
-                                   [else 'local])
+                                         (if tail? 'tail-rec 'rec)]
+                                        [(= (lvar-ref-count ($lref-lvar proc)) 1)
+                                         #f]
+                                        [else 'local])
                  (begin
                    ($call-flag-set! iform call-flag)
                    ($lambda-calls-set! initval

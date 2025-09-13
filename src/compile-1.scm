@@ -473,6 +473,10 @@
   (let ([lvars ($lambda-lvars iform)]
         [args  (adjust-arglist ($lambda-reqargs iform) ($lambda-optarg iform)
                                iargs ($lambda-name iform))])
+    ;; Mark this $LAMDA dissolved.  In Pass1, inlined $LAMBDA node will
+    ;; never be referenced, so it doesn't matter.  However, we do inline
+    ;; in pass2, in that case it matters.
+    ($lambda-dissolved-set! iform)
     (for-each (^[lv a] (lvar-initval-set! lv a)) lvars args)
     ($let src 'let lvars args ($lambda-body iform))))
 
