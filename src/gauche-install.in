@@ -214,7 +214,8 @@
                                             (ref e 'message)
                                             write-permission-message)])
                   (dolist [src args]
-                    (sys-unlink (build-path utarget (strip-dir sprefix src)))))]
+                    (sys-unlink (build-path utarget (strip-dir sprefix src))))
+                  (remove-empty-directories utarget))]
        [else
         (match args
           [() (usage)]
