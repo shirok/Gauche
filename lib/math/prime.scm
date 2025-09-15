@@ -439,14 +439,16 @@
   (define try-prime-limit 1000)
 
   ;; We exclude trivial factors first.
-  (let* ([ps (naive-factorize n try-prime-limit)]
-         [n (last ps)])
-    (if (< n (* try-prime-limit try-prime-limit))
-      ps ;; we're completely done
-      (let1 nf (smash n) ; n may be composite, so try to break it more.
-        (if (null? (cdr nf))
-          ps  ; n is unbreakable, so the original factorization was fine.
-          (sort (append nf (drop-right ps 1))))))))
+  (match (naive-factorize n try-prime-limit)
+    [() '()]                            ; n == 1
+    [ps
+     (let1 n (last ps)
+       (if (< n (* try-prime-limit try-prime-limit))
+         ps ;; we're completely done
+         (let1 nf (smash n) ; n may be composite, so try to break it more.
+           (if (null? (cdr nf))
+             ps  ; n is unbreakable, so the original factorization was fine.
+             (sort (append nf (drop-right ps 1)))))))]))
 
 ;; API
 ;; Factorize n and returns ((p_1 . k_1) ... (p_n . k_n)), where

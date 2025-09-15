@@ -58,6 +58,12 @@
                    (loop (+ n 1))
                    `(disagreement at ,n with sample ,sample))))))))
 
+;; Factorization corner cases
+;; https://github.com/shirok/Gauche/issues/1170
+(test* "factorizing 1" '(() ())
+       (list (naive-factorize 1)
+             (mc-factorize 1)))
+
 (let1 results
     ;;(a n jacobi)
     '((0    1    1)

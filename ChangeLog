@@ -1,3 +1,8 @@
+2025-09-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/math/prime.scm (mc-factorize): Fix corner case
+	  https://github.com/shirok/Gauche/issues/1170
+
 2025-09-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-install.in: -U option removes target directory
