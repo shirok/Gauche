@@ -187,8 +187,20 @@ void Scm_Init(const char *signature)
 
     /* Newer bdwgc delays spawning marker threads until the client creates
        first thread.  We can take advantage of parallel markers even with
-       single-threaded program, so we ask them to go parallel now.  */
+       single-threaded program, so we ask them to go parallel now.
+       NB: On Mingw, parallel marking on single-threaded programs has
+       negative effect.  So, on MinGW, we don't enable it until
+       the program explicitly spawns threads.  The environment variable
+       GAUCHE_PARALLEL_MARK_ALWAYS can override it.
+       See https://github.com/shirok/Gauche/pull/1054
+    */
+#if defined(GAUCHE_WINDOWS)
+    if (Scm_GetEnv("GAUCHE_PARALLEL_MARK_ALWAYS") != NULL) {
+        GC_start_mark_threads();
+    }
+#else  /*!defined(GAUCHE_WINDOWS)*/
     GC_start_mark_threads();
+#endif /*!defined(GAUCHE_WINDOWS)*/
 
     (void)SCM_INTERNAL_MUTEX_INIT(cond_features.mutex);
 

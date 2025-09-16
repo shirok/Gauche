@@ -1,5 +1,10 @@
 2025-09-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/core.c (Scm_Init): On MinGW, don't start parallel mark threads
+	  immediately unless env var GAUCHE_PARALLEL_MARK_ALWAYS is defined.
+	  MinGW doesn't like running parallel mark in single-threaded program.
+	  https://github.com/shirok/Gauche/pull/1054
+
 	* lib/math/prime.scm (mc-factorize): Fix corner case
 	  https://github.com/shirok/Gauche/issues/1170
 
