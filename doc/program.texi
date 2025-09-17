@@ -657,6 +657,24 @@ compatibility with 0.9.7 and before.
 @c COMMON
 @end deftp
 
+@deftp {Environment variable} GAUCHE_PARALLEL_MARK_ALWAYS
+@c EN
+Gauche runs garbage collector's mark threads in parallel to take advantage
+of multi-core platforms.  On Linux/Unix, threads are spawned at initialization.
+On Windows (MinGW), however, running parallel mark with single-threaded Scheme
+programs show slowdown, so the spawning is delayed until Scheme code explicitly
+create threads.  When this environment variable is set at the initialization,
+Gauche creates parallel mark threads at initialization on Windows, just like
+Linux/Unix.
+@c JP
+Gaucheはマルチコアプラットフォームでは並列性を活用するために、ガベージコレクタの
+マークを行うスレッドを複数立ち上げます。Linux/Unixではマークスレッドは初期化時に
+作られます。しかし、Windows (MinGW)では、Schemeプログラムがシングルスレッドの時に
+並列マークスレッドを使うと速度低下がみられたため、デフォルトではマークスレッドの生成は
+Schemeプログラム自身が複数スレッドを明示的に使うまで遅延されます。
+この環境変数が初期化時に設定されていると、Windowsでも最初からマークスレッドが作られます。
+@c COMMON
+@end deftp
 
 @deftp {Environment variable} GAUCHE_REPL_NO_PPRINT
 @c EN
