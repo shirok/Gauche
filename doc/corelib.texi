@@ -34062,49 +34062,121 @@ are for those who know Boehm GC.)
 
 @table @code
 @item :total-heap-size
+@c EN
 Heap size in bytes, not including the area unmapped to OS.
 (The value @code{GC_get_heap_size()} returns.)
+@c JP
+OSがマップしていない領域を除く、GCが使っているヒープ領域のサイズ
+(@code{GC_get_heap_size()}の戻り値)。
+@c COMMON
 @item :heap-size-full
+@c EN
 Heap size in bytes, including the area unmapped to OS.
 (The value of @code{heapsize_full} field of @code{GC_prof_stats_s}.)
+@c JP
+OSがマップしていない領域を含めた、GCが使っているヒープ領域のサイズ
+(@code{GC_prof_stats_s}の@code{heapsize_full}フィールドの値)。
+@c COMMON
 @item :free-bytes
+@c EN
 Total bytes contained in free blocks.
 (The value @code{GC_get_free_bytes()} returns.)
+@c JP
+フリーブロックの総バイト数
+(@code{GC_get_free_bytes()}の戻り値)。
+@c COMMON
 @item :free-bytes-full
+@c EN
 Total bytes contained in free and unmapped blocks.
 (The value of @code{free_bytes_full} field of @code{GC_prof_stat_s}.)
+@c JP
+フリーブロックとマップされていないブロックの総バイト数
+(@code{GC_prof_stat_s}の@code{free_bytes_full}フィールドの値)。
+@c COMMON
 @item :unmapped-bytes
+@c EN
 Amount of memory unmapped to OS.
 (The value @code{GC_get_unmapped_bytes()} returns.)
+@c JP
+OSにマップされていないメモリの量
+(@code{GC_get_unmapped_bytes()}の戻り値)。
+@c COMMON
 @item :bytes-since-gc
+@c EN
 Number of bytes allocated since the recent collection.
 (The value @code{GC_get_bytes_since_gc()} returns).
+@c JP
+最後のGC以降にアロケートされたバイト数
+(@code{GC_get_bytes_since_gc()}の戻り値)。
+@c COMMON
 @item :allocated-bytes-before-gc
+@c EN
 Number of bytes allocated before the recent collection.
 This value may wrap if the process has allocated so many bytes.
 (The value of @code{allocd_bytes_before_gc} field of @code{GC_prof_stat_s}.)
+@c JP
+最後のGCまでにアロケートされた延べバイト数。
+メモリを大量にアロケートするプロセスではこの値はラップアラウンドするかもしれません。
+(@code{GC_prof_stat_s}の@code{allocd_bytes_before_gc}フィールドの値。)
+@c COMMON
 @item :non-gc-bytes
+@c EN
 Number of bytes not considered for collection.
 (The value of @code{non_gc_bytes} field of @code{GC_prof_stat_s}.)
+@c JP
+GCの対象にならない領域のバイト数
+(@code{GC_prof_stat_s}の@code{non_gc_bytes}フィールドの値)。
+@c COMMON
 @item :gc-cycle
+@c EN
 Garbage collection cycle number.  The value may wrap.
 (The value of @code{gc_no} field of @code{GC_prof_stat_s}.)
+@c JP
+これまでのGCの回数。この値はラップアラウンドするかもしれません
+(@code{GC_prof_stat_s}の@code{gc_no}フィールドの値)。
+@c COMMON
 @item :num-markers
+@c EN
 Number of marker threads, excluding the initiating one.
 (The value of @code{markers_m1} field of @code{GC_prof_stat_s}.)
+@c JP
+最初のマーカースレッドを除く、マーカースレッドの数
+(@code{GC_prof_stat_s}の@code{markers_m1}フィールドの値)。
+@c COMMON
 @item :bytes-reclaimed-since-gc
+@c EN
 Approx. number of reclaimed bytes after the recent collection.
 (The value of @code{bytes_reclaimed_since_gc} field of @code{GC_prof_stat_s}.)
+@c JP
+最後のGCで回収されたバイト数の概数
+(@code{GC_prof_stat_s}の@code{bytes_reclaimed_since_gc}フィールドの値)。
+@c COMMON
 @item :reclaimed-bytes-before-gc
-Approx. number of bytesreclaimed before the recent collection.
+@c EN
+Approx. number of bytes reclaimed before the recent collection.
 The value may wrap.
 (The value of @code{reclaimed_bytes_before_gc} field of @code{GC_prof_stat_s}.)
+@c JP
+最後のGCまでに回収されたバイト数の概数。
+この値はラップアラウンドするかもしれません
+(@code{GC_prof_stat_s}の@code{reclaimed_bytes_before_gc}フィールドの値)。
+@c COMMON
 @item :explicitly-freed-bytes-since-gc
+@c EN
 Number of bytes freed explicitly since the recent collection.
 (The value of @code{expl_freed_bytes_since_gc} field of @code{GC_prof_stat_s}.)
+@c JP
+最後のGC以降に明示的に開放されたバイト数
+(@code{GC_prof_stat_s}の@code{expl_freed_bytes_since_gc}フィールドの値)。
+@c COMMON
 @item :obtained-from-os-bytes
+@c EN
 Total amount of memory obtained from OS in bytes.
 (The value of @code{obtained_from_os_bytes} field of @code{GC_prof_stat_s}.)
+@c JP
+OSから獲得したメモリの総バイト数
+(@code{GC_prof_stat_s}の@code{obtained_from_os_bytes}フィールドの値)。
+@c COMMON
 @end table
 @end defun
 
