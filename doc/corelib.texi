@@ -28194,11 +28194,11 @@ the expression is read from a socket), this flag is ignored.
 Use this form instead of changing @code{load-paths} directly.
 This form is a special form and recognized by the compiler;
 if you change @code{load-paths}, it is in effect at run time,
-and that may be too late for ``use'' or ``require''.
+and that may be too late for @code{use} or @code{require}.
 @c JP
 ロードパスを変更したい場合、@code{load-paths}を直接替えずにこのフォームを
 使って下さい。このフォームはコンパイル時に解釈されるのに対し、@code{load-paths}を
-書き換えるコードは実行時に解釈されます。``@code{use}'' や ``@code{require}'' は
+書き換えるコードは実行時に解釈されます。@code{use} や @code{require} は
 コンパイル時のロードパスを使うので、@code{load-paths}への変更は反映されないかもしれません。
 @c COMMON
 
