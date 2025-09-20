@@ -182,16 +182,15 @@
           (logior= z SCM_BINDING_INLINABLE))
         (unless (SCM_FALSEP (Scm_Memq 'dummy flags))
           (logior= z SCM_BINDING_DUMMY))
+        (unless (SCM_FALSEP (Scm_Memq 'syntax flags))
+          (logior= z SCM_BINDING_SYNTAX))
         (return (SCM_OBJ (Scm_MakeBinding mod name value z)))))))
 
 ;; Insert binding as a syntactic keyword.  VALUE must be #<macro> or #<syntax>.
-;; Currently Gauche conflates toplevel variable bindings and syntax bindings,
-;; so this is effectively the same as %insert-binding; but we may change it
-;; in future, so use this API to bind syntax.
 (define (%insert-syntax-binding mod name value)
   (unless (or (syntax? value) (macro? value))
     (error "Syntax or macro object required, but got" value))
-  (%insert-binding mod name value))
+  (%insert-binding mod name value '(syntax)))
 
 (define-cproc %hide-binding (mod::<module> name::<symbol>) ::<void>
   Scm_HideBinding)

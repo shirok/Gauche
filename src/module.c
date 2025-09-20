@@ -461,10 +461,24 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
     }
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
 
-    if (existing && !Scm_GlocSupersedableP(g, flags, value)) {
-        Scm_Warn("redefining %s %S#%S",
-                 Scm_GlocConstP(g)? "constant" : "inlinable",
-                 g->module->name, g->name);
+    if (existing) {
+        if (!Scm_GlocSupersedableP(g, flags, value)) {
+            Scm_Warn("redefining %s %S#%S",
+                     Scm_GlocConstP(g)? "constant" : "inlinable",
+                     g->module->name, g->name);
+        }
+        if (!(flags & SCM_BINDING_SYNTAX) && Scm_GlocSyntaxP(g)) {
+            Scm_Warn("overriding syntactic binding with normal binding %S#%S",
+                     g->module->name, g->name);
+        }
+#if 0
+        /* Currently this inevitably occur by autoload, so we suppress
+           this for now. */
+        else if ((flags & SCM_BINDING_SYNTAX) && !Scm_GlocSyntaxP(g)) {
+            Scm_Warn("overriding normal binding with syntactic binding %S#%S",
+                     g->module->name, g->name);
+        }
+#endif
     }
 
     g->value = value;

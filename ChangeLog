@@ -1,3 +1,10 @@
+2025-09-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/gloc.c, src/module.c: Keep track of global syntactic binding.
+	  Syntactic bindings introduced by define-syntax is marked so.
+	  (Redefining it with normal define prints warning).
+	  This info will be used during compilation.
+
 2025-09-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm_Init): On MinGW, don't start parallel mark threads

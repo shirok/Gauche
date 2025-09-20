@@ -70,6 +70,7 @@ SCM_EXTERN ScmObj Scm_MakeGlocWithHooks(ScmSymbol *sym, ScmModule *module,
 SCM_EXTERN void   Scm_GlocMark(ScmGloc *g, int flags);
 SCM_EXTERN ScmObj Scm_GlocConstSetter(ScmGloc *g, ScmObj val);
 SCM_EXTERN ScmObj Scm_GlocInlinableSetter(ScmGloc *g, ScmObj val);
+SCM_EXTERN ScmObj Scm_GlocSyntaxSetter(ScmGloc *g, ScmObj val);
 
 /* For ABI compatibility.  Should be gone at api1.0. */
 #define SCM_GLOC_CONST_P(gloc)  Scm_GlocConstP(gloc)

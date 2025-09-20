@@ -52,7 +52,9 @@ static void gloc_print(ScmObj obj, ScmPort *port,
                    ? " inlinable"
                    : (SCM_GLOC_PHANTOM_BINDING_P(g)
                       ? " phantom"
-                      : ""))));
+                      : (Scm_GlocSyntaxP(g)
+                         ? " syntax"
+                         : "")))));
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);
@@ -126,6 +128,15 @@ ScmObj Scm_GlocInlinableSetter(ScmGloc *gloc, ScmObj val)
     return val;
 }
 
+ScmObj Scm_GlocSyntaxSetter(ScmGloc *gloc, ScmObj val)
+{
+    if (!(SCM_SYNTAXP(val) || SCM_MACROP(val))) {
+        Scm_Warn("altering syntax/macro binding with normal binding: %S#%S",
+                 gloc->module->name, gloc->name);
+    }
+    return val;
+}
+
 /* Kludge - we need to distinguish 'dummy' inlinable bindings (which are
    only needed during compilation in order to inline expand in the same
    compilation unit), and real inlinable bindings.  The difference is that
@@ -155,6 +166,10 @@ static int gloc_dummy_inlinable_p(ScmGloc *gloc)
     return ((gloc)->setter == gloc_dummy_inlinable_setter);
 }
 
+int Scm_GlocSyntaxP(ScmGloc *gloc)
+{
+    return ((gloc)->setter == Scm_GlocSyntaxSetter);
+}
 
 /* This is to check if the module can supesede the exsiting binding of gloc
  * with the new value.  (It is different from setting the new value, which
@@ -196,6 +211,8 @@ void Scm_GlocMark(ScmGloc *gloc, int flags)
         } else {
             gloc->setter = Scm_GlocInlinableSetter;
         }
+    } else if (flags & SCM_BINDING_SYNTAX) {
+        gloc->setter = Scm_GlocSyntaxSetter;
     } else {
         gloc->setter = NULL;
     }

@@ -92,7 +92,7 @@ enum {
                                             bindings, as if we're importing
                                             the module.  Currently used to
                                             create alias binding. */
-    SCM_BINDING_DUMMY = (1L<<4)           /*(M) inline or constant binding,
+    SCM_BINDING_DUMMY = (1L<<4),          /*(M) inline or constant binding,
                                             inserted only during compilation.
                                             this is a dummy binding only to be
                                             recognized by the compiler to expand
@@ -101,6 +101,8 @@ enum {
                                             the proper one when the compiled
                                             module is loaded, so we won't warn
                                             the overwriting. */
+    SCM_BINDING_SYNTAX = (1L<<5)          /*(F,M) indicates the identifier is
+                                            bound to a syntax or a macro. */
 };
 
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
