@@ -366,6 +366,8 @@
                                           (logior= lflags SCM_BINDING_CONST)]
                                          [(SCM_EQ fl 'inlinable)
                                           (logior= lflags SCM_BINDING_INLINABLE)]
+                                         [(SCM_EQ fl 'syntax)
+                                          (logior= lflags SCM_BINDING_SYNTAX)]
                                          [else
                                           (Scm_Error "unknown flag: %S" fl)]))
                                  flags)]
@@ -373,7 +375,9 @@
                        (when (Scm_GlocInlinableP g)
                          (logior= lflags SCM_BINDING_INLINABLE))
                        (when (Scm_GlocConstP g)
-                         (logior= lflags SCM_BINDING_CONST))])
+                         (logior= lflags SCM_BINDING_CONST))
+                       (when (Scm_GlocSyntaxP g)
+                         (logior= lflags SCM_BINDING_SYNTAX))])
                 (Scm_MakeBinding to (SCM_SYMBOL sym) (SCM_GLOC_GET g) lflags)))
             symbols))
 
