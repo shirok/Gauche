@@ -325,16 +325,17 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
             external_only? module->external : module->internal,
             SCM_OBJ(symbol), SCM_FALSE);
         if (SCM_GLOCP(v)) {
-            if (SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
+            ScmGloc *g = SCM_GLOC(v);
+            if (SCM_GLOC_PHANTOM_BINDING_P(g)) {
                 /* If we're here, the symbol is external to MODULE but
                    the real GLOC is somewhere in imported or inherited
                    modules.  We turn off external_only switch so that
                    when we search inherited modules we look into it's
                    internal bindings. */
                 external_only = FALSE;
-                symbol = SCM_GLOC(v)->name; /* in case it's renamed on export */
+                symbol = g->name; /* in case it's renamed on export */
             } else {
-                return SCM_GLOC(v);
+                return g;
             }
         }
         if (stay_in_module) return NULL;
@@ -394,7 +395,8 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
 
         if (SCM_GLOCP(v)) {
             if (SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
-                symbol = SCM_GLOC(v)->name; /* in case it's renamed on export */                ScmGloc *g = search_binding(m, symbol, FALSE, FALSE, TRUE);
+                symbol = SCM_GLOC(v)->name; /* in case it's renamed on export */
+                ScmGloc *g = search_binding(m, symbol, FALSE, FALSE, TRUE);
                 if (g) return g;
                 external_only = FALSE; /* See above comment */
             } else {
@@ -415,7 +417,13 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
     gloc = search_binding(module, symbol, stay_in_module, external_only, FALSE);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
-    return gloc;
+
+    if (flags&SCM_BINDING_SYNTAX) {
+        if (Scm_GlocSyntaxP(gloc)) return gloc;
+        else return NULL;
+    } else {
+        return gloc;
+    }
 }
 
 /* See also Scm_GlobalIdentifierRef in compaux.c */
