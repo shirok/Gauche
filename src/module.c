@@ -505,6 +505,11 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     return SCM_OBJ(Scm_MakeBinding(module, symbol, value, SCM_BINDING_CONST));
 }
 
+ScmObj Scm_DefineSyntax(ScmModule *module, ScmSymbol *symbol, ScmObj value)
+{
+    return SCM_OBJ(Scm_MakeBinding(module, symbol, value, SCM_BINDING_SYNTAX));
+}
+
 /*
  * Injecting hidden binding
  *   This inserts a dummy binding with hidden==true so that

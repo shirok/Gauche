@@ -57,9 +57,9 @@
            #"  al = Scm_MakeAutoload(SCM_CURRENT_MODULE(), sym, SCM_STRING(path), import_from);")
           (case (cdr ent)
             [(macro)
-             (cgen-init #"  Scm_Define(~|where|, sym, Scm__MakeMacroAutoload(sym, SCM_AUTOLOAD(al), 0));")]
+             (cgen-init #"  Scm_DefineSyntax(~|where|, sym, Scm__MakeMacroAutoload(sym, SCM_AUTOLOAD(al), 0));")]
             [(id-macro)
-             (cgen-init #"  Scm_Define(~|where|, sym, Scm__MakeMacroAutoload(sym, SCM_AUTOLOAD(al), SCM_MACRO_IDENTIFIER));")]
+             (cgen-init #"  Scm_DefineSyntax(~|where|, sym, Scm__MakeMacroAutoload(sym, SCM_AUTOLOAD(al), SCM_MACRO_IDENTIFIER));")]
             [(var)
              (cgen-init
               #"  Scm_Define(~|where|, sym, al);")])))
