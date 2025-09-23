@@ -1,3 +1,12 @@
+2025-09-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm (handle-define-macro): Generate
+	  %insert-syntax-binding as the expansion of define-macro, instead
+	  of using define to bind the macro transformer.
+	* src/libalpha.scm, src/libmod.scm: Move %insert-syntax-binding
+	  to libalpha, for it must be available before define-macro is
+	  used in the core library.
+
 2025-09-22  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm: Rename remove-empty-directories ->

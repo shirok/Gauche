@@ -404,3 +404,23 @@
                   (Scm_Error "Unknown flag symbol: %S" flag)]))
               flags)
     (return (Scm_MakeMacro name transformer info flag-bits))))
+
+;; Insert binding as a syntactic keyword.  VALUE must be #<macro> or #<syntax>.
+;; Returns GLOC.
+;;
+;; This is a functionally similar to %insert-binding in libmod.scm.
+;; We need it defined here though, before any define-macro.
+;; This also accepts a symbol module name as well as the module itself;
+;; it is important, since define-macro is expanded to the call of this
+;; procedure by precomp, and when this is first called during Gauche
+;; initialization, libmod isn't intiaizlied so we can't call find-module
+;; from Scheme.
+(define-cproc %insert-syntax-binding (mod name::<symbol> value)
+  (let* ([m::ScmModule* NULL])
+    (unless (or (SCM_SYNTAXP value) (SCM_MACROP value))
+      (Scm_Error "Syntax or macro object required, but got: %S" value))
+    (cond
+     [(SCM_MODULEP mod) (set! m (SCM_MODULE mod))]
+     [(SCM_SYMBOLP mod) (set! m (Scm_FindModule (SCM_SYMBOL mod) 0))]
+     [else (Scm_Error "Module or symbol expected, but got: %S" mod)])
+    (return (SCM_OBJ (Scm_MakeBinding m name value SCM_BINDING_SYNTAX)))))

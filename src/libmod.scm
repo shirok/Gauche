@@ -186,12 +186,6 @@
           (logior= z SCM_BINDING_SYNTAX))
         (return (SCM_OBJ (Scm_MakeBinding mod name value z)))))))
 
-;; Insert binding as a syntactic keyword.  VALUE must be #<macro> or #<syntax>.
-(define (%insert-syntax-binding mod name value)
-  (unless (or (syntax? value) (macro? value))
-    (error "Syntax or macro object required, but got" value))
-  (%insert-binding mod name value '(syntax)))
-
 (define-cproc %hide-binding (mod::<module> name::<symbol>) ::<void>
   Scm_HideBinding)
 

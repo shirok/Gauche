@@ -786,8 +786,8 @@
 ;; file, so we intercept define-macro and define-syntax.
 
 (define (handle-define-macro form)
-  (define %define (make-identifier 'define (find-module 'gauche) '()))
-  (define %define-syntax (make-identifier 'define-syntax (find-module 'gauche) '()))
+  (define %insert (make-identifier '%insert-syntax-binding
+                                   (find-module 'gauche.internal) '()))
   (define %lambda (make-identifier 'lambda (find-module 'gauche) '()))
   (define %begin (make-identifier 'begin (find-module 'gauche) '()))
   (define %macro (make-identifier '%make-macro-transformer
@@ -800,10 +800,12 @@
       (let ([form (gensym)]
             [env (gensym)])
         `(,%begin
-          (,%define ,name (,%macro ',name
-                                   (,%lambda (,form ,env)
-                                             (,%apply ,expr (,%cdr ,form)))
-                                   '((source . ,expr))))
+          (,%insert ',(~ (current-tmodule)'name)
+                    ',name
+                    (,%macro ',name
+                             (,%lambda (,form ,env)
+                                       (,%apply ,expr (,%cdr ,form)))
+                             '((source . ,expr))))
           ((with-module gauche define-macro) ,name ,expr)))
       `((with-module gauche define-macro) ,name ,expr)))
 
