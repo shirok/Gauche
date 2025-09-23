@@ -12081,6 +12081,32 @@ You can use @code{remove-files} to remove both files and directories.
 @c COMMON
 @end defun
 
+@defun remove-empty-directories path
+@c EN
+If @var{path} is a directory, recursively walk down and remove any
+empty directories.  If removing subdirectories caused a directory to be
+empty, the directory is also removed; i.e. if @var{path} is a directory
+tree which contains no regular files, the entire tree, including @var{path},
+is removed.
+
+If @var{path} contains regular files, those files and the directories to
+get to them are retained.
+
+If @var{path} isn't a directory or does not exist, no-op.
+@c JP
+@var{path}がディレクトリなら、それを再帰的に下降し、空のディレクトリを消去します。
+その結果として空になったディレクトリがあればそれも消去します。すなわち、@var{path}
+が通常のファイルを全く含まないディレクトリツリーを指していたなら、@var{path}自身を含め
+全てのディレクトリが消去されます。
+
+@var{path}の指すディレクトリツリーの中に通常のファイルがあった場合、
+そのファイルとそこに至るまでのディレクトリは残されます。
+
+@var{path}が存在しない、あるいはディレクトリでなかった場合は何もしません。
+@c COMMON
+@end defun
+
+
 @defun copy-directory* src dst :key if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
 @c MOD file.util
 @c EN

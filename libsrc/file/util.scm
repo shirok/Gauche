@@ -252,7 +252,7 @@
 
 (define delete-directory* remove-directory*)
 
-;; Scan
+;; Scan DIR and remove empty directories recursively.
 (define (remove-empty-directories dir)
   (define (walk! dir) ; returns #t if dir is removed
     (receive [subdirs others]
@@ -260,7 +260,8 @@
       (and (fold (^[sub removed?] (and (walk! sub) removed?)) #t subdirs)
            (null? others)
            (begin (sys-rmdir dir) #t))))
-  (walk! dir))
+  (and (file-is-directory? dir)
+       (walk! dir)))
 
 ;; cp -r
 ;;   if-exists  - :error :supersede :backup :overwrite #f
