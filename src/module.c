@@ -489,6 +489,15 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
 #endif
     }
 
+#if 0
+    /* This also interferes with autoload. */
+    if ((SCM_SYNTAXP(value) || SCM_MACROP(value))
+        && !(flags & SCM_BINDING_SYNTAX)) {
+        Scm_Warn("Effect of binding syntax/macro using `define' is undefined. (%S#%S)",
+                 g->module->name, g->name);
+    }
+#endif
+
     g->value = value;
     Scm_GlocMark(g, flags);
     return g;
