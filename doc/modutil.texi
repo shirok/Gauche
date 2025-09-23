@@ -12081,7 +12081,7 @@ You can use @code{remove-files} to remove both files and directories.
 @c COMMON
 @end defun
 
-@defun remove-empty-directories path
+@defun remove-empty-directory* path
 @c EN
 If @var{path} is a directory, recursively walk down and remove any
 empty directories.  If removing subdirectories caused a directory to be

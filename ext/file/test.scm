@@ -635,15 +635,15 @@
                                             (bac ())))
                                        (bb ((bba ())
                                             (bbb ()))))))))
-  (remove-empty-directories "test.o")
-  (test* "remove-empty-directories" (n "test.o/b"
-                                       "test.o/b/ba"
-                                       "test.o/b/ba/bab")
+  (remove-empty-directory* "test.o")
+  (test* "remove-empty-directory*" (n "test.o/b"
+                                      "test.o/b/ba"
+                                      "test.o/b/ba/bab")
          (glob "test.o/**/*"))
 
   (sys-unlink "test.o/b/ba/bab")
-  (remove-empty-directories "test.o")
-  (test* "remove-empty-directories" #f (file-exists? "test.o"))
+  (remove-empty-directory* "test.o")
+  (test* "remove-empty-directory*" #f (file-exists? "test.o"))
   )
 
 ;;

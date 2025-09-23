@@ -1,3 +1,8 @@
+2025-09-22  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm: Rename remove-empty-directories ->
+	  remove-empty-directory*, for the consistency with other APIs.
+
 2025-09-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/gloc.c, src/module.c: Keep track of global syntactic binding.
