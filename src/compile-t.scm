@@ -69,8 +69,10 @@
     (cond [($const? arg) ($const-value arg)]
           [(has-tag? arg $GREF)
            ;; We recognize some "reserved keywords".
-           (cond [(global-identifier=? ($gref-id arg) id:*) '*]
-                 [(global-identifier=? ($gref-id arg) id:->) '->]
+           ;; NB: Semantically we could use free-identifier=?, but
+           ;; global-syntax=? is faster.
+           (cond [(global-syntax=? ($gref-id arg) id:*) '*]
+                 [(global-syntax=? ($gref-id arg) id:->) '->]
                  [(gref-inlinable-gloc arg)
                   => (^[gloc]
                        (let1 v (gloc-ref gloc)

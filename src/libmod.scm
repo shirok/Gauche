@@ -345,13 +345,3 @@
 
  (define-cproc id->bound-gloc (id::<identifier>) ::<gloc>?
    Scm__IdentifierToBoundGloc))
-
-;; Returns #t if id1 and id2 both refer to the same existing global binding.
-;; Like free-identifier=? but we know id1 and id2 are both toplevel and
-;; at least one is bound, so we skip local binding lookup.
-(define (global-identifier=? id1 id2)
-  (and-let* ([ (wrapped-identifier? id1) ]
-             [ (wrapped-identifier? id2) ]
-             [g1 (id->bound-gloc id1)]
-             [g2 (id->bound-gloc id2)])
-    (eq? g1 g2)))

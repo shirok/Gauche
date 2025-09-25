@@ -424,7 +424,7 @@
 (define (pass3/find-deducible-predicate id)
   (let loop ([tab *pass3/pred-table*])
     (cond [(null? tab) pass3/pred:fallback]
-          [(global-identifier=? id (caar tab)) (cdar tab)]
+          [(free-identifier=? id (caar tab)) (cdar tab)]
           [else (loop (cdr tab))])))
 
 (define (pass3/deduce-predicate-result gref arg)

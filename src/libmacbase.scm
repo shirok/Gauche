@@ -92,9 +92,9 @@
       (^[id]
         (or (hash-table-get tab id #f)
             (let1 nam (unwrap-syntax id)
-              (if (global-identifier=? id (make-identifier nam
-                                                           (vm-current-module)
-                                                           '()))
+              (if (free-identifier=? id (make-identifier nam
+                                                         (vm-current-module)
+                                                         '()))
                 (begin (hash-table-put! tab id nam) nam)
                 (let1 num ($ hash-table-fold tab
                              (^[i _ c]

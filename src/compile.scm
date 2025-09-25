@@ -2099,7 +2099,22 @@
   (and (identifier? var)
        (let1 v (cenv-lookup cenv var)
          (and (wrapped-identifier? v)
-              (global-identifier=? v id)))))
+              (global-syntax=? v id)))))
+
+;; Returns #t if id1 and id2 both refer to the same existing global binding,
+;; or bound to the same syntax, macro, or a constant value globally.
+;; The caller must know both ids are toplevel and at least one is bound.
+;; So we can skip local binding lookup like free-identifier=?.
+(define (global-syntax=? id1 id2)
+  (and-let* ([ (wrapped-identifier? id1) ]
+             [ (wrapped-identifier? id2) ]
+             [g1 (id->bound-gloc id1)]
+             [g2 (id->bound-gloc id2)])
+    (or (eq? g1 g2)
+        (let ([v1 (gloc-ref g1)]
+              [v2 (gloc-ref g2)])
+          (and (or (syntax? v1) (macro? v1))
+               (eq? v1 v2))))))
 
 ;; TRANSIENT: To compare keyword hygienically.  We need to treat keywords
 ;; specially until we complete keyword-symbol integration.

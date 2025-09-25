@@ -150,7 +150,7 @@
 (define (pass1/detect-constant-setter-call op cenv)
   (and (pair? op) (pair? (cdr op)) (null? (cddr op))
        (not (vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_SETTERS))
-       (global-identifier=? (car op) setter.)
+       (global-syntax=? (car op) setter.)
        (and-let* ([var (cadr op)]
                   [ (identifier? var) ] ;ok, <var> is variable
                   [hd (pass1/lookup-head var cenv)]
@@ -249,7 +249,7 @@
     [((? identifier? wm) mod (? identifier? v))
      (and-let* ([var (cenv-lookup cenv wm)]
                 [ (identifier? var) ])
-       (global-identifier=? var with-module.))]
+       (global-syntax=? var with-module.))]
     [_ #f]))
 
 ;;--------------------------------------------------------------
@@ -320,15 +320,15 @@
       (pass1/body-finish exprs mframe vframe cenv)]
      [(not (wrapped-identifier? head))
       (error "[internal] pass1/body" head)]
-     [(or (global-identifier=? head define.)
-          (global-identifier=? head define-inline.)
-          (global-identifier=? head r5rs-define.))
+     [(or (global-syntax=? head define.)
+          (global-syntax=? head define-inline.)
+          (global-syntax=? head r5rs-define.))
       (let1 def (match args
                   [((name . formals) . body)
                    `(,name :rec (,lambda. ,formals ,@body) . ,incsrc)]
                   [(var init) `(,var :rec ,init . ,incsrc)]
                   [(var)
-                   (if (global-identifier=? head r5rs-define.)
+                   (if (global-syntax=? head r5rs-define.)
                      (error "define without expression is not allowed in R7RS" (caar exprs))
                      `(,var :rec ,(undefined) . ,incsrc))]
                   [_ (error "malformed internal define:" (caar exprs))])
@@ -342,7 +342,7 @@
           (begin
             (push! (cdr vframe) def)
             (pass1/body-rec rest mframe vframe cenv))))]
-     [(global-identifier=? head define-syntax.) ; internal syntax definition
+     [(global-syntax=? head define-syntax.) ; internal syntax definition
       (match args
         [(name trans-spec)
          (dupe-check name mframe vframe)
@@ -365,13 +365,13 @@
                (pass1/body-rec rest mframe vframe cenv))))]
         [_ (error "syntax-error: malformed internal define-syntax:"
                   `(,op ,@args))])]
-     [(global-identifier=? head begin.) ;intersperse forms
+     [(global-syntax=? head begin.) ;intersperse forms
       (pass1/body-rec (append (imap (cut cons <> incsrc) args) rest)
                       mframe vframe cenv)]
-     [(global-identifier=? head include.)
+     [(global-syntax=? head include.)
       (let1 sexpr&srcs (pass1/expand-include args cenv #f)
         (pass1/body-rec (append sexpr&srcs rest) mframe vframe cenv))]
-     [(global-identifier=? head include-ci.)
+     [(global-syntax=? head include-ci.)
       (let1 sexpr&srcs (pass1/expand-include args cenv #t)
         (pass1/body-rec (append sexpr&srcs rest) mframe vframe cenv))]
      [(wrapped-identifier? head)
@@ -753,8 +753,8 @@
         ;;  (define-inline foo (getter-with-setter (lambda ...) (lambda.. )))
         [(and (has-tag? iform $CALL)
               (has-tag? ($call-proc iform) $GREF)
-              (global-identifier=? ($gref-id ($call-proc iform))
-                                   getter-with-setter.)
+              (free-identifier=? ($gref-id ($call-proc iform))
+                                 getter-with-setter.)
               (= (length ($call-args iform)) 2))
          (receive (closures1 closed1)
              (pass1/check-inlinable-lambda (car ($call-args iform)))

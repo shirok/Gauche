@@ -1,3 +1,16 @@
+2025-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (global-syntax=?): Compare two identifiers iff
+	  both are bound to the same syntax/macro.  We add this in place
+	  of global-identifier=?, which was merely a more efficient version
+	  of free-identifier=?.  The issue of the latter is that it can't
+	  handle aliased identifier; e.g. if we have (define-syntax def define),
+	  then 'def' in (define (x) (def y 3) y) should be understood as
+	  a internal define.
+	* src/compile-1.scm: Use global-syntax=? instead of global-identifier=?
+	  when comparing syntactic keywords.
+	  Cf. https://github.com/shirok/Gauche/issues/1172
+
 2025-09-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (handle-define-macro): Generate
