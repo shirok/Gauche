@@ -1140,6 +1140,29 @@
         (with-module mac-idef2.user
           (let ((a 5)) (define x a) (x)))))
 
+;; Recognize aliased define
+;; https://github.com/shirok/Gauche/issues/1172
+(define-module mac-define-aliased-1
+  (define-syntax def define))
+(test "internal define by alias" 4
+      (lambda ()
+        (eval '(define (x a)
+                 (def (y) a)
+                 y)
+              (find-module 'mac-define-aliased-1))
+        (eval '((x 4)) (find-module 'mac-define-aliased-1))))
+
+;; Similar, but recognize internal define-syntax
+(define-module mac-define-aliased-2
+  (define-syntax defsyn define-syntax))
+(test "internal define-syntax by alias" 6
+      (lambda ()
+        (eval '(define (x a)
+                 (defsyn y (syntax-rules () [(_) a]))
+                 (y))
+              (find-module 'mac-define-aliased-2))
+        (eval '(x 6) (find-module 'mac-define-aliased-2))))
+
 (test "internal define-syntax and scope 1" 'inner
       (let ((x 'outer))
         (lambda ()
