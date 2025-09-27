@@ -12577,8 +12577,14 @@ object.  Otherwise it returns @code{#f}.
 見付からなかった場合は@code{#f}を返します。
 @c COMMON
 
-If @var{start} and/or @var{end} are given, only the substring between
+@c EN
+If @var{start} and/or @var{end} indexes are given, only the substring between
 @var{start} (inclusive) and @var{end} (exclusive) is searched.
+@c JP
+@var{start}や@var{end}インデックスが与えられた場合、
+@var{string}のうち@var{start}(含む)から@var{end}(含まない)までの
+部分文字列が検索対象になります。
+@c COMMON
 
 @c EN
 This is called @code{match}, @code{regexp-search} or @code{string-match}
@@ -13399,9 +13405,9 @@ returned AST will match case-insensitively.
 not by the engine).
 @c JP
 @var{case-fold}キーワード引数に真の値が与えられた場合は、
-大文字小文字を区別せずにマッチを行うASTが変えされます
+大文字小文字を区別せずにマッチを行うASTが返されます
 (エンジン自体に「大文字小文字を区別しない」モードがあるわけではなく、
-パーザの段階で異なるASTが生成されます。)
+パーザの段階で異なるASTが生成されます)。
 @c COMMON
 @end defun
 
