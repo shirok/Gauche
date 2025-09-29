@@ -1,3 +1,9 @@
+2025-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/data/trie.scm: Custon tab-empty? procedure hasn't been
+	  fully supported.
+	  https://github.com/shirok/Gauche/issues/1174
+
 2025-09-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (global-syntax=?): Compare two identifiers iff

@@ -117,13 +117,14 @@
 ;;;
 
 (define (make-trie :optional (tab-make #f) (tab-get  #f) (tab-put! #f)
-                   (tab-fold #f))
+                   (tab-fold #f) (tab-empty? #f))
     (apply make <trie>
            (cond-list
             (tab-make @ `(:tab-make ,tab-make))
             (tab-get  @ `(:tab-get  ,tab-get))
             (tab-put! @ `(:tab-put! ,tab-put!))
-            (tab-fold @ `(:tab-fold ,tab-fold)))))
+            (tab-fold @ `(:tab-fold ,tab-fold))
+            (tab-empty? @ `(:tab-empty? ,tab-empty?)))))
 
 (define (trie params . keys&vals)
   (rlet1 t (apply make-trie params)
@@ -223,14 +224,15 @@
 
 ;; internal: Trie, Node -> Boolean
 (define (%trie-node-empty? trie node)
-  (cond
-   [(slot-ref trie'tab-empty?) => (^[empty?] (empty? node))]
-   ;; some heuristics
-   [(and (hash-table? (%node-table node))
-         (eq? (slot-ref trie'tab-fold) hash-table-fold))
-    (zero? (hash-table-num-entries (%node-table node)))]
-   [(%node-table node) => (cut (slot-ref trie'tab-fold) <> (^[k n s] #t) #f)]
-   [else #t]))
+  (if-let1 tab (%node-table node)
+    (cond
+     [(slot-ref trie'tab-empty?) => (^[empty?] (empty? tab))]
+     ;; some heuristics
+     [(and (hash-table? tab)
+           (eq? (slot-ref trie'tab-fold) hash-table-fold))
+      (zero? (hash-table-num-entries tab))]
+     [else (slot-ref trie'tab-fold) tab (^[k n s] #t) #f])
+    #t))
 
 ;; Public APIs
 

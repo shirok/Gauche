@@ -201,6 +201,28 @@
            (let1 h (coerce-to <hash-table> t6)
              (every (cut hash-table-get h <>) strs)))
     )
+
+  ;; customizing tables w/ tag-empty?
+  (let1 t7 (make-trie (cut list 'fooo)
+                      (^[tab elt] (assoc-ref (cdr tab) elt))
+                      (^[tab elt child-node]
+                        (if child-node
+                          (set! (cdr tab) (assoc-set! (cdr tab) elt child-node))
+                          (set! (cdr tab) (alist-delete elt (cdr tab) equal?)))
+                        tab)
+                      (^[tab proc seed]
+                        (fold (^[e s] (proc (car e) (cdr e) s)) seed (cdr tab)))
+                      (^[tab] (null? (cdr tab))))
+    (test* "trie (empty?):" (length strs)
+           (begin
+             (dolist [s strs]
+               (trie-put! t7 s s))
+             (trie-num-entries t7)))
+
+    (test* "trie-partial-key?" #t (trie-partial-key? t7 "kan"))
+    (test* "trie-partial-key?" #t (trie-partial-key? t7 "kana"))
+    (test* "trie-partial-key?" #f (trie-partial-key? t7 "kanaono"))
+    )
   )
 
 (test-end)
