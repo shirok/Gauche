@@ -1,3 +1,10 @@
+2025-09-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (read_sharp_word_1): Support reading CL-style complex
+	  number, #c(x y).
+	  NB: It is supported in the generic reader rather than number reader,
+	  so string->number doesn't recognize it.
+
 2025-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/data/trie.scm: Custon tab-empty? procedure hasn't been

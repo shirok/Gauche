@@ -1856,6 +1856,22 @@ static ScmObj read_sharp_word_1(ScmPort *port, char ch, ScmReadContext *ctx)
             || strcmp(w, "c64") == 0
             || strcmp(w, "c128") == 0) {
             tag = w;
+        } else if (strcmp(w, "c") == 0) {
+            /* possibly CL-style complex number. */
+            ScmChar op = Scm_GetcUnsafe(port);
+            if (op != '(') {
+                Scm_UngetcUnsafe(op, port);
+                break;          /* let it be error */
+            }
+            reject_in_r7(port, ctx, "#c(...)");
+            ScmObj r = read_list(port, ')', ctx);
+            if (Scm_Length(r) != 2
+                || !SCM_REALP(SCM_CAR(r))
+                || !SCM_REALP(SCM_CADR(r))) {
+                Scm_ReadError(port, "invalid #c syntax: #c%S", r);
+            }
+            return Scm_MakeComplex(Scm_GetDouble(SCM_CAR(r)),
+                                   Scm_GetDouble(SCM_CADR(r)));
         }
         break;
     case 'f':

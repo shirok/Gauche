@@ -562,6 +562,19 @@
 (test* "complex reader (padding)" '(0.0 1.2)
        (decompose-complex (string->number "1.2##@.5###pi")))
 
+(test* "complex reader (CL)" '(1.0 2.0)
+       (decompose-complex (read-from-string "#c(1.0 2.0)")))
+(test* "complex reader (CL)" '(1.0 2.0)
+       (decompose-complex (read-from-string "#C(1.0 2.0)")))
+(test* "complex reader (CL)" (test-error <read-error> #/invalid #c syntax/)
+       (decompose-complex (read-from-string "#c(1.0)")))
+(test* "complex reader (CL)" (test-error <read-error> #/invalid #c syntax/)
+       (decompose-complex (read-from-string "#c(1.0 2.0 3.0)")))
+(test* "complex reader (CL)" (test-error <read-error> #/invalid #c syntax/)
+       (decompose-complex (read-from-string "#c(1.0 a)")))
+(test* "complex reader (CL)" (test-error <read-error> #/invalid #c syntax/)
+       (decompose-complex (read-from-string "#c(1.0+i 2.0)")))
+
 ;;------------------------------------------------------------------
 (test-section "repeating decimals")
 
