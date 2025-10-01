@@ -930,7 +930,7 @@
             :bytestring    ,(~ obj'bytestring)
             :string-length ,(~ obj'string-length)
             :exact-decimal ,(~ obj'exact-decimal)
-            :array-format  ,(~ obj'array-format))))
+            :array ,(~ obj'array))))
 
 ;;----------------------------------------------------------------
 ;; Describe
