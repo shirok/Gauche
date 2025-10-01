@@ -8759,15 +8759,12 @@ string keys with case-insensitive way:
 @example
 (make-trie list
            (cut alist-ref <> <> char-ci=? #f)
-           (lambda (t k v)
+           (^[t k v]
              (if v
                (alist-set! t k v char-ci=?)
                (alist-delete! k t char-ci=?)))
-           (lambda (t f s)
-             (let loop ((t t) (s s))
-               (if (null? t)
-                 s
-                 (loop (cdr t) (f (caar t) (cdar t) s)))))
+           (^[t f s]
+             (fold (^[e s] (f (car e) (cdr e) s)) s t))
            null?)
 @end example
 
