@@ -8758,10 +8758,10 @@ string keys with case-insensitive way:
 
 @example
 (make-trie list
-           (cut assoc-ref <> <> #f char-ci=?)
+           (cut alist-ref <> <> char-ci=? #f)
            (lambda (t k v)
              (if v
-               (assoc-set! t k v char-ci=?)
+               (alist-set! t k v char-ci=?)
                (alist-delete! k t char-ci=?)))
            (lambda (t f s) (fold f s t))
            null?)
@@ -34412,7 +34412,7 @@ Then you can calculate the immediate dominator of each node as follows:
 @example
 (calculate-dominators 'A
   (^n (filter-map (^g (and (memq n (cdr g)) (car g))) *graph*))
-  (^n (assoc-ref *graph* n '()))
+  (^n (alist-ref *graph* n eq? '()))
   eq-comparator)
   @result{} ((E B) (F D) (D B) (C B) (B A))
 @end example
