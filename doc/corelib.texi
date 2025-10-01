@@ -7708,11 +7708,11 @@ the optional arguments.
 @defunx assq-set! alist key val
 @defunx assv-set! alist key val
 @c DEPRECATED
-@code{(assoc-set! alist key key=)} @equiv{} @code{(alist-set! alist key key=)}.
+@code{(assoc-set! alist key val key=)} @equiv{} @code{(alist-set! alist key val key=)}.
 
-@code{(assq-set! alist key)} @equiv{} @code{(alist-set! alist key eq?)}.
+@code{(assq-set! alist key val)} @equiv{} @code{(alist-set! alist key val eq?)}.
 
-@code{(assv-set! alist key)} @equiv{} @code{(alist-set! alist key eqv?)}.
+@code{(assv-set! alist key val)} @equiv{} @code{(alist-set! alist key val eqv?)}.
 @end defun
 
 @defun assoc-adjoin alist key val :optional key=
