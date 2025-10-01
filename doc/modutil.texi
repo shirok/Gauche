@@ -8763,7 +8763,11 @@ string keys with case-insensitive way:
              (if v
                (alist-set! t k v char-ci=?)
                (alist-delete! k t char-ci=?)))
-           (lambda (t f s) (fold f s t))
+           (lambda (t f s)
+             (let loop ((t t) (s s))
+               (if (null? t)
+                 s
+                 (loop (cdr t) (f (caar t) (cdar t) s)))))
            null?)
 @end example
 
