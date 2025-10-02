@@ -920,17 +920,18 @@
 
 (define-method write-object ((obj <write-controls>) port)
   (format port "#<write-controls ~s>"
-          `(:length ,(~ obj'length)
-            :level  ,(~ obj'level)
-            :base   ,(~ obj'base)
-            :radix  ,(~ obj'radix)
-            :pretty ,(~ obj'pretty)
-            :width  ,(~ obj'width)
-            :indent ,(~ obj'indent)
+          `(:length        ,(~ obj'length)
+            :level         ,(~ obj'level)
+            :base          ,(~ obj'base)
+            :radix         ,(~ obj'radix)
+            :pretty        ,(~ obj'pretty)
+            :width         ,(~ obj'width)
+            :indent        ,(~ obj'indent)
             :bytestring    ,(~ obj'bytestring)
             :string-length ,(~ obj'string-length)
             :exact-decimal ,(~ obj'exact-decimal)
-            :array ,(~ obj'array))))
+            :array         ,(~ obj'array)
+            :complex       ,(~ obj'complex))))
 
 ;;----------------------------------------------------------------
 ;; Describe

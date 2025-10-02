@@ -930,9 +930,8 @@
        [(SCM_WRITE_ARRAY_COMPACT) (return 'compact)]
        [(SCM_WRITE_ARRAY_DIMENSIONS) (return 'dimensions)]
        [(SCM_WRITE_ARRAY_READER_CTOR) (return 'reader-ctor)]
-       [else (Scm_Panic "Invalid value in ScmWriteControls.array: ~S"
+       [else (Scm_Panic "Invalid value in ScmWriteControls.array: %d"
                         (-> obj arrayFormat))])))
-
  (define-cfn write-controls-array-set (arg value) ::void :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (cond
@@ -945,6 +944,23 @@
       [else (Scm_Error "Invalid ScmWriteControls.array, must be \
                         one of compact, dimensions or \
                         reader-ctor, but got %S" value)])))
+ (define-cfn write-controls-complex-get (arg) :static
+   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
+     (case (-> obj arrayFormat)
+       [(SCM_WRITE_COMPLEX_SCHEME) (return 'scheme)]
+       [(SCM_WRITE_COMPLEX_COMMON_LISP) (return 'common-lisp)]
+       [else (Scm_Panic "Invalid value in ScmWriteControls.complex: %d"
+                        (-> obj complexFormat))])))
+ (define-cfn write-controls-complex-set (arg value) ::void :static
+   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
+     (cond
+      [(SCM_EQ value 'scheme)
+       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_SCHEME)]
+      [(SCM_EQ value 'common-lisp)
+       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_COMMON_LISP)]
+      [else (Scm_Error "Invalid ScmWriteControls.complex, must be \
+                        one of scheme or common-lisp, \
+                        but got %S" value)])))
 
  ;; TODO: We want to treat <write-controls> as immutable structure, but
  ;; define-cclass doesn't yet handle a slot that's immutable but allowing
@@ -999,6 +1015,10 @@
     (array  :type <symbol> :c-name "arrayFormat"
             :getter (c "write_controls_array_get")
             :setter (c "write_controls_array_set"))
+    (complex :type <boolean> :c-name "complexFormat"
+             :getter (c "write_controls_complex_get")
+             :setter (c "write_controls_complex_set"))
+
     )
    (allocator (c "write_controls_allocate")))
 
@@ -1008,7 +1028,7 @@
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (make-write-controls :key length level width base radix pretty indent
                                   bytestring string-length exact-decimal
-                                  array
+                                  array complex
                                   print-length print-level print-width
                                   print-base print-radix print-pretty)
   (define (arg k k-alt) (if (undefined? k-alt) k k-alt))
@@ -1023,7 +1043,8 @@
     :string-length string-length
     :indent indent
     :exact-decimal exact-decimal
-    :array array))
+    :array array
+    :complex complex))
 
 ;; Returns fresh write-controls where the specified slot value is replaced
 ;; from the original WC.

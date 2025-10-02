@@ -1,3 +1,9 @@
+2025-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/writerP.h (ScmWriteControls),
+	  src/libio.scm (<write-controls>): Add 'complex' slot to customize
+	  how complex number is printed.
+
 2025-09-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_sharp_word_1): Support reading CL-style complex

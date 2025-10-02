@@ -51,6 +51,7 @@ struct ScmWriteControlsRec {
     int exactDecimal;           /* #t to use decimal point for exact numbers
                                    whenever possible. */
     int arrayFormat;            /* enum ScmWriteArrayFormat */
+    int complexFormat;          /* enum ScmWriteComplexFormat */
 };
 
 SCM_CLASS_DECL(Scm_WriteControlsClass);
@@ -62,6 +63,11 @@ enum ScmWriteArrayFormat {
     SCM_WRITE_ARRAY_COMPACT,     /* #2a(...) */
     SCM_WRITE_ARRAY_DIMENSIONS,  /* #2a:3:3(...) */
     SCM_WRITE_ARRAY_READER_CTOR, /* #,(<array> (0 3 0 3) ...) */
+};
+
+enum ScmWriteComplexFormat {
+    SCM_WRITE_COMPLEX_SCHEME,      /* a+bi */
+    SCM_WRITE_COMPLEX_COMMON_LISP, /* #c(a b) */
 };
 
 /*
