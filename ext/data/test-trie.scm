@@ -228,12 +228,14 @@
 ;; https://github.com/shirok/Gauche/issues/1179
 (let1 t (trie '() '("car" . a) '("cat" . b) '("cup" . c))
   (test* "trie-common-prefix ca" '(("car" . a) ("cat" . b))
-         (trie-common-prefix t "ca"))
+         (trie-common-prefix t "ca")
+         (cut lset= equal? <> <>))
   (test* "trie-common-prefix ba" '()
          (trie-common-prefix t "ba"))
 
   (test* "trie-common-prefix-map ca" '(("car" . a) ("cat" . b))
-         (trie-common-prefix-map t "ca" cons))
+         (trie-common-prefix-map t "ca" cons)
+         (cut lset= equal? <> <>))
   (test* "trie-common-prefix-map ba" '()
          (trie-common-prefix-map t "ba" cons))
   )
