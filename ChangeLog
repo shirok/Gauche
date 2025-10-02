@@ -1,3 +1,8 @@
+2025-10-02  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/data/trie.scm (trie-common-prefix-fold): Fix empty set case.
+	  https://github.com/shirok/Gauche/issues/1179
+
 2025-10-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/writerP.h (ScmWriteControls),

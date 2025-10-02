@@ -325,7 +325,9 @@
   (%trie-prefix-collect trie prefix (^[k v s] (cons v s))))
 
 (define (trie-common-prefix-fold trie prefix proc seed)
-  (%trie-node-fold trie (or (%trie-get-node trie prefix) '()) proc seed))
+  (if-let1 node (%trie-get-node trie prefix)
+    (%trie-node-fold trie node proc seed)
+    seed))
 
 (define (trie-common-prefix-map trie prefix proc)
   (trie-common-prefix-fold trie prefix
