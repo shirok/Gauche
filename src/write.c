@@ -137,7 +137,7 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
         p->stringLength = -1;
         p->exactDecimal = FALSE;
         p->arrayFormat = SCM_WRITE_ARRAY_COMPACT;
-        p->complexFormat = SCM_WRITE_COMPLEX_SCHEME;
+        p->complexFormat = SCM_WRITE_COMPLEX_RECTANGULAR;
     }
     return p;
 }

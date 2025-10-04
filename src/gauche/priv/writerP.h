@@ -66,7 +66,9 @@ enum ScmWriteArrayFormat {
 };
 
 enum ScmWriteComplexFormat {
-    SCM_WRITE_COMPLEX_SCHEME,      /* a+bi */
+    SCM_WRITE_COMPLEX_RECTANGULAR, /* a+bi */
+    SCM_WRITE_COMPLEX_POLAR,       /* a@b */
+    SCM_WRITE_COMPLEX_POLAR_PI,    /* a@bpi */
     SCM_WRITE_COMPLEX_COMMON_LISP, /* #c(a b) */
 };
 

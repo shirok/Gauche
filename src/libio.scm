@@ -947,15 +947,21 @@
  (define-cfn write-controls-complex-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (case (-> obj arrayFormat)
-       [(SCM_WRITE_COMPLEX_SCHEME) (return 'scheme)]
+       [(SCM_WRITE_COMPLEX_RECTANGULAR) (return 'rectangular)]
+       [(SCM_WRITE_COMPLEX_POLAR) (return 'polar)]
+       [(SCM_WRITE_COMPLEX_POLAR_PI) (return 'polar-pi)]
        [(SCM_WRITE_COMPLEX_COMMON_LISP) (return 'common-lisp)]
        [else (Scm_Panic "Invalid value in ScmWriteControls.complex: %d"
                         (-> obj complexFormat))])))
  (define-cfn write-controls-complex-set (arg value) ::void :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (cond
-      [(SCM_EQ value 'scheme)
-       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_SCHEME)]
+      [(SCM_EQ value 'rectangular)
+       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_RECTANGULAR)]
+      [(SCM_EQ value 'polar)
+       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_POLAR)]
+      [(SCM_EQ value 'polar-pi)
+       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_POLAR_PI)]
       [(SCM_EQ value 'common-lisp)
        (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_COMMON_LISP)]
       [else (Scm_Error "Invalid ScmWriteControls.complex, must be \
