@@ -6635,25 +6635,44 @@ range of the uniorm vector to be used.
 @defun bitvector/bool-range bvec :optional start end
 @defunx bitvector/int-range bvec :optional start end
 @c MOD data.range
+@c EN
 Returns a range over the given bitvector @var{bvec}.
 @code{Bitvector/bool-range} regards @var{bvec} as a boolean vector,
 while @code{bitvector/int-range} regards it as a vector of 0 and 1.
 @xref{Bitvectors}, for the details of bitvectors.
-Note that @var{bvec} is kept in the range, so you shouldn't mutate @var{uvec}.
+Note that @var{bvec} is kept in the range, so you shouldn't mutate @var{bvec}.
 
 The optional @var{start} and @var{end} arguments limits the
-range of the uniorm vector to be used.
+range of the bitvector to be used.
+@c JP
+ビットベクタ@var{bvec}にアクセスするレンジを作って返します。
+@code{bitvector/bool-range}は@var{bvec}を真偽値のベクタ、
+@code{bitvector/int-range}は0と1からなるベクタとみなします。
+ビットベクタについて詳しくは@xref{Bitvectors}を参照してください。
+@var{bvec}はレンジオブジェクトの中から直接参照されるので、
+後から@var{bvec}を変更してはなりません。
+
+省略可能な@var{start}、@var{end}引数はビットベクタのうち使われる範囲を制限します。
+@c COMMON
 @end defun
 
 @defun string-range str :optional start end
 [SRFI-196]
 @c MOD data.range
+@c EN
 Returns a range over each character in the given string @var{str}.
 The string is kept in the range, so you shouldn't mutate @var{str}.
 
 The optional @var{start} and @var{end} arguments limits the
-range of the vector to be used.
+range of the string to be used.
 They are Gauche's extension and not in SRFI-196.
+@c JP
+文字列@var{str}の各文字にアクセスするレンジを作って返します。
+@var{str}はレンジオブジェクトから直接参照されるので、後で@var{str}を変更してはなりません。
+
+省略可能な@var{start}、@var{end}引数は文字列のうち使われる範囲を制限します。
+これはSRFI-196に対するGaucheの拡張です。
+@c COMMON
 
 @example
 (range->list (string-range "abc"))
@@ -6667,18 +6686,29 @@ They are Gauche's extension and not in SRFI-196.
 @defun range-append range @dots{}
 [SRFI-196]
 @c MOD data.range
+@c EN
 Returns a new range that walks over concatenation of the given ranges.
+@c JP
+与えられたレンジをつなぎ合わせたレンジを新たに作って返します。
+@c COMMON
 @end defun
 
 @defun range-reverse range :optional start end
 [SRFI-196+]
 @c MOD data.range
+@c EN
 Returns a new range that walks over the elements of @var{range}, but
 in reverse order.
 
 The optional @var{start} and @var{end} arguments limits the
 range of the vector to be used.
 They are Gauche's extension and not in SRFI-196.
+@c JP
+@var{range}の各要素を逆順にアクセスする新たなレンジを作って返します。
+
+省略可能な@var{start}、@var{end}引数は@var{range}のうち使われる範囲を制限します。
+これはSRFI-196に対するGaucheの拡張です。
+@c COMMON
 
 @example
 (range->list (range-reverse (string-range "abc")))
@@ -6689,22 +6719,39 @@ They are Gauche's extension and not in SRFI-196.
 @end example
 @end defun
 
+@c EN
 @subheading Predicates
+@c JP
+@subheading 述語
+@c COMMON
 
 @defun range? obj
 [SRFI-196]
 @c MOD data.range
+@c EN
 Returns true iff @var{obj} is a range.
+@c JP
+@var{obj}がレンジなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun range=? elt= range @dots{}
 [SRFI-196]
 @c MOD data.range
+@c EN
 Returns true iff all ranges have the same length, and any pair
 of corresponding elements in the given ranges are equal in terms of
 @code{elt=} predicate.
 
 As edge cases, when zero or one range is given, @code{#t} is returned.
+@c JP
+与えられたレンジがすべて同じ長さで、
+かつすべてのレンジのペアの対応する要素が@code{elt=}で比較して
+等しい場合に@code{#t}を、そうでなければ@code{#f}を返します。
+
+エッジケースとして、ゼロ個または一個のレンジが与えられた場合は無条件に@code{#t}を
+返します。
+@c COMMON
 
 @example
 (range=? eqv? (numeric-range 0 5)
@@ -6714,46 +6761,65 @@ As edge cases, when zero or one range is given, @code{#t} is returned.
 @end example
 @end defun
 
+@c EN
 @subheading Accessors
+@c JP
+@subheading アクセサ
+@c COMMON
 
 @defun range-length range
 [SRFI-196]
 @c MOD data.range
+@c EN
 Returns the length of @var{range}.
+@c JP
+@var{range}の長さを返します。
+@c COMMON
 @end defun
 
 @defun range-ref range i :optional fallback
 [SRFI-196+]
 @c MOD data.range
+@c EN
 Returns the @var{i}-th element of @var{range}.  The index
 @var{i} must be an exact integer.
 
 If @var{i} is negative, or greater than or equal to the length of @var{range},
 @var{fallback} is returned if given, or an error is signaled.
 The @var{fallback} argument is Gauche's extension and not in SRFI-196.
+@c JP
+@var{range}の@var{i}番目の要素を返します。@var{i}は正確な整数でなければなりません。
+
+@var{i}が負、もしくは@var{range}の長さ以上だった場合、
+@var{fallback}が与えられていればそれが返され、そうでなければエラーが投げられます。
+@var{fallback}引数はSRFI-196に対するGauchenの拡張です。
+@c COMMON
 @end defun
 
 @defun range-first range :optional fallback
+@defunx range-last range :optional fallback
 [SRFI-196+]
 @c MOD data.range
-Returns the first element of @var{range}.
+@c EN
+Returns the first or last element of @var{range}, respectively.
 
 If the range is empty,
 @var{fallback} is returned if given, or an error is signaled.
 The @var{fallback} argument is Gauche's extension and not in SRFI-196.
+@c JP
+それぞれ、@var{range}の最初および最後の要素を返します。
+
+@var{range}が空の場合、
+@var{fallback}が与えられていればそれが返され、そうでなければエラーが投げられます。
+@var{fallback}引数はSRFI-196に対するGauchenの拡張です。
+@c COMMON
 @end defun
 
-@defun range-last range :optional fallback
-[SRFI-196+]
-@c MOD data.range
-Returns the last element of @var{range}.
-
-If the range is empty,
-@var{fallback} is returned if given, or an error is signaled.
-The @var{fallback} argument is Gauche's extension and not in SRFI-196.
-@end defun
-
+@c EN
 @subheading Iteration
+@c JP
+@subheading 繰り返し
+@c COMMON
 
 @defun range-split-at range k
 [SRFI-196]
