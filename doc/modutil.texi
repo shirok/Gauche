@@ -6811,7 +6811,7 @@ The @var{fallback} argument is Gauche's extension and not in SRFI-196.
 
 @var{range}が空の場合、
 @var{fallback}が与えられていればそれが返され、そうでなければエラーが投げられます。
-@var{fallback}引数はSRFI-196に対するGauchenの拡張です。
+@var{fallback}引数はSRFI-196に対するGaucheの拡張です。
 @c COMMON
 @end defun
 
@@ -6824,23 +6824,39 @@ The @var{fallback} argument is Gauche's extension and not in SRFI-196.
 @defun range-split-at range k
 [SRFI-196]
 @c MOD data.range
+@c EN
 Returns two ranges, the first one with elements before @var{k}-th
 elements of @var{range},
 and the second one with @var{k}-th elements and after of @var{range}.
+@c JP
+元のレンジのうち、@var{k}番目より前の要素を含むレンジと、
+@var{k}番目以降の要素を含むレンジを作って二つの値として返します。
+@c COMMON
 @end defun
 
 @defun subrange range start end
 [SRFI-196]
 @c MOD data.range
+@c E
 Returns a new range that contains @var{start}-th (inclusive)
 to @var{end}-th (exclusive) elements of @var{range}.
+@c JP
+元のレンジの@var{start}番目から@var{end}番目の手前の要素までを含む
+レンジを作って返します。
+@c COMMON
 @end defun
 
 @defun range-segment range len
 [SRFI-196]
 @c MOD data.range
-Split @var{range} into subranges of length @var{len}.  The last range
+@c EN
+Split @var{range} into subranges of length @var{len} and returns
+the result ranges.  The last range
 may be shorter than @var{len}.
+@c JP
+@var{range}を、それぞれ長さ@var{len}のレンジに分割してそのリストを返します。
+最後のレンジは@var{len}より短いかもしれません。
+@c COMMON
 
 @example
 (map range->list (range-segment (numeric-range 0 11) 4))
@@ -6852,21 +6868,30 @@ may be shorter than @var{len}.
 @defunx range-take-right range count
 [SRFI-196]
 @c MOD data.range
+@c EN
 Returns a new range containing initial @var{count} elements or last @var{count}
 elements from @var{range}, respectively
+@c JP
+それぞれ、@var{range}の最初もしくは最後の@var{count}個の要素を含むレンジを返します。
+@c COMMON
 @end defun
 
 @defun range-drop range count
 @defunx range-drop-range range count
 [SRFI-196]
 @c MOD data.range
+@c EN
 Returns a new range containing elements of @var{range}
 except initial @var{count} elements or last @var{count} elements, respectively.
+@c JP
+それぞれ、@var{range}の最初もしくは最後から@var{count}個の要素を除いたレンジを返します。
+@c COMMON
 @end defun
 
 @defun range-count pred range range2 @dots{}
 [SRFI-196]
 @c MOD data.range
+@c EN
 A procedure @var{pred} must take as many arguments as the given ranges.
 It is called on each corresponding element of
 @var{range}, @var{range2} @dots{}, and the procedure returns
@@ -6874,11 +6899,20 @@ the number of times @var{pred} returned true.
 
 If more than one ranges are given and not all ranges are of the same length,
 iteration terminates at the end of the shortest range.
+@c JP
+@var{pred}は引数のレンジの数と同じだけの引数を取る述語です。
+各レンジの対応する要素を引数として@var{pred}が呼ばれ、
+それが真の値を返した回数を返します。
+
+複数のレンジが与えられ、それらの長さが異なっていた場合、
+繰り返しは最も短いレンジで止まります。
+@c COMMON
 @end defun
 
 @defun range-any pred range range2 @dots{}
 [SRFI-196]
 @c MOD data.range
+@c EN
 A procedure @var{pred} must take as many arguments as the given ranges.
 It is called on each first element of
 @var{range}, @var{range2} @dots{}, then each second element, and so on.
@@ -6888,11 +6922,21 @@ If @var{pred} never returns a true value, @code{#f} is returned.
 
 If more than one ranges are given and not all ranges are of the same length,
 iteration terminates at the end of the shortest range.
+@c JP
+@var{pred}は引数のレンジの数と同じだけの引数を取る手続きです。
+各レンジの対応する要素を引数として@var{pred}が順に呼ばれます。
+@var{pred}が真の値を返したら、繰り返しは打ち切られ、その@var{pred}の戻り値が
+返されます。@var{pred}が全て@code{#f}を返した場合は@code{#f}が返されます。
+
+複数のレンジが与えられ、それらの長さが異なっていた場合、
+繰り返しは最も短いレンジで止まります。
+@c COMMON
 @end defun
 
 @defun range-every pred range range2 @dots{}
 [SRFI-196]
 @c MOD data.range
+@c EN
 A procedure @var{pred} must take as many arguments as the given ranges.
 It is called on each first element of
 @var{range}, @var{range2} @dots{}, then each second element, and so on.
@@ -6902,6 +6946,15 @@ If all @var{pred} returns a true value, the last value is returned.
 
 If more than one ranges are given and not all ranges are of the same length,
 iteration terminates at the end of the shortest range.
+@c JP
+@var{pred}は引数のレンジの数と同じだけの引数を取る手続きです。
+各レンジの対応する要素を引数として@var{pred}が順に呼ばれます。
+@var{pred}が@code{#f}を返したら、繰り返しは打ち切られ、@code{#f}が返されます。
+@var{pred}が全て真の値を返した場合は、最後の値が戻り値となります。
+
+複数のレンジが与えられ、それらの長さが異なっていた場合、
+繰り返しは最も短いレンジで止まります。
+@c COMMON
 @end defun
 
 
@@ -6910,6 +6963,7 @@ iteration terminates at the end of the shortest range.
 @defunx range-map->vector proc range range2 @dots{}
 [SRFI-196]
 @c MOD data.range
+@c EN
 Mapping over ranges.
 A procedure @var{proc} must take as many arguments as the given ranges,
 and is called on each corresponding element of
@@ -6921,11 +6975,25 @@ in which @var{proc} is invoked is not specified.  Note that
 
 If more than one ranges are given and not all ranges are of the same length,
 iteration terminates at the end of the shortest range.
+@c JP
+レンジに対するmapです。
+@var{proc}は引数のレンジの数と同じだけの引数を取る手続きで、
+各レンジの対応する要素を引数として呼び出されます。
+結果は集められ、
+それぞれレンジ(@code{range-map})、リスト(@code{range-map->list})、
+ベクタ(@code{range-map->vector}) として返されます。
+@var{proc}が呼ばれる順番は規定されていません。
+@code{range-map}は全ての要素を計算してから結果を返します。
+
+複数のレンジが与えられ、それらの長さが異なっていた場合、
+繰り返しは最も短いレンジで止まります。
+@c COMMON
 @end defun
 
 @defun range-for-each proc range range2 @dots{}
 [SRFI-196]
 @c MOD data.range
+@c EN
 A procedure @var{proc} must take as many arguments as the given ranges.
 It is invoked with the first elements of each range,
 and then with the second elements of them, and so on,
@@ -6933,6 +7001,13 @@ until the shortest range is exhausted.  The result of @var{proc} is
 discarded.
 
 Returns an undefined value.
+@c JP
+@var{proc}は引数のレンジの数と同じだけの引数を取る手続きで、
+各レンジの対応する要素を引数として順に呼び出されます。
+繰り返しは最も短いレンジの末尾で止まります。@var{proc}の結果は捨てられます。
+
+戻り値は未定義です。
+@c COMMON
 @end defun
 
 @defun range-filter pred range
