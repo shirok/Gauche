@@ -138,6 +138,7 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
         p->exactDecimal = FALSE;
         p->arrayFormat = SCM_WRITE_ARRAY_COMPACT;
         p->complexFormat = SCM_WRITE_COMPLEX_RECTANGULAR;
+        Scm_NumberFormatInit(&p->numberFormat);
     }
     return p;
 }

@@ -34,6 +34,8 @@
 #ifndef GAUCHE_PRIV_WRITERP_H
 #define GAUCHE_PRIV_WRITERP_H
 
+#include <gauche/number.h>      /* for ScmNumberFormat */
+
 /* Writer control parameters */
 struct ScmWriteControlsRec {
     SCM_HEADER;
@@ -52,6 +54,7 @@ struct ScmWriteControlsRec {
                                    whenever possible. */
     int arrayFormat;            /* enum ScmWriteArrayFormat */
     int complexFormat;          /* enum ScmWriteComplexFormat */
+    ScmNumberFormat numberFormat; /* number formatting */
 };
 
 SCM_CLASS_DECL(Scm_WriteControlsClass);

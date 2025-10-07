@@ -4259,8 +4259,10 @@ void Scm_NumberFormatFromWriteContext(ScmNumberFormat* fmt,
                                       const ScmWriteContext* ctx, /* may be NULL */
                                       const ScmWriteState *state) /* may be NULL */
 {
-    Scm_NumberFormatInit(fmt);
     const ScmWriteControls *ctrl = Scm_GetWriteControls(ctx, state);
+    *fmt = ctrl->numberFormat;
+    /* The following will be deleted once WriteControls fully integrates
+       numberFormat. */
     fmt->radix = ctrl->printBase;
     if (ctrl->printRadix) {
         fmt->flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
