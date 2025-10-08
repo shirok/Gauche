@@ -682,7 +682,7 @@ static void print_u8vector(ScmObj obj, ScmPort *out,
 {
     const ScmWriteControls *wp =
         Scm_GetWriteControls(ctx, Scm_PortWriteState(out));
-    if (!wp->bytestring) {
+    if (!SCM_WRITE_CONTROL_BYTESTRING(wp)) {
         print_u8vector_generic(obj, out, ctx);
     } else {
         Scm_Putz("#u8\"", 4, out);
@@ -737,7 +737,8 @@ static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
     for (int i=0; i<SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(obj); i++) {     \
         T elt = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(obj)[i];         \
         if (i != 0) Scm_Printf(out, " ");                               \
-        if (wp->printLength >= 0 && i >= wp->printLength) {             \
+        int pl = SCM_WRITE_CONTROL_LENGTH(wp);                          \
+        if (pl >= 0 && i >= pl) {                                       \
             Scm_Printf(out, SCM_WRITTEN_ELLIPSIS);                      \
             break;                                                      \
         }                                                               \

@@ -4263,11 +4263,11 @@ void Scm_NumberFormatFromWriteContext(ScmNumberFormat* fmt,
     *fmt = ctrl->numberFormat;
     /* The following will be deleted once WriteControls fully integrates
        numberFormat. */
-    fmt->radix = ctrl->printBase;
+    fmt->radix = SCM_WRITE_CONTROL_BASE(ctrl);
     if (ctrl->printRadix) {
         fmt->flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
     }
-    if (ctrl->exactDecimal) {
+    if (SCM_WRITE_CONTROL_EXACTDECIMAL(ctrl)) {
         fmt->flags |= SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT;
     }
 }

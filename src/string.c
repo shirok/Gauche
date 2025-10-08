@@ -1519,7 +1519,9 @@ static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmString *str = SCM_STRING(obj);
-    int limit = (ctx->controls? ctx->controls->stringLength : -1);
+    int limit = (ctx->controls
+                 ? SCM_WRITE_CONTROL_STRINGLENGTH(ctx->controls)
+                 : -1);
     int trimmed = FALSE;
 
     if (Scm_WriteContextMode(ctx) == SCM_WRITE_DISPLAY) {

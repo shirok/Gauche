@@ -926,7 +926,7 @@
    (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
  (define-cfn write-controls-array-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
-     (case (-> obj arrayFormat)
+     (case (SCM_WRITE_CONTROL_ARRAYFORMAT obj)
        [(SCM_WRITE_ARRAY_COMPACT) (return 'compact)]
        [(SCM_WRITE_ARRAY_DIMENSIONS) (return 'dimensions)]
        [(SCM_WRITE_ARRAY_READER_CTOR) (return 'reader-ctor)]
@@ -936,17 +936,17 @@
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (cond
       [(SCM_EQ value 'compact)
-       (set! (-> obj arrayFormat) SCM_WRITE_ARRAY_COMPACT)]
+       (set! (SCM_WRITE_CONTROL_ARRAYFORMAT obj) SCM_WRITE_ARRAY_COMPACT)]
       [(SCM_EQ value 'dimensions)
-       (set! (-> obj arrayFormat) SCM_WRITE_ARRAY_DIMENSIONS)]
+       (set! (SCM_WRITE_CONTROL_ARRAYFORMAT obj) SCM_WRITE_ARRAY_DIMENSIONS)]
       [(SCM_EQ value 'reader-ctor)
-       (set! (-> obj arrayFormat) SCM_WRITE_ARRAY_READER_CTOR)]
+       (set! (SCM_WRITE_CONTROL_ARRAYFORMAT obj) SCM_WRITE_ARRAY_READER_CTOR)]
       [else (Scm_Error "Invalid ScmWriteControls.array, must be \
                         one of compact, dimensions or \
                         reader-ctor, but got %S" value)])))
  (define-cfn write-controls-complex-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
-     (case (-> obj arrayFormat)
+     (case (SCM_WRITE_CONTROL_COMPLEXFORMAT obj)
        [(SCM_WRITE_COMPLEX_RECTANGULAR) (return 'rectangular)]
        [(SCM_WRITE_COMPLEX_POLAR) (return 'polar)]
        [(SCM_WRITE_COMPLEX_POLAR_PI) (return 'polar-pi)]
@@ -957,13 +957,13 @@
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (cond
       [(SCM_EQ value 'rectangular)
-       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_RECTANGULAR)]
+       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj) SCM_WRITE_COMPLEX_RECTANGULAR)]
       [(SCM_EQ value 'polar)
-       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_POLAR)]
+       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj) SCM_WRITE_COMPLEX_POLAR)]
       [(SCM_EQ value 'polar-pi)
-       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_POLAR_PI)]
+       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj) SCM_WRITE_COMPLEX_POLAR_PI)]
       [(SCM_EQ value 'common-lisp)
-       (set! (-> obj arrayFormat) SCM_WRITE_COMPLEX_COMMON_LISP)]
+       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj) SCM_WRITE_COMPLEX_COMMON_LISP)]
       [else (Scm_Error "Invalid ScmWriteControls.complex, must be \
                         one of scheme or common-lisp, \
                         but got %S" value)])))
@@ -974,50 +974,56 @@
  (define-cclass <write-controls>
    "ScmWriteControls*" "Scm_WriteControlsClass"
    ("Scm_TopClass")
-   ((length :type <int>     :c-name "printLength"
-            :getter "if (obj->printLength < 0) return SCM_FALSE; \
-                     else return SCM_MAKE_INT(obj->printLength);"
+   ((length :type <int>
+            :getter "if (SCM_WRITE_CONTROL_LENGTH(obj) < 0) return SCM_FALSE; \
+                     else return SCM_MAKE_INT(SCM_WRITE_CONTROL_LENGTH(obj));"
             :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                       obj->printLength = SCM_INT_VALUE(value); \
-                     else obj->printLength = -1;")
-    (level  :type <int>     :c-name "printLevel"
-            :getter "if (obj->printLevel < 0) return SCM_FALSE; \
-                     else return SCM_MAKE_INT(obj->printLevel);"
+                       SCM_WRITE_CONTROL_LENGTH(obj) = SCM_INT_VALUE(value); \
+                     else SCM_WRITE_CONTROL_LENGTH(obj) = -1;")
+    (level  :type <int>
+            :getter "if (SCM_WRITE_CONTROL_LEVEL(obj) < 0) return SCM_FALSE; \
+                     else return SCM_MAKE_INT(SCM_WRITE_CONTROL_LEVEL(obj));"
             :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                       obj->printLevel = SCM_INT_VALUE(value); \
-                     else obj->printLevel = -1;")
-    (width  :type <int>     :c-name "printWidth"
-            :getter "if (obj->printWidth < 0) return SCM_FALSE; \
-                     else return SCM_MAKE_INT(obj->printWidth);"
+                       SCM_WRITE_CONTROL_LEVEL(obj) = SCM_INT_VALUE(value); \
+                     else SCM_WRITE_CONTROL_LEVEL(obj) = -1;")
+    (width  :type <int>
+            :getter "if (SCM_WRITE_CONTROL_WIDTH(obj) < 0) return SCM_FALSE; \
+                     else return SCM_MAKE_INT(SCM_WRITE_CONTROL_WIDTH(obj));"
             :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                       obj->printWidth = SCM_INT_VALUE(value); \
-                     else obj->printWidth = -1;")
-    (base   :type <int>     :c-name "printBase"
+                       SCM_WRITE_CONTROL_WIDTH(obj) = SCM_INT_VALUE(value); \
+                     else SCM_WRITE_CONTROL_WIDTH(obj) = -1;")
+    (base   :type <int>
+            :getter "return SCM_MAKE_INT(SCM_WRITE_CONTROL_BASE(obj));"
             :setter "if (SCM_INTP(value) \
                          && SCM_INT_VALUE(value) >= SCM_RADIX_MIN \
                          && SCM_INT_VALUE(value) <= SCM_RADIX_MAX) \
-                       obj->printBase = SCM_INT_VALUE(value); \
+                       SCM_WRITE_CONTROL_BASE(obj) = SCM_INT_VALUE(value); \
                      else Scm_Error(\"print-base must be an integer \
                                     between %d and %d, but got: %S\", \
                                     SCM_RADIX_MIN, SCM_RADIX_MAX, value);")
-    (radix  :type <boolean> :c-name "printRadix"
-            :setter "obj->printRadix = !SCM_FALSEP(value);")
-    (pretty :type <boolean> :c-name "printPretty"
-            :setter "obj->printPretty = !SCM_FALSEP(value);")
-    (indent :type <int>     :c-name "printIndent"
+    (radix  :type <boolean>
+            :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_RADIX(obj));"
+            :setter "SCM_WRITE_CONTROL_RADIX(obj) = !SCM_FALSEP(value);")
+    (pretty :type <boolean>
+            :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_PRETTY(obj));"
+            :setter "SCM_WRITE_CONTROL_PRETTY(obj) = !SCM_FALSEP(value);")
+    (indent :type <int>
+            :getter "return SCM_MAKE_INT(SCM_WRITE_CONTROL_INDENT(obj));"
             :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                       obj->printIndent = SCM_INT_VALUE(value); \
-                     else obj->printIndent = 0;")
-    (bytestring :type <boolean> :c-name "bytestring"
-                :setter "obj->bytestring = !SCM_FALSEP(value);")
-    (string-length :type <int> :c-name "stringLength"
-                   :getter "if (obj->stringLength < 0) return SCM_FALSE; \
-                            else return SCM_MAKE_INT(obj->stringLength);"
+                       SCM_WRITE_CONTROL_INDENT(obj) = SCM_INT_VALUE(value); \
+                     else SCM_WRITE_CONTROL_INDENT(obj) = 0;")
+    (bytestring :type <boolean>
+                :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_BYTESTRING(obj));"
+                :setter "SCM_WRITE_CONTROL_BYTESTRING(obj) = !SCM_FALSEP(value);")
+    (string-length :type <int>
+                   :getter "if (SCM_WRITE_CONTROL_STRINGLENGTH(obj) < 0) return SCM_FALSE; \
+                            else return SCM_MAKE_INT(SCM_WRITE_CONTROL_STRINGLENGTH(obj));"
                    :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                              obj->stringLength = SCM_INT_VALUE(value); \
-                            else obj->stringLength = -1;")
-    (exact-decimal :type <boolean> :c-name "exactDecimal"
-                   :setter "obj->exactDecimal = !SCM_FALSEP(value);")
+                              SCM_WRITE_CONTROL_STRINGLENGTH(obj) = SCM_INT_VALUE(value); \
+                            else SCM_WRITE_CONTROL_STRINGLENGTH(obj) = -1;")
+    (exact-decimal :type <boolean>
+                   :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_EXACTDECIMAL(obj));"
+                   :setter "SCM_WRITE_CONTROL_EXACTDECIMAL(obj) = !SCM_FALSEP(value);")
     (array  :type <symbol> :c-name "arrayFormat"
             :getter (c "write_controls_array_get")
             :setter (c "write_controls_array_set"))

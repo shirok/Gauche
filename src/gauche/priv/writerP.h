@@ -75,6 +75,19 @@ enum ScmWriteComplexFormat {
     SCM_WRITE_COMPLEX_COMMON_LISP, /* #c(a b) */
 };
 
+#define SCM_WRITE_CONTROL_LENGTH(wc)         ((wc)->printLength)
+#define SCM_WRITE_CONTROL_LEVEL(wc)          ((wc)->printLevel)
+#define SCM_WRITE_CONTROL_WIDTH(wc)          ((wc)->printWidth)
+#define SCM_WRITE_CONTROL_BASE(wc)           ((wc)->printBase)
+#define SCM_WRITE_CONTROL_RADIX(wc)          ((wc)->printRadix)
+#define SCM_WRITE_CONTROL_PRETTY(wc)         ((wc)->printPretty)
+#define SCM_WRITE_CONTROL_INDENT(wc)         ((wc)->printIndent)
+#define SCM_WRITE_CONTROL_BYTESTRING(wc)     ((wc)->bytestring)
+#define SCM_WRITE_CONTROL_STRINGLENGTH(wc)   ((wc)->stringLength)
+#define SCM_WRITE_CONTROL_EXACTDECIMAL(wc)   ((wc)->exactDecimal)
+#define SCM_WRITE_CONTROL_ARRAYFORMAT(wc)    ((wc)->arrayFormat)
+#define SCM_WRITE_CONTROL_COMPLEXFORMAT(wc)  ((wc)->complexFormat)
+
 /*
  * NB: Flip the following condition to use ellipsis (U+2026) to indicate
  * truncated output, instead of three periods.  This is turned off because,

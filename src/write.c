@@ -475,7 +475,9 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             Scm_Panic("write: unknown itag object: %08x", SCM_WORD(obj));
         }
     }
-    else if (SCM_INTP(obj) && wp->printBase == 10 && !wp->printRadix) {
+    else if (SCM_INTP(obj)
+             && SCM_WRITE_CONTROL_BASE(wp) == 10
+             && !SCM_WRITE_CONTROL_RADIX(wp)) {
         /* Shortcut to avoid allocation */
         char buf[SPBUFSIZ];
         int k = snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
@@ -489,9 +491,11 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     else if (SCM_NUMBERP(obj)) {
         ScmNumberFormat fmt;
         Scm_NumberFormatInit(&fmt);
-        fmt.radix = wp->printBase;
-        if (wp->printRadix) fmt.flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
-        if (wp->exactDecimal) fmt.flags |= SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT;
+        fmt.radix = SCM_WRITE_CONTROL_BASE(wp);
+        if (SCM_WRITE_CONTROL_RADIX(wp))
+            fmt.flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
+        if (SCM_WRITE_CONTROL_EXACTDECIMAL(wp))
+            fmt.flags |= SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT;
         return SCM_MAKE_INT(Scm_PrintNumber(port, obj, &fmt));
     }
     /* PVREF only appears in pattern temlate in the current macro expander.
@@ -611,7 +615,8 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 #define CHECK_LEVEL()                                                   \
     do {                                                                \
         if (st) {                                                       \
-            if (wp->printLevel >= 0 && st->currentLevel >= wp->printLevel) { \
+            if (SCM_WRITE_CONTROL_LEVEL(wp) >= 0                        \
+                && st->currentLevel >= SCM_WRITE_CONTROL_LEVEL(wp)) {   \
                 Scm_PutcUnsafe('#', port);                              \
                 goto next;                                              \
             } else {                                                    \
@@ -688,7 +693,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 }
             }
 
-            if (wp->printLength == 0) {
+            if (SCM_WRITE_CONTROL_LENGTH(wp) == 0) {
                 /* in this case we don't print the elements at all, so we need
                    to treat this specially. */
                 Scm_PutzUnsafe("(" SCM_WRITTEN_ELLIPSIS ")", -1, port);
@@ -705,7 +710,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
             CHECK_LEVEL();
 
-            if (wp->printLength == 0) {
+            if (SCM_WRITE_CONTROL_LENGTH(wp) == 0) {
                 /* in this case we don't print the elements at all, so we need
                    to treat this specially. */
                 Scm_PutzUnsafe("#(" SCM_WRITTEN_ELLIPSIS ")", -1, port);
@@ -739,7 +744,8 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 if (i == len) { /* we've done this vector */
                     Scm_PutcUnsafe(')', port);
                     POP();
-                } else if (wp->printLength >= 0 && wp->printLength <= i) {
+                } else if (SCM_WRITE_CONTROL_LENGTH(wp) >= 0
+                           && SCM_WRITE_CONTROL_LENGTH(wp) <= i) {
                     Scm_PutzUnsafe(" " SCM_WRITTEN_ELLIPSIS ")", -1, port);
                     POP();
                 } else {
@@ -776,7 +782,8 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                         SCM_SET_CDR_UNCHECKED(SCM_CDR(top), SCM_NIL);
                         goto write1;
                     }
-                } else if (wp->printLength >= 0 && wp->printLength <= count) {
+                } else if (SCM_WRITE_CONTROL_LENGTH(wp) >= 0
+                           && SCM_WRITE_CONTROL_LENGTH(wp) <= count) {
                     /* print-length limit reached */
                     Scm_PutzUnsafe(" " SCM_WRITTEN_ELLIPSIS ")", -1, port);
                     POP();
@@ -837,7 +844,9 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);
 
     /* pass 2 */
-    if (ctx->controls && ctx->controls->printPretty && pprintable_p(obj)) {
+    if (ctx->controls
+        && SCM_WRITE_CONTROL_PRETTY(ctx->controls)
+        && pprintable_p(obj)) {
         static ScmObj proc = SCM_UNDEFINED;
         SCM_BIND_PROC(proc, "%pretty-print", Scm_GaucheInternalModule());
         Scm_ApplyRec4(proc, obj, SCM_OBJ(port),
