@@ -4153,12 +4153,12 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
 {
     int use_upper = flags & SCM_NUMBER_FORMAT_USE_UPPER;
     int show_plus = flags & SCM_NUMBER_FORMAT_SHOW_PLUS;
-    int radix = fmt->radix;
+    int base = fmt->base;
     int nchars = 0;
     char buf[FLT_BUF];
 
     if ((flags & SCM_NUMBER_FORMAT_ALT_RADIX) && SCM_EXACTP(obj)) {
-        nchars += print_radix_prefix(port, radix);
+        nchars += print_radix_prefix(port, base);
     }
 
     if (SCM_INTP(obj)) {
@@ -4174,15 +4174,15 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         if (value == 0) { SCM_PUTC('0', port); return nchars+1; }
         int i;
         for (i = FLT_BUF-1; i >= 0 && value > 0; i--) {
-            int c = value % radix;
+            int c = value % base;
             buf[i] = (c<10)?(c+'0'):(use_upper?(c-10+'A'):(c-10+'a'));
-            value /= radix;
+            value /= base;
             nchars++;
         }
         Scm_Putz(buf+i+1, FLT_BUF-i-1, port);
         return nchars;
     } else if (SCM_BIGNUMP(obj)) {
-        ScmObj s = Scm_BignumToString(SCM_BIGNUM(obj), radix, use_upper);
+        ScmObj s = Scm_BignumToString(SCM_BIGNUM(obj), base, use_upper);
         if(show_plus && Scm_Sign(obj) >= 0) {
             Scm_Putc('+', port);
             nchars++;
@@ -4246,7 +4246,7 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
 void Scm_NumberFormatInit(ScmNumberFormat* fmt)
 {
     fmt->flags = 0;
-    fmt->radix = 10;
+    fmt->base = 10;
     fmt->precision = -1;
     fmt->exp_lo = -3;
     fmt->exp_hi = 10;
@@ -4263,8 +4263,8 @@ void Scm_NumberFormatFromWriteContext(ScmNumberFormat* fmt,
     *fmt = ctrl->numberFormat;
     /* The following will be deleted once WriteControls fully integrates
        numberFormat. */
-    fmt->radix = SCM_WRITE_CONTROL_BASE(ctrl);
-    if (ctrl->printRadix) {
+    fmt->base = SCM_WRITE_CONTROL_BASE(ctrl);
+    if (SCM_WRITE_CONTROL_RADIX(ctrl)) {
         fmt->flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
     }
     if (SCM_WRITE_CONTROL_EXACTDECIMAL(ctrl)) {
@@ -4275,15 +4275,15 @@ void Scm_NumberFormatFromWriteContext(ScmNumberFormat* fmt,
 /* API
    This is for users' convenience.  The 'real' operation is done by
    Scm_PrintNumber.  */
-ScmObj Scm_NumberToString(ScmObj obj, int radix, u_long flags)
+ScmObj Scm_NumberToString(ScmObj obj, int base, u_long flags)
 {
-    if (radix < SCM_RADIX_MIN || radix > SCM_RADIX_MAX)
-        Scm_Error("radix out of range: %d", radix);
+    if (base < SCM_RADIX_MIN || base > SCM_RADIX_MAX)
+        Scm_Error("base out of range: %d", base);
     ScmPort *p = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
     ScmNumberFormat fmt;
     Scm_NumberFormatInit(&fmt);
     fmt.flags = flags;
-    fmt.radix = radix;
+    fmt.base = base;
     Scm_PrintNumber(p, obj, &fmt);
     return Scm_GetOutputString(p, 0);
 }

@@ -129,7 +129,6 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
         p->printLength = -1;
         p->printLevel = -1;
         p->printWidth = -1;
-        p->printBase = 10;
         p->printRadix = FALSE;
         p->printPretty = FALSE;
         p->printIndent = 0;
@@ -491,7 +490,7 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     else if (SCM_NUMBERP(obj)) {
         ScmNumberFormat fmt;
         Scm_NumberFormatInit(&fmt);
-        fmt.radix = SCM_WRITE_CONTROL_BASE(wp);
+        fmt.base = SCM_WRITE_CONTROL_BASE(wp);
         if (SCM_WRITE_CONTROL_RADIX(wp))
             fmt.flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
         if (SCM_WRITE_CONTROL_EXACTDECIMAL(wp))

@@ -216,27 +216,27 @@
 (define-inline inexact exact->inexact)           ;R6RS
 
 (select-module scheme)
-(define-cproc number->string (obj :optional (control-or-radix #f)
+(define-cproc number->string (obj :optional (control-or-base #f)
                                             (flags #f)
                                             (precision::<fixnum> -1))
   :fast-flonum :constant
   (let* ([fmt::ScmNumberFormat]
+         [pfmt::ScmNumberFormat* (& fmt)]
          [o::ScmPort* (SCM_PORT (Scm_MakeOutputStringPort TRUE))])
-    (Scm_NumberFormatInit (& fmt))
     (cond
-     [(SCM_WRITE_CONTROLS_P control-or-radix)
-      (let* ([c::ScmWriteControls* (SCM_WRITE_CONTROLS control-or-radix)])
-        (set! (ref fmt radix) (-> c printBase))
-        (when (-> c printRadix)
-          (logior= (ref fmt flags) SCM_NUMBER_FORMAT_ALT_RADIX))
-        (when (-> c exactDecimal)
-          (logior= (ref fmt flags) SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)))]
-     [(SCM_INTP control-or-radix)
+     [(SCM_WRITE_CONTROLS_P control-or-base)
+      (let* ([c::ScmWriteControls* (SCM_WRITE_CONTROLS control-or-base)])
+        (set! pfmt (& (-> c numberFormat)))
+        (when (SCM_WRITE_CONTROL_RADIX c)
+          (logior= (-> pfmt flags) SCM_NUMBER_FORMAT_ALT_RADIX))
+        (when (SCM_WRITE_CONTROL_EXACTDECIMAL c)
+          (logior= (-> pfmt flags) SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)))]
+     [(SCM_INTP control-or-base)
       (let* ([f::u_long 0]
-             [radix::ScmSmallInt (SCM_INT_VALUE control-or-radix)])
-        (when (or (< radix SCM_RADIX_MIN) (> radix SCM_RADIX_MAX))
-          (Scm_Error "radix must be an integer between %d and %d, but got %d"
-                     SCM_RADIX_MIN SCM_RADIX_MAX radix))
+             [base::ScmSmallInt (SCM_INT_VALUE control-or-base)])
+        (when (or (< base SCM_RADIX_MIN) (> base SCM_RADIX_MAX))
+          (Scm_Error "base must be an integer between %d and %d, but got %d"
+                     SCM_RADIX_MIN SCM_RADIX_MAX base))
         (cond [(or (SCM_FALSEP flags) (SCM_NULLP flags)) (set! f 0)]
               [(SCM_TRUEP flags) (set! f SCM_NUMBER_FORMAT_USE_UPPER)];compatibility
               [(SCM_PAIRP flags)
@@ -252,14 +252,17 @@
                (Scm_Error "flags argument must be a list of symbols (uppercase, \
                                 plus, radix, notational) or a boolean, but got: %S"
                           flags)])
-        (set! (ref fmt radix) radix)
-        (set! (ref fmt flags) f)
-        (set! (ref fmt precision) precision))]
-     [(SCM_FALSEP control-or-radix)]    ;default
+        (Scm_NumberFormatInit pfmt)
+        (set! (-> pfmt base) base)
+        (set! (-> pfmt flags) f)
+        (set! (-> pfmt precision) precision))]
+     [(SCM_FALSEP control-or-base)     ;use default
+      (set! pfmt (& fmt))
+      (Scm_NumberFormatInit pfmt)]
      [else
       (Scm_Error "<write-controls> or fixnum expected, but got: %S"
-                 control-or-radix)])
-    (Scm_PrintNumber o obj (& fmt))
+                 control-or-base)])
+    (Scm_PrintNumber o obj pfmt)
     (return (Scm_GetOutputString o 0))))
 
 (define-cproc string->number (obj::<string>
