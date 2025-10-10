@@ -227,8 +227,6 @@
      [(SCM_WRITE_CONTROLS_P control-or-base)
       (let* ([c::ScmWriteControls* (SCM_WRITE_CONTROLS control-or-base)])
         (set! pfmt (& (-> c numberFormat)))
-        (when (SCM_WRITE_CONTROL_RADIX c)
-          (logior= (-> pfmt flags) SCM_NUMBER_FORMAT_ALT_RADIX))
         (when (SCM_WRITE_CONTROL_EXACTDECIMAL c)
           (logior= (-> pfmt flags) SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)))]
      [(SCM_INTP control-or-base)

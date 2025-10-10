@@ -42,7 +42,6 @@ struct ScmWriteControlsRec {
     int printLength;            /* -1 for no limit */
     int printLevel;             /* -1 for no limit */
     int printWidth;             /* -1 for no limit */
-    int printRadix;             /* boolean, #t to print radix for all numbers */
     int printPretty;            /* boolean, #t to use pretty printer */
     int printIndent;            /* >=0 extra indent to be added after each
                                    newline when pretty printing. */
@@ -78,7 +77,8 @@ enum ScmWriteComplexFormat {
 #define SCM_WRITE_CONTROL_LEVEL(wc)          ((wc)->printLevel)
 #define SCM_WRITE_CONTROL_WIDTH(wc)          ((wc)->printWidth)
 #define SCM_WRITE_CONTROL_BASE(wc)           ((wc)->numberFormat.base)
-#define SCM_WRITE_CONTROL_RADIX(wc)          ((wc)->printRadix)
+#define SCM_WRITE_CONTROL_RADIX(wc) \
+    ((wc)->numberFormat.flags & SCM_NUMBER_FORMAT_ALT_RADIX)
 #define SCM_WRITE_CONTROL_PRETTY(wc)         ((wc)->printPretty)
 #define SCM_WRITE_CONTROL_INDENT(wc)         ((wc)->printIndent)
 #define SCM_WRITE_CONTROL_BYTESTRING(wc)     ((wc)->bytestring)

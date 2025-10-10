@@ -129,7 +129,6 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
         p->printLength = -1;
         p->printLevel = -1;
         p->printWidth = -1;
-        p->printRadix = FALSE;
         p->printPretty = FALSE;
         p->printIndent = 0;
         p->bytestring = 0;

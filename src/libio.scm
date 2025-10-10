@@ -922,9 +922,21 @@
 
 (select-module gauche)
 (inline-stub
- (define-cfn write_controls_allocate (_::ScmClass* _) :static
+ (define-cfn wc-allocate (_::ScmClass* _) :static
    (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
- (define-cfn write-controls-array-get (arg) :static
+
+ (define-cfn wc-show-radix-get (arg) :static
+   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
+     (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_RADIX obj)))))
+ (define-cfn wc-show-radix-set (arg value) ::void :static
+   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
+     (if (not (SCM_FALSEP value))
+       (logior= (ref (-> obj numberFormat) flags)
+                SCM_NUMBER_FORMAT_ALT_RADIX)
+       (logand= (ref (-> obj numberFormat) flags)
+                (not SCM_NUMBER_FORMAT_ALT_RADIX)))))
+
+ (define-cfn wc-array-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (case (SCM_WRITE_CONTROL_ARRAYFORMAT obj)
        [(SCM_WRITE_ARRAY_COMPACT) (return 'compact)]
@@ -932,7 +944,7 @@
        [(SCM_WRITE_ARRAY_READER_CTOR) (return 'reader-ctor)]
        [else (Scm_Panic "Invalid value in ScmWriteControls.array: %d"
                         (-> obj arrayFormat))])))
- (define-cfn write-controls-array-set (arg value) ::void :static
+ (define-cfn wc-array-set (arg value) ::void :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (cond
       [(SCM_EQ value 'compact)
@@ -944,7 +956,8 @@
       [else (Scm_Error "Invalid ScmWriteControls.array, must be \
                         one of compact, dimensions or \
                         reader-ctor, but got %S" value)])))
- (define-cfn write-controls-complex-get (arg) :static
+
+ (define-cfn wc-complex-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (case (SCM_WRITE_CONTROL_COMPLEXFORMAT obj)
        [(SCM_WRITE_COMPLEX_RECTANGULAR) (return 'rectangular)]
@@ -953,7 +966,7 @@
        [(SCM_WRITE_COMPLEX_COMMON_LISP) (return 'common-lisp)]
        [else (Scm_Panic "Invalid value in ScmWriteControls.complex: %d"
                         (-> obj complexFormat))])))
- (define-cfn write-controls-complex-set (arg value) ::void :static
+ (define-cfn wc-complex-set (arg value) ::void :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (cond
       [(SCM_EQ value 'rectangular)
@@ -1001,9 +1014,12 @@
                      else Scm_Error(\"print-base must be an integer \
                                     between %d and %d, but got: %S\", \
                                     SCM_RADIX_MIN, SCM_RADIX_MAX, value);")
-    (radix  :type <boolean>
-            :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_RADIX(obj));"
-            :setter "SCM_WRITE_CONTROL_RADIX(obj) = !SCM_FALSEP(value);")
+    (show-radix  :type <boolean>
+                 :getter (c "wc_show_radix_get")
+                 :setter (c "wc_show_radix_set"))
+    (radix  :type <boolean>             ;backward compatibility
+            :getter (c "wc_show_radix_get")
+            :setter (c "wc_show_radix_set"))
     (pretty :type <boolean>
             :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_PRETTY(obj));"
             :setter "SCM_WRITE_CONTROL_PRETTY(obj) = !SCM_FALSEP(value);")
@@ -1025,14 +1041,14 @@
                    :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_EXACTDECIMAL(obj));"
                    :setter "SCM_WRITE_CONTROL_EXACTDECIMAL(obj) = !SCM_FALSEP(value);")
     (array  :type <symbol> :c-name "arrayFormat"
-            :getter (c "write_controls_array_get")
-            :setter (c "write_controls_array_set"))
+            :getter (c "wc_array_get")
+            :setter (c "wc_array_set"))
     (complex :type <boolean> :c-name "complexFormat"
-             :getter (c "write_controls_complex_get")
-             :setter (c "write_controls_complex_set"))
+             :getter (c "wc_complex_get")
+             :setter (c "wc_complex_set"))
 
     )
-   (allocator (c "write_controls_allocate")))
+   (allocator (c "wc_allocate")))
 
  ;; NB: Printer is defined in libobj.scm via write-object method
  )
