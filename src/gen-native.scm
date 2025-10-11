@@ -111,6 +111,7 @@
   (pprint `(define *amd64-call-reg-code*
              ',(list->u8vector reg-code))
           :port port
+          ;; TRANSIENT: :radix -> :radix-prefix after the new release
           :controls (make-write-controls :pretty #t :width 75
                                          :base 16 :radix #t))
 
@@ -121,6 +122,7 @@
   (pprint `(define *amd64-call-spill-code*
              ',(list->u8vector spill-code))
           :port port
+          ;; TRANSIENT: :radix -> :radix-prefix after the new release
           :controls (make-write-controls :pretty #t :width 75
                                          :base 16 :radix #t))
 
@@ -274,6 +276,7 @@
   (pprint `(define *winx64-call-reg-code*
              ',(list->u8vector reg-code))
           :port port
+          ;; TRANSIENT: :radix -> :radix-prefix after the new release
           :controls (make-write-controls :pretty #t :width 75
                                          :base 16 :radix #t))
 

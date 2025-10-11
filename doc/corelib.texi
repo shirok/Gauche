@@ -26473,7 +26473,7 @@ write controls can do:
 
 @example
 (write '(1 10 100 1000)
-       (make-write-controls :base 16 :radix #t))
+       (make-write-controls :base 16 :radix-prefix #t))
  @r{prints} (#x1 #xa #x64 #x3e8)
 
 (write (iota 100)
@@ -26531,7 +26531,7 @@ the radix used to print exact numbers.  The default value is 10.
 @c COMMON
 @end defivar
 
-@defivar <write-controls> radix
+@defivar <write-controls> radix-prefix
 @c EN
 This slot must have a boolean value.  If it is true, radix prefix
 is always printed before exact numbers.  The default value is @code{#f}.
@@ -26681,7 +26681,7 @@ Common Lispのスペシャル変数の名前をそのまま反映した
 @c COMMON
 @end deftp
 
-@defun make-write-controls :key length level base radix pretty width indent string-length exact-decimal
+@defun make-write-controls :key length level base radix-prefix pretty width indent string-length exact-decimal array
 @c EN
 Creates and returns a write-controls object.
 @c JP
@@ -26689,7 +26689,7 @@ Creates and returns a write-controls object.
 @c COMMON
 @end defun
 
-@defun write-controls-copy controls :key length level base radix pretty width indent string-length exact-decimal
+@defun write-controls-copy controls :key length level base radix-prefix pretty width indent string-length exact-decimal array
 @c EN
 Returns a copy of another write-controls object @var{controls}.
 If keyword arguments are given, those values override the

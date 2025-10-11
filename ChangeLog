@@ -1,3 +1,10 @@
+2025-10-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (<write-controls>): Rename :radix to :radix-prefix,
+	  to make it clear it's about prefix, and avoid confusion with :base.
+	  :radix is supported for the backward compatibility.
+	  https://github.com/shirok/Gauche/issues/1097
+
 2025-10-02  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/data/trie.scm (trie-common-prefix-fold): Fix empty set case.

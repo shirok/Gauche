@@ -229,6 +229,7 @@
                 (file->string-list #"8859-~|n|.TXT")))
   (when (= n 7)
     (pprint alis :level #f :length #f
+            ;; TRANSIENT: :radix -> :radix-prefix after the new release
             :controls (make-write-controls :base 16 :radix #t)))
   (with-output-to-file #"lat~|n|.ISO8859-~|n|"
     (^[] (dolist [p alis] (write-byte (car p)))))

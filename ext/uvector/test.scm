@@ -108,7 +108,7 @@
 (test* "#u8() w/controls" "#u8(#xa1 #xb2 #xc3)"
        (with-output-to-string
          (^[] (write (u8vector #xa1 #xb2 #xc3)
-                     (make-write-controls :base 16 :radix #t)))))
+                     (make-write-controls :base 16 :radix-prefix #t)))))
 
 ;;-------------------------------------------------------------------
 (test-section "constructors")

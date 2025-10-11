@@ -925,10 +925,10 @@
  (define-cfn wc-allocate (_::ScmClass* _) :static
    (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
 
- (define-cfn wc-show-radix-get (arg) :static
+ (define-cfn wc-radix-prefix-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_RADIX obj)))))
- (define-cfn wc-show-radix-set (arg value) ::void :static
+ (define-cfn wc-radix-prefix-set (arg value) ::void :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (if (not (SCM_FALSEP value))
        (logior= (ref (-> obj numberFormat) flags)
@@ -1014,12 +1014,12 @@
                      else Scm_Error(\"print-base must be an integer \
                                     between %d and %d, but got: %S\", \
                                     SCM_RADIX_MIN, SCM_RADIX_MAX, value);")
-    (show-radix  :type <boolean>
-                 :getter (c "wc_show_radix_get")
-                 :setter (c "wc_show_radix_set"))
+    (radix-prefix  :type <boolean>
+                 :getter (c "wc_radix_prefix_get")
+                 :setter (c "wc_radix_prefix_set"))
     (radix  :type <boolean>             ;backward compatibility
-            :getter (c "wc_show_radix_get")
-            :setter (c "wc_show_radix_set"))
+            :getter (c "wc_radix_prefix_get")
+            :setter (c "wc_radix_prefix_set"))
     (pretty :type <boolean>
             :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_PRETTY(obj));"
             :setter "SCM_WRITE_CONTROL_PRETTY(obj) = !SCM_FALSEP(value);")
@@ -1054,18 +1054,27 @@
  )
 
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
-(define (make-write-controls :key length level width base radix pretty indent
+(define (make-write-controls :key length level width base radix-prefix
+                                  pretty indent
                                   bytestring string-length exact-decimal
                                   array complex
+                                     ;; For backward compatibility
                                   print-length print-level print-width
-                                  print-base print-radix print-pretty)
-  (define (arg k k-alt) (if (undefined? k-alt) k k-alt))
+                                  print-base print-radix radix print-pretty)
+  (define arg
+    (case-lambda
+      [(k k-alt)(if (undefined? k-alt) k k-alt)]
+      [(k k-alt k-alt2) (if (undefined? k-alt2)
+                          (if (undefined? k-alt)
+                            k
+                            k-alt)
+                          k-alt2)]))
   (make <write-controls>
     :length (arg length print-length)
     :level  (arg level  print-level)
     :width  (arg width  print-width)
     :base   (arg base   print-base)
-    :radix  (arg radix  print-radix)
+    :radix-prefix (arg radix-prefix radix print-radix)
     :pretty (arg pretty print-pretty)
     :bytestring bytestring
     :string-length string-length
@@ -1080,13 +1089,23 @@
 ;; we don't bother to create a copy.  This assumes we treat WC immutable.
 ;; (Maybe we should write this in C to avoid overhead.)
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
-(define (write-controls-copy wc :key length level width base radix pretty indent
+(define (write-controls-copy wc :key length level width base radix-prefix
+                                     pretty indent
                                      bytestring string-length exact-decimal
-                                     array
+                                     array complex
+                                     ;; For backward compatibility
                                      print-length print-level print-width
-                                     print-base print-radix print-pretty)
+                                     print-base print-radix radix print-pretty)
   (let-syntax [(select
                 (syntax-rules ()
+                  [(_ k k-alt k-alt2)
+                   (if (undefined? k)
+                     (if (undefined? k-alt)
+                       (if (undefined? k-alt2)
+                         (slot-ref wc 'k)
+                         k-alt2)
+                       k-alt)
+                     k)]
                   [(_ k k-alt)
                    (if (undefined? k)
                      (if (undefined? k-alt)
@@ -1101,7 +1120,7 @@
           [level  (select level  print-level)]
           [width  (select width  print-width)]
           [base   (select base   print-base)]
-          [radix  (select radix  print-radix)]
+          [radix-prefix  (select radix-prefix radix  print-radix)]
           [pretty (select pretty print-pretty)]
           [indent (select indent)]
           [bytestring    (select bytestring)]
@@ -1112,7 +1131,7 @@
                (eqv? level  (slot-ref wc 'level))
                (eqv? width  (slot-ref wc 'width))
                (eqv? base   (slot-ref wc 'base))
-               (eqv? radix  (slot-ref wc 'radix))
+               (eqv? radix-prefix (slot-ref wc 'radix-prefix))
                (eqv? pretty (slot-ref wc 'pretty))
                (eqv? indent (slot-ref wc 'indent))
                (eqv? bytestring    (slot-ref wc 'bytestring))
@@ -1125,7 +1144,7 @@
           :level  level
           :width  width
           :base   base
-          :radix  radix
+          :radix-prefix radix-prefix
           :pretty pretty
           :indent indent
           :bytestring bytestring
