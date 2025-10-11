@@ -1948,6 +1948,9 @@
     (p "{")
     (p "  "(~ class-type'c-type)" obj = "(cgen-unbox-expr class-type "OBJARG")";")
     (cond [(string? (~ slot'getter)) (p (~ slot'getter))]
+          [(and (list? (~ slot'getter))
+                (not (eq? (car (~ slot'getter)) 'c)))
+           (cise-render (~ slot'getter))]
           [(string? (~ slot'c-spec))
            (f "  return ~a;" (cgen-box-tail-expr type (~ slot'c-spec)))]
           [else
@@ -1962,15 +1965,19 @@
     (p "static void "(slot-setter-name slot)"(ScmObj OBJARG, ScmObj value)")
     (p "{")
     (p "  "(~ class-type'c-type)" obj = "(cgen-unbox-expr class-type "OBJARG")";")
-    (if (string? (~ slot'setter))
-      (p (~ slot'setter))
-      (begin
-        (unless (eq? type *scm-type*)
-          (f "  if (!~a) Scm_Error(\"~a required, but got %S\", value);"
-             (cgen-pred-expr type "value") (~ type'c-type)))
-        (if (~ slot'c-spec)
-          (f "  ~a = ~a;" (~ slot'c-spec) (cgen-unbox-expr type "value"))
-          (f "  obj->~a = ~a;" (~ slot'c-name) (cgen-unbox-expr type "value")))))
+    (cond
+     [(string? (~ slot'setter))
+      (p (~ slot'setter))]
+     [(and (list? (~ slot'setter))
+           (not (eq? (car (~ slot'setter)) 'c)))
+      (cise-render (~ slot'setter))]
+     [else
+      (unless (eq? type *scm-type*)
+        (f "  if (!~a) Scm_Error(\"~a required, but got %S\", value);"
+           (cgen-pred-expr type "value") (~ type'c-type)))
+      (if (~ slot'c-spec)
+        (f "  ~a = ~a;" (~ slot'c-spec) (cgen-unbox-expr type "value"))
+        (f "  obj->~a = ~a;" (~ slot'c-name) (cgen-unbox-expr type "value")))])
     (p "}")
     (p "")))
 

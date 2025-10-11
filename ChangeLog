@@ -1,5 +1,8 @@
 2025-10-10  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgne/stub.scm (emit-getter, emit-setter):
+	  Allow CiSE in slot's :getter/:setter spec.
+
 	* src/libio.scm (<write-controls>): Rename :radix to :radix-prefix,
 	  to make it clear it's about prefix, and avoid confusion with :base.
 	  :radix is supported for the backward compatibility.
