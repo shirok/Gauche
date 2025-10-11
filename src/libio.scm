@@ -987,66 +987,88 @@
  (define-cclass <write-controls>
    "ScmWriteControls*" "Scm_WriteControlsClass"
    ("Scm_TopClass")
-   ((length :type <int>
-            :getter "if (SCM_WRITE_CONTROL_LENGTH(obj) < 0) return SCM_FALSE; \
-                     else return SCM_MAKE_INT(SCM_WRITE_CONTROL_LENGTH(obj));"
-            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                       SCM_WRITE_CONTROL_LENGTH(obj) = SCM_INT_VALUE(value); \
-                     else SCM_WRITE_CONTROL_LENGTH(obj) = -1;")
-    (level  :type <int>
-            :getter "if (SCM_WRITE_CONTROL_LEVEL(obj) < 0) return SCM_FALSE; \
-                     else return SCM_MAKE_INT(SCM_WRITE_CONTROL_LEVEL(obj));"
-            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                       SCM_WRITE_CONTROL_LEVEL(obj) = SCM_INT_VALUE(value); \
-                     else SCM_WRITE_CONTROL_LEVEL(obj) = -1;")
-    (width  :type <int>
-            :getter "if (SCM_WRITE_CONTROL_WIDTH(obj) < 0) return SCM_FALSE; \
-                     else return SCM_MAKE_INT(SCM_WRITE_CONTROL_WIDTH(obj));"
-            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                       SCM_WRITE_CONTROL_WIDTH(obj) = SCM_INT_VALUE(value); \
-                     else SCM_WRITE_CONTROL_WIDTH(obj) = -1;")
-    (base   :type <int>
-            :getter "return SCM_MAKE_INT(SCM_WRITE_CONTROL_BASE(obj));"
-            :setter "if (SCM_INTP(value) \
-                         && SCM_INT_VALUE(value) >= SCM_RADIX_MIN \
-                         && SCM_INT_VALUE(value) <= SCM_RADIX_MAX) \
-                       SCM_WRITE_CONTROL_BASE(obj) = SCM_INT_VALUE(value); \
-                     else Scm_Error(\"print-base must be an integer \
-                                    between %d and %d, but got: %S\", \
-                                    SCM_RADIX_MIN, SCM_RADIX_MAX, value);")
-    (radix-prefix  :type <boolean>
-                 :getter (c "wc_radix_prefix_get")
-                 :setter (c "wc_radix_prefix_set"))
-    (radix  :type <boolean>             ;backward compatibility
-            :getter (c "wc_radix_prefix_get")
-            :setter (c "wc_radix_prefix_set"))
-    (pretty :type <boolean>
-            :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_PRETTY(obj));"
-            :setter "SCM_WRITE_CONTROL_PRETTY(obj) = !SCM_FALSEP(value);")
-    (indent :type <int>
-            :getter "return SCM_MAKE_INT(SCM_WRITE_CONTROL_INDENT(obj));"
-            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                       SCM_WRITE_CONTROL_INDENT(obj) = SCM_INT_VALUE(value); \
-                     else SCM_WRITE_CONTROL_INDENT(obj) = 0;")
-    (bytestring :type <boolean>
-                :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_BYTESTRING(obj));"
-                :setter "SCM_WRITE_CONTROL_BYTESTRING(obj) = !SCM_FALSEP(value);")
-    (string-length :type <int>
-                   :getter "if (SCM_WRITE_CONTROL_STRINGLENGTH(obj) < 0) return SCM_FALSE; \
-                            else return SCM_MAKE_INT(SCM_WRITE_CONTROL_STRINGLENGTH(obj));"
-                   :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                              SCM_WRITE_CONTROL_STRINGLENGTH(obj) = SCM_INT_VALUE(value); \
-                            else SCM_WRITE_CONTROL_STRINGLENGTH(obj) = -1;")
-    (exact-decimal :type <boolean>
-                   :getter "return SCM_MAKE_BOOL(SCM_WRITE_CONTROL_EXACTDECIMAL(obj));"
-                   :setter "SCM_WRITE_CONTROL_EXACTDECIMAL(obj) = !SCM_FALSEP(value);")
-    (array  :type <symbol> :c-name "arrayFormat"
-            :getter (c "wc_array_get")
-            :setter (c "wc_array_set"))
-    (complex :type <boolean> :c-name "complexFormat"
-             :getter (c "wc_complex_get")
-             :setter (c "wc_complex_set"))
-
+   ((length
+     :type <int>
+     :getter (if (< (SCM_WRITE_CONTROL_LENGTH obj) 0)
+               (return SCM_FALSE)
+               (return (SCM_MAKE_INT (SCM_WRITE_CONTROL_LENGTH obj))))
+     :setter (if (and (SCM_INTP value)
+                      (>= (SCM_INT_VALUE value) 0))
+               (set! (SCM_WRITE_CONTROL_LENGTH obj) (SCM_INT_VALUE value))
+               (set! (SCM_WRITE_CONTROL_LENGTH obj) -1)))
+    (level
+     :type <int>
+     :getter (if (< (SCM_WRITE_CONTROL_LEVEL obj) 0)
+               (return SCM_FALSE)
+               (return (SCM_MAKE_INT(SCM_WRITE_CONTROL_LEVEL obj))))
+     :setter (if (and (SCM_INTP value)
+                      (>= (SCM_INT_VALUE value) 0))
+               (set! (SCM_WRITE_CONTROL_LEVEL obj) (SCM_INT_VALUE value))
+               (set! ( SCM_WRITE_CONTROL_LEVEL obj) -1)))
+    (width
+     :type <int>
+     :getter (if (< (SCM_WRITE_CONTROL_WIDTH obj) 0)
+               (return SCM_FALSE)
+               (return (SCM_MAKE_INT (SCM_WRITE_CONTROL_WIDTH obj))))
+     :setter (if (and (SCM_INTP value)
+                      (>= (SCM_INT_VALUE value) 0))
+               (set! (SCM_WRITE_CONTROL_WIDTH obj) (SCM_INT_VALUE value))
+               (set! (SCM_WRITE_CONTROL_WIDTH obj) -1)))
+    (base
+     :type <int>
+     :getter (return (SCM_MAKE_INT(SCM_WRITE_CONTROL_BASE obj)))
+     :setter (if (and (SCM_INTP value)
+                      (>= (SCM_INT_VALUE value) SCM_RADIX_MIN)
+                      (<= (SCM_INT_VALUE value) SCM_RADIX_MAX))
+               (set! (SCM_WRITE_CONTROL_BASE obj) (SCM_INT_VALUE value))
+               (Scm_Error "print-base must be an integer \
+                           between %d and %d, but got: %S"
+                          SCM_RADIX_MIN SCM_RADIX_MAX value)))
+    (radix-prefix
+     :type <boolean>
+     :getter (c "wc_radix_prefix_get")
+     :setter (c "wc_radix_prefix_set"))
+    (radix                              ;backward compatibility
+     :type <boolean>
+     :getter (c "wc_radix_prefix_get")
+     :setter (c "wc_radix_prefix_set"))
+    (pretty
+     :type <boolean>
+     :getter (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_PRETTY obj)))
+     :setter (set! (SCM_WRITE_CONTROL_PRETTY obj) (SCM_BOOL_VALUE value)))
+    (indent
+     :type <int>
+     :getter (return (SCM_MAKE_INT(SCM_WRITE_CONTROL_INDENT obj)))
+     :setter (if (and (SCM_INTP value)
+                      (>= (SCM_INT_VALUE value) 0))
+               (set! (SCM_WRITE_CONTROL_INDENT obj) (SCM_INT_VALUE value))
+               (set! (SCM_WRITE_CONTROL_INDENT obj) 0)))
+    (bytestring
+     :type <boolean>
+     :getter (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_BYTESTRING obj)))
+     :setter (set! (SCM_WRITE_CONTROL_BYTESTRING obj) (SCM_BOOL_VALUE value)))
+    (string-length
+     :type <int>
+     :getter (let* ([n::int (SCM_WRITE_CONTROL_STRINGLENGTH obj)])
+               (if (< n 0)
+                 (return SCM_FALSE)
+                 (return (SCM_MAKE_INT n))))
+     :setter (if (and (SCM_INTP value)
+                      (>= (SCM_INT_VALUE value) 0))
+               (set! (SCM_WRITE_CONTROL_STRINGLENGTH obj) (SCM_INT_VALUE value))
+               (set! (SCM_WRITE_CONTROL_STRINGLENGTH obj) -1)))
+    (exact-decimal
+     :type <boolean>
+     :getter (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_EXACTDECIMAL obj)))
+     :setter (set! (SCM_WRITE_CONTROL_EXACTDECIMAL obj) (SCM_BOOL_VALUE value)))
+    (array
+     :type <symbol> :c-name "arrayFormat"
+     :getter (c "wc_array_get")
+     :setter (c "wc_array_set"))
+    (complex
+     :type <boolean> :c-name "complexFormat"
+     :getter (c "wc_complex_get")
+     :setter (c "wc_complex_set"))
     )
    (allocator (c "wc_allocate")))
 
