@@ -4245,13 +4245,17 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, const ScmNumberFormat *fmt
 /* API */
 void Scm_NumberFormatInit(ScmNumberFormat* fmt)
 {
+    /* Zero fill entire struct including reserved fields, so that if
+       we later repurpose reserved fields, we're sure the old code
+       still initializes them to zero. */
+    memset(fmt, 0, sizeof(ScmNumberFormat));
     fmt->flags = 0;
     fmt->base = 10;
     fmt->precision = -1;
     fmt->exp_lo = -3;
     fmt->exp_hi = 10;
     fmt->exp_width = 0;
-    fmt->reserved[0] = fmt->reserved[1] = 0;
+    fmt->comp_format = SCM_NUMBER_FORMAT_COMPLEX_RECTANGULAR;
 }
 
 /* API */

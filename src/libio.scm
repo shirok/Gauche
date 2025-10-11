@@ -971,23 +971,28 @@
  (define-cfn wc-complex-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (case (SCM_WRITE_CONTROL_COMPLEXFORMAT obj)
-       [(SCM_WRITE_COMPLEX_RECTANGULAR) (return 'rectangular)]
-       [(SCM_WRITE_COMPLEX_POLAR) (return 'polar)]
-       [(SCM_WRITE_COMPLEX_POLAR_PI) (return 'polar-pi)]
-       [(SCM_WRITE_COMPLEX_COMMON_LISP) (return 'common-lisp)]
+       [(SCM_NUMBER_FORMAT_COMPLEX_RECTANGULAR) (return 'rectangular)]
+       [(SCM_NUMBER_FORMAT_COMPLEX_POLAR) (return 'polar)]
+       [(SCM_NUMBER_FORMAT_COMPLEX_POLAR_PI) (return 'polar-pi)]
+       [(SCM_NUMBER_FORMAT_COMPLEX_COMMON_LISP) (return 'common-lisp)]
        [else (Scm_Panic "Invalid value in ScmWriteControls.complex: %d"
-                        (-> obj complexFormat))])))
+                        (SCM_WRITE_CONTROL_COMPLEXFORMAT obj))])))
+
  (define-cfn wc-complex-set (arg value) ::void :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
      (cond
       [(SCM_EQ value 'rectangular)
-       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj) SCM_WRITE_COMPLEX_RECTANGULAR)]
+       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj)
+             SCM_NUMBER_FORMAT_COMPLEX_RECTANGULAR)]
       [(SCM_EQ value 'polar)
-       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj) SCM_WRITE_COMPLEX_POLAR)]
+       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj)
+             SCM_NUMBER_FORMAT_COMPLEX_POLAR)]
       [(SCM_EQ value 'polar-pi)
-       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj) SCM_WRITE_COMPLEX_POLAR_PI)]
+       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj)
+             SCM_NUMBER_FORMAT_COMPLEX_POLAR_PI)]
       [(SCM_EQ value 'common-lisp)
-       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj) SCM_WRITE_COMPLEX_COMMON_LISP)]
+       (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj)
+             SCM_NUMBER_FORMAT_COMPLEX_COMMON_LISP)]
       [else (Scm_Error "Invalid ScmWriteControls.complex, must be \
                         one of scheme or common-lisp, \
                         but got %S" value)])))
@@ -1073,11 +1078,11 @@
      :getter (c "wc_exact_decimal_get")
      :setter (c "wc_exact_decimal_set"))
     (array
-     :type <symbol> :c-name "arrayFormat"
+     :type <symbol>
      :getter (c "wc_array_get")
      :setter (c "wc_array_set"))
     (complex
-     :type <boolean> :c-name "complexFormat"
+     :type <boolean>
      :getter (c "wc_complex_get")
      :setter (c "wc_complex_set"))
     )
@@ -1159,7 +1164,8 @@
           [bytestring    (select bytestring)]
           [string-length (select string-length)]
           [exact-decimal (select exact-decimal)]
-          [array  (select array)])
+          [array  (select array)]
+          [complex (select complex)])
       (if (and (eqv? length (slot-ref wc 'length))
                (eqv? level  (slot-ref wc 'level))
                (eqv? width  (slot-ref wc 'width))
@@ -1170,7 +1176,9 @@
                (eqv? bytestring    (slot-ref wc 'bytestring))
                (eqv? string-length (slot-ref wc 'string-length))
                (eqv? exact-decimal (slot-ref wc 'exact-decimal))
-               (eqv? array  (slot-ref wc 'array)))
+               (eqv? array  (slot-ref wc 'array))
+               (eqv? complex (slot-ref wc 'complex)))
+
         wc
         (make <write-controls>
           :length length
@@ -1183,7 +1191,8 @@
           :bytestring bytestring
           :string-length string-length
           :exact-decimal exact-decimal
-          :array array)))))
+          :array array
+          :complex complex)))))
 
 ;;;
 ;;; With-something

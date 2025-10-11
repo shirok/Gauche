@@ -404,7 +404,14 @@ enum ScmNumberFormatFlags {
     /* Returns an error message string if the input is invalid.
        [N] ignored.
        [S] returns error message instead of #f on error.*/
-    SCM_NUMBER_FORMAT_ERROR_MESSAGE = (1L<<8)
+    SCM_NUMBER_FORMAT_ERROR_MESSAGE = (1L<<8),
+};
+
+enum ScmNumberFormatComplex {
+    SCM_NUMBER_FORMAT_COMPLEX_RECTANGULAR, /* a+bi */
+    SCM_NUMBER_FORMAT_COMPLEX_POLAR,       /* a@b */
+    SCM_NUMBER_FORMAT_COMPLEX_POLAR_PI,    /* a@bpi */
+    SCM_NUMBER_FORMAT_COMPLEX_COMMON_LISP, /* #c(a b) */
 };
 
 /* Fine controls of number formatting.   */
@@ -415,6 +422,8 @@ typedef struct ScmNumberFormatRec {
     int8_t exp_lo;      /* use exp notation if exponent <= exp_lo */
     int8_t exp_hi;      /* use exp notation if exponent >= exp_hi */
     int8_t exp_width;   /* min # of digits used for exponent */
+    int8_t comp_format; /* enum ScmNumberFormatComplex */
+    int8_t padding[7];  /* for future extension */
     u_long reserved[2]; /* for future extension */
 } ScmNumberFormat;
 

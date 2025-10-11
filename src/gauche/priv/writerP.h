@@ -49,7 +49,6 @@ struct ScmWriteControlsRec {
                                    u8vector (srfi-207) */
     int stringLength;           /* -1 for no limit.  Length of literal string */
     int arrayFormat;            /* enum ScmWriteArrayFormat */
-    int complexFormat;          /* enum ScmWriteComplexFormat */
     ScmNumberFormat numberFormat; /* number formatting */
 };
 
@@ -62,13 +61,6 @@ enum ScmWriteArrayFormat {
     SCM_WRITE_ARRAY_COMPACT,     /* #2a(...) */
     SCM_WRITE_ARRAY_DIMENSIONS,  /* #2a:3:3(...) */
     SCM_WRITE_ARRAY_READER_CTOR, /* #,(<array> (0 3 0 3) ...) */
-};
-
-enum ScmWriteComplexFormat {
-    SCM_WRITE_COMPLEX_RECTANGULAR, /* a+bi */
-    SCM_WRITE_COMPLEX_POLAR,       /* a@b */
-    SCM_WRITE_COMPLEX_POLAR_PI,    /* a@bpi */
-    SCM_WRITE_COMPLEX_COMMON_LISP, /* #c(a b) */
 };
 
 #define SCM_WRITE_CONTROL_LENGTH(wc)         ((wc)->printLength)
@@ -84,7 +76,8 @@ enum ScmWriteComplexFormat {
 #define SCM_WRITE_CONTROL_EXACTDECIMAL(wc) \
     ((wc)->numberFormat.flags & SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)
 #define SCM_WRITE_CONTROL_ARRAYFORMAT(wc)    ((wc)->arrayFormat)
-#define SCM_WRITE_CONTROL_COMPLEXFORMAT(wc)  ((wc)->complexFormat)
+#define SCM_WRITE_CONTROL_COMPLEXFORMAT(wc) \
+    ((wc)->numberFormat.comp_format)
 
 /*
  * NB: Flip the following condition to use ellipsis (U+2026) to indicate

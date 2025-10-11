@@ -1,3 +1,15 @@
+2025-10-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/number.h (ScmNumberFormat): Add comp_format slot.
+	  This changes the size of ScmNumberFormat and affects the binary
+	  compatibility.  However, the added field overlaps the reserved
+	  field of old code, which is always zero-filled, so it won't cause
+	  immediate issue.
+	  Later, if we start using the reserved[1] which is out of bound
+	  of the old struct, it will cause a compatibility issue, but by that
+	  time we think we're in new ABI version (post-1.0, hopefully) and
+	  won't be an issue.
+
 2025-10-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgne/stub.scm (emit-getter, emit-setter):
