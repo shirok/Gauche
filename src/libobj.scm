@@ -923,7 +923,7 @@
           `(:length        ,(~ obj'length)
             :level         ,(~ obj'level)
             :base          ,(~ obj'base)
-            :show-radix    ,(~ obj'show-radix)
+            :radix-prefix  ,(~ obj'radix-prefix)
             :pretty        ,(~ obj'pretty)
             :width         ,(~ obj'width)
             :indent        ,(~ obj'indent)
