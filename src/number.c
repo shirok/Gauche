@@ -4149,7 +4149,7 @@ gauche_numioutil_module()
 
 
 static size_t
-print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
+print_number(ScmPort *port, ScmObj obj, u_long flags, const ScmNumberFormat *fmt)
 {
     int use_upper = flags & SCM_NUMBER_FORMAT_USE_UPPER;
     int show_plus = flags & SCM_NUMBER_FORMAT_SHOW_PLUS;
@@ -4261,15 +4261,6 @@ void Scm_NumberFormatFromWriteContext(ScmNumberFormat* fmt,
 {
     const ScmWriteControls *ctrl = Scm_GetWriteControls(ctx, state);
     *fmt = ctrl->numberFormat;
-    /* The following will be deleted once WriteControls fully integrates
-       numberFormat. */
-    fmt->base = SCM_WRITE_CONTROL_BASE(ctrl);
-    if (SCM_WRITE_CONTROL_RADIX(ctrl)) {
-        fmt->flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
-    }
-    if (SCM_WRITE_CONTROL_EXACTDECIMAL(ctrl)) {
-        fmt->flags |= SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT;
-    }
 }
 
 /* API
@@ -4289,7 +4280,7 @@ ScmObj Scm_NumberToString(ScmObj obj, int base, u_long flags)
 }
 
 /* API.  FMT can be NULL. */
-size_t Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *fmt)
+size_t Scm_PrintNumber(ScmPort *port, ScmObj n, const ScmNumberFormat *fmt)
 {
     ScmNumberFormat defaults;
     if (fmt == NULL) {
@@ -4300,7 +4291,7 @@ size_t Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *fmt)
 }
 
 /* API.  FMT can be NULL.  Utility to expose Burger&Dybvig algorithm. */
-size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
+size_t Scm_PrintDouble(ScmPort *port, double d, const ScmNumberFormat *fmt)
 {
     ScmNumberFormat defaults;
     if (fmt == NULL) {

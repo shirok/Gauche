@@ -930,11 +930,22 @@
      (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_RADIX obj)))))
  (define-cfn wc-radix-prefix-set (arg value) ::void :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
-     (if (not (SCM_FALSEP value))
+     (if (SCM_BOOL_VALUE value)
        (logior= (ref (-> obj numberFormat) flags)
                 SCM_NUMBER_FORMAT_ALT_RADIX)
        (logand= (ref (-> obj numberFormat) flags)
-                (not SCM_NUMBER_FORMAT_ALT_RADIX)))))
+                (lognot SCM_NUMBER_FORMAT_ALT_RADIX)))))
+
+ (define-cfn wc-exact-decimal-get (arg) :static
+   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
+     (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_EXACTDECIMAL obj)))))
+ (define-cfn wc-exact-decimal-set (arg value) ::void :static
+   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
+     (if (SCM_BOOL_VALUE value)
+       (logior= (ref (-> obj numberFormat) flags)
+                SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)
+       (logand= (ref (-> obj numberFormat) flags)
+                (lognot SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)))))
 
  (define-cfn wc-array-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
@@ -1059,8 +1070,8 @@
                (set! (SCM_WRITE_CONTROL_STRINGLENGTH obj) -1)))
     (exact-decimal
      :type <boolean>
-     :getter (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_EXACTDECIMAL obj)))
-     :setter (set! (SCM_WRITE_CONTROL_EXACTDECIMAL obj) (SCM_BOOL_VALUE value)))
+     :getter (c "wc_exact_decimal_get")
+     :setter (c "wc_exact_decimal_set"))
     (array
      :type <symbol> :c-name "arrayFormat"
      :getter (c "wc_array_get")
@@ -1080,7 +1091,7 @@
                                   pretty indent
                                   bytestring string-length exact-decimal
                                   array complex
-                                     ;; For backward compatibility
+                                  ;; For backward compatibility
                                   print-length print-level print-width
                                   print-base print-radix radix print-pretty)
   (define arg

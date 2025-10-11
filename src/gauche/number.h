@@ -396,8 +396,7 @@ enum ScmNumberFormatFlags {
        [S] treat as if #i is present if no exactness prefix is given */
     SCM_NUMBER_FORMAT_INEXACT = (1L<<6),
 
-    /* If ratnum's denominator is a divisor of radix, we use decimal-point
-       notation prefixed with #e.
+    /* Write ratnums using decimal-point notation prefixed with #e
        [N] same.
        [S] ignored. */
     SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT = (1L<<7),
@@ -423,8 +422,10 @@ SCM_EXTERN void   Scm_NumberFormatInit(ScmNumberFormat*);
 SCM_EXTERN void   Scm_NumberFormatFromWriteContext(ScmNumberFormat*,
                                                    const ScmWriteContext*,
                                                    const ScmWriteState*);
-SCM_EXTERN size_t Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *f);
-SCM_EXTERN size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *f);
+SCM_EXTERN size_t Scm_PrintNumber(ScmPort *port, ScmObj n,
+                                  const ScmNumberFormat *f);
+SCM_EXTERN size_t Scm_PrintDouble(ScmPort *port, double d,
+                                  const ScmNumberFormat *f);
 
 /* Higher-level convenience routines */
 SCM_EXTERN ScmObj Scm_NumberToString(ScmObj num, int radix, u_long flags);

@@ -48,8 +48,6 @@ struct ScmWriteControlsRec {
     int bytestring;             /* boolean, #t to use bytestring repr for
                                    u8vector (srfi-207) */
     int stringLength;           /* -1 for no limit.  Length of literal string */
-    int exactDecimal;           /* #t to use decimal point for exact numbers
-                                   whenever possible. */
     int arrayFormat;            /* enum ScmWriteArrayFormat */
     int complexFormat;          /* enum ScmWriteComplexFormat */
     ScmNumberFormat numberFormat; /* number formatting */
@@ -83,7 +81,8 @@ enum ScmWriteComplexFormat {
 #define SCM_WRITE_CONTROL_INDENT(wc)         ((wc)->printIndent)
 #define SCM_WRITE_CONTROL_BYTESTRING(wc)     ((wc)->bytestring)
 #define SCM_WRITE_CONTROL_STRINGLENGTH(wc)   ((wc)->stringLength)
-#define SCM_WRITE_CONTROL_EXACTDECIMAL(wc)   ((wc)->exactDecimal)
+#define SCM_WRITE_CONTROL_EXACTDECIMAL(wc) \
+    ((wc)->numberFormat.flags & SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)
 #define SCM_WRITE_CONTROL_ARRAYFORMAT(wc)    ((wc)->arrayFormat)
 #define SCM_WRITE_CONTROL_COMPLEXFORMAT(wc)  ((wc)->complexFormat)
 
