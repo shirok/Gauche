@@ -974,7 +974,7 @@
        [(SCM_NUMBER_FORMAT_COMPLEX_RECTANGULAR) (return 'rectangular)]
        [(SCM_NUMBER_FORMAT_COMPLEX_POLAR) (return 'polar)]
        [(SCM_NUMBER_FORMAT_COMPLEX_POLAR_PI) (return 'polar-pi)]
-       [(SCM_NUMBER_FORMAT_COMPLEX_COMMON_LISP) (return 'common-lisp)]
+       [(SCM_NUMBER_FORMAT_COMPLEX_VECTOR) (return 'vector)]
        [else (Scm_Panic "Invalid value in ScmWriteControls.complex: %d"
                         (SCM_WRITE_CONTROL_COMPLEXFORMAT obj))])))
 
@@ -990,11 +990,11 @@
       [(SCM_EQ value 'polar-pi)
        (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj)
              SCM_NUMBER_FORMAT_COMPLEX_POLAR_PI)]
-      [(SCM_EQ value 'common-lisp)
+      [(SCM_EQ value 'vector)
        (set! (SCM_WRITE_CONTROL_COMPLEXFORMAT obj)
-             SCM_NUMBER_FORMAT_COMPLEX_COMMON_LISP)]
+             SCM_NUMBER_FORMAT_COMPLEX_VECTOR)]
       [else (Scm_Error "Invalid ScmWriteControls.complex, must be \
-                        one of scheme or common-lisp, \
+                        one of rectangular, polar, polar-pi, or vector, \
                         but got %S" value)])))
 
  ;; TODO: We want to treat <write-controls> as immutable structure, but

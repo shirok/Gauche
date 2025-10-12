@@ -411,7 +411,7 @@ enum ScmNumberFormatComplex {
     SCM_NUMBER_FORMAT_COMPLEX_RECTANGULAR, /* a+bi */
     SCM_NUMBER_FORMAT_COMPLEX_POLAR,       /* a@b */
     SCM_NUMBER_FORMAT_COMPLEX_POLAR_PI,    /* a@bpi */
-    SCM_NUMBER_FORMAT_COMPLEX_COMMON_LISP, /* #c(a b) */
+    SCM_NUMBER_FORMAT_COMPLEX_VECTOR,      /* #c(a b) */
 };
 
 /* Fine controls of number formatting.   */

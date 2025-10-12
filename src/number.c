@@ -4114,6 +4114,39 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
     }
 }
 
+/* print a complex number.
+ */
+static void print_complex(ScmDString *ds, ScmCompnum *val,
+                          const ScmNumberFormat *fmt)
+{
+    switch (fmt->comp_format) {
+    case SCM_NUMBER_FORMAT_COMPLEX_POLAR:
+        print_double(ds, Scm_Magnitude(SCM_OBJ(val)), FALSE, fmt);
+        Scm_DStringPutc(ds, '@');
+        print_double(ds, Scm_Angle(SCM_OBJ(val)), FALSE, fmt);
+        break;
+    case SCM_NUMBER_FORMAT_COMPLEX_POLAR_PI:
+        print_double(ds, Scm_Magnitude(SCM_OBJ(val)), FALSE, fmt);
+        Scm_DStringPutc(ds, '@');
+        print_double(ds, Scm_Angle(SCM_OBJ(val))/M_PI, FALSE, fmt);
+        Scm_DStringPutz(ds, "pi", 2);
+        break;
+    case SCM_NUMBER_FORMAT_COMPLEX_VECTOR:
+        Scm_DStringPutz(ds, "#c(", 3);
+        print_double(ds, SCM_COMPNUM_REAL(val), FALSE, fmt);
+        Scm_DStringPutc(ds, ' ');
+        print_double(ds, SCM_COMPNUM_IMAG(val), FALSE, fmt); /* ensure +|- */
+        Scm_DStringPutc(ds, ')');
+        break;
+    default:                    /* a+bi */
+        print_double(ds, SCM_COMPNUM_REAL(val),
+                     fmt->flags & SCM_NUMBER_FORMAT_SHOW_PLUS, fmt);
+        print_double(ds, SCM_COMPNUM_IMAG(val), TRUE, fmt); /* ensure +|- */
+        Scm_DStringPutc(ds, 'i');
+        break;
+    }
+}
+
 #define FLT_BUF 65  /* need to hold binary representation of the least fixnum */
 
 static size_t
@@ -4215,15 +4248,10 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, const ScmNumberFormat *fmt
     } else if (SCM_COMPNUMP(obj)) {
         ScmDString ds;
         Scm_DStringInit(&ds);
-        print_double(&ds, SCM_COMPNUM_REAL(obj), show_plus, fmt);
-        Scm_Putz(Scm_DStringGetz(&ds), -1, port);
-        nchars += Scm_DStringSize(&ds);
-        Scm_DStringTruncate(&ds, 0);
-        print_double(&ds, SCM_COMPNUM_IMAG(obj), TRUE, fmt);
-        Scm_Putz(Scm_DStringGetz(&ds), -1, port);
-        nchars += Scm_DStringSize(&ds);
-        Scm_Putc('i', port);
-        return nchars+1;
+        print_complex(&ds, SCM_COMPNUM(obj), fmt);
+        size_t nchars = Scm_DStringSize(&ds);
+        Scm_Putz(Scm_DStringGetz(&ds), nchars, port);
+        return nchars;
     } else {
         Scm_Error("number required: %S", obj);
         return 0;               /* dummy */

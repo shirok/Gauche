@@ -1,5 +1,11 @@
 2025-10-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (print_complex): Support alternative complex number
+	  printing.  Besides from a+bi, it can be printed out as a@b (polar)
+	  a@bpi (polar-pi), or #c(a b) (vector).
+	  The reader can handle all formats already.
+	  This covers https://github.com/shirok/Gauche/issues/1171
+
 	* src/gauche/number.h (ScmNumberFormat): Add comp_format slot.
 	  This changes the size of ScmNumberFormat and affects the binary
 	  compatibility.  However, the added field overlaps the reserved
