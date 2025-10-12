@@ -184,6 +184,10 @@ gosh> 2@@-0.5pi
 0.0-2.0i
 @end example
 
+For the rectangular complex notation, Gauche also recognizes Common Lisp
+style syntax, e.g. @code{#c(1.0 2.0)} as @code{1.0+2.0i}.  It is convenient
+to exchange data to/from Common Lisp programs.
+
 Inexact real numbers include
 the positive infinity, the negative infinity, and NaN,
 which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
@@ -248,6 +252,10 @@ gosh> 2@@0.5pi
 gosh> 2@@-0.5pi
 0.0-2.0i
 @end example
+
+複素数の直交座標表記として、GaucheはCommon Lisp形式
+(例: @code{#c(1.0 2.0)}、@code{1.0+2.0i}と同じ)も認識します。
+これはCommon Lispプログラムとデータ交換をする場合に便利です。
 
 非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
 それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
@@ -472,9 +480,10 @@ The table below lists hash-syntaxes.
 @c COMMON
 @item @code{#c}
 @c EN
- @tab Unused.
+ @tab Complex notation (@`a la Common Lisp).  @code{#c(1.0 2.0)} is
+ @code{1.0+2.0i}.
 @c JP
- @tab 未使用。
+ @tab Common Lisp風の複素数表記。@code{#c(1.0 2.0)}は@code{1.0+2.0i}です。
 @c COMMON
 @item @code{#d}
 @c EN
