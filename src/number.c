@@ -3856,19 +3856,16 @@ static void spill_fixup(ScmDString *ds, int numstart)
    Convert VAL to a string and store to BUF, which must have at least FLT_BUF
    bytes long.
    True for PLUS_SIGN forces adding '+' for nonnegative numbers.
-   EXP_LO and EXP_HI control when to switch exponential representation.
-   We use n.nnne+zz representation when zz can be smaller than or equal
-   to EXP_LO, or greater than or equal to EXP_HI.
-   PRECISION specifies the number of digits to be printed after
-   the decimal point; -1 means no limit.
-   NOTATIONAL flags changes how the rounding with precision is done; if it's
-   false, we choose closest decimal to the actual number represented by VAL.
-   If it's true, we first generate optimal decimal notation, then round.
-   */
+   Other parameters in FMT affects the output. */
 static void print_double(ScmDString *ds, double val, int plus_sign,
-                         int precision, int notational,
-                         int exp_lo, int exp_hi, int exp_width)
+                         const ScmNumberFormat *fmt)
 {
+    int precision = fmt->precision;
+    int notational = fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL;
+    int exp_lo = fmt->exp_lo;
+    int exp_hi = fmt->exp_hi;
+    int exp_width = fmt->exp_width;
+
     /* Handle a few special cases first. */
     if (val == 0.0) {
         if (Scm_FlonumSign(val) > 0) {
@@ -4192,10 +4189,7 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, const ScmNumberFormat *fmt
     } else if (SCM_FLONUMP(obj)) {
         ScmDString ds;
         Scm_DStringInit(&ds);
-        print_double(&ds, SCM_FLONUM_VALUE(obj), show_plus,
-                     fmt->precision,
-                     fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
-                     fmt->exp_lo, fmt->exp_hi, fmt->exp_width);
+        print_double(&ds, SCM_FLONUM_VALUE(obj), show_plus, fmt);
         Scm_Putz(Scm_DStringGetz(&ds), -1, port);
         return Scm_DStringSize(&ds);
     } else if (SCM_RATNUMP(obj)) {
@@ -4221,17 +4215,11 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, const ScmNumberFormat *fmt
     } else if (SCM_COMPNUMP(obj)) {
         ScmDString ds;
         Scm_DStringInit(&ds);
-        print_double(&ds, SCM_COMPNUM_REAL(obj), show_plus,
-                     fmt->precision,
-                     fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
-                     fmt->exp_lo, fmt->exp_hi, fmt->exp_width);
+        print_double(&ds, SCM_COMPNUM_REAL(obj), show_plus, fmt);
         Scm_Putz(Scm_DStringGetz(&ds), -1, port);
         nchars += Scm_DStringSize(&ds);
         Scm_DStringTruncate(&ds, 0);
-        print_double(&ds, SCM_COMPNUM_IMAG(obj), TRUE,
-                     fmt->precision,
-                     fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
-                     fmt->exp_lo, fmt->exp_hi, fmt->exp_width);
+        print_double(&ds, SCM_COMPNUM_IMAG(obj), TRUE, fmt);
         Scm_Putz(Scm_DStringGetz(&ds), -1, port);
         nchars += Scm_DStringSize(&ds);
         Scm_Putc('i', port);
@@ -4304,11 +4292,7 @@ size_t Scm_PrintDouble(ScmPort *port, double d, const ScmNumberFormat *fmt)
     }
     ScmDString ds;
     Scm_DStringInit(&ds);
-    print_double(&ds, d,
-                 fmt->flags & SCM_NUMBER_FORMAT_SHOW_PLUS,
-                 fmt->precision,
-                 fmt->flags & SCM_NUMBER_FORMAT_ROUND_NOTATIONAL,
-                 fmt->exp_lo, fmt->exp_hi, fmt->exp_width);
+    print_double(&ds, d, (fmt->flags & SCM_NUMBER_FORMAT_SHOW_PLUS), fmt);
     size_t nchars = Scm_DStringSize(&ds);
     Scm_Putz(Scm_DStringGetz(&ds), (int)nchars, port);
     return nchars;
