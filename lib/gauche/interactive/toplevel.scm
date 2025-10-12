@@ -403,7 +403,8 @@
   \n  width <integer>|#f  - Column width before line is wrapped.  Only used in\
   \n                        the pretty printer.  #f for unlimited.  [default: ~(~ default-pm'width)]\
   \n  base <integer>      - Base radix of showing whole numbers.  [default: ~(~ default-pm'base)]\
-  \n  radix <boolean>     - Add radix prefix ('#x' etc.) befors whole numbers.\
+  \n  radix-prefix <boolean> \
+  \n                      - Add radix prefix ('#x' etc.) befors whole numbers.\
   \n                        [default: ~(~ default-pm'radix)]\
   \n  string-length <integer>|#f\
   \n                      - Max length of string literals before abbreviated.\
@@ -416,7 +417,9 @@
   \n                        numbers if they can be written out exactly.\
   \n                        [default: ~(~ default-pm'exact-decimal)]\
   \n  array <symbol>      - Can be 'compact, 'dimensions or 'reader-ctor.\
-  \n                        [default: ~(~ default-pm'array)]"
+  \n                        [default: ~(~ default-pm'array)]\
+  \n  complex <symbol>    - Can be 'rectangular, 'polar, 'polar-pi or 'vector.\
+  \n                        [default: ~(~ default-pm'complex)]"
   (^[args]
     (match args
       [() #f]
@@ -428,9 +431,9 @@
               (append-map
                (^[kv]
                  `(,(if (memq (car kv)
-                              '(pretty length level width base radix
+                              '(pretty length level width base radix-prefix
                                 string-length bytestring exact-decimal
-                                array))
+                                array complex))
                       (make-keyword (car kv))
                       (error "print-mode: unrecognized key:" (car kv)))
                    ,(cadr kv)))
@@ -443,11 +446,12 @@
              (format "       pretty : ~3@a" (~ c'pretty))
              (format "        width : ~3d"  (~ c'width))
              (format "         base : ~3d"  (~ c'base))
-             (format "        radix : ~3d"  (~ c'radix))
+             (format " radix-prefix : ~3@a" (~ c'radix))
              (format "string-length : ~3d"  (~ c'string-length))
              (format "   bytestring : ~3@a" (~ c'bytestring))
              (format "exact-decimal : ~3d"  (~ c'exact-decimal))
-             (format "        array : ~a"   (~ c'array)))
+             (format "        array : ~a"   (~ c'array))
+             (format "      complex : ~a"   (~ c'complex)))
        :style 'packed))
     *no-value*))
 

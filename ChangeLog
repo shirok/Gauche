@@ -1,5 +1,8 @@
 2025-10-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interactive/toplevel.scm (print-mode): Support
+	  complex print mode customization, and rename radix -> radix-prefix.
+
 	* src/number.c (print_complex): Support alternative complex number
 	  printing.  Besides from a+bi, it can be printed out as a@b (polar)
 	  a@bpi (polar-pi), or #c(a b) (vector).
