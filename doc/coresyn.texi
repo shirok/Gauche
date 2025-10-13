@@ -391,9 +391,9 @@ The table below lists hash-syntaxes.
 @c COMMON
 @item @code{#*}
 @c EN
- @tab Bitvector or an incomplete string.  @xref{Strings}.
+ @tab [SRFI-178] Bitvector (or an incomplete string).  @xref{Bitvectors}.
 @c JP
- @tab ビットベクタあるいは不完全な文字列。@ref{Strings}参照。
+ @tab [SRFI-178] ビットベクタ(あるいは不完全な文字列)。@ref{Bitvectors}参照。
 @c COMMON
 @item @code{#+}
 @c EN
