@@ -26535,10 +26535,18 @@ the radix used to print exact numbers.  The default value is 10.
 @c EN
 This slot must have a boolean value.  If it is true, radix prefix
 is always printed before exact numbers.  The default value is @code{#f}.
+
+(NB: This slot used to be called @code{radix}.
+It was confusing with @code{base}, so we changed it since 0.9.16.  Old
+name is still recognized but deprecated.)
 @c JP
 このスロットは真偽値を持ちます。真であれば、
 正確な整数の前に常に基数プレフィクスが表示されます。
 デフォルトは@code{#f}です。
+
+(註: このスロットは以前は@code{radix}と呼ばれていましたが、
+@code{base}と混同しやすいので0.9.16から@code{radix-prefix}になりました。
+以前の名前も認識されますが、非推奨です。)
 @c COMMON
 @end defivar
 
@@ -26647,6 +26655,41 @@ It controls how arrays are printed.
 配列の表示方式を制御します。
 詳しくは@ref{Array literal syntax}を参照してください。
 @c COMMON
+@end defivar
+
+@defivar <write-controls> complex
+@c EN
+This slot can have one of the symbols @code{rectangular} (default),
+@code{polar}, @code{polar-pi}, or @code{vector}.
+It controls how compilex numbers are printed.
+(@code{vector} style uses uniform-vector like
+representation @code{#c(@var{real-part} @var{imag-part})}, which is compatible
+to Common Lisp).
+
+The following table shows how @code{(sqrt (sqrt -5))} is printed
+with each complex printing mode.
+@c JP
+このスロットはシンボル@code{rectangular} (デフォルト)、
+@code{polar}、@code{polar-pi}、@code{vector}のいずれかを持ち、
+複素数の表示方式を制御します。
+(@code{vector}スタイルはユニフォームベクタに似た
+@code{#c(@var{real-part} @var{imag-part})}という表記を使います。
+これはCommon Lispと互換性があります)。
+
+以下の表は、各方式で@code{(sqrt (sqrt -5))}がどう表示されるかを
+示します。
+@c COMMON
+
+@table @code
+@item rectangular
+@code{1.057371263440564+1.057371263440564i}
+@item polar
+@code{1.4953487812212205@@0.7853981633974483}
+@item polar-pi
+@code{1.4953487812212205@@0.25pi}
+@item vector
+@code{#c(1.057371263440564 1.057371263440564)}
+@end table
 @end defivar
 
 @c EN
