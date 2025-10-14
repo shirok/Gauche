@@ -480,10 +480,15 @@ The table below lists hash-syntaxes.
 @c COMMON
 @item @code{#c}
 @c EN
- @tab Complex notation (@`a la Common Lisp).  @code{#c(1.0 2.0)} is
- @code{1.0+2.0i}.
+ @tab (1) [R7RS] Complex uniform vector (@code{#c32(...)}, @code{#c64(...)},
+ @code{#c128(...)}).  @xref{Uniform vectors}. @*
+ (2) Complex notation (@`a la Common Lisp).  @code{#c(1.0 2.0)} is
+ @code{1.0+2.0i}.  @xref{Output controls}.
 @c JP
- @tab Common Lisp風の複素数表記。@code{#c(1.0 2.0)}は@code{1.0+2.0i}です。
+ @tab (1) [R7RS] 複素数ユニフォームベクタ (@code{#c32(...)}, @code{#c64(...)},
+ @code{#c128(...)}。@ref{Uniform vectors}参照。@*
+ (2) Common Lisp風の複素数表記。@code{#c(1.0 2.0)}は@code{1.0+2.0i}です。
+ @ref{Output controls}参照。
 @c COMMON
 @item @code{#d}
 @c EN
