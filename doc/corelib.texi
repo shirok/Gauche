@@ -27018,8 +27018,42 @@ value is assumed.
 @c EN
 You can customize how the object is printed out by this method.
 @c JP
-このメソッドをつかって、オブジェクトをどのように印字するかをカスタマイズ
+このメソッドを使って、オブジェクトをどのように印字するかをカスタマイズ
 できます。
+@c COMMON
+
+@example
+(define-class <user> ()
+  ((id :init-keyword :id)
+   (first-name :init-keyword :first-name)
+   (middle-name :init-keyword :middle-name)
+   (last-name :init-keyword :last-name)))
+
+(define-method write-object ((user <user>) port)
+  (format port "#<user ~d: ~a, ~a ~a>"
+          (~ user'id) (~ user'last-name) (~ user'first-name) (~ user'middle-name)))
+@end example
+
+@example
+gosh> (make <user> :id 1000 :first-name "Eva" :middle-name "Lu" :last-name "Ator")
+#<user 1000: Ator, Eva Lu>
+@end example
+
+@c EN
+Note: You're not supposed to call @code{write-object} directly.
+Most built-in objects are handled directly within basic output procedures
+(@code{write}, @code{display} etc.) and only objects not
+handled there are passed to @code{write-object}.  You should call
+those basic procedures, or other high-level output procedures like
+@code{format}, in your @code{write-object} definition.
+@c JP
+註: @code{write-object}を直接呼び出すことは想定されていません。
+組み込みオブジェクトの多くは基本的な出力手続き
+(@code{write}, @code{display}など)で直接処理され、
+そうでないオブジェクトの表示のみが@code{write-object}に任されます。
+独自の@code{write-object}メソッドを定義する場合、
+その中では基本的続きか@code{format}などの高レベル出力手続きを呼ぶように
+してください。
 @c COMMON
 @end deffn
 
