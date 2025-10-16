@@ -3158,14 +3158,12 @@ C code (which is not recommended, by the way.)
 @c EN
 If you want to write out a Scheme string as a C string literal,
 you can use @code{cgen-safe-string}.  It escapes control
-characters and non-ascii characters.  If the Scheme string contains
-a character beyond ASCII, it is encoded in Gauche's native encoding.
+characters and non-ascii characters.
 (NB: It also escapes @code{?}, to avoid accidenal formation of
 C trigraphs).
 @c JP
 Scheme文字列をCの文字列リテラルにしたい場合は@code{cgen-safe-string}が使えます。
 これは制御文字と非ASCII文字をエスケープします。
-ASCII範囲外の文字については、Gaucheの内部エンコーディングが使われます
 (この変換はまた、@code{?}も変換します。うっかりCのトライグラフを出力してしまわないためです)。
 @c COMMON
 
@@ -3265,9 +3263,9 @@ Example:
   (cgen-init "foo();"))
 
 ;; will generate:
-#if ((defined FOO)&&(defined BAR))
+#if defined(FOO)&&defined(BAR)
 foo();
-#endif /* ((defined FOO)&&(defined BAR)) */
+#endif /* defined(FOO)&&defined(BAR) */
 @end example
 
 @c EN
@@ -3865,7 +3863,7 @@ context; @pxref{CiSE procedures}, for the details.)
 @node CiSE syntax, CiSE procedures, CiSE overview, C in S expression
 @subsubsection CiSE syntax
 
-In this section, we lists basic CiSE syntax.  They are just data from
+In this section, we list basic CiSE syntax.  They are just data from
 the viewpoint of Gauche---so you can build and manipulate them like
 any S-expression (quasiquote comes pretty handy).
 
@@ -4304,14 +4302,14 @@ Optional arguments. @var{spec} is @var{var} or (@var{var}
 raise an error.
 
 @item
-@code{ARG @dots{} :key @var{spec} @dots{} [:allow-other-keys [:rest @var{rest-var}]]} :
+@code{@var{arg} @dots{} :key @var{spec} @dots{} [:allow-other-keys [:rest @var{rest-var}]]} :
 Keyword arguments. @var{spec} is @var{var} or (@var{var}
 @var{default}).  If no @var{default} is given, @var{var} receives
 @code{SCM_UNBOUND}---if @var{var} isn't a type of @code{ScmObj} it will raise
 an error.
 
 @item
-@code{arg @dots{} :optarray (@var{var} @var{cnt} @var{max}) [:rest @var{rest-var}]} :
+@code{@var{arg} @dots{} :optarray (@var{var} @var{cnt} @var{max}) [:rest @var{rest-var}]} :
 A special syntax to receive optional arguments as a C array.
 @var{var} is a C variable of type @code{ScmObj*}. @var{cnt} is a C
 variable of type @code{int}, which receives the number of optional
