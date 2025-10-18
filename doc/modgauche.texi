@@ -70,7 +70,7 @@ another using srfi-10, are also provided.
 数値要素を効率良く保持する配列型も提供されます。
 
 また、配列の外部表現も実装されます。ひとつはSRFI-163準拠のもの、
-もうひとつはSRFI-10を利用したいものです。
+もうひとつはSRFI-10を利用したものです。
 @c COMMON
 
 @c EN
@@ -119,11 +119,11 @@ by changing the vector elements, for it won't involve memory allocation.
 @c EN
 Arrays can be compared by the @code{equal?} procedure.
 @code{Equal?} returns @code{#t} if two arrays have the same
-shape and their corresponding elements are the same
+shape and class, and their corresponding elements are the same
 in the sense of @code{equal?}.
 @c JP
 配列は@code{equal?}手続きで比較することが出来ます。
-二つの配列のshapeが等しく、また対応する各要素が@code{equal?}の意味で
+二つの配列のshapeとクラスが等しく、また対応する各要素が@code{equal?}の意味で
 等しい場合に二つの配列は@code{equal?}であると見なされます。
 @c COMMON
 
@@ -422,8 +422,8 @@ given elements as well.
 @c COMMON
 ; (array (shape -1 1 -2 0) 1 2 3 4)
  @result{}
-#2a@-1@-2((1 2) (3 4))
-#2a@-1:2@-2:2((1 2) (3 4))
+#2a@@-1@@-2((1 2) (3 4))
+#2a@@-1:2@@-2:2((1 2) (3 4))
 @end example
 
 @c EN
