@@ -1,3 +1,8 @@
+2025-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/bitvector.scm (bitvector-last-bit): Export it, for
+	  it is generally useful.
+
 2025-10-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (Scm_CombineHashValue): Improve combine-hash-value to

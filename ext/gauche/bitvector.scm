@@ -120,6 +120,7 @@
    ;; quasi-integer operations
    bitvector-logical-shift bitvector-count bitvector-count-run
    bitvector-if bitvector-first-bit
+   bitvector-last-bit ; Gauche specific
 
    ;; bit field operations
    bitvector-field-any? bitvector-field-every?

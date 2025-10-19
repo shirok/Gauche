@@ -21,6 +21,10 @@
 
 (test-section "extra procedures")
 
+(test* "bitvector-last-bit" 6 (bitvector-last-bit 1 #*00100110))
+(test* "bitvector-last-bit" 7 (bitvector-last-bit #f #*00100110))
+(test* "bitvector-last-bit" -1 (bitvector-last-bit 0 #*11111111))
+
 (test* "value-fold-index (#t)" '(0 4 6 9 11)
        (reverse
         (bitvector-value-fold-index cons '() #*100010100101 #t)))
