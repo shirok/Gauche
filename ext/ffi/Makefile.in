@@ -1,0 +1,32 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+XCPPFLAGS = @FFI_CPPFLAGS@
+XLDFLAGS  = @FFI_LDFLAGS@
+XLIBS     = @FFI_LIB@
+
+SCM_CATEGORY = gauche
+
+LIBFILES = @FFI_ARCHFILES@
+SCMFILES = @FFI_SCMFILES@
+
+OBJECTS = @FFI_OBJECTS@
+
+CONFIG_GENERATED = Makefile
+PREGENERATED =
+XCLEANFILES = gauche--ffi.c ffi.sci
+
+all : $(LIBFILES)
+
+gauche--ffi.$(SOEXT) : $(OBJECTS)
+	$(MODLINK) gauche--ffi.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+$(OBJECTS) : gauche-ffi.h
+
+gauche--ffi.c ffi.sci : ffi.scm
+	$(PRECOMP) -e -P -o gauche--ffi $(srcdir)/ffi.scm
+
+install : install-std
