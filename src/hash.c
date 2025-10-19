@@ -492,10 +492,17 @@ u_long Scm_CombineHashValue(u_long a, u_long b)
 {
     u_long c = COMBINE(a, b);
 #if SIZEOF_LONG == 8
-    /* we limit portable hash value to 32bit. */
-    c &= 0xffffffff;
-#endif /**/
+    /* Kludge - Remix high-bits to retain entropy.
+       We only do it when at least one of inputs is >=2^32, so that
+       we don't change portable hash value. */
+    if (a > PORTABLE_HASHMASK || b >  PORTABLE_HASHMASK) {
+        return c ^ (c >> 32);
+    } else {
+        return c &= PORTABLE_HASHMASK;
+    }
+#else
     return c;
+#endif
 }
 
 /*------------------------------------------------------------

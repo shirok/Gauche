@@ -1,3 +1,12 @@
+2025-10-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_CombineHashValue): Improve combine-hash-value to
+	  remix higher bits to lower bits.  This improve ditribution of hash
+	  value significantly.
+	  Note that we don't change (possibly) portable hash value---the
+	  change only applies to the values that can't be portable.
+	  https://github.com/shirok/Gauche/issues/1169
+
 2025-10-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/toplevel.scm (print-mode): Support
