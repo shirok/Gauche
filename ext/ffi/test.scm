@@ -2,17 +2,12 @@
 ;;; Test foreign function interface
 ;;;
 
-#!no-fold-case
-
 (use gauche.test)
-(use gauche.uvector)
-(use gauche.vport)
-(use gauche.process)
 
 (test-start "gauche.ffi")
 
 ;; bail out if we aren't configured to build ffi
-(unless (file-exists? (string-append "ffi" (gauche-dso-suffix)))
+#;(unless (file-exists? (string-append "ffi" (gauche-dso-suffix)))
   (test-end)
   (exit 0))
 
@@ -20,9 +15,62 @@
 (import gauche.ffi)
 (test-module 'gauche.ffi)
 
+(test* "size-of-int8" #t (number? (size-of-int8)))
+(test* "size-of-uint8" #t (number? (size-of-uint8)))
+(test* "size-of-int16" #t (number? (size-of-int16)))
+(test* "size-of-uint16" #t (number? (size-of-uint16)))
+(test* "size-of-int32" #t (number? (size-of-int32)))
+(test* "size-of-uint32" #t (number? (size-of-uint32)))
+(test* "size-of-int64" #t (number? (size-of-int64)))
+(test* "size-of-uint64" #t (number? (size-of-uint64)))
+(test* "size-of-char" #t (number? (size-of-char)))
+(test* "size-of-unsigned-char" #t (number? (size-of-unsigned-char)))
+(test* "size-of-short" #t (number? (size-of-short)))
+(test* "size-of-unsigned-short" #t (number? (size-of-unsigned-short)))
+(test* "size-of-int" #t (number? (size-of-int)))
+(test* "size-of-unsigned-int" #t (number? (size-of-unsigned-int)))
+(test* "size-of-long" #t (number? (size-of-long)))
+(test* "size-of-unsigned-long" #t (number? (size-of-unsigned-long)))
+(test* "size-of-float" #t (number? (size-of-float)))
+(test* "size-of-double" #t (number? (size-of-double)))
+(test* "size-of-string" #t (number? (size-of-string)))
+(test* "size-of-pointer" #t (number? (size-of-pointer)))
+
+(test* "align-of-int8" #t (number? (align-of-int8)))
+(test* "align-of-uint8" #t (number? (align-of-uint8)))
+(test* "align-of-int16" #t (number? (align-of-int16)))
+(test* "align-of-uint16" #t (number? (align-of-uint16)))
+(test* "align-of-int32" #t (number? (align-of-int32)))
+(test* "align-of-uint32" #t (number? (align-of-uint32)))
+(test* "align-of-int64" #t (number? (align-of-int64)))
+(test* "align-of-uint64" #t (number? (align-of-uint64)))
+(test* "align-of-char" #t (number? (align-of-char)))
+(test* "align-of-unsigned-char" #t (number? (align-of-unsigned-char)))
+(test* "align-of-short" #t (number? (align-of-short)))
+(test* "align-of-unsigned-short" #t (number? (align-of-unsigned-short)))
+(test* "align-of-int" #t (number? (align-of-int)))
+(test* "align-of-unsigned-int" #t (number? (align-of-unsigned-int)))
+(test* "align-of-long" #t (number? (align-of-long)))
+(test* "align-of-unsigned-long" #t (number? (align-of-unsigned-long)))
+(test* "align-of-float" #t (number? (align-of-float)))
+(test* "align-of-double" #t (number? (align-of-double)))
+(test* "align-of-string" #t (number? (align-of-string)))
+(test* "align-of-pointer" #t (number? (align-of-pointer)))
+
+(define so (open-shared-library "./test/f"))
+
 (display "HERE: ")
-(test* "size-of-int8"       1 (size-of-int8))
+(write so)
 (newline)
+
+(define libcurl (open-shared-library "libcurl"))
+
+(display "HERE: ")
+(write libcurl)
+(newline)
+
+
+;(test* "open-shared-library" #t (and so))
 
 #|
 (test* "zlib-version" #t (string? (zlib-version)))

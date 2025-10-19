@@ -29,4 +29,9 @@ $(OBJECTS) : gauche-ffi.h
 gauche--ffi.c ffi.sci : ffi.scm
 	$(PRECOMP) -e -P -o gauche--ffi $(srcdir)/ffi.scm
 
+test/f.$(SOEXT) : test/f.h test/f.c
+	mkdir -p test
+	$(COMPILE) -c $(srcdir)/test/f.c
+	$(LINK) test/f.$(SOEXT) f.$(OBJEXT)
+
 install : install-std

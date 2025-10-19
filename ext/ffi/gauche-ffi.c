@@ -4,11 +4,23 @@
 #include <gauche/extend.h>
 #include <gauche/module.h>
 #include <gauche/load.h>
-#include <gauche/number.h>
-#include <gauche/string.h>
+//#include <gauche/number.h>
+//#include <gauche/string.h>
 #include <gauche-ffi.h>
 #include <ffi.h>
-#include <dlfcn.h>
+
+// Copied from load.c begin
+typedef void (*ScmDynLoadEntry)(void); /* Dynamically loaded function pointer */
+// Copied from load.c end
+
+#if defined(HAVE_DLOPEN)
+#include "dl_dlopen.c"
+#elif defined(GAUCHE_WINDOWS)
+#include "dl_win.c"
+#else
+#include "dl_dummy.c"
+#endif
+
 
 void print_pointer(ScmObj obj, ScmPort* sink, ScmWriteContext* G1788 SCM_UNUSED) {
     void* p = SCM_FOREIGN_POINTER_REF(void*, obj);
@@ -39,7 +51,6 @@ ScmObj size_of_float() { return Scm_MakeInteger(sizeof(float)); }
 ScmObj size_of_double() { return Scm_MakeInteger(sizeof(double)); }
 ScmObj size_of_string() { return Scm_MakeInteger(sizeof(char*)); }
 ScmObj size_of_pointer() { return Scm_MakeInteger(sizeof(void*)); }
-ScmObj size_of_void() { return Scm_MakeInteger(sizeof(void)); }
 
 ScmObj align_of_int8() { return Scm_MakeInteger(_Alignof(int8_t)); }
 ScmObj align_of_uint8() { return Scm_MakeInteger(_Alignof(uint8_t)); }
@@ -61,18 +72,55 @@ ScmObj align_of_float() { return Scm_MakeInteger(_Alignof(float)); }
 ScmObj align_of_double() { return Scm_MakeInteger(_Alignof(double)); }
 ScmObj align_of_string() { return Scm_MakeInteger(_Alignof(char*)); }
 ScmObj align_of_pointer() { return Scm_MakeInteger(_Alignof(void*)); }
-ScmObj align_of_void() { return Scm_MakeInteger(_Alignof(void)); }
 
 ScmModule* module = NULL;
 
-ScmObj shared_object_load(ScmString* path, ScmObj options) {
-    const ScmStringBody* body = SCM_STRING_BODY(path);
-    const char* c_path = SCM_STRING_BODY_START(body);
-    void* shared_object = dlopen(c_path, RTLD_NOW);
-    ScmClass* shared_object_class = Scm_MakeForeignPointerClass(module, "shared-object", print_pointer, NULL, 0);
-    ScmObj scm_shared_object = Scm_MakeForeignPointer(shared_object_class, shared_object);
-    return scm_shared_object;
+struct ScmDLObjRec {
+    SCM_HEADER;
+    ScmString *path;            /* pathname for DSO, including suffix */
+    int loaded;                 /* TRUE if this DSO is already loaded.
+                                   It may need to be initialized, though.
+                                   Check initfns.  */
+    void *handle;               /* whatever dl_open returned */
+    ScmVM *loader;              /* The VM that's holding the lock to operate
+                                   on this DLO. */
+    ScmHashCore entries;        /* name -> <foreign-pointer> */
+    ScmInternalMutex mutex;
+    ScmInternalCond  cv;
+};
+
+static void dlobj_print(ScmObj obj, ScmPort *sink,
+                        ScmWriteContext *mode SCM_UNUSED)
+{
+    Scm_Printf(sink, "#<dlobj %S>", SCM_DLOBJ(obj)->path);
 }
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_DLObjClass, dlobj_print);
+
+ScmObj open_shared_library(ScmString* path) {
+    ScmDLObj* so = SCM_NEW(ScmDLObj);
+    SCM_SET_CLASS(so, &Scm_DLObjClass);
+    so->path = SCM_STRING(Scm_StringAppend2(path, SCM_STRING(Scm_MakeString("." SHLIB_SO_SUFFIX, -1, -1, 0))));
+    so->loader = NULL;
+    so->loaded = FALSE;
+    so->handle = NULL;
+    Scm_HashCoreInitSimple(&so->entries, SCM_HASH_STRING, 0, NULL);
+    (void)SCM_INTERNAL_MUTEX_INIT(so->mutex);
+    (void)SCM_INTERNAL_COND_INIT(so->cv);
+
+    so->handle = dl_open(Scm_GetStringConst(so->path));
+    if (so->handle == NULL) {
+        const char *err = dl_error();
+        if (err == NULL) {
+            Scm_Error("failed to load shared library %A", so->path);
+        } else {
+            Scm_Error("failed to load shared library %A: %s", so->path, err);
+        }
+    }
+
+    return SCM_OBJ(so);
+}
+
 
 /*
 ScmObj pointer_null() {
@@ -82,6 +130,7 @@ ScmObj pointer_null() {
 }
 */
 
+/*
 ScmObj is_pointer_null(ScmObj pointer) {
     if(!Scm_TypeP(pointer, SCM_CLASS_FOREIGN_POINTER)) {
         return SCM_FALSE;
@@ -92,6 +141,7 @@ ScmObj is_pointer_null(ScmObj pointer) {
         return SCM_FALSE;
     }
 }
+*/
 
 /*
 ScmObj pointer_allocate(int size) {
@@ -116,6 +166,7 @@ ScmObj pointer_address(ScmObj pointer) {
 }
 */
 
+/*
 ScmObj is_pointer(ScmObj pointer) {
     if(Scm_TypeP(pointer, SCM_CLASS_FOREIGN_POINTER)) {
         return SCM_TRUE;
@@ -123,6 +174,7 @@ ScmObj is_pointer(ScmObj pointer) {
         return SCM_FALSE;
     }
 }
+*/
 
 /*
 ScmObj pointer_free(ScmObj pointer) {
@@ -143,6 +195,7 @@ ScmObj pointer_set_int8(ScmObj pointer, int offset, int8_t value) {
 }
 */
 
+/*
 ScmObj pointer_set_uint8(ScmObj pointer, int offset, uint8_t value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
@@ -152,6 +205,7 @@ ScmObj pointer_set_uint8(ScmObj pointer, int offset, uint8_t value) {
     }
     return SCM_UNDEFINED;
 }
+*/
 
 /*
 ScmObj pointer_set_int16(ScmObj pointer, int offset, int16_t value) {
@@ -316,6 +370,7 @@ ScmObj pointer_set_double(ScmObj pointer, int offset, double value) {
 
 */
 
+/*
 ScmObj pointer_set_pointer(ScmObj pointer, int offset, ScmObj value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* v = SCM_FOREIGN_POINTER_REF(void*, value);
@@ -327,6 +382,7 @@ ScmObj pointer_set_pointer(ScmObj pointer, int offset, ScmObj value) {
     }
     return SCM_UNDEFINED;
 }
+*/
 
 /*
 
@@ -341,6 +397,7 @@ ScmObj pointer_get_int8(ScmObj pointer, int offset) {
 }
 */
 
+/*
 ScmObj pointer_get_uint8(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
@@ -350,6 +407,7 @@ ScmObj pointer_get_uint8(ScmObj pointer, int offset) {
     }
     return SCM_UNDEFINED;
 }
+*/
 
 /*
 ScmObj pointer_get_int16(ScmObj pointer, int offset) {
@@ -513,6 +571,7 @@ ScmObj pointer_get_double(ScmObj pointer, int offset) {
 }
 */
 
+/*
 ScmObj pointer_get_pointer(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
@@ -524,6 +583,7 @@ ScmObj pointer_get_pointer(ScmObj pointer, int offset) {
     }
     return SCM_UNDEFINED;
 }
+*/
 
 /*
 
@@ -549,6 +609,7 @@ ScmObj pointer_to_string(ScmObj pointer) {
 }
 */
 
+/*
 ScmObj internal_dlerror() {
     ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "pointer", print_pointer, NULL, 0);
     void* msg = dlerror();
@@ -558,7 +619,9 @@ ScmObj internal_dlerror() {
         return Scm_MakeForeignPointer(pointer_class, msg);
     }
 }
+*/
 
+/*
 ScmObj internal_dlsym(ScmObj shared_object, ScmObj c_name) {
 
     if(!SCM_FOREIGN_POINTER_P(shared_object)) {
@@ -584,6 +647,9 @@ ScmObj internal_dlsym(ScmObj shared_object, ScmObj c_name) {
     ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "pointer", print_pointer, NULL, 0);
     return Scm_MakeForeignPointer(pointer_class, symbol);
 }
+*/
+
+/*
 
 ScmObj get_ffi_type_int8() {
     ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "pointer", print_pointer, NULL, 0);
@@ -684,7 +750,9 @@ ScmObj get_ffi_type_pointer() {
     ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "pointer", print_pointer, NULL, 0);
     return Scm_MakeForeignPointer(pointer_class, &ffi_type_pointer);
 }
+*/
 
+/*
 ScmObj internal_ffi_call(
         ScmObj nargs,
         ScmObj rtype,
@@ -696,7 +764,7 @@ ScmObj internal_ffi_call(
 
     ffi_cif cif;
 
-    /*
+    *
     unsigned int c_nargs = SCM_INT_VALUE(nargs);
     ffi_type* c_rtype = SCM_FOREIGN_POINTER_REF(ffi_type*, rtype);
     int atypes_length = (int)Scm_Length(atypes);
@@ -706,7 +774,7 @@ ScmObj internal_ffi_call(
         }
         //c_atypes[i] = SCM_FOREIGN_POINTER_REF(ffi_type*, Scm_ListRef(atypes, i, SCM_UNDEFINED));
     }
-    */
+    *
 
     unsigned int c_nargs = SCM_INT_VALUE(nargs);
     ffi_type* c_atypes[c_nargs];
@@ -800,7 +868,7 @@ ScmObj internal_ffi_call(
 
     void* c_fn = SCM_FOREIGN_POINTER_REF(void*, fn);
     void* rvalue = malloc(SCM_INT_VALUE(rvalue_size)); //SCM_FOREIGN_POINTER_REF(void*, rvalue);
-    /*
+    *
     int avalues_length = (int)Scm_Length(avalues);
     void* c_avalues[avalues_length];
     for(int i = 0; i < avalues_length; i++) {
@@ -808,18 +876,21 @@ ScmObj internal_ffi_call(
         void* pp = SCM_FOREIGN_POINTER_REF(void*, item);
         char* list_p = (char*)c_avalues + (sizeof(void) * i);
         c_avalues[i] = pp;
-    }*/
+    }*
     ffi_call(&cif, FFI_FN(c_fn), rvalue, c_avalues);
 
     //printf("Return value: %s\n", (char*)rvalue);
     ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "pointer", print_pointer, NULL, 0);
     return Scm_MakeForeignPointer(pointer_class, rvalue);
 }
+*/
 
+/*
 ScmObj scheme_procedure_to_pointer(ScmObj procedure) {
     ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "callback", print_pointer, NULL, 0);
     return Scm_MakeForeignPointer(pointer_class, procedure);
 }
+*/
 
 /*
 ScmObj procedure_to_pointer(ScmObj procedure) {
@@ -827,9 +898,9 @@ ScmObj procedure_to_pointer(ScmObj procedure) {
     return SCM_UNDEFINED;
 }*/
 
-void Scm_Init_gauche(void)
+void Scm_Init_gauche_ffi(void)
 {
     SCM_INIT_EXTENSION(gauche.ffi);
-    module = SCM_MODULE(SCM_FIND_MODULE("foreign.c.primitives.gauche", TRUE));
-    Scm_Init_gauche_ffi();
+    module = SCM_MODULE(SCM_FIND_MODULE("gauche.ffi", TRUE));
+    //Scm_Init_gauche_ffi();
 }

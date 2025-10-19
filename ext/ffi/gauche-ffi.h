@@ -18,7 +18,6 @@ extern ScmObj size_of_float();
 extern ScmObj size_of_double();
 extern ScmObj size_of_string();
 extern ScmObj size_of_pointer();
-extern ScmObj size_of_void();
 
 extern ScmObj align_of_int8();
 extern ScmObj align_of_uint8();
@@ -40,9 +39,8 @@ extern ScmObj align_of_float();
 extern ScmObj align_of_double();
 extern ScmObj align_of_string();
 extern ScmObj align_of_pointer();
-extern ScmObj align_of_void();
 
-extern ScmObj shared_object_load(ScmString* path, ScmObj options);
+extern ScmObj open_shared_library(ScmString* path);
 //extern ScmObj pointer_null();
 extern ScmObj is_pointer_null(ScmObj pointer);
 //extern ScmObj pointer_allocate(int size);
