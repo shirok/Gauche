@@ -1,3 +1,10 @@
+2025-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (<write-controls>): Expose numberFormat.exp_lo and
+	  numberFormat.exp_hi.  We're not sure yet if these are a good way
+	  to control flonum printing, so we don't make them 'official' for
+	  a while.  However, it allows us to implement ~f and ~e in libfmt.
+
 2025-10-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/gauche/bitvector.scm (bitvector-last-bit): Export it, for

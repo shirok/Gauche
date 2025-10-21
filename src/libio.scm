@@ -1085,6 +1085,10 @@
      :type <boolean>
      :getter (c "wc_complex_get")
      :setter (c "wc_complex_set"))
+    (flonum-exp-lo
+     :type <int8> :c-name "numberFormat.exp_lo")
+    (flonum-exp-hi
+     :type <int8> :c-name "numberFormat.exp_hi")
     )
    (allocator (c "wc_allocate")))
 
@@ -1119,7 +1123,12 @@
     :indent indent
     :exact-decimal exact-decimal
     :array array
-    :complex complex))
+    :complex complex
+    ;; The following slots are "internal use" for now.  We may change the
+    ;; interface in the furture.  Atm, we initialize them in the same values
+    ;; as Scm_NumebrFormatInit() -- eventually we eliminate these magic numbers.
+    :flonum-exp-lo -3
+    :flonum-exp-hi 10))
 
 ;; Returns fresh write-controls where the specified slot value is replaced
 ;; from the original WC.
@@ -1131,6 +1140,8 @@
                                      pretty indent
                                      bytestring string-length exact-decimal
                                      array complex
+                                     ;; These two are "unofficial" for now
+                                     flonum-exp-lo flonum-exp-hi
                                      ;; For backward compatibility
                                      print-length print-level print-width
                                      print-base print-radix radix print-pretty)
@@ -1165,7 +1176,12 @@
           [string-length (select string-length)]
           [exact-decimal (select exact-decimal)]
           [array  (select array)]
-          [complex (select complex)])
+          [complex (select complex)]
+          [exp-hi (select flonum-exp-hi)]
+          [exp-lo (select flonum-exp-lo)])
+      ;; TODO: As the number of kwargs increase, we could do a bit better in
+      ;; handling this---we commonly see only a few of those args given,
+      ;; and we only need to check those given args differ from the original.
       (if (and (eqv? length (slot-ref wc 'length))
                (eqv? level  (slot-ref wc 'level))
                (eqv? width  (slot-ref wc 'width))
@@ -1177,8 +1193,9 @@
                (eqv? string-length (slot-ref wc 'string-length))
                (eqv? exact-decimal (slot-ref wc 'exact-decimal))
                (eqv? array  (slot-ref wc 'array))
-               (eqv? complex (slot-ref wc 'complex)))
-
+               (eqv? complex (slot-ref wc 'complex))
+               (eqv? exp-hi (slot-ref wc 'flonum-exp-hi))
+               (eqv? exp-lo (slot-ref wc 'flonum-exp-lo)))
         wc
         (make <write-controls>
           :length length
@@ -1192,7 +1209,9 @@
           :string-length string-length
           :exact-decimal exact-decimal
           :array array
-          :complex complex)))))
+          :complex complex
+          :flonum-exp-hi exp-hi
+          :flonum-exp-lo exp-lo)))))
 
 ;;;
 ;;; With-something
