@@ -1150,26 +1150,29 @@
                                      ;; For backward compatibility
                                      print-length print-level print-width
                                      print-base print-radix radix print-pretty)
+
+  (define changed? #f)
+  (define (return val orig)
+    (unless (equal? val orig) (set! changed? #t))
+    val)
   (let-syntax [(select
                 (syntax-rules ()
                   [(_ k k-alt k-alt2)
-                   (if (undefined? k)
-                     (if (undefined? k-alt)
-                       (if (undefined? k-alt2)
-                         (slot-ref wc 'k)
-                         k-alt2)
-                       k-alt)
-                     k)]
+                   (let1 orig (slot-ref wc 'k)
+                     (cond [(not (undefined? k)) (return k orig)]
+                           [(not (undefined? k-alt)) (return k-alt orig)]
+                           [(not (undefined? k-alt2)) (return k-alt2 orig)]
+                           [else orig]))]
                   [(_ k k-alt)
-                   (if (undefined? k)
-                     (if (undefined? k-alt)
-                       (slot-ref wc 'k)
-                       k-alt)
-                     k)]
+                   (let1 orig (slot-ref wc 'k)
+                     (cond [(not (undefined? k)) (return k orig)]
+                           [(not (undefined? k-alt)) (return k-alt orig)]
+                           [else orig]))]
                   [(_ k)
-                   (if (undefined? k)
-                     (slot-ref wc 'k)
-                     k)]))]
+                   (let1 orig (slot-ref wc 'k)
+                     (if (undefined? k)
+                       orig
+                       (return k orig)))]))]
     (let ([length (select length print-length)]
           [level  (select level  print-level)]
           [width  (select width  print-width)]
@@ -1186,26 +1189,7 @@
           [notational (select notational-rounding)]
           [exp-hi (select flonum-exp-hi)]
           [exp-lo (select flonum-exp-lo)])
-      ;; TODO: As the number of kwargs increase, we could do a bit better in
-      ;; handling this---we commonly see only a few of those args given,
-      ;; and we only need to check those given args differ from the original.
-      (if (and (eqv? length (slot-ref wc 'length))
-               (eqv? level  (slot-ref wc 'level))
-               (eqv? width  (slot-ref wc 'width))
-               (eqv? base   (slot-ref wc 'base))
-               (eqv? radix-prefix (slot-ref wc 'radix-prefix))
-               (eqv? pretty (slot-ref wc 'pretty))
-               (eqv? indent (slot-ref wc 'indent))
-               (eqv? bytestring    (slot-ref wc 'bytestring))
-               (eqv? string-length (slot-ref wc 'string-length))
-               (eqv? exact-decimal (slot-ref wc 'exact-decimal))
-               (eqv? array  (slot-ref wc 'array))
-               (eqv? complex (slot-ref wc 'complex))
-               (eqv? plus (slot-ref wc 'explicit-plus-sign))
-               (eqv? notational (slot-ref wc 'notational-rounding))
-               (eqv? exp-hi (slot-ref wc 'flonum-exp-hi))
-               (eqv? exp-lo (slot-ref wc 'flonum-exp-lo)))
-        wc
+      (if changed?
         (make <write-controls>
           :length length
           :level  level
@@ -1222,7 +1206,8 @@
           :explicit-plus-sign plus
           :notational-rounding notational
           :flonum-exp-hi exp-hi
-          :flonum-exp-lo exp-lo)))))
+          :flonum-exp-lo exp-lo)
+        wc))))
 
 ;;;
 ;;; With-something
