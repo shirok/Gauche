@@ -925,27 +925,28 @@
  (define-cfn wc-allocate (_::ScmClass* _) :static
    (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
 
+ (define-cise-stmt wc-bit-get
+   [(_ bit arg)
+    `(let* ([obj :: ScmWriteControls* (SCM_WRITE_CONTROLS ,arg)])
+       (return (SCM_MAKE_BOOL
+                (logand (ref (-> obj numberFormat) flags) ,bit))))])
+
+ (define-cise-stmt wc-bit-set
+   [(_ bit arg value)
+    `(let* ([obj :: ScmWriteControls* (SCM_WRITE_CONTROLS ,arg)])
+       (if (SCM_BOOL_VALUE ,value)
+         (logior= (ref (-> obj numberFormat) flags) ,bit)
+         (logand= (ref (-> obj numberFormat) flags) (lognot ,bit))))])
+
  (define-cfn wc-radix-prefix-get (arg) :static
-   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
-     (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_RADIX obj)))))
+   (wc-bit-get SCM_NUMBER_FORMAT_ALT_RADIX arg))
  (define-cfn wc-radix-prefix-set (arg value) ::void :static
-   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
-     (if (SCM_BOOL_VALUE value)
-       (logior= (ref (-> obj numberFormat) flags)
-                SCM_NUMBER_FORMAT_ALT_RADIX)
-       (logand= (ref (-> obj numberFormat) flags)
-                (lognot SCM_NUMBER_FORMAT_ALT_RADIX)))))
+   (wc-bit-set SCM_NUMBER_FORMAT_ALT_RADIX arg value))
 
  (define-cfn wc-exact-decimal-get (arg) :static
-   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
-     (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_EXACTDECIMAL obj)))))
+   (wc-bit-get SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT arg))
  (define-cfn wc-exact-decimal-set (arg value) ::void :static
-   (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
-     (if (SCM_BOOL_VALUE value)
-       (logior= (ref (-> obj numberFormat) flags)
-                SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)
-       (logand= (ref (-> obj numberFormat) flags)
-                (lognot SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)))))
+   (wc-bit-set SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT arg value))
 
  (define-cfn wc-array-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])

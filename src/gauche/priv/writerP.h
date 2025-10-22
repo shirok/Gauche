@@ -67,7 +67,7 @@ enum ScmWriteArrayFormat {
 #define SCM_WRITE_CONTROL_LEVEL(wc)          ((wc)->printLevel)
 #define SCM_WRITE_CONTROL_WIDTH(wc)          ((wc)->printWidth)
 #define SCM_WRITE_CONTROL_BASE(wc)           ((wc)->numberFormat.base)
-#define SCM_WRITE_CONTROL_RADIX(wc) \
+#define SCM_WRITE_CONTROL_RADIX(wc)                           \
     ((wc)->numberFormat.flags & SCM_NUMBER_FORMAT_ALT_RADIX)
 #define SCM_WRITE_CONTROL_PRETTY(wc)         ((wc)->printPretty)
 #define SCM_WRITE_CONTROL_INDENT(wc)         ((wc)->printIndent)
