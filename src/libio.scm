@@ -927,26 +927,18 @@
 
  (define-cise-stmt wc-bit-get
    [(_ bit arg)
-    `(let* ([obj :: ScmWriteControls* (SCM_WRITE_CONTROLS ,arg)])
-       (return (SCM_MAKE_BOOL
-                (logand (ref (-> obj numberFormat) flags) ,bit))))])
+    (let1 obj (gensym)
+      `(let* ([,obj :: ScmWriteControls* (SCM_WRITE_CONTROLS ,arg)])
+         (return (SCM_MAKE_BOOL
+                  (logand (ref (-> ,obj numberFormat) flags) ,bit)))))])
 
  (define-cise-stmt wc-bit-set
    [(_ bit arg value)
-    `(let* ([obj :: ScmWriteControls* (SCM_WRITE_CONTROLS ,arg)])
-       (if (SCM_BOOL_VALUE ,value)
-         (logior= (ref (-> obj numberFormat) flags) ,bit)
-         (logand= (ref (-> obj numberFormat) flags) (lognot ,bit))))])
-
- (define-cfn wc-radix-prefix-get (arg) :static
-   (wc-bit-get SCM_NUMBER_FORMAT_ALT_RADIX arg))
- (define-cfn wc-radix-prefix-set (arg value) ::void :static
-   (wc-bit-set SCM_NUMBER_FORMAT_ALT_RADIX arg value))
-
- (define-cfn wc-exact-decimal-get (arg) :static
-   (wc-bit-get SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT arg))
- (define-cfn wc-exact-decimal-set (arg value) ::void :static
-   (wc-bit-set SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT arg value))
+    (let1 obj (gensym)
+      `(let* ([,obj :: ScmWriteControls* (SCM_WRITE_CONTROLS ,arg)])
+         (if (SCM_BOOL_VALUE ,value)
+           (logior= (ref (-> ,obj numberFormat) flags) ,bit)
+           (logand= (ref (-> ,obj numberFormat) flags) (lognot ,bit)))))])
 
  (define-cfn wc-array-get (arg) :static
    (let* ([obj::ScmWriteControls* (SCM_WRITE_CONTROLS arg)])
@@ -1043,12 +1035,12 @@
                           SCM_RADIX_MIN SCM_RADIX_MAX value)))
     (radix-prefix
      :type <boolean>
-     :getter (c "wc_radix_prefix_get")
-     :setter (c "wc_radix_prefix_set"))
+     :getter (wc-bit-get SCM_NUMBER_FORMAT_ALT_RADIX obj)
+     :setter (wc-bit-set SCM_NUMBER_FORMAT_ALT_RADIX obj value))
     (radix                              ;backward compatibility
      :type <boolean>
-     :getter (c "wc_radix_prefix_get")
-     :setter (c "wc_radix_prefix_set"))
+     :getter (wc-bit-get SCM_NUMBER_FORMAT_ALT_RADIX obj)
+     :setter (wc-bit-set SCM_NUMBER_FORMAT_ALT_RADIX obj value))
     (pretty
      :type <boolean>
      :getter (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_PRETTY obj)))
@@ -1076,8 +1068,8 @@
                (set! (SCM_WRITE_CONTROL_STRINGLENGTH obj) -1)))
     (exact-decimal
      :type <boolean>
-     :getter (c "wc_exact_decimal_get")
-     :setter (c "wc_exact_decimal_set"))
+     :getter (wc-bit-get SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT obj)
+     :setter (wc-bit-set SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT obj value))
     (array
      :type <symbol>
      :getter (c "wc_array_get")
@@ -1086,6 +1078,14 @@
      :type <boolean>
      :getter (c "wc_complex_get")
      :setter (c "wc_complex_set"))
+    (explicit-plus-sign
+     :type <boolean>
+     :getter (wc-bit-get SCM_NUMBER_FORMAT_SHOW_PLUS obj)
+     :setter (wc-bit-set SCM_NUMBER_FORMAT_SHOW_PLUS obj value))
+    (notational-rounding
+     :type <boolean>
+     :getter (wc-bit-get SCM_NUMBER_FORMAT_ROUND_NOTATIONAL obj)
+     :setter (wc-bit-set SCM_NUMBER_FORMAT_ROUND_NOTATIONAL obj value))
     (flonum-exp-lo
      :type <int8> :c-name "numberFormat.exp_lo")
     (flonum-exp-hi
@@ -1100,7 +1100,8 @@
 (define (make-write-controls :key length level width base radix-prefix
                                   pretty indent
                                   bytestring string-length exact-decimal
-                                  array complex
+                                  array complex explicit-plus-sign
+                                  notational-rounding
                                   ;; For backward compatibility
                                   print-length print-level print-width
                                   print-base print-radix radix print-pretty)
@@ -1125,6 +1126,8 @@
     :exact-decimal exact-decimal
     :array array
     :complex complex
+    :explicit-plus-sign explicit-plus-sign
+    :notational-rounding notational-rounding
     ;; The following slots are "internal use" for now.  We may change the
     ;; interface in the furture.  Atm, we initialize them in the same values
     ;; as Scm_NumebrFormatInit() -- eventually we eliminate these magic numbers.
@@ -1140,7 +1143,8 @@
 (define (write-controls-copy wc :key length level width base radix-prefix
                                      pretty indent
                                      bytestring string-length exact-decimal
-                                     array complex
+                                     array complex explicit-plus-sign
+                                     notational-rounding
                                      ;; These two are "unofficial" for now
                                      flonum-exp-lo flonum-exp-hi
                                      ;; For backward compatibility
@@ -1178,6 +1182,8 @@
           [exact-decimal (select exact-decimal)]
           [array  (select array)]
           [complex (select complex)]
+          [plus (select explicit-plus-sign)]
+          [notational (select notational-rounding)]
           [exp-hi (select flonum-exp-hi)]
           [exp-lo (select flonum-exp-lo)])
       ;; TODO: As the number of kwargs increase, we could do a bit better in
@@ -1195,6 +1201,8 @@
                (eqv? exact-decimal (slot-ref wc 'exact-decimal))
                (eqv? array  (slot-ref wc 'array))
                (eqv? complex (slot-ref wc 'complex))
+               (eqv? plus (slot-ref wc 'explicit-plus-sign))
+               (eqv? notational (slot-ref wc 'notational-rounding))
                (eqv? exp-hi (slot-ref wc 'flonum-exp-hi))
                (eqv? exp-lo (slot-ref wc 'flonum-exp-lo)))
         wc
@@ -1211,6 +1219,8 @@
           :exact-decimal exact-decimal
           :array array
           :complex complex
+          :explicit-plus-sign plus
+          :notational-rounding notational
           :flonum-exp-hi exp-hi
           :flonum-exp-lo exp-lo)))))
 
