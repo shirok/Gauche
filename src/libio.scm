@@ -1086,6 +1086,13 @@
      :type <boolean>
      :getter (wc-bit-get SCM_NUMBER_FORMAT_ROUND_NOTATIONAL obj)
      :setter (wc-bit-set SCM_NUMBER_FORMAT_ROUND_NOTATIONAL obj value))
+    (flonum-digits
+     :type <int>
+     :getter (return (SCM_MAKE_INT (ref (-> obj numberFormat) precision)))
+     :setter (set! (ref (-> obj numberFormat) precision)
+                   (?: (SCM_INTP value)
+                       (SCM_INT_VALUE value)
+                       -1)))
     (flonum-exp-lo
      :type <int8> :c-name "numberFormat.exp_lo")
     (flonum-exp-hi
@@ -1101,7 +1108,7 @@
                                   pretty indent
                                   bytestring string-length exact-decimal
                                   array complex explicit-plus-sign
-                                  notational-rounding
+                                  notational-rounding flonum-digits
                                   ;; For backward compatibility
                                   print-length print-level print-width
                                   print-base print-radix radix print-pretty)
@@ -1128,6 +1135,7 @@
     :complex complex
     :explicit-plus-sign explicit-plus-sign
     :notational-rounding notational-rounding
+    :flonum-digits flonum-digits
     ;; The following slots are "internal use" for now.  We may change the
     ;; interface in the furture.  Atm, we initialize them in the same values
     ;; as Scm_NumebrFormatInit() -- eventually we eliminate these magic numbers.
@@ -1144,7 +1152,7 @@
                                      pretty indent
                                      bytestring string-length exact-decimal
                                      array complex explicit-plus-sign
-                                     notational-rounding
+                                     notational-rounding flonum-digits
                                      ;; These two are "unofficial" for now
                                      flonum-exp-lo flonum-exp-hi
                                      ;; For backward compatibility
@@ -1187,6 +1195,7 @@
           [complex (select complex)]
           [plus (select explicit-plus-sign)]
           [notational (select notational-rounding)]
+          [digits (select flonum-digits)]
           [exp-hi (select flonum-exp-hi)]
           [exp-lo (select flonum-exp-lo)])
       (if changed?
@@ -1205,6 +1214,7 @@
           :complex complex
           :explicit-plus-sign plus
           :notational-rounding notational
+          :flonum-digits digits
           :flonum-exp-hi exp-hi
           :flonum-exp-lo exp-lo)
         wc))))
