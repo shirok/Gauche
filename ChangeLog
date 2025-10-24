@@ -1,3 +1,11 @@
+2025-10-23  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match-impl.scm: Make match-define work as an internal
+	  define.  https://github.com/shirok/Gauche/issues/1184
+	  NB: Currently, match-define expands into forms that set! matched
+	  values to newly defined variables.  The existence of set! interferes
+	  optimizer, and the generated code is very inefficient.
+
 2025-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (<write-controls>): Expose numberFormat.exp_lo and
