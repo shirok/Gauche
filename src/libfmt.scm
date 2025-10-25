@@ -595,6 +595,31 @@
        (format-num-body fmtstr argptr port ctrl radix upcase
                         flags mincol padchar comma interval point))))
 
+;; Utility macro to set up <write-controls> for flonum printing.
+;; This is intentionally unhygienic to keep the main code concise.
+;; Assuming these variables are visible:
+;;   ctrl - <write-controls>
+;;   digits - # of digits after the decimal point
+;;   flags - ':' and '@' flag info given to the format directive.
+(define-macro (flo-ctrl kind
+                        :key (plus? #f)
+                             (notational? #f))
+  (let ([hi (gensym)]
+        [lo (gensym)])
+    `(receive (,hi ,lo)
+         (case ,kind
+           [(F) (values 127 -128)]
+           [(E) (values 0 0)]
+           [else (values 10 -3)])
+       (write-controls-copy ctrl
+                            :flonum-digits digits
+                            :explicit-plus-sign ,(or plus?
+                                                     '(has-@? flags))
+                            :notational-rounding ,(or notational?
+                                                      '(has-:? flags))
+                            :flonum-exp-hi ,hi
+                            :flonum-exp-lo ,lo))))
+
 ;; ~F, ~E, ~G  ; we only support ~F for now
 ;; kind is 'E 'F or 'G
 ;; @ flag is used to force plus sign (CL)
@@ -610,32 +635,23 @@
                      ((with-module gauche.internal %port-write-controls) port))])
        (cond [(real? arg)
               (flo-fmt (inexact (* arg (expt 10 scale)))
-                       (write-controls-copy ctrl
-                                            :flonum-digits digits
-                                            :explicit-plus-sign (has-@? flags)
-                                            :notational-rounding (has-:? flags))
+                       (flo-ctrl kind)
                        width 0 ovchar padchar #f port)]
              [(complex? arg)
               ;; TODO: Reflect complex printing mode?
-              (let1 s (call-with-output-string
-                        (^p
-                         (flo-fmt (* (real-part arg) (expt 10 scale))
-                                  ($ write-controls-copy ctrl
-                                     :flonum-digits digits
-                                     :explicit-plus-sign (has-@? flags)
-                                     :notational-rounding (has-:? flags))
-                                  0 0 ovchar padchar #f p)
-                         (flo-fmt (* (imag-part arg) (expt 10 scale))
-                                  ($ write-controls-copy ctrl
-                                     :flonum-digits digits
-                                     :explicit-plus-sign #t
-                                     :notational-rounding (has-:? flags))
-                                  0 0 ovchar padchar  #f p)
-                         (display "i" p)))
-                (let1 len (string-length s)
-                  (when (< len width)
-                    (dotimes [(- width len)]  (write-char padchar port)))
-                  (display s port)))]
+              (let* ([s (call-with-output-string
+                          (^p
+                           (flo-fmt (* (real-part arg) (expt 10 scale))
+                                    (flo-ctrl kind)
+                                    0 0 ovchar padchar #f p)
+                           (flo-fmt (* (imag-part arg) (expt 10 scale))
+                                    (flo-ctrl kind :plus? #t)
+                                    0 0 ovchar padchar  #f p)
+                           (display "i" p)))]
+                     [len (string-length s)])
+                (when (< len width)
+                  (dotimes [(- width len)]  (write-char padchar port)))
+                (display s port))]
              [else
               (let1 sarg (write-to-string arg display)
                 (let1 len (string-length sarg)
@@ -656,12 +672,8 @@
                      ((with-module gauche.internal %port-write-controls) port))])
        (if (real? arg)
          (flo-fmt (inexact (fr-next-arg! fmtstr argptr))
-                  (write-controls-copy ctrl
-                                       :flonum-digits digits
-                                       :explicit-plus-sign (has-@? flags)
-                                       :notational-rounding #t)
-                  width pre-digits
-                  #f padchar (has-:? flags) port)
+                  (flo-ctrl 'f :notational? #t)
+                  width pre-digits #f padchar (has-:? flags) port)
          ;; if arg isn't real, use ~wD.
          (format-num-body fmtstr argptr port ctrl 10 #f
                           '() width #\space #\, 3 #\.)))))
