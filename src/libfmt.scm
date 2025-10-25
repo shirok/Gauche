@@ -605,20 +605,32 @@
                          [scale 0]
                          [ovchar #f]
                          [padchar #\space])
-     (let1 arg (fr-next-arg! fmtstr argptr)
+     (let ([arg (fr-next-arg! fmtstr argptr)]
+           [ctrl (or ctrl
+                     ((with-module gauche.internal %port-write-controls) port))])
        (cond [(real? arg)
               (flo-fmt (inexact (* arg (expt 10 scale)))
-                       width digits 0 ovchar padchar
-                       (has-@? flags) (has-:? flags) #f port)]
+                       (write-controls-copy ctrl
+                                            :flonum-digits digits
+                                            :explicit-plus-sign (has-@? flags)
+                                            :notational-rounding (has-:? flags))
+                       width 0 ovchar padchar #f port)]
              [(complex? arg)
+              ;; TODO: Reflect complex printing mode?
               (let1 s (call-with-output-string
                         (^p
                          (flo-fmt (* (real-part arg) (expt 10 scale))
-                                  0 digits 0 ovchar padchar
-                                  (has-@? flags) (has-:? flags) #f p)
+                                  ($ write-controls-copy ctrl
+                                     :flonum-digits digits
+                                     :explicit-plus-sign (has-@? flags)
+                                     :notational-rounding (has-:? flags))
+                                  0 0 ovchar padchar #f p)
                          (flo-fmt (* (imag-part arg) (expt 10 scale))
-                                  0 digits 0 ovchar padchar
-                                  #t (has-:? flags) #f p)
+                                  ($ write-controls-copy ctrl
+                                     :flonum-digits digits
+                                     :explicit-plus-sign #t
+                                     :notational-rounding (has-:? flags))
+                                  0 0 ovchar padchar  #f p)
                          (display "i" p)))
                 (let1 len (string-length s)
                   (when (< len width)
@@ -639,22 +651,24 @@
                          [pre-digits 1]
                          [width 0]
                          [padchar #\space])
-     (let1 arg (fr-peek-arg fmtstr argptr)
+     (let ([arg (fr-peek-arg fmtstr argptr)]
+           [ctrl (or ctrl
+                     ((with-module gauche.internal %port-write-controls) port))])
        (if (real? arg)
          (flo-fmt (inexact (fr-next-arg! fmtstr argptr))
-                  width digits pre-digits
-                  #f padchar (has-@? flags) #t (has-:? flags) port)
+                  (write-controls-copy ctrl
+                                       :flonum-digits digits
+                                       :explicit-plus-sign (has-@? flags)
+                                       :notational-rounding #t)
+                  width pre-digits
+                  #f padchar (has-:? flags) port)
          ;; if arg isn't real, use ~wD.
          (format-num-body fmtstr argptr port ctrl 10 #f
                           '() width #\space #\, 3 #\.)))))
 
-(define (flo-fmt val width digits pre-digits
-                 ovchar padchar plus? notational? sign-front? port)
-  (let* ([s0 (number->string val 10
-                             (cond-list
-                              [plus? 'plus]
-                              [notational? 'notational])
-                             digits)]
+(define (flo-fmt val ctrl width pre-digits
+                 ovchar padchar sign-front? port)
+  (let* ([s0 (number->string val ctrl)]
          [s (if (> pre-digits 0)        ;special for ~$
               (let* ([m (#/^([+-]?)(\d+)/ s0)]
                      [pre (m 2)])
