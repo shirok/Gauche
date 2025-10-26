@@ -1,5 +1,7 @@
 2025-10-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/libfmt.scm: Start supporting ~E.  Need more tests.
+
 	* src/gauche/number.h (ScmNumberFormat): Add exp_char field to
 	  customize exponent char.  To keep the backward binary compatibility,
 	  we treat #\null for 'system default', which is #\e.  (But we may

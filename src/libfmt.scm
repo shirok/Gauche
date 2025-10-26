@@ -56,6 +56,7 @@
 ;;         | (x flags mincol padchar commachar interval)
 ;;         | (R flags mincol padchar commachar interval)
 ;;         | (r flags mincol padchar commachar interval)
+;;         | (E flags width digits expdigits scale ovfchar padchar expchar)
 ;;         | (F flags width digits scale ovfchar padchar)
 ;;         | ($ flags digits pre-digits width padchar)
 ;;         | (* flags count)
@@ -75,10 +76,10 @@
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
     (define (directive? c)
-      (string-scan "sSaAcCwWdDbBoOxXrR*?fF$~%&pPtT|(){}[];" c))
+      (string-scan "sSaAcCwWdDbBoOxXrR*?eEfF$~%&pPtT|(){}[];" c))
     (define directive-param-spec ; (type max-#-of-params [token-id])
       '((S 5) (A 5) (W 0) (C 0)
-        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5) ($ 4) (? 0)
+        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (E 7) (F 5) ($ 4) (? 0)
         (& 1) (P 0)
         ;; single-character instertion
         (~ 1 #\~) (% 1 #\newline) (T 1 #\tab) (|\|| 1 #\page)
@@ -220,6 +221,7 @@
 ;;      | (O flags mincol padchar commachar interval)
 ;;      | (X flags mincol padchar commachar interval)
 ;;      | (x flags mincol padchar commachar interval)
+;;      | (E flags width digits scale ovfchar padchar)
 ;;      | (F flags width digits scale ovfchar padchar)
 ;;      | ($ flags digits pre-digits width padchar)
 ;;      | (* flags count)
@@ -595,6 +597,28 @@
        (format-num-body fmtstr argptr port ctrl radix upcase
                         flags mincol padchar comma interval point))))
 
+;; ~F
+(define (make-format-flo-f fmtstr params flags)
+  ($ with-format-params ([width 0]
+                         [digits -1]
+                         [scale 0]
+                         [ovchar #f]
+                         [padchar #\space])
+     (make-format-flo fmtstr params flags 'F argptr flags ctrl port
+                      width digits 0 scale ovchar padchar #\null)))
+
+;; ~E
+(define (make-format-flo-e fmtstr params flags)
+  ($ with-format-params ([width 0]
+                         [digits -1]
+                         [expdigits 0]
+                         [scale 0]
+                         [ovchar #f]
+                         [padchar #\space]
+                         [expchar #\null])
+     (make-format-flo fmtstr params flags 'E argptr flags ctrl port
+                      width digits expdigits scale ovchar padchar expchar)))
+
 ;; Utility macro to set up <write-controls> for flonum printing.
 ;; This is intentionally unhygienic to keep the main code concise.
 ;; Assuming these variables are visible:
@@ -603,7 +627,9 @@
 ;;   flags - ':' and '@' flag info given to the format directive.
 (define-macro (flo-ctrl kind
                         :key (plus? #f)
-                             (notational? #f))
+                             (notational? #f)
+                             (exp-width 0)
+                             (exp-char #\null))
   (let ([hi (gensym)]
         [lo (gensym)])
     `(receive (,hi ,lo)
@@ -617,47 +643,52 @@
                                                      '(has-@? flags))
                             :notational-rounding ,(or notational?
                                                       '(has-:? flags))
+                            :flonum-exp-width ,exp-width
                             :flonum-exp-hi ,hi
-                            :flonum-exp-lo ,lo))))
+                            :flonum-exp-lo ,lo
+                            :flonum-exp-char ,exp-char))))
 
-;; ~F, ~E, ~G  ; we only support ~F for now
-;; kind is 'E 'F or 'G
+;; Common flonum formatting.
+;; kind is 'E or 'F
 ;; @ flag is used to force plus sign (CL)
 ;; : flag is used for notational rounding (Gauche only)
-(define (make-format-flo fmtstr params flags kind)
-  ($ with-format-params ([width 0]
-                         [digits -1]
-                         [scale 0]
-                         [ovchar #f]
-                         [padchar #\space])
-     (let ([arg (fr-next-arg! fmtstr argptr)]
-           [ctrl (or ctrl
-                     ((with-module gauche.internal %port-write-controls) port))])
-       (cond [(real? arg)
-              (flo-fmt (inexact (* arg (expt 10 scale)))
-                       (flo-ctrl kind)
-                       width 0 ovchar padchar #f port)]
-             [(complex? arg)
-              ;; TODO: Reflect complex printing mode?
-              (let* ([s (call-with-output-string
-                          (^p
-                           (flo-fmt (* (real-part arg) (expt 10 scale))
-                                    (flo-ctrl kind)
-                                    0 0 ovchar padchar #f p)
-                           (flo-fmt (* (imag-part arg) (expt 10 scale))
-                                    (flo-ctrl kind :plus? #t)
-                                    0 0 ovchar padchar  #f p)
-                           (display "i" p)))]
-                     [len (string-length s)])
-                (when (< len width)
-                  (dotimes [(- width len)]  (write-char padchar port)))
-                (display s port))]
-             [else
-              (let1 sarg (write-to-string arg display)
-                (let1 len (string-length sarg)
-                  (when (< len width)
-                    (dotimes [(- width len)] (write-char padchar port)))
-                  (display sarg port)))]))))
+(define (make-format-flo fmtstr params flags kind argptr flags ctrl port
+                         width digits expdigits scale ovchar padchar expchar)
+  (let ([arg (fr-next-arg! fmtstr argptr)]
+        [ctrl (or ctrl
+                  ((with-module gauche.internal %port-write-controls) port))])
+    (cond [(real? arg)
+           (flo-fmt (inexact (* arg (expt 10 scale)))
+                    (flo-ctrl kind
+                              :exp-width expdigits
+                              :exp-char expchar)
+                    width 0 ovchar padchar #f port)]
+          [(complex? arg)
+           ;; TODO: Reflect complex printing mode?
+           (let* ([s (call-with-output-string
+                       (^p
+                        (flo-fmt (* (real-part arg) (expt 10 scale))
+                                 (flo-ctrl kind
+                                           :exp-width expdigits
+                                           :exp-char expchar)
+                                 0 0 ovchar padchar #f p)
+                        (flo-fmt (* (imag-part arg) (expt 10 scale))
+                                 (flo-ctrl kind
+                                           :plus? #t
+                                           :exp-width expdigits
+                                           :exp-char expchar)
+                                 0 0 ovchar padchar  #f p)
+                        (display "i" p)))]
+                  [len (string-length s)])
+             (when (< len width)
+               (dotimes [(- width len)]  (write-char padchar port)))
+             (display s port))]
+          [else
+           (let1 sarg (write-to-string arg display)
+             (let1 len (string-length sarg)
+               (when (< len width)
+                 (dotimes [(- width len)] (write-char padchar port)))
+               (display sarg port)))])))
 
 ;; ~$ (monetary floating point)
 ;; The order of parameters and their defaults differ from ~F
@@ -804,7 +835,8 @@
     [('O fs . ps) (make-format-num src ps fs 8 #f)]
     [('x fs . ps) (make-format-num src ps fs 16 #f)]
     [('X fs . ps) (make-format-num src ps fs 16 #t)]
-    [('F fs . ps) (make-format-flo src ps fs 'F)]
+    [('E fs . ps) (make-format-flo-e src ps fs)]
+    [('F fs . ps) (make-format-flo-f src ps fs)]
     [('$ fs . ps) (make-format-currency src ps fs)]
     [((or 'R 'r) fs . ps) (make-format-r src ps fs (eq? (car tree) 'R))]
     [('? fs)      (make-format-recur src fs)]
