@@ -4097,7 +4097,11 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
     /* prints exponent.  we shifted decimal point, so -1. */
     est--;
     if (est != 0) {
-        SCM_DSTRING_PUTC(ds, 'e');
+        ScmChar expchar = 'e';
+        if (fmt->exp_char != 0) {
+            expchar = fmt->exp_char;
+        }
+        SCM_DSTRING_PUTC(ds, expchar);
         if (est < 0) {
             Scm_DStringPutc(ds, '-');
             est = -est;
@@ -4263,7 +4267,15 @@ void Scm_NumberFormatInit(ScmNumberFormat* fmt)
 {
     /* Zero fill entire struct including reserved fields, so that if
        we later repurpose reserved fields, we're sure the old code
-       still initializes them to zero. */
+       still initializes them to zero.
+
+       Historical notes: Up to 0.9.15, we lacked fields comp_format,
+       padding, and exp_car. But they're initialized by zeros as far
+       as the old binary code called Scm_NumberFormatInit(), so the old
+       binary can be mixed with 0.9.16.  The comatibility breaks
+       When we start using reserved fields, but we expect it'll be after
+       1.0 ABI rehash.
+    */
     memset(fmt, 0, sizeof(ScmNumberFormat));
     fmt->flags = 0;
     fmt->base = 10;

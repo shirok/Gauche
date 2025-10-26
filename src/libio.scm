@@ -1099,6 +1099,8 @@
      :type <int8> :c-name "numberFormat.exp_lo")
     (flonum-exp-hi
      :type <int8> :c-name "numberFormat.exp_hi")
+    (flonum-exp-char                    ; #\null for default
+     :type <char> :c-name "numberFormat.exp_char")
     )
    (allocator (c "wc_allocate")))
 
@@ -1157,7 +1159,7 @@
                                      notational-rounding flonum-digits
                                      ;; These two are "unofficial" for now
                                      flonum-exp-lo flonum-exp-hi
-                                     flonum-exp-width
+                                     flonum-exp-width flonum-exp-char
                                      ;; For backward compatibility
                                      print-length print-level print-width
                                      print-base print-radix radix print-pretty)
@@ -1201,7 +1203,8 @@
           [digits (select flonum-digits)]
           [exp-width (select flonum-exp-width)]
           [exp-hi (select flonum-exp-hi)]
-          [exp-lo (select flonum-exp-lo)])
+          [exp-lo (select flonum-exp-lo)]
+          [exp-char (select flonum-exp-char)])
       (if changed?
         (make <write-controls>
           :length length
@@ -1221,7 +1224,8 @@
           :flonum-digits digits
           :flonum-exp-width exp-width
           :flonum-exp-hi exp-hi
-          :flonum-exp-lo exp-lo)
+          :flonum-exp-lo exp-lo
+          :flonum-exp-char exp-char)
         wc))))
 
 ;;;
