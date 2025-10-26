@@ -1093,6 +1093,8 @@
                    (?: (SCM_INTP value)
                        (SCM_INT_VALUE value)
                        -1)))
+    (flonum-exp-width
+     :type <int8> :c-name "numberFormat.exp_width")
     (flonum-exp-lo
      :type <int8> :c-name "numberFormat.exp_lo")
     (flonum-exp-hi
@@ -1155,6 +1157,7 @@
                                      notational-rounding flonum-digits
                                      ;; These two are "unofficial" for now
                                      flonum-exp-lo flonum-exp-hi
+                                     flonum-exp-width
                                      ;; For backward compatibility
                                      print-length print-level print-width
                                      print-base print-radix radix print-pretty)
@@ -1196,6 +1199,7 @@
           [plus (select explicit-plus-sign)]
           [notational (select notational-rounding)]
           [digits (select flonum-digits)]
+          [exp-width (select flonum-exp-width)]
           [exp-hi (select flonum-exp-hi)]
           [exp-lo (select flonum-exp-lo)])
       (if changed?
@@ -1215,6 +1219,7 @@
           :explicit-plus-sign plus
           :notational-rounding notational
           :flonum-digits digits
+          :flonum-exp-width exp-width
           :flonum-exp-hi exp-hi
           :flonum-exp-lo exp-lo)
         wc))))
