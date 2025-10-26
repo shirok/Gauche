@@ -3971,9 +3971,11 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
     /* Determine position of decimal point.  we avoid exponential
        notation if exponent is small, i.e. 0.9 and 30.0 instead of
        9.0e-1 and 3.0e1.  */
-    int point;
-    if (est < exp_hi && est > exp_lo) { point = est; est = 1; }
-    else { point = 1; }
+    int point = 1;
+    int need_exp = TRUE;
+    if (est < exp_hi && est > exp_lo) {
+        point = est; est = 1; need_exp = FALSE;
+    }
 
     /* Now, we print XX.YYeZZ, where XX.YY is VAL*10^EST and
        ZZ is EST.  If EST == 1 we omit exponent part.  POINT is
@@ -4096,7 +4098,7 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
     SCM_ASSERT(est < 1000 && est > -1000);
     /* prints exponent.  we shifted decimal point, so -1. */
     est--;
-    if (est != 0) {
+    if (est != 0 || need_exp) {
         ScmChar expchar = 'e';
         if (fmt->exp_char != 0) {
             expchar = fmt->exp_char;
