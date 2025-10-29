@@ -58,6 +58,7 @@
 ;;         | (r flags mincol padchar commachar interval)
 ;;         | (E flags width digits expdigits scale ovfchar padchar expchar)
 ;;         | (F flags width digits scale ovfchar padchar)
+;;         | (G flags width digits expdigits scale ovfchar padchar expchar)
 ;;         | ($ flags digits pre-digits width padchar)
 ;;         | (* flags count)
 ;;         | (? flags)
@@ -76,11 +77,11 @@
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
     (define (directive? c)
-      (string-scan "sSaAcCwWdDbBoOxXrR*?eEfF$~%&pPtT|(){}[];" c))
+      (string-scan "sSaAcCwWdDbBoOxXrR*?eEfFgG$~%&pPtT|(){}[];" c))
     (define directive-param-spec ; (type max-#-of-params [token-id])
       '((S 5) (A 5) (W 0) (C 0)
-        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (E 7) (F 5) ($ 4) (? 0)
-        (& 1) (P 0)
+        (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (E 7) (F 5) (G 7) ($ 4)
+        (? 0) (& 1) (P 0)
         ;; single-character instertion
         (~ 1 #\~) (% 1 #\newline) (T 1 #\tab) (|\|| 1 #\page)
         ;; tokens for structures
@@ -221,8 +222,9 @@
 ;;      | (O flags mincol padchar commachar interval)
 ;;      | (X flags mincol padchar commachar interval)
 ;;      | (x flags mincol padchar commachar interval)
-;;      | (E flags width digits scale ovfchar padchar)
+;;      | (E flags width digits expdigits scale ovfchar padchar expchar)
 ;;      | (F flags width digits scale ovfchar padchar)
+;;      | (G flags width digits expdigits scale ovfchar padchar expchar)
 ;;      | ($ flags digits pre-digits width padchar)
 ;;      | (* flags count)
 ;;      | (? flags)
@@ -607,8 +609,8 @@
      (make-format-flo fmtstr params flags 'F argptr flags ctrl port
                       width digits 0 scale ovchar padchar #\null)))
 
-;; ~E
-(define (make-format-flo-e fmtstr params flags)
+;; ~E, ~G
+(define (make-format-flo-eg fmtstr params flags kind)
   ($ with-format-params ([width 0]
                          [digits -1]
                          [expdigits 0]
@@ -616,20 +618,23 @@
                          [ovchar #f]
                          [padchar #\space]
                          [expchar #\null])
-     (make-format-flo fmtstr params flags 'E argptr flags ctrl port
+     (make-format-flo fmtstr params flags kind argptr flags ctrl port
                       width digits expdigits scale ovchar padchar expchar)))
 
 ;; Common flonum formatting.
-;; kind is 'E or 'F
+;; kind is 'E, 'F or 'G.
 ;; @ flag is used to force plus sign (CL)
 ;; : flag is used for notational rounding (Gauche only)
+;;
+;; NB: Common Lisp has convoluted rules for G to fall back to exponential
+;; notation.  For the time being, we use more naive condition instead.
 (define (make-format-flo fmtstr params flags kind argptr flags ctrl port
                          width digits expdigits scale ovchar padchar expchar)
   (let ([arg (fr-next-arg! fmtstr argptr)]
         [ctrl (or ctrl
                   ((with-module gauche.internal %port-write-controls) port))]
-        [exp-hi (case kind [(F) 127] [(E) 0] [else 10])]
-        [exp-lo (case kind [(F) -128] [(E) 0] [else -3])])
+        [exp-hi (ecase kind [(F) 127] [(E) 0] [(G) 10])]
+        [exp-lo (ecase kind [(F) -128] [(E) 0] [(G) -3])])
     (if (number? arg)
       ;; NB: It is not proper to scale arg here, for it can lose precision.
       ;; Eventually the scale factor needs to be handled within
@@ -800,8 +805,9 @@
     [('O fs . ps) (make-format-num src ps fs 8 #f)]
     [('x fs . ps) (make-format-num src ps fs 16 #f)]
     [('X fs . ps) (make-format-num src ps fs 16 #t)]
-    [('E fs . ps) (make-format-flo-e src ps fs)]
+    [('E fs . ps) (make-format-flo-eg src ps fs 'E)]
     [('F fs . ps) (make-format-flo-f src ps fs)]
+    [('G fs . ps) (make-format-flo-eg src ps fs 'G)]
     [('$ fs . ps) (make-format-currency src ps fs)]
     [((or 'R 'r) fs . ps) (make-format-r src ps fs (eq? (car tree) 'R))]
     [('? fs)      (make-format-recur src fs)]
