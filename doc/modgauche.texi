@@ -2477,6 +2477,24 @@ If @var{bv} doesn't have @var{bit}, returns @code{-1}.
 @end example
 @end defun
 
+@defun bitvector-last-bit bit bv
+@c MOD gauche.bitvector
+@c EN
+Returns the index of the rightmost @var{bit} in @var{bv}.
+If @var{bv} doesn't have @var{bit}, returns @code{-1}.
+(NB: This is not in SRFI-178).
+@c JP
+@var{bv}中で一番右にある@var{bit}のインデックスを返します。
+@var{bv}中に@var{bit}が無ければ@code{-1}を返します。
+(これはSRFI-178には含まれていません)。
+@c COMMON
+
+@example
+(bitvector-last-bit 1 #*00100110) @result{} 6
+(bitvector-last-bit 0 #*11111111) @result{} -1
+@end example
+@end defun
+
 @c EN
 @subheading Bit field operations
 @c JP

@@ -1,3 +1,33 @@
+2025-10-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm: Start supporting ~E.  Need more tests.
+
+	* src/gauche/number.h (ScmNumberFormat): Add exp_char field to
+	  customize exponent char.  To keep the backward binary compatibility,
+	  we treat #\null for 'system default', which is #\e.  (But we may
+	  use a parameter for the system default in future).
+	  The number of reserved fields is also increased, just in case.
+
+2025-10-23  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match-impl.scm: Make match-define work as an internal
+	  define.  https://github.com/shirok/Gauche/issues/1184
+	  NB: Currently, match-define expands into forms that set! matched
+	  values to newly defined variables.  The existence of set! interferes
+	  optimizer, and the generated code is very inefficient.
+
+2025-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (<write-controls>): Expose numberFormat.exp_lo and
+	  numberFormat.exp_hi.  We're not sure yet if these are a good way
+	  to control flonum printing, so we don't make them 'official' for
+	  a while.  However, it allows us to implement ~f and ~e in libfmt.
+
+2025-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/bitvector.scm (bitvector-last-bit): Export it, for
+	  it is generally useful.
+
 2025-10-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (Scm_CombineHashValue): Improve combine-hash-value to

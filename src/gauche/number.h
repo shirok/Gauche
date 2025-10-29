@@ -414,7 +414,7 @@ enum ScmNumberFormatComplex {
     SCM_NUMBER_FORMAT_COMPLEX_VECTOR,      /* #c(a b) */
 };
 
-/* Fine controls of number formatting.   */
+/* Fine controls of number formatting. */
 typedef struct ScmNumberFormatRec {
     u_long flags;       /* bitflags of ScmNumberFormatFlags */
     int32_t precision;  /* # of digits after decimal point, -1 for unlimited */
@@ -423,8 +423,9 @@ typedef struct ScmNumberFormatRec {
     int8_t exp_hi;      /* use exp notation if exponent >= exp_hi */
     int8_t exp_width;   /* min # of digits used for exponent */
     int8_t comp_format; /* enum ScmNumberFormatComplex */
-    int8_t padding[7];  /* for future extension */
-    u_long reserved[2]; /* for future extension */
+    int8_t padding[3];  /* for future extension */
+    ScmChar exp_char;   /* exponent character.  If NULL, use system default */
+    u_long reserved[3]; /* for future extension */
 } ScmNumberFormat;
 
 SCM_EXTERN void   Scm_NumberFormatInit(ScmNumberFormat*);

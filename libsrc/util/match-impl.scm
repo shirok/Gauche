@@ -252,19 +252,21 @@
          (bv (cadr x))
          (bindings (caddr x))
          (code (gensym))
+         (dummy (gensym))
          (plist (list (list p code bv #f #f)))
          (x (gensym))
          (m (gen x '() plist (cdr eb-errf) (gensym)))
          (gs (map (lambda (_) (gensym)) bv)))
     (unreachable plist match-expr)
     `(begin ,@(map (lambda (v) `(define ,v #f)) bv)
-            (let ((,x ,exp)
-                  (,code (,lambda. ,gs
-                           ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
-                           (cond (#f #f))))
-                  ,@bindings
-                  ,@(car eb-errf))
-              ,m))))
+            (define ,dummy
+              (let ((,x ,exp)
+                    (,code (,lambda. ,gs
+                                     ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
+                                     (cond (#f #f))))
+                    ,@bindings
+                    ,@(car eb-errf))
+                ,m)))))
 
 (define (symbolize x)
   (if (identifier? x) (identifier->symbol x) x))

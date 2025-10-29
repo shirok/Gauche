@@ -316,6 +316,12 @@
 
 ;;--------------------------------------------------------------
 
+(test* "internal match-define" '(1 2 3)
+       (let ((data '(1 (2 3))))
+         (match-define (a (b c)) data)
+         (define d (list c b a))
+         (reverse d)))
+
 (test* "match-let1" '((a b c) (1 2 3))
        (match-let1 ((ca . cd) ...) '((a . 1) (b . 2) (c . 3))
          (list ca cd)))

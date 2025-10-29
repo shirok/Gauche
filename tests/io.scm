@@ -758,6 +758,10 @@
 (test* "format ~1,2f" "0.00"     (format "~1,2f" 0.003))
 (test* "format ~1,0f" "-1."      (format "~1,0f" -0.555))
 (test* "format ~,2f" "0.00"      (format "~,2f" 0))
+(test* "format ~,5f" "0.01000"   (format "~,5f" 0.01))
+(test* "format ~,5f" "0.00000"   (format "~,5f" 1e-6))
+(test* "format ~,5f" "0.00001"   (format "~,5f" 6e-6))
+(test* "format ~,5f" "1000000000000.00000" (format "~,5f" 1e12))
 
 (test* "format carry over ~,4f" "0.0100" (format "~,4f" 0.00999))
 (test* "format carry over across decimal point ~,1f" "124.0"
@@ -776,13 +780,17 @@
 (test* "format ~f with complex"  "         +1.10+0.46i"
        (format "~20,2@f" (sqrt 1+i)))
 
+(test* "format ~e" "1.2345e0"     (format "~e" 1.2345))
+(test* "format ~,6e" "6.666667e-1" (format "~,6e" 2/3))
+(test* "format ~,,,,,,'De" "3.14D0" (format "~,,,,,,'De" 3.14))
+
 (test* "format ~$" "100.00"  (format "~$" 100))
 (test* "format ~$" "0.33"    (format "~$" 1/3))
 (test* "format ~$" "3.14"    (format "~$" 3.1415926))
-(test* "format ~$" "3.14"    (format "~2$" 3.1415926))
-(test* "format ~$" "3.142"   (format "~3$" 3.1415926))
-(test* "format ~$" "3.1416"  (format "~4$" 3.1415926))
-(test* "format ~$" "3.14159" (format "~5$" 3.1415926))
+(test* "format ~2$" "3.14"    (format "~2$" 3.1415926))
+(test* "format ~3$" "3.142"   (format "~3$" 3.1415926))
+(test* "format ~4$" "3.1416"  (format "~4$" 3.1415926))
+(test* "format ~5$" "3.14159" (format "~5$" 3.1415926))
 (test* "format ~$ pre-digits" "00.00"   (format "~,2$" 0))
 (test* "format ~$ padding"    "   0.00" (format "~,,7$" 0))
 (test* "format ~$ padding"    "***0.00" (format "~,,7,'*$" 0))
