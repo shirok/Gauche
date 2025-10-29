@@ -631,6 +631,9 @@
         [exp-hi (case kind [(F) 127] [(E) 0] [else 10])]
         [exp-lo (case kind [(F) -128] [(E) 0] [else -3])])
     (if (number? arg)
+      ;; NB: It is not proper to scale arg here, for it can lose precision.
+      ;; Eventually the scale factor needs to be handled within
+      ;; number->string.
       (flo-fmt (inexact (* arg (expt 10 scale)))
                (write-controls-copy ctrl
                                     :flonum-digits digits
