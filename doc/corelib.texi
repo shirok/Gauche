@@ -13464,7 +13464,7 @@ incomprehensible.  So, don't use this procedure as a AST validness checker.)
 @c JP
 註：この関数は渡されたASTが有効なものであるかどうかについて
 簡単なチェックを行いますが、有効でないASTを受け入れてしまうかもしれません。
-その場合、変えされる正規表現オブジェクトの動作は不定です。
+その場合、返される正規表現オブジェクトの動作は不定です。
 正しい形式のASTを渡すのは呼出側の責任です
 (この関数が有効でないASTを見つけてエラーにする場合でも、
 そのエラーメッセージからどこがおかしいかを判断するのが難しい場合があります。
@@ -20335,7 +20335,7 @@ mb @result{} #<mv-box[3] 10 21 30>
 @c EN
 Generic referencer also works with boxes.
 @c JP
-boxaにｈジェネリックな参照も使えます。
+boxaにはジェネリックな参照も使えます。
 @c COMMON
 
 @example
@@ -20344,7 +20344,7 @@ boxaにｈジェネリックな参照も使えます。
 mb @result{} #<mv-box[3] 10 21 30>
 
 (define b (box 10))
-(inc! (~ mb 0))
+(inc! (~ b 0))
 b @result{} #<box 11>
 @end example
 @end defun
@@ -28596,7 +28596,7 @@ XはYのAPIを全て提供しますが、実装は異なります。この場合
 (注：@code{provide}が呼ばれると、@code{require}のautoprovide機能は
 抑制されるため、@file{X.scm}中で@code{(provide "X")}も指定する必要があります。)
 
-もちろんの方法では、ユーザが @code{(require "Y")} を @code{(require "X")}
+もちろんこのの方法では、ユーザが @code{(require "Y")} を @code{(require "X")}
 より先に書いてしまったら@file{Y.scm}はロードされてしまいます。
 この方法は、現場において、永久的な解決が高コストになるような場合のとりあえずの
 回避処置と考えるべきでしょう。
