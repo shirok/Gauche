@@ -17,9 +17,9 @@ OBJECTS = @FFI_OBJECTS@
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
-XCLEANFILES = gauche--ffi.c ffi.sci
+XCLEANFILES = gauche--ffi.c ffi.sci test/f.so
 
-all : $(LIBFILES)
+all : $(LIBFILES) test/f.$(SOEXT)
 
 gauche--ffi.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--ffi.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
