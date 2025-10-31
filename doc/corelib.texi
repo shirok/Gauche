@@ -8456,10 +8456,6 @@ the key and the following value is removed from @var{kv-list}.
 
 @end defun
 
-@menu
-* Keyword and symbol integration::
-@end menu
-
 @node Keyword and symbol integration,  , Keywords, Symbols
 @subsection Keyword and symbol integration
 @c NODE キーワードとシンボルの統合
