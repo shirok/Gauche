@@ -36,6 +36,7 @@
           close-shared-library
           shared-object-suffix
 
+          c-function
           make-c-function
           ;TODO address
 
@@ -53,21 +54,20 @@
           ;TODO bytevector->pointer
           ;TODO deref
           ;TODO pointer-address
-          ;TODO allocate-pointer
+          allocate-pointer
           ;TODO c-malloc
           ;TODO c-free
-          ;TODO null-pointer
-          ;TODO null-pointer?
-          ;TODO empty-pointer
-          ;TODO
-          pointer-ref-c-int8_t
-          pointer-ref-c-uint8_t
-          pointer-ref-c-int16_t
-          pointer-ref-c-uint16_t
-          pointer-ref-c-int32_t
-          pointer-ref-c-uint32_t
-          pointer-ref-c-int64_t
-          pointer-ref-c-uint64_t
+          null-pointer
+          null-pointer?
+          empty-pointer
+          pointer-ref-c-int8
+          pointer-ref-c-uint8
+          pointer-ref-c-int16
+          pointer-ref-c-uint16
+          pointer-ref-c-int32
+          pointer-ref-c-uint32
+          pointer-ref-c-int64
+          pointer-ref-c-uint64
           pointer-ref-c-char
           pointer-ref-c-unsigned-char
           pointer-ref-c-short
@@ -82,14 +82,14 @@
           pointer-ref-c-double
           pointer-ref-c-pointer
 
-          pointer-set-c-int8_t!
-          pointer-set-c-uint8_t!
-          pointer-set-c-int16_t!
-          pointer-set-c-uint16_t!
-          pointer-set-c-int32_t!
-          pointer-set-c-uint32_t!
-          pointer-set-c-int64_t!
-          pointer-set-c-uint64_t!
+          pointer-set-c-int8!
+          pointer-set-c-uint8!
+          pointer-set-c-int16!
+          pointer-set-c-uint16!
+          pointer-set-c-int32!
+          pointer-set-c-uint32!
+          pointer-set-c-int64!
+          pointer-set-c-uint64!
           pointer-set-c-char!
           pointer-set-c-unsigned-char!
           pointer-set-c-short!
@@ -104,62 +104,22 @@
           pointer-set-c-double!
           pointer-set-c-pointer!
 
-          size-of-int8_t
-          size-of-uint8_t
-          size-of-int16_t
-          size-of-uint16_t
-          size-of-int32_t
-          size-of-uint32_t
-          size-of-int64_t
-          size-of-uint64_t
-          size-of-char
-          size-of-unsigned-char
-          size-of-short
-          size-of-unsigned-short
-          size-of-int
-          size-of-unsigned-int
-          size-of-long
-          size-of-unsigned-long
-          size-of-float
-          size-of-double
-          size-of-string
-          size-of-pointer
-
-          align-of-int8_t
-          align-of-uint8_t
-          align-of-int16_t
-          align-of-uint16_t
-          align-of-int32_t
-          align-of-uint32_t
-          align-of-int64_t
-          align-of-uint64_t
-          align-of-char
-          align-of-unsigned-char
-          align-of-short
-          align-of-unsigned-short
-          align-of-int
-          align-of-unsigned-int
-          align-of-long
-          align-of-unsigned-long
-          align-of-float
-          align-of-double
-          align-of-string
-          align-of-pointer
-          ))
+          size-of-type
+          align-of-type))
 (select-module gauche.ffi)
 
 (inline-stub
  (.include "gauche-ffi.h")
  (initcode (Scm_Init_gauche_ffi))
 
- (define-cproc size-of-int8_t () size_of_int8_t)
- (define-cproc size-of-uint8_t () size_of_uint8_t)
- (define-cproc size-of-int16_t () size_of_int16_t)
- (define-cproc size-of-uint16_t () size_of_int16_t)
- (define-cproc size-of-int32_t () size_of_int32_t)
- (define-cproc size-of-uint32_t () size_of_int32_t)
- (define-cproc size-of-int64_t () size_of_int64_t)
- (define-cproc size-of-uint64_t () size_of_int64_t)
+ (define-cproc size-of-int8 () size_of_int8)
+ (define-cproc size-of-uint8 () size_of_uint8)
+ (define-cproc size-of-int16 () size_of_int16)
+ (define-cproc size-of-uint16 () size_of_int16)
+ (define-cproc size-of-int32 () size_of_int32)
+ (define-cproc size-of-uint32 () size_of_int32)
+ (define-cproc size-of-int64 () size_of_int64)
+ (define-cproc size-of-uint64 () size_of_int64)
  (define-cproc size-of-char () size_of_char)
  (define-cproc size-of-unsigned-char () size_of_unsigned_char)
  (define-cproc size-of-short () size_of_short)
@@ -173,14 +133,14 @@
  (define-cproc size-of-string () size_of_string)
  (define-cproc size-of-pointer () size_of_pointer)
 
- (define-cproc align-of-int8_t () align_of_int8_t)
- (define-cproc align-of-uint8_t () align_of_uint8_t)
- (define-cproc align-of-int16_t () align_of_int16_t)
- (define-cproc align-of-uint16_t () align_of_int16_t)
- (define-cproc align-of-int32_t () align_of_int32_t)
- (define-cproc align-of-uint32_t () align_of_int32_t)
- (define-cproc align-of-int64_t () align_of_int64_t)
- (define-cproc align-of-uint64_t () align_of_int64_t)
+ (define-cproc align-of-int8 () align_of_int8)
+ (define-cproc align-of-uint8 () align_of_uint8)
+ (define-cproc align-of-int16 () align_of_int16)
+ (define-cproc align-of-uint16 () align_of_int16)
+ (define-cproc align-of-int32 () align_of_int32)
+ (define-cproc align-of-uint32 () align_of_int32)
+ (define-cproc align-of-int64 () align_of_int64)
+ (define-cproc align-of-uint64 () align_of_int64)
  (define-cproc align-of-char () align_of_char)
  (define-cproc align-of-unsigned-char () align_of_unsigned_char)
  (define-cproc align-of-short () align_of_short)
@@ -194,27 +154,29 @@
  (define-cproc align-of-string () align_of_string)
  (define-cproc align-of-pointer () align_of_pointer)
 
- (define-cproc internal-open-shared-library (path::<string> version::<string>) open_shared_library)
+ (define-cproc internal-open-shared-library (path::<string> version::<string> throw_error) internal_open_shared_library)
  (define-cproc close-shared-library (shared-library) close_shared_library)
  (define-cproc shared-object-suffix() shared_object_suffix)
- ;(define-cproc pointer-allocate (size::<int>) pointer_allocate)
- ;(define-cproc address (object) address)
+ ;(define-cproc internal-address (pointer offset::<int>) address)
  (define-cproc pointer? (pointer) is_pointer)
- ;(define-cproc null-pointer () null_pointer)
- ;(define-cproc null-pointer? (object) is_null_pointer)
  ;(define-cproc integer->pointer (integer::<int>) integer_to_pointer)
+ ;(define-cproc pointer->integer (pointer) pointer_to_integer)
+ ;(define-cproc pointer->uinteger (pointer) pointer_to_uinteger)
  (define-cproc string->pointer (str) string_to_pointer)
  (define-cproc pointer->string (pointer) pointer_to_string)
+ (define-cproc allocate-pointer(size::<int>) allocate_pointer)
+ (define-cproc empty-pointer () empty_pointer)
+ (define-cproc null-pointer? (object) is_null_pointer)
  ;(define-cproc pointer-free (pointer) pointer_free)
 
- (define-cproc pointer-set-c-int8_t! (pointer offset::<int> value::<int8>) pointer_set_c_int8_t)
- (define-cproc pointer-set-c-uint8_t! (pointer offset::<int> value::<uint8>) pointer_set_c_uint8_t)
- (define-cproc pointer-set-c-int16_t! (pointer offset::<int> value::<int16>) pointer_set_c_int16_t)
- (define-cproc pointer-set-c-uint16_t! (pointer offset::<int> value::<int16>) pointer_set_c_uint16_t)
- (define-cproc pointer-set-c-int32_t! (pointer offset::<int> value::<int32>) pointer_set_c_int32_t)
- (define-cproc pointer-set-c-uint32_t! (pointer offset::<int> value::<int32>) pointer_set_c_uint32_t)
- (define-cproc pointer-set-c-int64_t! (pointer offset::<int> value::<int64>) pointer_set_c_int64_t)
- (define-cproc pointer-set-c-uint64_t! (pointer offset::<int> value::<int64>) pointer_set_c_uint64_t)
+ (define-cproc pointer-set-c-int8! (pointer offset::<int> value::<int8>) pointer_set_c_int8)
+ (define-cproc pointer-set-c-uint8! (pointer offset::<int> value::<uint8>) pointer_set_c_uint8)
+ (define-cproc pointer-set-c-int16! (pointer offset::<int> value::<int16>) pointer_set_c_int16)
+ (define-cproc pointer-set-c-uint16! (pointer offset::<int> value::<int16>) pointer_set_c_uint16)
+ (define-cproc pointer-set-c-int32! (pointer offset::<int> value::<int32>) pointer_set_c_int32)
+ (define-cproc pointer-set-c-uint32! (pointer offset::<int> value::<int32>) pointer_set_c_uint32)
+ (define-cproc pointer-set-c-int64! (pointer offset::<int> value::<int64>) pointer_set_c_int64)
+ (define-cproc pointer-set-c-uint64! (pointer offset::<int> value::<int64>) pointer_set_c_uint64)
  (define-cproc pointer-set-c-char! (pointer offset::<int> value::<char>) pointer_set_c_char)
  (define-cproc pointer-set-c-unsigned-char! (pointer offset::<int> value::<char>) pointer_set_c_unsigned_char)
  (define-cproc pointer-set-c-short! (pointer offset::<int> value::<short>) pointer_set_c_short)
@@ -227,14 +189,14 @@
  (define-cproc pointer-set-c-double! (pointer offset::<int> value::<double>) pointer_set_c_double)
  (define-cproc pointer-set-c-pointer! (pointer offset::<int> value) pointer_set_c_pointer)
 
- (define-cproc pointer-ref-c-int8_t (pointer offset::<int>) pointer_ref_c_int8_t)
- (define-cproc pointer-ref-c-uint8_t (pointer offset::<int>) pointer_ref_c_uint8_t)
- (define-cproc pointer-ref-c-int16_t (pointer offset::<int>) pointer_ref_c_int16_t)
- (define-cproc pointer-ref-c-uint16_t (pointer offset::<int>) pointer_ref_c_uint16_t)
- (define-cproc pointer-ref-c-int32_t (pointer offset::<int>) pointer_ref_c_int32_t)
- (define-cproc pointer-ref-c-uint32_t (pointer offset::<int>) pointer_ref_c_uint32_t)
- (define-cproc pointer-ref-c-int64_t (pointer offset::<int>) pointer_ref_c_int64_t)
- (define-cproc pointer-ref-c-uint64_t (pointer offset::<int>) pointer_ref_c_uint64_t)
+ (define-cproc pointer-ref-c-int8 (pointer offset::<int>) pointer_ref_c_int8)
+ (define-cproc pointer-ref-c-uint8 (pointer offset::<int>) pointer_ref_c_uint8)
+ (define-cproc pointer-ref-c-int16 (pointer offset::<int>) pointer_ref_c_int16)
+ (define-cproc pointer-ref-c-uint16 (pointer offset::<int>) pointer_ref_c_uint16)
+ (define-cproc pointer-ref-c-int32 (pointer offset::<int>) pointer_ref_c_int32)
+ (define-cproc pointer-ref-c-uint32 (pointer offset::<int>) pointer_ref_c_uint32)
+ (define-cproc pointer-ref-c-int64 (pointer offset::<int>) pointer_ref_c_int64)
+ (define-cproc pointer-ref-c-uint64 (pointer offset::<int>) pointer_ref_c_uint64)
  (define-cproc pointer-ref-c-char (pointer offset::<int>) pointer_ref_c_char)
  (define-cproc pointer-ref-c-unsigned-char (pointer offset::<int>) pointer_ref_c_unsigned_char)
  (define-cproc pointer-ref-c-short (pointer offset::<int>) pointer_ref_c_short)
@@ -278,14 +240,14 @@
 
 (define size-of-type
   (lambda (type)
-    (cond ((eq? type 'int8) (size-of-int8_t))
-          ((eq? type 'uint8) (size-of-uint8_t))
-          ((eq? type 'int16) (size-of-int16_t))
-          ((eq? type 'uint16) (size-of-uint16_t))
-          ((eq? type 'int32) (size-of-int32_t))
-          ((eq? type 'uint32) (size-of-uint32_t))
-          ((eq? type 'int64) (size-of-int64_t))
-          ((eq? type 'uint64) (size-of-uint64_t))
+    (cond ((eq? type 'int8) (size-of-int8))
+          ((eq? type 'uint8) (size-of-uint8))
+          ((eq? type 'int16) (size-of-int16))
+          ((eq? type 'uint16) (size-of-uint16))
+          ((eq? type 'int32) (size-of-int32))
+          ((eq? type 'uint32) (size-of-uint32))
+          ((eq? type 'int64) (size-of-int64))
+          ((eq? type 'uint64) (size-of-uint64))
           ((eq? type 'char) (size-of-char))
           ((eq? type 'unsigned-char) (size-of-char))
           ((eq? type 'short) (size-of-short))
@@ -299,23 +261,36 @@
           ((eq? type 'pointer) (size-of-pointer))
           ((not (equal? type 'void)) (error "No such foreign type" type)))))
 
- (define (open-shared-library path . version)
-   (if (null? version)
-     (internal-open-shared-library path "")
-     (internal-open-shared-library path (car version))))
+ (define (open-shared-library path . versions)
+   (let ((shared-library-version ""))
+     (for-each
+       (lambda (version)
+         (let ((version-string (if (number? version)
+                                 (number->string version)
+                                 version)))
+           (write (string-append path
+                                 "."
+                                 (shared-object-suffix)
+                                 "."
+                                 version-string))
+           (newline)
+           (when (internal-open-shared-library path version-string #f)
+             (set! shared-library-version version-string))))
+       (if (null? versions) '() (car versions)))
+       (internal-open-shared-library path shared-library-version #t)))
 
 (define pointer-get
   (lambda (pointer type offset)
-    (cond ((equal? type 'int8) (pointer-ref-c-int8_t pointer offset))
-          ((equal? type 'uint8) (pointer-ref-c-uint8_t pointer offset))
-          ((equal? type 'int16) (pointer-ref-c-int16_t pointer offset))
-          ((equal? type 'uint16) (pointer-ref-c-uint16_t pointer offset))
-          ((equal? type 'int32) (pointer-ref-c-int32_t pointer offset))
-          ((equal? type 'uint32) (pointer-ref-c-uint32_t pointer offset))
-          ((equal? type 'int64) (pointer-ref-c-int32_t pointer offset))
-          ((equal? type 'uint64) (pointer-ref-c-uint64_t pointer offset))
+    (cond ((equal? type 'int8) (pointer-ref-c-int8 pointer offset))
+          ((equal? type 'uint8) (pointer-ref-c-uint8 pointer offset))
+          ((equal? type 'int16) (pointer-ref-c-int16 pointer offset))
+          ((equal? type 'uint16) (pointer-ref-c-uint16 pointer offset))
+          ((equal? type 'int32) (pointer-ref-c-int32 pointer offset))
+          ((equal? type 'uint32) (pointer-ref-c-uint32 pointer offset))
+          ((equal? type 'int64) (pointer-ref-c-int32 pointer offset))
+          ((equal? type 'uint64) (pointer-ref-c-uint64 pointer offset))
           ((equal? type 'char) (integer->char (pointer-ref-c-char pointer offset)))
-          ((equal? type 'unsigned-char) (integer->char (pointer-ref-c-uint8_t pointer offset)))
+          ((equal? type 'unsigned-char) (integer->char (pointer-ref-c-uint8 pointer offset)))
           ((equal? type 'short) (pointer-ref-c-short pointer offset))
           ((equal? type 'unsigned-short) (pointer-ref-c-unsigned-short pointer offset))
           ((equal? type 'int) (pointer-ref-c-int pointer offset))
@@ -354,9 +329,13 @@
           ((equal? type 'callback) 22)
           (else (error "Undefined type" type)))))
 
+(define c-function
+  (lambda (shared-object c-name return-type . argument-types)
+    (make-c-function shared-object c-name return-type argument-types)))
+
 (define make-c-function
-  (lambda (shared-object c-name return-type argument-types)
-    (let ((c-function (dlsym shared-object c-name)))
+  (lambda (shared-object return-type c-name argument-types)
+    (let ((c-function (dlsym shared-object (symbol->string c-name))))
       (lambda arguments
         (let ((return-pointer (internal-ffi-call (length argument-types)
                                                  (type->libffi-type-number return-type)
@@ -364,5 +343,54 @@
                                                  c-function
                                                  (size-of-type return-type)
                                                  arguments)))
-          (pointer-get return-pointer return-type 0))))))
+          (if (equal? return-type 'void)
+            (undefined)
+            (pointer-get return-pointer return-type 0)))))))
 
+(define null-pointer (empty-pointer))
+
+(define size-of-type
+  (lambda (type)
+    (cond ((eq? type 'int8) (size-of-int8))
+          ((eq? type 'uint8) (size-of-uint8))
+          ((eq? type 'int16) (size-of-int16))
+          ((eq? type 'uint16) (size-of-uint16))
+          ((eq? type 'int32) (size-of-int32))
+          ((eq? type 'uint32) (size-of-uint32))
+          ((eq? type 'int64) (size-of-int64))
+          ((eq? type 'uint64) (size-of-uint64))
+          ((eq? type 'char) (size-of-char))
+          ((eq? type 'unsigned-char) (size-of-char))
+          ((eq? type 'short) (size-of-short))
+          ((eq? type 'unsigned-short) (size-of-unsigned-short))
+          ((eq? type 'int) (size-of-int))
+          ((eq? type 'unsigned-int) (size-of-unsigned-int))
+          ((eq? type 'long) (size-of-long))
+          ((eq? type 'unsigned-long) (size-of-unsigned-long))
+          ((eq? type 'float) (size-of-float))
+          ((eq? type 'double) (size-of-double))
+          ((eq? type 'pointer) (size-of-pointer))
+          (else (error "Can not get size of type" type)))))
+
+(define align-of-type
+  (lambda (type)
+    (cond ((eq? type 'int8) (align-of-int8))
+          ((eq? type 'uint8) (align-of-uint8))
+          ((eq? type 'int16) (align-of-int16))
+          ((eq? type 'uint16) (align-of-uint16))
+          ((eq? type 'int32) (align-of-int32))
+          ((eq? type 'uint32) (align-of-uint32))
+          ((eq? type 'int64) (align-of-int64))
+          ((eq? type 'uint64) (align-of-uint64))
+          ((eq? type 'char) (align-of-char))
+          ((eq? type 'unsigned-char) (align-of-char))
+          ((eq? type 'short) (align-of-short))
+          ((eq? type 'unsigned-short) (align-of-unsigned-short))
+          ((eq? type 'int) (align-of-int))
+          ((eq? type 'unsigned-int) (align-of-unsigned-int))
+          ((eq? type 'long) (align-of-long))
+          ((eq? type 'unsigned-long) (align-of-unsigned-long))
+          ((eq? type 'float) (align-of-float))
+          ((eq? type 'double) (align-of-double))
+          ((eq? type 'pointer) (align-of-pointer))
+          (else (error "Can not get align of type" type)))))

@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <gauche.h>
 #include <gauche/extend.h>
 #include <gauche/module.h>
@@ -33,14 +34,14 @@ void print_pointer(ScmObj obj, ScmPort* sink, ScmWriteContext* G1788 SCM_UNUSED)
     }
 }
 
-ScmObj size_of_int8_t() { return Scm_MakeInteger(sizeof(int8_t)); }
-ScmObj size_of_uint8_t() { return Scm_MakeInteger(sizeof(uint8_t)); }
-ScmObj size_of_int16_t() { return Scm_MakeInteger(sizeof(int16_t)); }
-ScmObj size_of_uint16_t() { return Scm_MakeInteger(sizeof(uint16_t)); }
-ScmObj size_of_int32_t() { return Scm_MakeInteger(sizeof(int32_t)); }
-ScmObj size_of_uint32_t() { return Scm_MakeInteger(sizeof(uint32_t)); }
-ScmObj size_of_int64_t() { return Scm_MakeInteger(sizeof(int64_t)); }
-ScmObj size_of_uint64_t() { return Scm_MakeInteger(sizeof(uint64_t)); }
+ScmObj size_of_int8() { return Scm_MakeInteger(sizeof(int8_t)); }
+ScmObj size_of_uint8() { return Scm_MakeInteger(sizeof(uint8_t)); }
+ScmObj size_of_int16() { return Scm_MakeInteger(sizeof(int16_t)); }
+ScmObj size_of_uint16() { return Scm_MakeInteger(sizeof(uint16_t)); }
+ScmObj size_of_int32() { return Scm_MakeInteger(sizeof(int32_t)); }
+ScmObj size_of_uint32() { return Scm_MakeInteger(sizeof(uint32_t)); }
+ScmObj size_of_int64() { return Scm_MakeInteger(sizeof(int64_t)); }
+ScmObj size_of_uint64() { return Scm_MakeInteger(sizeof(uint64_t)); }
 ScmObj size_of_char() { return Scm_MakeInteger(sizeof(char)); }
 ScmObj size_of_unsigned_char() { return Scm_MakeInteger(sizeof(unsigned char)); }
 ScmObj size_of_short() { return Scm_MakeInteger(sizeof(short)); }
@@ -54,14 +55,14 @@ ScmObj size_of_double() { return Scm_MakeInteger(sizeof(double)); }
 ScmObj size_of_string() { return Scm_MakeInteger(sizeof(char*)); }
 ScmObj size_of_pointer() { return Scm_MakeInteger(sizeof(void*)); }
 
-ScmObj align_of_int8_t() { return Scm_MakeInteger(_Alignof(int8_t)); }
-ScmObj align_of_uint8_t() { return Scm_MakeInteger(_Alignof(uint8_t)); }
-ScmObj align_of_int16_t() { return Scm_MakeInteger(_Alignof(int16_t)); }
-ScmObj align_of_uint16_t() { return Scm_MakeInteger(_Alignof(uint16_t)); }
-ScmObj align_of_int32_t() { return Scm_MakeInteger(_Alignof(int32_t)); }
-ScmObj align_of_uint32_t() { return Scm_MakeInteger(_Alignof(uint32_t)); }
-ScmObj align_of_int64_t() { return Scm_MakeInteger(_Alignof(int64_t)); }
-ScmObj align_of_uint64_T() { return Scm_MakeInteger(_Alignof(uint64_t)); }
+ScmObj align_of_int8() { return Scm_MakeInteger(_Alignof(int8_t)); }
+ScmObj align_of_uint8() { return Scm_MakeInteger(_Alignof(uint8_t)); }
+ScmObj align_of_int16() { return Scm_MakeInteger(_Alignof(int16_t)); }
+ScmObj align_of_uint16() { return Scm_MakeInteger(_Alignof(uint16_t)); }
+ScmObj align_of_int32() { return Scm_MakeInteger(_Alignof(int32_t)); }
+ScmObj align_of_uint32() { return Scm_MakeInteger(_Alignof(uint32_t)); }
+ScmObj align_of_int64() { return Scm_MakeInteger(_Alignof(int64_t)); }
+ScmObj align_of_uint64() { return Scm_MakeInteger(_Alignof(uint64_t)); }
 ScmObj align_of_char() { return Scm_MakeInteger(_Alignof(char)); }
 ScmObj align_of_unsigned_char() { return Scm_MakeInteger(_Alignof(unsigned char)); }
 ScmObj align_of_short() { return Scm_MakeInteger(_Alignof(short)); }
@@ -112,7 +113,7 @@ static void ptr_print(ScmObj obj, ScmPort *sink, ScmWriteContext *mode SCM_UNUSE
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PtrClass, ptr_print);
 
-ScmObj open_shared_library(ScmString* path, ScmString* version) {
+ScmObj internal_open_shared_library(ScmString* path, ScmString* version, ScmObj throw_error) {
     ScmDLObj* so = SCM_NEW(ScmDLObj);
     SCM_SET_CLASS(so, &Scm_DLObjClass);
     if(strcmp(SHLIB_SO_SUFFIX, "so") == 0) {
@@ -135,9 +136,15 @@ ScmObj open_shared_library(ScmString* path, ScmString* version) {
     if (so->handle == NULL) {
         const char *err = dl_error();
         if (err == NULL) {
-            Scm_Error("failed to load shared library %A", so->path);
+            if(SCM_BOOL_VALUE(throw_error)) {
+                Scm_Error("failed to load shared library %A", so->path);
+            }
+            return SCM_FALSE;
         } else {
-            Scm_Error("failed to load shared library %A: %s", so->path, err);
+            if(SCM_BOOL_VALUE(throw_error)) {
+                Scm_Error("failed to load shared library %A: %s", so->path, err);
+            }
+            return SCM_FALSE;
         }
     }
 
@@ -303,16 +310,13 @@ ScmObj internal_ffi_call(
 }
 
 /*
-ScmObj address(ScmObj pointer) {
+ScmObj address(ScmObj pointer, int offset) {
     if(!Scm_TypeP(pointer, SCM_CLASS_FOREIGN_POINTER)) {
         Scm_Error("Can only get pointer address of a pointer");
         return SCM_UNDEFINED;
     }
-    void* p = SCM_FOREIGN_POINTER_REF(void*, p);
-    //ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "pointer", print_pointer, NULL, 0);
-    //ScmObj address = Scm_MakeForeignPointer(pointer_class, p);
-    printf("HERE: %u", (uint64_t)&p);
-    return SCM_MAKE_INT((uint64_t)&p);
+    void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
+    return Scm_MakeForeignPointer(pointer_class, &p);
 }
 */
 
@@ -325,23 +329,43 @@ ScmObj is_pointer(ScmObj pointer) {
 }
 
 /*
-ScmObj integer_to_pointer(int integer) {
+ScmObj pointer_to_integer(ScmObj pointer) {
+    if(!Scm_TypeP(pointer, SCM_CLASS_FOREIGN_POINTER)) {
+        Scm_Error("Can only get integer from pointer");
+        return SCM_UNDEFINED;
+    }
+    void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
+    intptr_t integer = (intptr_t)(void*)p;
+    return SCM_MAKE_INT(integer);
+}
+
+ScmObj pointer_to_uinteger(ScmObj pointer) {
+    if(!Scm_TypeP(pointer, SCM_CLASS_FOREIGN_POINTER)) {
+        Scm_Error("Can only get integer from pointer");
+        return SCM_UNDEFINED;
+    }
+    void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
+    return SCM_MAKE_INT((uintptr_t)(void*)p);
+}
+
+ScmObj integer_to_pointer(intptr_t integer) {
     ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "pointer", print_pointer, NULL, 0);
-    void* p = (void*)(uint8_t*)integer;
+    void* p = (void*)integer;
     return Scm_MakeForeignPointer(pointer_class, p);
 }
 */
 
-
-/*
-ScmObj null_pointer() {
+ScmObj allocate_pointer(int size) {
+    void* p = malloc(size);
     ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "pointer", print_pointer, NULL, 0);
-    ScmObj pointer = Scm_MakeForeignPointer(pointer_class, NULL);
+    ScmObj pointer = Scm_MakeForeignPointer(pointer_class, p);
     return pointer;
 }
-*/
 
-/*
+ScmObj empty_pointer() {
+    return Scm_MakeForeignPointer(pointer_class, NULL);
+}
+
 ScmObj is_null_pointer(ScmObj pointer) {
     if(!Scm_TypeP(pointer, SCM_CLASS_FOREIGN_POINTER)) {
         return SCM_FALSE;
@@ -352,16 +376,6 @@ ScmObj is_null_pointer(ScmObj pointer) {
         return SCM_FALSE;
     }
 }
-*/
-
-/*
-ScmObj pointer_allocate(int size) {
-    void* p = malloc(size);
-    ScmClass* pointer_class = Scm_MakeForeignPointerClass(module, "pointer", print_pointer, NULL, 0);
-    ScmObj pointer = Scm_MakeForeignPointer(pointer_class, p);
-    return pointer;
-}
-*/
 
 
 /*
@@ -373,7 +387,7 @@ ScmObj pointer_free(ScmObj pointer) {
 }
 */
 
-ScmObj pointer_set_c_int8_t(ScmObj pointer, int offset, int8_t value) {
+ScmObj pointer_set_c_int8(ScmObj pointer, int offset, int8_t value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         *(int8_t*)((char*)p + offset) = value;
@@ -383,7 +397,7 @@ ScmObj pointer_set_c_int8_t(ScmObj pointer, int offset, int8_t value) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_set_c_uint8_t(ScmObj pointer, int offset, uint8_t value) {
+ScmObj pointer_set_c_uint8(ScmObj pointer, int offset, uint8_t value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         *(uint8_t*)((char*)p + offset) = value;
@@ -393,7 +407,7 @@ ScmObj pointer_set_c_uint8_t(ScmObj pointer, int offset, uint8_t value) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_set_c_int16_t(ScmObj pointer, int offset, int16_t value) {
+ScmObj pointer_set_c_int16(ScmObj pointer, int offset, int16_t value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         *(int16_t*)((char*)p + offset) = value;
@@ -403,7 +417,7 @@ ScmObj pointer_set_c_int16_t(ScmObj pointer, int offset, int16_t value) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_set_c_uint16_t(ScmObj pointer, int offset, uint16_t value) {
+ScmObj pointer_set_c_uint16(ScmObj pointer, int offset, uint16_t value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         *(uint16_t*)((char*)p + offset) = value;
@@ -413,7 +427,7 @@ ScmObj pointer_set_c_uint16_t(ScmObj pointer, int offset, uint16_t value) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_set_c_int32_t(ScmObj pointer, int offset, int32_t value) {
+ScmObj pointer_set_c_int32(ScmObj pointer, int offset, int32_t value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         *(int32_t*)((char*)p + offset) = value;
@@ -423,7 +437,7 @@ ScmObj pointer_set_c_int32_t(ScmObj pointer, int offset, int32_t value) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_set_c_uint32_t(ScmObj pointer, int offset, uint32_t value) {
+ScmObj pointer_set_c_uint32(ScmObj pointer, int offset, uint32_t value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         *(uint32_t*)((char*)p + offset) = value;
@@ -433,7 +447,7 @@ ScmObj pointer_set_c_uint32_t(ScmObj pointer, int offset, uint32_t value) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_set_c_int64_t(ScmObj pointer, int offset, int64_t value) {
+ScmObj pointer_set_c_int64(ScmObj pointer, int offset, int64_t value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         *(int64_t*)((char*)p + offset) = value;
@@ -443,7 +457,7 @@ ScmObj pointer_set_c_int64_t(ScmObj pointer, int offset, int64_t value) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_set_c_uint64_t(ScmObj pointer, int offset, uint64_t value) {
+ScmObj pointer_set_c_uint64(ScmObj pointer, int offset, uint64_t value) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         *(uint64_t*)((char*)p + offset) = value;
@@ -565,7 +579,7 @@ ScmObj pointer_set_c_pointer(ScmObj pointer, int offset, ScmObj value) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_ref_c_int8_t(ScmObj pointer, int offset) {
+ScmObj pointer_ref_c_int8(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         return SCM_MAKE_INT(*(int8_t*)((char*)p + offset));
@@ -575,7 +589,7 @@ ScmObj pointer_ref_c_int8_t(ScmObj pointer, int offset) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_ref_c_uint8_t(ScmObj pointer, int offset) {
+ScmObj pointer_ref_c_uint8(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         return SCM_MAKE_INT(*(uint8_t*)((char*)p + offset));
@@ -585,7 +599,7 @@ ScmObj pointer_ref_c_uint8_t(ScmObj pointer, int offset) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_ref_c_int16_t(ScmObj pointer, int offset) {
+ScmObj pointer_ref_c_int16(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         return SCM_MAKE_INT(*(int16_t*)((char*)p + offset));
@@ -595,7 +609,7 @@ ScmObj pointer_ref_c_int16_t(ScmObj pointer, int offset) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_ref_c_uint16_t(ScmObj pointer, int offset) {
+ScmObj pointer_ref_c_uint16(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         return SCM_MAKE_INT(*(uint16_t*)((char*)p + offset));
@@ -605,7 +619,7 @@ ScmObj pointer_ref_c_uint16_t(ScmObj pointer, int offset) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_ref_c_int32_t(ScmObj pointer, int offset) {
+ScmObj pointer_ref_c_int32(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         return SCM_MAKE_INT(*(int32_t*)((char*)p + offset));
@@ -615,7 +629,7 @@ ScmObj pointer_ref_c_int32_t(ScmObj pointer, int offset) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_ref_c_uint32_t(ScmObj pointer, int offset) {
+ScmObj pointer_ref_c_uint32(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         return SCM_MAKE_INT(*(uint32_t*)((char*)p + offset));
@@ -625,7 +639,7 @@ ScmObj pointer_ref_c_uint32_t(ScmObj pointer, int offset) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_ref_c_int64_t(ScmObj pointer, int offset) {
+ScmObj pointer_ref_c_int64(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         return SCM_MAKE_INT(*(int64_t*)((char*)p + offset));
@@ -635,7 +649,7 @@ ScmObj pointer_ref_c_int64_t(ScmObj pointer, int offset) {
     return SCM_UNDEFINED;
 }
 
-ScmObj pointer_ref_c_uint64_t(ScmObj pointer, int offset) {
+ScmObj pointer_ref_c_uint64(ScmObj pointer, int offset) {
     if(SCM_FOREIGN_POINTER_P(pointer)) {
         void* p = SCM_FOREIGN_POINTER_REF(void*, pointer);
         return SCM_MAKE_INT(*(uint64_t*)((char*)p + offset));
