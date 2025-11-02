@@ -1,3 +1,11 @@
+2025-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (enter_repl): Handle uncaptured error during
+	  read-eval-print-loop.  This is most likely that something went
+	  awry during setting up repl (e.g. missing files needed for
+	  interactive editing).
+	  Cf. https://github.com/shirok/Gauche/issues/1186
+
 2025-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm:: Also support ~G, but not strictly following
