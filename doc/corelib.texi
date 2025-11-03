@@ -24754,17 +24754,11 @@ This is valid only for output ports.  The written data is buffered, but
 the buffer is flushed whenever a newline character is written.
 This is suitable for interactive output port.  Process's standard
 output port is opened in this mode by default.
-(Note that this differs from the line buffering mode of C stdio, which
-flushes the buffer as well when input is requested from the same file
-descriptor.)
 @c JP
 このモードは出力ポートにのみ有効です。書き出されたデータはバッファに
 貯められますが、改行文字が書かれたらフラッシュされます。
 このモードは対話的な出力ポートなどに便利です。
 プロセスの標準出力ポートはこのモードでオープンされています。
-(これは、Cのstdioライブラリの「ラインバッファリング」とちょっと違うことに
-注意してください。stdioでは同じファイルディスクリプタから入力が行われる時も
-バッファはフラッシュされますが、Gaucheではそうはなりません)。
 @c COMMON
 @item :modest
 @c EN
@@ -25111,7 +25105,7 @@ you're dealing with non-utf8 data.
 However, suppose you have exising system that assumes, say, latin-1 encoding,
 and you've been using Gauche with @code{none} CES encoding (which means
 Gauche just treats an octet as a character).
-Gauche uses utf-8 exclusively in its internal encoding since 1.0,
+Gauche uses utf-8 exclusively in its internal encoding since 0.9.14,
 and if you switch to it, you would need to check every file opening
 calls to make sure they have @code{:encoding latin-1}.  That would be a lot
 of work.
@@ -25119,7 +25113,7 @@ of work.
 ただ、例えばこれまでGaucheの内部エンコーディングを@code{none}でコンパイルしていて
 (これはGaucheが文字を8ビット固定長で扱うことを意味します)、システムがLatin-1エンコーディング
 でデータを扱っていたとしましょう。
-Gaucheは1.0から内部エンコーディングをutf-8のみにしたので、
+Gaucheは0.9.14から内部エンコーディングをutf-8のみにしたので、
 バージョンを上げる際に、
 全てのファイルオープン手続きを調べて@code{:encoding latin-1}をつけて回らないとなりません。
 それはかなり大きな変更となるでしょう。
@@ -25145,7 +25139,7 @@ source code.
 ソースコードをloadする場合は、内部エンコーディングをデフォルトとする
 コーディング認識ポートが使われることに注意してください (@ref{Coding-aware ports}参照)。
 内部エンコーディングとソースエンコーディングが異なる場合は、
-文字エンコーディングを指定する呪文コメント@code{coding:coding-name}を使ってください。
+文字エンコーディングを指定するマジックコメント@code{coding:coding-name}を使ってください。
 @c COMMON
 @end deffn
 
@@ -25505,7 +25499,7 @@ data as they are read.
 @c JP
 入力ポートを引数としてとりコーディング認識入力ポートを返します。
 基本的には @var{iport} からの入力データをリーダにわたしているだけです。
-しかし、@var{iport} からの入力データの最初の2行以内に、特別な呪文コメント
+しかし、@var{iport} からの入力データの最初の2行以内に、特別なマジックコメント
 が現れた場合、コーディング認識ポートは、その後に読み込まれるデータについて
 必要な文字エンコーディング変換を行います。
 @c COMMON
@@ -25519,7 +25513,7 @@ coding-aware port, so other code shouldn't read from @var{iport}.
 引数として渡されたポート、@var{iport} は生成されたコーディング認識
 ポートによって所有されます。つまり、コーディング認識ポートがクローズ
 されると、@var{iport} もクローズされます。@var{iport} から読み込まれた
-内容はコーディング認識ポート内でバッファリングさます、したがって、
+内容はコーディング認識ポート内でバッファリングされます、したがって、
 別のコードで @var{iport} から読み出しを行うべきではありません。
 @c COMMON
 
@@ -25535,10 +25529,10 @@ magic comment.
 @c JP
 デフォルトでは、Gauche の @code{load} はプログラムソースを読むのに
 コーディング認識ポートを使います。したがって、文字エンコーディングを
-示す特別な呪文コメントは、Gauche のソースプログラムでは有効になります
+示す特別なマジックコメントは、Gauche のソースプログラムでは有効になります
 (@ref{Loading Scheme file}参照)。ただし、この機構自身は @code{load} とは
 独立しており、このポートを別の目的で利用できます。特にコーディングの
-呪文コメントがある Scheme のソースプログラムを処理する関数を書くときに
+マジックコメントがある Scheme のソースプログラムを処理する関数を書くときに
 便利です。
 @c COMMON
 @end defun
@@ -25765,7 +25759,7 @@ input for @code{read-line}.  Hence, it is useful to consume trailing
 @c JP
 これはユーザが通常期待する動作とは異なります。
 ユーザは、@code{read-line}が実行された時点で、入力にタイプした行を読んで欲しいと
-思うでしょう。したがって、ユーザの最初の入力のあと、バフぁFに残っているRETを含めた
+思うでしょう。したがって、ユーザの最初の入力のあと、バッファに残っているRETを含めた
 空白文字を捨てておくことが役に立ちます。
 @c COMMON
 @end defun

@@ -3102,7 +3102,7 @@ After running this code you'll get @code{my-cfile.c} and
 
 (parameterize ([cgen-current-unit *unit*])
   (cgen-decl "#include <stdio.h>")
-  (cgen-init "printf(stderr, \"initialization function\\n\");")
+  (cgen-init "fprintf(stderr, \"initialization function\\n\");")
   (cgen-body "void foo(int n) @{ printf(stderr, \"got %d\\n\", n); @}")
   (cgen-extern "void foo(int n);")
   )
