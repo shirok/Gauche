@@ -7445,11 +7445,11 @@ An error is signaled if the index is out of bounds.
 @end defun
 
 
-@defun ring-buffer->flat-vector rb :optional start end
+@defun ring-buffer->xvector rb :optional start end
 @c MOD data.ring-buffer
 @c EN
 Returns the current valid content of the ring buffer @var{rb}
-as a fresh flat vector
+as a fresh vector
 of the same type as @var{rb}'s storage.  If the optional @var{start}/@var{end}
 indexes are given, the content between those indexes are taken.
 @c JP
@@ -7462,17 +7462,85 @@ indexes are given, the content between those indexes are taken.
 @example
 (define rb (make-ring-buffer (make-vector 4)))
 
-(ring-buffer->flat-vector rb) @result{} #()
+(ring-buffer->xvector rb) @result{} #()
 
 (ring-buffer-add-back! rb 'a)
 (ring-buffer-add-back! rb 'b)
 (ring-buffer-add-front! rb 'z)
 (ring-buffer-add-front! rb 'y)
 
-(ring-buffer->flat-vector rb) @result{} #(y z a b)
-(ring-buffer->flat-vector rb 1 3) @result{} #(z a)
+(ring-buffer->xvector rb) @result{} #(y z a b)
+(ring-buffer->xvector rb 1 3) @result{} #(z a)
 @end example
 @end defun
+
+@defun ring-buffer->xvector! target tstart rb :optional start end
+@c MOD data.ring-buffer
+@c EN
+Like @code{ring-buffer->xvector} above, but store the result into
+@var{target}, starting from index @var{tstart}.  @var{Target} must be
+the same type of vector of the backing storage of @var{rb},
+and must be large enough to hold the result.
+If the optional @var{start}/@var{end}
+indexes are given, the content between those indexes are taken.
+@c JP
+@code{ring-buffer->xvector}と似ていますが、結果を@var{target}の、
+インデックス@var{tstart}からに格納します。
+@var{target}は@var{rb}のバッキングストレージと同じ型で、
+結果を保持するのに十分な容量がなければなりません。
+@var{start}/@var{end}インデックスを指定した場合はそのインデックスの範囲内の
+内容だけが取り出されます。
+@c COMMON
+@end defun
+
+
+@defun ring-buffer->xsubvectors rb :optional start end
+@c MOD data.ring-buffer
+@c EN
+Returns @code{(vec start1 end1)} or @code{(vec start1 end1 vec start2 end2)},
+where @var{vec} is the backing storage of ring buffer @var{rb},
+and @var{start1}, @var{end1}, @var{start2}, @var{end2} are integer index
+into @var{vec}.  They represent the range(s) in the backing storage
+where active ring buffer data is stored.  It may be contiguous,
+or splitted to two parts when the buffer is wrapped around.
+
+The optional @var{start} and @var{end} arguments are indexes of
+the contents of ring buffer (@emph{not} the indexes to the backing
+storage) to limit the range of the contents to be extracted.
+
+The returned list can be passed as arguments to
+@code{vector-append-subvectors} (@pxref{R7RS vectors}) or
+@code{@@vector-append-subvector} (@pxref{Uvector basic operations}).
+
+This procedure is lightweight, for it doesn't allocate.  However,
+be aware that the content of @var{vec} may be changed and/or indexes
+become invalid by operations on
+@var{rb}.  I you want a snapshot of the ring buffer contents,
+you can use @code{ring-buffer->xvector} above.
+@c JP
+@code{(vec start1 end1)}か@code{(vec start1 end1 vec start2 end2)}を返します。
+ここで、@var{vec}はリングバッファ@var{rb}のバッキングストレージ、
+@var{start1}、@var{end1}、@var{start2}、@var{end2}はバッキングストレージの
+整数インデックスです。これは、バッキングストレージ中の、リングバッファの有効な
+データが存在する範囲を示しています。
+有効なデータはひとつづきであるか、バッファの末尾でラップアラウンドして
+二つの部分に分かれて存在します。
+
+省略可能な@var{start}と@var{end}引数はリングバッファの内容への整数インデックス
+(バッキングストレージのインデックスではなく)で、取り出す範囲を制限します。
+
+返されるリストは、それを引数として
+@code{vector-append-subvectors} (@ref{R7RS vectors}参照) あるいは
+@code{@@vector-append-subvector} (@ref{Uvector basic operations}参照)
+を呼び出すことができる形になっています。
+
+この手続きはアロケーションを行わないので軽いですが、この後でリングバッファに
+対する操作を行うと@var{vec}の内容が上書きされたり返されたインデックスが無効
+になることに注意してください。ある時点でのリングバッファの内容のスナップショットを
+保存したい場合は、上の@code{ring-buffer->xvector}が使えます。
+@c COMMON
+@end defun
+
 
 
 @c ----------------------------------------------------------------------
