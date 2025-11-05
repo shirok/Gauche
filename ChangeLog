@@ -1,5 +1,6 @@
 2025-11-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/treemap.c (core_ref): Also check integer overflow.
 	* src/hash.c (insert_entry): Avoid interger overflow.
 	  https://github.com/shirok/Gauche/issues/1187
 
