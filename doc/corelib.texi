@@ -11669,6 +11669,7 @@ already returned from @code{string-map} won't be affected
 二番目のインタフェースでは、文字列引数はひとつだけで、省略可能な@var{start}/@var{end}
 引数を取ります。@var{start}と@var{end}は非負整数のインデックスか
 文字列カーソルで、入力文字列を使う範囲を制限します。
+この形式はSRFI-13で定義されています。
 
 @var{proc}が適用される順序は左から右とは限りません。順序に依存しないようにしてください。
 
@@ -11848,13 +11849,14 @@ in @var{filler} argument, defaulted to @code{?}.
 不正なバイト列中の各バイトを、@var{filler}引数に与えられ文字で置き換えます。
 @var{filler}引数のデフォルトは@code{?}です。
 @c COMMON
+@c EN
 @item @code{:escape}
 Replace each byte in illegal byte sequences by a sequence of
 @var{filler} @code{<hexdigit>} @code{<hexdigit>}.
 Besides, the @var{filler} characters in the original string is replaced with
 @var{filler} @var{filler}.
 @c JP
-@item 1文字
+@item @code{:escape}
 不正なバイト列中の各バイトを、@var{filler} @code{<hexdigit>} @code{<hexdigit>}
 の3文字で置き換えます。さらに、元文字列中に@var{filler}が登場した場合はそれぞれを
 @var{filler} @var{filler} で置き換えます。
