@@ -5743,7 +5743,7 @@ This includes non-pair, non-() values (e.g. symbols, numbers),
 which are considered to be dotted lists of length 0.
 @c JP
 @var{x} が有限の大きさで、空リストで終端していないリストなら
-@code{#t} を返します。これには、ペアではなく、空リストもない値(たとえば
+@code{#t} を返します。これには、ペアではなく、空リストでもない値(たとえば
 シンボルや数値)のような長さ0のドットリストと考えられるものを含みます。
 @c COMMON
 @end defun
@@ -25515,7 +25515,7 @@ coding-aware port, so other code shouldn't read from @var{iport}.
 引数として渡されたポート、@var{iport} は生成されたコーディング認識
 ポートによって所有されます。つまり、コーディング認識ポートがクローズ
 されると、@var{iport} もクローズされます。@var{iport} から読み込まれた
-内容はコーディング認識ポート内でバッファリングされます、したがって、
+内容はコーディング認識ポート内でバッファリングされます。したがって、
 別のコードで @var{iport} から読み出しを行うべきではありません。
 @c COMMON
 
