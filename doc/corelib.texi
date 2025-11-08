@@ -12576,10 +12576,12 @@ object.  Otherwise it returns @code{#f}.
 @c COMMON
 
 @c EN
-If @var{start} and/or @var{end} indexes are given, only the substring between
+If @var{start} and/or @var{end} can be integer indexes or string
+cursors on @var{string}.  If given, only the substring between
 @var{start} (inclusive) and @var{end} (exclusive) is searched.
 @c JP
-@var{start}や@var{end}インデックスが与えられた場合、
+@var{start}と@var{end}は@var{string}に対する整数インデックスか
+文字列カーソルで、与えられた場合は
 @var{string}のうち@var{start}(含む)から@var{end}(含まない)までの
 部分文字列が検索対象になります。
 @c COMMON
