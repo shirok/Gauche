@@ -706,6 +706,12 @@
 (test* "abc" '(3 6 "abc") (rxmatch->full-match "abc$" "zzzabczz" 2 6))
 (test* "abc" '(5 8 "abc") (rxmatch->full-match "abc" "abczzabczz" 4))
 
+(test* "abc" '(3 6 "abc")
+       (let* ([str "zzzabczz"]
+              [s (string-index->cursor str 2)]
+              [e (string-index->cursor str 6)])
+         (rxmatch->full-match "abc$" "zzzabczz" s e)))
+
 ;;-------------------------------------------------------------------------
 (test-section "regexp macros")
 

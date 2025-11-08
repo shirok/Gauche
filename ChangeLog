@@ -1,5 +1,8 @@
 2025-11-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/regexp.c (Scm_RegExec): Let rxmatch accept string cursors
+	  https://github.com/shirok/Gauche/issues/1173
+
 	* src/string.c (Scm_StringCursorPointer): Added.
 	  Rewrote Scm_MaybeSubstring with it.
 
