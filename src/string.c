@@ -968,60 +968,18 @@ ScmObj Scm_Substring(ScmString *x, ScmSmallInt start, ScmSmallInt end,
 ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
 {
     const ScmStringBody *xb = SCM_STRING_BODY(x);
-    int no_start = SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start) || SCM_FALSEP(start);
-    int no_end = SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end);
-    ScmSmallInt istart = -1, iend = -1, ostart = -1, oend = -1;
+    const char *pstart =
+        Scm_StringCursorPointer(xb, start, STRING_CURSOR_FALLBACK_TO_START);
+    const char *pend =
+        Scm_StringCursorPointer(xb, end, STRING_CURSOR_FALLBACK_TO_END);
 
-    int immutable = SCM_STRING_BODY_HAS_FLAG(xb, SCM_STRING_IMMUTABLE);
-
-    if (no_start)
-        istart = 0;
-    else if (SCM_STRING_CURSOR_P(start))
-        ostart = string_cursor_offset(start);
-    else if (SCM_INTP(start))
-        istart = SCM_INT_VALUE(start);
-    else
-        Scm_Error("exact integer or cursor required for start, but got %S", start);
-
-    if (no_end) {
-        if (istart == 0 || ostart == 0) {
-            return SCM_OBJ(x);
-        }
-        iend = SCM_STRING_BODY_LENGTH(xb);
-    } else if (SCM_STRING_CURSOR_P(end))
-        oend = string_cursor_offset(end);
-    else if (SCM_INTP(end))
-        iend = SCM_INT_VALUE(end);
-    else
-        Scm_Error("exact integer or cursor required for end, but got %S", end);
-
-    if (no_start && oend != -1) {
-        return substring_cursor(xb,
-                                SCM_STRING_BODY_START(xb),
-                                SCM_STRING_BODY_START(xb) + oend,
-                                immutable);
+    if (pstart == SCM_STRING_BODY_START(xb)
+        && pend == SCM_STRING_BODY_END(xb)) {
+        return SCM_OBJ(x);
+    } else {
+        return substring_cursor(xb, pstart, pend,
+                                SCM_STRING_BODY_IMMUTABLE_P(xb));
     }
-    if (ostart != -1 && oend != -1) {
-        return substring_cursor(xb,
-                                SCM_STRING_BODY_START(xb) + ostart,
-                                SCM_STRING_BODY_START(xb) + oend,
-                                immutable);
-    }
-    if (ostart != -1 && no_end) {
-        return substring_cursor(xb,
-                                SCM_STRING_BODY_START(xb) + ostart,
-                                SCM_STRING_BODY_END(xb),
-                                immutable);
-    }
-
-    if (ostart != -1) {
-        istart = Scm_GetInteger(Scm_StringCursorIndex(x, start));
-    }
-    if (oend != -1) {
-        iend = Scm_GetInteger(Scm_StringCursorIndex(x, end));
-    }
-
-    return substring(xb, istart, iend, FALSE, immutable);
 }
 
 /*----------------------------------------------------------------
@@ -1767,6 +1725,13 @@ ScmObj Scm_MakeStringCursorEnd(ScmString *src)
     return SCM_OBJ(sc);
 }
 
+/* Convert cursor or integer index to integer index.
+ * If the input is integer, we just pass through for the convenience.
+ *
+ * NB: We don't check our-of-range error of input index here.  The string
+ * can be mutated between this call and the returned index is used--the
+ * range must be checked against a string body when the index is actually used.
+ */
 ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
 {
     if (SCM_INTP(sc) || SCM_BIGNUMP(sc)) {
@@ -1797,6 +1762,51 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
     }
 
     return SCM_MAKE_INT(index);
+}
+
+/* Convert cursor or integer index to the pointer into the string body.
+ * Boundary check is performed.
+ *
+ * If FALLBACK is STRING_CURSOR_FALLBACK_TO_START, #<undef>, #<unbound>,
+ * and #f is allowed to SC, indicating the beginning of the string.
+ * If FALLBACK is STRING_CURSOR_FALLBACK_TO_END, #<undef>, #<unbound>,
+ * #f and -1 is allowed to SC, indicating the end of the string.
+ * These are for the typical cases of optional arguments.
+ */
+const char *Scm_StringCursorPointer(const ScmStringBody *sb, ScmObj sc,
+                                    ScmStringCursorFallback fallback)
+{
+    if (SCM_BIGNUMP(sc)) {
+        Scm_Error("String index out of range: %S", sc);
+    }
+    if (SCM_INTP(sc)) {
+        ScmSmallInt i = SCM_INT_VALUE(sc);
+        if (fallback == STRING_CURSOR_FALLBACK_TO_END && i == -1) {
+            return SCM_STRING_BODY_END(sb);
+        }
+        if (i < 0 || i > SCM_STRING_BODY_LENGTH(sb)) {
+            Scm_Error("String index out of range: %S", sc);
+        }
+        return index2ptr(sb, i);
+    }
+
+    if (SCM_UNBOUNDP(sc) || SCM_UNDEFINEDP(sc) || SCM_FALSEP(sc)) {
+        switch (fallback) {
+        case STRING_CURSOR_FALLBACK_TO_START:
+            return SCM_STRING_BODY_START(sb);
+        case STRING_CURSOR_FALLBACK_TO_END:
+            return SCM_STRING_BODY_END(sb);
+        default:
+            /* FALLTHROUGH */
+        }
+    }
+
+    const char *ptr = string_cursor_ptr(sb, sc);
+    if (ptr == NULL) {
+        Scm_Error("String cursor or integer index is expected, but got: %S",
+                  sc);
+    }
+    return ptr;
 }
 
 ScmObj Scm_StringCursorForward(ScmString* s, ScmObj sc, int nchars)

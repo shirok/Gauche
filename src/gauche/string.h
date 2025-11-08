@@ -190,6 +190,16 @@ SCM_EXTERN ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
 SCM_EXTERN ScmObj Scm_SubstringCursor(ScmString *str, ScmObj start, ScmObj end);
 SCM_EXTERN int Scm_StringCursorCompare(ScmObj sc1, ScmObj sc2, int (*numcmp)(ScmObj, ScmObj));
 
+typedef enum {
+    STRING_CURSOR_FALLBACK_NONE,
+    STRING_CURSOR_FALLBACK_TO_START,
+    STRING_CURSOR_FALLBACK_TO_END,
+} ScmStringCursorFallback;
+
+SCM_EXTERN const char *Scm_StringCursorPointer(const ScmStringBody *sb,
+                                               ScmObj sc,
+                                               ScmStringCursorFallback fb);
+
 
 /*
  * Constructors
