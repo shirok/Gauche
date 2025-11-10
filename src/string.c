@@ -1766,6 +1766,7 @@ ScmObj Scm_StringCursorIndex(ScmString *src, ScmObj sc)
 
 /* Convert cursor or integer index to the pointer into the string body.
  * Boundary check is performed.
+ * This *never* returns NULL.
  *
  * If FALLBACK is STRING_CURSOR_FALLBACK_TO_START, #<undef>, #<unbound>,
  * and #f is allowed to SC, indicating the beginning of the string.
@@ -1893,17 +1894,11 @@ ScmObj Scm_SubstringCursor(ScmString *str,
                            ScmObj start_scm, ScmObj end_scm)
 {
     const ScmStringBody *sb = SCM_STRING_BODY(str);
-    const char *start = string_cursor_ptr(sb, start_scm);
-    const char *end   = string_cursor_ptr(sb, end_scm);
-
-    if (start && end) {
-        return substring_cursor(sb, start, end, FALSE);
-    }
-
-    return substring(SCM_STRING_BODY(str),
-                     Scm_GetInteger(Scm_StringCursorIndex(str, start_scm)),
-                     Scm_GetInteger(Scm_StringCursorIndex(str, end_scm)),
-                     FALSE, FALSE);
+    const char *start = Scm_StringCursorPointer(sb, start_scm,
+                                                STRING_CURSOR_FALLBACK_TO_START);
+    const char *end   = Scm_StringCursorPointer(sb, end_scm,
+                                                STRING_CURSOR_FALLBACK_TO_END);
+    return substring_cursor(sb, start, end, FALSE);
 }
 
 int Scm_StringCursorCompare(ScmObj sc1, ScmObj sc2,
