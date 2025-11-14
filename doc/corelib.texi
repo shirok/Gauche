@@ -27894,7 +27894,11 @@ of characters.
 ひとつ出力します。@var{count}が与えられた場合はその個数出力します。
 @c COMMON
 
-@item @b{~} + newline
+@c EN
+@item @b{~} followed by newline
+@c JP
+@item @b{~} とそれに続く改行
+@c COMMON
 @c EN
 Parameters: none
 
@@ -28666,18 +28670,24 @@ same rule as of @code{use}), then the binding of @var{item} in the
 
 @c EN
 @var{Item} can be either a variable name (symbol),
-or a form @code{(:macro @var{symbol})}.  If it is a variable,
+a form @code{(:macro @var{symbol})},
+or a form @code{(:id-macro @var{symbol})},
+If it is a symbol,
 the named file/module is loaded when the variable is
 about to be evaluated.  If it is the latter form,
-the named file/module is loaded when a form
-@code{(@var{symbol} arg @dots{})} is about to be @emph{compiled},
+the named file/module is loaded when the symbol
+is about to be dealt with the compiler as a macro call
+or as an identifier macro call,
 which enables autoloading macros.
+(@xref{Identifier transformer}, for the identifier macros).
 @c JP
 @var{item}は変数名(シンボル)か、@code{(:macro @var{symbol})}というフォーム
 でなければなりません。変数名の場合は、その変数が評価されようとした時に
 指定のファイル／モジュールがロードされます。後者のフォームの場合は、
-@code{(@var{symbol} arg @dots{})} というフォームがコンパイルされようとした
-時に指定のファイル／モジュールがロードされます。後者はマクロのオートロードになります。
+そのシンボルがマクロ呼び出し(あるいは識別子マクロ呼び出し)として
+コンパイルされようとした時に指定のファイル／モジュールがロードされます。
+後者はマクロのオートロードになります。
+(識別子マクロについては@ref{Identifier transformer}を参照してください。)
 @c COMMON
 
 @c EN
@@ -32456,7 +32466,7 @@ if the receiver thread is waiting on mutex or condition variable.
 So, it is recommended to make sure, for each signal, there is only one
 thread that can receive it.
 @c JP
-特定のシグナルをブロックしないスレッドが1つ以上ある場合、
+特定のシグナルをブロックしないスレッドが複数ある場合、
 どのスレッドがそのシグナルを受け取るかを知る術はありません。
 そのような状況は、GaucheにおいてはCプログラムよりもさらに不便です。
 なぜなら、受信側のスレッドがmutexや条件変数で待機している場合、
@@ -32714,8 +32724,8 @@ an error if @var{pid} is not zero.
 @c JP
 @code{getpgid()}はPOSIXではないことに注意して下さい。
 システムに@code{getpgid()}がない場合、@var{pid}が0ならば
-@code{sys-getpgid}がまだ動作しますが(それは単に@code{sys-getpgrp}を呼びます)
-、@var{pid}が0でない場合はエラーが通知されます。
+@code{sys-getpgid}は動作しますが(それは単に@code{sys-getpgrp}を呼びます)、
+@var{pid}が0でない場合はエラーが通知されます。
 @c COMMON
 @end defun
 
