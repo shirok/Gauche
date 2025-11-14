@@ -810,9 +810,9 @@
     (when (== r (cast clock_t -1)) (Scm_SysError "times failed"))
     (.if (defined "_SC_CLK_TCK")
       (set! tick (sysconf _SC_CLK_TCK))
-      (.if (defined "CLK_TCK")
-        (set! tick CLK_TCK)   ; older name
-        (set! tick 100)))     ; fallback
+      (.if (defined "CLOCKS_PER_SEC")
+        (set! tick CLOCKS_PER_SEC)   ; C std
+        (set! tick 100)))            ; fallback
     (return (list (Scm_MakeInteger (ref info tms_utime))
                   (Scm_MakeInteger (ref info tms_stime))
                   (Scm_MakeInteger (ref info tms_cutime))

@@ -120,7 +120,7 @@
 ;; A layouter procedure takes three arguments:
 ;;  - size - the entire width of rendering area
 ;;  - room - the remaining width of rendering area of the current line
-;;  - memo - memoized table; see belo.
+;;  - memo - memoized table; see below.
 ;; And it returns a pair of FSTree and the width the element occupies.
 ;;
 ;; Layouter = (Integer, Integer, Memo) -> (FSTree . Integer))

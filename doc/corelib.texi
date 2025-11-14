@@ -32759,6 +32759,46 @@ respectively.
 
 @defun sys-times
 [POSIX]
+@c EN
+Returns a list of five integers, each signifies the following
+value.  The unit of time is @emph{tick}, whose value is determined
+by the last element.
+@c JP
+それぞれ以下の値を示す、5つの整数のリストを返します。
+時間の単位は@emph{ティック}で、その大きさは最後の要素で決まります。
+@c COMMON
+@enumerate
+@item
+@c EN
+User time spent in the current process (@code{tms_utime}).
+@c JP
+現在のプロセスで費やされたユーザ時間 (@code{tms_utime}).
+@c COMMON
+@item
+@c EN
+System time spent in the current process (@code{tms_stime}).
+@c JP
+現在のプロセスで費やされたシステム時間 (@code{tms_stime}).
+@c COMMON
+@item
+@c EN
+User time spent in the children of the current process (@code{tms_cutime}).
+@c JP
+現在のプロセスの子プロセス達が費やしたユーザ時間 (@code{tms_cutime}).
+@c COMMON
+@item
+@c EN
+System time spent in the children of the current process (@code{tms_cstime}).
+@c JP
+現在のプロセスの子プロセス達が費やしたシステム時間 (@code{tms_cstime}).
+@c COMMON
+@item
+@c EN
+The number of ticks per second (@code{sysconf(_SC_CLK_TCK)} or @code{CLOCKS_PER_SEC})
+@c JP
+1秒あたりのティック数 (@code{sysconf(_SC_CLK_TCK)} もしくは @code{CLOCKS_PER_SEC})
+@c COMMON
+@end enumerate
 @end defun
 
 @defun sys-ctermid
