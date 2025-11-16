@@ -9,7 +9,7 @@
    ;; built-in
    real-exp real-ln real-sin real-cos real-tan
    real-asin real-acos real-atan atan
-   real-sqrt integer-sqrt integer-expt
+   real-sqrt integer-expt real-expt
    make-rectangular make-polar
 
    ;; SRFI-94 specific
@@ -26,10 +26,24 @@
 
 (define integer-sqrt exact-integer-sqrt)
 
-;; Returns max k such that base^k <= n
-(define (integer-log base n)
-  ;; WRITEME
-  )
+;; Returns max m such that base^m <= k
+;; Based on the reference implementation
+(define (integer-log base k)
+  (define (ilog m b k n)
+    (if (< k b)
+      (values k n)
+      (let1 n (+ n m)
+        (receive (q nn) (ilog (+ m m) (* b b) (quotient k b) n)
+          (if (< q b)
+            (values q nn)
+            (values (quotient q b) (+ nn m)))))))
+  (assume (and (exact? base) (>= base 1))
+          "Base must be exact integer >= 1, but got: " base)
+  (assume (and (exact? k) (>= k 0))
+          "K must be exact integer >= 1, but got: " k)
+  (if (< k base)
+    0
+    (values-ref (ilog 1 base (quotient k base) 1) 1)))
 
 (define (ln z) (log z))
 

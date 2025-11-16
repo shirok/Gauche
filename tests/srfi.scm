@@ -1472,6 +1472,34 @@
   )
 
 ;;-----------------------------------------------------------------------
+;; Type-restricted numerical functions
+
+(test-section "SRFI-94")
+
+(define-module srfi-94-tests
+  (use gauche.test)
+  (use srfi.94)
+  (test-module 'srfi.94)
+
+  ;; Most procedures are built-in.
+  (test* "integer-log 2" 10 (integer-log 2 (expt 2 10)))
+  (test* "integer-log 2" 9 (integer-log 2 (+ (expt 2 9) 123)))
+  (test* "integer-log 3" 8 (integer-log 3 (expt 3 8)))
+  (test* "integer-log 3" 7 (integer-log 3 (- (expt 3 8) 1)))
+  (test* "integer-log 3" 6 (integer-log 3 (+ (expt 3 6) 123)))
+  (test* "integer-log 111" 3 (integer-log 111 (expt 111 3)))
+  (test* "integer-log 111" 2 (integer-log 111 (- (expt 111 3) 3)))
+  (test* "integer-log 111" 4 (integer-log 111 (+ (expt 111 4) 3)))
+  (test* "integer-log 111" 0 (integer-log 111 110))
+
+  (test* "quo" 3 (quo 2/3 1/5))
+  (test* "mod" 1/15 (mod 2/3 1/5))
+
+  (test* "quo" 3.0 (quo 0.666 1/5))
+  (test* "mod" 0.06599999999999995 (mod 0.666 1/5) approx=?)
+  )
+
+;;-----------------------------------------------------------------------
 ;; An interface to access environment variables.  Just aliases of built-ins.
 
 (test-section "SRFI-98")

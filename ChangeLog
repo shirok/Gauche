@@ -1,3 +1,7 @@
+2025-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/94.scm (integer-log): Finishing support of srfi-94.
+
 2025-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (Scm_RegExec): Let rxmatch accept string cursors
