@@ -1480,8 +1480,10 @@
   (use gauche.test)
   (use srfi.94)
   (test-module 'srfi.94)
-
   ;; Most procedures are built-in.
+
+  (test* "real-log" 10.0 (real-log 2.0 1024.0))
+
   (test* "integer-log 2" 10 (integer-log 2 (expt 2 10)))
   (test* "integer-log 2" 9 (integer-log 2 (+ (expt 2 9) 123)))
   (test* "integer-log 3" 8 (integer-log 3 (expt 3 8)))
@@ -1494,9 +1496,29 @@
 
   (test* "quo" 3 (quo 2/3 1/5))
   (test* "mod" 1/15 (mod 2/3 1/5))
+  (test* "rem" 1/15 (rem 2/3 1/5))
+  (test* "quo" -3 (quo 2/3 -1/5))
+  (test* "mod" -2/15 (mod 2/3 -1/5))
+  (test* "rem" 1/15 (rem 2/3 -1/5))
+  (test* "quo" -3 (quo -2/3 1/5))
+  (test* "mod" 2/15 (mod -2/3 1/5))
+  (test* "rem" -1/15 (rem -2/3 1/5))
+  (test* "quo" 3 (quo -2/3 -1/5))
+  (test* "mod" -1/15 (mod -2/3 -1/5))
+  (test* "rem" -1/15 (rem -2/3 -1/5))
 
   (test* "quo" 3.0 (quo 0.666 1/5))
   (test* "mod" 0.06599999999999995 (mod 0.666 1/5) approx=?)
+  (test* "rem" 0.06599999999999995 (rem 0.666 1/5) approx=?)
+  (test* "quo" -3.0 (quo 0.666 -1/5))
+  (test* "mod" -0.134 (mod 0.666 -1/5))
+  (test* "rem" 0.06599999999999995 (rem 0.666 -1/5) approx=?)
+  (test* "quo" -3.0 (quo -0.666 1/5))
+  (test* "mod" 0.134 (mod -0.666 1/5) approx=?)
+  (test* "rem" -0.06599999999999995 (rem -0.666 1/5) approx=?)
+  (test* "quo" 3.0 (quo -0.666 -1/5))
+  (test* "mod" -0.06599999999999995 (mod -0.666 -1/5))
+  (test* "rem" -0.06599999999999995 (rem -0.666 -1/5) approx=?)
   )
 
 ;;-----------------------------------------------------------------------

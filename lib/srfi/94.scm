@@ -26,7 +26,7 @@
 
 (define integer-sqrt exact-integer-sqrt)
 
-;; Returns max m such that base^m <= k
+;; Returns max n such that base^n <= k
 ;; Based on the reference implementation
 (define (integer-log base k)
   (define (ilog m b k n)
@@ -56,19 +56,9 @@
 ;; They allow non-integer arguments like the former, but round
 ;; towards zero like the latter.
 
-(define (quo n d)
-  (if (or (negative? n) (negative? d))
-    (- (div (- n) d))
-    (div n d)))
-
-(define (rem n d)
-  (- n (* d (quo n d))))
-
-(define (mod n d)
-  (let1 r (rem n d)
-    (if (and (negative? r) (negative? n))
-      (- r)
-      r)))
+(define (quo n d) (truncate (/ n d)))
+(define (rem n d) (- n (* d (quo n d))))
+(define (mod n d) (- n (* d (floor (/ n d)))))
 
 ;; SRFI-94's quotient, remainder and modulo require exact integers,
 ;; while Gauche's built-ins allow inexact integers.
