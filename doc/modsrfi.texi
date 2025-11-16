@@ -59,6 +59,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Basic hash tables::           srfi.69
 * Octet-addressed binary blocks::  srfi.74
 * Lightweight testing::         srfi.78
+* Type-restricted numerical functions:: srfi.94
 * Accessing environment variables::  srfi.98
 * Purely functional random-access pairs and lists::  srfi.101
 * Basic socket interface::      srfi.106
@@ -5713,7 +5714,7 @@ sそれぞれの整数が@var{size}オクテットを占めます。
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Lightweight testing, Accessing environment variables, Octet-addressed binary blocks, Library modules - SRFIs
+@node Lightweight testing, Type-restricted numerical functions, Octet-addressed binary blocks, Library modules - SRFIs
 @section @code{srfi.78} - Lightweight testing
 @c NODE 軽量なテスト, @code{srfi.78} - 軽量なテスト
 
@@ -5939,7 +5940,119 @@ However, only the tests using @code{check} and @code{check-ec} are counted.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Accessing environment variables, Purely functional random-access pairs and lists, Lightweight testing, Library modules - SRFIs
+@node Type-restricted numerical functions, Accessing environment variables, Lightweight testing, Library modules - SRFIs
+@section @code{srfi.94} - Type-restricted numerical functions
+@c NODE 型を制限した数値関数, @code{srfi.94} - 型を制限した数値関数
+
+@deftp {Module} srfi.94
+@mdindex srfi.94
+This module provides arithmetic functions specialized for exact integers
+and reals.  Similar to @code{scheme.fixnum} (@pxref{R7RS fixnum})
+and @code{scheme.flonum} (@pxref{R7RS flonum}) in a sense of restricting
+types of range and domains, but this srfi procedures cover wider range
+(e.g. @code{real-*} procedures can accept all real numbers include
+exact integers, and @code{integer-*} procedures can accept both fixnums
+and bignums).
+
+This module is provided mostly for the completeness.  Generally useful
+procedures are already built-in, so you don't need to use this
+module to use them.  Furthermore, some SRFI-94 procedures have the
+same name of Gauche's built-in but behave slightly differently, so
+just importing everything from @code{srfi.94} may cause unexpected effect.
+If you need certain srfi-94 specific procedures, we recommend you to import
+them selectively.
+
+The following procedures are built-in.  @xref{Arithmetics} for the details.
+@example
+real-exp          real-tan          atan              make-rectangular
+real-ln           real-asin         real-sqrt         make-polar
+real-sin          real-acos         integer-expt
+real-cos          real-atan         real-expt
+@end example
+
+The following procedures are redefined in this module, shadowing
+Gauche's built-in procedures.   See the description
+of each entry for the difference.
+@example
+quotient     modulo       remainder    mod         abs
+@end example
+@end deftp
+
+@defun real-log base x
+[SRFI-94]
+@c MOD srfi.94
+The arguments must be nonnegative reals.  Returns logarithm of @var{x}
+with base @var{base}, computed as
+@code{(/ (real-ln x) (real-ln base))}.
+
+Note that R7RS's @code{log} takes @var{x} first, then optional @var{base}.
+Gauche doesn't provide this procedure as built-in to avoid confusion.
+@end defun
+
+@defun integer-sqrt n
+[SRFI-94]
+@c MOD srfi.94
+This is the same as @code{exact-integer-sqrt} (@pxref{Arithmetics}).
+@end defun
+
+@defun integer-log base k
+[SRFI-94]
+@c MOD srfi.94
+Both arguments must be exact integers, and @var{base} must be
+positive, while @var{x} must be nonnegative.
+
+Returns a maximum exact integer @var{n} such that @code{(<= (expt base n) k)}.
+
+The order of arguments is the same as @code{real-log}---not @code{log}.
+
+@example
+(integer-log 2 1500) @result{} 10
+@end example
+@end defun
+
+@defun abs x
+[SRFI-94]
+@c MOD srfi.94
+While Gauche's built-in @code{abs} can take a non-real number
+(in which case, it acts like @code{magnitude}), this version
+throws an error.
+@end defun
+
+@defun quo n d
+@defunx mod n d
+@defunx rem n d
+[SRFI-94]
+@c MOD srfi.94
+Real version of @code{quotient}, @code{modulo}, and @code{remainder}
+(@pxref{Arithmetics}).
+
+Returns quotient, modulo, and remainder of @var{n} divided by @var{d}.
+Arguments doesn't need to be integers.  If both are exact, the result
+is exact.
+
+@code{quo} returns @code{(truncate (/ n d))}.
+@code{rem} returns @code{(- n (* d (quo n d)))}.
+@code{mod} returns @code{(- n (* d (floor (/ n d))))}.
+
+Note: R6RS introduced different divison operators, @code{div} and @code{mod}
+(@pxref{Arithmetics}).
+They can take non-integer arguments, but unfortunately, they behave
+differently from SRFI-94.
+@end defun
+
+@defun quotient n d
+@defunx modulo n d
+@defunx remainder n d
+[SRFI-94]
+@c MOD srfi.94
+SRFI-94 version of these procedures throws an error if the arguments
+are not exact integers.  Otherwise they behave the same
+as built-in (@pxref{Arithmetics}).
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Accessing environment variables, Purely functional random-access pairs and lists, Type-restricted numerical functions, Library modules - SRFIs
 @section @code{srfi.98} - Accessing environment variables
 @c NODE 環境変数へのアクセス, @code{srfi.98} - 環境変数へのアクセス
 
