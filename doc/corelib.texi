@@ -4088,8 +4088,7 @@ Returns an exact integer only if all the given numbers are exact integers.
 
 
 @defun exp z
-@defunx log z
-@defunx log z1 z2
+@defunx log z :optional base
 @defunx sin z
 @defunx cos z
 @defunx tan z
@@ -4110,12 +4109,12 @@ R7RSではこれらの手続きは@code{(scheme inexact)}モジュールにあ�
 @code{exp} returns @i{e} raised to the power of @var{z}.  The one-argument
 version of @code{log} returns the natural logarithm of @var{z}.
 The two-argument version of @code{log} is added in R6RS, and returns
-base-@var{z2} logarithm of @var{z1}.
+base @var{base} logarithm of @var{z}.
 @c JP
 @code{exp}は@i{e}の@var{z}乗を返します。
 1引数の@code{log}は@var{z}の自然対数を返します。
 2引数の@code{log}はR6RSで追加されたもので、
-@var{z2}を底とした@var{z1}の対数を返します。
+@var{base}を底とした@var{z}の対数を返します。
 @c COMMON
 
 @c EN
