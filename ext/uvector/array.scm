@@ -944,18 +944,22 @@
     (apply array-map! target proc ar0 more)))
 
 (define (array->vector ar)
-  (with-builder (<vector> add! get :size (array-size ar))
-    (array-for-each-index ar
-      (^[ind] (add! (array-ref ar ind)))
-      (make-vector (array-rank ar)))
-    (get)))
+  (if (zero? (array-rank ar))
+    (vector (array-ref ar))
+    (with-builder (<vector> add! get :size (array-size ar))
+      ($ array-for-each-index ar
+         (^[ind] (add! (array-ref ar ind)))
+         (make-vector (array-rank ar)))
+      (get))))
 
 (define (array->list ar)
-  (with-builder (<list> add! get)
-    (array-for-each-index ar
-      (^[ind] (add! (array-ref ar ind)))
-      (make-vector (array-rank ar)))
-    (get)))
+  (if (zero? (array-rank ar))
+    (list (array-ref ar))
+    (with-builder (<list> add! get)
+      ($ array-for-each-index ar
+         (^[ind] (add! (array-ref ar ind)))
+         (make-vector (array-rank ar)))
+      (get))))
 
 (define (array->nested-list ar)
   (define rank (array-rank ar))

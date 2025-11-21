@@ -1,3 +1,8 @@
+2025-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm (array->list, array->vector): Fix to handle
+	  zero-rank array
+
 2025-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/94.scm (integer-log): Finishing support of srfi-94.
