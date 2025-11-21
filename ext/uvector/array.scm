@@ -55,6 +55,7 @@
           array-mul-elements array-mul-elements!
           array-div-elements array-div-elements!
           array-reciprocate-elements array-reciprocate-elements!
+          format-array/prefix format-array/content ; for pretty printer
           pretty-print-array
           ))
 (select-module gauche.array)
@@ -111,16 +112,29 @@
     (set! (slot-ref self 'getter) (^[index] (get store index)))
     (set! (slot-ref self 'setter) (^[index value] (set store index value)))))
 
-(define-method write-object ((self <array-base>) port)
-  (ecase (~ ((with-module gauche.internal %port-write-controls) port) 'array)
-    [(compact dimensions) => (cut format-array/srfi-163 self port <>)]
-    [(reader-ctor) (format-array/reader-ctor self port)]))
+;;
+;; Formatting array
+;;
 
-(define (format-array/reader-ctor array port)
-  (format port "#,(~A ~S" (class-name (class-of array))
-          (array->list (array-shape array)))
-  (array-for-each (cut format port " ~S" <>) array)
-  (format port ")"))
+(define-method write-object ((self <array-base>) port)
+  (let1 style
+      (~ ((with-module gauche.internal %port-write-controls) port) 'array)
+    (display (format-array/prefix self style))
+    (write (format-array/content self style))))
+
+(define (format-array/prefix array style)
+  (ecase style
+    [(compact dimensions) => (cut format-array/srfi-163-prefix array <>)]
+    [(reader-ctor) "#,"]))
+
+(define (format-array/content array style)
+  ;; This does not "format" the content to the port; instead, it returns
+  ;; a list form, which should be written to the port.
+  (ecase style
+    [(compact dimensions) (array->nested-list array)]
+    [(reader-ctor) (list* (class-name (class-of array))
+                          (array->list (array-shape array))
+                          (array->list array))]))
 
 ;; #<rank>a style.  FMT can be 'compact or 'dimensions
 ;;  If compact,
@@ -129,7 +143,7 @@
 ;;  If dimensions
 ;;    - We show start if it's not 0
 ;;    - We show length for all dimensions
-(define (format-array/srfi-163 array port fmt)
+(define (format-array/srfi-163-prefix array fmt)
   (define (dims full?)
     (with-output-to-string
       (^[] (dotimes [i (array-rank array)]
@@ -138,7 +152,7 @@
                (unless (and full? (= s 0)) (display #\@) (display s))
                (when full? (begin (display #\:) (display (- e s)))))))))
 
-  (format port "#~a~a~@[~a~]~a~s"
+  (format "#~a~a~@[~a~]~a"
           (array-rank array)
           (array-tag (class-of array))
           (cond [(eq? fmt 'dimensions) (dims #t)]
@@ -147,7 +161,7 @@
                  (dims #f)]
                 [else #f])
           (if (zero? (array-rank array)) " " "") ; need this for zero-dim array
-          (array->nested-list array)))
+          ))
 
 (define-class <array> (<array-base>)
   ()
