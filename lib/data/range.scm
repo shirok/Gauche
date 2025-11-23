@@ -546,8 +546,9 @@
   ;; value; but there would be no check if the caller conforms it.  Until
   ;; we see the case that such optimization is effective, we just build
   ;; a new vector.
-  (vector-ec (: i (range-length range))
-             (range-ref range i)))
+  (vector-of-length-ec (range-length range)
+                       (: i (range-length range))
+                       (range-ref range i)))
 
 (define (range->string range)
   (assume-type range <range>)
