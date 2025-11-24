@@ -665,6 +665,16 @@
   (test* "vector-of-length-ec" '#(0)   (vector-of-length-ec 1 (:range i 1) i))
   (test* "vector-of-length-ec" '#(0 1) (vector-of-length-ec 2 (:range i 2) i))
 
+  (test* "uvector-ec" '#u8(1)    (uvector-ec <u8vector> 1))
+  (test* "uvector-ec" '#s8()     (uvector-ec <s8vector> (:range i 0) i))
+  (test* "uvector-ec" '#f16(0.0) (uvector-ec <f16vector>  (:range i 1) i))
+  (test* "uvector-ec" '#u64(0 1) (uvector-ec <u64vector> (:range i 2) i))
+
+  (test* "uvector-of-length-ec" '#u8(1)  (uvector-of-length-ec <u8vector> 1 1))
+  (test* "uvector-of-length-ec" '#s8()   (uvector-of-length-ec <s8vector> 0 (:range i 0) i))
+  (test* "uvector-of-length-ec" '#u8(0)  (uvector-of-length-ec <u8vector> 1 (:range i 1) i))
+  (test* "uvector-of-length-ec" '#s8(0 1) (uvector-of-length-ec <s8vector> 2 (:range i 2) i))
+
   (test* "sum-ec" 1 (sum-ec 1))
   (test* "sum-ec" 0 (sum-ec (:range i 0) i))
   (test* "sum-ec" 0 (sum-ec (:range i 1) i))
