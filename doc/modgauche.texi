@@ -32378,6 +32378,22 @@ if you import @code{gauche.collection}.
 @end example
 @end deffn
 
+@defun list->uvector classs list
+@c MOD gauche.uvector
+@c EN
+A ganeric version of @code{list->@@vector}.  You can pass a uvector
+class @var{class}.
+@c JP
+@code{list->@@vector}の汎用バージョンです。
+nユニフォームベクタのクラスを@var{class}に渡します。
+@c COMMON
+
+@example
+(list->uvector <u8vector> '(0 1 2)) @result{} #u8(0 1 2)
+@end example
+@end defun
+
+
 @deffn {Function} reverse-list->@@vector list :optional clamp
 @findex reverse-list->s8vector
 @findex reverse-list->u8vector
@@ -32455,6 +32471,21 @@ if you import @code{gauche.collection}.
 (coerce-to <f64vector> '#(3.1 5.4 3.2)) @result{} #f64(3.1 5.4 3.2)
 @end example
 @end deffn
+
+@defun vector->uvector classs vec
+@c MOD gauche.uvector
+@c EN
+A ganeric version of @code{vector->@@vector}.  You can pass a uvector
+class @var{class}.
+@c JP
+@code{vector->@@vector}の汎用バージョンです。
+nユニフォームベクタのクラスを@var{class}に渡します。
+@c COMMON
+
+@example
+(vector->uvector <u8vector> '#(0 1 2)) @result{} #u8(0 1 2)
+@end example
+@end defun
 
 @defun uvector-alias uvector-class vec :optional start end
 @c MOD gauche.uvector
