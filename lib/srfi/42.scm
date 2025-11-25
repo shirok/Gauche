@@ -33,13 +33,12 @@
 
 (define-module srfi.42
   (use util.match)
-  (use gauche.sequence)
   (use gauche.generator)
-  (use gauche.uvector)
   (export-all))
 (select-module srfi.42)
 
-(autoload gauche.uvector uvector->list)
+(autoload gauche.uvector uvector->list make-uvector)
+(autoload gauche.sequence coerce-to)
 (autoload data.range range? range-length range-ref)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1138,7 +1137,7 @@
                     (begin (uvector-set! vec i expression)
                            (set! i (+ i 1)) )
                     (error "uvector is too short for the comprehension") ))
-         (if (= i len)
+5         (if (= i len)
              vec
              (error "uvector is too long for the comprehension") ))))))
 
