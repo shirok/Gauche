@@ -1,3 +1,8 @@
+2025-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (list->uvector, vector->uvector): Added
+	  generic version of converters.
+
 2025-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/42.scm (uvector-ec, uvector-of-length-ec): Added.

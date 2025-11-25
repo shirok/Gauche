@@ -273,6 +273,15 @@
 (uvconv-test-c64 '#c64(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
 (uvconv-test-c128 '#c128(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
 
+(test* "list->uvector" '#u8(0 1 2 3)
+       (list->uvector <u8vector> '(0 1 2 3)))
+(test* "list->uvector" '#s64(0 1 2 3)
+       (list->uvector <s64vector> '(0 1 2 3)))
+(test* "vector->uvector" '#u8(0 1 2 3)
+       (vector->uvector <u8vector> '#(0 1 2 3)))
+(test* "vector>uvector" '#s64(0 1 2 3)
+       (vector->uvector <s64vector> '#(0 1 2 3)))
+
 ;;-------------------------------------------------------------------
 (test-section "comparison")
 

@@ -66,6 +66,7 @@
           uvector-binary-search uvector-class-element-size
           uvector-copy uvector-copy! uvector-ref uvector-set! uvector-size
           uvector->list uvector->vector uvector-swap-bytes uvector-swap-bytes!
+          list->uvector vector->uvector
 
           uvector-class-valid-element?
 
@@ -232,6 +233,25 @@
                                                          start end))]
      [else (Scm_Error "[internal] Invalid uvector type: %S" v)
            (return SCM_UNDEFINED)])))
+
+(define (list->uvector class elts)
+  (assume-type class <uvector-meta>)
+  (assume-type elts <list>)
+  (let* ([len (length elts)]
+         [v (make-uvector class len)])
+    (do ([i 0 (+ i 1)]
+         [elts elts (cdr elts)])
+        [(= i len) v]
+      (uvector-set! v i (car elts)))))
+
+(define (vector->uvector class elts)
+  (assume-type class <uvector-meta>)
+  (assume-type elts <vector>)
+  (let* ([len (vector-length elts)]
+         [v (make-uvector class len)])
+    (do ([i 0 (+ i 1)])
+        [(= i len) v]
+      (uvector-set! v i (vector-ref elts i)))))
 
 ;; allocation by class
 (inline-stub
