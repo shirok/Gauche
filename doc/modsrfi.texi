@@ -3303,6 +3303,7 @@ See @ref{Lazy sequences}, @ref{Generators} and @ref{Stream library}.
 @c COMMON
 @end deftp
 
+
 @c EN
 @subheading Eager comprehension examples
 @c JP
@@ -3556,6 +3557,23 @@ Repeats @var{body} and collects the results into a vector.
 @c COMMON
 @end defmac
 
+@defmac uvector-ec class qualifier @dots{} body
+@c MOD srfi.42
+@c EN
+Repeats @var{body} and collects the results into a uniform vector
+of class @var{class}.  This is a Gauche's extension and not a part of
+SRFI-42.
+@c JP
+@var{body}を繰り返し、結果をクラス@var{class}のユニフォームベクタに集めて返します。
+これはGaucheの拡張で、SRFI-42には含まれていません。
+@c COMMON
+
+@example
+(uvector-ec <u8vector> (: i 10))
+ @result{} #u8(0 1 2 3 4 5 6 7 8 9)
+@end example
+@end defmac
+
 @defmac vector-of-length-ec k qualifier @dots{} body
 [SRFI-42]
 @c MOD srfi.42
@@ -3570,6 +3588,24 @@ than @code{vector-ec}.  Unless the comprehension repeats exactly
 繰り返しが正確に@var{k}回にならなかった場合はエラーが投げられます。
 @c COMMON
 @end defmac
+
+@defmac uvector-of-length-ec class k qualifier @dots{} body
+@c MOD srfi.42
+@c EN
+Like @code{vector-of-length-ec}, but creates a uniform vector
+of class @var{lass} instead of a vector.  This is more efficient
+than @code{uvector-ec}.
+This is a Gauche's extension and not a part of
+SRFI-42.
+@c JP
+@code{vector-ec}と似ていますが、ベクタではなくクラス@var{class}の
+ユニフォームベクタを作って返します。
+あらかじめユニフォームベクタをアロケートしておけるので
+@code{uvector-ec}より効率が良いです。
+これはGaucheの拡張で、SRFI-42には含まれていません。
+@c COMMON
+@end defmac
+
 
 @defmac sum-ec qualifier @dots{} body
 @defmacx product-ec qualifier @dots{} body
