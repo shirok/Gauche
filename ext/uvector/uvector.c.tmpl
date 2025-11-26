@@ -1246,6 +1246,44 @@ $END
     }
 }
 
+/*
+ * Generic converters
+ */
+ScmObj Scm_UVectorToList(ScmUVector *v, ScmSmallInt start, ScmSmallInt end)
+{
+    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
+$BEGIN
+    case SCM_UVECTOR_${T}: return Scm_${T}VectorToList(v, start, end);
+$END
+    default: Scm_Error("Invalid uvector type: %S", v);
+        return SCM_UNDEFINED;   /* dummy */
+    }
+}
+
+ScmObj Scm_UVectorToVector(ScmUVector *v, ScmSmallInt start, ScmSmallInt end)
+{
+    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
+$BEGIN
+    case SCM_UVECTOR_${T}: return Scm_${T}VectorToVector(v, start, end);
+$END
+    default: Scm_Error("Invalid uvector type: %S", v);
+        return SCM_UNDEFINED;   /* dummy */
+    }
+}
+
+ScmObj Scm_VectorToUVector(ScmClass *klass, ScmVector *vec,
+                           ScmSmallInt start, ScmSmallInt end, int clamp)
+{
+    switch (Scm_UVectorType(klass)) {
+$BEGIN
+    case SCM_UVECTOR_${T}:
+        return Scm_VectorTo${T}Vector(vec, start , end, clamp);
+$END
+    default: Scm_Error("uvector class required, but got: %S", klass);
+        return SCM_UNDEFINED;   /* dummy */
+    }
+}
+
 ///))
 
 ///(define *extra-procedure*  ;; procedurally generates code

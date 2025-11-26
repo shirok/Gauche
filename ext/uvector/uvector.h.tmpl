@@ -70,6 +70,16 @@ SCM_EXTERN ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
                                  ScmSmallInt start, ScmSmallInt end,
                                  ScmSymbol *endian);
 
+SCM_EXTERN ScmObj Scm_UVectorToList(ScmUVector *v,
+                                    ScmSmallInt start, ScmSmallInt end);
+SCM_EXTERN ScmObj Scm_UVectorToVector(ScmUVector *v,
+                                      ScmSmallInt start, ScmSmallInt end);
+
+/* NB: Scm_ListToUVector is in core */
+SCM_EXTERN ScmObj Scm_VectorToUVector(ScmClass *klass, ScmVector *vec,
+                                      ScmSmallInt start, ScmSmallInt end,
+                                      int clamp);
+
 ///)) ;; tmpl-prologue
 
 ///(define *tmpl-body* (list

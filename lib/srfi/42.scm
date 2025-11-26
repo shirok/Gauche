@@ -37,8 +37,7 @@
   (export-all))
 (select-module srfi.42)
 
-(autoload gauche.uvector uvector->list make-uvector)
-(autoload gauche.sequence coerce-to)
+(autoload gauche.uvector uvector->list list->uvector make-uvector)
 (autoload data.range range? range-length range-ref)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1089,7 +1088,7 @@
     ((uvector-ec class etc1 etc ...)
      (let ((c class))
        (assume (subtype? c <uvector>))
-       (coerce-to class (list-ec etc1 etc ...))))))
+       (list->uvector class (list-ec etc1 etc ...))))))
 
 ; Comment: A similar approach as for string-ec can be used for vector-ec.
 ;   However, the space overhead for the intermediate list is much lower
