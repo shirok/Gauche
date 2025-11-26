@@ -1137,7 +1137,7 @@
                     (begin (uvector-set! vec i expression)
                            (set! i (+ i 1)) )
                     (error "uvector is too short for the comprehension") ))
-5         (if (= i len)
+         (if (= i len)
              vec
              (error "uvector is too long for the comprehension") ))))))
 
