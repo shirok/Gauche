@@ -32385,7 +32385,7 @@ A ganeric version of @code{list->@@vector}.  You can pass a uvector
 class @var{class}.
 @c JP
 @code{list->@@vector}の汎用バージョンです。
-nユニフォームベクタのクラスを@var{class}に渡します。
+ユニフォームベクタのクラスを@var{class}に渡します。
 @c COMMON
 
 @example

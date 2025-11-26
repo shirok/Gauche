@@ -1,3 +1,8 @@
+2025-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvgen.scm, ext/uvetor/uvector.c.tmpl: Add auto-generation
+	  of dispatcher-type function.
+
 2025-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm (list->uvector, vector->uvector): Added

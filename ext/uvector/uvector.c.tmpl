@@ -1196,7 +1196,6 @@ ScmObj Scm_F64VectorSwapBytesX_ARM2BE(ScmF64Vector *v)
 
 ///))
 
-
 ///(define *tmpl-swapb* '(
 
 static void ${t}vector_swapb(ScmUVector *v)
@@ -1227,6 +1226,27 @@ ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v)
 
 ///))
 
+///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///;; Dispatcher functions
+///;;
+
+///(define *tmpl-dispatch* '(
+
+/*
+ * Generic copy
+ */
+ScmObj Scm_UVectorCopy(ScmUVector *v, ScmSmallInt start, ScmSmallInt end)
+{
+    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
+$BEGIN
+    case SCM_UVECTOR_${T}: return Scm_${T}VectorCopy(v, start, end);
+$END
+    default: Scm_Error("uniform vector required, but got %S", v);
+        return SCM_UNDEFINED;
+    }
+}
+
+///))
 
 ///(define *extra-procedure*  ;; procedurally generates code
 ///  (lambda ()
@@ -1235,6 +1255,7 @@ ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v)
 ///    (generate-dotop)
 ///    (generate-rangeop)
 ///    (generate-swapb)
+///    (generate-dispatch)
 ///)) ;; end of extra-procedure
 
 ///(define *tmpl-epilogue* '(
@@ -1242,31 +1263,6 @@ ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v)
 /*==============================================================
  * Some generic functions
  */
-
-/*
- * Generic copy
- */
-ScmObj Scm_UVectorCopy(ScmUVector *v, ScmSmallInt start, ScmSmallInt end)
-{
-    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
-    case SCM_UVECTOR_S8: return Scm_S8VectorCopy(v, start, end);
-    case SCM_UVECTOR_U8: return Scm_U8VectorCopy(v, start, end);
-    case SCM_UVECTOR_S16: return Scm_S16VectorCopy(v, start, end);
-    case SCM_UVECTOR_U16: return Scm_U16VectorCopy(v, start, end);
-    case SCM_UVECTOR_S32: return Scm_S32VectorCopy(v, start, end);
-    case SCM_UVECTOR_U32: return Scm_U32VectorCopy(v, start, end);
-    case SCM_UVECTOR_S64: return Scm_S64VectorCopy(v, start, end);
-    case SCM_UVECTOR_U64: return Scm_U64VectorCopy(v, start, end);
-    case SCM_UVECTOR_F16: return Scm_F16VectorCopy(v, start, end);
-    case SCM_UVECTOR_F32: return Scm_F32VectorCopy(v, start, end);
-    case SCM_UVECTOR_F64: return Scm_F64VectorCopy(v, start, end);
-    case SCM_UVECTOR_C32: return Scm_C32VectorCopy(v, start, end);
-    case SCM_UVECTOR_C64: return Scm_C64VectorCopy(v, start, end);
-    case SCM_UVECTOR_C128: return Scm_C128VectorCopy(v, start, end);
-    default: Scm_Error("uniform vector required, but got %S", v);
-        return SCM_UNDEFINED;
-    }
-}
 
 /*
  * Generic swapb
