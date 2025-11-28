@@ -13539,6 +13539,35 @@ provides a bunch of procedures that can treat a bytevector as a bytestring.
 このSRFIはバイトベクタの別形式の外部表現を定義し、
 バイトベクタをバイト列(bytestring)として扱える多くの手続きを提供します。
 @c COMMON
+
+@c EN
+Gauche supports 'string' representation of bytevectors natively.
+The reader can recognize bytevectors both in the numeric format
+(e.g. @code{#u(65 66 67 68)}) and the string format
+(e.g. @code{#u8"ABCD"}).  The writer writes bytevectors in the numeric
+format by default, but you can switch it to string format
+when @code{bytestring} slot of @code{<wrtie-controls>} is true.
+@c JP
+Gaucheはバイトベクタの「文字列」表現を組み込みでサポートしています。
+リーダーは、数値形式(例: @code{#u(65 66 67 68)})、
+文字列形式(例: @code{#u8"ABCD"})、のどちらでも読むことができます。
+ライターはデフォルトで数値形式を使いますが、
+@code{<write-controls>}の@code{bytestring}スロットを真にすると
+文字列形式を使うようになります。
+@c COMMON
+
+@example
+gosh> #u8(65 66 67 68)
+#u8(65 66 67 68)
+gosh> ,pm bytestring #t
+Current print mode:
+       length :  50           base :  10  exact-decimal :  #f
+        level :  10   radix-prefix :  #f          array : compact
+       pretty :  #t  string-length : 256        complex : rectangular
+        width :  79     bytestring :  #t
+gosh> #u8(65 66 67 68)
+#u8"ABCD"
+@end example
 @end deftp
 
 @defun bytestring arg @dots{}
@@ -13594,22 +13623,38 @@ An error is signaled if anything other than above is given.
 @defun make-bytestring lis
 [SRFI-207]
 @c MOD srfi.207
+@c EN
 Returns a new bytevector whose content is a concatenation of
 elements in @var{lis}.  Each element must be either an exact integer
 between 0 and 255 inclusive, an ASCII character, a bytevector
 or an ASCII string.  It is effectively the same as
 @code{(apply bytestring lis)}.
+@c JP
+@var{lis}の要素をつなげた内容を持つバイトベクタを作って返します。
+@var{lis}の各要素は、0以上255以下の正確な整数、ASCII文字、
+バイトベクタ、あるいはASCII文字列のいずれかでなければなりません。
+実質的には@code{(apply bytestring lis)}と同じです。
+@c COMMON
 @end defun
 
 @defun make-bytestring! bv at lis
 [SRFI-207]
 @c MOD srfi.207
+@c EN
 Fill a bytevector @var{bv} starting from index @var{at} with the
 elements in @var{lis}.  Each element must be either an exact integer
 between 0 and 255 inclusive, an ASCII character, a bytevector
 or an ASCII string.
 
 Returns an undefined value.
+@c JP
+バイトベクタ@var{bv}の、インデックス@var{at}以降を、
+@var{lis}の要素で埋めます。
+@var{lis}の各要素は、0以上255以下の正確な整数、ASCII文字、
+バイトベクタ、あるいはASCII文字列のいずれかでなければなりません。
+
+戻り値は未定義です。
+@c COMMON
 
 @example
 (rlet1 bv (make-u8vector 10)
@@ -13622,11 +13667,18 @@ Returns an undefined value.
 @defunx hex-string->bytevector string
 [SRFI-207]
 @c MOD srfi.207
+@c EN
 Convert a bytevector to hexadecimal digit string, and vice versa.
 
 A condition that satisfies @code{bytestring-error?} is thrown
 by @code{hex-string->bytevector} if @var{string} contains a letter
 not valid as a hexadecimal digits.
+@c JP
+それぞれ、バイトベクタと十六進数文字列とを相互に変換します。
+
+@code{hex-string->bytevector}が、引数中に十六進数と解釈できない
+文字に出会った場合は、@code{bytestring-error?}を満たすコンディションが投げられます。
+@c COMMON
 
 @example
 (bytevector->hex-string #u8"aloha")
@@ -13640,20 +13692,41 @@ not valid as a hexadecimal digits.
 @defunx base64->bytevector string :optional digits
 [SRFI-207]
 @c MOD srfi.207
+@c EN
 Encode a bytevector @var{bv} to Base64 encoded string, and vice versa.
 
 A condition that satisfies @code{bytestring-error?} is thrown
 by @code{base64->bytevector} if @var{string} contains a letter
-not valid as a hexadecimal digits.  Whitespace characters in @var{string}
+not valid in Base64 encoded string.  Whitespace characters in @var{string}
 are silently ignored, though.
+@c JP
+それぞれ、バイトベクタとBase64文字列とを相互に変換します。
 
+@code{hex-string->bytevector}が、引数がBase64と解釈できない
+場合は、@code{bytestring-error?}を満たすコンディションが投げられます。
+但し、空白文字は許されて、それは単に無視されます。
+@c COMMON
+
+@c EN
 By default, they use standard Base64 mappings.  You can specify
 a string of two ASCII characters in @var{digits} to alter
 mapping of 62nd and 63rd digits; the 'URL-safe' variant
 of Base64 can be achieved by passing @code{"-_"} as @var{digits}.
+@c JP
+デフォルトでは標準のBase64マッピングが使われます。
+マッピングの62と63に使う代わりの文字を、2文字のASCII文字列列として
+@var{digits}に渡すことで、それらの文字のマッピングを変更できます。
+いわゆる「URL安全」なBase64バリエーションを使うには、
+@code{"-_"}を@var{digits}に渡します。
+@c COMMON
 
+@c EN
 @xref{Base64 encoding/decoding}, for Gauche-specific Base64 library
 that provides more APIs.
+@c JP
+Gauche特有のBase64ライブラリには他のAPIも提供されています。
+@ref{Base64 encoding/decoding}を参照してください。
+@c COMMON
 @end defun
 
 @defun bytestring->list bv :optional start end
