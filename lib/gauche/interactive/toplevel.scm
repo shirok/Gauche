@@ -395,27 +395,27 @@
   \nOtherwise, the arguments must be a key-value list where keys are symbols,\
   \nand values are either integers or booleans.\
   \nThe following keys are recognized.\
-  \n  pretty <boolean>    - Use pretty printer [default: ~(~ default-pm'pretty)]\
   \n  length <integer>|#f - Max # of items shown in list/vector before abbreviated.\
   \n                        #f for unlimited.  [default: ~(~ default-pm'length)]\
   \n  level <integer>|#f  - Max # of nestings shown before abbreviated.\
   \n                        #f for unlimited.  [default: ~(~ default-pm'level)]\
   \n  width <integer>|#f  - Column width before line is wrapped.  Only used in\
   \n                        the pretty printer.  #f for unlimited.  [default: ~(~ default-pm'width)]\
+  \n  string-length <integer>|#f\
+  \n                      - Max length of string literals before abbreviated.\
+  \n                        [default: ~(~ default-pm'string-length)]\
+  \n  pretty <boolean>    - Use pretty printer [default: ~(~ default-pm'pretty)]\
   \n  base <integer>      - Base radix of showing whole numbers.  [default: ~(~ default-pm'base)]\
   \n  radix-prefix <boolean> \
   \n                      - Add radix prefix ('#x' etc.) befors whole numbers.\
   \n                        [default: ~(~ default-pm'radix)]\
-  \n  string-length <integer>|#f\
-  \n                      - Max length of string literals before abbreviated.\
-  \n                        [default: ~(~ default-pm'string-length)]\
-  \n  bytestring <boolean>\
-  \n                      - If true, u8vector is printed with string notation.\
-  \n                        [default: ~(~ default-pm'bytestring)]\
   \n  exact-decimal <boolean>\
   \n                      - If true, use decimal notation for exact rational\
   \n                        numbers if they can be written out exactly.\
   \n                        [default: ~(~ default-pm'exact-decimal)]\
+  \n  bytestring <boolean>\
+  \n                      - If true, u8vector is printed with string notation.\
+  \n                        [default: ~(~ default-pm'bytestring)]\
   \n  array <symbol>      - Can be 'compact, 'dimensions or 'reader-ctor.\
   \n                        [default: ~(~ default-pm'array)]\
   \n  complex <symbol>    - Can be 'rectangular, 'polar, 'polar-pi or 'vector.\
@@ -443,13 +443,13 @@
       (display-multicolumn
        (list (format "       length : ~3d"  (~ c'length))
              (format "        level : ~3d"  (~ c'level))
-             (format "       pretty : ~3@a" (~ c'pretty))
              (format "        width : ~3d"  (~ c'width))
+             (format "string-length : ~3d"  (~ c'string-length))
+             (format "       pretty : ~3@a" (~ c'pretty))
              (format "         base : ~3d"  (~ c'base))
              (format " radix-prefix : ~3@a" (~ c'radix))
-             (format "string-length : ~3d"  (~ c'string-length))
-             (format "   bytestring : ~3@a" (~ c'bytestring))
              (format "exact-decimal : ~3d"  (~ c'exact-decimal))
+             (format "   bytestring : ~3@a" (~ c'bytestring))
              (format "        array : ~a"   (~ c'array))
              (format "      complex : ~a"   (~ c'complex)))
        :style 'packed))
