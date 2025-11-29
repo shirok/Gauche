@@ -507,6 +507,11 @@
 (test* "bitvector/int-range" '(0 1 1 0 0)
        (range->list (bitvector/int-range #*0101100 2)))
 
+(test* "range->vector" '#(0 1 2 3 4)
+       (range->vector (iota-range 5)))
+(test* "range->string" "ABCDE"
+       (range->string (range-map integer->char (numeric-range 65 70))))
+
 ;; sequence protocol
 (test* "range as a sequence (ref)" 3 (~ (numeric-range 1 6) 2))
 (test* "range as a sequence (iterate)" '(1 2 3 4 5)

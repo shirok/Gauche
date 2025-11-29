@@ -4088,8 +4088,7 @@ Returns an exact integer only if all the given numbers are exact integers.
 
 
 @defun exp z
-@defunx log z
-@defunx log z1 z2
+@defunx log z :optional base
 @defunx sin z
 @defunx cos z
 @defunx tan z
@@ -4110,12 +4109,12 @@ R7RSではこれらの手続きは@code{(scheme inexact)}モジュールにあ�
 @code{exp} returns @i{e} raised to the power of @var{z}.  The one-argument
 version of @code{log} returns the natural logarithm of @var{z}.
 The two-argument version of @code{log} is added in R6RS, and returns
-base-@var{z2} logarithm of @var{z1}.
+base @var{base} logarithm of @var{z}.
 @c JP
 @code{exp}は@i{e}の@var{z}乗を返します。
 1引数の@code{log}は@var{z}の自然対数を返します。
 2引数の@code{log}はR6RSで追加されたもので、
-@var{z2}を底とした@var{z1}の対数を返します。
+@var{base}を底とした@var{z}の対数を返します。
 @c COMMON
 
 @c EN
@@ -5743,7 +5742,7 @@ This includes non-pair, non-() values (e.g. symbols, numbers),
 which are considered to be dotted lists of length 0.
 @c JP
 @var{x} が有限の大きさで、空リストで終端していないリストなら
-@code{#t} を返します。これには、ペアではなく、空リストもない値(たとえば
+@code{#t} を返します。これには、ペアではなく、空リストでもない値(たとえば
 シンボルや数値)のような長さ0のドットリストと考えられるものを含みます。
 @c COMMON
 @end defun
@@ -8455,10 +8454,6 @@ the key and the following value is removed from @var{kv-list}.
 @end example
 
 @end defun
-
-@menu
-* Keyword and symbol integration::
-@end menu
 
 @node Keyword and symbol integration,  , Keywords, Symbols
 @subsection Keyword and symbol integration
@@ -11673,6 +11668,7 @@ already returned from @code{string-map} won't be affected
 二番目のインタフェースでは、文字列引数はひとつだけで、省略可能な@var{start}/@var{end}
 引数を取ります。@var{start}と@var{end}は非負整数のインデックスか
 文字列カーソルで、入力文字列を使う範囲を制限します。
+この形式はSRFI-13で定義されています。
 
 @var{proc}が適用される順序は左から右とは限りません。順序に依存しないようにしてください。
 
@@ -11852,13 +11848,14 @@ in @var{filler} argument, defaulted to @code{?}.
 不正なバイト列中の各バイトを、@var{filler}引数に与えられ文字で置き換えます。
 @var{filler}引数のデフォルトは@code{?}です。
 @c COMMON
+@c EN
 @item @code{:escape}
 Replace each byte in illegal byte sequences by a sequence of
 @var{filler} @code{<hexdigit>} @code{<hexdigit>}.
 Besides, the @var{filler} characters in the original string is replaced with
 @var{filler} @var{filler}.
 @c JP
-@item 1文字
+@item @code{:escape}
 不正なバイト列中の各バイトを、@var{filler} @code{<hexdigit>} @code{<hexdigit>}
 の3文字で置き換えます。さらに、元文字列中に@var{filler}が登場した場合はそれぞれを
 @var{filler} @var{filler} で置き換えます。
@@ -12578,10 +12575,12 @@ object.  Otherwise it returns @code{#f}.
 @c COMMON
 
 @c EN
-If @var{start} and/or @var{end} indexes are given, only the substring between
+If @var{start} and/or @var{end} can be integer indexes or string
+cursors on @var{string}.  If given, only the substring between
 @var{start} (inclusive) and @var{end} (exclusive) is searched.
 @c JP
-@var{start}や@var{end}インデックスが与えられた場合、
+@var{start}と@var{end}は@var{string}に対する整数インデックスか
+文字列カーソルで、与えられた場合は
 @var{string}のうち@var{start}(含む)から@var{end}(含まない)までの
 部分文字列が検索対象になります。
 @c COMMON
@@ -13464,7 +13463,7 @@ incomprehensible.  So, don't use this procedure as a AST validness checker.)
 @c JP
 註：この関数は渡されたASTが有効なものであるかどうかについて
 簡単なチェックを行いますが、有効でないASTを受け入れてしまうかもしれません。
-その場合、変えされる正規表現オブジェクトの動作は不定です。
+その場合、返される正規表現オブジェクトの動作は不定です。
 正しい形式のASTを渡すのは呼出側の責任です
 (この関数が有効でないASTを見つけてエラーにする場合でも、
 そのエラーメッセージからどこがおかしいかを判断するのが難しい場合があります。
@@ -20335,7 +20334,7 @@ mb @result{} #<mv-box[3] 10 21 30>
 @c EN
 Generic referencer also works with boxes.
 @c JP
-boxaにｈジェネリックな参照も使えます。
+boxaにはジェネリックな参照も使えます。
 @c COMMON
 
 @example
@@ -20344,7 +20343,7 @@ boxaにｈジェネリックな参照も使えます。
 mb @result{} #<mv-box[3] 10 21 30>
 
 (define b (box 10))
-(inc! (~ mb 0))
+(inc! (~ b 0))
 b @result{} #<box 11>
 @end example
 @end defun
@@ -24758,17 +24757,11 @@ This is valid only for output ports.  The written data is buffered, but
 the buffer is flushed whenever a newline character is written.
 This is suitable for interactive output port.  Process's standard
 output port is opened in this mode by default.
-(Note that this differs from the line buffering mode of C stdio, which
-flushes the buffer as well when input is requested from the same file
-descriptor.)
 @c JP
 このモードは出力ポートにのみ有効です。書き出されたデータはバッファに
 貯められますが、改行文字が書かれたらフラッシュされます。
 このモードは対話的な出力ポートなどに便利です。
 プロセスの標準出力ポートはこのモードでオープンされています。
-(これは、Cのstdioライブラリの「ラインバッファリング」とちょっと違うことに
-注意してください。stdioでは同じファイルディスクリプタから入力が行われる時も
-バッファはフラッシュされますが、Gaucheではそうはなりません)。
 @c COMMON
 @item :modest
 @c EN
@@ -25115,7 +25108,7 @@ you're dealing with non-utf8 data.
 However, suppose you have exising system that assumes, say, latin-1 encoding,
 and you've been using Gauche with @code{none} CES encoding (which means
 Gauche just treats an octet as a character).
-Gauche uses utf-8 exclusively in its internal encoding since 1.0,
+Gauche uses utf-8 exclusively in its internal encoding since 0.9.14,
 and if you switch to it, you would need to check every file opening
 calls to make sure they have @code{:encoding latin-1}.  That would be a lot
 of work.
@@ -25123,7 +25116,7 @@ of work.
 ただ、例えばこれまでGaucheの内部エンコーディングを@code{none}でコンパイルしていて
 (これはGaucheが文字を8ビット固定長で扱うことを意味します)、システムがLatin-1エンコーディング
 でデータを扱っていたとしましょう。
-Gaucheは1.0から内部エンコーディングをutf-8のみにしたので、
+Gaucheは0.9.14から内部エンコーディングをutf-8のみにしたので、
 バージョンを上げる際に、
 全てのファイルオープン手続きを調べて@code{:encoding latin-1}をつけて回らないとなりません。
 それはかなり大きな変更となるでしょう。
@@ -25149,7 +25142,7 @@ source code.
 ソースコードをloadする場合は、内部エンコーディングをデフォルトとする
 コーディング認識ポートが使われることに注意してください (@ref{Coding-aware ports}参照)。
 内部エンコーディングとソースエンコーディングが異なる場合は、
-文字エンコーディングを指定する呪文コメント@code{coding:coding-name}を使ってください。
+文字エンコーディングを指定するマジックコメント@code{coding:coding-name}を使ってください。
 @c COMMON
 @end deffn
 
@@ -25509,7 +25502,7 @@ data as they are read.
 @c JP
 入力ポートを引数としてとりコーディング認識入力ポートを返します。
 基本的には @var{iport} からの入力データをリーダにわたしているだけです。
-しかし、@var{iport} からの入力データの最初の2行以内に、特別な呪文コメント
+しかし、@var{iport} からの入力データの最初の2行以内に、特別なマジックコメント
 が現れた場合、コーディング認識ポートは、その後に読み込まれるデータについて
 必要な文字エンコーディング変換を行います。
 @c COMMON
@@ -25523,7 +25516,7 @@ coding-aware port, so other code shouldn't read from @var{iport}.
 引数として渡されたポート、@var{iport} は生成されたコーディング認識
 ポートによって所有されます。つまり、コーディング認識ポートがクローズ
 されると、@var{iport} もクローズされます。@var{iport} から読み込まれた
-内容はコーディング認識ポート内でバッファリングさます、したがって、
+内容はコーディング認識ポート内でバッファリングされます。したがって、
 別のコードで @var{iport} から読み出しを行うべきではありません。
 @c COMMON
 
@@ -25539,10 +25532,10 @@ magic comment.
 @c JP
 デフォルトでは、Gauche の @code{load} はプログラムソースを読むのに
 コーディング認識ポートを使います。したがって、文字エンコーディングを
-示す特別な呪文コメントは、Gauche のソースプログラムでは有効になります
+示す特別なマジックコメントは、Gauche のソースプログラムでは有効になります
 (@ref{Loading Scheme file}参照)。ただし、この機構自身は @code{load} とは
 独立しており、このポートを別の目的で利用できます。特にコーディングの
-呪文コメントがある Scheme のソースプログラムを処理する関数を書くときに
+マジックコメントがある Scheme のソースプログラムを処理する関数を書くときに
 便利です。
 @c COMMON
 @end defun
@@ -25769,7 +25762,7 @@ input for @code{read-line}.  Hence, it is useful to consume trailing
 @c JP
 これはユーザが通常期待する動作とは異なります。
 ユーザは、@code{read-line}が実行された時点で、入力にタイプした行を読んで欲しいと
-思うでしょう。したがって、ユーザの最初の入力のあと、バフぁFに残っているRETを含めた
+思うでしょう。したがって、ユーザの最初の入力のあと、バッファに残っているRETを含めた
 空白文字を捨てておくことが役に立ちます。
 @c COMMON
 @end defun
@@ -27900,7 +27893,11 @@ of characters.
 ひとつ出力します。@var{count}が与えられた場合はその個数出力します。
 @c COMMON
 
-@item @b{~} + newline
+@c EN
+@item @b{~} followed by newline
+@c JP
+@item @b{~} とそれに続く改行
+@c COMMON
 @c EN
 Parameters: none
 
@@ -28596,7 +28593,7 @@ XはYのAPIを全て提供しますが、実装は異なります。この場合
 (注：@code{provide}が呼ばれると、@code{require}のautoprovide機能は
 抑制されるため、@file{X.scm}中で@code{(provide "X")}も指定する必要があります。)
 
-もちろんの方法では、ユーザが @code{(require "Y")} を @code{(require "X")}
+もちろんこのの方法では、ユーザが @code{(require "Y")} を @code{(require "X")}
 より先に書いてしまったら@file{Y.scm}はロードされてしまいます。
 この方法は、現場において、永久的な解決が高コストになるような場合のとりあえずの
 回避処置と考えるべきでしょう。
@@ -28672,18 +28669,24 @@ same rule as of @code{use}), then the binding of @var{item} in the
 
 @c EN
 @var{Item} can be either a variable name (symbol),
-or a form @code{(:macro @var{symbol})}.  If it is a variable,
+a form @code{(:macro @var{symbol})},
+or a form @code{(:id-macro @var{symbol})},
+If it is a symbol,
 the named file/module is loaded when the variable is
 about to be evaluated.  If it is the latter form,
-the named file/module is loaded when a form
-@code{(@var{symbol} arg @dots{})} is about to be @emph{compiled},
+the named file/module is loaded when the symbol
+is about to be dealt with the compiler as a macro call
+or as an identifier macro call,
 which enables autoloading macros.
+(@xref{Identifier transformer}, for the identifier macros).
 @c JP
 @var{item}は変数名(シンボル)か、@code{(:macro @var{symbol})}というフォーム
 でなければなりません。変数名の場合は、その変数が評価されようとした時に
 指定のファイル／モジュールがロードされます。後者のフォームの場合は、
-@code{(@var{symbol} arg @dots{})} というフォームがコンパイルされようとした
-時に指定のファイル／モジュールがロードされます。後者はマクロのオートロードになります。
+そのシンボルがマクロ呼び出し(あるいは識別子マクロ呼び出し)として
+コンパイルされようとした時に指定のファイル／モジュールがロードされます。
+後者はマクロのオートロードになります。
+(識別子マクロについては@ref{Identifier transformer}を参照してください。)
 @c COMMON
 
 @c EN
@@ -32462,7 +32465,7 @@ if the receiver thread is waiting on mutex or condition variable.
 So, it is recommended to make sure, for each signal, there is only one
 thread that can receive it.
 @c JP
-特定のシグナルをブロックしないスレッドが1つ以上ある場合、
+特定のシグナルをブロックしないスレッドが複数ある場合、
 どのスレッドがそのシグナルを受け取るかを知る術はありません。
 そのような状況は、GaucheにおいてはCプログラムよりもさらに不便です。
 なぜなら、受信側のスレッドがmutexや条件変数で待機している場合、
@@ -32720,8 +32723,8 @@ an error if @var{pid} is not zero.
 @c JP
 @code{getpgid()}はPOSIXではないことに注意して下さい。
 システムに@code{getpgid()}がない場合、@var{pid}が0ならば
-@code{sys-getpgid}がまだ動作しますが(それは単に@code{sys-getpgrp}を呼びます)
-、@var{pid}が0でない場合はエラーが通知されます。
+@code{sys-getpgid}は動作しますが(それは単に@code{sys-getpgrp}を呼びます)、
+@var{pid}が0でない場合はエラーが通知されます。
 @c COMMON
 @end defun
 
@@ -32765,6 +32768,46 @@ respectively.
 
 @defun sys-times
 [POSIX]
+@c EN
+Returns a list of five integers, each signifies the following
+value.  The unit of time is @emph{tick}, whose value is determined
+by the last element.
+@c JP
+それぞれ以下の値を示す、5つの整数のリストを返します。
+時間の単位は@emph{ティック}で、その大きさは最後の要素で決まります。
+@c COMMON
+@enumerate
+@item
+@c EN
+User time spent in the current process (@code{tms_utime}).
+@c JP
+現在のプロセスで費やされたユーザ時間 (@code{tms_utime}).
+@c COMMON
+@item
+@c EN
+System time spent in the current process (@code{tms_stime}).
+@c JP
+現在のプロセスで費やされたシステム時間 (@code{tms_stime}).
+@c COMMON
+@item
+@c EN
+User time spent in the children of the current process (@code{tms_cutime}).
+@c JP
+現在のプロセスの子プロセス達が費やしたユーザ時間 (@code{tms_cutime}).
+@c COMMON
+@item
+@c EN
+System time spent in the children of the current process (@code{tms_cstime}).
+@c JP
+現在のプロセスの子プロセス達が費やしたシステム時間 (@code{tms_cstime}).
+@c COMMON
+@item
+@c EN
+The number of ticks per second (@code{sysconf(_SC_CLK_TCK)} or @code{CLOCKS_PER_SEC})
+@c JP
+1秒あたりのティック数 (@code{sysconf(_SC_CLK_TCK)} もしくは @code{CLOCKS_PER_SEC})
+@c COMMON
+@end enumerate
 @end defun
 
 @defun sys-ctermid

@@ -773,8 +773,12 @@ static int has_terminal()
     return FALSE;
 }
 
-/* When no script is given, enter REPL. */
-void enter_repl()
+/* When no script is given, enter REPL.
+   This returns either EOF is typed in repl, or an uncaptured error is
+   signaled from repl.  Returns 0 in the former case, 1 in the latter case.
+   NB: This won't return if the program evaluates (exit).
+*/
+int enter_repl()
 {
     _Bool full_mode = FALSE;
 
@@ -804,9 +808,20 @@ void enter_repl()
         /* Call read-eval-print-loop.  If gauche.interactive is loaded,
            this will invoke 'user-friendly' version of repl; otherwise,
            this calls the 'bare' version in libeval.scm. */
-        Scm_EvalCString("(read-eval-print-loop)",
-                        SCM_OBJ(Scm_CurrentModule()), NULL);
+        ScmEvalPacket epak;
+        if (Scm_EvalCString("(read-eval-print-loop)",
+                            SCM_OBJ(Scm_CurrentModule()), &epak) < 0) {
+            /* read-eval-print-loop captures errors during evaluating the
+               given code.  So if it returns an error, it's something
+               that happend outside of normal evaluation---most likely
+               that setting up repl infrastrucure is failed.
+             */
+            Scm_Printf(SCM_CURERR, "Unrecoverable error from REPL:\n");
+            Scm_ReportError(epak.exception, SCM_OBJ(SCM_CURERR));
+            return 1;
+        }
     }
+    return 0;
 }
 
 /* POSIX basename() may or may not modify arg, so we roll our own. */
@@ -948,7 +963,7 @@ int main(int ac, char **av)
     /* Following is the main dish. */
     if (scriptfile != NULL) exit_code = execute_script(scriptfile, args);
 #if !defined(GAUCHE_WINDOWS_NOCONSOLE)
-    else                    enter_repl();
+    else                    exit_code = enter_repl();
 #endif /*!defined(GAUCHE_WINDOWS_NOCONSOLE)*/
 
     /* All is done.  */

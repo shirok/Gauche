@@ -95,6 +95,29 @@
     [(VMNBOX) '(NBOX BOX)]
     [else '()]))
 
+;; Scan lines and find lines between $BEGIN and $END.  Those lines
+;; are expanded into as many lines as (length rules-set), where each line
+;; is substituted with the given rules.
+(define (expand/substitute lines rules-list)
+  (define (scan-out lines)
+    (cond [(null? lines)]
+          [(#/\s*$BEGIN\b/ (car lines))
+           (scan-in (cdr lines) '())]
+          [(#/\s*$END\b/ (car lines))
+           (error "Stray $END")]
+          [else (print (car lines)) (scan-out (cdr lines))]))
+  (define (scan-in lines acc)
+    (cond [(null? lines) (error "Unterminated $BEGIN")]
+          [(#/\s*$END\b/ (car lines))
+           (let1 to-expand (reverse acc)
+             (dolist [rules rules-list]
+               (for-each (cut substitute <> rules) to-expand)))
+           (scan-out (cdr lines))]
+          [(#/\s*$BEGIN\b/ (car lines))
+           (error "Unterminated $END")]
+          [else (scan-in (cdr lines) (cons (car lines) acc))]))
+  (scan-out lines))
+
 ;; keys ------------------------------------------------------------
 ;;
 ;;  t           : lowercase tag, e.g. "s16"
@@ -419,3 +442,6 @@
       (unless (memq tag '(s8 u8))
         (for-each (cute substitute <> `((SWAPB  ,SWAPB) ,@rule))
                   *tmpl-swapb*)))))
+
+(define (generate-dispatch)
+  (expand/substitute *tmpl-dispatch* (make-rules)))

@@ -2811,9 +2811,11 @@ static inline const char *skip_input(const char *start, const char *limit,
 ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str, ScmObj start_scm, ScmObj end_scm)
 {
     const ScmStringBody *b = SCM_STRING_BODY(str);
-    const char *orig_start = SCM_STRING_BODY_START(b);
-    const char *start;
-    const char *end;
+    const char *start =
+        Scm_StringCursorPointer(b, start_scm, STRING_CURSOR_FALLBACK_TO_START);
+    const char *orig_start = start;
+    const char *end =
+        Scm_StringCursorPointer(b, end_scm, STRING_CURSOR_FALLBACK_TO_END);
     const ScmStringBody *mb = rx->mustMatch? SCM_STRING_BODY(rx->mustMatch) : NULL;
     int mustMatchLen = mb? SCM_STRING_BODY_SIZE(mb) : 0;
     const char *start_limit;
@@ -2821,36 +2823,8 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str, ScmObj start_scm, ScmObj end_s
     if (SCM_STRING_INCOMPLETE_P(str)) {
         Scm_Error("incomplete string is not allowed: %S", str);
     }
-    if (!SCM_UNBOUNDP(start_scm) && !SCM_UNDEFINEDP(start_scm)) {
-        if (!SCM_INTEGERP(start_scm)) {
-            Scm_TypeError("start", "exact integer required but got %S", start_scm);
-        }
-        int value = Scm_GetInteger(start_scm);
-        if (value < 0 || value >= SCM_STRING_BODY_LENGTH(b)) {
-            Scm_Error("invalid start parameter: %S", start_scm);
-        }
-        while (value--) {
-            orig_start += SCM_CHAR_NFOLLOWS(*orig_start) + 1;
-        }
-    }
-    start = orig_start;
-    end = SCM_STRING_BODY_START(b);
-    if (!SCM_UNBOUNDP(end_scm) && !SCM_UNDEFINEDP(end_scm)) {
-        if (!SCM_INTEGERP(end_scm)) {
-            Scm_TypeError("end", "exact integer required but got %S", end_scm);
-        }
-        int value = Scm_GetInteger(end_scm);
-        if (value < 0 || value > SCM_STRING_BODY_LENGTH(b)) {
-            Scm_Error("invalid end parameter: %S", end_scm);
-        }
-        while (value--) {
-            end += SCM_CHAR_NFOLLOWS(*end) + 1;
-        }
-        if (end < start) {
-            Scm_Error("invalid end parameter: %S", end_scm);
-        }
-    } else {
-        end += SCM_STRING_BODY_SIZE(b);
+    if (end < start) {
+        Scm_Error("invalid start/end parameter: %S %S", start_scm, end_scm);
     }
     start_limit = end - mustMatchLen;
 #if 0

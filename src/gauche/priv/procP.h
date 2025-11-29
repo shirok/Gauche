@@ -47,4 +47,9 @@ void Scm__ProcedureInit(ScmProcedure *proc,
  */
 SCM_EXTERN ScmObj Scm__CopyProcedure(ScmProcedure *proc, ScmObj tagsAlist);
 
+/* Experimental implicit currying feature.
+ */
+SCM_EXTERN ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given,
+                                     int ngiven, int foldlen);
+
 #endif /*GAUCHE_PRIV_PROCP_H*/

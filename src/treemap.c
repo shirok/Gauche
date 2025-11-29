@@ -79,6 +79,11 @@ enum TreeOp {
 #define ROOT(tc)         ((Node*)tc->root)
 #define SET_ROOT(tc, n)  (tc->root = (ScmDictEntry*)n)
 
+#define CHECK_OVERFLOW(tc) \
+    do { if (tc->num_entries == INT_MAX) \
+             Scm_Error("Too many entries in a treemap");        \
+    } while (0)
+
 static Node *core_ref(ScmTreeCore *tc, intptr_t key, enum TreeOp op,
                       Node **lo, Node **hi);
 static Node *rightmost(Node *n);
@@ -729,6 +734,7 @@ Node *core_ref(ScmTreeCore *tc, intptr_t key, enum TreeOp op,
     if (e == NULL) {
         /* Tree is empty */
         if (op == TREE_CREATE) {
+            CHECK_OVERFLOW(tc);
             n = new_node(NULL, key);
             PAINT(n, BLACK);
             SET_ROOT(tc, n);
@@ -764,6 +770,7 @@ Node *core_ref(ScmTreeCore *tc, intptr_t key, enum TreeOp op,
                 e = e->right;
             } else {
                 if (op == TREE_CREATE) {
+                    CHECK_OVERFLOW(tc);
                     n = new_node(e, key);
                     e->right = n;
                     balance_tree(tc, n);
@@ -782,6 +789,7 @@ Node *core_ref(ScmTreeCore *tc, intptr_t key, enum TreeOp op,
                 e = e->left;
             } else {
                 if (op == TREE_CREATE) {
+                    CHECK_OVERFLOW(tc);
                     n = new_node(e, key);
                     e->left = n;
                     balance_tree(tc, n);

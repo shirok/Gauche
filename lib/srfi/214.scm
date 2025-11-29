@@ -101,7 +101,7 @@
 (define (flexvector-copy fv :optional (start 0)
                                       (end (flexvector-length fv)))
   (assume-type fv <ring-buffer>)
-  (make-ring-buffer (ring-buffer->flat-vector fv start end)
+  (make-ring-buffer (ring-buffer->xvector fv start end)
                     :initial-tail-index (- end start)))
 
 (define (flexvector-reverse-copy fv :optional (start 0)
@@ -123,7 +123,7 @@
     (let loop ([fvs fvs] [k 0])
       (if (null? fvs)
         (make-ring-buffer dest :initial-tail-index len)
-        (begin (ring-buffer->flat-vector! dest k (car fvs))
+        (begin (ring-buffer->xvector! dest k (car fvs))
                (loop (cdr fvs) (+ k (flexvector-length (car fvs)))))))))
 
 ;; flexvector-append-subvectors

@@ -781,8 +781,15 @@
        (format "~20,2@f" (sqrt 1+i)))
 
 (test* "format ~e" "1.2345e0"     (format "~e" 1.2345))
+(test* "format ~10e" "  1.2345e0"     (format "~10e" 1.2345))
+(test* "format ~10,,,,,'0e padchar" "001.2345e0" (format "~10,,,,,'0e" 1.2345))
+(test* "format ~6,,,,'#e ovchar" "######" (format "~6,,,,'#e" 1.2345))
 (test* "format ~,6e" "6.666667e-1" (format "~,6e" 2/3))
-(test* "format ~,,,,,,'De" "3.14D0" (format "~,,,,,,'De" 3.14))
+(test* "format ~,2e" "1.67e-1+2.89e-1i" (format "~,2e" 1/3@1/3pi))
+(test* "format ~,,3e" "1.0e000" (format "~,,3e" 1))
+(test* "format ~,,3e" "1.0e002" (format "~,,3e" 100))
+(test* "format ~,,3e" "1.0e-002" (format "~,,3e" 0.01))
+(test* "format ~,,,,,,'De expchar" "3.14D0" (format "~,,,,,,'De" 3.14))
 
 (test* "format ~$" "100.00"  (format "~$" 100))
 (test* "format ~$" "0.33"    (format "~$" 1/3))

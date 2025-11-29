@@ -54,6 +54,9 @@ typedef struct EntryRec {
 #define DEFAULT_NUM_BUCKETS    4
 #define MAX_AVG_CHAIN_LIMITS   3
 #define EXTEND_BITS            2
+#define MAX_NUM_BUCKETS   (((1<<EXTEND_BITS) > MAX_AVG_CHAIN_LIMITS) \
+                           ? (INT_MAX>>EXTEND_BITS)                  \
+                           : INT_MAX / MAX_AVG_CHAIN_LIMITS)
 
 /* We limit portable hash value to 32bits */
 #define PORTABLE_HASHMASK  0xffffffffUL
@@ -549,9 +552,15 @@ static Entry *insert_entry(ScmHashCore *table,
     e->next = buckets[index];
     e->hashval = hashval;
     buckets[index] = e;
+
+    if (table->numEntries == INT_MAX) {
+        Scm_Error("Too many entries in a hashtable; can't insert any more entries.");
+    }
+
     table->numEntries++;
 
-    if (table->numEntries > table->numBuckets*MAX_AVG_CHAIN_LIMITS) {
+    if (table->numBuckets <= MAX_NUM_BUCKETS
+        && table->numEntries > table->numBuckets*MAX_AVG_CHAIN_LIMITS) {
         /* Extend the table */
         int newsize = (table->numBuckets << EXTEND_BITS);
         int newbits = table->numBucketsLog2 + EXTEND_BITS;

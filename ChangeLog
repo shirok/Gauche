@@ -1,3 +1,53 @@
+2025-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvgen.scm, ext/uvetor/uvector.c.tmpl: Add auto-generation
+	  of dispatcher-type function.
+
+2025-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (list->uvector, vector->uvector): Added
+	  generic version of converters.
+
+2025-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/42.scm (uvector-ec, uvector-of-length-ec): Added.
+
+2025-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm (array->list, array->vector): Fix to handle
+	  zero-rank array
+
+2025-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/94.scm (integer-log): Finishing support of srfi-94.
+
+2025-11-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (Scm_RegExec): Let rxmatch accept string cursors
+	  https://github.com/shirok/Gauche/issues/1173
+
+	* src/string.c (Scm_StringCursorPointer): Added.
+	  Rewrote Scm_MaybeSubstring with it.
+
+2025-11-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/treemap.c (core_ref): Also check integer overflow.
+	* src/hash.c (insert_entry): Avoid interger overflow.
+	  https://github.com/shirok/Gauche/issues/1187
+
+2025-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (enter_repl): Handle uncaptured error during
+	  read-eval-print-loop.  This is most likely that something went
+	  awry during setting up repl (e.g. missing files needed for
+	  interactive editing).
+	  Cf. https://github.com/shirok/Gauche/issues/1186
+
+2025-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm:: Also support ~G, but not strictly following
+	  CL's spec (yet).
+
 2025-10-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm: Start supporting ~E.  Need more tests.

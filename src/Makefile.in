@@ -171,7 +171,8 @@ INSTALL_SUBHEADERS = \
 	gauche/float.h gauche/gloc.h \
 	gauche/hash.h gauche/load.h \
 	gauche/module.h gauche/net.h gauche/number.h gauche/parameter.h \
-	gauche/port.h gauche/precomp.h gauche/prof.h gauche/pthread.h \
+	gauche/port.h gauche/precomp.h gauche/procedure.h \
+	gauche/prof.h gauche/pthread.h \
 	gauche/reader.h gauche/regexp.h gauche/scmconst.h \
 	gauche/static.h gauche/string.h gauche/symbol.h gauche/system.h \
 	gauche/treemap.h gauche/thread.h \

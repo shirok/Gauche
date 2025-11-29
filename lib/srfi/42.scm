@@ -37,7 +37,7 @@
   (export-all))
 (select-module srfi.42)
 
-(autoload gauche.uvector uvector->list)
+(autoload gauche.uvector uvector->list list->uvector make-uvector)
 (autoload data.range range? range-length range-ref)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1083,6 +1083,13 @@
     ((vector-ec etc1 etc ...)
      (list->vector (list-ec etc1 etc ...)) )))
 
+(define-syntax uvector-ec
+  (syntax-rules ()
+    ((uvector-ec class etc1 etc ...)
+     (let ((c class))
+       (assume (subtype? c <uvector>))
+       (list->uvector class (list-ec etc1 etc ...))))))
+
 ; Comment: A similar approach as for string-ec can be used for vector-ec.
 ;   However, the space overhead for the intermediate list is much lower
 ;   than for string-ec and as there is no vector-append, the intermediate
@@ -1110,6 +1117,28 @@
              vec
              (error "vector is too long for the comprehension") ))))))
 
+(define-syntax uvector-of-length-ec
+  (syntax-rules (nested)
+    ((uvector-of-length-ec class k (nested q1 ...) q etc1 etc ...)
+     (uvector-of-length-ec class k (nested q1 ... q) etc1 etc ...) )
+    ((uvector-of-length-ec class k q1 q2             etc1 etc ...)
+     (uvector-of-length-ec class k (nested q1 q2)    etc1 etc ...) )
+    ((uvector-of-length-ec class k expression)
+     (uvector-of-length-ec class k (nested) expression) )
+
+    ((uvector-of-length-ec class k qualifier expression)
+     (let ((len k)
+           (c class))
+       (let ((vec (make-uvector c len))
+             (i 0) )
+         (do-ec qualifier
+                (if (< i len)
+                    (begin (uvector-set! vec i expression)
+                           (set! i (+ i 1)) )
+                    (error "uvector is too short for the comprehension") ))
+         (if (= i len)
+             vec
+             (error "uvector is too long for the comprehension") ))))))
 
 (define-syntax sum-ec
   (syntax-rules ()

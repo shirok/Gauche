@@ -665,6 +665,16 @@
   (test* "vector-of-length-ec" '#(0)   (vector-of-length-ec 1 (:range i 1) i))
   (test* "vector-of-length-ec" '#(0 1) (vector-of-length-ec 2 (:range i 2) i))
 
+  (test* "uvector-ec" '#u8(1)    (uvector-ec <u8vector> 1))
+  (test* "uvector-ec" '#s8()     (uvector-ec <s8vector> (:range i 0) i))
+  (test* "uvector-ec" '#f16(0.0) (uvector-ec <f16vector>  (:range i 1) i))
+  (test* "uvector-ec" '#u64(0 1) (uvector-ec <u64vector> (:range i 2) i))
+
+  (test* "uvector-of-length-ec" '#u8(1)  (uvector-of-length-ec <u8vector> 1 1))
+  (test* "uvector-of-length-ec" '#s8()   (uvector-of-length-ec <s8vector> 0 (:range i 0) i))
+  (test* "uvector-of-length-ec" '#u8(0)  (uvector-of-length-ec <u8vector> 1 (:range i 1) i))
+  (test* "uvector-of-length-ec" '#s8(0 1) (uvector-of-length-ec <s8vector> 2 (:range i 2) i))
+
   (test* "sum-ec" 1 (sum-ec 1))
   (test* "sum-ec" 0 (sum-ec (:range i 0) i))
   (test* "sum-ec" 0 (sum-ec (:range i 1) i))
@@ -1469,6 +1479,56 @@
   (use gauche.test)
   (use srfi.78)
   (test-module 'srfi.78)
+  )
+
+;;-----------------------------------------------------------------------
+;; Type-restricted numerical functions
+
+(test-section "SRFI-94")
+
+(define-module srfi-94-tests
+  (use gauche.test)
+  (use srfi.94)
+  (test-module 'srfi.94)
+  ;; Most procedures are built-in.
+
+  (test* "real-log" 10.0 (real-log 2.0 1024.0))
+
+  (test* "integer-log 2" 10 (integer-log 2 (expt 2 10)))
+  (test* "integer-log 2" 9 (integer-log 2 (+ (expt 2 9) 123)))
+  (test* "integer-log 3" 8 (integer-log 3 (expt 3 8)))
+  (test* "integer-log 3" 7 (integer-log 3 (- (expt 3 8) 1)))
+  (test* "integer-log 3" 6 (integer-log 3 (+ (expt 3 6) 123)))
+  (test* "integer-log 111" 3 (integer-log 111 (expt 111 3)))
+  (test* "integer-log 111" 2 (integer-log 111 (- (expt 111 3) 3)))
+  (test* "integer-log 111" 4 (integer-log 111 (+ (expt 111 4) 3)))
+  (test* "integer-log 111" 0 (integer-log 111 110))
+
+  (test* "quo" 3 (quo 2/3 1/5))
+  (test* "mod" 1/15 (mod 2/3 1/5))
+  (test* "rem" 1/15 (rem 2/3 1/5))
+  (test* "quo" -3 (quo 2/3 -1/5))
+  (test* "mod" -2/15 (mod 2/3 -1/5))
+  (test* "rem" 1/15 (rem 2/3 -1/5))
+  (test* "quo" -3 (quo -2/3 1/5))
+  (test* "mod" 2/15 (mod -2/3 1/5))
+  (test* "rem" -1/15 (rem -2/3 1/5))
+  (test* "quo" 3 (quo -2/3 -1/5))
+  (test* "mod" -1/15 (mod -2/3 -1/5))
+  (test* "rem" -1/15 (rem -2/3 -1/5))
+
+  (test* "quo" 3.0 (quo 0.666 1/5))
+  (test* "mod" 0.06599999999999995 (mod 0.666 1/5) approx=?)
+  (test* "rem" 0.06599999999999995 (rem 0.666 1/5) approx=?)
+  (test* "quo" -3.0 (quo 0.666 -1/5))
+  (test* "mod" -0.134 (mod 0.666 -1/5))
+  (test* "rem" 0.06599999999999995 (rem 0.666 -1/5) approx=?)
+  (test* "quo" -3.0 (quo -0.666 1/5))
+  (test* "mod" 0.134 (mod -0.666 1/5) approx=?)
+  (test* "rem" -0.06599999999999995 (rem -0.666 1/5) approx=?)
+  (test* "quo" 3.0 (quo -0.666 -1/5))
+  (test* "mod" -0.06599999999999995 (mod -0.666 -1/5))
+  (test* "rem" -0.06599999999999995 (rem -0.666 -1/5) approx=?)
   )
 
 ;;-----------------------------------------------------------------------

@@ -59,6 +59,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Basic hash tables::           srfi.69
 * Octet-addressed binary blocks::  srfi.74
 * Lightweight testing::         srfi.78
+* Type-restricted numerical functions:: srfi.94
 * Accessing environment variables::  srfi.98
 * Purely functional random-access pairs and lists::  srfi.101
 * Basic socket interface::      srfi.106
@@ -3302,6 +3303,7 @@ See @ref{Lazy sequences}, @ref{Generators} and @ref{Stream library}.
 @c COMMON
 @end deftp
 
+
 @c EN
 @subheading Eager comprehension examples
 @c JP
@@ -3555,6 +3557,23 @@ Repeats @var{body} and collects the results into a vector.
 @c COMMON
 @end defmac
 
+@defmac uvector-ec class qualifier @dots{} body
+@c MOD srfi.42
+@c EN
+Repeats @var{body} and collects the results into a uniform vector
+of class @var{class}.  This is a Gauche's extension and not a part of
+SRFI-42.
+@c JP
+@var{body}を繰り返し、結果をクラス@var{class}のユニフォームベクタに集めて返します。
+これはGaucheの拡張で、SRFI-42には含まれていません。
+@c COMMON
+
+@example
+(uvector-ec <u8vector> (: i 10))
+ @result{} #u8(0 1 2 3 4 5 6 7 8 9)
+@end example
+@end defmac
+
 @defmac vector-of-length-ec k qualifier @dots{} body
 [SRFI-42]
 @c MOD srfi.42
@@ -3569,6 +3588,24 @@ than @code{vector-ec}.  Unless the comprehension repeats exactly
 繰り返しが正確に@var{k}回にならなかった場合はエラーが投げられます。
 @c COMMON
 @end defmac
+
+@defmac uvector-of-length-ec class k qualifier @dots{} body
+@c MOD srfi.42
+@c EN
+Like @code{vector-of-length-ec}, but creates a uniform vector
+of class @var{lass} instead of a vector.  This is more efficient
+than @code{uvector-ec}.
+This is a Gauche's extension and not a part of
+SRFI-42.
+@c JP
+@code{vector-ec}と似ていますが、ベクタではなくクラス@var{class}の
+ユニフォームベクタを作って返します。
+あらかじめユニフォームベクタをアロケートしておけるので
+@code{uvector-ec}より効率が良いです。
+これはGaucheの拡張で、SRFI-42には含まれていません。
+@c COMMON
+@end defmac
+
 
 @defmac sum-ec qualifier @dots{} body
 @defmacx product-ec qualifier @dots{} body
@@ -5713,7 +5750,7 @@ sそれぞれの整数が@var{size}オクテットを占めます。
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Lightweight testing, Accessing environment variables, Octet-addressed binary blocks, Library modules - SRFIs
+@node Lightweight testing, Type-restricted numerical functions, Octet-addressed binary blocks, Library modules - SRFIs
 @section @code{srfi.78} - Lightweight testing
 @c NODE 軽量なテスト, @code{srfi.78} - 軽量なテスト
 
@@ -5939,7 +5976,257 @@ However, only the tests using @code{check} and @code{check-ec} are counted.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Accessing environment variables, Purely functional random-access pairs and lists, Lightweight testing, Library modules - SRFIs
+@node Type-restricted numerical functions, Accessing environment variables, Lightweight testing, Library modules - SRFIs
+@section @code{srfi.94} - Type-restricted numerical functions
+@c NODE 型を制限した数値関数, @code{srfi.94} - 型を制限した数値関数
+
+@deftp {Module} srfi.94
+@mdindex srfi.94
+@c EN
+This module provides arithmetic functions specialized for reals
+and exact integers.  Similar to @code{scheme.fixnum} (@pxref{R7RS fixnum})
+and @code{scheme.flonum} (@pxref{R7RS flonum}) in a sense of restricting
+types of range and domains, but this srfi procedures cover wider range
+(e.g. @code{real-*} procedures can accept all real numbers include
+exact integers, and @code{integer-*} procedures can accept both fixnums
+and bignums).
+@c JP
+このモジュールは実数および正確な整数に特化した数値演算関数を提供します。
+定義域や値域の型を制約するという意味では
+@code{scheme.fixnum} (@ref{R7RS fixnum}参照) や
+@code{scheme.flonum} ((@ref{R7RS flonum})参照) と似ていますが、
+このSRFIの関数はそれらのモジュールよりは広い範囲をカバーします
+(例えば@code{real-*}手続きは正確な整数を含めた全ての実数を
+対象としますし、@code{integer-*}手続きはfixnumだけでなくbignumも
+扱えます)。
+@c COMMON
+
+@c EN
+This module is provided mostly for the completeness.  Generally useful
+procedures are already built-in, so you don't need to use this
+module to use them.  Furthermore, some SRFI-94 procedures have the
+same name of Gauche's built-in but behave slightly differently, so
+just importing everything from @code{srfi.94} may cause unexpected effect.
+If you need certain srfi-94 specific procedures, we recommend you to import
+them selectively.
+@c JP
+このモジュール自体は完全性のために用意してあります。
+一般的に有用と思われる関数については組み込みになっているので、
+わざわざこのモジュールをuseする必要はありません。
+さらに、SRFI-94の手続きのいくつかはGaucheの組み込み手続きと同じ名前を
+持ちながら振る舞いが多少異なったりするので、
+@code{srfi.94}をまるごとインポートすると思いがけない副作用があるかもしれません。
+特定の、SRFI-94特有の手続きを使いたい場合は、それに絞ってインポートすることを
+お勧めします。
+@c COMMON
+
+@c EN
+The following procedures are built-in.  @xref{Arithmetics} for the details.
+@c JP
+以下の手続きは組み込みになっています。詳しくは@ref{Arithmetics}を参照してください。
+@c COMMON
+@example
+real-exp          real-tan          atan              make-rectangular
+real-ln           real-asin         real-sqrt         make-polar
+real-sin          real-acos         integer-expt
+real-cos          real-atan         real-expt
+@end example
+
+@c EN
+The following procedures are redefined in this module, shadowing
+Gauche's built-in procedures.   See the description
+of each entry for the difference.
+@c JP
+以下の手続きはこのモジュールで定義され、インポートすると
+組み込み手続きをシャドウします。違いについてはそれぞれの
+エントリの記述を参照してください。
+@c COMMON
+@example
+quotient     modulo       remainder    mod         abs
+@end example
+@end deftp
+
+@defun real-log base x
+[SRFI-94]
+@c MOD srfi.94
+@c EN
+The arguments must be nonnegative reals.  Returns logarithm of @var{x}
+with base @var{base}, computed as
+@code{(/ (real-ln x) (real-ln base))}.
+
+Note that R7RS's @code{log} takes @var{x} first, then optional @var{base}.
+Gauche doesn't provide this procedure as built-in to avoid confusion.
+@c JP
+引数は非負の実数でなければなりません。
+@var{base}を底とする@var{x}の対数を@code{(/ (real-ln x) (real-ln base))}
+で計算して返します。
+
+R7RSの@code{log}は@var{x}を最初に取り、
+省略可能な@var{base}で底を指定することに注意してください。
+Gaucheがこの手続きを組み込みとして提供していないのは、
+引数順の混乱を避けるためです。
+@c COMMON
+@end defun
+
+@defun integer-sqrt n
+[SRFI-94]
+@c MOD srfi.94
+@c EN
+This is the same as @code{exact-integer-sqrt} (@pxref{Arithmetics}).
+@c JP
+これは@code{exact-integer-sqrt}と同じです
+(@ref{Arithmetics}参照)。
+@c COMMON
+@end defun
+
+@defun integer-log base k
+[SRFI-94]
+@c MOD srfi.94
+@c EN
+Both arguments must be exact integers, and @var{base} must be
+positive, while @var{x} must be nonnegative.
+
+Returns a maximum exact integer @var{n} such that @code{(<= (expt base n) k)}.
+
+The order of arguments is the same as @code{real-log}---not @code{log}.
+@c JP
+引数は正確な整数でなければならず、@var{base}は正数、
+@var{x}は非負でなければなりません。
+
+@code{(<= (expt base n) k)}となるような最大の正確な整数@var{n}を返します。
+
+引数の順序は@code{real-log}と同じ、すなわち@code{log}とは異なります。
+@c COMMON
+
+@example
+(integer-log 2 1500) @result{} 10
+@end example
+@end defun
+
+@defun abs x
+[SRFI-94]
+@c MOD srfi.94
+@c EN
+While Gauche's built-in @code{abs} can take a non-real number
+(in which case, it acts like @code{magnitude}), this version
+throws an error.
+@c JP
+Gauche組み込みの@code{abs}は実数でない複素数を取ることができて、
+その場合は@code{magnitude}のように振る舞いますが、
+この手続きはエラーを投げます。
+@c COMMON
+@end defun
+
+@defun quo n d
+@defunx mod n d
+@defunx rem n d
+[SRFI-94]
+@c MOD srfi.94
+@c EN
+Real version of @code{quotient}, @code{modulo}, and @code{remainder}
+(@pxref{Arithmetics}).
+
+Returns quotient, modulo, and remainder of @var{n} divided by @var{d}.
+Arguments doesn't need to be integers.  If both are exact, the result
+is exact.
+@c JP
+@code{quotient}、@code{modulo}、@code{remainder}の実数への拡張版です。
+
+@var{n}を@var{d}で割った時の商および余りを返します。
+引数は整数である必要はありません。両方とも正確数であれば結果も正確数となります。
+@c COMMON
+
+@c EN
+@code{quo} returns @code{(truncate (/ n d))}.
+@code{rem} returns @code{(- n (* d (quo n d)))}.
+@code{mod} returns @code{(- n (* d (floor (/ n d))))}.
+@c JP
+@code{quo}は@code{(truncate (/ n d))}を、
+@code{rem}は@code{(- n (* d (quo n d)))}を、
+そして@code{mod}は@code{(- n (* d (floor (/ n d))))}を返します。
+@c COMMON
+
+@c EN
+Note: R6RS defined different divison operators, @code{div}, @code{mod},
+@code{div0}, and @code{mod0}
+(@pxref{Arithmetics}).
+They can take non-integer arguments, but unfortunately, they behave
+differently from SRFI-94.  SRFI-94's @code{quo} behaves the same as
+R6RS's @code{div0}, and SRFI-94's @code{rem} behaves the same as
+R6RS's @code{mod0}.
+@c JP
+註: R6RSは異なる除算オペレータ、@code{div}、@code{mod}、
+@code{div0}、および@code{mod0}を定義しました(@ref{Arithmetics}参照)。
+これらも非整数を取ることができますが、残念なことに
+SRFI-94とは振る舞いが異なります。SRFI-94の@code{quo}は
+R6RSの@code{div0}と、SRFI-94の@code{rem}は
+R6RSの@code{mod0}と、それぞれ同じふるまいです。
+@c COMMON
+
+@example
+(quo 2/3 1/5)    @result{} 3
+(mod 2/3 1/5)    @result{} 1/15
+(rem 2/3 1/5)    @result{} 1/15
+
+(quo 2/3 -1/5)   @result{} -3
+(mod 2/3 -1/5)   @result{} -2/15
+(rem 2/3 -1/5)   @result{} 1/15
+
+(quo -2/3 1/5)   @result{} -3
+(mod -2/3 1/5)   @result{} 2/15
+(rem -2/3 1/5)   @result{} -1/15
+
+(quo -2/3 -1/5)  @result{} 3
+(mod -2/3 -1/5)  @result{} -1/15
+(rem -2/3 -1/5)  @result{} -1/15
+
+@c EN
+;; For comparison- R6RS procedures
+@c JP
+;; 比較のため: R6RS手続き
+@c COMMON
+(use gauche.base)
+(div 2/3 1/5)    @result{} 3
+(mod 2/3 1/5)    @result{} 1/15
+(div0 2/3 1/5)   @result{} 3
+(mod0 2/3 1/5)   @result{} 1/15
+
+(div 2/3 -1/5)   @result{} -3
+(mod 2/3 -1/5)   @result{} 1/15
+(div0 2/3 -1/5)  @result{} -3
+(mod0 2/3 -1/5)  @result{} 1/15
+
+(div -2/3 1/5)   @result{} -4
+(mod -2/3 1/5)   @result{} 2/15
+(div0 -2/3 1/5)  @result{} -3
+(mod0 -2/3 1/5)  @result{} -1/15
+
+(div -2/3 -1/5)  @result{} 4
+(mod -2/3 -1/5)  @result{} 2/15
+(div0 -2/3 -1/5) @result{} 3
+(mod0 -2/3 -1/5) @result{} -1/15
+@end example
+@end defun
+
+@defun quotient n d
+@defunx modulo n d
+@defunx remainder n d
+[SRFI-94]
+@c MOD srfi.94
+@c EN
+SRFI-94 version of these procedures throws an error if the arguments
+are not exact integers.  Otherwise they behave the same
+as built-in (@pxref{Arithmetics}).
+@c JP
+SRFI-94のバージョンは、引数が正確な整数でなければエラーを投げます。
+それ以外は組み込みと同じように振る舞います
+(@ref{Arithmetics}参照)。
+@c COMMON
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Accessing environment variables, Purely functional random-access pairs and lists, Type-restricted numerical functions, Library modules - SRFIs
 @section @code{srfi.98} - Accessing environment variables
 @c NODE 環境変数へのアクセス, @code{srfi.98} - 環境変数へのアクセス
 
@@ -13252,6 +13539,35 @@ provides a bunch of procedures that can treat a bytevector as a bytestring.
 このSRFIはバイトベクタの別形式の外部表現を定義し、
 バイトベクタをバイト列(bytestring)として扱える多くの手続きを提供します。
 @c COMMON
+
+@c EN
+Gauche supports 'string' representation of bytevectors natively.
+The reader can recognize bytevectors both in the numeric format
+(e.g. @code{#u(65 66 67 68)}) and the string format
+(e.g. @code{#u8"ABCD"}).  The writer writes bytevectors in the numeric
+format by default, but you can switch it to string format
+when @code{bytestring} slot of @code{<wrtie-controls>} is true.
+@c JP
+Gaucheはバイトベクタの「文字列」表現を組み込みでサポートしています。
+リーダーは、数値形式(例: @code{#u(65 66 67 68)})、
+文字列形式(例: @code{#u8"ABCD"})、のどちらでも読むことができます。
+ライターはデフォルトで数値形式を使いますが、
+@code{<write-controls>}の@code{bytestring}スロットを真にすると
+文字列形式を使うようになります。
+@c COMMON
+
+@example
+gosh> #u8(65 66 67 68)
+#u8(65 66 67 68)
+gosh> ,pm bytestring #t
+Current print mode:
+       length :  50           base :  10  exact-decimal :  #f
+        level :  10   radix-prefix :  #f          array : compact
+       pretty :  #t  string-length : 256        complex : rectangular
+        width :  79     bytestring :  #t
+gosh> #u8(65 66 67 68)
+#u8"ABCD"
+@end example
 @end deftp
 
 @defun bytestring arg @dots{}
@@ -13307,22 +13623,38 @@ An error is signaled if anything other than above is given.
 @defun make-bytestring lis
 [SRFI-207]
 @c MOD srfi.207
+@c EN
 Returns a new bytevector whose content is a concatenation of
 elements in @var{lis}.  Each element must be either an exact integer
 between 0 and 255 inclusive, an ASCII character, a bytevector
 or an ASCII string.  It is effectively the same as
 @code{(apply bytestring lis)}.
+@c JP
+@var{lis}の要素をつなげた内容を持つバイトベクタを作って返します。
+@var{lis}の各要素は、0以上255以下の正確な整数、ASCII文字、
+バイトベクタ、あるいはASCII文字列のいずれかでなければなりません。
+実質的には@code{(apply bytestring lis)}と同じです。
+@c COMMON
 @end defun
 
 @defun make-bytestring! bv at lis
 [SRFI-207]
 @c MOD srfi.207
+@c EN
 Fill a bytevector @var{bv} starting from index @var{at} with the
 elements in @var{lis}.  Each element must be either an exact integer
 between 0 and 255 inclusive, an ASCII character, a bytevector
 or an ASCII string.
 
 Returns an undefined value.
+@c JP
+バイトベクタ@var{bv}の、インデックス@var{at}以降を、
+@var{lis}の要素で埋めます。
+@var{lis}の各要素は、0以上255以下の正確な整数、ASCII文字、
+バイトベクタ、あるいはASCII文字列のいずれかでなければなりません。
+
+戻り値は未定義です。
+@c COMMON
 
 @example
 (rlet1 bv (make-u8vector 10)
@@ -13335,11 +13667,18 @@ Returns an undefined value.
 @defunx hex-string->bytevector string
 [SRFI-207]
 @c MOD srfi.207
+@c EN
 Convert a bytevector to hexadecimal digit string, and vice versa.
 
 A condition that satisfies @code{bytestring-error?} is thrown
 by @code{hex-string->bytevector} if @var{string} contains a letter
 not valid as a hexadecimal digits.
+@c JP
+それぞれ、バイトベクタと十六進数文字列とを相互に変換します。
+
+@code{hex-string->bytevector}が、引数中に十六進数と解釈できない
+文字に出会った場合は、@code{bytestring-error?}を満たすコンディションが投げられます。
+@c COMMON
 
 @example
 (bytevector->hex-string #u8"aloha")
@@ -13353,20 +13692,41 @@ not valid as a hexadecimal digits.
 @defunx base64->bytevector string :optional digits
 [SRFI-207]
 @c MOD srfi.207
+@c EN
 Encode a bytevector @var{bv} to Base64 encoded string, and vice versa.
 
 A condition that satisfies @code{bytestring-error?} is thrown
 by @code{base64->bytevector} if @var{string} contains a letter
-not valid as a hexadecimal digits.  Whitespace characters in @var{string}
+not valid in Base64 encoded string.  Whitespace characters in @var{string}
 are silently ignored, though.
+@c JP
+それぞれ、バイトベクタとBase64文字列とを相互に変換します。
 
+@code{hex-string->bytevector}が、引数がBase64と解釈できない
+場合は、@code{bytestring-error?}を満たすコンディションが投げられます。
+但し、空白文字は許されて、それは単に無視されます。
+@c COMMON
+
+@c EN
 By default, they use standard Base64 mappings.  You can specify
 a string of two ASCII characters in @var{digits} to alter
 mapping of 62nd and 63rd digits; the 'URL-safe' variant
 of Base64 can be achieved by passing @code{"-_"} as @var{digits}.
+@c JP
+デフォルトでは標準のBase64マッピングが使われます。
+マッピングの62と63に使う代わりの文字を、2文字のASCII文字列列として
+@var{digits}に渡すことで、それらの文字のマッピングを変更できます。
+いわゆる「URL安全」なBase64バリエーションを使うには、
+@code{"-_"}を@var{digits}に渡します。
+@c COMMON
 
+@c EN
 @xref{Base64 encoding/decoding}, for Gauche-specific Base64 library
 that provides more APIs.
+@c JP
+Gauche特有のBase64ライブラリには他のAPIも提供されています。
+@ref{Base64 encoding/decoding}を参照してください。
+@c COMMON
 @end defun
 
 @defun bytestring->list bv :optional start end

@@ -120,14 +120,14 @@
 ;; A layouter procedure takes three arguments:
 ;;  - size - the entire width of rendering area
 ;;  - room - the remaining width of rendering area of the current line
-;;  - memo - memoized table; see belo.
+;;  - memo - memoized table; see below.
 ;; And it returns a pair of FSTree and the width the element occupies.
 ;;
 ;; Layouter = (Integer, Integer, Memo) -> (FSTree . Integer))
-;; FSTree = String | 's | 'b | (FSTree ...)
+;; FSTree = String | 's | 'b | 'z | (FSTree ...)
 ;;
-;; FSTree is a tree of strings, with a symbol 's or 'b, indicating
-;; inter-datum space and line break.
+;; FSTree is a tree of strings, with a symbol 's, 'b, or 'z, indicating
+;; inter-datum space, line break, and zero-width non-break space.
 ;;
 ;; A layouter may be called more than once on the same object if the
 ;; layout is "retried".  Because of retrying, running layouter might cost
@@ -233,6 +233,8 @@
     (^[s w m] val)))
 (define dot  (^[s w m] '("." . 1)))
 
+(define zwsp (^[s w m] '(z . 0)))       ; zero width space
+
 ;; layout-simple :: String -> Layouter
 (define (layout-simple str) (^[s w m] (cons str (string-length str))))
 
@@ -284,14 +286,14 @@
          [cmpname (if-let1 cmp (dict-comparator dict)
                     (or (~ cmp 'name) 'custom)
                     '||)]
-         [tag (format "~a ~a[~d](" cname cmpname (size-of dict))]
+         [tag (format "~a ~a[~d] (" cname cmpname (size-of dict))]
          [tag-layouter (layout-simple tag)]
          [prefix "#<"]
          [plen (string-length prefix)])
     (memo^ [size room memo]
            (match-let1 (s . w)
                (do-layout-elements size (-* room plen 1) memo
-                                   (cons tag-layouter content-layouters))
+                                   (cons* tag-layouter zwsp content-layouters))
              (cons `(,prefix ,@(reverse s) ">")
                    (and w (+ w plen 1)))))))
 
@@ -356,7 +358,9 @@
          (match es
            [() #f]
            [('b . es) (next-line ind) (loop (drop-while symbol? es))]
+           [('s 'z . es) (loop (drop-while symbol? es))]
            [('s . es) (display " " port) (loop es)]
+           [('z . es) (loop (drop-while symbol? es))]
            [(s . es)  (render s ind port) (loop es)])))]
     [else (display stree port)]))
 

@@ -710,6 +710,21 @@ case節での@code{=>}
 組込みです。@ref{Conditionals}参照。
 
 
+srfi-94, srfi-94
+()
+
+Type-restricted numerical functions
+Most procedures in this srfi is supported natively
+(@pxref{Arithmetics}).  The rest is in the module @code{srfi.94}
+(@pxref{Type-restricted numerical functions}).
+
+型を制限した数値関数
+このSRFIの大半の手続きは組み込みになっています
+(@ref{Arithmetics}参照)。
+残りは@code{srfi.94}モジュールにて提供されます
+(@ref{Type-restricted numerical functions}参照)。
+
+
 srfi-95
 (sorted? merge merge! sort sort!)
 
