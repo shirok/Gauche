@@ -384,11 +384,13 @@ ScmObj Scm_ShortClassName(ScmClass *klass)
  *     has not been output in the current serializing session.
  */
 
-/* A note on the 'data' member of ScmClass
+/* A note on the 'class_auxdata' member of ScmClass
  *
  *   It can be used to hang an opaque data to a specific class.  So far,
- *   we use it only for <simple> class mechanism.  Its use is highly
- *   controversial; I mean, The Right Thing is to define a metaclass
+ *   we use it only for limited number of builtin classes, including
+ *   ScmForeignPointerClass.
+ *
+ *   The Right Thing is to define a metaclass
  *   which defines an extra member, and allocate <simple> class as an
  *   instance of it.  However, creating metaclass from C is messy now,
  *   so I chose to hack.  In future we may have a nice C API to create
@@ -433,7 +435,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     instance->redefined = SCM_FALSE;
     (void)SCM_INTERNAL_MUTEX_INIT(instance->mutex);
     (void)SCM_INTERNAL_COND_INIT(instance->cv);
-    instance->data = NULL;      /* see the above note on the 'data' member */
+    instance->class_auxdata = NULL; /* see the above note on this member */
     return SCM_OBJ(instance);
 }
 
@@ -3123,7 +3125,7 @@ ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
     } else {
         data->identity_map = NULL;
     }
-    fp->data = (void*)data; /* see the note above class_allocate() */
+    fp->class_auxdata = (void*)data; /* see the note above class_allocate() */
     return fp;
 }
 
@@ -3159,7 +3161,8 @@ ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
 ScmObj Scm_MakeForeignPointerWithAttr(ScmClass *klass, void *ptr, ScmObj attr)
 {
     ScmForeignPointer *obj;
-    struct foreign_data_rec *data = (struct foreign_data_rec *)klass->data;
+    struct foreign_data_rec *data =
+        (struct foreign_data_rec *)klass->class_auxdata;
     SCM_ASSERT(data != NULL);   /* if this happens, user directly uses
                                    <foreign-pointer> class without subclassing*/
 
@@ -3239,7 +3242,7 @@ ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
                                  ScmObj key, ScmObj value)
 {
     struct foreign_data_rec *data
-        = (struct foreign_data_rec*)(SCM_CLASS_OF(fp)->data);
+        = (struct foreign_data_rec*)(SCM_CLASS_OF(fp)->class_auxdata);
 
     /* NB: We presume mutating foreign pointer attributes is rare operation,
        so we don't try hard to make it efficient.   Particularly, we use

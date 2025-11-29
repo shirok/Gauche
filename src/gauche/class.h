@@ -122,8 +122,9 @@ struct ScmClassRec {
                                    otherwise #f */
     ScmInternalMutex mutex;     /* to protect from MT hazard */
     ScmInternalCond cv;         /* wait on this while a class being updated */
-    void   *data;               /* extra data to do nasty trick.  See the note
-                                   in class.c */
+    void *class_auxdata;        /* extra data to do nasty trick.  This is
+                                   intentionally named awkwardly; not for
+                                   public use.  See the note in class.c */
 } SCM_ALIGN8;
 
 typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
