@@ -7,6 +7,7 @@
 (test-start "gauche.ffi")
 
 ;; bail out if we aren't configured to build ffi
+;; FIXME
 #;(unless (file-exists? (string-append "ffi" (gauche-dso-suffix)))
   (test-end)
   (exit 0))
@@ -93,6 +94,19 @@
 (test* "null-pointer?" #t (null-pointer? null-pointer))
 (define np (empty-pointer))
 (test* "empty-pointer/null-pointer?" #t (null-pointer? np))
+
+(define string-address-in-string-out
+  (make-c-function testlib 'pointer 'string_address_in_string_out '(pointer)))
+
+(define strptr-address (address strptr))
+(display "HERE: ")
+(write (pointer->string (string-address-in-string-out strptr-address)))
+(newline)
+(test*
+  "address"
+  #t
+  (string=? (pointer->string (string-address-in-string-out strptr-address))
+            "Hello world"))
 
 (close-shared-library testlib)
 (close-shared-library libc)

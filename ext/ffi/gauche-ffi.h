@@ -43,15 +43,11 @@ extern ScmObj align_of_pointer();
 extern ScmObj internal_open_shared_library(ScmString* path, ScmString* version, ScmObj throw_error);
 extern ScmObj close_shared_library(ScmObj shared_library);
 extern ScmObj shared_object_suffix();
-//extern ScmObj address(ScmObj pointer, int offset);
-//extern ScmObj pointer_to_integer(ScmObj pointer);
-//extern ScmObj pointer_to_uinteger(ScmObj pointer);
-//extern ScmObj integer_to_pointer(intptr_t integer);
+extern ScmObj internal_address(ScmObj pointer, int offset);
 extern ScmObj allocate_pointer(int size);
 extern ScmObj empty_pointer();
 extern ScmObj is_null_pointer(ScmObj pointer);
 extern ScmObj is_pointer(ScmObj pointer);
-//extern ScmObj pointer_free(ScmObj pointer);
 
 
 extern ScmObj pointer_set_c_int8(ScmObj pointer, int offset, int8_t value);

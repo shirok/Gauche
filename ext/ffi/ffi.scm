@@ -157,7 +157,7 @@
  (define-cproc internal-open-shared-library (path::<string> version::<string> throw_error) internal_open_shared_library)
  (define-cproc close-shared-library (shared-library) close_shared_library)
  (define-cproc shared-object-suffix() shared_object_suffix)
- ;(define-cproc internal-address (pointer offset::<int>) address)
+ (define-cproc internal-address (pointer offset::<int>) internal_address)
  (define-cproc pointer? (pointer) is_pointer)
  ;(define-cproc integer->pointer (integer::<int>) integer_to_pointer)
  ;(define-cproc pointer->integer (pointer) pointer_to_integer)
@@ -394,3 +394,8 @@
           ((eq? type 'double) (align-of-double))
           ((eq? type 'pointer) (align-of-pointer))
           (else (error "Can not get align of type" type)))))
+
+ (define (address pointer . offset)
+   (if (null? offset)
+     (internal-address pointer 0)
+     (internal-address pointer offset)))
