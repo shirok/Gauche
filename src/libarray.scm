@@ -61,7 +61,9 @@
                setter
                backing-storage)))
 
- (define-cclass <array-base> :base :private
+ (.define SCM_ARRAY_BASE (obj) (cast ScmArrayBase* obj))
+
+ (define-cclass <array-base> :base
    "ScmArrayBase*" "Scm_ArrayBaseClass"
    (c "SCM_CLASS_OBJECT_CPL")
    ((start-vector)

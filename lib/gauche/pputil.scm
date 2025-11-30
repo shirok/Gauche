@@ -38,6 +38,7 @@
 
 (autoload gauche.collection size-of)
 (autoload gauche.dictionary dict->alist dict-comparator)
+(autoload gauche.array format-array/prefix format-array/content)
 
 ;; List printing modes:
 ;;
@@ -164,7 +165,8 @@
               (or (pair? obj)
                   (vector? obj)
                   (uvector? obj)
-                  (is-a? obj <dictionary>)))
+                  (is-a? obj <dictionary>)
+                  (is-a? obj (with-module gauche.internal <array-base>))))
          (layout-simple "#")]
         [else (layout-misc obj (cute layout <> (+ level 1) c) c)]))
 
@@ -223,6 +225,8 @@
            (layout-list (sprefix obj (format "#~a(" tag) c) (mapu rec obj) c))]
         [(is-a? obj <dictionary>)
          (layout-dict obj (map+ rec (dict->alist obj)) c)]
+        [(is-a? obj (with-module gauche.internal <array-base>))
+         (layout-array obj rec c)]
         [else
          (layout-simple (sprefix obj (stringify obj c) c))]))
 
@@ -296,6 +300,18 @@
                                    (cons* tag-layouter zwsp content-layouters))
              (cons `(,prefix ,@(reverse s) ">")
                    (and w (+ w plen 1)))))))
+
+;; laout-array
+(define (layout-array array rec c)
+  (let* ([style (~ c'controls'array)]
+         [prefix (format-array/prefix array style)]
+         [plen (string-length prefix)]
+         [content-layouter (rec (format-array/content array style))])
+    (memo^ [size room memo]
+           (match-let1 (s . w)
+               (content-layouter size (-* room plen) memo)
+             (cons `(,prefix z ,s)
+                   (and w (+ w plen)))))))
 
 ;; sprefix :: (Object, String, Context) -> String
 (define (sprefix obj s c)

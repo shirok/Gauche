@@ -1,5 +1,9 @@
 2025-11-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/write.c: Dispach array display to pretty printer.
+	* lib/gauche/pputil.scm (layout-array): Support array pretty-printing.
+	   https://github.com/shirok/Gauche/issues/1189
+
 	* src/libarray.scm (<array-base>): Move the base class to the core,
 	  so that writer can autoload array printer as needed.
 
