@@ -221,6 +221,7 @@ test.record
 /src/gauche/vminsn.h
 /src/genconfig
 /src/libalpha.c
+/src/libarray.c
 /src/libbool.c
 /src/libbox.c
 /src/libchar.c

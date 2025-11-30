@@ -1,3 +1,8 @@
+2025-11-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/libarray.scm (<array-base>): Move the base class to the core,
+	  so that writer can autoload array printer as needed.
+
 2025-11-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvgen.scm, ext/uvetor/uvector.c.tmpl: Add auto-generation

@@ -99,6 +99,7 @@ extern void Scm__InitMutex(void);
 extern void Scm__InitThreads(void);
 
 extern void Scm_Init_libalpha(void);
+extern void Scm_Init_libarray(void);
 extern void Scm_Init_libbool(void);
 extern void Scm_Init_libbox(void);
 extern void Scm_Init_libchar(void);
@@ -238,6 +239,7 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm__InitThreads);
 
     CALL_INIT(Scm_Init_libalpha);
+    CALL_INIT(Scm_Init_libarray);
     CALL_INIT(Scm_Init_libbool);
     CALL_INIT(Scm_Init_libbox);
     CALL_INIT(Scm_Init_libchar);

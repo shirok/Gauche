@@ -94,15 +94,21 @@
         (^[sh . inits]
           (list-fill-array! (make-array-internal class (apply shape sh)) inits))))))
 
-(define-class <array-base> ()
-  ((start-vector    :init-keyword :start-vector :getter start-vector-of)
-   (end-vector      :init-keyword :end-vector   :getter end-vector-of)
-   (mapper          :init-keyword :mapper       :getter mapper-of)
-   (getter          :getter getter-of)
-   (setter          :getter setter-of)
-   (backing-storage :init-keyword :backing-storage
-                    :getter backing-storage-of))
-  :metaclass <array-meta>)
+;; <array-base> is defined in the core
+(define <array-base> (with-module gauche.internal <array-base>))
+
+(define (start-vector-of base)
+  (~ base'start-vector))
+(define (end-vector-of base)
+  (~ base'end-vector))
+(define (mapper-of base)
+  (~ base'mapper))
+(define (getter-of base)
+  (~ base'getter))
+(define (setter-of base)
+  (~ base'setter))
+(define (backing-storage-of base)
+  (~ base'backing-storage))
 
 (define-method initialize ((self <array-base>) initargs)
   (next-method)
@@ -165,6 +171,7 @@
 
 (define-class <array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-vector
   :backing-storage-getter vector-ref
   :backing-storage-setter vector-set!
@@ -172,6 +179,7 @@
 
 (define-class <u8array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-u8vector
   :backing-storage-getter u8vector-ref
   :backing-storage-setter u8vector-set!
@@ -179,6 +187,7 @@
 
 (define-class <s8array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-s8vector
   :backing-storage-getter s8vector-ref
   :backing-storage-setter s8vector-set!
@@ -186,6 +195,7 @@
 
 (define-class <u16array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-u16vector
   :backing-storage-getter u16vector-ref
   :backing-storage-setter u16vector-set!
@@ -193,6 +203,7 @@
 
 (define-class <s16array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-s16vector
   :backing-storage-getter s16vector-ref
   :backing-storage-setter s16vector-set!
@@ -200,6 +211,7 @@
 
 (define-class <u32array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-u32vector
   :backing-storage-getter u32vector-ref
   :backing-storage-setter u32vector-set!
@@ -207,6 +219,7 @@
 
 (define-class <s32array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-s32vector
   :backing-storage-getter s32vector-ref
   :backing-storage-setter s32vector-set!
@@ -214,6 +227,7 @@
 
 (define-class <u64array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-u64vector
   :backing-storage-getter u64vector-ref
   :backing-storage-setter u64vector-set!
@@ -221,6 +235,7 @@
 
 (define-class <s64array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-s64vector
   :backing-storage-getter s64vector-ref
   :backing-storage-setter s64vector-set!
@@ -228,6 +243,7 @@
 
 (define-class <f16array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-f16vector
   :backing-storage-getter f16vector-ref
   :backing-storage-setter f16vector-set!
@@ -235,6 +251,7 @@
 
 (define-class <f32array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-f32vector
   :backing-storage-getter f32vector-ref
   :backing-storage-setter f32vector-set!
@@ -242,6 +259,7 @@
 
 (define-class <f64array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-f64vector
   :backing-storage-getter f64vector-ref
   :backing-storage-setter f64vector-set!
@@ -249,6 +267,7 @@
 
 (define-class <c32array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-c32vector
   :backing-storage-getter c32vector-ref
   :backing-storage-setter c32vector-set!
@@ -256,6 +275,7 @@
 
 (define-class <c64array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-c64vector
   :backing-storage-getter c64vector-ref
   :backing-storage-setter c64vector-set!
@@ -263,6 +283,7 @@
 
 (define-class <c128array> (<array-base>)
   ()
+  :metaclass <array-meta>
   :backing-storage-creator make-c128vector
   :backing-storage-getter c128vector-ref
   :backing-storage-setter c128vector-set!
