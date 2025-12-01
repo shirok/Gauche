@@ -48,9 +48,18 @@
 (select-module gauche.internal)
 
 (inline-stub
+ (.include "gauche/priv/arrayP.h")
+
  ;;
  ;; Array-base
  ;;
+
+ ;; NB: We rely on the 'initialize' method of <array-base>, defined in array.scm,
+ ;; to set up the slots properly.
+
+ ;; start-vector, end-vector : s32vector of length N, where N is the rank
+ ;; of the array.  K's dimension index starts from (~ start-vector k), inclusive,
+ ;; and ends at (~ end-vector k), exclusive.
  (define-ctype ScmArrayBase
    ::(.struct ScmArrayBaseRec
               (SCM_INSTANCE_HEADER::||
@@ -60,8 +69,6 @@
                getter
                setter
                backing-storage)))
-
- (.define SCM_ARRAY_BASE (obj) (cast ScmArrayBase* obj))
 
  (define-cclass <array-base> :base
    "ScmArrayBase*" "Scm_ArrayBaseClass"
@@ -80,4 +87,15 @@
                 (set! (-> z setter) SCM_UNDEFINED)
                 (set! (-> z backing-storage) SCM_UNDEFINED)
                 (return (SCM_OBJ z)))))
+
+ (declare-stub-type <array-base> "ScmArrayBase*")
+
+ (define-cfn Scm_ArrayRank (array::(const ScmArrayBase*)) ::ScmSmallInt
+   (SCM_ASSERT (SCM_UVECTORP (-> array start-vector)))
+   (return (SCM_UVECTOR_SIZE (-> array start-vector))))
  )
+
+(select-module gauche)
+
+(define-cproc array-rank (array::<array-base>) ::<fixnum>
+  Scm_ArrayRank)

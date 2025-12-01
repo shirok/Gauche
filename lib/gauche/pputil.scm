@@ -38,7 +38,7 @@
 
 (autoload gauche.collection size-of)
 (autoload gauche.dictionary dict->alist dict-comparator)
-(autoload gauche.array format-array/prefix format-array/content array-rank)
+(autoload gauche.array format-array/prefix format-array/content)
 
 ;; List printing modes:
 ;;

@@ -34,7 +34,13 @@
 #ifndef GAUCHE_PRIV_ARRAYP_H
 #define GAUCHE_PRIV_ARRAYP_H
 
+typedef struct ScmArrayBaseRec ScmArrayBase;
+
 SCM_CLASS_DECL(Scm_ArrayBaseClass);
 #define SCM_CLASS_ARRAY_BASE  (&Scm_ArrayBaseClass)
+#define SCM_ARRAY_BASE_P(obj) SCM_ISA(obj, SCM_CLASS_ARRAY_BASE)
+#define SCM_ARRAY_BASE(obj)   ((ScmArrayBase*)(obj))
+
+SCM_EXTERN ScmSmallInt Scm_ArrayRank(const ScmArrayBase*);
 
 #endif /*GAUCHE_PRIV_ARRAYP_H*/

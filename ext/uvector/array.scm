@@ -667,9 +667,7 @@
 (define (array? obj)
   (is-a? obj <array-base>))
 
-(define (array-rank array)
-  (unless (array? array) (error "array required, but got" array))
-  (s32vector-length (start-vector-of array)))
+;; array-rank is in src/libarray.scm
 
 (define (array-start array k)
   (unless (array? array) (error "array required, but got" array))
