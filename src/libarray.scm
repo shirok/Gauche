@@ -95,7 +95,13 @@
    (return (SCM_UVECTOR_SIZE (-> array start-vector))))
  )
 
-(select-module gauche)
+;; Kludge: If we place (define-cproc array-rank ..) after (select-module gauche),
+;; the procedure type info with <array-base> is recorded with the
+;; #<module gauche>.  This causes procedure-type fail
+;; (https://github.com/shirok/Gauche/issues/1192), since <array-base>
+;; isn't visible from #<module gauche>.
 
 (define-cproc array-rank (array::<array-base>) ::<fixnum>
   Scm_ArrayRank)
+
+(define-in-module gauche array-rank array-rank)
