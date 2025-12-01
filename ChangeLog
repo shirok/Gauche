@@ -1,3 +1,10 @@
+2025-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/pputil.scm (layout-array): Special treatment of display
+	  an array with rank >= 2 at the toplevel.  We insert newlines after
+	  each row so that the elements are shown in rectangular shape,
+	  even if we have plenty of horizontal room.
+
 2025-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c: Dispach array display to pretty printer.
