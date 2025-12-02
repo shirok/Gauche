@@ -65,6 +65,7 @@
               (SCM_INSTANCE_HEADER::||
                start-vector
                end-vector
+               coeff-vector
                mapper
                getter
                setter
@@ -75,6 +76,7 @@
    (c "SCM_CLASS_OBJECT_CPL")
    ((start-vector)
     (end-vector)
+    (coeff-vector)
     (mapper)
     (getter)
     (setter)
@@ -82,6 +84,7 @@
    (allocator (let* ([z::ScmArrayBase* (SCM_NEW_INSTANCE ScmArrayBase klass)])
                 (set! (-> z start-vector) SCM_UNDEFINED)
                 (set! (-> z end-vector) SCM_UNDEFINED)
+                (set! (-> z coeff-vector) SCM_UNDEFINED)
                 (set! (-> z mapper) SCM_UNDEFINED)
                 (set! (-> z getter) SCM_UNDEFINED)
                 (set! (-> z setter) SCM_UNDEFINED)

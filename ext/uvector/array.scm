@@ -530,10 +530,9 @@
                               (s32vector->list Vs))])
     (coerce-to <s32vector> (cdr vcl))))
 
-(define (generate-amap Vb Ve)
+(define (generate-amap Vb Ve Vc)
   (let ([-Vb     (map-to <s32vector> - Vb)]
-        [Ve-1    (s32vector-sub Ve 1)]
-        [Vc      (coefficient-vector Vb Ve)])
+        [Ve-1    (s32vector-sub Ve 1)])
     (^[Vi]
       (cond [(s32vector-range-check Ve-1 Vi #f)
              => (^i (errorf "index of dimension ~s is too big: ~s"
@@ -619,13 +618,15 @@
 
 (define (make-array-internal class shape . maybe-init)
   (receive (Vb Ve) (shape->start/end-vector shape)
-    (make class
-      :start-vector Vb
-      :end-vector Ve
-      :mapper (generate-amap Vb Ve)
-      :backing-storage (apply (backing-storage-creator-of class)
-                              (fold * 1 (s32vector-sub Ve Vb))
-                              maybe-init))))
+    (let1 Vc (coefficient-vector Vb Ve)
+      (make class
+        :start-vector Vb
+        :end-vector Ve
+        :coefficient-vector Vc
+        :mapper (generate-amap Vb Ve Vc)
+        :backing-storage (apply (backing-storage-creator-of class)
+                                (fold * 1 (s32vector-sub Ve Vb))
+                                maybe-init)))))
 
 (define (list-fill-array! a inits)
   (let* ([bv  (backing-storage-of a)]
