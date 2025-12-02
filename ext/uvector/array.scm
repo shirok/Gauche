@@ -523,16 +523,17 @@
 (define (zero-vector? vec)
   (not (s32vector-range-check vec 0 0)))
 
-(define (generate-amap Vb Ve)
-  (let* ([rank    (s32vector-length Vb)]
-         [indices (iota rank)]
-         [Vs      (s32vector-sub Ve Vb)]
-         [-Vb     (map-to <s32vector> - Vb)]
-         [Ve-1    (s32vector-sub Ve 1)]
+(define (coefficient-vector Vb Ve)
+  (let* ([Vs      (s32vector-sub Ve Vb)]
          [vcl     (fold-right (^[sN l] (cons (* sN (car l)) l))
                               '(1)
-                              (s32vector->list Vs))]
-         [Vc      (coerce-to <s32vector> (cdr vcl))])
+                              (s32vector->list Vs))])
+    (coerce-to <s32vector> (cdr vcl))))
+
+(define (generate-amap Vb Ve)
+  (let ([-Vb     (map-to <s32vector> - Vb)]
+        [Ve-1    (s32vector-sub Ve 1)]
+        [Vc      (coefficient-vector Vb Ve)])
     (^[Vi]
       (cond [(s32vector-range-check Ve-1 Vi #f)
              => (^i (errorf "index of dimension ~s is too big: ~s"
