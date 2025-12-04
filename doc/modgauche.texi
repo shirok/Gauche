@@ -26333,6 +26333,45 @@ For the time being, you can lift the call to loop outside of
                      (loop)))))
 @end example
 
+@c EN
+@subsubheading Using high-level libraries
+@c JP
+@subsubheading 高レベルライブラリを使う
+@c COMMON
+
+@c EN
+As we've seen above, there are lots of caveats to consider when you use threads.
+In fact, for typical use cases, Gauche provides high-level utilities
+that hides thireads under the hood.  For example,
+Concurrent sequences implements producer-consumer type concurrency
+by running the producer thread (@pxref{Concurrent sequences}),
+and Parallel map provides a utility to run computation on a group of
+data conucurrently (@pxref{Parallel map}.  Plumbing uses threads implicity
+to construct a network of input/output ports(@pxref{Plumbing ports}).
+@c JP
+これまで見たように、スレッドを使う際には考慮すべき注意点が多々あります。
+そこで、Gaucheでは典型的なユースケースに対して、スレッドをボンネットの下に隠す
+高レベルライブラリを用意しています。
+例えば並行シーケンスは生産者-消費者型の並列性を簡単に書けます
+(@ref{Concurrent sequences}参照)し、並列mapはデータのセットに対して
+スレッドを使って並行計算を行います(@ref{Parallel map}参照)。
+配管(plumbing)を使うと複雑な入力/出力ポートのネットワークを組めますが、
+裏ではスレッドが動いています(@ref{Plumbing ports}参照)。
+@c COMMON
+
+@c EN
+Those high-level libraries hides cumbersome details around using threads.
+Take a look at @code{control.*} modules to see if there's any that saves
+you the trouple of using bare thread primitives.
+(If you can't find a suitable library for your purpose but you think it is
+a common thread use case, let us know!)
+@c JP
+これらの高レベルライブラリはスレッドを使うに当たっての煩雑な詳細を隠してくれます。
+@code{control.*}モジュールを見てみてください。
+自分でスレッドを直接使う手間を省けるライブラリがあるかもしれません。
+(もし、やりたいことを実現してくれるライブラリがなく、
+でもその目的がよくあるものなら、ぜひ教えてください!)
+@c COMMON
 
 @node Thread procedures, Thread local storage, Thread programming tips, Threads
 @subsection Thread procedures
