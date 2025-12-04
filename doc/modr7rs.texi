@@ -8235,19 +8235,37 @@ EOFを受け取ったらそれまで受け取ったオブジェクトの数を�
 
 @deftp {Module} scheme.lseq
 @mdindex scheme.lseq
+@c EN
 This module provides lightweight lazy sequence (lseq), conceptually represented
 by a pair of element and generator.  When the rest of sequence is
 taken, the generator is evaluated and yields another pair of element and
 generator, and so on.  The overhead is one allocation of a pair per
 element.  It is much lighter than streams (@pxref{Stream library}),
 which requires to create a thunk for every element.
+@c JP
+このモジュールは軽量の遅延シーケンス(lseq)を提供します。
+lseqは概念的には、要素とジェネレータのペアです。
+シーケンスの残りを取る操作は、ジェネレータを評価して、
+得られた要素とジェネレータのペアを返します。
+一要素あたりアロケートされるのはペアひとつだけで、
+これは一要素ごとにクロージャを作らなければならないストリームよりも
+ずっと軽量です(@ref{Stream library}参照)。
+@c COMMON
 
+@c EN
 Gauche already has built-in support for such lazy sequences;
 we go further to make it behave like ordinary pairs---that is, if you
 take cdr of a lazy pair, we automatically forces the generator so
 it is indistinguishable from an ordinary pair, modulo side effects.
 @xref{Lazy sequences}.
+@c JP
+Gaucheは既に組み込みでこの形の遅延シーケンスをサポートしています。
+さらに、Gaucheでは遅延シーケンスは通常のペアのように振る舞います。
+遅延ペアのcdrを取ると、自動的にジェネレータが呼ばれます。
+つまり、副作用を除いて遅延シーケンスは通常のリストと区別がありません。
+@c COMMON
 
+@c EN
 SRFI-127, the original srfi for this module,
 is a bit ambiguous whether its lazy sequence @emph{must} be
 implemented with a pair whose cdr is a generator procedure, or
@@ -8257,51 +8275,116 @@ matter; that is, the user of lazy sequence should not count on the fact
 that the lseq is an improper list terminated by a generator procedure.
 Instead, an lseq should be treated as an opaque object that can be
 passed to @code{scheme.lseq} procedures.
+@c JP
+このモジュールの元になったSRFI-127では、遅延シーケンスを必ず
+cdrをジェネレータとするペアとして実装せよとは名言していません。
+遅延シーケンスの目的を考えれば、具体的な実装がどうなっているかは
+問題にならないはずです。すなわち、
+ユーザはlseqを「ジェネレータを最後のcdrに持つドットリスト」
+ではなく、@code{scheme.lseq}の手続きに渡せる不透明なオブジェクトとして
+扱うべきです。
+@c COMMON
 
+@c EN
 With that premise, we implement this module as just a thin wrapper of
 Gauche's native lazy sequence.  It is upper-compatible,
 except that the code that assumes the internal structure could break.
 Notably, the constructor @code{generator->lseq} is the same as
 Gauche's built-in, which returns Gauche's lseq, undistinguishable
 to the ordinary list.
+@c JP
+この前提に基づき、このモジュールはGaucheの組み込みの遅延シーケンスの
+薄いラッパーになっています。
+コードが遅延シーケンスの内部構造に依存しない限り、
+このモジュールはSRFI-127の上位互換になっています。
+特に、@code{generator->lseq}はGaucheの組み込み手続きと同じで、
+Gaucheのlseqを返します。これは通常のリストと区別がつきません。
+@c COMMON
 
 @example
 (procedure? (generator->lseq (generator 1)))
+@c EN
   ;; => #t, in SRFI-127 reference implementation,
   ;;    #f, in our implementation.
+@c JP
+  ;; => #t (SRFI-127参照実装)
+  ;;    #f (Gauche)
+@c COMMON
 @end example
 @end deftp
 
 @defun lseq? x
 [R7RS lseq]
 @c MOD scheme.lseq
+@c EN
 Returns true iff @var{x} is an object that can be passed to
-lseq procedures.  In Gauche, it returns @code{#t} if @var{x} is
+procedures expecting lseqs.
+In Gauche, it returns @code{#t} if @var{x} is
 a pair or an empty list, since a lazy pair is indistinguishable
 from a pair.
+@c JP
+@var{x}がlseqを期待する手続きに渡せるオブジェクトなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+Gaucheでは、遅延ペアは通常のペアと区別できないので、
+@var{x}がペアか空リストであれば@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun lseq=? elt=? lseq1 lseq2
 [R7RS lseq]
 @c MOD scheme.lseq
+@c EN
 Compare two lseqs element-wise using @code{elt=?} and returns @code{#t}
 iff two lseqs are equal.
+@code{elt=?} must return @code{#t} if two elements are @code{eq?}.
+This procedure takes advantage of that fact and returns @code{#t}
+if @var{lseq1} and @var{lseq2} are @code{eq?}, without forcing
+the lseqs.
+@c JP
+二つのlseqが、対応する各要素を@code{elt=?}で比較して等しければ
+@code{#t}を、そうでなければ@code{#f}を返します。
+@code{elt=?}は二つの要素が@code{eq?}の場合は@code{#t}を返さなければなりません。
+この手続きはその事実を利用して、二つのlseqが@code{eq?}である場合は
+それらをforceすることなく@code{#t}を返します。
+@c COMMON
+
+@c EN
+NB: Technically, @code{=} does not meet this constraint of @var{elt=?},
+for @code{=} returns @code{#f} if both arguments are @code{+nan.0}.
+Practically it is usable as long as you're aware of NaN's peculiarity.
+@c JP
+註: 細かいことを言えば、@code{=}は@var{elt=?}に関するこの制約を満たしません。
+@code{=}は両引数が@code{+nan.0}の場合は@code{#f}を返すからです。
+現実的には、NaNの特異性に気をつけている限り、これが問題になることは少ないでしょう。
+@c COMMON
 @end defun
 
 @defun lseq-car lseq
 @defunx lseq-first lseq
 [R7RS lseq]
 @c MOD scheme.lseq
+@c EN
 Returns the first item of @var{lseq}.  If @var{lseq} is empty, an error
 is raised.  In Gauche, these are just aliases of @code{car}.
+@c JP
+@var{lseq}の最初の要素を返します。@var{lseq}が空であればエラーが投げられます。
+Gaucheではこれらは単に@code{car}の別名です。
+@c COMMON
 @end defun
 
 @defun lseq-cdr lseq
 @defunx lseq-rest lseq
 [R7RS lseq]
 @c MOD scheme.lseq
-Returns the rest of @var{lseq}.  If @var{lseq} is empty, an error
-is raised.  In Gauche, these are just aliases of @code{cdr}.
+@c EN
+Returns the rest of @var{lseq}, which should be a lazy sequence as well.
+If @var{lseq} is empty, an error is raised.
+In Gauche, these are just aliases of @code{cdr}.
+@c JP
+@var{lseq}の残りの要素を返します。返される値もまた遅延シーケンスです。
+@var{lseq}が空であればエラーが投げられます。
+Gaucheではこれらは単に@code{cdr}の別名です。
+@c COMMON
 @end defun
 
 @defun lseq-take lseq k
