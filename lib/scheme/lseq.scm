@@ -70,7 +70,8 @@
 (define (lseq? x) (or (null? x) (pair? x)))
 
 (define (lseq=? elt=? lseq1 lseq2)
-  (list= elt=? lseq1 lseq2))
+  (or (eq? lseq1 lseq2)                 ;shortcut
+      (list= elt=? lseq1 lseq2)))
 
 (define lseq-car car)
 (define lseq-first car)
