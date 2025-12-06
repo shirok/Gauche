@@ -342,10 +342,11 @@
 (define (array-copy a)
   (assume-type a <array-base>)
   (make (class-of a)
-    :start-vector (start-vector-of a)
-    :end-vector   (end-vector-of a)
-    :mapper       (mapper-of a)
-    :backing-storage (%xvector-copy (backing-storage-of a))))
+    :start-vector (~ a'start-vector)
+    :end-vector   (~ a'end-vector)
+    :coefficient-vector (~ a'coefficient-vector)
+    :mapper       (~ a'mapper)
+    :backing-storage (%xvector-copy (~ a'backing-storage))))
 
 ;;-------------------------------------------------------------
 ;; Literal array reader
@@ -593,11 +594,15 @@
         (unless (<= (car l) (cadr l))
           (errorf "beginning index ~s is larger than ending index ~s in shape argument: ~s" (car l) (cadr l) args)))
       ;; make array.
-      (make <array>
-        :start-vector (s32vector 0 0)
-        :end-vector (s32vector rank 2)
-        :mapper (^[Vi] (s32vector-dot (s32vector 2 1) Vi))
-        :backing-storage (list->vector args)))))
+      (let* ([Vb (s32vector 0 0)]
+             [Ve (s32vector rank 2)]
+             [Vc (coefficient-vector Vb Ve)])
+        (make <array>
+          :start-vector Vb
+          :end-vector Ve
+          :coefficient-vector Vc
+          :mapper (^[Vi] (s32vector-dot (s32vector 2 1) Vi))
+          :backing-storage (list->vector args))))))
 
 (define (shape->start/end-vector shape)
   (let* ([rank (array-end shape 0)]
