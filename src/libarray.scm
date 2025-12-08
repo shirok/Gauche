@@ -60,12 +60,25 @@
  ;; start-vector, end-vector : s32vector of length N, where N is the rank
  ;; of the array.  K's dimension index starts from (~ start-vector k), inclusive,
  ;; and ends at (~ end-vector k), exclusive.
+ ;;
+ ;; coefficient-vector (s32vector) and offset (scalar) maps input index
+ ;; vector Vi into the position of backing storage Pos as
+ ;;
+ ;;  Pos = Vc・(Vi - Vb) + Off
+ ;;
+ ;; Where Vc is the coefficient vector and Vb is the start vector.
+ ;; Arrays created with make-*array maps all the elements in the backing
+ ;; stroage contiguously (e.g. The range of Pos is [0..N-1] where N is the
+ ;; number of total elements), and Off is always 0.
+ ;; However, if an array is created by share-array, Pos can be incontiguous.
+ ;;
  (define-ctype ScmArrayBase
    ::(.struct ScmArrayBaseRec
               (SCM_INSTANCE_HEADER::||
                start-vector
                end-vector
                coefficient-vector
+               offset
                mapper
                getter
                setter
@@ -77,6 +90,7 @@
    ((start-vector)
     (end-vector)
     (coefficient-vector)
+    (offset)
     (mapper)
     (getter)
     (setter)
@@ -85,6 +99,7 @@
                 (set! (-> z start-vector) SCM_UNDEFINED)
                 (set! (-> z end-vector) SCM_UNDEFINED)
                 (set! (-> z coefficient-vector) SCM_UNDEFINED)
+                (set! (-> z offset) (SCM_MAKE_INT 0))
                 (set! (-> z mapper) SCM_UNDEFINED)
                 (set! (-> z getter) SCM_UNDEFINED)
                 (set! (-> z setter) SCM_UNDEFINED)
@@ -104,14 +119,14 @@
 
  ;; Convert array indexes (ScmObj[]) to the position of the backing vector.
  ;; The caller should make sure that the size of IXS must be RANK.
- (define-cfn map_array_index (array::(const ScmArrayBase*)
+ (define-cfn map-array-index (array::(const ScmArrayBase*)
                               rank::ScmSmallInt
                               ixs::ScmObj*)
    ::ScmSmallInt :static :inline
    (let* ([Vb::int32_t* (SCM_S32VECTOR_ELEMENTS (-> array start-vector))]
           [Ve::int32_t* (SCM_S32VECTOR_ELEMENTS (-> array end-vector))]
           [Vc::int32_t* (SCM_S32VECTOR_ELEMENTS (-> array coefficient-vector))]
-          [pos::ScmSmallInt 0])
+          [pos::ScmSmallInt (SCM_INT_VALUE (-> array offset))])
      (dotimes [i rank]
        (fprintf stderr "kebekebe %d\n" i)
        (unless (SCM_INTP (aref ixs i))
@@ -170,13 +185,11 @@
   (ARRAY-CHECK array)
   (let* ([rank::ScmSmallInt (SCM_UVECTOR_SIZE (-> array start-vector))]
          [ixsize::ScmSmallInt ixcount])
-    (fprintf stderr "kwe kwe %ld %ld\n" rank ixsize)
     (unless (== rank ixsize)
       (Scm_Error "Array index %S doesn't match array rank of %S" ixlist array))
     (let* ([ixv::ScmObj* (canonicalize-index-args ixs ixcount ixlist)]
            [pos::ScmSmallInt (map-array-index array rank ixv)]
            [bv (-> array backing-storage)])
-      (fprintf stderr ">>> pos=%ld\n" pos)
       (cond
        [(SCM_VECTORP bv)
         (return (SCM_VECTOR_ELEMENT bv pos))]

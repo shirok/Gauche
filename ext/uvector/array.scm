@@ -531,7 +531,7 @@
                               (s32vector->list Vs))])
     (coerce-to <s32vector> (cdr vcl))))
 
-(define (generate-amap Vb Ve Vc)
+(define (generate-amap Vb Ve Vc off)
   (let ([-Vb     (map-to <s32vector> - Vb)]
         [Ve-1    (s32vector-sub Ve 1)])
     (^[Vi]
@@ -541,7 +541,7 @@
             [(s32vector-range-check Vb #f Vi)
              => (^i (errorf "index of dimension ~s is too small: ~s"
                             i (ref Vi i)))]
-            [else (s32vector-dot Vc (s32vector-add -Vb Vi))]))))
+            [else (+ off (s32vector-dot Vc (s32vector-add -Vb Vi)))]))))
 
 ;; shape index tests
 
@@ -628,7 +628,7 @@
         :start-vector Vb
         :end-vector Ve
         :coefficient-vector Vc
-        :mapper (generate-amap Vb Ve Vc)
+        :mapper (generate-amap Vb Ve Vc 0)
         :backing-storage (apply (backing-storage-creator-of class)
                                 (fold * 1 (s32vector-sub Ve Vb))
                                 maybe-init)))))
@@ -738,33 +738,75 @@
 ;; Share array
 ;;
 
-;; Given proc, calculates coefficients of affine mapper
-;; Rank is the rank of the new array returned by share-array, which is
-;; the same as the arity of proc.
+;; PROC maps the resulting array's index Ia = [a0 a1 a2 ... an-1] to
+;; the original array's index Ib = [b0 b1 ... bm-1].  The mapping must be
+;; an affine transformation, i.e.
+;;   Ib = X・Ia + Y
+;; where X is nxm matrix and Y is a vector of length m.
+;;
+;; Note that the origial indices Ib is mapped to the 1-dimensional
+;; backing storage position with
+;;   Vc・(Ib - Vb) + off
+;; where Vc is the original coefficient vector, Vb is the original
+;; start vector, and off is the original offset.
+;; Thus, given Ia, we can say
+;;
+;;   Vc・(X・Ia + Y - Vb) + off
+;;     = (Vc・X)・Ia + Vc・(Y - Vb) + off
+;;
+;; As the accessor of the new array computes the position from
+;; the given index by
+;;
+;;   Vc'・(Ia - Vb') + off'
+;;
+;; where Vb' is the start vector of new array (given by the shape),
+;; Vc' is the new coefficient vector, and off' is the new offset.
+;; Hence we can compute Vc' and off' as follows.
+;;
+;;   Vc'  = Vc・X
+;;   off' = (Vc・X)・Vb' + Vc・(Y - Vb) + off
+;;
 
+;; Compute X and Y
 (define (affine-proc->coeffs proc rank)
-  (receive Cs (apply proc (make-list rank 0))
-    (let ([cvecs (map (^_ (make-s32vector rank)) Cs)]
+  (receive Y (apply proc (make-list rank 0))
+    (let ([X (map (^_ (make-list rank 0)) Y)]
           [cnt   (iota rank)])
       (dotimes [i rank]
         (receive Ks (apply proc (map (^j (if (= j i) 1 0)) cnt))
-          (for-each (^[v k c] (set! (ref v i) (- k c))) cvecs Ks Cs)))
-      (values Cs cvecs))))
+          (for-each (^[v k c] (set! (~ v i) (- k c))) X Ks Y)))
+      (values (if (null? Y)
+                '()
+                (apply map s32vector X)) ; make list of column vector
+              (coerce-to <s32vector> Y)))))
 
-;; given calculated coefficients vectors and constants for affine mapper,
-;; and the original mapping function, creates the new afiine mapper.
-(define (generate-shared-map omap constants coeffs)
-  (^[Vi] (omap (map (^[ci cvec] (+ ci (s32vector-dot cvec Vi)))
-                    constants coeffs))))
+;; compute Vc・X.  Note that X is a list of column vectors.
+(define (mul-vec-mat Vc X)
+  (map-to <s32vector> (cut s32vector-dot Vc <>) X))
+
+(define (compute-new-coeff+offset oarray Vb. X Y)
+  (let* ([Vc (~ oarray'coefficient-vector)]
+         [Vb (~ oarray'start-vector)]
+         [off (~ oarray'offset)]
+         [Vc. (mul-vec-mat Vc X)]
+         [off. (if (null? X)
+                 0                      ;empty array case
+                 (+ (s32vector-dot Vc. Vb.)
+                    (s32vector-dot Vc (s32vector-sub Y Vb))
+                    off))])
+    (values Vc. off.)))
 
 (define (share-array array shape proc)
-  (receive (Vb Ve) (shape->start/end-vector shape)
-    (receive (constants coeffs) (affine-proc->coeffs proc (size-of Vb))
-      (make (class-of array)
-        :start-vector Vb
-        :end-vector   Ve
-        :mapper (generate-shared-map (mapper-of array) constants coeffs)
-        :backing-storage (backing-storage-of array)))))
+  (receive (Vb. Ve.) (shape->start/end-vector shape)
+    (receive (X Y) (affine-proc->coeffs proc (size-of Vb.))
+      (receive (Vc. off.) (compute-new-coeff+offset array Vb. X Y)
+        (make (class-of array)
+          :start-vector Vb.
+          :end-vector   Ve.
+          :coefficient-vector Vc.
+          :offset off.
+          :mapper (generate-amap Vb. Ve. Vc. off.)
+          :backing-storage (backing-storage-of array))))))
 
 ;;---------------------------------------------------------------
 ;; Array utilities
