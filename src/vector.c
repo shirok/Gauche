@@ -484,7 +484,11 @@ ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, ScmSmallInt k, ScmObj fallback)
 /* Generic modifier */
 ScmObj Scm_UVectorSet(ScmUVector *v, int t, ScmSmallInt k, ScmObj val, int clamp)
 {
-    SCM_ASSERT(Scm_UVectorType(SCM_CLASS_OF(v)) == t);
+    if (t == SCM_UVECTOR_GENERIC) {
+        t = Scm_UVectorType(SCM_CLASS_OF(v));
+    } else if (Scm_UVectorType(SCM_CLASS_OF(v)) != t) {
+        Scm_Error("%s required, but got %S", Scm_UVectorTypeName(t), v);
+    }
     SCM_UVECTOR_CHECK_MUTABLE(SCM_OBJ(v));
     if (k < 0 || k >= SCM_UVECTOR_SIZE(v)) {
         Scm_Error("%s-set! index out of range: %ld", Scm_UVectorTypeName(t), k);
