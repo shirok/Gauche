@@ -79,9 +79,6 @@
                end-vector
                coefficient-vector
                offset
-               mapper
-               getter
-               setter
                backing-storage)))
 
  (define-cclass <array-base> :base
@@ -91,18 +88,12 @@
     (end-vector)
     (coefficient-vector)
     (offset)
-    (mapper)
-    (getter)
-    (setter)
     (backing-storage))
    (allocator (let* ([z::ScmArrayBase* (SCM_NEW_INSTANCE ScmArrayBase klass)])
                 (set! (-> z start-vector) SCM_UNDEFINED)
                 (set! (-> z end-vector) SCM_UNDEFINED)
                 (set! (-> z coefficient-vector) SCM_UNDEFINED)
                 (set! (-> z offset) (SCM_MAKE_INT 0))
-                (set! (-> z mapper) SCM_UNDEFINED)
-                (set! (-> z getter) SCM_UNDEFINED)
-                (set! (-> z setter) SCM_UNDEFINED)
                 (set! (-> z backing-storage) SCM_UNDEFINED)
                 (return (SCM_OBJ z)))))
 
