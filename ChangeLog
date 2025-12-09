@@ -1,5 +1,8 @@
 2025-12-08  Shiro Kawai  <shiro@acm.org>
 
+	* src/libarray.scm, ext/uvector/array.scm (array-ref, array-set!):
+	  Move array-ref and array-set! to the core.
+
 	* lib/gauche/cgen/cise.scm (expand-cfn): Treat arguments beginning
 	  with '_' as possibly unused arguments (not only '_', but also
 	  '_a', '_foo', etc.)

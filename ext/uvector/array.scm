@@ -688,51 +688,7 @@
 ;; Array ref and set!
 ;;
 
-(define-method array-ref ((array <array-base>) (index <integer>) . more-index)
-  ((getter-of array)
-   ((mapper-of array) (cons index more-index))))
-
-(define-method array-ref ((array <array-base>) (index <vector>))
-  ((getter-of array) ((mapper-of array) index)))
-
-(define-method array-ref ((array <array-base>) (index <array>))
-  (unless (= (array-rank index) 1)
-    (error "index array must be rank 1" index))
-  ;; This is slow, but we don't know if the index array using
-  ;; standard mapping.
-  ((getter-of array)
-   ((mapper-of array)
-    (map (pa$ array-ref index)
-         (iota (- (array-end index 0) (array-start index 0))
-               (array-start index 0))))))
-
-(define-method array-ref ((array <array-base>))
-  ;; special case - zero dimensional array
-  ((getter-of array) ((mapper-of array) '())))
-
-(define-method array-set! ((array <array-base>) (index <integer>) . more-index)
-  (receive (indices value)
-      (split-at! (cons index more-index) (length more-index))
-    ((setter-of array) ((mapper-of array) indices) (car value))))
-
-(define-method array-set! ((array <array-base>) (index <vector>) value)
-  ((setter-of array) ((mapper-of array) index) value))
-
-(define-method array-set! ((array <array-base>) (index <array>) value)
-  (unless (= (array-rank index) 1)
-    (error "index array must be rank 1" index))
-  ;; This is slow, but we don't know if the index array using
-  ;; standard mapping.
-  ((setter-of array)
-   ((mapper-of array)
-    (map (pa$ array-ref index)
-         (iota (- (array-end index 0) (array-start index 0))
-               (array-start index 0))))
-   value))
-
-(define-method array-set! ((array <array-base>) value)
-  ;; special case - zero dimensional array
-  ((setter-of array) ((mapper-of array) '()) value))
+;; array-ref and array-set! are now defined in src/libarray.scm
 
 ;;---------------------------------------------------------------
 ;; Share array

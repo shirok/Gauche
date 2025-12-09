@@ -108,6 +108,11 @@
 
  (declare-stub-type <array-base> "ScmArrayBase*")
 
+ ;; If array's rank is smaller than this, array-ref and array-set! handles
+ ;; arguments very efficiently.
+ (.define ARRAY_FAST_RANK 10)
+ (.define ARRAY_FAST_RANK1 (+ ARRAY_FAST_RANK 1))
+
  (define-cise-stmt ARRAY-CHECK
    ([_ array]
     `(unless (SCM_UVECTORP (-> ,array start-vector))
@@ -117,18 +122,36 @@
    (ARRAY-CHECK array)
    (return (SCM_UVECTOR_SIZE (-> array start-vector))))
 
+ ;; If the # of index argument is greater than ARRAY_FAST_RANK, we need
+ ;; to create a full array by adding eleemnts from ixlist.
+ ;; For the time being, this is very inefficient since we allocate.
+ ;;
+ (define-cfn complete-ixs (ixs::ScmObj*
+                           pixcount::int* ; out
+                           ixlist)
+   ::ScmObj* :static
+   (if (SCM_NULLP ixlist)
+     (return ixs)                       ; common case.  nothing to do.
+     (let* ([len::ScmSmallInt (+ (* pixcount) (Scm_Length ixlist))]
+            [ixs2::ScmObj* (SCM_NEW_ARRAY ScmObj len)]
+            [i::int 0])
+       (for (() (< i (* pixcount)) (post++ i))
+         (set! (aref ixs2 i) (aref ixs i)))
+       (for-each (lambda (v) (set! (aref ixs2 i) v)) ixlist)
+       (set! (* pixcount) i)
+       (return ixs2))))
+
  ;; Convert array indexes (ScmObj[]) to the position of the backing vector.
  ;; The caller should make sure that the size of IXS must be RANK.
- (define-cfn map-array-index (array::(const ScmArrayBase*)
-                              rank::ScmSmallInt
-                              ixs::ScmObj*)
-   ::ScmSmallInt :static :inline
+ (define-cfn index-vector->pos (array::(const ScmArrayBase*)
+                                rank::ScmSmallInt
+                                ixs::ScmObj*)
+   ::ScmSmallInt :static
    (let* ([Vb::int32_t* (SCM_S32VECTOR_ELEMENTS (-> array start-vector))]
           [Ve::int32_t* (SCM_S32VECTOR_ELEMENTS (-> array end-vector))]
           [Vc::int32_t* (SCM_S32VECTOR_ELEMENTS (-> array coefficient-vector))]
           [pos::ScmSmallInt (SCM_INT_VALUE (-> array offset))])
      (dotimes [i rank]
-       (fprintf stderr "kebekebe %d\n" i)
        (unless (SCM_INTP (aref ixs i))
          (Scm_Error "Bad array index: %S" (aref ixs i)))
        (let* ([ix::ScmSmallInt (SCM_INT_VALUE (aref ixs i))])
@@ -136,35 +159,73 @@
                       (< ix (aref Ve i)))
            (Scm_Error "Array index out of range: %d" ix))
          (set! pos (+ pos (* (- ix (aref Vb i)) (aref Vc i))))))
+     (SCM_ASSERT (<= 0 pos))
      (return pos)))
 
- (define-cfn bad_args (ixlist)
+ ;; This handles the case when array index is given as another array (iarray)
+ ;; iarray must be rank 1 and the same size as arrray's rank.
+ ;; We need a special handler, since iarray may have a nontrivial mapping
+ ;; from index to the position of backing storage.
+ (define-cfn index-array->pos (array::(const ScmArrayBase*)
+                               rank::ScmSmallInt
+                               iarray::(const ScmArrayBase*))
+   ::ScmSmallInt :static
+   (unless (SCM_VECTORP (-> iarray backing-storage))
+     (Scm_Error "Only <array> can be used as an index object: %S" iarray))
+   (let* ([iVb::int32_t* (SCM_S32VECTOR_ELEMENTS (-> iarray start-vector))]
+          [iVc::int32_t* (SCM_S32VECTOR_ELEMENTS (-> iarray coefficient-vector))]
+          [ioff::ScmSmallInt (SCM_INT_VALUE (-> iarray offset))]
+          [ibs::ScmVector* (SCM_VECTOR (-> iarray backing-storage))]
+          [ixs::(.array ScmObj (rank))])
+     (dotimes [i rank]
+       (let* ([ipos::ScmSmallInt (+ (* (aref iVc 0) (+ i (aref iVb 0))) ioff)])
+         (SCM_ASSERT (and (<= 0 ipos)
+                          (< ipos (SCM_VECTOR_SIZE ibs))))
+         (set! (aref ixs i) (aref (SCM_VECTOR_ELEMENTS ibs) ipos))))
+     (return (index-vector->pos array rank ixs))))
+
+ ;; Errors in indexing
+ (define-cfn bad-index (ixs::ScmObj* ixcount::int)
    ::void :static
-   (Scm_Error "Bad array index: %S" ixlist))
+   (Scm_Error "Bad array index: %S" (Scm_ArrayToList ixs ixcount)))
+
+ (define-cfn index-mismatch (rank::ScmSmallInt ixs::ScmObj* ixcount::int)
+   ::void :static
+   (Scm_Error "Index %S does not match array's rank %ld"
+              (Scm_ArrayToList ixs ixcount) rank))
 
  ;; array-ref and array-set! are variadic and polymorphic regarding
  ;; indexes.  This handles all the cases and returns the array of
  ;; ScmObj index.
- (define-cfn canonicalize_index_args (ixs::ScmObj*
-                                      ixcount::ScmSmallInt
-                                      ixlist)
-   ::ScmObj* :static
+ (define-cfn index-args->pos (array::(const ScmArrayBase*)
+                              rank::ScmSmallInt
+                              ixs::ScmObj*
+                              ixcount::ScmSmallInt)
+   ::ScmSmallInt :static
    (cond
-    [(== ixcount 0) (return ixs)]  ; special case: 0-dim array
+    [(== ixcount 0)                     ; special case: 0-dim array
+     (unless (== rank 0) (index-mismatch rank ixs ixcount))
+     (return (SCM_INT_VALUE (-> array offset)))]
     [(SCM_VECTORP (aref ixs 0))
-     (unless (== ixcount 1) (bad_args ixlist))
-     (return (SCM_VECTOR_ELEMENTS (aref ixs 0)))]
+     (unless (== ixcount 1) (bad-index ixs ixcount))
+     (unless (== rank (SCM_VECTOR_SIZE (aref ixs 0)))
+       (index-mismatch rank ixs ixcount))
+     (return (index-vector->pos array rank (SCM_VECTOR_ELEMENTS (aref ixs 0))))]
     [(SCM_ARRAY_BASE_P (aref ixs 0))
-     (unless (== ixcount 1) (bad_args ixlist))
-     (let* ([arr::(const ScmArrayBase*) (SCM_ARRAY_BASE (aref ixs 0))]
-            [bv (-> arr backing-storage)])
-       (unless (SCM_VECTORP bv) (bad_args ixlist))
-       ;; TODO: check dimension and also reshaped case
-       (return (SCM_VECTOR_ELEMENTS bv)))]
+     (unless (== ixcount 1) (bad-index ixs ixcount))
+     (let* ([iarr::(const ScmArrayBase*) (SCM_ARRAY_BASE (aref ixs 0))]
+            [bv (-> iarr backing-storage)])
+       (unless (SCM_VECTORP bv) (bad-index ixs ixcount))
+       (unless (== (Scm_ArrayRank iarr) 1) (bad-index ixs ixcount))
+       (unless (== (- (aref (SCM_S32VECTOR_ELEMENTS (-> iarr end-vector)) 0)
+                      (aref (SCM_S32VECTOR_ELEMENTS (-> iarr start-vector)) 0))
+                   rank)
+         (index-mismatch rank ixs 1))
+       (return (index-array->pos array rank iarr)))]
     [(SCM_INTP (aref ixs 0))
-     (return ixs)]
-    [else (bad_args ixlist)
-          (return ixs)]))              ;DUMMY
+     (unless (== ixcount rank) (index-mismatch rank ixs ixcount))
+     (return (index-vector->pos array rank ixs))]
+    [else (bad-index ixs ixcount) (return 0)])) ;dummy
  )
 
 ;; Kludge: If we place (define-cproc array-rank ..) after (select-module gauche),
@@ -178,23 +239,45 @@
 
 (define-in-module gauche array-rank array-rank)
 
-;; NB: Not quite ready.  DO NOT USE THIS YET.
-(define-cproc %array-ref (array::<array-base>
-                          :optarray (ixs ixcount 10)
-                          :rest ixlist)
+(define-cproc array-ref (array::<array-base>
+                         :optarray (ixs ixcount 10)
+                         :rest ixlist)
   (ARRAY-CHECK array)
   (let* ([rank::ScmSmallInt (SCM_UVECTOR_SIZE (-> array start-vector))]
-         [ixsize::ScmSmallInt ixcount])
-    (unless (== rank ixsize)
-      (Scm_Error "Array index %S doesn't match array rank of %S" ixlist array))
-    (let* ([ixv::ScmObj* (canonicalize-index-args ixs ixcount ixlist)]
-           [pos::ScmSmallInt (map-array-index array rank ixv)]
-           [bv (-> array backing-storage)])
+         [ixs2::ScmObj* (complete-ixs ixs (& ixcount) ixlist)]
+         [pos::ScmSmallInt (index-args->pos array rank ixs2 ixcount)]
+         [bv (-> array backing-storage)])
+    (cond
+     [(SCM_VECTORP bv)
+      (SCM_ASSERT (< pos (SCM_VECTOR_SIZE bv)))
+      (return (SCM_VECTOR_ELEMENT bv pos))]
+     [(SCM_UVECTORP bv)
+      (return (Scm_VMUVectorRef (SCM_UVECTOR bv) SCM_UVECTOR_GENERIC
+                                pos SCM_UNBOUND))]
+     [else (Scm_Panic "Invalid array")
+           (return SCM_UNDEFINED)])))
+
+(define-cproc array-set! (array::<array-base>
+                         :optarray (ixs ixcount 11)
+                         :rest ixlist)
+  ::<void>
+  (ARRAY-CHECK array)
+  (unless (>= ixcount 1)
+    (Scm_AssertionError (SCM_LIST1 (SCM_OBJ array))
+                        "Wrong number of arguments for array-set!"))
+  (let* ([rank::ScmSmallInt (SCM_UVECTOR_SIZE (-> array start-vector))]
+         [ixs2::ScmObj* (complete-ixs ixs (& ixcount) ixlist)]
+         [pos::ScmSmallInt (index-args->pos array rank ixs2 (- ixcount 1))]
+         [val (aref ixs2 (- ixcount 1))]
+         [bv (-> array backing-storage)])
       (cond
        [(SCM_VECTORP bv)
-        (return (SCM_VECTOR_ELEMENT bv pos))]
+        (SCM_ASSERT (< pos (SCM_VECTOR_SIZE bv)))
+        (set! (SCM_VECTOR_ELEMENT bv pos) val)]
        [(SCM_UVECTORP bv)
-        (return (Scm_VMUVectorRef (SCM_UVECTOR bv) SCM_UVECTOR_GENERIC
-                                  pos SCM_UNBOUND))]
-       [else (Scm_Panic "Invalid array")
-             (return SCM_UNDEFINED)]))))
+        (Scm_UVectorSet (SCM_UVECTOR bv) SCM_UVECTOR_GENERIC
+                        pos val SCM_CLAMP_ERROR)]
+       [else (Scm_Panic "Invalid array")])))
+
+(define-in-module gauche array-ref array-ref)
+(define-in-module gauche array-set! array-set!)
