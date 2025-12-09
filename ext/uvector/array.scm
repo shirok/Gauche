@@ -74,8 +74,17 @@
   pretty-print-array)
 
 (define-class <array-meta> (<class>)
-  ((backing-storage-class :init-keyword :backing-storage-class))
-  )
+  ((backing-storage-class :init-keyword :backing-storage-class)
+   (tag :init-keyword :tag)             ;for external representation
+   (signed :init-keyword :signed        ;metainfo used in matrix op
+           :init-value #f)
+   (integral :init-keyword :integral    ;ditto
+             :init-value #f)
+   (real :init-keyword :real            ;ditto
+         :init-value #f)
+   (element-size :init-keyword :element-size ;ditto
+                 :init-value 0)
+   ))
 
 ;; auto reader and writer for array-meta
 
@@ -149,121 +158,143 @@
 (define-class <array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <vector>)
+  :backing-storage-class <vector>
+  :tag 'a)
 
 (define-class <u8array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <u8vector>)
+  :backing-storage-class <u8vector>
+  :tag 'u8
+  :element-size 8
+  :integral #t
+  :real #t)
 
 (define-class <s8array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <s8vector>)
+  :backing-storage-class <s8vector>
+  :tag 's8
+  :element-size 8
+  :signed #t
+  :integral #t
+  :real #t)
 
 (define-class <u16array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <u16vector>)
+  :backing-storage-class <u16vector>
+  :tag 'u16
+  :element-size 16
+  :integral #t
+  :real #t)
 
 (define-class <s16array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <s16vector>)
+  :backing-storage-class <s16vector>
+  :tag 's16
+  :element-size 16
+  :signed #t
+  :integral #t
+  :real #t)
 
 (define-class <u32array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <u32vector>)
+  :backing-storage-class <u32vector>
+  :tag 'u32
+  :element-size 32
+  :integral #t
+  :real #t)
 
 (define-class <s32array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <s32vector>)
+  :backing-storage-class <s32vector>
+  :tag 's32
+  :element-size 32
+  :signed #t
+  :integral #t
+  :real #t)
 
 (define-class <u64array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <u64vector>)
+  :backing-storage-class <u64vector>
+  :tag 'u64
+  :element-size 64
+  :integral #t
+  :real #t)
 
 (define-class <s64array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <s64vector>)
+  :backing-storage-class <s64vector>
+  :tag 's64
+  :element-size 64
+  :signed #t
+  :integral #t
+  :real #t)
 
 (define-class <f16array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <f16vector>)
+  :backing-storage-class <f16vector>
+  :tag 'f16
+  :element-size 16
+  :signed #t
+  :real #t)
 
 (define-class <f32array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <f32vector>)
+  :backing-storage-class <f32vector>
+  :tag 'f32
+  :element-size 32
+  :signed #t
+  :real #t)
 
 (define-class <f64array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <f64vector>)
+  :backing-storage-class <f64vector>
+  :tag 'f64
+  :element-size 64
+  :signed #t
+  :real #t)
 
 (define-class <c32array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <c32vector>)
+  :backing-storage-class <c32vector>
+  :tag 'c32
+  :element-size 32)
 
 (define-class <c64array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <c64vector>)
+  :backing-storage-class <c64vector>
+  :tag 'c64
+  :element-size 64)
 
 (define-class <c128array> (<array-base>)
   ()
   :metaclass <array-meta>
-  :backing-storage-class <c128vector>)
+  :backing-storage-class <c128vector>
+  :tag 'c64
+  :element-size 64)
 
 ;; Utility to inquire array-type attributes
 
-(define-class <array-attr> ()
-  ((tag :init-keyword :tag)
-   (signed :init-keyword :signed)
-   (integral :init-keyword :integral)
-   (real :init-keyword :real)
-   (element-size :init-keyword :element-size)))
-
-(define (aattr tag . attrs)
-  (let ([signed (boolean (memq 'signed attrs))]
-        [integral (boolean (memq 'integral attrs))]
-        [real (boolean (memq 'real attrs))]
-        [element-size (find number? attrs)])
-    (make <array-attr> :tag tag :signed signed :integral integral :real real
-          :element-size element-size)))
-
-(define *array-attrs*
-  ($ hash-table-r7 eq-comparator
-     <s8array>   (aattr 's8   8  'signed 'integral 'real)
-     <s16array>  (aattr 's16  16 'signed 'integral 'real)
-     <s32array>  (aattr 's32  32 'signed 'integral 'real)
-     <s64array>  (aattr 's64  64 'signed 'integral 'real)
-     <u8array>   (aattr 'u8   8  'integral 'real)
-     <u16array>  (aattr 'u16  16 'integral 'real)
-     <u32array>  (aattr 'u32  32 'integral 'real)
-     <u64array>  (aattr 'u64  64 'integral 'real)
-     <f16array>  (aattr 'f16  16 'real)
-     <f32array>  (aattr 'f32  32 'real)
-     <f64array>  (aattr 'f64  64 'real)
-     <c32array>  (aattr 'c32  32)
-     <c64array>  (aattr 'c64  64)
-     <c128array> (aattr 'c128 128)
-     <array>     (aattr 'a    0)))
-
-(define (array-tag class) (~ *array-attrs* class 'tag))
+(define (array-tag class) (~ class 'tag))
 (define (non-numeric? class) (eq? class <array>))
-(define (non-real? class) (not (~ *array-attrs* class 'real)))
-(define (non-integral? class) (not (~ *array-attrs* class 'integral)))
+(define (non-real? class) (not (~ class 'real)))
+(define (non-integral? class) (not (~ class 'integral)))
 (define (inexact-numeric? class) (and (not (non-numeric? class))
                                       (non-integral? class)))
-(define (signed-integral? class) (~ *array-attrs* class 'signed))
-(define (element-size class) (~ *array-attrs* class 'element-size))
+(define (signed-integral? class) (~ class 'signed))
+(define (element-size class) (~  class 'element-size))
 
 ;; internal
 (define-inline (%xvector-copy v)

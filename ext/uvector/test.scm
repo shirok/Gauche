@@ -2548,7 +2548,8 @@
                 (array-inverse ar)
                 array-approx-equal?)
          (when (and inv (eq? (class-of ar) (class-of inv)))
-           (test* (format "array-inverse-~D" (inc! i)) (array-normalize ar)
+           (test* (format "array-normalize/inverse-~D" (inc! i))
+                  (array-normalize ar)
                   (array-inverse inv)
                   array-approx-equal?))
          (test* (format "determinant-~D" (inc! i)) det
