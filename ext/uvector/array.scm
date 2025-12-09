@@ -111,8 +111,8 @@
 (define-method write-object ((self <array-base>) port)
   (let1 style
       (~ ((with-module gauche.internal %port-write-controls) port) 'array)
-    (display (format-array/prefix self style))
-    (write (format-array/content self style))))
+    (display (format-array/prefix self style) port)
+    (write (format-array/content self style) port)))
 
 (define (format-array/prefix array style)
   (ecase style
