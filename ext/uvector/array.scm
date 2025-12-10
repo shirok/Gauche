@@ -94,7 +94,8 @@
     (when name
       (define-reader-ctor name
         (^[sh . inits]
-          (list-fill-array! (make-array-internal class (apply shape sh)) inits))))))
+          (make-array-internal class (apply shape sh)
+                               :init-list inits))))))
 
 ;; <array-base> is defined in the core
 (define <array-base> (with-module gauche.internal <array-base>))
@@ -457,9 +458,8 @@
       ;; Deduced dimensions doesn't match the given rank.
       (err "Array literal has inconsistent rank" contents))
 
-    (list-fill-array!
-     (make-array-internal type-class (dim->shape dim-list))
-     (flatten contents (- (length dim-list) 1) '()))))
+    ($ make-array-internal type-class (dim->shape dim-list)
+       :init-list (flatten contents (- (length dim-list) 1) '()))))
 
 ;;-------------------------------------------------------------
 ;; Affine mapper
@@ -570,7 +570,8 @@
 ;; Make general array
 ;;
 
-(define (make-array-internal class shape . maybe-init)
+(define (make-array-internal class shape
+                             :key init-1 init-list)
   (receive (Vb Ve) (shape->start/end-vector shape)
     (let ([Vc (coefficient-vector Vb Ve)]
           [bsclass (~ class'backing-storage-class)]
@@ -579,30 +580,30 @@
         :start-vector Vb
         :end-vector Ve
         :coefficient-vector Vc
-        :backing-storage (if (eq? bsclass <vector>)
-                           (apply make-vector bslen maybe-init)
-                           (apply make-uvector bsclass bslen maybe-init))))))
-
-(define (list-fill-array! a inits)
-  (let* ([bv  (~ a'backing-storage)]
-         [len (size-of bv)])
-    (unless (= (length inits) len)
-      (errorf "array element initializer doesn't match the shape ~s [~s]: ~s"
-              (array->list (array-shape a)) len inits))
-    ;; This wastes previously allocated backing storage.  We can optimize,
-    ;; for this procedure is called at initialization only.
-    (set! (~ a'backing-storage) (coerce-to (class-of bv) inits))
-    a))
+        :backing-storage
+        (cond [(pair? init-list)
+               (unless (= (%array-size Vb Ve) (length init-list))
+                 (error "Array initialization list doesn't match array size"
+                        init-list))
+               (coerce-to bsclass init-list)]
+              [(undefined? init-1)
+               (if (eq? bsclass <vector>)
+                 (make-vector bslen)
+                 (make-uvector bsclass bslen))]
+              [else
+               (if (eq? bsclass <vector>)
+                 (make-vector bslen init-1)
+                 (make-uvector bsclass bslen init-1))])))))
 
 (define-macro (define-array-ctors . pfxs)
   (define (build-ctor-def pfx)
     (define maker (symbol-append 'make- pfx 'array))
     (define ctor  (symbol-append pfx 'array))
     (define class (symbol-append '< pfx 'array>))
-    `((define (,maker shape . opt)
-        (apply make-array-internal ,class shape opt))
+    `((define (,maker shape :optional init-1)
+        (make-array-internal ,class shape :init-1 init-1))
       (define (,ctor shape . inits)
-        (list-fill-array! (,maker shape) inits))))
+        (make-array-internal ,class shape :init-list inits))))
   `(begin ,@(append-map build-ctor-def pfxs)))
 
 (define-array-ctors || u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
@@ -725,8 +726,9 @@
 (define (array-length ar dim)
   (- (array-end ar dim) (array-start ar dim)))
 
-(define (array-size ar)
-  (reduce * 1 (map (cute array-length ar <>) (iota (array-rank ar)))))
+(define (%array-size Vb Ve) (reduce * 1 (map - Ve Vb)))
+
+(define (array-size ar) (%array-size (~ ar'start-vector) (~ ar'end-vector)))
 
 (define (array-equal? a b :optional (eq equal?))
   (let1 r (array-rank a)

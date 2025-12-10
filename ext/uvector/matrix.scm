@@ -119,7 +119,7 @@
 ;; linear algebra
 
 (define (identity-array n :optional (class <array>))
-  (let1 res (make-array-internal class (shape 0 n 0 n) 0)
+  (let1 res (make-array-internal class (shape 0 n 0 n) :init-1 0)
     (do ([i 0 (+ i 1)])
         [(= i n) res]
       (array-set! res i i 1))))
@@ -629,9 +629,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; internal utility to keep arrays uniform when possible
 
-(define (make-minimal-backend-array ls sh . args)
+(define (make-minimal-backend-array ls sh)
   (define (return class)
-    (apply make-array-internal class sh args))
+    (make-array-internal class sh))
   (define (join a b)
     (cond [(or (non-numeric? a) (non-numeric? b)) <array>]
           [(or (non-real? a) (non-real? b))
