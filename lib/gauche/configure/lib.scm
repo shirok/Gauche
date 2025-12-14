@@ -148,8 +148,8 @@
          ;; -lbsd, -lsocket, etc., but we're not sure any modern systems
          ;; require them.  Here we only check -lICE.
          ($ with-cf-subst ([LDFLAGS + (if (string-null? libdir)
-                                        #"-L~|libdir|"
-                                        "")])
+                                        ""
+                                        #"-L~|libdir|")])
             (cf-check-lib "ICE" "IceConnectionNumber"
                           :if-found (^_ (cf-subst-append 'X_PRE_LIBS
                                                          "-lSM -lICE"))
