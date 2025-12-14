@@ -153,5 +153,5 @@
             (cf-check-lib "ICE" "IceConnectionNumber"
                           :if-found (^_ (cf-subst-append 'X_PRE_LIBS
                                                          "-lSM -lICE"))
-                          :other-libs (cf$ 'X_EXTRA_LIBS)))
+                          :other-libs (list (cf$ 'X_EXTRA_LIBS))))
          ]))

@@ -166,7 +166,9 @@
   (cf-define 'PACKAGE_BUGREPORT (S (~ p'bug-report)))
   (cf-define 'PACKAGE_URL (S (~ p'url)))
 
-  (cf-subst 'SHELL (or (sys-getenv "CONFIG_SHELL") "/bin/sh"))
+  (cf-subst 'SHELL (or (sys-getenv "CONFIG_SHELL")
+                       (sys-getenv "SHELL")
+                       "/bin/sh"))
   (cf-subst 'LIBOBJS "")
   (cf-subst 'MFLAGS "")
   (cf-subst 'MAKEFLAGS "")
