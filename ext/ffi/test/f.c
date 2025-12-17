@@ -21,8 +21,3 @@ int plus(int a, int b) {
 char* string_in_string_out(char* t) {
     return t;
 }
-
-char* string_address_in_string_out(char** t) {
-    printf("HERE C: %s\n", (char*)*t);
-    return (char*)*t;
-}
