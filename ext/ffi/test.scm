@@ -91,7 +91,6 @@
 
 (test* "allocate-pointer" #t (pointer? (allocate-pointer 32)))
 
-(test* "null-pointer?" #t (null-pointer? null-pointer))
 (define np (null-pointer))
 (test* "null-pointer/null-pointer?" #t (null-pointer? np))
 
