@@ -45,10 +45,9 @@ extern ScmObj close_shared_library(ScmObj shared_library);
 extern ScmObj shared_object_suffix();
 extern ScmObj internal_address(ScmObj pointer, int offset);
 extern ScmObj allocate_pointer(int size);
-extern ScmObj empty_pointer();
+extern ScmObj null_pointer();
 extern ScmObj is_null_pointer(ScmObj pointer);
-extern ScmObj is_pointer(ScmObj pointer);
-
+extern ScmObj is_pointer(ScmObj object);
 
 extern ScmObj pointer_set_c_int8(ScmObj pointer, int offset, int8_t value);
 extern ScmObj pointer_set_c_uint8(ScmObj pointer, int offset, uint8_t value);

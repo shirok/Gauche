@@ -38,28 +38,16 @@
 
           c-function
           make-c-function
-          ;TODO address
 
-          ;TODO c-callback
-          ;TODO make-c-callback
-          ;TODO free-c-callback
-
-          pointer?
-          ;TODO integer->pointer
-          ;TODO pointer->integer
-          ;TODO pointer->uinteger
-          string->pointer
-          pointer->string
-          ;TODO pointer->bytevector
-          ;TODO bytevector->pointer
-          ;TODO deref
-          ;TODO pointer-address
           allocate-pointer
-          ;TODO c-malloc
-          ;TODO c-free
+          pointer?
+
           null-pointer
           null-pointer?
-          empty-pointer
+
+          string->pointer
+          pointer->string
+
           pointer-ref-c-int8
           pointer-ref-c-uint8
           pointer-ref-c-int16
@@ -76,8 +64,6 @@
           pointer-ref-c-unsigned-int
           pointer-ref-c-long
           pointer-ref-c-unsigned-long
-          ;TODO pointer-ref-c-long-long
-          ;TODO pointer-ref-c-unsigned-long-long
           pointer-ref-c-float
           pointer-ref-c-double
           pointer-ref-c-pointer
@@ -98,8 +84,6 @@
           pointer-set-c-unsigned-int!
           pointer-set-c-long!
           pointer-set-c-unsigned-long!
-          ;TODO pointer-set-c-long-long!
-          ;TODO pointer-set-c-unsigned-long-long!
           pointer-set-c-float!
           pointer-set-c-double!
           pointer-set-c-pointer!
@@ -158,16 +142,12 @@
  (define-cproc close-shared-library (shared-library) close_shared_library)
  (define-cproc shared-object-suffix() shared_object_suffix)
  (define-cproc internal-address (pointer offset::<int>) internal_address)
- (define-cproc pointer? (pointer) is_pointer)
- ;(define-cproc integer->pointer (integer::<int>) integer_to_pointer)
- ;(define-cproc pointer->integer (pointer) pointer_to_integer)
- ;(define-cproc pointer->uinteger (pointer) pointer_to_uinteger)
+ (define-cproc pointer? (object) is_pointer)
  (define-cproc string->pointer (str) string_to_pointer)
  (define-cproc pointer->string (pointer) pointer_to_string)
  (define-cproc allocate-pointer(size::<int>) allocate_pointer)
- (define-cproc empty-pointer () empty_pointer)
+ (define-cproc null-pointer () null_pointer)
  (define-cproc null-pointer? (object) is_null_pointer)
- ;(define-cproc pointer-free (pointer) pointer_free)
 
  (define-cproc pointer-set-c-int8! (pointer offset::<int> value::<int8>) pointer_set_c_int8)
  (define-cproc pointer-set-c-uint8! (pointer offset::<int> value::<uint8>) pointer_set_c_uint8)
@@ -209,34 +189,8 @@
  (define-cproc pointer-ref-c-double (pointer offset::<int>) pointer_ref_c_double)
  (define-cproc pointer-ref-c-pointer (pointer offset::<int>) pointer_ref_c_pointer)
 
- ;(define-cproc dlerror () internal_dlerror)
  (define-cproc dlsym (shared-object c-name::<string>) internal_dlsym)
- (define-cproc internal-ffi-call (nargs rtype atypes fn rvalue avalues) internal_ffi_call)
- ;(define-cproc scheme-procedure-to-pointer (procedure) scheme_procedure_to_pointer)
-
- ;(define-cproc get-ffi-type-int8 () get_ffi_type_int8)
- ;(define-cproc get-ffi-type-uint8 () get_ffi_type_uint8)
- ;(define-cproc get-ffi-type-int16 () get_ffi_type_int16)
- ;(define-cproc get-ffi-type-uint16 () get_ffi_type_uint16)
- ;(define-cproc get-ffi-type-int32 () get_ffi_type_int32)
- ;(define-cproc get-ffi-type-uint32 () get_ffi_type_uint32)
- ;(define-cproc get-ffi-type-int64 () get_ffi_type_int64)
- ;(define-cproc get-ffi-type-uint64 () get_ffi_type_uint64)
- ;(define-cproc get-ffi-type-char () get_ffi_type_char)
- ;(define-cproc get-ffi-type-unsigned-char () get_ffi_type_unsigned_char)
- ;(define-cproc get-ffi-type-short () get_ffi_type_short)
- ;(define-cproc get-ffi-type-unsigned-short () get_ffi_type_unsigned_short)
- ;(define-cproc get-ffi-type-int () get_ffi_type_int)
- ;(define-cproc get-ffi-type-unsigned-int () get_ffi_type_unsigned_int)
- ;(define-cproc get-ffi-type-long () get_ffi_type_long)
- ;(define-cproc get-ffi-type-unsigned-long () get_ffi_type_unsigned_long)
- ;(define-cproc get-ffi-type-float () get_ffi_type_float)
- ;(define-cproc get-ffi-type-double () get_ffi_type_double)
- ;(define-cproc get-ffi-type-void() get_ffi_type_void)
- ;(define-cproc get-ffi-type-pointer () get_ffi_type_pointer)
-
- ;(define-cproc procedure-to-pointer (procedure) procedure_to_pointer)
- )
+ (define-cproc internal-ffi-call (nargs rtype atypes fn rvalue avalues) internal_ffi_call))
 
 (define size-of-type
   (lambda (type)
@@ -346,8 +300,6 @@
           (if (equal? return-type 'void)
             (undefined)
             (pointer-get return-pointer return-type 0)))))))
-
-(define null-pointer (empty-pointer))
 
 (define size-of-type
   (lambda (type)

@@ -90,18 +90,11 @@ static void dlobj_print(ScmObj obj, ScmPort *sink,
     Scm_Printf(sink, "#<dlobj %S>", SCM_DLOBJ(obj)->path);
 }
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_DLObjClass, dlobj_print);
-
-static void fn_ptr_print(ScmObj obj, ScmPort *sink, ScmWriteContext *mode SCM_UNUSED)
-{
-    Scm_Printf(sink, "#<function pointer>");
-}
-
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_FnPtrClass, fn_ptr_print);
+//SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_DLObjClass, dlobj_print);
 
 static void ptr_print(ScmObj obj, ScmPort *sink, ScmWriteContext *mode SCM_UNUSED)
 {
-    Scm_Printf(sink, "#<pointer>");
+    Scm_Printf(sink, "#<pointer %S>", obj);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PtrClass, ptr_print);
@@ -360,8 +353,8 @@ ScmObj internal_address(ScmObj pointer, int offset) {
     return Scm_MakeForeignPointer(pointer_class, &pp);
 }
 
-ScmObj is_pointer(ScmObj pointer) {
-    if(Scm_TypeP(pointer, SCM_CLASS_FOREIGN_POINTER)) {
+ScmObj is_pointer(ScmObj object) {
+    if(Scm_TypeP(object, SCM_CLASS_FOREIGN_POINTER)) {
         return SCM_TRUE;
     } else {
         return SCM_FALSE;
@@ -375,7 +368,7 @@ ScmObj allocate_pointer(int size) {
     return pointer;
 }
 
-ScmObj empty_pointer() {
+ScmObj null_pointer() {
     return Scm_MakeForeignPointer(pointer_class, NULL);
 }
 
