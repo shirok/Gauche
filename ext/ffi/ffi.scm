@@ -222,12 +222,6 @@
          (let ((version-string (if (number? version)
                                  (number->string version)
                                  version)))
-           (write (string-append path
-                                 "."
-                                 (shared-object-suffix)
-                                 "."
-                                 version-string))
-           (newline)
            (when (internal-open-shared-library path version-string #f)
              (set! shared-library-version version-string))))
        (if (null? versions) '() (car versions)))
