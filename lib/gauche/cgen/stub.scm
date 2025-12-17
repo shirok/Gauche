@@ -1820,7 +1820,7 @@
   (when (memv :private (~ self'qualifiers))
     (cclass-emit-standard-decls self))
   (unless ((any-pred not c-literal?) (~ self'allocator))
-    (p "static ScmObj "(c-allocator-name self)"(ScmClass *klass, ScmObj initargs)")
+    (p "static ScmObj "(c-allocator-name self)"(ScmClass *klass SCM_UNUSED, ScmObj initargs SCM_UNUSED)")
     (p "{")
     (p (~ self'allocator))
     (p "}")
@@ -1870,7 +1870,7 @@
           [(~ self'metaclass)
            => (^m (cond [(string? m) (gen-init-class/meta m)]
                         [(symbol? m)
-                         (p "{ ScmObj meta = Scm_GlobalVariableRef("mod",\
+                         (p "{ ScmObj meta = Scm_GlobalVariableRef(SCM_MODULE("mod"),\
                                   SCM_SYMBOL(SCM_INTERN(\"" m "\")), 0);")
                          (p "  if (SCM_UNBOUNDP(meta)) Scm_Error(\"Uknown metaclass: "m"\");")
                          (p "  if (!SCM_CLASSP(meta)) Scm_Error(\"Metaclass is not a class: %S\", meta);")

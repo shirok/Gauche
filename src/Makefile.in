@@ -248,8 +248,10 @@ libgauche_OBJECTS = \
 	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
 	mutex.$(OBJEXT) thread.$(OBJEXT) threadlocal.$(OBJEXT) \
 	compile.$(OBJEXT) \
-	libalpha.$(OBJEXT) libbool.$(OBJEXT) libbox.$(OBJEXT) libchar.$(OBJEXT) \
-	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
+	libalpha.$(OBJEXT) libarray.$(OBJEXT) \
+	libbool.$(OBJEXT) libbox.$(OBJEXT) \
+	libchar.$(OBJEXT) libcode.$(OBJEXT) libcmp.$(OBJEXT) \
+	libdict.$(OBJEXT) libeval.$(OBJEXT) \
 	libexc.$(OBJEXT) libfmt.$(OBJEXT) libhash.$(OBJEXT) libio.$(OBJEXT) \
 	liblazy.$(OBJEXT) liblist.$(OBJEXT) \
 	libmacbase.$(OBJEXT) libmacro.$(OBJEXT) libmemo.$(OBJEXT) \
@@ -332,6 +334,7 @@ compile.c  : compile.scm compile-0.scm compile-1.scm compile-2.scm \
 	     compile-3.scm compile-4.scm compile-5.scm compile-i.scm \
 	     compile-t.scm $(PRECOMP_DEPENDENCY)
 
+libarray.c   : libarray.scm $(PRECOMP_DEPENDENCY)
 libalpha.c   : libalpha.scm $(PRECOMP_DEPENDENCY)
 libbool.c    : libbool.scm $(PRECOMP_DEPENDENCY)
 libbox.c     : libbox.scm $(PRECOMP_DEPENDENCY)

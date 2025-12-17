@@ -1,3 +1,28 @@
+2025-12-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/libarray.scm, ext/uvector/array.scm (array-ref, array-set!):
+	  Move array-ref and array-set! to the core.
+
+	* lib/gauche/cgen/cise.scm (expand-cfn): Treat arguments beginning
+	  with '_' as possibly unused arguments (not only '_', but also
+	  '_a', '_foo', etc.)
+
+2025-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/pputil.scm (layout-array): Special treatment of display
+	  an array with rank >= 2 at the toplevel.  We insert newlines after
+	  each row so that the elements are shown in rectangular shape,
+	  even if we have plenty of horizontal room.
+
+2025-11-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c: Dispach array display to pretty printer.
+	* lib/gauche/pputil.scm (layout-array): Support array pretty-printing.
+	   https://github.com/shirok/Gauche/issues/1189
+
+	* src/libarray.scm (<array-base>): Move the base class to the core,
+	  so that writer can autoload array printer as needed.
+
 2025-11-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvgen.scm, ext/uvetor/uvector.c.tmpl: Add auto-generation

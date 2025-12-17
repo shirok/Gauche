@@ -38,6 +38,7 @@
 
 (autoload gauche.collection size-of)
 (autoload gauche.dictionary dict->alist dict-comparator)
+(autoload gauche.array format-array/prefix format-array/content)
 
 ;; List printing modes:
 ;;
@@ -164,12 +165,16 @@
               (or (pair? obj)
                   (vector? obj)
                   (uvector? obj)
-                  (is-a? obj <dictionary>)))
+                  (is-a? obj <dictionary>)
+                  (is-a? obj (with-module gauche.internal <array-base>))))
          (layout-simple "#")]
-        [else (layout-misc obj (cute layout <> (+ level 1) c) c)]))
+        [else (layout-misc obj level c)]))
 
-;; layout-misc :: (Obj, (Obj -> Layouter), Context) -> Layouter
-(define (layout-misc obj rec c)
+;; layout-misc :: (Obj, Integer, Context) -> Layouter
+(define (layout-misc obj level c)
+
+  (define (rec obj)
+    (layout obj (+ level 1) c))
 
   ;; mapi :: (Obj -> Layouter), Vector -> [Layouter]
   (define (mapi fn vec)
@@ -223,6 +228,8 @@
            (layout-list (sprefix obj (format "#~a(" tag) c) (mapu rec obj) c))]
         [(is-a? obj <dictionary>)
          (layout-dict obj (map+ rec (dict->alist obj)) c)]
+        [(is-a? obj (with-module gauche.internal <array-base>))
+         (layout-array obj level c)]
         [else
          (layout-simple (sprefix obj (stringify obj c) c))]))
 
@@ -296,6 +303,34 @@
                                    (cons* tag-layouter zwsp content-layouters))
              (cons `(,prefix ,@(reverse s) ">")
                    (and w (+ w plen 1)))))))
+
+;; laout-array
+(define (layout-array array level c)
+  (let* ([style (~ c'controls'array)]
+         [prefix (format-array/prefix array style)]
+         [plen (string-length prefix)]
+         [contents (format-array/content array style)]) ; nested list
+    (if (and (= level 0)
+             (not (eq? style 'reader-ctor))
+             (>= (array-rank array) 2))
+      ;; A special treatment of toplevel display of arrays with rank >= 2.
+      ;; Insert newline after each "row", so that it is rendered in rectangular
+      ;; shape even the whole width is much smaller than the screen space.
+      ;; We turn off this feature if level >= 1, in which case an array is
+      ;; appearing within some struct and we don't know the rectangular
+      ;; placement fits well.
+      (let1 clayouters (map (cute layout <> (+ level 1) c) contents)
+        (memo^ [size room memo]
+               (let ([ss (map (^l (car (l size (-* room plen 1) memo)))
+                              clayouters)])
+                 (cons `(,#"~prefix(" ,@(intersperse 'b ss) ")")
+                       #f))))
+      (let1 clayouter (layout contents level c)
+        (memo^ [size room memo]
+               (match-let1 (s . w)
+                   (clayouter size (-* room plen) memo)
+                 (cons `(,prefix z ,s)
+                       (and w (+ w plen)))))))))
 
 ;; sprefix :: (Object, String, Context) -> String
 (define (sprefix obj s c)

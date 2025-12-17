@@ -20334,7 +20334,7 @@ mb @result{} #<mv-box[3] 10 21 30>
 @c EN
 Generic referencer also works with boxes.
 @c JP
-boxaにはジェネリックな参照も使えます。
+boxにはジェネリックな参照も使えます。
 @c COMMON
 
 @example
@@ -24519,11 +24519,16 @@ port position without changing it.
 @end defun
 
 @defun port-tell port
+@c DEPRECATED
 @c EN
+Use @code{port-position} insead in the new code.
+
 Returns the current read/write pointer of @var{port} in byte count,
 if @var{port} is random-accessible.   Returns @code{#f} otherwise.
 This is equivalent to the following call:
 @c JP
+新しいコードでは@code{port-position}を使ってください。
+
 @var{port}の現在のread/writeポインタの値をバイト数で返します。
 @var{port}がランダムアクセス可能でない場合は@code{#f}が返されます。
 これは以下の呼び出しと等価です。
@@ -24532,34 +24537,6 @@ This is equivalent to the following call:
 (port-seek @var{port} 0 SEEK_CUR)
 @end example
 @end defun
-
-@c EN
-@emph{Note on the names}:  @code{Port-seek} is called
-@code{seek}, @code{file-position} or @code{input-port-position}/
-@code{output-port-position} on some implementations.
-@code{Port-tell} is called @code{tell}, @code{ftell} or
-@code{set-file-position!}.   Some implementations have
-@code{port-position} for different functionality.
-CommonLisp has @code{file-position}, but it is not suitable
-for us since @var{port} need not be a file port.  @code{Seek} and
-@code{tell} reflects POSIX name, and with Gauche naming convention
-we could use @code{sys-seek} and @code{sys-tell}; however, @var{port}
-deals with higher level of abstraction than system calls, so I dropped
-those names, and adopted new names.
-@c JP
-@emph{名前に関するメモ}: @code{port-seek}は他の処理系で
-@code{seek}、@code{file-position}、@code{input-port-position}/
-@code{output-port-position}等と呼ばれています。
-@code{port-tell}は@code{tell}、@code{ftell}、@code{set-file-position!}等と
-呼ばれています。いくつかの処理系は@code{port-position}という手続きを
-持っていますが、@code{port-seek}とは別の機能を実現しています。
-@code{file-position}はCommonLisp由来の名前ですが、
-fileポート以外のものも扱うため採用しませんでした。
-また、@code{seek}と@code{tell}はPOSIXの名前由来であり、
-Gaucheの名前付け規則を使って@code{sys-seek}と@code{sys-tell}としても
-よさそうですが、portの操作はシステムコールレベルよりも抽象度が高いため
-これも採用しませんでした。結局、新しい名前を採用することにしました。
-@c COMMON
 
 @defun copy-port src dst :key (unit 0) (size #f)
 @c EN

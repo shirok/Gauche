@@ -129,7 +129,13 @@
   (define (make-replace-1 output-file)
     (let1 subst (make-subst (sys-dirname (simplify-path+ output-file)))
       (^[line outp]
-        (display (regexp-replace-all #/@(\w+)@/ line subst) outp)
+        ;; A special treatment - autoconf removes'VPATH =' line if it
+        ;; refers to $srcdir and srcdir is ".".  See the comment in
+        ;; status.m4 of autoconf.
+        (if (and (equal? (cf$ 'srcdir) ".")
+                 (#/^\s*VPATH\s*=\s*($\{srcdir\}|$\(srcdir\)|@srcdir@)\s*$/ line))
+          (display "")
+          (display (regexp-replace-all #/@(\w+)@/ line subst) outp))
         (newline outp))))
 
   (define (make-config.h)

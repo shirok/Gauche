@@ -513,7 +513,7 @@
   (define (gen-args args env)
     (let1 eenv (expr-env env)
       (define (gen-arg-1 var type)
-        (if (eq? var '_)
+        (if (string-prefix? "_" (x->string var))
           `(,@(cise-render-typed-var type (gensym) eenv) " SCM_UNUSED")
           (cise-render-typed-var type var eenv)))
       (let loop ([args args])

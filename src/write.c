@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/priv/configP.h"
 #include "gauche/writer.h"
+#include "gauche/priv/arrayP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/macroP.h" /* PVREF stuff.  Will go in future */
 #include "gauche/priv/writerP.h"
@@ -811,6 +812,7 @@ static int pprintable_p(ScmObj obj)
     if (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) > 0) return TRUE;
     if (SCM_UVECTORP(obj) && SCM_UVECTOR_SIZE(obj) > 0) return TRUE;
     if (SCM_ISA(obj, SCM_CLASS_DICTIONARY)) return TRUE;
+    if (SCM_ISA(obj, SCM_CLASS_ARRAY_BASE)) return TRUE;
     return FALSE;
 }
 
