@@ -10642,7 +10642,7 @@ Returns the align of C type.
 
 @deftp {Module} gauche.generator
 @mdindex gauche.generator
-@c Ealign N
+@c EN
 A generator is merely a procedure with no arguments and works
 as a source of a series of values.  Every time it is called,
 it yields a value.  The EOF value indicates the generator is exhausted.
