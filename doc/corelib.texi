@@ -27577,7 +27577,7 @@ Common Lispでは引数の数字を英語表記で出力します。
 
 @item @b{~F}
 @c EN
-Parameters: @var{width},@var{digis},@var{scale},@var{ovfchar},@var{padchar}
+Parameters: @var{width},@var{digits},@var{scale},@var{ovfchar},@var{padchar}
 
 Floating-number output.
 If the argument is a real number, it is formatted as a decimal floating number.
@@ -27587,7 +27587,7 @@ whose default is @code{#\space}.  When the formatted output can't fit
 in @var{width}, @var{ovfchar} is output @var{width} times if it is given,
 or the entire output is shown if @var{ovfchar} is omitted.
 @c JP
-パラメータ: @var{width},@var{digis},@var{scale},@var{ovfchar},@var{padchar}
+パラメータ: @var{width},@var{digits},@var{scale},@var{ovfchar},@var{padchar}
 
 浮動小数点数出力。
 引数が実数ならば、その十進小数表現が出力されます。
@@ -27685,6 +27685,97 @@ adding @code{:} flag.
 (format "~6,1f" 1.15)  @result{} "   1.1"
 (format "~6,1:f" 1.15) @result{} "   1.2"
 @end example
+
+@c EN
+If the argument is a complex number, each of its component is formatted
+by @code{~f} with given parameters.  (This behavior differs from Common Lisp,
+which prints complex numbers as if @code{~d} is given,
+with the @var{width} parameter if any).
+@c JP
+引数が複素数の場合、各要素が@code{~f}を使って整形されます。
+パラメータも各要素に適用されます。(この振る舞いはCommon Lispと異なります。
+Common Lispでは@code{~f}に複素数が与えられると、あたかも@code{~d}を使った
+かのように整形されます。パラメータは@var{w}だけが考慮されます。)
+@c COMMON
+
+@example
+(format "~8,3f" 2@@0.1pi) @result{} "1.902+0.618i"
+@end example
+
+@item @b{~E}
+@c EN
+Parameters: @var{width},@var{digits},@var{expdigits},@var{scale},@var{ovfchar},@var{padchar},@var{expchar}
+
+Exponential floating number format.
+If the argument is a real number, it is formatted as a decimal floating number
+with the exponential part.  Compare @code{~f} and @code{~e}:
+@c JP
+パラメータ: @var{width},@var{digits},@var{expdigits},@var{scale},@var{ovfchar},@var{padchar},@var{expchar}
+
+指数形式浮動小数点数出力。
+引数が実数ならば、その十進小数表現が指数形式で出力されます。
+@code{~f}と@code{~e}を比べてみましょう:
+@c COMMON
+
+@example
+(format "~f" 0.1234) @result{} "0.1234"
+(format "~e" 0.1234) @result{} "1.234e-1"
+@end example
+
+@c EN
+The parameters @var{width}, @var{digits}, @var{scale}, @var{ovfchar}, and
+@var{padchar} are the same as @code{~f}.  The @code{@@} flags and
+@code{:} flag behave the same, too.
+
+@var{expdigits} specifies the minimum number of digits in the exponent
+field:
+@c JP
+@var{width}、@var{digits}、@var{scale}、@var{ovfchar}、
+@var{padchar}パラメータ、および@code{@@}フラグと
+@code{:}フラグは@code{~f}と同じです。
+
+@var{expdigits}は指数部の最小桁数を指定します。
+@c COMMON
+
+@example
+(format "~,,3e" 0.1234) @result{} "1.234e-001"
+(format "~,,3e" 1234  ) @result{} "1.234e003"
+@end example
+
+@c EN
+@var{expchar} specifies the exponent delimiter character, in place
+of @code{e}:
+@c JP
+@var{expchar}は指数部の区切りの文字(デフォルトは@code{e})を置き換えます。
+@c COMMON
+
+@example
+(format "~,,,,,,'se" 12345) @result{} "1.2345s4"
+@end example
+
+
+@item @b{~G}
+@c EN
+Parameters: @var{width},@var{digits},@var{expdigits},@var{scale},@var{ovfchar},@var{padchar},@var{expchar}
+
+General floating number format.
+This formats the argument like @code{~f}, i.e. without exponent part,
+when the argument's absolute value is not
+too big or too small, and switches to exponential display like @code{~e} if the
+absolute value exceeds the limit.  This is handy when you don't know
+the dynamic range of the number.
+
+Parameters and flags behaves the same as @code{~e}.
+@c JP
+パラメータ: @var{width},@var{digits},@var{expdigits},@var{scale},@var{ovfchar},@var{padchar},@var{expchar}
+
+一般的な浮動小数点数表示。
+これは引数の絶対値が大きすぎでも小さすぎでもない時には@code{~f}のように
+指数部の無い形式を、限界を超えた場合は@code{~e}のように指数形式を使って
+出力します。表示する数の範囲がわかっていない場合に便利です。
+
+パラメータとフラグは@code{~e}と同じです。
+@c COMMON
 
 @item @b{~$}
 @c EN
