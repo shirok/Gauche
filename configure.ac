@@ -905,6 +905,7 @@ EXT_LIBS=
 m4_include([ext/charconv/charconv.ac])
 m4_include([ext/dbm/dbm.ac])
 m4_include([ext/zlib/zlib.ac])
+m4_include([ext/ffi/ffi.ac])
 m4_include([ext/tls/tls.ac])
 
 dnl Setup STATIC_LIBS
@@ -975,6 +976,7 @@ AC_CONFIG_FILES([
           ext/vport/Makefile
           ext/rfc/Makefile
           ext/zlib/Makefile
+          ext/ffi/Makefile
           ext/windows/Makefile
           examples/Makefile
           examples/standalone/Makefile
@@ -997,6 +999,7 @@ dnl convenience.
 
 [OPTDBMS=`echo "$DBM_SCMFILES" | sed 's/\.sci//g'`]
 AS_IF([test "$ac_cv_use_zlib" = yes], [OPTZLIB=" zlib"], [OPTZLIB=" "])
+AS_IF([test "$ac_cv_use_ffi" = yes], [OPTFFI=" ffi"], [OPTFFI=" "])
 
 AC_MSG_RESULT(
 [
@@ -1007,7 +1010,7 @@ This Gauche has been configured with the following parameters:
             thread: $GAUCHE_THREAD_TYPE
            tls/ssl: $GAUCHE_TLS_TYPES
           CA store: $TLS_CA_TYPE $TLS_CA_PATH
-  optional modules: $OPTDBMS$OPTZLIB
+  optional modules: $OPTDBMS$OPTZLIB$OPTFFI
 ])
 
 AS_IF([test -z "$GAUCHE_TLS_TYPES" -a "$tls_explicitly_disabled" != yes], [
