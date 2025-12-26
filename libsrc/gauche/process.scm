@@ -94,8 +94,6 @@
    (input     :allocation :virtual :slot-ref (^o (process-input o 0)))
    (output    :allocation :virtual :slot-ref (^o (process-output o 1)))
    (error     :allocation :virtual :slot-ref (^o (process-output o 2)))
-   (extra-inputs  :initform '())
-   (extra-outputs :initform '())
    (upstreams :init-value '()) ; pipeline upstream #<process>es
 
    ;; class slot - keep reference to all processes whose status is unclaimed
