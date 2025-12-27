@@ -616,6 +616,19 @@
            (list val1 val2 val3))))
 
 ;;---------------------------------------------------------------------
+(test-section "alternative error reporter")
+
+(let ((out (open-output-string)))
+  (test* "alternative error reporter" '(ok "whew")
+         (let1 thr (make-thread (^[] (error "oops")) #f
+                                (^_ (display "whew" out) (flush out)))
+           (guard (e [(<uncaught-exception> e)
+                      (list 'ok (get-output-string out))])
+             (thread-start! thr)
+             (thread-join! thr)
+             #f))))
+
+;;---------------------------------------------------------------------
 (test-section "run-once")
 
 (let ((v 0))

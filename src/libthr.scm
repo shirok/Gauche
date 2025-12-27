@@ -129,9 +129,25 @@
      (slot-ref thread 'specific))
    thread-specific-set!))
 
-(define (make-thread thunk :optional (name #f))
+(define (make-thread thunk :optional (name #f) (error-reporter #f))
   (rlet1 t (%make-thread thunk name)
-    ((with-module gauche.internal %vm-custom-error-reporter-set!) t (^e #f))))
+    (cond
+     [(eq? error-reporter #f)
+      ;; default; do not report error immediately; an uncaught error will be
+      ;; reraised by thread-join!.
+      ((with-module gauche.internal %vm-custom-error-reporter-set!) t (^e #f))]
+     [(eq? error-reporter #t)
+       ;; report an uncaught error immediately.  The error will be reraised
+       ;; by thread-join!, and be reported again unless the caller of
+       ;; thread-join! handles it.  This is useful for long-running thread
+       ;; when therad-join! won't happen soon (or at all).
+       ((with-module gauche.internal %vm-custom-error-reporter-set!) t #f)]
+     [(applicable? error-reporter <top>)
+      ;; custom error reporter.  error-reporter must be a procedure
+      ;; taking one argument.
+      ((with-module gauche.internal %vm-custom-error-reporter-set!) t error-reporter)]
+     [else (error "Invalid error-reporter; must be #f, #t, or a procedure \
+                   taking one argument, but got:" error-reporter)])))
 
 (inline-stub
  (define-cproc thread-state (vm::<thread>)
