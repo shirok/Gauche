@@ -53,7 +53,8 @@
           make-concurrent-modification-violation
           concurrent-modification-violation?
 
-          thread? make-thread thread-name thread-specific-set! thread-specific
+          thread? make-thread make-thread/loop
+          thread-name thread-specific-set! thread-specific
           thread-state thread-start! thread-try-start!
           thread-yield! thread-sleep!
           thread-join! thread-terminate! thread-schedule-terminate!
@@ -148,6 +149,21 @@
       ((with-module gauche.internal %vm-custom-error-reporter-set!) t error-reporter)]
      [else (error "Invalid error-reporter; must be #f, #t, or a procedure \
                    taking one argument, but got:" error-reporter)])))
+
+;; Codify a common pattern of long-running looping thread.
+;; This only saves several lines of code.  However, this will enforce
+;; the user to think over error handling, and ensures proper looping
+;; (workaround the known bug of Gauche's guard where handler clauses
+;; aren't executed in tail position).
+(define (make-thread/loop proc handler :optional (name #f))
+  (define (body)
+    (let/cc break
+      (let outer ()
+        (let/cc restart
+          (with-exception-handler (^e (handler e break) (restart))
+                                  (^[] (let loop () (proc break) (loop)))))
+        (outer))))
+  (make-thread body name))
 
 (inline-stub
  (define-cproc thread-state (vm::<thread>)
