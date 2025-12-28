@@ -1,5 +1,8 @@
 2025-12-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/logger.scm (log-from-input-port, log-display, log-write):
+	  Added.
+
 	* src/libthr.scm (make-thread/loop): Added.
 
 2025-12-26  Shiro Kawai  <shiro@acm.org>

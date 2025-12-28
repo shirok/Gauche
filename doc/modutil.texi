@@ -5621,7 +5621,7 @@ to pair with @code{enqueue/wait!}, and @code{queue-pop/wait!}
 with @code{queue-push/wait!}, for clarity.
 
 The caller thread would block if the queue is empty.
-The blocked caller thread is unblockedeither
+The blocked caller thread is unblocked either
 when the blocking condition is resolved, or the timeout
 condition is met.
 

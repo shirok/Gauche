@@ -7658,12 +7658,14 @@ you can use generalized @code{set!} as
 
 @c EN
 The @code{cf-init} procedure opens the default log drain
-that goes to @code{config.log}, and you can use @code{log-format}
+that goes to @code{config.log}, and you can use @code{log-format},
+@code{log-display} or @code{log-write}
 to write to it (@xref{User-level logging}, for the details of logging).
 @c JP
 @code{cf-init}手続きは@code{config.log}にロギングするデフォルトログドレインを
-オープンするので、@code{log-format}を使って@code{config.log}にログを
-残すことができます (ロギングの詳細については@ref{User-level logging}参照)。
+オープンするので、@code{log-format}、@code{log-display}、@code{log-write}
+を使って@code{config.log}にログを残すことができます
+(ロギングの詳細については@ref{User-level logging}参照)。
 @c COMMON
 
 @c EN
@@ -14446,6 +14448,70 @@ the code runs without logging.
 @code{log-format}は何もしません。したがって、@code{log-format}をデバッグに
 活用し、必要なくなったら@code{log-open}だけをコメントアウトする、というような
 使用法も可能です。
+@c COMMON
+@end deffn
+
+@defun log-display obj :optional drain
+@defunx log-write obj :optional drain
+@c MOD gauche.logger
+@c EN
+Convenience procedures.
+Work as @code{(log-format drain "~a" obj)} and
+@code{log-format drain "~s" obj)}, respectively.
+Note the order of the arguments; these are alined with @code{display} and
+@code{write}.
+@c JP
+便利関数です。それぞれ@code{(log-format drain "~a" obj)}、
+@code{log-format drain "~s" obj)}のように動作します。
+引数順に注意。これらの手続きは@code{display}と@code{write}に合わせてあります。
+@c COMMON
+@end defun
+
+@deffn {Method} log-from-input-port (port <port>) :key formatter
+@deffnx {Method} log-from-input-port (drain <log-drain>) (port <port>) :key formatter
+@c MOD gauche.logger
+@c EN
+Starts a thread that keeps reading from the input port @var{port},
+line by line, and logs each line using @var{formatter}.
+It is handy to log data fed asynchronously via a pipe.
+
+The @var{formatter} procedure is called as @code{(formatter line drain)},
+where @var{line} is a string (without a newline), and @var{drain} is
+@code{<log-drain>}.  The default formatter is @code{log-display}.
+
+The created thread is returned.  It terminates when @var{port} reaches EOF.
+
+In the first form, the value of @code{(log-default-drain)}
+@emph{when this procedure is called} is used as the log drain.  Changing
+the value of @code{(log-default-drain)} afterwards won't affect
+the destination of the log.
+
+If an error occurs in the thread, it is captured and a warning is issued
+to the current error port at the time of calling @code{log-from-input-port},
+using @code{warn} (@pxref{Warnings}).
+If the error is low-level I/O error from the @var{port}, the port
+is closed and the thread terminates.  Otherwise, the thread resumes
+monitoring the input and logging.
+@c JP
+入力ポート@var{port}から1行づつ読み込み、
+それを@var{formatter}を使ってログ出力するスレッドを開始します。
+パイプから非同期に送られてくるデータをログするのに便利です。
+
+@var{formatter}は入力行(改行文字は含まない)@var{line}とログドレイン@var{drain}
+を引数として@code{(formatter line drain)}のように呼ばれます。
+@var{formatter}のデフォルトは@code{log-display}です。
+
+戻り値は作られたスレッドです。スレッドは@var{port}がEOFに達したら終了します。
+
+最初の形式では、ログの行き先として@emph{この手続きが呼ばれた時点}での
+@code{(log-default-drain)}の値が使われます。
+この手続きを呼んだ後で@code{(log-default-drain)}を変えてもログの行き先に影響はありません。
+
+スレッド内でエラーが起きた場合、それは捕捉され、警告が@code{warn}を使って
+@code{log-from-input-port}が呼ばれた時点での@code{current-error-port}に
+出力されます (@pxref{Warnings})。その後、もしエラーが@var{port}の
+低レベルI/Oに起因するものなら、@var{port}がクローズされスレッドは終了します。
+そうでなければ、また@var{port}を読んでログするループに戻ります。
 @c COMMON
 @end deffn
 
