@@ -26749,10 +26749,92 @@ is called.
 内部的に、この手続きは単にSchemeスレッドオブジェクトを割り当て初期化している
 だけです。POSIXスレッドは@code{thread-start!}が呼ばれるまで生成されません。
 @c COMMON
+@end defun
 
+@defun make-thread/loop proc ehandler :optional name
+@c MOD gauche.threads
 @c EN
+This procedure creates a thread that loops, like a event loop.
+There's a common pattern to avoid typical caveats, so we codify
+it in this procedure.
+
+@var{proc} is a procedure that takes one argument, @var{break}, an
+escape procedure.  When @var{proc} returns, it is immediately
+called again with the same argument.  If you want to exit the loop,
+call @var{break}--then the thread terminates, and the argument
+passed to @var{break} becomes the result of the thread, which can
+be retrieved by @code{thread-join!}.
+
+@var{ehandler} is a procedure that takes two arguments, and called
+whenever an exception is raised during the loop.  The first argument
+is the raised condition, and the second argument is the @var{break}
+procedure the same as the one passed to @var{proc}.  The @var{ehandler}
+processes the condition, and can take one of the following actions.
+
+@enumerate
+@item
+Return.  In this case, the thread resumes the loop to call @var{proc}
+repeatedly.
+@item
+Call @var{break}.  The thread terminates, and the argument passed
+to @var{break} becoms the result of the thread.
+@item
+Raise the condition again, or a different condition.
+The thread aborts, and the raised condition is reraised
+(wrapped with @code{<uncaught-condition>}) when
+@code{thread-join!} is called.
+@end enumerate
+
+The idea is that you want to keep looping unless the exception
+is too serious to keep doing so.
+
+Here's the typical pattern of event handling thread:
 @c JP
+この手続きは、イベントループのようなループするスレッドを作ります。
+典型的な危険を避ける書き方には共通のパターンがあるので、
+それをコード化したものがこの手続きです。
+
+@var{proc}はひとつの引数、@var{break}を取る手続きです。
+@var{proc}からリターンすると、直ちに再び@var{proc}が呼ばれます。
+@var{break}を呼び出すことでループから抜け出し、スレッドが終了します。
+@var{break}に渡した引数がスレッドの結果 (@code{thread-join!}の戻り値となります。
+
+@var{ehandler}は2つの引数を取る手続きで、ループ中で例外が起きた時に
+呼び出されます。最初の引数は投げられたコンディション、
+次の引数は@var{proc}に渡される@var{break}と同じものです。
+@var{ehandler}はコンディションを処理し、次の3つのうちのいずれかの
+帰結を取ります。
+
+@enumerate
+@item
+リターンする。この場合、スレッドは@var{proc}を呼ぶループを再開します。
+@item
+@var{break}を呼ぶ。スレッドは終了し、@var{break}に渡した引数が
+スレッドの結果となります。
+@item
+渡されたコンディションを再び投げるか、新たなコンディションを投げる。
+スレッドの実行は中断され、@var{thread-join!}が呼ばれると
+投げられたコンディションが(@code{<uncaught-condition>}にラップされて)
+再び投げられます。
+@end enumerate
+
+基本的な考え方は、例外が重大でこれ以上処理を続けられない場合以外は
+ループを続ける、というものです。
+
+次の例は典型的なパターンを示します:
 @c COMMON
+
+@example
+(thread-start!
+ (make-thread/loop
+  (^[break] (let event (read-event)
+              (cond [(termination? event)  (break 'done)]
+                    ... handle other event types ...
+                    )))
+  (^[e break] (if (fatal-condition? e)
+                 (break 'something-bad-happened)]
+                 (log-format "Error in event loop: ~S" e))))
+@end example
 @end defun
 
 @defun thread-state thread
