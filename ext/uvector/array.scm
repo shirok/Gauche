@@ -321,7 +321,7 @@
   (define line (port-current-line port))
   (define chars `(,type-char))          ; for error message
   (define (save-char!)
-    (let1 ch (read-char)
+    (let1 ch (read-char port)
       (unless (eof-object? ch) (push! chars ch))))
   (define (prefix) (list->string (reverse chars)))
   (define (err msg content)
@@ -331,9 +331,9 @@
   (define (bad-prefix)
     ;; We read up to the delimiter so that the subsequent read won't be
     ;; tripped.
-    (let loop ((ch (peek-char)))
+    (let loop ((ch (peek-char port)))
       (unless (or (eof-object? ch) (#[\s\(\[\{#\"'`,] ch))
-        (save-char!) (loop (peek-char))))
+        (save-char!) (loop (peek-char port))))
     (err "Invalid array literal prefix" #f))
   (define (make-type-tag nbits)
     (string->symbol (format "~c~d" (char-down-case type-char) nbits)))
