@@ -283,8 +283,8 @@
   ()
   :metaclass <array-meta>
   :backing-storage-class <c128vector>
-  :tag 'c64
-  :element-size 64)
+  :tag 'c128
+  :element-size 128)
 
 ;; Utility to inquire array-type attributes
 
