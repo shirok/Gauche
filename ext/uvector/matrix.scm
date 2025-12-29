@@ -245,6 +245,23 @@
                                 (make-vector rank))])
         (determinant! b)))))
 
+(define (array-trace a)
+  (let* ([start (start-vector-of a)]
+         [end (end-vector-of a)]
+         [rank (s32vector-length start)]
+         [start0 (s32vector-ref start 0)]
+         [start1 (s32vector-ref start 1)]
+         [n (- (s32vector-ref end 0) start0)]
+         [m (- (s32vector-ref end 1) start1)]
+         [ret 0])
+    (unless (= 2 rank)
+      (error "can only compute traces of 2D arrays"))
+    (unless (= n m)
+      (error "can only compute traces of square matrices"))
+    (dotimes (i n)
+      (inc! ret (array-ref a (+ i start0) (+ i start1))))
+    ret))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; matrix arithmetic

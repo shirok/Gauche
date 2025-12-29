@@ -2543,49 +2543,65 @@
 
 (let1 i 0
   (for-each
-   (^t (let-optionals* t (ar (inv #f) (det 0))
+   (^t (let-optionals* t (ar (inv #f) (det 0) (tr 0))
          (test* (format "array-inverse-~D" (inc! i)) inv
                 (array-inverse ar)
                 array-approx-equal?)
          (when (and inv (eq? (class-of ar) (class-of inv)))
-           (test* (format "array-normalize/inverse-~D" (inc! i))
+           (test* (format "array-normalize/inverse-~D" i)
                   (array-normalize ar)
                   (array-inverse inv)
                   array-approx-equal?))
-         (test* (format "determinant-~D" (inc! i)) det
+         (test* (format "determinant-~D" i) det
                 (determinant ar)
+                approx-equal?)
+         (test* (format "array-trace-~D" i) tr
+                (array-trace ar)
                 approx-equal?)))
    '((#,(<array> (0 2 0 2) 1 2 3 4)
       #,(<array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
-      -2)
+      -2
+      5)
      (#,(<array> (1 3 1 3) 1 2 3 4)
       #,(<array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
-      -2)
+      -2
+      5)
      (#,(<array> (3 5 7 9) 1 2 3 4)
       #,(<array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
-      -2)
+      -2
+      5)
      (#,(<array> (0 3 0 3) 1 5 2 1 1 7 0 -3 4)
       #,(<array> (0 3 0 3) -25 26 -33 4 -4 5 3 -3 4)
-      -1)
+      -1
+      6)
      (#,(<array> (0 3 0 3) 2 0 1 1 1 0 3 2 1)
       #,(<array> (0 3 0 3) 1 2 -1 -1 -1 1 -1 -4 2)
-      1)
+      1
+      4)
      (#,(<array> (0 3 0 3) 1 -1 3 2 1 2 -2 -2 1)
       #,(<array> (0 3 0 3) 1 -1 -1 -1.2 1.4 0.8 -0.4 0.8 0.6)
-      5)
-     (#,(<array> (0 2 0 2) 1 2 3 6))
+      5
+      3)
+     (#,(<array> (0 2 0 2) 1 2 3 6)
+      #f
+      0
+      7)
      (#,(<u8array> (0 2 0 2) 1 2 3 4)
       #,(<array>   (0 2 0 2) -2.0 1.0 1.5 -0.5)
-      -2)
+      -2
+      5)
      (#,(<s16array> (0 2 0 2) 1 2 3 4)
       #,(<array>    (0 2 0 2) -2.0 1.0 1.5 -0.5)
-      -2)
+      -2
+      5)
      (#,(<f32array> (0 2 0 2) 1 2 3 4)
       #,(<f32array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
-      -2)
+      -2
+      5)
      (#,(<f64array> (0 2 0 2) 1 2 3 4)
       #,(<f64array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
-      -2)
+      -2
+      5)
      )))
 
 (let ((i 0))
