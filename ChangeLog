@@ -1,3 +1,11 @@
+2025-12-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/matrix.scm (array-trace): Added (patch by Hamayama)
+	  https://github.com/shirok/Gauche/pull/1202
+	  Also improve argument checking.
+	* src/libmacro.scm (assume): Fixed (patch by Hamayama)
+	  https://github.com/shirok/Gauche/pull/1203
+
 2025-12-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/logger.scm (log-from-input-port, log-display, log-write):
