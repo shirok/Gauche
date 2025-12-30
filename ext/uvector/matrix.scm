@@ -55,6 +55,8 @@
         c))))
 
 (define (array-transpose a :optional (dim1 0) (dim2 1))
+  (unless (>= (array-rank a) 2)
+    (error "array-transpose matrices must be of rank 2 or greater"))
   (let* ([sh (array-copy (array-shape a))]
          [rank (array-rank a)]
          [tmp0 (array-ref sh dim1 0)]
@@ -73,6 +75,8 @@
         (make-vector rank)))))
 
 (define (array-rotate-90 a :optional (dim1 0) (dim2 1))
+  (unless (>= (array-rank a) 2)
+    (error "array-rotate-90 matrices must be of rank 2 or greater"))
   (let* ([sh (array-copy (array-shape a))]
          [rank (array-rank a)]
          [tmp0 (array-ref sh dim1 0)]
@@ -200,15 +204,14 @@
             (array-set! a i j (/ (array-ref a i j) divisor))))))))
 
 (define (array-inverse a)
+  (unless (= (array-rank a) 2)
+    (error "array-inverse matrices must be of rank 2"))
   (let* ([start (start-vector-of a)]
          [end (end-vector-of a)]
-         [rank (s32vector-length start)]
          [n (- (s32vector-ref end 0) (s32vector-ref start 0))]
          [m (- (s32vector-ref end 1) (s32vector-ref start 1))])
-    (unless (= 2 rank)
-      (error "can only compute inverses of 2D arrays"))
     (unless (= n m)
-      (error "can only compute inverses of square matrices"))
+      (error "array-inverse matrices must be of square"))
     (let* ([class (class-of a)]
            [id (identity-array n (if (inexact-numeric? class)
                                    class
@@ -222,12 +225,14 @@
 
 
 (define (determinant! a)
+  (unless (= (array-rank a) 2)
+    (error "determinant matrices must be of rank 2"))
   (let* ([start (s32vector->list (start-vector-of a))]
          [end (s32vector->list (end-vector-of a))]
          [row-col-offset (- (car start) (cadr start))]
          [factor (array-row-echelon! a)])
-    (unless (= 2 (length start)) ; add determinant for the 2x2x2 case?
-      (error "can't compute hyperdeterminants in the general case"))
+    ;(unless (= 2 (length start)) ; add determinant for the 2x2x2 case?
+    ;  (error "can't compute hyperdeterminants in the general case"))
     (unless (apply = (map - end start))
       (error "can't compute determinants of non-square matrices"))
     (apply * factor (map (^i (array-ref a i (- i row-col-offset)))
@@ -244,6 +249,22 @@
                                 (^[ind] (array-ref a ind))
                                 (make-vector rank))])
         (determinant! b)))))
+
+(define (array-trace a)
+  (unless (= (array-rank a) 2)
+    (error "array-trace matrices must be of rank 2"))
+  (let* ([start (start-vector-of a)]
+         [end (end-vector-of a)]
+         [start0 (s32vector-ref start 0)]
+         [start1 (s32vector-ref start 1)]
+         [n (- (s32vector-ref end 0) start0)]
+         [m (- (s32vector-ref end 1) start1)]
+         [ret 0])
+      (unless (= n m)
+        (error "array-trace matrices must be of square"))
+      (dotimes (i n)
+        (inc! ret (array-ref a (+ i start0) (+ i start1))))
+      ret))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

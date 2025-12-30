@@ -1172,6 +1172,19 @@ calculation.  It is faster than @code{determinant}, which copies
 @c COMMON
 @end defun
 
+@defun array-trace array
+@c MOD gauche.array
+@c EN
+Regards the @var{array} as a matrix, and calculates its trace;
+@var{array} must be 2-dimensional, and must have square shape.  If
+@var{array} doesn't satisfy these conditions, an error is thrown.
+@c JP
+@var{array}を行列とみなし、そのトレースを計算します。
+@var{array}は2次元で、正方行列となるシェイプを持っていなければなりません。
+そうでない場合はエラーが投げられます。
+@c COMMON
+@end defun
+
 @defun array-mul a b
 @c MOD gauche.array
 @c EN
