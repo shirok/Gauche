@@ -431,9 +431,10 @@ typedef void (*ScmDynLoadEntry)(void); /* Dynamically loaded function pointer */
 struct ScmDLObjRec {
     SCM_HEADER;
     ScmString *path;            /* pathname for DSO, including suffix */
-    int loaded;                 /* TRUE if this DSO is already loaded.
+    _Bool loaded;               /* TRUE if this DSO is already loaded.
                                    It may need to be initialized, though.
                                    Check initfns.  */
+    _Bool initialized;          /* TRUE if initfn is already called. */
     void *handle;               /* whatever dl_open returned */
     ScmVM *loader;              /* The VM that's holding the lock to operate
                                    on this DLO. */
@@ -457,6 +458,7 @@ static ScmDLObj *make_dlobj(ScmString *path)
     z->path = path;
     z->loader = NULL;
     z->loaded = FALSE;
+    z->initialized = FALSE;
     z->handle = NULL;
     Scm_HashCoreInitSimple(&z->entries, SCM_HASH_STRING, 0, NULL);
     (void)SCM_INTERNAL_MUTEX_INIT(z->mutex);
@@ -559,9 +561,10 @@ static ScmObj lookup_entry(ScmDLObj *dlo, ScmString *name)
     return fptr;
 }
 
-/* Load the DSO.  The caller holds the lock of dlobj.  May throw an error;
-   the caller makes sure it releases the lock even in that case. */
-static void load_dlo(ScmDLObj *dlo)
+/* Load the DSO.  The caller holds the lock of dlobj.
+   On success, dlo->loaded is set and SCM_TRUE is returned.
+   On error, an error message string is returned. */
+static ScmObj load_dlo(ScmDLObj *dlo)
 {
     ScmVM *vm = Scm_VM();
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
@@ -573,14 +576,19 @@ static void load_dlo(ScmDLObj *dlo)
     dlo->handle = dl_open(Scm_GetStringConst(dlo->path));
     if (dlo->handle == NULL) {
         const char *err = dl_error();
-        if (err == NULL) {
-            Scm_Error("failed to link %A dynamically", dlo->path);
-        } else {
-            Scm_Error("failed to link %A dynamically: %s", dlo->path, err);
+        ScmDString ds;
+        Scm_DStringInit(&ds);
+        Scm_DStringPutz(&ds, "failed to link ", -1);
+        Scm_DStringAdd(&ds, dlo->path);
+        Scm_DStringPutz(&ds, " dynamically", -1);
+        if (err != NULL) {
+            Scm_DStringPutz(&ds, ": ", -1);
+            Scm_DStringPutz(&ds, err, -1);
         }
-        /*NOTREACHED*/
+        return Scm_DStringGet(&ds, SCM_STRING_IMMUTABLE);
     }
     dlo->loaded = TRUE;
+    return SCM_TRUE;
 }
 
 /* Call the DSO's initfn.  The caller holds the lock of dlobj, and responsible
@@ -676,24 +684,33 @@ static ScmObj find_prelinked(ScmString *dsoname)
    If INITFN is SCM_FALSE, the initialization function won't be called.
    It is to load DSO for FFI.
 */
-ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
-                   u_long flags SCM_UNUSED /*reserved*/)
+ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags)
 {
-    ScmObj dsopath = find_prelinked(dsoname);
-    if (SCM_FALSEP(dsopath)) {
-        static ScmObj find_load_file_proc = SCM_UNDEFINED;
-        SCM_BIND_PROC(find_load_file_proc, "find-load-file",
-                      Scm_GaucheInternalModule());
-        ScmObj spath = Scm_ApplyRec3(find_load_file_proc,
-                                     SCM_OBJ(dsoname),
-                                     Scm_GetDynLoadPath(),
-                                     ldinfo.dso_suffixes);
-        if (!SCM_PAIRP(spath)) {
-            Scm_Error("can't find dlopen-able module %S", dsoname);
+    ScmObj dsopath = SCM_OBJ(dsoname);
+    if (!(flags & SCM_DYNLOAD_NO_SEARCH)) {
+        dsopath = find_prelinked(dsoname);
+        if (SCM_FALSEP(dsopath)) {
+            static ScmObj find_load_file_proc = SCM_UNDEFINED;
+            SCM_BIND_PROC(find_load_file_proc, "find-load-file",
+                          Scm_GaucheInternalModule());
+            ScmObj spath = Scm_ApplyRec3(find_load_file_proc,
+                                         SCM_OBJ(dsoname),
+                                         Scm_GetDynLoadPath(),
+                                         ldinfo.dso_suffixes);
+            if (!SCM_PAIRP(spath)) {
+                if (flags & SCM_DYNLOAD_QUIET_ERROR) {
+                    /* TODO: We may want to pass the error info to the caller.
+                     */
+                    return SCM_FALSE;
+                } else {
+                    Scm_Error("can't find dlopen-able module %S", dsoname);
+                }
+            }
+            dsopath = SCM_CAR(spath);
         }
-        dsopath = SCM_CAR(spath);
-        SCM_ASSERT(SCM_STRINGP(dsopath));
     }
+
+    SCM_ASSERT(SCM_STRINGP(dsopath));
 
     ScmObj initname = SCM_FALSE;
 
@@ -711,9 +728,17 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
     /* Load the dlobj if necessary. */
     lock_dlobj(dlo);
     if (!dlo->loaded) {
-        SCM_UNWIND_PROTECT { load_dlo(dlo); }
-        SCM_WHEN_ERROR { unlock_dlobj(dlo); SCM_NEXT_HANDLER; }
-        SCM_END_PROTECT;
+        ScmObj r = load_dlo(dlo);
+        if (SCM_STRINGP(r)) {
+            /* error */
+            unlock_dlobj(dlo);
+            if (flags & SCM_DYNLOAD_QUIET_ERROR) {
+                return SCM_FALSE;
+            } else {
+                /* TODO: We could throw some specialized condition */
+                Scm_Error("%S", r);
+            }
+        }
     }
 
     /* Now the dlo is loaded.  We need to call initializer. */
@@ -725,6 +750,7 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
         SCM_END_PROTECT;
     }
 
+    dlo->initialized = TRUE;
     unlock_dlobj(dlo);
     return SCM_OBJ(dlo);
 }
