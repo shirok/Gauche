@@ -2972,6 +2972,18 @@
       #,(<f64array> (0 2 0 2) 1 1/2 1/3 1/4))
      )))
 
+(let ((m1 #1a(1 2 3 4 5))
+      (m2 #2a((1 2 3) (4 5 6))))
+  (test* "array-transpose-err-1" (test-error) (array-transpose m1))
+  (test* "array-rotate-90-err-1" (test-error) (array-rotate-90 m1))
+  (test* "array-inverse-err-1"   (test-error) (array-inverse m1))
+  (test* "array-inverse-err-2"   (test-error) (array-inverse m2))
+  (test* "determinant-err-1"     (test-error) (determinant m1))
+  (test* "determinant-err-2"     (test-error) (determinant m2))
+  (test* "array-trace-err-1"     (test-error) (array-trace m1))
+  (test* "array-trace-err-2"     (test-error) (array-trace m2))
+  )
+
 ;;-------------------------------------------------------------------
 ;; NB: copy-port uses read-block! and write-block for block copy,
 ;;     so we test it here.
