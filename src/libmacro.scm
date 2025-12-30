@@ -898,7 +898,7 @@
                (let ((m ,msg))
                  ;; This is a kluge to allow assume to raise
                  ;; user-specified condition.
-                 (if (subclass? m <condition>)
+                 (if (and (is-a? m <class>) (subclass? m <condition>))
                    (error m ,@objs)
                    (error <assertion-violation> m ,@objs)))))]))))
 
