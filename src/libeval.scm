@@ -202,16 +202,55 @@
                                      [else #\_]))
                            (string->list stem)))))))
 
+(define-cproc %call-initfn (dlo::<dlobj> initfn::<string>)
+  (return (Scm_CallInitFunction dlo initfn)))
+
+(define-cproc %prelinked-path (dsoname::<string>)
+  (return (Scm_PrelinkedPath dsoname)))
+
+(define-cproc %open-dlo (dsopath::<string>) ::(<top> <string>?)
+  (let* ([errmsg::ScmString* NULL]
+         [dlo (Scm_OpenDLO dsopath (& errmsg))])
+    (return dlo errmsg)))
+
+(define-cproc %dlo-suffixes ()
+  (return (Scm_DLOSuffixes)))
+
+;; API
+;; returns #<dlobj>
+(define-in-module gauche
+  (dynamic-load dsoname
+                :key (paths (dynamic-load-paths))
+                     (error-if-not-found #t)
+                     (init-function #t)
+                     (export-symbols #f)); for backward compatibility
+  (assume (or (boolean? init-function)
+              (string? init-function))
+    "String or boolean required for init-function, but got:" init-function)
+  (let* ([dsopath (or (%prelinked-path dsoname)
+                      (and-let* ([ (pair? paths) ]
+                                 ;; We search dsoname in the given path first.
+                                 ;; If not found, we use dsoname directly and
+                                 ;; let the system search it.
+                                 [r (find-load-file dsoname paths
+                                                    (%dlo-suffixes)
+                                                    :error-if-not-found #f)])
+                        (car r))
+                      dsoname)])
+    (receive [dlo err] (%open-dlo dsopath)
+      (if (not dlo)
+        (and error-if-not-found
+             (error err))
+        (begin
+          (when init-function
+            (%call-initfn dlo (%get-initfn-name init-function dsopath)))
+          dlo)))))
 
 (select-module gauche)
 
 ;; API
-;; returns #<dlobj>
-(define-cproc dynamic-load (file::<string>
-                            :key (init-function #t)
-                            (export-symbols #f)); for backward compatibility
-  (cast void export-symbols) ; suppress unused var warning
-  (return (Scm_DynLoad file init_function 0)))
+(define-cproc close-dynamic-loadable-object (dlo::<dlobj>)
+  (return (Scm_CloseDLO dlo)))
 
 ;; API (experimental)
 ;; returns #<dlptr>

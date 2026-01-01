@@ -98,17 +98,15 @@ SCM_CLASS_DECL(Scm_DLObjClass);
 #define SCM_DLOBJ(obj)         ((ScmDLObj*)(obj))
 #define SCM_DLOBJP(obj)        (SCM_XTYPEP(obj, SCM_CLASS_DLOBJ))
 
-/* Flats to Scm_DynLoad */
-enum ScmDynLoadFlags {
-    SCM_DYNLOAD_QUIET_ERROR = (1L<<0),
-    /* Let Scm_DynLoad return #f instead of throwing an error when
-       dl_open fails. */
+SCM_EXTERN ScmObj Scm_PrelinkedPath(ScmString *dsoname);
+SCM_EXTERN ScmObj Scm_OpenDLO(ScmString *dsopath, ScmString **errmsg);
+SCM_EXTERN ScmObj Scm_CloseDLO(ScmDLObj *dlo);
+SCM_EXTERN ScmObj Scm_CallInitFunction(ScmDLObj *dlo, ScmString *initfn);
+SCM_EXTERN ScmObj Scm_DLOSuffixes(void);
 
-    SCM_DYNLOAD_NO_SEARCH = (1L<<1),
-    /* Do not search given dsoname in (dynamic-load-path). */
-};
-
+#if GAUCHE_API_VERSION < 1000
 SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, u_long flags);
+#endif
 
 SCM_EXTERN ScmObj Scm_DLObjs(void);
 SCM_EXTERN ScmObj Scm_DLOGetEntryAddress(ScmDLObj *dlo, ScmString *name);

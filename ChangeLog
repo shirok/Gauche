@@ -1,3 +1,8 @@
+2025-12-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (dynamic-load), src/load.c: Now dynamic-load
+	  is implemented in Scheme for greater flexibility.
+
 2025-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/matrix.scm (array-trace): Added (patch by Hamayama)
