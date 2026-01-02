@@ -14505,6 +14505,9 @@ using @code{warn} (@pxref{Warnings}).
 If the error is low-level I/O error from the @var{port}, the port
 is closed and the thread terminates.  Otherwise, the thread resumes
 monitoring the input and logging.
+
+Note: To wait all the data from the port to be logged, you have to
+call @code{thread-join!} on the returned thread.
 @c JP
 入力ポート@var{port}から1行づつ読み込み、
 それを@var{formatter}を使ってログ出力するスレッドを開始します。
@@ -14525,6 +14528,9 @@ monitoring the input and logging.
 出力されます (@pxref{Warnings})。その後、もしエラーが@var{port}の
 低レベルI/Oに起因するものなら、@var{port}がクローズされスレッドは終了します。
 そうでなければ、また@var{port}を読んでログするループに戻ります。
+
+註: ポートからの全てのデータがログされるまで待つには、返されたスレッド
+を@code{thread-join!}で待つ必要があります。
 @c COMMON
 @end deffn
 

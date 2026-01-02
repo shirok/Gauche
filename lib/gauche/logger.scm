@@ -263,6 +263,7 @@
   (log-default-drain (apply make <log-drain> :path path args)))
 
 ;; log-from-input-port [drain] iport :key formatter
+;;  returns thread
 
 (define-method log-from-input-port ((iport <port>) :key (formatter #f))
   (log-from-input-port (log-default-drain) iport :formatter formatter))
