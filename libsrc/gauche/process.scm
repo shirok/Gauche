@@ -40,6 +40,7 @@
   (use gauche.generator)
   (use gauche.connection)
   (use scheme.charset)
+  (use gauche.threads)
   (use srfi.13)
   (export <process> <process-abnormal-exit>
           run-process do-process do-process!
@@ -76,7 +77,6 @@
 ;; Delay-load to avoid circular dependency
 (autoload gauche.charconv wrap-with-input-conversion wrap-with-output-conversion)
 (autoload gauche.uvector write-uvector)
-(autoload gauche.threads make-thread thread-start!)
 
 ;; These two are moved to text.sh
 (autoload text.sh shell-escape-string shell-tokenize-string)
@@ -94,8 +94,6 @@
    (input     :allocation :virtual :slot-ref (^o (process-input o 0)))
    (output    :allocation :virtual :slot-ref (^o (process-output o 1)))
    (error     :allocation :virtual :slot-ref (^o (process-output o 2)))
-   (extra-inputs  :initform '())
-   (extra-outputs :initform '())
    (upstreams :init-value '()) ; pipeline upstream #<process>es
 
    ;; class slot - keep reference to all processes whose status is unclaimed
@@ -437,6 +435,7 @@
   (values iomap toclose ipipes opipes tmpfiles))
 
 ;; Set up source of << and <<< redirection, used inside %setup-iomap.
+;; The argument is already validated.
 (define (%setup-<< fd do-file dir arg iomap toclose tmpfiles)
   (define (write-arg o)
     (unwind-protect
@@ -445,6 +444,13 @@
               [else (write-uvector arg o)])
       (close-output-port o)))
   (receive (in out) (sys-pipe)
+    ;; We run write-arg in a separate thread to avoid deadlock when
+    ;; the pipe gets full.  Technically we should handle an error
+    ;; from write-arg; that error will be unnoticed.  As long as
+    ;; we use 'write', 'display' or 'write-uvector', the chances of
+    ;; error is low.  If the pipe is broken, the process itself isn't
+    ;; safe either.  But watch out if you want to enhance write-arg.
+    ;; See also https://github.com/shirok/Gauche/issues/1199
     (thread-start! (make-thread (cut write-arg out)))
     (values (acons fd in iomap) (cons in toclose) tmpfiles)))
 

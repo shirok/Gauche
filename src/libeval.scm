@@ -202,16 +202,91 @@
                                      [else #\_]))
                            (string->list stem)))))))
 
+(define-cproc %call-initfn (dlo::<dlobj> initfn::<string>)
+  (return (Scm_CallInitFunction dlo initfn)))
+
+(define-cproc %prelinked-path (dsoname::<string>)
+  (return (Scm_PrelinkedPath dsoname)))
+
+(define-cproc %open-dlo (dsopath::<string>) ::(<top> <string>?)
+  (let* ([errmsg::ScmString* NULL]
+         [dlo (Scm_OpenDLO dsopath (& errmsg))])
+    (return dlo errmsg)))
+
+(define-cproc %dlo-suffixes ()
+  (return (Scm_DLOSuffixes)))
+
+;; try %open-dlo in each of PATHS.  failure are tolerated except the
+;; last one in PATHS AND error-if-not-found is true.
+;; caller ensures PATHS contains at least one element.
+(define (%try-dlopen paths error-if-not-found)
+  (receive [dlo errmsg] (%open-dlo (car paths))
+    (if (not dlo)
+      (if (null? (cdr paths))
+        (if error-if-not-found
+          (error errmsg)
+          (values #f errmsg))
+        (%try-dlopen (cdr paths) error-if-not-found))
+      (values dlo errmsg))))
+
+;; Returns all combinations of dso_suffixes and versions.
+(define (%all-dlo-suffixes/versions versions)
+  (reverse (fold (^[sfx rs]
+                   (cons sfx
+                         (fold (^[ver rs] (cons #"~|sfx|.~|ver|" rs))
+                               rs
+                               versions)))
+                 '()
+                 (%dlo-suffixes))))
+
+;; API
+;; returns #<dlobj>
+;;   If PATHS isn't null and dsoname isn't aboslute, the existence of the
+;;   DSO file is first checked by find-load-file.  If found, only that file
+;;   is tried.  Otherwise, we try dsoname with %dlo-suffixes and versions,
+;;   one by one, and let the system find the DSO file.
+;;
+;;   If no loadable file is found, an error is thrown with the last error
+;;   message when ERROR-IF-NOT-FOUND is true, otherwise just reurns #f.
+;;
+;;   VERSIONS can be a list of strings or numbers.  Each element is appended
+;;   with period after suffix.  For example, dso-sufixxes is ("la" "so") and
+;;   versions is (3 "3.1"), "libfoo.la.3", "libfoo.la.3.1", "libfoo.la",
+;;   "libfoo.so.3", "libfoo.so.3.1", "libfoo.so" are tried.
+;;
+;;   NB: On Linux, *.so can be GNU ld linker script.  Trying to dl_open
+;;   it yields "file is not ELF" error.  Ideally we want to recognize the
+;;   file format.
+(define-in-module gauche
+  (dynamic-load dsoname
+                :key (paths (dynamic-load-paths))
+                     (error-if-not-found #t)
+                     (versions '())
+                     (init-function #t)
+                     (export-symbols #f)); for backward compatibility
+  (assume (or (boolean? init-function)
+              (string? init-function))
+    "String or boolean required for init-function, but got:" init-function)
+  ;; We search dsoname in the given path first.  If not found, we use
+  ;; dsoname directly and let the system search it.
+  (let* ([sfxs (%all-dlo-suffixes/versions versions)]
+         [dsopaths
+          (cond [(%prelinked-path dsoname) => list]
+                [(and-let* ([ (pair? paths) ]
+                            [r (find-load-file dsoname paths sfxs
+                                               :error-if-not-found #f)])
+                   (list (car r)))]
+                [else (map (cut string-append dsoname <>) sfxs)])])
+    (receive [dlo err] (%try-dlopen dsopaths error-if-not-found)
+      (when init-function
+        (%call-initfn dlo (%get-initfn-name init-function dsoname)))
+      dlo)))
 
 (select-module gauche)
 
 ;; API
-;; returns #<dlobj>
-(define-cproc dynamic-load (file::<string>
-                            :key (init-function #t)
-                            (export-symbols #f)); for backward compatibility
-  (cast void export-symbols) ; suppress unused var warning
-  (return (Scm_DynLoad file init_function 0)))
+(define-cproc close-dynamic-loadable-object (dlo::<dlobj>)
+  (return (Scm_CloseDLO dlo)))
 
 ;; API (experimental)
 ;; returns #<dlptr>

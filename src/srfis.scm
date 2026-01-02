@@ -1285,6 +1285,18 @@ Supported by the module @code{srfi.162}.  @xref{Comparator sublibrary}.
 モジュール@code{srfi.162}でサポートされます。@ref{Comparator sublibrary}参照。
 
 
+srfi-163
+()
+
+Enhanced array literals
+Supported by the built-in reader and writer.
+@xref{Array literal syntax}, for the details.
+
+拡張された配列リテラル
+組み込みのリーダーとライターでサポートしています。
+詳しくは@ref{Array literal syntax}を参照してください。
+
+
 srfi-169
 ()
 

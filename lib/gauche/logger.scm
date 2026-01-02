@@ -37,10 +37,14 @@
   (use scheme.list)
   (use srfi.13)
   (use gauche.fcntl)
+  (use gauche.threads)
   (export <log-drain>
           log-open
           log-format
-          log-default-drain)
+          log-display
+          log-write
+          log-default-drain
+          log-from-input-port)
   )
 (select-module gauche.logger)
 
@@ -246,7 +250,36 @@
                    $ string-split (apply format #f fmt args) #\newline)])
       (with-log-output drain (^p (display str p))))))
 
-;; log-open path &keyword :program-name :prefix
+;; Convenience API
+
+(define (log-display obj :optional (drain (log-default-drain)))
+  (log-format drain "~a" obj))
+(define (log-write obj :optional (drain (log-default-drain)))
+  (log-format drain "~s" obj))
+
+;; log-open path :key program-name prefix
 
 (define (log-open path . args)
   (log-default-drain (apply make <log-drain> :path path args)))
+
+;; log-from-input-port [drain] iport :key formatter
+
+(define-method log-from-input-port ((iport <port>) :key (formatter #f))
+  (log-from-input-port (log-default-drain) iport :formatter formatter))
+
+(define-method log-from-input-port ((drain <log-drain>) (iport <port>)
+                                    :key (formatter #f))
+  (define format-it (or formatter log-display))
+  (assume (input-port? iport))
+  ($ thread-start! $ make-thread/loop
+     (^[return]
+       (let1 line (read-line iport)
+         (if (eof-object? line)
+           (return)
+           (format-it line drain))))
+     (^[e return]
+       (warn "Error occurred during log-from-input-port formatter from ~s: ~a\n"
+             iport e)
+       (when (~ iport'error-occurred?)
+         (close-port iport)
+         (return)))))

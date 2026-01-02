@@ -46,7 +46,7 @@
           c32array c64array c128array
           array-concatenate array-transpose array-rotate-90
           array-flip array-flip!
-          identity-array array-inverse determinant determinant!
+          identity-array array-inverse determinant determinant! array-trace
           array-mul array-vector-mul vector-array-mul array-expt
           array-div-left array-div-right
           array-add-elements array-add-elements!
@@ -62,7 +62,7 @@
 
 (autoload "gauche/matrix"
   array-concatenate array-transpose array-rotate-90 array-flip array-flip!
-  identity-array array-inverse determinant determinant!
+  identity-array array-inverse determinant determinant! array-trace
   array-mul array-vector-mul vector-array-mul array-expt
   array-div-left array-div-right
   array-add-elements array-add-elements!
@@ -283,8 +283,8 @@
   ()
   :metaclass <array-meta>
   :backing-storage-class <c128vector>
-  :tag 'c64
-  :element-size 64)
+  :tag 'c128
+  :element-size 128)
 
 ;; Utility to inquire array-type attributes
 
@@ -321,7 +321,7 @@
   (define line (port-current-line port))
   (define chars `(,type-char))          ; for error message
   (define (save-char!)
-    (let1 ch (read-char)
+    (let1 ch (read-char port)
       (unless (eof-object? ch) (push! chars ch))))
   (define (prefix) (list->string (reverse chars)))
   (define (err msg content)
@@ -331,9 +331,9 @@
   (define (bad-prefix)
     ;; We read up to the delimiter so that the subsequent read won't be
     ;; tripped.
-    (let loop ((ch (peek-char)))
+    (let loop ((ch (peek-char port)))
       (unless (or (eof-object? ch) (#[\s\(\[\{#\"'`,] ch))
-        (save-char!) (loop (peek-char))))
+        (save-char!) (loop (peek-char port))))
     (err "Invalid array literal prefix" #f))
   (define (make-type-tag nbits)
     (string->symbol (format "~c~d" (char-down-case type-char) nbits)))

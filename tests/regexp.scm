@@ -931,6 +931,9 @@
        (list (match 'after) (match 'after 1) (match 'after 'int)
              (match 'before) (match 'before 2) (match 'before 'frac)))
 
+(test* "object-apply regexp + complement" #f ((complement #/a/) "a"))
+(test* "object-apply regexp + complement" #t ((complement #/a/) "b"))
+
 ;;-------------------------------------------------------------------------
 (test-section "regexp quote")
 

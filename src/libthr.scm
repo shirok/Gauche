@@ -53,7 +53,8 @@
           make-concurrent-modification-violation
           concurrent-modification-violation?
 
-          thread? make-thread thread-name thread-specific-set! thread-specific
+          thread? make-thread make-thread/loop
+          thread-name thread-specific-set! thread-specific
           thread-state thread-start! thread-try-start!
           thread-yield! thread-sleep!
           thread-join! thread-terminate! thread-schedule-terminate!
@@ -129,9 +130,40 @@
      (slot-ref thread 'specific))
    thread-specific-set!))
 
-(define (make-thread thunk :optional (name #f))
+(define (make-thread thunk :optional (name #f) (error-reporter #f))
   (rlet1 t (%make-thread thunk name)
-    ((with-module gauche.internal %vm-custom-error-reporter-set!) t (^e #f))))
+    (cond
+     [(eq? error-reporter #f)
+      ;; default; do not report error immediately; an uncaught error will be
+      ;; reraised by thread-join!.
+      ((with-module gauche.internal %vm-custom-error-reporter-set!) t (^e #f))]
+     [(eq? error-reporter #t)
+       ;; report an uncaught error immediately.  The error will be reraised
+       ;; by thread-join!, and be reported again unless the caller of
+       ;; thread-join! handles it.  This is useful for long-running thread
+       ;; when therad-join! won't happen soon (or at all).
+       ((with-module gauche.internal %vm-custom-error-reporter-set!) t #f)]
+     [(applicable? error-reporter <top>)
+      ;; custom error reporter.  error-reporter must be a procedure
+      ;; taking one argument.
+      ((with-module gauche.internal %vm-custom-error-reporter-set!) t error-reporter)]
+     [else (error "Invalid error-reporter; must be #f, #t, or a procedure \
+                   taking one argument, but got:" error-reporter)])))
+
+;; Codify a common pattern of long-running looping thread.
+;; This only saves several lines of code.  However, this will enforce
+;; the user to think over error handling, and ensures proper looping
+;; (workaround the known bug of Gauche's guard where handler clauses
+;; aren't executed in tail position).
+(define (make-thread/loop proc handler :optional (name #f))
+  (define (body)
+    (let/cc break
+      (let outer ()
+        (let/cc restart
+          (with-exception-handler (^e (handler e break) (restart))
+                                  (^[] (let loop () (proc break) (loop)))))
+        (outer))))
+  (make-thread body name))
 
 (inline-stub
  (define-cproc thread-state (vm::<thread>)

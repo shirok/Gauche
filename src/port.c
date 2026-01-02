@@ -132,6 +132,11 @@ static ScmObj get_port_link(ScmPort *port)
     return PORT_LINK(port);
 }
 
+static ScmObj get_port_error_occurred(ScmObj *port)
+{
+    return SCM_MAKE_BOOL(SCM_PORT_ERROR_OCCURRED_P(port));
+}
+
 static ScmClassStaticSlotSpec port_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", get_port_name, NULL),
     SCM_CLASS_SLOT_SPEC("buffering", get_port_buffering,
@@ -142,6 +147,7 @@ static ScmClassStaticSlotSpec port_slots[] = {
     SCM_CLASS_SLOT_SPEC("current-column", get_port_current_column,
                         set_port_current_column),
     SCM_CLASS_SLOT_SPEC("link", get_port_link, NULL),
+    SCM_CLASS_SLOT_SPEC("error-occurred?", get_port_error_occurred, NULL),
     SCM_CLASS_SLOT_SPEC_END()
 };
 

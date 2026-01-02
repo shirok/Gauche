@@ -98,7 +98,15 @@ SCM_CLASS_DECL(Scm_DLObjClass);
 #define SCM_DLOBJ(obj)         ((ScmDLObj*)(obj))
 #define SCM_DLOBJP(obj)        (SCM_XTYPEP(obj, SCM_CLASS_DLOBJ))
 
+SCM_EXTERN ScmObj Scm_PrelinkedPath(ScmString *dsoname);
+SCM_EXTERN ScmObj Scm_OpenDLO(ScmString *dsopath, ScmString **errmsg);
+SCM_EXTERN ScmObj Scm_CloseDLO(ScmDLObj *dlo);
+SCM_EXTERN ScmObj Scm_CallInitFunction(ScmDLObj *dlo, ScmString *initfn);
+SCM_EXTERN ScmObj Scm_DLOSuffixes(void);
+
+#if GAUCHE_API_VERSION < 1000
 SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, u_long flags);
+#endif
 
 SCM_EXTERN ScmObj Scm_DLObjs(void);
 SCM_EXTERN ScmObj Scm_DLOGetEntryAddress(ScmDLObj *dlo, ScmString *name);

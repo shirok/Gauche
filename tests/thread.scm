@@ -616,6 +616,19 @@
            (list val1 val2 val3))))
 
 ;;---------------------------------------------------------------------
+(test-section "alternative error reporter")
+
+(let ((out (open-output-string)))
+  (test* "alternative error reporter" '(ok "whew")
+         (let1 thr (make-thread (^[] (error "oops")) #f
+                                (^_ (display "whew" out) (flush out)))
+           (guard (e [(<uncaught-exception> e)
+                      (list 'ok (get-output-string out))])
+             (thread-start! thr)
+             (thread-join! thr)
+             #f))))
+
+;;---------------------------------------------------------------------
 (test-section "run-once")
 
 (let ((v 0))
@@ -1053,5 +1066,61 @@
 
   ;;((with-module gauche.internal memo-table-dump) string-hash-tab)
   )
+
+;;---------------------------------------------------------------------
+(test-section "looping thread")
+
+(define (make-test-looper)
+  (let* ([q (make-mtqueue)]
+         [r (box '())]
+         [t (make-thread/loop
+             (^[break]
+               (let1 v (dequeue/wait! q)
+                 (cond [(number? v) (push! (unbox r) v)]
+                       [(eof-object? v) (break 'ok)]
+                       [(symbol? v) (raise v)]
+                       [(string? v) (raise v)]
+                       [else (error "Bad message:" v)])))
+             (^[e break]
+               (cond [(symbol? e) (push! (unbox r) e)]
+                     [(string? e) (break e)]
+                     [else (raise e)])))])
+    (thread-start! t)
+    (values q r t)))
+
+(let-values ([(q r t) (make-test-looper)])
+  (enqueue/wait! q 1)
+  (enqueue/wait! q 2)
+  (enqueue/wait! q 'fizz)
+  (enqueue/wait! q 4)
+  (enqueue/wait! q (eof-object))
+  (test* "make-thread/loop normal join" 'ok
+         (thread-join! t))
+  (test* "make-thread/loop normal results"
+         '(4 fizz 2 1)
+         (unbox r)))
+
+(let-values ([(q r t) (make-test-looper)])
+  (enqueue/wait! q 'fizz)
+  (enqueue/wait! q 4)
+  (enqueue/wait! q "buzz")
+  (test* "make-thread/loop escape join" "buzz"
+         (thread-join! t))
+  (test* "make-thread/loop escape results"
+         '(4 fizz)
+         (unbox r)))
+
+(let-values ([(q r t) (make-test-looper)])
+  (enqueue/wait! q 'fizz)
+  (enqueue/wait! q 7)
+  (enqueue/wait! q 8)
+  (enqueue/wait! q 'fizz)
+  (enqueue/wait! q #f)
+  (test* "make-thread/loop reraise join"
+         (test-error <uncaught-exception>)
+         (thread-join! t))
+  (test* "make-thread/loop reraise results"
+         '(fizz 8 7 fizz)
+         (unbox r)))
 
 (test-end)

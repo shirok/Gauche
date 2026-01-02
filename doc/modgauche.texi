@@ -1173,6 +1173,19 @@ calculation.  It is faster than @code{determinant}, which copies
 @c COMMON
 @end defun
 
+@defun array-trace array
+@c MOD gauche.array
+@c EN
+Regards the @var{array} as a matrix, and calculates its trace;
+@var{array} must be 2-dimensional, and must have square shape.  If
+@var{array} doesn't satisfy these conditions, an error is thrown.
+@c JP
+@var{array}を行列とみなし、そのトレースを計算します。
+@var{array}は2次元で、正方行列となるシェイプを持っていなければなりません。
+そうでない場合はエラーが投げられます。
+@c COMMON
+@end defun
+
 @defun array-mul a b
 @c MOD gauche.array
 @c EN
@@ -7659,12 +7672,14 @@ you can use generalized @code{set!} as
 
 @c EN
 The @code{cf-init} procedure opens the default log drain
-that goes to @code{config.log}, and you can use @code{log-format}
+that goes to @code{config.log}, and you can use @code{log-format},
+@code{log-display} or @code{log-write}
 to write to it (@xref{User-level logging}, for the details of logging).
 @c JP
 @code{cf-init}手続きは@code{config.log}にロギングするデフォルトログドレインを
-オープンするので、@code{log-format}を使って@code{config.log}にログを
-残すことができます (ロギングの詳細については@ref{User-level logging}参照)。
+オープンするので、@code{log-format}、@code{log-display}、@code{log-write}
+を使って@code{config.log}にログを残すことができます
+(ロギングの詳細については@ref{User-level logging}参照)。
 @c COMMON
 
 @c EN
@@ -14614,6 +14629,70 @@ the code runs without logging.
 @code{log-format}は何もしません。したがって、@code{log-format}をデバッグに
 活用し、必要なくなったら@code{log-open}だけをコメントアウトする、というような
 使用法も可能です。
+@c COMMON
+@end deffn
+
+@defun log-display obj :optional drain
+@defunx log-write obj :optional drain
+@c MOD gauche.logger
+@c EN
+Convenience procedures.
+Work as @code{(log-format drain "~a" obj)} and
+@code{log-format drain "~s" obj)}, respectively.
+Note the order of the arguments; these are alined with @code{display} and
+@code{write}.
+@c JP
+便利関数です。それぞれ@code{(log-format drain "~a" obj)}、
+@code{log-format drain "~s" obj)}のように動作します。
+引数順に注意。これらの手続きは@code{display}と@code{write}に合わせてあります。
+@c COMMON
+@end defun
+
+@deffn {Method} log-from-input-port (port <port>) :key formatter
+@deffnx {Method} log-from-input-port (drain <log-drain>) (port <port>) :key formatter
+@c MOD gauche.logger
+@c EN
+Starts a thread that keeps reading from the input port @var{port},
+line by line, and logs each line using @var{formatter}.
+It is handy to log data fed asynchronously via a pipe.
+
+The @var{formatter} procedure is called as @code{(formatter line drain)},
+where @var{line} is a string (without a newline), and @var{drain} is
+@code{<log-drain>}.  The default formatter is @code{log-display}.
+
+The created thread is returned.  It terminates when @var{port} reaches EOF.
+
+In the first form, the value of @code{(log-default-drain)}
+@emph{when this procedure is called} is used as the log drain.  Changing
+the value of @code{(log-default-drain)} afterwards won't affect
+the destination of the log.
+
+If an error occurs in the thread, it is captured and a warning is issued
+to the current error port at the time of calling @code{log-from-input-port},
+using @code{warn} (@pxref{Warnings}).
+If the error is low-level I/O error from the @var{port}, the port
+is closed and the thread terminates.  Otherwise, the thread resumes
+monitoring the input and logging.
+@c JP
+入力ポート@var{port}から1行づつ読み込み、
+それを@var{formatter}を使ってログ出力するスレッドを開始します。
+パイプから非同期に送られてくるデータをログするのに便利です。
+
+@var{formatter}は入力行(改行文字は含まない)@var{line}とログドレイン@var{drain}
+を引数として@code{(formatter line drain)}のように呼ばれます。
+@var{formatter}のデフォルトは@code{log-display}です。
+
+戻り値は作られたスレッドです。スレッドは@var{port}がEOFに達したら終了します。
+
+最初の形式では、ログの行き先として@emph{この手続きが呼ばれた時点}での
+@code{(log-default-drain)}の値が使われます。
+この手続きを呼んだ後で@code{(log-default-drain)}を変えてもログの行き先に影響はありません。
+
+スレッド内でエラーが起きた場合、それは捕捉され、警告が@code{warn}を使って
+@code{log-from-input-port}が呼ばれた時点での@code{current-error-port}に
+出力されます (@pxref{Warnings})。その後、もしエラーが@var{port}の
+低レベルI/Oに起因するものなら、@var{port}がクローズされスレッドは終了します。
+そうでなければ、また@var{port}を読んでログするループに戻ります。
 @c COMMON
 @end deffn
 
@@ -26713,8 +26792,8 @@ Returns @code{#t} if @var{obj} is a thread, @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun make-thread thunk :optional name
-[SRFI-18], [SRFI-21]
+@defun make-thread thunk :optional name error-reporter
+[SRFI-18+], [SRFI-21+]
 @c MOD gauche.threads
 @c EN
 Creates and returns a new thread to execute @var{thunk}.
@@ -26762,20 +26841,85 @@ after the execution of the thread terminates.
 
 @c EN
 If a thread execution is terminated because of uncaught exception,
-and @code{thread-join!} has never been called on the thread until
+it is saved in the thread object, and reraised
+when @code{thread-join!} is called (wrapped by @code{<uncaught-exception>}
+condition).
+
+If @code{thread-join!} has never been called on the thread until
 it is garbage-collected, a warning
 will be printed to the standard error port notifying
 ``thread dies a lonely death'':  It usually indicates some coding
 error.  If you don't collect the result of threads, you have to
 make sure that all the exceptions are captured and handled within @var{thunk}.
 @c JP
-もしスレッドが捕捉されない例外のために実行を終了し、
-@code{thread-join!}がそのスレッドに対し一切呼ばれずに
+もしスレッドが捕捉されない例外のために実行を終了した場合、
+その例外はスレッドオブジェクトに保管され、
+@code{thread-join!}が呼ばれた時に@code{<uncaught-exception>}にラップされて
+再び投げられます。
+
+もし@code{thread-join!}がそのスレッドに対し一切呼ばれずに
 スレッドがガベージコレクトされた場合、
 標準エラーポートに``thread dies a lonely death'' という
 警告メッセージが出力されます。そのようなケースは通常何らかのコーディングエラーで
 あるからです。スレッドの結果を回収しない場合は、
 @var{thunk}中ですべての例外を捕捉し処理しなければなりません。
+@c COMMON
+
+@c EN
+The optional @var{error-reporter} argument is Gauche's extension.
+
+Since the uncaught exception from @var{thunk} is reraised by @code{thread-join!},
+the exception won't be reported as in the usual mannter by default
+(otherwise, it will be reported twice, once when the exception occurs, and
+again when @code{thread-join!} raises @code{<uncaught-exception>}.)
+This is logical, but sometimes it causes an unexpected error
+from the thread unnoticed, especially @code{thread-join!} isn't
+called soon, or at all.  Although the ``right way'' is to always install
+your own exception handler, it requires more repetitive, boilerplate code
+for ``just in case''.
+This argument provides a handy alternative.
+
+The @var{error-reporter} argument can be @code{#f}, @code{#t}, or a
+procedure taking one argument.  @code{#f} is the default behavior
+(do not report the error immediately).  If it is @code{#t},
+the error is reported as usual when it occurs.  If it is a procedure,
+it is called with the thrown condition, and supposed to report
+the error in some way (e.g. logging).   In any case, the condition
+is saved in the thread object and reraised by @code{thread-join!} anyway.
+Note that If @var{error-reporter} itself
+raises an exception, Gauche process aborts by double fault.
+
+If there's an exception handler installed when an error occurs,
+@var{error-repoorter} is not consulted.  @var{error-reporter} is not
+a substitution of exception handler, but merely set a fallback
+mechanism for an unintentional leakage of exception.
+@c JP
+省略可能な@var{error-reporter}引数はGaucheの独自拡張です。
+
+@var{thunk}からの捕捉されない例外は@code{thread-join!}から再び投げられるので、
+デフォルトでは例外発生時にそのことは報告されません
+(でないと、例外発生時と@code{thread-join!}から再び投げられた時で
+重複報告されてしまいます)。
+これは筋が通っていますが、@code{thread-join!}の呼ばれるタイミングが
+ずっと後だったり全く呼ばれない場合に、予想していないエラーが気づかれないままに
+なってしまう場合があります。「正しい方法」は常に独自の例外ハンドラを
+設定することですが、「念の為」に似たようなコードを繰り返し書かねばならなくなります。
+この引数はより手軽な代替です。
+
+@var{error-reporter}引数は、@code{#f}、@code{#t}、あるいは1引数を取る
+手続きでなければなりません。@code{#f}の場合はデフォルトの動作で、
+例外は発生時には報告されません。@code{#t}の場合は例外発生時に
+通常の報告が出されます。手続きの場合は、投げられたコンディションを
+引数としてその手続きが呼ばれます。
+手続きは何らかの例外報告(ログなど)をすることが期待されます。
+いずれにせよ、コンディションはスレッドオブジェクトに保存され、
+@code{thread-join!}で再び投げられることに変わりはありません。
+@var{error-reporter}の中でエラーが起きた場合、ダブルフォールトとみなされ
+Gaucheプロセスがabortするので注意してください。
+
+エラーが起きた時点で例外ハンドラがインストールされていれば@var{error-reporter}
+は無視されます。@var{error-reporter}は例外ハンドラの置き換えではなく、
+意図せずに例外が漏れてきてしまった場合のフォールバックを指定するものです。
 @c COMMON
 
 @c EN
@@ -26786,6 +26930,92 @@ is called.
 内部的に、この手続きは単にSchemeスレッドオブジェクトを割り当て初期化している
 だけです。POSIXスレッドは@code{thread-start!}が呼ばれるまで生成されません。
 @c COMMON
+@end defun
+
+@defun make-thread/loop proc ehandler :optional name
+@c MOD gauche.threads
+@c EN
+This procedure creates a thread that loops, like a event loop.
+There's a common pattern to avoid typical caveats, so we codify
+it in this procedure.
+
+@var{proc} is a procedure that takes one argument, @var{break}, an
+escape procedure.  When @var{proc} returns, it is immediately
+called again with the same argument.  If you want to exit the loop,
+call @var{break}--then the thread terminates, and the argument
+passed to @var{break} becomes the result of the thread, which can
+be retrieved by @code{thread-join!}.
+
+@var{ehandler} is a procedure that takes two arguments, and called
+whenever an exception is raised during the loop.  The first argument
+is the raised condition, and the second argument is the @var{break}
+procedure the same as the one passed to @var{proc}.  The @var{ehandler}
+processes the condition, and can take one of the following actions.
+
+@enumerate
+@item
+Return.  In this case, the thread resumes the loop to call @var{proc}
+repeatedly.
+@item
+Call @var{break}.  The thread terminates, and the argument passed
+to @var{break} becoms the result of the thread.
+@item
+Raise the condition again, or a different condition.
+The thread aborts, and the raised condition is reraised
+(wrapped with @code{<uncaught-condition>}) when
+@code{thread-join!} is called.
+@end enumerate
+
+The idea is that you want to keep looping unless the exception
+is too serious to keep doing so.
+
+Here's the typical pattern of event handling thread:
+@c JP
+この手続きは、イベントループのようなループするスレッドを作ります。
+典型的な危険を避ける書き方には共通のパターンがあるので、
+それをコード化したものがこの手続きです。
+
+@var{proc}はひとつの引数、@var{break}を取る手続きです。
+@var{proc}からリターンすると、直ちに再び@var{proc}が呼ばれます。
+@var{break}を呼び出すことでループから抜け出し、スレッドが終了します。
+@var{break}に渡した引数がスレッドの結果 (@code{thread-join!}の戻り値となります。
+
+@var{ehandler}は2つの引数を取る手続きで、ループ中で例外が起きた時に
+呼び出されます。最初の引数は投げられたコンディション、
+次の引数は@var{proc}に渡される@var{break}と同じものです。
+@var{ehandler}はコンディションを処理し、次の3つのうちのいずれかの
+帰結を取ります。
+
+@enumerate
+@item
+リターンする。この場合、スレッドは@var{proc}を呼ぶループを再開します。
+@item
+@var{break}を呼ぶ。スレッドは終了し、@var{break}に渡した引数が
+スレッドの結果となります。
+@item
+渡されたコンディションを再び投げるか、新たなコンディションを投げる。
+スレッドの実行は中断され、@var{thread-join!}が呼ばれると
+投げられたコンディションが(@code{<uncaught-condition>}にラップされて)
+再び投げられます。
+@end enumerate
+
+基本的な考え方は、例外が重大でこれ以上処理を続けられない場合以外は
+ループを続ける、というものです。
+
+次の例は典型的なパターンを示します:
+@c COMMON
+
+@example
+(thread-start!
+ (make-thread/loop
+  (^[break] (let event (read-event)
+              (cond [(termination? event)  (break 'done)]
+                    ... handle other event types ...
+                    )))
+  (^[e break] (if (fatal-condition? e)
+                 (break 'something-bad-happened)]
+                 (log-format "Error in event loop: ~S" e))))
+@end example
 @end defun
 
 @defun thread-state thread

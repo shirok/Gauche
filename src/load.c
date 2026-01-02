@@ -417,6 +417,19 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
    by pathname including suffix) to track the state of loading.  The thread
    must lock the structure first to operate on the particluar DSO.
 
+   To prevent loading the smae DSO simultaneously, loading is done in
+   the following steps:
+
+   - Lookup DLObj associated to the path.  If none, create one. (find_dlobj)
+   - with locking DLObj
+      - dl_open
+      - call initfn if needed
+
+   initfn only needs to be called for Gauche extensions.  Note that it is
+   technically possible that an DSO is first loaded for FFI, then loaded
+   again as a Gauche extension; in that case, we don't load DSO twice,
+   and just call initfn.
+
    By default, a DSO has one initialization function (initfn) whose name
    can be derived from DSO's basename (if DSO is /foo/bar/baz.so, the
    initfn is Scm_Init_baz).  DSO may have more than one initfn, if it is
@@ -428,12 +441,29 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
 
 typedef void (*ScmDynLoadEntry)(void); /* Dynamically loaded function pointer */
 
+enum DLObjState {
+    /* DLObj created but not associated with dl_opened DSO. */
+    DLOBJ_NEW,
+
+    /* dl_opened successfully, but initfn hasn't been called.
+       ready for FFI.  This state of DSO can be dl_closed,
+       as long as the user code retains pointer into the memory
+       mapped for DSO. */
+    DLOBJ_LOADED,
+
+    /* initfn is called.  ready for Gauche extension.  Once DSO gets this
+       state, it can't be dl_closed. */
+    DLOBJ_BOUND,
+
+    /* initfn is called but failed.  The DSO is still usable for FFI but
+       can't be used as a Gauche extention, and neither be dl_closed.*/
+    DLOBJ_INCOMPLETE,
+};
+
 struct ScmDLObjRec {
     SCM_HEADER;
     ScmString *path;            /* pathname for DSO, including suffix */
-    int loaded;                 /* TRUE if this DSO is already loaded.
-                                   It may need to be initialized, though.
-                                   Check initfns.  */
+    enum DLObjState state;      /* see above */
     void *handle;               /* whatever dl_open returned */
     ScmVM *loader;              /* The VM that's holding the lock to operate
                                    on this DLO. */
@@ -445,7 +475,14 @@ struct ScmDLObjRec {
 static void dlobj_print(ScmObj obj, ScmPort *sink,
                         ScmWriteContext *mode SCM_UNUSED)
 {
-    Scm_Printf(sink, "#<dlobj %S>", SCM_DLOBJ(obj)->path);
+    const char *state = "new";
+    switch (SCM_DLOBJ(obj)->state) {
+    case DLOBJ_LOADED:     state = "loaded"; break;
+    case DLOBJ_BOUND:      state = "bound"; break;
+    case DLOBJ_INCOMPLETE: state = "incomplete"; break;
+    case DLOBJ_NEW: break;
+    }
+    Scm_Printf(sink, "#<dlobj %S (%s)>", SCM_DLOBJ(obj)->path, state);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_DLObjClass, dlobj_print);
@@ -455,8 +492,7 @@ static ScmDLObj *make_dlobj(ScmString *path)
     ScmDLObj *z = SCM_NEW(ScmDLObj);
     SCM_SET_CLASS(z, &Scm_DLObjClass);
     z->path = path;
-    z->loader = NULL;
-    z->loaded = FALSE;
+    z->state = DLOBJ_NEW;
     z->handle = NULL;
     Scm_HashCoreInitSimple(&z->entries, SCM_HASH_STRING, 0, NULL);
     (void)SCM_INTERNAL_MUTEX_INIT(z->mutex);
@@ -476,17 +512,17 @@ static ScmDLObj *make_dlobj(ScmString *path)
 #endif
 
 /* Find dlobj with path, creating one if there aren't, and returns it. */
-static ScmDLObj *find_dlobj(ScmObj path)
+static ScmDLObj *find_dlobj(ScmString *path)
 {
     ScmDLObj *z = NULL;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
-    ScmObj p = Scm_HashTableRef(ldinfo.dso_table, path, SCM_FALSE);
+    ScmObj p = Scm_HashTableRef(ldinfo.dso_table, SCM_OBJ(path), SCM_FALSE);
     if (SCM_DLOBJP(p)) {
         z = SCM_DLOBJ(p);
     } else {
-        z = make_dlobj(SCM_STRING(path));
-        Scm_HashTableSet(ldinfo.dso_table, path, SCM_OBJ(z), 0);
+        z = make_dlobj(path);
+        Scm_HashTableSet(ldinfo.dso_table, SCM_OBJ(path), SCM_OBJ(z), 0);
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
     return z;
@@ -559,9 +595,10 @@ static ScmObj lookup_entry(ScmDLObj *dlo, ScmString *name)
     return fptr;
 }
 
-/* Load the DSO.  The caller holds the lock of dlobj.  May throw an error;
-   the caller makes sure it releases the lock even in that case. */
-static void load_dlo(ScmDLObj *dlo)
+/* Load the DSO.  The caller holds the lock of dlobj.
+   On success, dlo->loaded is set and SCM_TRUE is returned.
+   On error, an error message string is returned. */
+static ScmObj load_dlo(ScmDLObj *dlo)
 {
     ScmVM *vm = Scm_VM();
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
@@ -573,14 +610,19 @@ static void load_dlo(ScmDLObj *dlo)
     dlo->handle = dl_open(Scm_GetStringConst(dlo->path));
     if (dlo->handle == NULL) {
         const char *err = dl_error();
-        if (err == NULL) {
-            Scm_Error("failed to link %A dynamically", dlo->path);
-        } else {
-            Scm_Error("failed to link %A dynamically: %s", dlo->path, err);
+        ScmDString ds;
+        Scm_DStringInit(&ds);
+        Scm_DStringPutz(&ds, "failed to link ", -1);
+        Scm_DStringAdd(&ds, dlo->path);
+        Scm_DStringPutz(&ds, " dynamically", -1);
+        if (err != NULL) {
+            Scm_DStringPutz(&ds, ": ", -1);
+            Scm_DStringPutz(&ds, err, -1);
         }
-        /*NOTREACHED*/
+        return Scm_DStringGet(&ds, SCM_STRING_IMMUTABLE);
     }
-    dlo->loaded = TRUE;
+    dlo->state = DLOBJ_LOADED;
+    return SCM_TRUE;
 }
 
 /* Call the DSO's initfn.  The caller holds the lock of dlobj, and responsible
@@ -590,9 +632,10 @@ static void call_initfn(ScmDLObj *dlo, ScmString *name)
     ScmObj fptr = lookup_entry(dlo, name);
 
     if (!SCM_FOREIGN_POINTER_P(fptr)) {
-        dl_close(dlo->handle);
-        dlo->handle = NULL;
-        dlo->loaded = FALSE;
+        /* Named initfn isn't found in DLObj.  DLObj is still usable
+           (it may have other initfn functions, or can be used for FFI),
+           so we leave the DLObj state as is.
+         */
         Scm_Error("dynamic linking of %A failed: "
                   "couldn't find initialization function %S",
                   dlo->path, name);
@@ -600,6 +643,7 @@ static void call_initfn(ScmDLObj *dlo, ScmString *name)
 
     if (!SCM_FALSEP(Scm_ForeignPointerAttrGet(SCM_FOREIGN_POINTER(fptr),
                                               SCM_SYM_CALLED, SCM_FALSE))) {
+        /* initfn already called. */
         return;
     }
 
@@ -611,10 +655,14 @@ static void call_initfn(ScmDLObj *dlo, ScmString *name)
        loading right now.  However, if the code follows the Gauche's
        standard module structure, such circular dependency is detected
        by Scm_Load, so we don't worry about it here. */
+
     ScmDynLoadEntry fn = SCM_FOREIGN_POINTER_REF(ScmDynLoadEntry, fptr);
+
+    dlo->state = DLOBJ_INCOMPLETE; /* in case fn() raises an error  */
     fn();
+    dlo->state = DLOBJ_BOUND;     /* things look ok. */
     Scm_ForeignPointerAttrSet(SCM_FOREIGN_POINTER(fptr),
-                              SCM_SYM_NAME, SCM_TRUE);
+                              SCM_SYM_CALLED, SCM_TRUE);
 }
 
 /* Experimental: Prelink feature---we allow the extension module to be
@@ -634,8 +682,8 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
 {
     ScmObj path = Scm_StringAppend2(SCM_STRING(SCM_MAKE_STR_IMMUTABLE("@/")),
                                     dsoname);
-    ScmDLObj *dlo = find_dlobj(path);
-    dlo->loaded = TRUE;
+    ScmDLObj *dlo = find_dlobj(SCM_STRING(path));
+    dlo->state = DLOBJ_LOADED;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
     for (int i=0; initfns[i] && initfn_names[i]; i++) {
@@ -646,7 +694,10 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
 }
 
-static ScmObj find_prelinked(ScmString *dsoname)
+/* If DSONAME is prelinked, returns a pseudl pathname "@/DSONAME".
+   The path is used for the key to dso_table.
+   Returns #f if DSONAME is not prelinked. */
+ScmObj Scm_PrelinkedPath(ScmString *dsoname)
 {
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
     /* in general it is dangerous to invoke equal?-comparison during lock,
@@ -662,71 +713,97 @@ static ScmObj find_prelinked(ScmString *dsoname)
     }
 }
 
-/* Dynamically load the specified object by DSONAME.
-   DSONAME must not contain the system's suffix (.so, for example).
-   The same name of DSO can be only loaded once.
-
-   A DSO may contain multiple initialization functions (initfns), in
-   which case each initfn is called at most once.
-
-   If INITFN is SCM_TRUE, the name of initialization function is derived
-   from the DSO name (see %get-initfn-name in libeval.scm).  This is
-   the default value of 'dynamic-load'.
-
-   If INITFN is SCM_FALSE, the initialization function won't be called.
-   It is to load DSO for FFI.
-*/
-ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
-                   u_long flags SCM_UNUSED /*reserved*/)
+/* Returns a list of possible DSO suffixes (system-dependent)
+   We may change this feature to parameters later. */
+ScmObj Scm_DLOSuffixes()
 {
-    ScmObj dsopath = find_prelinked(dsoname);
-    if (SCM_FALSEP(dsopath)) {
-        static ScmObj find_load_file_proc = SCM_UNDEFINED;
-        SCM_BIND_PROC(find_load_file_proc, "find-load-file",
-                      Scm_GaucheInternalModule());
-        ScmObj spath = Scm_ApplyRec3(find_load_file_proc,
-                                     SCM_OBJ(dsoname),
-                                     Scm_GetDynLoadPath(),
-                                     ldinfo.dso_suffixes);
-        if (!SCM_PAIRP(spath)) {
-            Scm_Error("can't find dlopen-able module %S", dsoname);
-        }
-        dsopath = SCM_CAR(spath);
-        SCM_ASSERT(SCM_STRINGP(dsopath));
-    }
+    return ldinfo.dso_suffixes;
+}
 
-    ScmObj initname = SCM_FALSE;
+/* Open DSO with the given path.
+   This does not search dynamic-load-path.  The caller needs to do the
+   searching if necessary.  If path isn't absolute, system's DSO search
+   scheme (e.g. LD_LIBRARY_PATH) may be used.
+   This also does not call initfn.
 
-    if (SCM_EQ(initfn, SCM_TRUE) || SCM_STRINGP(initfn)) {
-        static ScmObj get_initfn_name_proc = SCM_UNDEFINED;
-        SCM_BIND_PROC(get_initfn_name_proc, "%get-initfn-name",
-                      Scm_GaucheInternalModule());
-        initname = Scm_ApplyRec2(get_initfn_name_proc, initfn, dsopath);
-    } else if (!SCM_FALSEP(initfn)) {
-        SCM_TYPE_ERROR(initfn, "a string or a boolean");
-    }
-
+   Returns ScmDLObj on success, #f on error.
+   If errmsg is not NULL, error message is stored in it on error.
+*/
+ScmObj Scm_OpenDLO(ScmString *dsopath, ScmString **errmsg)
+{
     ScmDLObj *dlo = find_dlobj(dsopath);
+    ScmString *err = NULL;
 
-    /* Load the dlobj if necessary. */
     lock_dlobj(dlo);
-    if (!dlo->loaded) {
-        SCM_UNWIND_PROTECT { load_dlo(dlo); }
-        SCM_WHEN_ERROR { unlock_dlobj(dlo); SCM_NEXT_HANDLER; }
-        SCM_END_PROTECT;
+    if (dlo->state == DLOBJ_NEW) {
+        ScmObj r = load_dlo(dlo);
+        if (SCM_STRINGP(r)) err = SCM_STRING(r);
     }
-
-    /* Now the dlo is loaded.  We need to call initializer. */
-    SCM_ASSERT(dlo->loaded);
-
-    if (SCM_STRINGP(initname)) {
-        SCM_UNWIND_PROTECT { call_initfn(dlo, SCM_STRING(initname)); }
-        SCM_WHEN_ERROR { unlock_dlobj(dlo);  SCM_NEXT_HANDLER; }
-        SCM_END_PROTECT;
-    }
-
     unlock_dlobj(dlo);
-    return SCM_OBJ(dlo);
+    if (errmsg) *errmsg = err;
+    return (err ? SCM_FALSE : SCM_OBJ(dlo));
+}
+
+#if GAUCHE_API_VERSION < 1000
+/* For the backward compatibility.  The function is now fully implemented
+   in Scheme (libeval.scm). */
+ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags SCM_UNUSED)
+{
+    static ScmObj dynamic_load = SCM_UNDEFINED;
+    ScmObj args = SCM_NIL, t = SCM_NIL;
+    SCM_BIND_PROC(dynamic_load, "dynamic-load", Scm_GaucheModule());
+    SCM_APPEND1(args, t, SCM_OBJ(dsoname));
+    SCM_APPEND1(args, t, SCM_MAKE_KEYWORD("init-function"));
+    SCM_APPEND1(args, t, initfn);
+    return Scm_ApplyRec(dynamic_load, args);
+}
+#endif // GAUCHE_API_VERSION < 1000
+
+ScmObj Scm_CloseDLO(ScmDLObj *dlo)
+{
+    volatile _Bool cannot_close = FALSE;
+
+    lock_dlobj(dlo);
+    switch (dlo->state) {
+    case DLOBJ_NEW: break;           /* nothing to do */
+    case DLOBJ_LOADED:
+        SCM_UNWIND_PROTECT {
+            dl_close(dlo);
+            dlo->handle = NULL;
+            dlo->state = DLOBJ_NEW;
+        }
+        SCM_WHEN_ERROR {
+            unlock_dlobj(dlo);
+            SCM_NEXT_HANDLER;
+        }
+        SCM_END_PROTECT;
+        break;
+    case DLOBJ_BOUND:
+    case DLOBJ_INCOMPLETE:
+        cannot_close = TRUE;
+        break;
+    }
+    unlock_dlobj(dlo);
+
+    if (cannot_close) {
+        Scm_Error("DLOboj is still used and cannot be closed: %S", SCM_OBJ(dlo));
+    }
+    return SCM_TRUE;
+}
+
+ScmObj Scm_CallInitFunction(ScmDLObj *dlo, ScmString *initfn_name)
+{
+    lock_dlobj(dlo);
+    if (dlo->state == DLOBJ_INCOMPLETE) {
+        /* initfn has been called but yielded an error.  We can't safely
+           use this DLO. */
+        Scm_Error("the dlobj couldn't be initialized: %S", dlo);
+    }
+    SCM_UNWIND_PROTECT {call_initfn(dlo, initfn_name);}
+    SCM_WHEN_ERROR {unlock_dlobj(dlo);  SCM_NEXT_HANDLER; }
+    SCM_END_PROTECT;
+    unlock_dlobj(dlo);
+    return SCM_UNDEFINED;
 }
 
 /* Expose dlobj to Scheme world */
@@ -738,7 +815,7 @@ static ScmObj dlobj_path_get(ScmObj obj)
 
 static ScmObj dlobj_loaded_get(ScmObj obj)
 {
-    return SCM_MAKE_BOOL(SCM_DLOBJ(obj)->loaded);
+    return SCM_MAKE_BOOL(SCM_DLOBJ(obj)->state >= DLOBJ_LOADED);
 }
 
 static ScmObj dlobj_entries_get(ScmObj obj)
