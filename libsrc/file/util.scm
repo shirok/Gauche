@@ -129,7 +129,7 @@
                                             (prefix "gtemp"))
   (let1 dir (sys-mkdtemp (build-path directory prefix))
     (unwind-protect (proc dir)
-      (remove-directory* dir))))
+      (remove-files dir))))
 
 (define (null-device)
   (cond-expand/runtime
@@ -230,7 +230,7 @@
 ;; synonym
 (define create-directory* make-directory*)
 
-;; rm -rf
+;; rm -r
 (define (remove-directory* dir :key (if-does-not-exist :error))
   (define (rec d)
     (receive (dirs files)

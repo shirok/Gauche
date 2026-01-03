@@ -1,3 +1,9 @@
+2026-01-03  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (call-with-temporary-directory): Use remove-files
+	  instead of remove-directory* to remove temp dir; temp dir may no
+	  longer exists at the cleanup time and that should be tolerated.
+
 2025-12-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (dynamic-load), src/load.c: Now dynamic-load
