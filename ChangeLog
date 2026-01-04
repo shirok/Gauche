@@ -1,5 +1,9 @@
 2026-01-03  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/libutil.scm (*load-path*): Suppress 'setting *load-path*'
+	  warning if the env var GAUCHE_SUPPRESS_LOAD_PATH_SET_WARNING is set.
+	  This is temporary for transition while apps update their code.
+
 	* libsrc/file/util.scm (call-with-temporary-directory): Use remove-files
 	  instead of remove-directory* to remove temp dir; temp dir may no
 	  longer exists at the cleanup time and that should be tolerated.
