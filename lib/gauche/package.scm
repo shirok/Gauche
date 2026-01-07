@@ -54,12 +54,7 @@
 ;;
 ;; package.scm and *.gpd file contains a single define-gauche-package
 ;; form.  It takes the name of the package, followed by keyword-value
-;; style attribute specifications.  Attributes marked by '*' can
-;; be specified zero or more times; '?' can be zero or one time.
-;; The order of attributes doesn't matter, except that the order of
-;; the same attribute is preserved (e.g. if package.scm has
-;; :author "foo" :author "bar", they appear in the same order in
-;; the package's installed gpd file.)
+;; style attribute specifications.
 ;;
 ;;   (define-gauche-package NAME
 ;;     :repository URI-STRING               ; uniquely identifies this module
@@ -76,9 +71,6 @@
 ;;     ;; The following attributes are added when *.gpd file is generated.
 ;;     :gauche-version VERSION            ; Gauche version used to build
 ;;     :configure STRING                  ; configure option given
-;;
-;;     ;; In the *.gpd file, the attributes marked with '*' above
-;;     ;; are consolidated to the following plural attributes.
 ;;     )
 ;;
 ;;   NAME _must_ match the filename sans suffix.

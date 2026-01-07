@@ -46,7 +46,7 @@
 ;; operationally equivalent to SRFI-127's lseq but you cannot get
 ;; the generator itself in the cdr.
 
-;; Originall SRFI-127
+;; Originally SRFI-127
 (define-module scheme.lseq
   (use scheme.list)
   (use gauche.lazy)
