@@ -855,41 +855,46 @@
                    (and (SCM_STRINGP obj) (== (SCM_STRING_SIZE obj) 0))
                    (and (SCM_VECTORP obj) (== (SCM_VECTOR_SIZE obj) 0))))))
 
-(define (write-walk obj port)
-  (if-let1 s (%port-write-state port)
-    (%write-walk-rec obj port (~ s shared-table))))
+;; Walk the object to find out circular/shared structurs.
+;; This is called from C routine write_walk() as well.
+(define (%write-walk-rec obj port tab ctrl)
+  ;; We may have a infinite lazy sequence, so we want to limit to recurse
+  ;; into cdr of pairs.  If <write-controls> have length limit, we don't need
+  ;; to look further.  Otherwise, we set some arbitrary large number such that
+  ;; it is impractical to output such a huge list.
+  (define length-limit
+    (or (~ ctrl'length) (ash 1 24)))
 
-(define (%write-walk-rec obj port tab)
-  (when (write-need-recurse? obj)
-    (if (hash-table-exists? tab obj)
-      (hash-table-update! tab obj (cut + <> 1))   ; seen more than once
-      (begin
-        (hash-table-put! tab obj 1) ; seen once
-        (cond
-         [(symbol? obj)] ; uninterned symbols
-         [(string? obj)]
-         [(uvector? obj)]
-         [(pair? obj)
-          (%write-walk-rec (car obj) port tab)
-          (%write-walk-rec (cdr obj) port tab)]
-         [(vector? obj)
-          (dotimes [i (vector-length obj)]
-            (%write-walk-rec (vector-ref obj i) port tab))]
-         [(box? obj)
-          (dotimes [i (box-arity obj)]
-            (%write-walk-rec (unbox-value obj i) port tab))]
-         [(is-a? obj <dictionary>)
-          (%dict-walk! obj
-                       (^[k v]
-                         (%write-walk-rec k port tab)
-                         (%write-walk-rec v port tab)))]
-         [else ; generic objects.  we go walk pass via write-object
-          (write-object obj port)])
-        ;; If circular-only, we don't count non-circular objects.
-        (unless (%port-writing-shared? port)
-          (when (eqv? (hash-table-get tab obj #f) 1)
-            (hash-table-delete! tab obj)))
-        ))))
+  (define (walk obj limit)
+    (when (write-need-recurse? obj)
+      (if (hash-table-exists? tab obj)
+        (hash-table-update! tab obj (cut + <> 1))   ; seen more than once
+        (begin
+          (hash-table-put! tab obj 1) ; seen once
+          (cond
+           [(symbol? obj)] ; uninterned symbols
+           [(string? obj)]
+           [(uvector? obj)]
+           [(pair? obj)
+            (unless (>= limit length-limit)
+              (walk (car obj) 0)
+              (walk (cdr obj) (+ limit 1)))]
+           [(vector? obj)
+            (dotimes [i (vector-length obj)]
+              (walk (vector-ref obj i) 0))]
+           [(box? obj)
+            (dotimes [i (box-arity obj)]
+              (walk (unbox-value obj i) 0))]
+           [(is-a? obj <dictionary>)
+            (%dict-walk! obj (^[k v] (walk k 0) (walk v 0)))]
+           [else ; generic objects.  we go walk pass via write-object
+            (write-object obj port)])
+          ;; If circular-only, we don't count non-circular objects.
+          (unless (%port-writing-shared? port)
+            (when (eqv? (hash-table-get tab obj #f) 1)
+              (hash-table-delete! tab obj)))
+          ))))
+    (walk obj 0))
 
 ;; Kludge - gauche.libdict is initialized after libio, so we can't use
 ;; with-module.  We hope we can fix this later.

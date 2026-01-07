@@ -45,7 +45,7 @@
 
 #include <ctype.h>
 
-static void write_walk(ScmObj obj, ScmPort *port);
+static void write_walk(ScmObj obj, ScmPort *port, const ScmWriteControls *ctrl);
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
@@ -238,7 +238,7 @@ void Scm_WriteWithControls(ScmObj obj, ScmObj p, int mode,
                Using srfi-38 notation to show displayed strings doesn't
                make sense at all. */
             if (!((mode == SCM_WRITE_DISPLAY) && SCM_STRINGP(obj))) {
-                write_walk(obj, port);
+                write_walk(obj, port, ctrl);
             }
         } else {
             ScmWriteContext ctx;
@@ -286,7 +286,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
        create an intermediate string port. */
     if (PORT_LOCK_OWNER_P(port, Scm_VM()) && PORT_WALKER_P(port)) {
         SCM_ASSERT(PORT_RECURSIVE_P(port));
-        write_walk(obj, port);
+        write_walk(obj, port, NULL);
         return 0;               /* doesn't really matter */
     }
 
@@ -558,15 +558,19 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 /* pass 1 */
 /* Implemented in Scheme */
-static void write_walk(ScmObj obj, ScmPort *port)
+static void write_walk(ScmObj obj, ScmPort *port, const ScmWriteControls *ctrl)
 {
     static ScmObj proc = SCM_UNDEFINED;
-    ScmWriteState *s = Scm_PortWriteState(port);
-    SCM_ASSERT(s);
-    ScmHashTable *ht = s->sharedTable;
+    ScmWriteState *st = Scm_PortWriteState(port);
+    SCM_ASSERT(st != NULL);
+    ScmHashTable *ht = st->sharedTable;
     SCM_ASSERT(ht != NULL);
     SCM_BIND_PROC(proc, "%write-walk-rec", Scm_GaucheInternalModule());
-    Scm_ApplyRec3(proc, obj, SCM_OBJ(port), SCM_OBJ(ht));
+    if (ctrl == NULL) {
+        ctrl = Scm_GetWriteControls(NULL, st);
+    }
+    SCM_ASSERT(ctrl != NULL);
+    Scm_ApplyRec4(proc, obj, SCM_OBJ(port), SCM_OBJ(ht), SCM_OBJ(ctrl));
 }
 
 /* pass 2 */
@@ -832,7 +836,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     s->controls = ctx->controls;
     Scm_PortWriteStateSet(port, s);
 
-    write_walk(obj, port);
+    write_walk(obj, port, ctx->controls);
     port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);
 
     /* pass 2 */
@@ -964,7 +968,7 @@ static ScmObj SCM_NOINLINE vprintf_pass1(ScmPort *out,
                 {
                     ScmObj o = va_arg(ap, ScmObj);
                     SCM_APPEND1(h, t, o);
-                    if (PORT_WALKER_P(out)) write_walk(o, out);
+                    if (PORT_WALKER_P(out)) write_walk(o, out, NULL);
                     break;
                 }
             case 'C':

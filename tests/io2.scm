@@ -172,6 +172,13 @@
                              (write-to-string circ write/ss)
                              "@")))
 
+;; https://github.com/shirok/Gauche/issues/1194
+(test* "infinite lazy sequence"
+       "(0 1 2 3 4 5 6 7 8 9 ...)"
+       (write-to-string (liota)
+                        (cut write <> (make-write-controls :length 10))))
+
+
 (define-class <foo> ()
   ((a :init-keyword :a)
    (b :init-keyword :b)))
