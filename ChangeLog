@@ -1,3 +1,10 @@
+2026-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (<pointer>): Add native type instance for
+	  foreign pointers.  The name may be too generic to have it in
+	  gauche namespace, but we want it concise for FFI use.  We'll
+	  mull over it.
+
 2026-01-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (%write-walk-rec): Limit recursion to the

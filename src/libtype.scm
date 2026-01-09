@@ -938,6 +938,9 @@
  (define-cfn native_closureP (obj) ::int :static
    (return (SCM_CLOSUREP obj)))
 
+ (define-cfn native_pointerP (obj) ::int :static
+   (return (SCM_FOREIGN_POINTER_P obj)))
+
  (initcode
   (define-native-type <fixnum>  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP)
   (define-native-type <short>   SCM_CLASS_INTEGER short native_shortP)
@@ -967,6 +970,7 @@
   (define-native-type <output-port> SCM_CLASS_PORT ScmPort* native_oportP)
   (define-native-type <closure> SCM_CLASS_PROCEDURE ScmClosure* native_closureP)
   (define-native-type <void>    SCM_CLASS_TOP ScmObj native_voidP)
+  (define-native-type <pointer> SCM_CLASS_TOP ScmForeignPointer* native_pointerP)
   ))
 
 ;;;
