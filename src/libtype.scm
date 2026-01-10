@@ -206,7 +206,8 @@
                super::ScmObj
                c-type-name::(const char *)
                size::size_t
-               alignment::size_t)))
+               alignment::size_t
+               inner)))
 
  (define-cclass <native-type> :base :private :no-meta
    "ScmNativeType*" "Scm_NativeTypeClass"
@@ -215,7 +216,8 @@
     (super)
     (c-type-name :type <const-cstring>)
     (size :type <size_t>)
-    (alignment :type <size_t>))
+    (alignment :type <size_t>)
+    (inner))   ; pointed-to type, or aggregate members
    (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
  )
 
@@ -801,6 +803,7 @@
                                c-type-name::(const char*)
                                size::size_t
                                alignment::size_t
+                               inner
                                c-of-type::(.function (obj)::int *))
    :static
    (let* ([z::ScmNativeType*
@@ -811,6 +814,7 @@
      (set! (-> z c-of-type) c-of-type)
      (set! (-> z size) size)
      (set! (-> z alignment) alignment)
+     (set! (-> z inner) inner)
      (return (SCM_OBJ z))))
 
  (define-cise-stmt define-native-type
@@ -819,6 +823,7 @@
                                  (SCM_OBJ ,super) ,(x->string ctype)
                                  (sizeof (.type ,ctype))
                                  (SCM_ALIGNOF (.type ,ctype))
+                                 SCM_FALSE
                                  ,fn)])
        (Scm_MakeBinding (Scm_GaucheModule)
                         (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
@@ -972,6 +977,49 @@
   (define-native-type <void>    SCM_CLASS_TOP ScmObj native_voidP)
   (define-native-type <pointer> SCM_CLASS_TOP ScmForeignPointer* native_pointerP)
   ))
+
+;;
+;; Native pointers
+;;
+
+(inline-stub
+ (define-cvar native_pointer_type)
+
+ (define-cfn pointer_p (obj) ::int :static
+   (return (SCM_FOREIGN_POINTER_P obj)))
+
+ (initcode
+  (set! native_pointer_type
+        (make_native_type "<void*>"
+                          (SCM_OBJ SCM_CLASS_TOP)
+                          "ScmForeignPointer*"
+                          (sizeof (.type void*))
+                          (SCM_ALIGNOF (.type void*))
+                          SCM_FALSE
+                          pointer_p))
+
+  (Scm_MakeBinding (Scm_GaucheModule)
+                   (SCM_SYMBOL '<void*>)
+                   native_pointer_type
+                   SCM_BINDING_INLINABLE))
+ )
+
+(define-cproc %make-pointer-type (pointer-type-name::<const-cstring>
+                                  pointee-type)
+  (return (make_native_type pointer-type-name
+                            native_pointer_type
+                            "ScmForeignPointer*"
+                            (sizeof (.type void*))
+                            (SCM_ALIGNOF (.type void*))
+                            pointee-type
+                            pointer_p)))
+
+(define-in-module gauche (make-pointer-type pointee-type)
+  (let* ([bare-name (regexp-replace* (symbol->string (~ pointee-type'name))
+                                     #/^</ ""
+                                     #/>$/ "")]
+         [pointer-name #"<~|bare-name|*>"])
+    (%make-pointer-type pointer-name pointee-type)))
 
 ;;;
 ;;; Make exported symbol visible from outside
