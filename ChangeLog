@@ -1,3 +1,8 @@
+2026-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (<c-function>): Also add native type for
+	  C function pointer.
+
 2026-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm (<pointer>): Add native type instance for

@@ -984,6 +984,7 @@
 
 (inline-stub
  (define-cvar native_pointer_type)
+ (define-cvar native_function_type)     ;root of c-function pointer
 
  (define-cfn pointer_p (obj) ::int :static
    (return (SCM_FOREIGN_POINTER_P obj)))
@@ -992,6 +993,14 @@
   (set! native_pointer_type
         (make_native_type "<void*>"
                           (SCM_OBJ SCM_CLASS_TOP)
+                          "ScmForeignPointer*"
+                          (sizeof (.type void*))
+                          (SCM_ALIGNOF (.type void*))
+                          SCM_FALSE
+                          pointer_p))
+  (set! native_function_type
+        (make_native_type "<c-function>"
+                          native_pointer_type
                           "ScmForeignPointer*"
                           (sizeof (.type void*))
                           (SCM_ALIGNOF (.type void*))
@@ -1015,11 +1024,40 @@
                             pointer_p)))
 
 (define-in-module gauche (make-pointer-type pointee-type)
+  (unless (is-a? pointee-type <native-type>)
+    (SCM_TYPE_ERROR pointee-type "<native-type>"))
   (let* ([bare-name (regexp-replace* (symbol->string (~ pointee-type'name))
                                      #/^</ ""
                                      #/>$/ "")]
          [pointer-name #"<~|bare-name|*>"])
     (%make-pointer-type pointer-name pointee-type)))
+
+(define-cproc %make-c-function-type (c-function-type-name::<const-cstring>
+                                     return-type
+                                     argument-types
+                                     varargs?::<boolean>)
+  (return (make_native-type c-function-type-name
+                            native_function_type
+                            "ScmForeignPointer*"
+                            (sizeof (.type void*))
+                            (SCM_ALIGNOF (.type void*))
+                            (Scm_Cons (SCM_MAKE_BOOL varargs?)
+                                      (Scm_Cons return-type
+                                                argument-types))
+                            pointer_p)))
+
+(define-in-module gauche (make-c-function-type return-type
+                                               argument-types
+                                               varargs?)
+    (unless (is-a? return-type <native-type>)
+      (SCM_TYPE_ERROR return-type "<native-type>"))
+    (dolist [arg-type argument-types]
+      (unless (is-a? arg-type <native-type>)
+        (SCM_TYPE_ERROR arg-type "<native-type>")))
+    (%make-c-function-type "<c-function>"
+                           return-type
+                           argument-types
+                           (boolean varargs?)))
 
 ;;;
 ;;; Make exported symbol visible from outside
