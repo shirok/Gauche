@@ -1,6 +1,6 @@
-;; -*- coding: euc-jp -*-
+;; -*- coding: utf-8 -*-
 ;;  Nqueen
-;;  n¡ßn ¤Î¸ß¤¤¤Ë¸ú¤­Àş¾å¤Ë¤Ê¤¤¥¯¥¤¡¼¥ó¤ÎÇÛÎó¤ò¤ß¤Ä¤±¤ë
+;;  nÃ—n ã®äº’ã„ã«åŠ¹ãç·šä¸Šã«ãªã„ã‚¯ã‚¤ãƒ¼ãƒ³ã®é…åˆ—ã‚’ã¿ã¤ã‘ã‚‹
 
 ;;  SHINYAMA Yusuke (euske@cl.cs.titech.ac.jp)
 ;;  This software is public domain.
@@ -8,7 +8,7 @@
 (define (decr x) (- x 1))
 (define (incr x) (+ x 1))
 
-; rotate: ¥Ù¥¯¥¿ x ¤ò posÍ×ÁÇ ¤À¤±²óÅ¾¤µ¤»¤ë
+; rotate: ãƒ™ã‚¯ã‚¿ x ã‚’ posè¦ç´  ã ã‘å›è»¢ã•ã›ã‚‹
 (define (rotate x pos)
   (do ((last (decr (vector-length x)))
        (x0 (vector-ref x pos))
@@ -16,7 +16,7 @@
       ((= i last) (vector-set! x last x0))
     (vector-set! x i (vector-ref x (incr i)))))
 
-; rotrec: ¥Ù¥¯¥¿ x ¤ÎÍ×ÁÇ¤Î¡¢¤¢¤é¤æ¤ëÇÛÃÖ¤ÎÁÈ¤ß¹ç¤ï¤»¤Ë func ¤òÅ¬ÍÑ¤¹¤ë
+; rotrec: ãƒ™ã‚¯ã‚¿ x ã®è¦ç´ ã®ã€ã‚ã‚‰ã‚†ã‚‹é…ç½®ã®çµ„ã¿åˆã‚ã›ã« func ã‚’é©ç”¨ã™ã‚‹
 (define (rotrec func x pos)
   (let ((last (decr (vector-length x))))
     (if (= pos last)
@@ -26,16 +26,16 @@
           (rotrec func x (incr pos))
           (rotate x pos)))))
 
-; genpat: n¡ßn ¤ÎÈ×¤Î½é´ü¥Ñ¥¿¡¼¥ó¤òºî¤ë
+; genpat: nÃ—n ã®ç›¤ã®åˆæœŸãƒ‘ã‚¿ãƒ¼ãƒ³ã‚’ä½œã‚‹
 (define (genpat n)
   (let ((x (make-vector n)))
     (do ((i 0 (incr i)))
         ((= n i) x)
       (vector-set! x i i))))
 
-; checkqueen: ¥Ñ¥¿¡¼¥ó p ¤¬¤¹¤Ù¤Æ¸ß¤¤¤Ë¸ú¤­Àş¾å¤Ë¤Ê¤¤¥¯¥¤¡¼¥ó¤Ê¤é #t
+; checkqueen: ãƒ‘ã‚¿ãƒ¼ãƒ³ p ãŒã™ã¹ã¦äº’ã„ã«åŠ¹ãç·šä¸Šã«ãªã„ã‚¯ã‚¤ãƒ¼ãƒ³ãªã‚‰ #t
 (define (checkqueen p)
-  (define (loop i diag0 diag1) ; i ¤Ï¥«¥¦¥ó¥¿, diag0, diag1 ¤Ï¥ê¥¹¥È
+  (define (loop i diag0 diag1) ; i ã¯ã‚«ã‚¦ãƒ³ã‚¿, diag0, diag1 ã¯ãƒªã‚¹ãƒˆ
     (or (zero? i)
         (let* ((x (decr i))
                (y (vector-ref p x))
@@ -47,7 +47,7 @@
                (loop (decr i) (cons d0 diag0) (cons d1 diag1))))))
   (loop (vector-length p) '() '()))
 
-; nqueen: ¥á¥¤¥ó¥ë¡¼¥Á¥ó
+; nqueen: ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒãƒ³
 (define (nqueen n)
   (let ((result '()))
     (rotrec (lambda (p)
