@@ -1,14 +1,17 @@
 #!/usr/bin/env gosh
+(use gauche.parseopt)
+(use util.match)
 
-(define (usage program-name)
-  (format (current-error-port)
-          "Usage: ~a regexp file ...\n" program-name)
+(define (usage)
+  (print #"Usage: ~|*program-name*| [option ...] regexp file ...")
+  (print "Options:")
+  (print (option-parser-help-string))
   (exit 2))
 
-(define (grep rx)
+(define (grep test)
   (generator-for-each
-   (lambda (line)
-     (when (rx line)
+   (^[line]
+     (when (test line)
        (format #t "~a:~a: ~a\n"
                (port-name (current-input-port))
                (- (port-current-line (current-input-port)) 1)
@@ -16,10 +19,16 @@
    read-line))
 
 (define (main args)
-  (when (null? (cdr args)) (usage (car args)))
-  (let1 rx (string->regexp (cadr args))
-    (if (null? (cddr args))
-        (grep rx)
-        (for-each (cut with-input-from-file <> (cut grep rx))
-                  (cddr args))))
+  (let-args (cdr args) ([exclude-match "v"
+                         ? "Exclude lines that match the regexp"]
+                        . args)
+    (match args
+      [() (usage)]
+      [(pattern . files)
+       (let* ([rx (string->regexp pattern)]
+              [test (if exclude-match (complement rx) rx)])
+         (if (null? files)
+           (grep test)
+           (for-each (cut with-input-from-file <> (cut grep test))
+                     files)))]))
   0)
