@@ -17181,6 +17181,20 @@ the package when the package is published.
 @c JP
 (文字列) パッケージのバージョン。例: @code{"1.0"}。
 @c COMMON
+@item stable-version
+@c EN
+(String) When the package is actively developed, and you want
+to recommend the general user to use the stable version instead of the HEAD,
+you can put that version here.  If this slot has a value,
+it is used in the Gauche package listings page instead of the value
+of @code{version} slot.
+@c JP
+(文字列) パッケージが活発に開発されていて、一般のユーザに対しては
+HEADよりも安定したバージョンを使うことを勧めたい場合は、
+そのバージョンをこのスロットに書いておくことができます。
+このスロットが値を持つ場合、Gaucheのパッケージリストページでは
+@code{version}スロットの値の代わりにこの値が表示されます。
+@c COMMON
 @item description
 @c EN
 (String) The description of the pacakge.  The first line (up to the
