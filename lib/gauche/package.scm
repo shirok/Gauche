@@ -59,6 +59,7 @@
 ;;   (define-gauche-package NAME
 ;;     :repository URI-STRING               ; uniquely identifies this module
 ;;     :version VERSION                     ; version of this module
+;;     :stable-version VERSION              ; stable version (optional)
 ;;     :require ((PACKAGE VERSION-SPEC)...) ; dependency
 ;;     :maintainers (STRING ...)            ;
 ;;     :authors (STRING ...)
@@ -108,6 +109,7 @@
   ((name           :init-keyword :name        :init-value #f)
    (repository     :init-keyword :repository  :init-value #f)
    (version        :init-keyword :version     :init-value #f)
+   (stable-version :init-keyword :stable-version :init-value #f)
    (description    :init-keyword :description :init-value #f)
    (require        :init-keyword :require     :init-value '())
    (maintainers    :init-keyword :maintainers :init-value '())
@@ -127,6 +129,7 @@
 ;; API
 (define (make-gauche-package-description name
                                          :key (version "0.0")
+                                              (stable-version #f)
                                               (description #f)
                                               (require '())
                                               (maintainers '())
@@ -149,10 +152,12 @@
   (check-maybe-string 'homepage homepage)
   (check-maybe-string 'repository repository)
   (check-maybe-string 'description description)
+  (check-maybe-string 'stable-version stable-version)
   (check-symbol-list 'providing-modules providing-modules)
   (check-maybe-string 'superseded-by superseded-by)
   (make <gauche-package-description>
-    :name name :version version :require require :maintainers maintainers
+    :name name :version version :stable-version stable-version
+    :require require :maintainers maintainers
     :authors authors :licenses licenses :homepage homepage
     :repository repository :description description
     :gauche-version gauche-version :configure configure

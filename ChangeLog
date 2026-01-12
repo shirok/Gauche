@@ -1,3 +1,8 @@
+2026-01-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package.scm (<gauche-package-description>): Add
+	  stable-version slot.
+
 2026-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm (<c-function>): Also add native type for
