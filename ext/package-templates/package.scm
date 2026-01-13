@@ -7,8 +7,15 @@
   ;;  This URL uniquely identifies the package.
   :repository "http://example.com/@@package@@.git"
 
-  ;;
+  ;; Current version number string.
   :version "0.1"
+
+  ;; Stable version number, if it differs from 'version' above.
+  ;; If the current version is being actively developed and not suitable
+  ;; for the general users, you can specify the recommended stable version
+  ;; string (e.g. "1.0") here.  If this is not #f, it is shown in the
+  ;; Gauche extension package page.
+  :stable-version #f
 
   ;; Description of the package.  The first line is used as a short
   ;; summary.
