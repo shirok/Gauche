@@ -791,7 +791,7 @@
   :supertype? (^[type sub] #f))
 
 ;;;
-;;; Types for bridging Scheme and C
+;;; <native-type> : Types for bridging Scheme and C
 ;;;
 
 ;; Each of these types has a corresponding cgen-type that maintains
@@ -943,9 +943,6 @@
  (define-cfn native_closureP (obj) ::int :static
    (return (SCM_CLOSUREP obj)))
 
- (define-cfn native_pointerP (obj) ::int :static
-   (return (SCM_FOREIGN_POINTER_P obj)))
-
  (initcode
   (define-native-type <fixnum>  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP)
   (define-native-type <short>   SCM_CLASS_INTEGER short native_shortP)
@@ -975,7 +972,6 @@
   (define-native-type <output-port> SCM_CLASS_PORT ScmPort* native_oportP)
   (define-native-type <closure> SCM_CLASS_PROCEDURE ScmClosure* native_closureP)
   (define-native-type <void>    SCM_CLASS_TOP ScmObj native_voidP)
-  (define-native-type <pointer> SCM_CLASS_TOP ScmForeignPointer* native_pointerP)
   ))
 
 ;;
@@ -986,7 +982,7 @@
  (define-cvar native_pointer_type)
  (define-cvar native_function_type)     ;root of c-function pointer
 
- (define-cfn pointer_p (obj) ::int :static
+ (define-cfn native_pointerP (obj) ::int :static
    (return (SCM_FOREIGN_POINTER_P obj)))
 
  (initcode
@@ -997,7 +993,7 @@
                           (sizeof (.type void*))
                           (SCM_ALIGNOF (.type void*))
                           SCM_FALSE
-                          pointer_p))
+                          native_pointerP))
   (set! native_function_type
         (make_native_type "<c-function>"
                           native_pointer_type
@@ -1005,7 +1001,7 @@
                           (sizeof (.type void*))
                           (SCM_ALIGNOF (.type void*))
                           SCM_FALSE
-                          pointer_p))
+                          native_pointerP))
 
   (Scm_MakeBinding (Scm_GaucheModule)
                    (SCM_SYMBOL '<void*>)
@@ -1021,7 +1017,7 @@
                             (sizeof (.type void*))
                             (SCM_ALIGNOF (.type void*))
                             pointee-type
-                            pointer_p)))
+                            native_pointerP)))
 
 (define-in-module gauche (make-pointer-type pointee-type)
   (unless (is-a? pointee-type <native-type>)
@@ -1044,7 +1040,7 @@
                             (Scm_Cons (SCM_MAKE_BOOL varargs?)
                                       (Scm_Cons return-type
                                                 argument-types))
-                            pointer_p)))
+                            native_pointerP)))
 
 (define-in-module gauche (make-c-function-type return-type
                                                argument-types
