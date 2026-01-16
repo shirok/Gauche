@@ -26694,7 +26694,7 @@ Common Lispのスペシャル変数の名前をそのまま反映した
 @c COMMON
 @end deftp
 
-@defun make-write-controls :key length level base radix-prefix pretty width indent string-length exact-decimal array
+@defun make-write-controls :key length level base radix-prefix pretty width indent string-length exact-decimal array complex
 @c EN
 Creates and returns a write-controls object.
 @c JP
@@ -26702,7 +26702,7 @@ Creates and returns a write-controls object.
 @c COMMON
 @end defun
 
-@defun write-controls-copy controls :key length level base radix-prefix pretty width indent string-length exact-decimal array
+@defun write-controls-copy controls :key length level base radix-prefix pretty width indent string-length exact-decimal array complex
 @c EN
 Returns a copy of another write-controls object @var{controls}.
 If keyword arguments are given, those values override the
