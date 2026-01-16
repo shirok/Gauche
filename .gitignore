@@ -80,6 +80,7 @@ test.record
 /src/native-supp.scm
 /ext/Makefile.ext
 /ext/bcrypt/crypt--bcrypt.c
+/ext/binary/binary--ftype.c
 /ext/binary/binary--io.c
 /ext/charconv/iconv-adapter.h
 /ext/charconv/convaux.c

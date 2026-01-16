@@ -1019,9 +1019,8 @@
                             pointee-type
                             native_pointerP)))
 
-(define-in-module gauche (make-pointer-type pointee-type)
-  (unless (is-a? pointee-type <native-type>)
-    (SCM_TYPE_ERROR pointee-type "<native-type>"))
+(define (make-pointer-type pointee-type)
+  (assume-type pointee-type <native-type>)
   (let* ([bare-name (regexp-replace* (symbol->string (~ pointee-type'name))
                                      #/^</ ""
                                      #/>$/ "")]
@@ -1042,18 +1041,16 @@
                                                 argument-types))
                             native_pointerP)))
 
-(define-in-module gauche (make-c-function-type return-type
-                                               argument-types
-                                               varargs?)
-    (unless (is-a? return-type <native-type>)
-      (SCM_TYPE_ERROR return-type "<native-type>"))
-    (dolist [arg-type argument-types]
-      (unless (is-a? arg-type <native-type>)
-        (SCM_TYPE_ERROR arg-type "<native-type>")))
-    (%make-c-function-type "<c-function>"
-                           return-type
-                           argument-types
-                           (boolean varargs?)))
+(define (make-c-function-type return-type
+                              argument-types
+                              varargs?)
+  (assume-type return-type <native-type>)
+  (dolist [arg-type argument-types]
+    (assume-type arg-type <native-type>))
+  (%make-c-function-type "<c-function>"
+                         return-type
+                         argument-types
+                         (boolean varargs?)))
 
 ;;;
 ;;; Make exported symbol visible from outside
