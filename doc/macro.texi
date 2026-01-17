@@ -2695,6 +2695,23 @@ the internal syntactic binding informations (@pxref{Identifiers}).
 (my-macro 1 2 3 4)
   @result{} @r{error: "malformed my-macro: (my-macro 1 2 3 4)"}
 @end example
+
+@c EN
+Note: In the er-macro-expander, you can use the ordinary @code{error}
+procedure to report wrong macro usage.  The body of the expander
+is evaluated at the macro expansion time, so the error is raised then.
+@code{syntax-error} is needed for @code{syntax-rules}, since it
+is just inserted (not evaluated) into the expanded form at the
+macro expansion time, and only evaluated at runtime.
+@c JP
+註: ERマクロ展開器中でマクロの謝った使い方を通知するには、
+普通の@code{error}手続きが使えます。
+マクロ展開器の式はマクロ展開中に評価されるので、
+エラーもその時に投げられるからです。
+@code{syntax-rules}で@code{syntax-error}が必要なのは、
+@code{syntax-error}フォームはマクロ展開時には展開結果に挿入されるだけで、
+それが評価されるのは実行時になるからです。
+@c COMMON
 @end defmac
 @c Local variables:
 @c mode: texinfo

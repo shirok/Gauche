@@ -2365,7 +2365,7 @@ the expression returns @code{#f}.)
 @var{test-expr}を評価し、それが真の値を返したらその値をそのまま返します。
 @code{#f}を返した場合は@code{<assertion-violation>}コンディションを投げます。
 
-これはR6RSで定義されており、R6RSこーどの移植を簡単にするために提供されています。
+これはR6RSで定義されており、R6RSコードの移植を簡単にするために提供されています。
 Gaucheでは@code{assume}を使うこともできます(SRFI-145)。
 Gaucheの@code{assume}は式が@code{#f}を返した場合はエラーを投げるからです。
 (但し、SRFI-145では@code{assume}はエラーを投げなくても良いとされていることに
@@ -3536,7 +3536,7 @@ that expands to @code{cond} form:
 そういうわけで、旧来のマクロでは準クォートが頻繁につかわれていました。
 旧来のマクロは基本的にマクロの引数として与えられた変数部分からプログラ
 ム断片を生成する手続だからです。簡単な@code{my-if}マクロの定義とそれが
-@code{cond}に展開されるようすを見てみましょう。
+@code{cond}に展開される様子を見てみましょう。
 @c COMMON
 
 @example
@@ -3726,14 +3726,14 @@ form.  If you've defined a constant like
 @c COMMON
 
 @c EN
-In general it is hard to say which part of quasiquoted form is
+In general it is not immediately obvious which part of quasiquoted form is
 compiled as a static datum and which part is not, so you shouldn't
 write a code that assumes some parts of the structure returned from
 quasiquote are freshly allocated.  In other words, you better avoid
 mutating such structures.
 @c JP
 一般的には、準クォート形式のどの部分が固定データとしてコンパイルされど
-の部分がされないのかを特定することは困難です。それゆえ、準クォートの返
+の部分がされないのかはぱっと見てわからないことがあります。それゆえ、準クォートの返
 す構造の一部が新規にアロケートされていることを前提としたコードを書いて
 はいけません。いいかえると、そのような構造を変更するのは避けるべきです。
 @c COMMON
