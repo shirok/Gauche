@@ -39,12 +39,6 @@
 ;; effective interface.
 
 (define-module binary.ftype
-  (use gauche.uvector)
-  (use gauche.record)
-  (use gauche.sequence)
-  (use scheme.list)
-  (use srfi.13)
-  (use binary.io)
   (use util.match)
   (extend gauche.typeutil)              ;access internal routines
   )
