@@ -13582,6 +13582,16 @@ Gaucheはまた、ビット列を格納するビットベクタも提供しま�
 @ref{Weak vectors}参照。
 @c COMMON
 
+@c EN
+Vectors can be used as 1-dimensional array with its origin fixed to 0.
+If you need more general arrays, e.g. multi-dimensional or non-0 origin,
+you can use @code{gauche.array} (@pxref{Arrays}).
+@c JP
+ベクタは0オリジンに固定された1次元配列のように扱えますが、
+より汎用的な配列(2次元以上の配列や、0オリジンでない配列)が必要なら、
+@code{gauche.array}モジュールが使えます(@ref{Arrays}参照)。
+@c COMMON
+
 @menu
 * Vectors::
 * Uniform vectors::

@@ -133,10 +133,13 @@ A backing storage is an object of aggregate type that can be accessed
 by an integer index.  A mapping procedure takes
 multi-dimensional indices (or index object) and
 returns a scalar index into the backing storage.
+(Note that, unlike Common Lisp,
+vectors and 1-dimensional arrays are disjoint types.)
 @c JP
 内部的には、配列は1次元のインデックスでアクセスされるバッキングストレージと、
 多次元のインデックスをバッキングストレージへのインデックスにマップする手続きとから
 構成されています。
+(Common Lispと違って、ベクタと1次元配列は異なる型であることに注意してください)。
 @c COMMON
 @end deftp
 
