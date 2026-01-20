@@ -42,6 +42,14 @@
 static ScmObj predef_sets[SCM_CHAR_SET_NUM_PREDEFINED_SETS];
 static ScmObj predef_sets_complement[SCM_CHAR_SET_NUM_PREDEFINED_SETS];
 
+/* TRANSIENT: Up to 0.9.15, we use Unicode Punctuation property for
+   [:punct:] charset.  However, POSIX's definition of [:punct:] differs
+   from it---it includes Unicode's punctuatons and symbols.
+   We switch it to align to POSIX, but allows to use old definition
+   with the environment variable GAUCHE_CHARSET_UNICODE_PUNCT.
+ */
+static _Bool unicode_punct_compatible_mode = FALSE;
+
 #include "char_attr.c"          /* generated tables */
 
 /*=======================================================================
@@ -1276,7 +1284,7 @@ static struct predef_charset_posix_name_rec predef_charset_posix_names[] = {
     PREDEF_ENTRY("graph:", ASCII_GRAPHIC, GRAPHIC),
     PREDEF_ENTRY("lower:", ASCII_LOWER, LOWER),
     PREDEF_ENTRY("print:", ASCII_PRINTING, PRINTING),
-    PREDEF_ENTRY("punct:", ASCII_PUNCTUATION, PUNCTUATION),
+    PREDEF_ENTRY("punct:", ASCII_POSIX_PUNCT, POSIX_PUNCT),
     PREDEF_ENTRY("space:", ASCII_WHITESPACE, WHITESPACE),
     PREDEF_ENTRY("upper:", ASCII_UPPER, UPPER),
     PREDEF_ENTRY("word:",  ASCII_WORD, WORD),
@@ -1292,7 +1300,7 @@ static struct predef_charset_posix_name_rec predef_charset_posix_names[] = {
     PREDEF_ENTRY("GRAPH:", GRAPHIC, GRAPHIC),
     PREDEF_ENTRY("LOWER:", LOWER, LOWER),
     PREDEF_ENTRY("PRINT:", PRINTING, PRINTING),
-    PREDEF_ENTRY("PUNCT:", PUNCTUATION, PUNCTUATION),
+    PREDEF_ENTRY("PUNCT:", POSIX_PUNCT, POSIX_PUNCT),
     PREDEF_ENTRY("SPACE:", WHITESPACE, WHITESPACE),
     PREDEF_ENTRY("UPPER:", UPPER, UPPER),
     PREDEF_ENTRY("TITLE:", TITLE, TITLE),
@@ -1332,10 +1340,22 @@ static ScmObj read_predef_charset(ScmPort *input, int error_p)
     struct predef_charset_posix_name_rec *e = predef_charset_posix_names;
     while (e->name != NULL) {
         if (strcmp(start, e->name) == 0) {
+            int cset = e->cset;
+
+            /* TRANSIENT: Special handling for the backward compatibility.
+               See the comment of unicode_punct_compatible_mode above. */
+            if (unicode_punct_compatible_mode) {
+                if (cset == SCM_CHAR_SET_ASCII_POSIX_PUNCT) {
+                    cset = SCM_CHAR_SET_ASCII_PUNCTUATION;
+                } else if (cset == SCM_CHAR_SET_POSIX_PUNCT) {
+                    cset = SCM_CHAR_SET_PUNCTUATION;
+                }
+            }
+
             if (!complement) {
-                return Scm_GetStandardCharSet(e->cset);
+                return Scm_GetStandardCharSet(cset);
             } else {
-                return Scm_GetStandardCharSet(-e->cset);
+                return Scm_GetStandardCharSet(-cset);
             }
         }
         e++;
@@ -1700,6 +1720,11 @@ void Scm__InitChar(void)
         = predef_sets_complement[SCM_CHAR_SET_FULL];
     predef_sets_complement[SCM_CHAR_SET_FULL]
         = predef_sets_complement[SCM_CHAR_SET_EMPTY];
+
+    /* TRANSIENT: See the comment of unicode_punct_compatible_mode. */
+    if (Scm_GetEnv("GAUCHE_CHARSET_UNICODE_PUNCT") != NULL) {
+        unicode_punct_compatible_mode = TRUE;
+    }
 
     /* Expose internal charset */
     Scm_AddFeature("gauche.ces.utf8", NULL);

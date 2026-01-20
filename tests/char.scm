@@ -282,6 +282,8 @@
                     char-set:ascii
                     char-set:empty
                     char-set:full
+                    char-set:posix-punct
+                    char-set:ascii-posix-punct
                     char-set:word
                     char-set:ascii-word)))
 

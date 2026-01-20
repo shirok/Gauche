@@ -1,5 +1,11 @@
 2026-01-19  Shiro Kawai  <shiro@acm.org>
 
+	* src/char.c (predef_charset_posix_names): Switch [:punct:] and
+	  [:PUNCT:] to ASCII_POSIX_PUNCT and POSIX_PUNCT by default.
+	  The backward compatible behavior can be restored if
+	  the environment variable GAUCHE_CHARSET_UNICODE_PUNCT is
+	  defined.  https://github.com/shirok/Gauche/issues/1205
+
 	* src/gen-unicode.scm: Add POSIX-PUNCT and ASCII-POSIX-PUNCT
 	  predefined char sets, to support POSIX regexp's [:punct:]
 	  char sets.  It is not the same as Unicode punctuation
