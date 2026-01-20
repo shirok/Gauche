@@ -112,6 +112,9 @@ enum {
     SCM_CHAR_SET_ASCII,         /* \u0000-\u007f */
     SCM_CHAR_SET_EMPTY,
     SCM_CHAR_SET_FULL,
+    /* POSIX special */
+    SCM_CHAR_SET_POSIX_PUNCT,       /* posix punct + ascii symbol */
+    SCM_CHAR_SET_ASCII_POSIX_PUNCT, /* ascii punct + symbol */
     /* internal use: word constituent chars */
     SCM_CHAR_SET_WORD,
     SCM_CHAR_SET_ASCII_WORD,

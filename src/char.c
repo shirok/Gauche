@@ -1687,6 +1687,8 @@ void Scm__InitChar(void)
     DEFCS("ascii", ASCII);
     DEFCS("word", WORD);
     DEFCS("ascii-word", ASCII_WORD);
+    DEFCS("posix-punct", POSIX_PUNCT);
+    DEFCS("ascii-posix-punct", ASCII_POSIX_PUNCT);
     DEFCS("empty", EMPTY);
     DEFCS("full", FULL);
 

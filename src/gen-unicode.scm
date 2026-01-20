@@ -399,6 +399,7 @@
                          GRAPHIC ASCII_GRAPHIC
                          PRINTING ASCII_PRINTING
                          (PUNCTUATION P) ASCII_PUNCTUATION
+                         POSIX_PUNCT ASCII_POSIX_PUNCT
                          (SYMBOL S) ASCII_SYMBOL
                          (ISO_CONTROL Cc) ASCII_CONTROL
                          HEX_DIGIT
@@ -728,6 +729,19 @@
                                    (hash-table-ref sets 'Ll)
                                    (hash-table-ref sets 'Lu)))
   (hash-table-put! sets 'EMPTY (make <char-code-set> :name 'EMPTY))
+  ;; POSIX [:punct:] is not Unicode Punctuation, but defined
+  ;; as graphic characters sans digits and letters, which is
+  ;; union of our punct and symbol.
+  ;; For extended ranges, it is a union of ASCII_POSIX_PUNCT and Unicode
+  ;; punct (we don't include Unicode symbol).  This follows Perl.
+  (hash-table-put! sets 'ASCII_POSIX_PUNCT
+                   (code-set-union 'ASCII_POSIX_PUNCT
+                                   (hash-table-ref sets 'ASCII_PUNCTUATION)
+                                   (hash-table-ref sets 'ASCII_SYMBOL)))
+  (hash-table-put! sets 'POSIX_PUNCT
+                   (code-set-union 'POSIX_PUNCT
+                                   (hash-table-ref sets 'ASCII_POSIX_PUNCT)
+                                   (hash-table-ref sets 'P)))
   sets)
 
 ;; Break property values

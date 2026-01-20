@@ -1,3 +1,10 @@
+2026-01-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-unicode.scm: Add POSIX-PUNCT and ASCII-POSIX-PUNCT
+	  predefined char sets, to support POSIX regexp's [:punct:]
+	  char sets.  It is not the same as Unicode punctuation
+	  attribute.
+
 2026-01-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package.scm (<gauche-package-description>): Add
