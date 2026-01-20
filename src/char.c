@@ -1284,7 +1284,7 @@ static struct predef_charset_posix_name_rec predef_charset_posix_names[] = {
     PREDEF_ENTRY("graph:", ASCII_GRAPHIC, GRAPHIC),
     PREDEF_ENTRY("lower:", ASCII_LOWER, LOWER),
     PREDEF_ENTRY("print:", ASCII_PRINTING, PRINTING),
-    PREDEF_ENTRY("punct:", ASCII_POSIX_PUNCT, POSIX_PUNCT),
+    PREDEF_ENTRY("punct:", ASCII_POSIX_PUNCTUATION, POSIX_PUNCTUATION),
     PREDEF_ENTRY("space:", ASCII_WHITESPACE, WHITESPACE),
     PREDEF_ENTRY("upper:", ASCII_UPPER, UPPER),
     PREDEF_ENTRY("word:",  ASCII_WORD, WORD),
@@ -1300,7 +1300,7 @@ static struct predef_charset_posix_name_rec predef_charset_posix_names[] = {
     PREDEF_ENTRY("GRAPH:", GRAPHIC, GRAPHIC),
     PREDEF_ENTRY("LOWER:", LOWER, LOWER),
     PREDEF_ENTRY("PRINT:", PRINTING, PRINTING),
-    PREDEF_ENTRY("PUNCT:", POSIX_PUNCT, POSIX_PUNCT),
+    PREDEF_ENTRY("PUNCT:", POSIX_PUNCTUATION, POSIX_PUNCTUATION),
     PREDEF_ENTRY("SPACE:", WHITESPACE, WHITESPACE),
     PREDEF_ENTRY("UPPER:", UPPER, UPPER),
     PREDEF_ENTRY("TITLE:", TITLE, TITLE),
@@ -1345,9 +1345,9 @@ static ScmObj read_predef_charset(ScmPort *input, int error_p)
             /* TRANSIENT: Special handling for the backward compatibility.
                See the comment of unicode_punct_compatible_mode above. */
             if (unicode_punct_compatible_mode) {
-                if (cset == SCM_CHAR_SET_ASCII_POSIX_PUNCT) {
+                if (cset == SCM_CHAR_SET_ASCII_POSIX_PUNCTUATION) {
                     cset = SCM_CHAR_SET_ASCII_PUNCTUATION;
-                } else if (cset == SCM_CHAR_SET_POSIX_PUNCT) {
+                } else if (cset == SCM_CHAR_SET_POSIX_PUNCTUATION) {
                     cset = SCM_CHAR_SET_PUNCTUATION;
                 }
             }
@@ -1707,8 +1707,8 @@ void Scm__InitChar(void)
     DEFCS("ascii", ASCII);
     DEFCS("word", WORD);
     DEFCS("ascii-word", ASCII_WORD);
-    DEFCS("posix-punct", POSIX_PUNCT);
-    DEFCS("ascii-posix-punct", ASCII_POSIX_PUNCT);
+    DEFCS("posix-punctuation", POSIX_PUNCTUATION);
+    DEFCS("ascii-posix-punctuation", ASCII_POSIX_PUNCTUATION);
     DEFCS("empty", EMPTY);
     DEFCS("full", FULL);
 
@@ -1722,7 +1722,7 @@ void Scm__InitChar(void)
         = predef_sets_complement[SCM_CHAR_SET_EMPTY];
 
     /* TRANSIENT: See the comment of unicode_punct_compatible_mode. */
-    if (Scm_GetEnv("GAUCHE_CHARSET_UNICODE_PUNCT") != NULL) {
+    if (Scm_GetEnv("GAUCHE_CHARSET_UNICODE_PUNCTUATION") != NULL) {
         unicode_punct_compatible_mode = TRUE;
     }
 
