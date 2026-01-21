@@ -1,3 +1,9 @@
+2026-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c: Add [:upunct:] and [:UPUNCT:] char-set-spec
+	  to explicitly specify Unicode punctuations.  It will ease
+	  updating existing code using [:punct:].
+
 2026-01-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c (predef_charset_posix_names): Switch [:punct:] and

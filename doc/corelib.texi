@@ -9264,50 +9264,6 @@ for the recognized names.
 @item [:^ALNUM:] @dots{}
 Complement set of @code{[:ALNUM:]} etc.
 @end table
-
-Here's the list of POSIX-style character class names:
-
-@multitable @columnfractions .15 .85
-@item @code{:alpha:} @tab ASCII alphabets.  @code{char-set:ascii-letter}, @code{#[A-Za-z]}
-@item @code{:alnum:} @tab ASCII alphabets and digits.  @code{char-set:ascii-letter+digits}, @code{#[0-9A-Za-z]}.
-@item @code{:blank:} @tab ASCII blanks.  @code{char-set:ascii-blank}, tab and space.
-@item @code{:cntrl:} @tab ASCII control characters.  @code{char-set:ascii-control}, U+0000 to U+001f and U+007f.
-@item @code{:digit:} @tab ASCII digits.  @code{char-set:ascii-digit}, @code{#[0-9]}.
-@item @code{:graph:} @tab ASCII graphic characters.  @code{char-set:ascii-graphic}.
-@item @code{:lower:} @tab ASCII lower-case alphabets.  @code{char-set:ascii-lower-case}, @code{#[a-z]}.
-@item @code{:print:} @tab ASCII printing characters.  @code{char-set:ascii-printing}.
-@item @code{:punct:} @tab ASCII punctuation characters.  @code{char-set:ascii-punctuation}.
-@item @code{:space:} @tab ASCII whitespaces. @code{char-set:ascii-whitespace}.
-@item @code{:upper:} @tab ASCII upper-case characters.  @code{char-set:ascii-upper-case}, @code{#[A-Z]}.
-@item @code{:word:} @tab ASCII word characters (not POSIX).  @code{char-set:ascii-word}, @code{#[0-9A-Za-z_]}.
-@item @code{:xdigit:} @tab Hexadecimal digits.  @code{char-set:hex-digit}, @code{#[0-9a-fA-F]}.
-@item @code{:ascii:} @tab ASCII characters (not POSIX).  @code{char-set:ascii}.
-@item @code{:ALPHA:} @tab Unicode letters (category @code{L*}). @code{char-set:letter}.
-@item @code{:ALNUM:} @tab Unicode letters and digits.  @code{char-set:letter+digits}.
-@item @code{:BLANK:} @tab Unicode blanks (tab and category @code{Zs}).  @code{char-set:blank}.
-@item @code{:CNTRL:} @tab Unicode control characters (category @code{Cc}).  @code{char-set:iso-control}.
-@item @code{:DIGIT:} @tab Unicode digits (category @code{Nd}).  @code{char-set:digit}.
-@item @code{:GRAPH:} @tab Unicode graphic characters (letter, digits, punctuation, symbol, and category @code{Nl} and @code{No}).  @code{char-set:graphic}.
-@item @code{:LOWER:} @tab Unicode lower-case letters (category @code{Ll}).  @code{char-set:lower-case}, @code{#[a-z]}.
-@item @code{:PRINT:} @tab Unicode printing characters (graphic and whitespace).  @code{char-set:printing}.
-@item @code{:PUNCT:} @tab Unicode punctuation characters (category @code{P*}).  @code{char-set:punctuation}.
-@item @code{:SPACE:} @tab Unicode whitespaces (tab, LF, vertical tab, FF, CR, and category @code{Z*}). @code{char-set:whitespace}.
-@item @code{:TITLE:} @tab Unicode titlecase letters (category @code{Lt}).  @code{char-set:title-case}.
-@item @code{:UPPER:} @tab Unicode upper-case letters (category @code{Lu}).  @code{char-set:upper-case}, @code{#[A-Z]}.
-@item @code{:WORD:} @tab Unicode word characters.  @code{char-set:word}.
-@item @code{:XDIGIT:} @tab Hexadecimal digits (same as @code{:xdigit:}).
-@end multitable
-
-Here are some examples:
-
-@example
-#[aeiou]       ; @r{a character set consists of vowels}
-#[a-zA-Z]      ; @r{alphabet}
-#[[:alpha:]]   ; @r{alphabet (using POSIX notation)}
-#[\\\-]        ; @r{backslash and minus}
-#[]            ; @r{empty charset}
-#[\x0d;\x0a;\x3000;] ; @r{carriage return, newline, and ideographic space}
-@end example
 @c JP
 この構文で、リテラル文字集合を記述することができます。
 @i{char-set-spec}には集合に含める文字を列挙します。
@@ -9354,7 +9310,44 @@ POSIX風文字集合表記のGauche拡張。名前は全て大文字でなけれ
 @item [:^ALNUM:] @dots{}
 @code{[:ALNUM:]}等の補集合です。
 @end table
+@c COMMON
 
+@c EN
+Here's the list of POSIX-style character class names:
+
+@multitable @columnfractions .15 .85
+@item @code{:alpha:} @tab ASCII alphabets.  @code{char-set:ascii-letter}, @code{#[A-Za-z]}
+@item @code{:alnum:} @tab ASCII alphabets and digits.  @code{char-set:ascii-letter+digits}, @code{#[0-9A-Za-z]}.
+@item @code{:blank:} @tab ASCII blanks.  @code{char-set:ascii-blank}, tab and space.
+@item @code{:cntrl:} @tab ASCII control characters.  @code{char-set:ascii-control}, U+0000 to U+001f and U+007f.
+@item @code{:digit:} @tab ASCII digits.  @code{char-set:ascii-digit}, @code{#[0-9]}.
+@item @code{:graph:} @tab ASCII graphic characters.  @code{char-set:ascii-graphic}.
+@item @code{:lower:} @tab ASCII lower-case alphabets.  @code{char-set:ascii-lower-case}, @code{#[a-z]}.
+@item @code{:print:} @tab ASCII printing characters.  @code{char-set:ascii-printing}.
+@item @code{:punct:} @tab POSIX punctuation characters.  @code{char-set:ascii-posix-punctuation} (see the note below).
+@item @code{:upunct:} @tab ASCII punctuation characters.  @code{char-set:ascii-punctuation}. (This is not POSIX).
+@item @code{:space:} @tab ASCII whitespaces. @code{char-set:ascii-whitespace}.
+@item @code{:upper:} @tab ASCII upper-case characters.  @code{char-set:ascii-upper-case}, @code{#[A-Z]}.
+@item @code{:word:} @tab ASCII word characters (not POSIX).  @code{char-set:ascii-word}, @code{#[0-9A-Za-z_]}.
+@item @code{:xdigit:} @tab Hexadecimal digits.  @code{char-set:hex-digit}, @code{#[0-9a-fA-F]}.
+@item @code{:ascii:} @tab ASCII characters (not POSIX).  @code{char-set:ascii}.
+@item @code{:ALPHA:} @tab Unicode letters. @code{char-set:letter}.
+@item @code{:ALNUM:} @tab Unicode letters and digits.  @code{char-set:letter+digits}.
+@item @code{:BLANK:} @tab Unicode blanks (tab and category @code{Zs}).  @code{char-set:blank}.
+@item @code{:CNTRL:} @tab Unicode control characters (category @code{Cc}).  @code{char-set:iso-control}.
+@item @code{:DIGIT:} @tab Unicode digits (category @code{Nd}).  @code{char-set:digit}.
+@item @code{:GRAPH:} @tab Unicode graphic characters (letter, digits, punctuation, symbol, and category @code{Nl} and @code{No}).  @code{char-set:graphic}.
+@item @code{:LOWER:} @tab Unicode lower-case letters (category @code{Ll}).  @code{char-set:lower-case}, @code{#[a-z]}.
+@item @code{:PRINT:} @tab Unicode printing characters (graphic and whitespace).  @code{char-set:printing}.
+@item @code{:PUNCT:} @tab Extended POSIX punctuation characters (category @code{P*}).  @code{char-set:posix-punctuation} (see the note below).
+@item @code{:UPUNCT:} @tab Unicode punctuation characters (category @code{P*}).  @code{char-set:punctuation}.
+@item @code{:SPACE:} @tab Unicode whitespaces (tab, LF, vertical tab, FF, CR, and category @code{Z*}). @code{char-set:whitespace}.
+@item @code{:TITLE:} @tab Unicode titlecase letters (category @code{Lt}).  @code{char-set:title-case}.
+@item @code{:UPPER:} @tab Unicode upper-case letters (category @code{Lu}).  @code{char-set:upper-case}, @code{#[A-Z]}.
+@item @code{:WORD:} @tab Unicode word characters.  @code{char-set:word}.
+@item @code{:XDIGIT:} @tab Hexadecimal digits (same as @code{:xdigit:}).
+@end multitable
+@c JP
 POSIX風文字集合表記で認識される名前は次のとおりです。
 
 @multitable @columnfractions .15 .85
@@ -9366,7 +9359,8 @@ POSIX風文字集合表記で認識される名前は次のとおりです。
 @item @code{:graph:} @tab ASCIIグラフィック文字。@code{char-set:ascii-graphic}.
 @item @code{:lower:} @tab ASCII小文字アルファベット。@code{char-set:ascii-lower-case}, @code{#[a-z]}.
 @item @code{:print:} @tab ASCII印字可能文字。@code{char-set:ascii-printing}.
-@item @code{:punct:} @tab ASCII句読点。@code{char-set:ascii-punctuation}.
+@item @code{:punct:} @tab POSIX句読点。@code{char-set:ascii-posix-punctuation}. (下の註を参照)
+@item @code{:upunct:} @tab ASCII句読点。@code{char-set:ascii-punctuation}. (これはPOSIXにはありません)
 @item @code{:space:} @tab ASCII空白文字。@code{char-set:ascii-whitespace}.
 @item @code{:upper:} @tab ASCII大文字アルファベット。@code{char-set:ascii-upper-case}, @code{#[A-Z]}.
 @item @code{:word:} @tab ASCII単語構成文字(POSIXではありません)。 @code{char-set:ascii-word}, @code{#[0-9A-Za-z_]}.
@@ -9380,13 +9374,27 @@ POSIX風文字集合表記で認識される名前は次のとおりです。
 @item @code{:GRAPH:} @tab Unicodeグラフィック文字。@code{char-set:graphic}.
 @item @code{:LOWER:} @tab Unicode小文字。@code{char-set:lower-case}, @code{#[a-z]}.
 @item @code{:PRINT:} @tab Unicode印字可能文字。@code{char-set:printing}.
-@item @code{:PUNCT:} @tab Unicode句読点。@code{char-set:punctuation}.
+@item @code{:PUNCT:} @tab 拡張POSIX句読点。@code{char-set:posix-punctuation}. (下の註を参照)
+@item @code{:UPUNCT:} @tab Unicode句読点。@code{char-set:punctuation}.
 @item @code{:SPACE:} @tab Unicode空白文字。@code{char-set:whitespace}.
 @item @code{:UPPER:} @tab Unicode大文字。@code{char-set:upper-case}, @code{#[A-Z]}.
 @item @code{:WORD:} @tab Unicode単語構成文字。@code{char-set:word}.
 @item @code{:XDIGIT:} @tab 16進数の数字。(@code{:xdigit:}と同じ).
 @end multitable
+@c COMMON
 
+@c EN
+Here are some examples:
+
+@example
+#[aeiou]       ; @r{a character set consists of vowels}
+#[a-zA-Z]      ; @r{alphabet}
+#[[:alpha:]]   ; @r{alphabet (using POSIX notation)}
+#[\\\-]        ; @r{backslash and minus}
+#[]            ; @r{empty charset}
+#[\x0d;\x0a;\x3000;] ; @r{carriage return, newline, and ideographic space}
+@end example
+@c JP
 いくつか例を示します。
 
 @example
@@ -9409,7 +9417,33 @@ is signalled when you attempt to modify an immutable character set.
 @c COMMON
 
 @c EN
-@b{Note for the compatibility}:
+@b{Note for the compatibility 1}:
+POSIX's definition of @code{[:punct:]} covers Unicode's punctuations
+and symbols in ASCII range.  Up to 0.9.15, we use the Unicode punctuation
+attribute for @code{[:punct:]}.  Since 0.9.16, we fixed it to cover POSIX
+range, for the compatibility of sharing POSIX notation with other systems.
+You can use @code{[:upunct:]} to specify Unicode punctuations.
+
+For the backward compatibility, if the environment variable
+@code{GAUCHE_CHARSET_UNICODE_PUNCTUATION} is defined, @code{[:punct:]}
+and @code{[:PUNCT:]} mean Unicode punctuation
+(@code{char-set:ascii-punctuation} and @code{char-set:punctuation}).
+@c JP
+@b{互換性への注 1}:
+POSIXで定義される@code{[:punct:]}は、ASCII範囲でUnicodeのpunctuation
+とsymbolの両方を含みます。0.9.15まではUnicodeのpunctuation属性を@code{[:punct:]}
+に使っていましたが、他のシステムとの互換性のため、0.9.16からは
+@code{[:punct:]}をPOSIXの定義に合わせました。
+かわりに、@code{[:upunct:]}でUnicode句読点を指示することができます。
+
+以前のバージョンとの互換性が必要な場合、
+環境変数@code{GAUCHE_CHARSET_UNICODE_PUNCTUATION}を定義しておけば、
+@code{[:punct:]}と@code{[:PUNCT:]}はUnicodeの句読点に限定されます
+(@code{char-set:ascii-punctuation}および@code{char-set:punctuation})。
+@c COMMON
+
+@c EN
+@b{Note for the compatibility 2}:
 We used to recognize a syntax @code{\xNN} (two-digit hexadecimal number,
 without semicolon terminator) as a character; for example,
 @code{#[\x0d\x0a]} as a return and a newline.  We still support it
@@ -9424,7 +9458,7 @@ behavior, but prints warning when it finds legacy syntax.
 
 To write code that can work both in new and old syntax, use @code{\u} escape.
 @c JP
-@b{互換性への注}:
+@b{互換性への注 2}:
 以前は、@code{\xNN} (2桁固定の16進数、終端のセミコロン無し) を文字と認識していました。
 例えば@code{#[\x0d\x0a]}はリターン文字と改行文字集合を意味していました。
 互換性のため、終端のセミコロンが見当たらない場合は古い構文もサポートされます。
@@ -9572,9 +9606,13 @@ Control characters (Unicode general category @code{Cc}).
 Punctuation characters (Unicode general category
 @code{Pc}, @code{Pd}, @code{Ps}, @code{Pe}, @code{Pi}, @code{Pf}
 and @code{Po}).
+Note that this is differenct from POSIX's @code{[:punct:]} character set.
+See @code{char-set:posix-punctuation} below.
 @c JP
 句読点 (Unicode一般カテゴリ
 @code{Pc}, @code{Pd}, @code{Ps}, @code{Pe}, @code{Pi}, @code{Pf}, @code{Po})。
+これはPOSIXの@code{[:punct:]}文字集合とは異なることに注意してください。
+下の @code{char-set:posix-punctuation}参照。
 @c COMMON
 @end defvar
 
@@ -9650,7 +9688,7 @@ the corresponding char set without @code{ascii-}.
 (@code{char-set:ascii-control} corresponds to @code{char-set:iso-control}).
 @c JP
 これらはそれぞれ、@code{ascii-}を除いた名前の文字集合と@code{char-set:ascii}と
-の積集合です。
+の交わりです。
 @c COMMON
 
 @c EN
@@ -9683,6 +9721,36 @@ by definition.
 なお、@code{char-set:ascii-title-case}と@code{char-set:ascii-hex-digit}は
 ありません。ASCIIの範囲内にtitlecaseにあたる文字はなく、
 また@code{char-set:hex-digit}はそれ自体ASCII範囲に限定されています。
+@c COMMON
+@end defvar
+
+@defvar char-set:posix-punctuation
+@defvarx char-set:ascii-posix-punctuation
+@c EN
+@code{char-set:ascii-posix-punctuation} is a union of
+@code{char-set:ascii-punctuation} and @code{char-set:ascii-symbol}.
+POSIX character set predates Unicode, and POSIX's definition of punctuation
+characters (used for @code{[:punct:]} notation) is splitted to
+punctuations and symbols in Unicode.
+To support POSIX's @code{[:punct:]}, we have this predefined character set.
+
+POSIX leaves what characters beyond ASCII range to be in @code{[:punct:]}.
+We make @code{[:PUNCT:]}, which is @code{char-set:posix-punctuation},
+include all Unicode punctuations plus
+@code{char-set:ascii-symbol}. It is compatible to Perl.
+(That is, non-ascii symbols are not included.)
+@c JP
+@code{char-set:ascii-posix-punctuation}は
+@code{char-set:ascii-punctuation}と@code{char-set:ascii-symbol}の和集合です。
+POSIX文字集合はUnicodeより前に制定されました。
+UnicodeはPOSIXの@code{[:punct:]}集合を句読点(punctuation)とシンボル(symbol)に
+分割しました。
+POSIXの@code{[:punct:]}をサポートするために、この文字集合が定義されました。
+
+POSIXはASCII範囲意外について@code{[:punct:]}が何を含むかを実装依存にしています。
+GaucheではUnicode範囲を含む@code{[:PUNCT:]}については、
+Unicodeの句読点とASCIIのシンボルの和集合としました
+(つまり、ASCII以外のシンボルは含まれません)。これはPerlと互換です。
 @c COMMON
 @end defvar
 
