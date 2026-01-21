@@ -3336,7 +3336,7 @@ It is an error if the number of arguments are not odd.
 引数の数が奇数でない場合はエラーとなります。
 @c COMMON
 @end defmac
-！
+
 @defun max x1 x2 @dots{}
 @defunx min x1 x2 @dots{}
 [R7RS base]
