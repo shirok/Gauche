@@ -43,3 +43,71 @@
   (extend gauche.typeutil)              ;access internal routines
   )
 (select-module binary.ftype)
+
+;; native pointer type
+;;
+;; We might auto-generate those accessor/modifiers eventually.
+
+(define-cproc %pointer-s8-ref (p::<foreign-pointer>)
+  (let* ([ptr::int8_t* (SCM_FOREIGN_POINTER_REF (.type int8_t*) p)])
+    (return (SCM_MAKE_INT (* ptr)))))
+
+(define-cproc %pointer-s8-sset! (p::<foreign-pointer> v::<int8>) ::<void>
+  (let* ([ptr::int8_t* (SCM_FOREIGN_POINTER_REF (.type int8_t*) p)])
+    (set! (* ptr) v)))
+
+(define-cproc %pointer-u8-ref (p::<foreign-pointer>)
+  (let* ([ptr::uint8_t* (SCM_FOREIGN_POINTER_REF (.type uint8_t*) p)])
+    (return (SCM_MAKE_INT (* ptr)))))
+
+(define-cproc %pointer-u8-sset! (p::<foreign-pointer> v::<uint8>) ::<void>
+  (let* ([ptr::uint8_t* (SCM_FOREIGN_POINTER_REF (.type uint8_t*) p)])
+    (set! (* ptr) v)))
+
+(define-cproc %pointer-s16-ref (p::<foreign-pointer>)
+  (let* ([ptr::int16_t* (SCM_FOREIGN_POINTER_REF (.type int16_t*) p)])
+    (return (SCM_MAKE_INT (* ptr)))))
+
+(define-cproc %pointer-s16-sset! (p::<foreign-pointer> v::<int16>) ::<void>
+  (let* ([ptr::int16_t* (SCM_FOREIGN_POINTER_REF (.type int16_t*) p)])
+    (set! (* ptr) v)))
+
+(define-cproc %pointer-u16-ref (p::<foreign-pointer>)
+  (let* ([ptr::uint16_t* (SCM_FOREIGN_POINTER_REF (.type uint16_t*) p)])
+    (return (SCM_MAKE_INT (* ptr)))))
+
+(define-cproc %pointer-u16-sset! (p::<foreign-pointer> v::<uint16>) ::<void>
+  (let* ([ptr::uint16_t* (SCM_FOREIGN_POINTER_REF (.type uint16_t*) p)])
+    (set! (* ptr) v)))
+
+(define-cproc %pointer-s32-ref (p::<foreign-pointer>)
+  (let* ([ptr::int32_t* (SCM_FOREIGN_POINTER_REF (.type int32_t*) p)])
+    (return (SCM_MAKE_INT (* ptr)))))
+
+(define-cproc %pointer-s32-sset! (p::<foreign-pointer> v::<int32>) ::<void>
+  (let* ([ptr::int32_t* (SCM_FOREIGN_POINTER_REF (.type int32_t*) p)])
+    (set! (* ptr) v)))
+
+(define-cproc %pointer-u32-ref (p::<foreign-pointer>)
+  (let* ([ptr::uint32_t* (SCM_FOREIGN_POINTER_REF (.type uint32_t*) p)])
+    (return (SCM_MAKE_INT (* ptr)))))
+
+(define-cproc %pointer-u32-sset! (p::<foreign-pointer> v::<uint32>) ::<void>
+  (let* ([ptr::uint32_t* (SCM_FOREIGN_POINTER_REF (.type uint32_t*) p)])
+    (set! (* ptr) v)))
+
+(define-cproc %pointer-s64-ref (p::<foreign-pointer>)
+  (let* ([ptr::int64_t* (SCM_FOREIGN_POINTER_REF (.type int64_t*) p)])
+    (return (SCM_MAKE_INT (* ptr)))))
+
+(define-cproc %pointer-s64-sset! (p::<foreign-pointer> v::<int64>) ::<void>
+  (let* ([ptr::int64_t* (SCM_FOREIGN_POINTER_REF (.type int64_t*) p)])
+    (set! (* ptr) v)))
+
+(define-cproc %pointer-u64-ref (p::<foreign-pointer>)
+  (let* ([ptr::uint64_t* (SCM_FOREIGN_POINTER_REF (.type uint64_t*) p)])
+    (return (SCM_MAKE_INT (* ptr)))))
+
+(define-cproc %pointer-u64-sset! (p::<foreign-pointer> v::<uint64>) ::<void>
+  (let* ([ptr::uint64_t* (SCM_FOREIGN_POINTER_REF (.type uint64_t*) p)])
+    (set! (* ptr) v)))

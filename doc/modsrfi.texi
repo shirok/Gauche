@@ -6917,10 +6917,18 @@ for the compatibility.
 @c COMMON
 
 @table @asis
+@c EN
 @item Predicates
+@c JP
+@item 述語
+@c COMMON
 @code{comparator?},
 
+@c EN
 @item Standard comparators
+@c JP
+@item 標準比較器
+@c COMMON
 @code{boolean-comparator},
 @code{char-comparator},
 @code{char-ci-comparator},
@@ -6939,26 +6947,46 @@ for the compatibility.
 @code{bytevector-comparator},
 @code{uvector-comparator}
 
+@c EN
 @item The default comparator
+@c JP
+@item デフォルト比較器
+@c COMMON
 @code{default-comparator}
 
+@c EN
 @item Wrapped equality predicates
+@c JP
+@item 等価述語のラッパー
+@c COMMON
 @code{eq-comparator},
 @code{eqv-comparator},
 @code{equal-comparator}
 
+@c EN
 @item Accessors
+@c JP
+@item アクセサ
+@c COMMON
 @code{comparator-equality-predicate},
 @code{comparator-comparison-procedure},
 @code{comparator-hash-function}
 
+@c EN
 @item Primitive applicators
+@c JP
+@item 基本的適用手続き
+@c COMMON
 @code{comparator-test-type},
 @code{comparator-check-type},
 @code{comparator-compare},
 @code{comparator-hash}
 
+@c EN
 @item Comparison predicates
+@c JP
+@item 比較手続き
+@c COMMON
 @code{=?},
 @code{<?},
 @code{<=?},
@@ -6968,7 +6996,11 @@ for the compatibility.
 
 @end deftp
 
+@c EN
 @subsubheading Basic comparator interface
+@c JP
+@subsubheading 比較器の基本的なインタフェース
+@c COMMON
 
 @defun make-comparator type-test equal compare hash :optional name
 [SRFI-114+]
@@ -7009,31 +7041,52 @@ regardless of how it is constructed.
 @defunx comparator-hash-function? c
 [SRFI-114]
 @c MOD srfi.114
+@c EN
 Returns true iff a comparator @var{c} can be used to order objects
 or to hash them, respectively.  These are aliases of
 built-in @code{comparator-ordered?} and @code{comparator-hashable?}.
+@c JP
+それぞれ、比較器@var{c}が順序付けに使える場合、ハッシュに使える場合に@code{#t}を
+返す述語です。
+これらはそれぞれ組み込みの@code{comparator-ordered?}及び
+@code{comparator-hashable?}の別名です。
+@c COMMON
 @end defun
 
 @defun comparator-type-test-procedure c
 [SRFI-114]
 @c MOD srfi.114
+@c EN
 Returns type test predicate of a comparator @var{c}.
 This is an alias of built-in @code{comparator-type-test-predicate}.
+@c JP
+比較器@var{c}の型検査述語を返します。
+これは組み込みの@code{comparator-type-test-predicate}の別名です。
+@c COMMON
 @end defun
 
 @defun comparator-equal? c a b
 [SRFI-114]
 @c MOD srfi.114
+@c EN
 Checks equality of @var{a} and @var{b} using the equality predicate
 of a comparator @var{c}.  This can be also written in @code{=?}, which
 is built-in (@pxref{Comparator predicates and accessors}).
+@c JP
+比較器@var{c}の等価述語を使って@var{a}と@var{b}が等しいかどうか検査します。
+組み込みの@code{=?}を使って同等の処理を書くことができます
+(@ref{Comparator predicates and accessors})参照。
+@c COMMON
 @example
 (=? c a b)
 @end example
 @end defun
 
-
+@c EN
 @subsubheading Auxiliary comparator constructors
+@c JP
+@subsubheading 追加の比較器コンストラクタ
+@c COMMON
 
 @defun make-inexact-real-comparator epsilon rounding nan-handling
 [SRFI-114]
