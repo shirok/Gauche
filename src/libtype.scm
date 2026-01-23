@@ -831,37 +831,36 @@
  ;;   BOX - C function ctype -> ScmObj for boxing
  ;;   UNBOX - C function ScmObj -> ctype for unboxing
 
- (define-cise-macro (define-native-type form env)
-   (match form
-     [(_ name super ctype pred box unbox)
-      (define c-ref-name (symbol-append name '-ptr-ref))
-      (define c-set-name (symbol-append name '-ptr-set))
+ (define-cise-stmt define-native-type
+   [(_ name super ctype pred box unbox)
+    (define c-ref-name (symbol-append name '-ptr-ref))
+    (define c-set-name (symbol-append name '-ptr-set))
 
-      (cgen-decl
-       (cise-render-to-string
-        `(define-cfn ,c-ref-name (ptr::void*) :static
-           (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
-             (return (,box (* pp)))))
-        'toplevel))
-      (cgen-decl
-       (cise-render-to-string
-        `(define-cfn ,c-set-name (ptr::void* obj) ::void :static
-           (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
-             (unless (,pred obj)
-               (SCM_TYPE_ERROR obj ,(x->string name)))
-             (set! (* pp) (,unbox obj))))
-        'toplevel))
-      `(let* ([z (make_native_type ,(symbol->string name)
-                                   (SCM_OBJ ,super) ,(x->string ctype)
-                                   (sizeof (.type ,ctype))
-                                   (SCM_ALIGNOF (.type ,ctype))
-                                   SCM_FALSE
-                                   ,pred
-                                   ,c-ref-name
-                                   ,c-set-name)])
-         (Scm_MakeBinding (Scm_GaucheModule)
-                          (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
-                          SCM_BINDING_INLINABLE))]))
+    (cgen-decl
+     (cise-render-to-string
+      `(define-cfn ,c-ref-name (ptr::void*) :static
+         (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
+           (return (,box (* pp)))))
+      'toplevel))
+    (cgen-decl
+     (cise-render-to-string
+      `(define-cfn ,c-set-name (ptr::void* obj) ::void :static
+         (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
+           (unless (,pred obj)
+             (SCM_TYPE_ERROR obj ,(x->string name)))
+           (set! (* pp) (,unbox obj))))
+      'toplevel))
+    `(let* ([z (make_native_type ,(symbol->string name)
+                                 (SCM_OBJ ,super) ,(x->string ctype)
+                                 (sizeof (.type ,ctype))
+                                 (SCM_ALIGNOF (.type ,ctype))
+                                 SCM_FALSE
+                                 ,pred
+                                 ,c-ref-name
+                                 ,c-set-name)])
+       (Scm_MakeBinding (Scm_GaucheModule)
+                        (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
+                        SCM_BINDING_INLINABLE))])
 
  (define-cfn native_fixnumP (obj) ::int :static
    (return (SCM_INTP obj)))
