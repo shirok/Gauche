@@ -203,6 +203,8 @@
               (SCM_INSTANCE_HEADER::||
                name::ScmObj
                c-of-type::(.function (obj) ::int *)
+               c-ref::(.function (ptr::void*) ::ScmObj *)
+               c-set::(.function (ptr::void* obj) ::void *)
                super::ScmObj
                c-type-name::(const char *)
                size::size_t
@@ -804,7 +806,9 @@
                                size::size_t
                                alignment::size_t
                                inner
-                               c-of-type::(.function (obj)::int *))
+                               c-of-type::(.function (obj)::int *)
+                               c-ref::(.function (ptr::void*)::ScmObj *)
+                               c-set::(.function (ptr::void* obj)::void *))
    :static
    (let* ([z::ScmNativeType*
            (SCM_NEW_INSTANCE ScmNativeType (& Scm_NativeTypeClass))])
@@ -812,22 +816,52 @@
      (set! (-> z super) super)
      (set! (-> z c-type-name) c-type-name)
      (set! (-> z c-of-type) c-of-type)
+     (set! (-> z c-ref) c-ref)
+     (set! (-> z c-set) c-set)
      (set! (-> z size) size)
      (set! (-> z alignment) alignment)
      (set! (-> z inner) inner)
      (return (SCM_OBJ z))))
 
- (define-cise-stmt define-native-type
-   [(_ name super ctype fn)
-    `(let* ([z (make_native_type ,(symbol->string name)
-                                 (SCM_OBJ ,super) ,(x->string ctype)
-                                 (sizeof (.type ,ctype))
-                                 (SCM_ALIGNOF (.type ,ctype))
-                                 SCM_FALSE
-                                 ,fn)])
-       (Scm_MakeBinding (Scm_GaucheModule)
-                        (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
-                        SCM_BINDING_INLINABLE))])
+ ;; define-native-type NAME SUPER CTYPE PRED BOX UNBOX
+ ;;   NAME - Symbol for Scheme name
+ ;;   SUPER - C macro name for superclass
+ ;;   CTYPE - C type name
+ ;;   PRED - C function ScmObj -> int for type predicate
+ ;;   BOX - C function ctype -> ScmObj for boxing
+ ;;   UNBOX - C function ScmObj -> ctype for unboxing
+
+ (define-cise-macro (define-native-type form env)
+   (match form
+     [(_ name super ctype pred box unbox)
+      (define c-ref-name (symbol-append name '-ptr-ref))
+      (define c-set-name (symbol-append name '-ptr-set))
+
+      (cgen-decl
+       (cise-render-to-string
+        `(define-cfn ,c-ref-name (ptr::void*) :static
+           (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
+             (return (,box (* pp)))))
+        'toplevel))
+      (cgen-decl
+       (cise-render-to-string
+        `(define-cfn ,c-set-name (ptr::void* obj) ::void :static
+           (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
+             (unless (,pred obj)
+               (SCM_TYPE_ERROR obj ,(x->string name)))
+             (set! (* pp) (,unbox obj))))
+        'toplevel))
+      `(let* ([z (make_native_type ,(symbol->string name)
+                                   (SCM_OBJ ,super) ,(x->string ctype)
+                                   (sizeof (.type ,ctype))
+                                   (SCM_ALIGNOF (.type ,ctype))
+                                   SCM_FALSE
+                                   ,pred
+                                   ,c-ref-name
+                                   ,c-set-name)])
+         (Scm_MakeBinding (Scm_GaucheModule)
+                          (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
+                          SCM_BINDING_INLINABLE))]))
 
  (define-cfn native_fixnumP (obj) ::int :static
    (return (SCM_INTP obj)))
@@ -931,6 +965,9 @@
 
  (define-cfn native_cstrP (obj) ::int :static
    (return (SCM_STRINGP obj)))
+ (define-cfn get_cstr (obj) ::(const char*) :static
+   (SCM_ASSERT (SCM_STRINGP obj))
+   (return (Scm_GetStringConst (SCM_STRING obj))))
 
  ;; subrs returning <void> actually return #<undef>
  (define-cfn native_voidP (obj) ::int :static
@@ -944,34 +981,62 @@
    (return (SCM_CLOSUREP obj)))
 
  (initcode
-  (define-native-type <fixnum>  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP)
-  (define-native-type <short>   SCM_CLASS_INTEGER short native_shortP)
-  (define-native-type <ushort>  SCM_CLASS_INTEGER u_short native_ushortP)
-  (define-native-type <int>     SCM_CLASS_INTEGER int native_intP)
-  (define-native-type <uint>    SCM_CLASS_INTEGER u_int native_uintP)
-  (define-native-type <long>    SCM_CLASS_INTEGER long native_longP)
-  (define-native-type <ulong>   SCM_CLASS_INTEGER u_long native_ulongP)
-  (define-native-type <int8>    SCM_CLASS_INTEGER int8_t native_s8P)
-  (define-native-type <uint8>   SCM_CLASS_INTEGER uint8_t native_u8P)
-  (define-native-type <int16>   SCM_CLASS_INTEGER int16_t native_s16P)
-  (define-native-type <uint16>  SCM_CLASS_INTEGER uint16_t native_u16P)
-  (define-native-type <int32>   SCM_CLASS_INTEGER int32_t native_s32P)
-  (define-native-type <uint32>  SCM_CLASS_INTEGER uint32_t native_u32P)
-  (define-native-type <int64>   SCM_CLASS_INTEGER int64_t native_s64P)
-  (define-native-type <uint64>  SCM_CLASS_INTEGER uint64_t native_u64P)
-  (define-native-type <size_t>  SCM_CLASS_INTEGER size_t Scm_IntegerFitsSizeP)
-  (define-native-type <ssize_t> SCM_CLASS_INTEGER ssize_t Scm_IntegerFitsSsizeP)
-  (define-native-type <ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t Scm_IntegerFitsPtrdiffP)
-  (define-native-type <off_t> SCM_CLASS_INTEGER off_t Scm_IntegerFitsOffsetP)
-  (define-native-type <intptr_t> SCM_CLASS_INTEGER intptr_t Scm_IntegerFitsIntptrP)
-  (define-native-type <uintptr_t> SCM_CLASS_INTEGER uintptr_t Scm_IntegerFitsUintptrP)
-  (define-native-type <float>   SCM_CLASS_REAL float native_realP)
-  (define-native-type <double>  SCM_CLASS_REAL double native_realP)
-  (define-native-type <const-cstring> SCM_CLASS_STRING "const char*" native_cstrP)
-  (define-native-type <input-port>  SCM_CLASS_PORT ScmPort* native_iportP)
-  (define-native-type <output-port> SCM_CLASS_PORT ScmPort* native_oportP)
-  (define-native-type <closure> SCM_CLASS_PROCEDURE ScmClosure* native_closureP)
-  (define-native-type <void>    SCM_CLASS_TOP ScmObj native_voidP)
+  (define-native-type <fixnum>  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP
+    SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <short>   SCM_CLASS_INTEGER short native_shortP
+    SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <ushort>  SCM_CLASS_INTEGER u_short native_ushortP
+    SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <int>     SCM_CLASS_INTEGER int native_intP
+    Scm_MakeInteger Scm_GetInteger)
+  (define-native-type <uint>    SCM_CLASS_INTEGER u_int native_uintP
+    Scm_MakeIntegerU Scm_GetIntegerU)
+  (define-native-type <long>    SCM_CLASS_INTEGER long native_longP
+    Scm_MakeInteger Scm_GetInteger)
+  (define-native-type <ulong>   SCM_CLASS_INTEGER u_long native_ulongP
+    Scm_MakeIntegerU Scm_GetIntegerU)
+  (define-native-type <int8>    SCM_CLASS_INTEGER int8_t native_s8P
+    SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <uint8>   SCM_CLASS_INTEGER uint8_t native_u8P
+    SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <int16>   SCM_CLASS_INTEGER int16_t native_s16P
+    SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <uint16>  SCM_CLASS_INTEGER uint16_t native_u16P
+    SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <int32>   SCM_CLASS_INTEGER int32_t native_s32P
+    Scm_MakeInteger Scm_GetInteger)
+  (define-native-type <uint32>  SCM_CLASS_INTEGER uint32_t native_u32P
+    Scm_MakeIntegerU Scm_GetIntegerU)
+  (define-native-type <int64>   SCM_CLASS_INTEGER int64_t native_s64P
+    Scm_MakeInteger64 Scm_GetInteger64)
+  (define-native-type <uint64>  SCM_CLASS_INTEGER uint64_t native_u64P
+    Scm_MakeIntegerU64 Scm_GetIntegerU64)
+  (define-native-type <size_t>  SCM_CLASS_INTEGER size_t Scm_IntegerFitsSizeP
+    Scm_SizeToInteger Scm_IntegerToSize)
+  (define-native-type <ssize_t> SCM_CLASS_INTEGER ssize_t Scm_IntegerFitsSsizeP
+    Scm_SsizeToInteger Scm_IntegerToSsize)
+  (define-native-type <ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t Scm_IntegerFitsPtrdiffP
+    Scm_PtrdiffToInteger Scm_IntegerToPtrdiff)
+  (define-native-type <off_t> SCM_CLASS_INTEGER off_t Scm_IntegerFitsOffsetP
+    Scm_OffsetToInteger Scm_IntegerToOffset)
+  (define-native-type <intptr_t> SCM_CLASS_INTEGER intptr_t Scm_IntegerFitsIntptrP
+    Scm_IntptrToInteger Scm_IntegerToIntptr)
+  (define-native-type <uintptr_t> SCM_CLASS_INTEGER uintptr_t Scm_IntegerFitsUintptrP
+    Scm_UintptrToInteger Scm_IntegerToUintptr)
+  (define-native-type <float>   SCM_CLASS_REAL float native_realP
+    Scm_MakeFlonum Scm_GetDouble)
+  (define-native-type <double>  SCM_CLASS_REAL double native_realP
+    Scm_MakeFlonum Scm_GetDouble)
+  (define-native-type <const-cstring> SCM_CLASS_STRING "const char*" native_cstrP
+    SCM_MAKE_STR_COPYING get_cstr)
+  (define-native-type <input-port>  SCM_CLASS_PORT ScmPort* native_iportP
+    SCM_OBJ SCM_PORT)
+  (define-native-type <output-port> SCM_CLASS_PORT ScmPort* native_oportP
+    SCM_OBJ SCM_PORT)
+  (define-native-type <closure> SCM_CLASS_PROCEDURE ScmClosure* native_closureP
+    SCM_OBJ SCM_CLOSURE)
+  (define-native-type <void>    SCM_CLASS_TOP ScmObj native_voidP
+    SCM_OBJ SCM_OBJ)
   ))
 
 ;;
@@ -993,7 +1058,9 @@
                           (sizeof (.type void*))
                           (SCM_ALIGNOF (.type void*))
                           SCM_FALSE
-                          native_pointerP))
+                          native_pointerP
+                          NULL
+                          NULL))
   (set! native_function_type
         (make_native_type "<c-function>"
                           native_pointer_type
@@ -1001,7 +1068,9 @@
                           (sizeof (.type void*))
                           (SCM_ALIGNOF (.type void*))
                           SCM_FALSE
-                          native_pointerP))
+                          native_pointerP
+                          NULL
+                          NULL))
 
   (Scm_MakeBinding (Scm_GaucheModule)
                    (SCM_SYMBOL '<void*>)
@@ -1017,7 +1086,8 @@
                             (sizeof (.type void*))
                             (SCM_ALIGNOF (.type void*))
                             pointee-type
-                            native_pointerP)))
+                            native_pointerP
+                            NULL NULL)))
 
 (define (make-pointer-type pointee-type)
   (assume-type pointee-type <native-type>)
@@ -1039,7 +1109,8 @@
                             (Scm_Cons (SCM_MAKE_BOOL varargs?)
                                       (Scm_Cons return-type
                                                 argument-types))
-                            native_pointerP)))
+                            native_pointerP
+                            NULL NULL)))
 
 (define (make-c-function-type return-type
                               argument-types

@@ -370,6 +370,9 @@
     [_ (error <cgen-stub-error> "invalid stub form:" form)]))
 
 ;; meta stuff
+(define-form-parser define-cise-macro args
+  (eval `(define-cise-macro ,@args) (current-module)))
+
 (define-form-parser define-cise-stmt args
   (eval `(define-cise-stmt ,@args) (current-module)))
 
