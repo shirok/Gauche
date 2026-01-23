@@ -254,7 +254,7 @@ SCM_EXTERN int       Scm_IntegerFitsSsizeP(ScmObj);
 SCM_EXTERN ssize_t   Scm_IntegerToSsize(ScmObj);
 SCM_EXTERN ScmObj    Scm_SsizeToInteger(ssize_t);
 SCM_EXTERN int       Scm_IntegerFitsPtrdiffP(ScmObj);
-SCM_EXTERN ptrdiff_t Scm_IntegerToPtrdiffP(ScmObj);
+SCM_EXTERN ptrdiff_t Scm_IntegerToPtrdiff(ScmObj);
 SCM_EXTERN ScmObj    Scm_PtrdiffToInteger(ssize_t);
 SCM_EXTERN int       Scm_IntegerFitsOffsetP(ScmObj);
 SCM_EXTERN off_t     Scm_IntegerToOffset(ScmObj);

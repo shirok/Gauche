@@ -3478,12 +3478,12 @@ size_t Scm_IntegerToSize(ScmObj i)
     return (size_t)-1;       /* dummy */
 }
 
-ScmObj Scm_SizeToInteger(size_t off)
+ScmObj Scm_SizeToInteger(size_t size)
 {
 #if SIZEOF_SIZE_T == SIZEOF_LONG
-    return Scm_MakeInteger(off);
+    return Scm_MakeIntegerU(size);
 #elif SIZEOF_SIZE_T == 8
-    return Scm_MakeInteger64((int64_t)off);
+    return Scm_MakeIntegerU64((uint64_t)size);
 #else
 # error "size_t size on this platform is not suported."
 #endif
@@ -3497,6 +3497,17 @@ int Scm_IntegerFitsSsizeP(ScmObj i)
                 && Scm_NumCmp(i, SCM_SSIZE_T_MAX) <= 0);
     }
     return FALSE;
+}
+
+ScmObj Scm_SsizeToInteger(ssize_t size)
+{
+#if SIZEOF_SIZE_T == SIZEOF_LONG
+    return Scm_MakeInteger(size);
+#elif SIZEOF_SIZE_T == 8
+    return Scm_MakeInteger64((int64_t)size);
+#else
+# error "size_t size on this platform is not suported."
+#endif
 }
 
 /* i must satisfy Scm_IntegerFitsSsizeP */
