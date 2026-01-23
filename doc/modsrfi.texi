@@ -5866,6 +5866,21 @@ F_5は合成数なのでテストは失敗します。
 @end example
 
 @c EN
+When combined with @code{data.random}, @code{check-ec} can be used
+for property testing.
+@c JP
+@code{data.random}と組み合わせると、@code{check-ec}はプロパティテストにも
+使えます。
+@c COMMON
+
+@example
+(use data.random)
+(check-ec (:parallel (: n 100)   ; try 100 times
+                     (:let xs (list-of (fixnums$))))  ; list of random fixnums
+          (reverse (reverse xs)) => xs)  ; reverse . reverse == identity
+@end example
+
+@c EN
 The entire @code{check-ec} form is treated as one check for the sake of
 reporting.
 @c JP
