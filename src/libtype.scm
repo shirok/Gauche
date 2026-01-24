@@ -198,20 +198,7 @@
  (define-cproc %dump-type-table () ::<void> ; for debug
    (Scm__MemoTableDump type-table SCM_CURERR))
 
- (define-ctype ScmNativeType
-   ::(.struct ScmNativeTypeRec
-              (SCM_INSTANCE_HEADER::||
-               name::ScmObj
-               c-of-type::(.function (obj) ::int *)
-               c-ref::(.function (ptr::void*) ::ScmObj *)
-               c-set::(.function (ptr::void* obj) ::void *)
-               super::ScmObj
-               c-type-name::(const char *)
-               size::size_t
-               alignment::size_t
-               inner)))
-
- (define-cclass <native-type> :base :private :no-meta
+ (define-cclass <native-type> :base :no-meta
    "ScmNativeType*" "Scm_NativeTypeClass"
    (c "SCM_CLASS_METACLASS_CPL+1")
    ((name)

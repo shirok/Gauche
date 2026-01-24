@@ -35,7 +35,7 @@
 #define GAUCHE_PRIV_TYPEP_H
 
 /* Some internal type mechanisms, such as type constructors.
-   We expose them only through Scheme public API. 
+   We expose them only through Scheme public API.
 
    See src/libtype.scm for the detailed explanations of those types
    and their usage. */
@@ -50,5 +50,24 @@ typedef struct ScmTypeConstructorRec {
     ScmObj   subtypeP;
     ScmObj   supertypeP;
 } ScmTypeConstructor;
+
+/* <native-type> */
+typedef struct ScmNativeTypeRec {
+    SCM_INSTANCE_HEADER;
+    ScmObj   name;
+    int      (*c_of_type)(ScmObj);
+    ScmObj   (*c_ref)(void*);
+    void     (*c_set)(void*, ScmObj);
+    ScmObj   super;
+    const char *c_type_name;
+    size_t   size;
+    size_t   alignment;
+    ScmObj   inner;
+} ScmNativeType;
+
+SCM_CLASS_DECL(Scm_NativeTypeClass);
+#define SCM_CLASS_NATIVE_TYPE    (&Scm_NativeTypeClass)
+#define SCM_NATIVE_TYPE(obj)     ((ScmNativeType*)(obj))
+#define SCM_NATIVE_TYPE_P(obj)   (SCM_ISA(obj, SCM_CLASS_NATIVE_TYPE))
 
 #endif  /*GAUCHE_PRIV_TYPEP_H*/
