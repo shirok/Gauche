@@ -217,6 +217,17 @@
   (unless (slot-bound? c 'supertype?)
     (slot-set! c 'supertype? (^[type sub] #f))))
 
+;; Returns a class that's the basis of the native type
+(inline-stub
+ (define-cfn Scm_NativeTypeBaseClass (np::ScmNativeType*)
+   (let* ([t::ScmNativeType* np])
+     (loop
+      (let* ([sup (-> t super)])
+        (cond [(SCM_CLASSP sup) (return sup)]
+              [(SCM_NATIVE_TYPE_P sup) (set! t (SCM_NATIVE_TYPE sup))]
+              [else (Scm_Error "[internal] Bad inheritance setup: %S" np)])))))
+ )
+
 ;;;
 ;;; type? obj
 ;;;
@@ -277,13 +288,25 @@
     [(SCM_EQ super (SCM_OBJ SCM_CLASS_TOP)) (return SCM_TRUE)]
     [(SCM_EQ sub (SCM_OBJ SCM_CLASS_BOTTOM)) (return SCM_TRUE)]
     [(SCM_EQ super sub) (return SCM_TRUE)]
-    ;; Native types can be a subtype of a class.  No type (except BOTTOM) can
-    ;; be a subtype of a native type.
+    ;; Native types can be a subtype of a class.  Classes never be a subtype
+    ;; of a native type (except <bottom>).
+    ;; Native types can form single inheritance chain.
     [(and (SCM_NATIVE_TYPE_P sub)
           (SCM_CLASSP super))
-     (let* ([klass (-> (SCM_NATIVE_TYPE sub) super)])
-       (SCM_ASSERT (SCM_CLASSP klass))
-       (set! sub klass))]
+     ;; we fall back to class vs class comparison
+     (let* ([klass (Scm_NativeTypeBaseClass (SCM_NATIVE_TYPE sub))])
+       (set! sub klass))]        ; retry
+    [(and (SCM_NATIVE_TYPE_P sub)
+          (SCM_NATIVE_TYPE_P super))
+     ;; we have single inheritance between native types
+     (set! sub (-> (SCM_NATIVE_TYPE sub) super))
+     (loop
+      (cond [(SCM_EQ sub super) (return SCM_TRUE)]
+            [(SCM_NATIVE_TYPE_P sub)
+             (set! sub (-> (SCM_NATIVE_TYPE sub) super))] ;retry
+            [else (return SCM_FALSE)]))]
+    ;; the case of (subtype? <native-type>  <descriptive-type>) is handled
+    ;; later
     [(SCM_NATIVE_TYPE_P super) (return SCM_FALSE)]
     ;; Both are classes, we can use subclass?
     [(and (SCM_CLASSP sub) (SCM_CLASSP super))
@@ -1038,7 +1061,7 @@
 
  (initcode
   (set! native_pointer_type
-        (make_native_type "<void*>"
+        (make_native_type "<native-pointer>"
                           (SCM_OBJ SCM_CLASS_TOP)
                           "ScmForeignPointer*"
                           (sizeof (.type void*))
@@ -1059,7 +1082,7 @@
                           NULL))
 
   (Scm_MakeBinding (Scm_GaucheModule)
-                   (SCM_SYMBOL '<void*>)
+                   (SCM_SYMBOL '<native-pointer>)
                    native_pointer_type
                    SCM_BINDING_INLINABLE))
  )
