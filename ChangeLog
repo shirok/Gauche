@@ -1,3 +1,7 @@
+2026-01-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmisc.scm (foreign-pointer-type{-set!}): Added. (internal API)
+
 2026-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c: Add [:upunct:] and [:UPUNCT:] char-set-spec

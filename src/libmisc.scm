@@ -84,6 +84,17 @@
 ; for backward compatibility - deprecated
 (define foreign-pointer-attribute-set foreign-pointer-attribute-set!)
 
+(select-module gauche.internal)
+
+(define *foreign-pointer-type-key* (delay (gensym "type-perapera")))
+
+(define (foreign-pointer-type fp)
+  (foreign-pointer-attribute-get fp (force *foreign-pointer-type-key*) #f))
+
+(define (foreign-pointer-type-set! fp type)
+  (assume-type type <native-type>)
+  (foreign-pointer-attribute-set! fp (force *foreign-pointer-type-key*) type))
+
 ;;
 ;; Static configuration
 ;;
