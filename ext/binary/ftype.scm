@@ -41,6 +41,8 @@
 (define-module binary.ftype
   (use util.match)
   (extend gauche.typeutil)              ;access internal routines
+  (export native-ref
+          native-set!)
   )
 (select-module binary.ftype)
 
@@ -48,7 +50,7 @@
  (.include "gauche/priv/typeP.h"))
 
 ;; native pointer type
-
+;; type must be a subtype of <native-pointer>
 (define-cproc %native-pointer-ref (type::<native-type>
                                    fp::<foreign-pointer>)
   (let* ([p::void* (Scm_ForeignPointerRef fp)]
@@ -70,3 +72,29 @@
     (if (!= c-set  NULL)
       (c-set p val)
       (Scm_Error "Cannot set foreign pinter: %S" fp))))
+
+(define (native-ref fp :optional (type #f))
+  (assume-type fp <foreign-pointer>)
+  (let1 t (or ((with-module gauche.internal foreign-pointer-type fp) fp)
+              type)
+    (unless t
+      (error "Can't dereference a foreign pointer: type unknown:" fp))
+    (cond
+     [(subtype? t <native-pointer>)
+      (%native-pointer-ref t fp)]
+     ;; more to come
+     [else
+      (errorf "Can't dereference a foreign pointer of type %S: %S" t fp)])))
+
+(define (native-set! fp val :optional (type #f))
+  (assume-type fp <foreign-pointer>)
+  (let1 t (or ((with-module gauche.internal foreign-pointer-type fp) fp)
+              type)
+    (unless t
+      (error "Can't set a foreign pointer: type unknown:" fp))
+    (cond
+     [(subtype? t <native-pointer>)
+      (%native-pointer-set! t fp val)]
+     ;; more to come
+     [else
+      (errorf "Can't set a foreign pointer of type %S: %S" t fp)])))
