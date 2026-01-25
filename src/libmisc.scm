@@ -86,6 +86,9 @@
 
 (select-module gauche.internal)
 
+;; TRANSIENT: We need to wrap gensym, for it is bound after this
+;; module is initialized.  If we ever have deferred initialization,
+;; use it to replace delay/force.
 (define *foreign-pointer-type-key* (delay (gensym "type-perapera")))
 
 (define (foreign-pointer-type fp)
