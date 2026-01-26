@@ -1055,8 +1055,11 @@
 (inline-stub
  (define-cvar native_pointer_type)
  (define-cvar native_function_type)     ;root of c-function pointer
+ (define-cvar native_array_type)
 
- (define-cfn native_pointerP (obj) ::int :static
+ ;; This predicate covers all native types that uses foreign pointer as
+ ;; instance.
+ (define-cfn native_ptrP (obj) ::int :static
    (return (SCM_FOREIGN_POINTER_P obj)))
 
  (initcode
@@ -1067,17 +1070,27 @@
                           (sizeof (.type void*))
                           (SCM_ALIGNOF (.type void*))
                           SCM_FALSE
-                          native_pointerP
+                          native_ptrP
                           NULL
                           NULL))
   (set! native_function_type
-        (make_native_type "<c-function>"
-                          native_pointer_type
+        (make_native_type "<native-function>"
+                          (SCM_OBJ SCM_CLASS_TOP)
                           "ScmForeignPointer*"
                           (sizeof (.type void*))
                           (SCM_ALIGNOF (.type void*))
                           SCM_FALSE
-                          native_pointerP
+                          native_ptrP
+                          NULL
+                          NULL))
+  (set! native_array_type
+        (make_native_type "<native-array>"
+                          (SCM_OBJ SCM_CLASS_TOP)
+                          "ScmForeignPointer*"
+                          (sizeof (.type void*))
+                          (SCM_ALIGNOF (.type void*))
+                          SCM_FALSE
+                          native_ptrP
                           NULL
                           NULL))
 
@@ -1089,13 +1102,13 @@
 
 (define-cproc %make-pointer-type (pointer-type-name::<const-cstring>
                                   pointee-type)
-  (return (make_native_type pointer-type-name
+  (return (make-native-type pointer-type-name
                             native_pointer_type
                             "ScmForeignPointer*"
                             (sizeof (.type void*))
                             (SCM_ALIGNOF (.type void*))
                             pointee-type
-                            native_pointerP
+                            native_ptrP
                             NULL NULL)))
 
 (define (make-pointer-type pointee-type)
@@ -1106,11 +1119,11 @@
          [pointer-name #"<~|bare-name|*>"])
     (%make-pointer-type pointer-name pointee-type)))
 
-(define-cproc %make-c-function-type (c-function-type-name::<const-cstring>
-                                     return-type
-                                     argument-types
-                                     varargs?::<boolean>)
-  (return (make_native-type c-function-type-name
+(define-cproc %make-native-function-type (type-name::<const-cstring>
+                                          return-type
+                                          argument-types
+                                          varargs?::<boolean>)
+  (return (make-native-type type-name
                             native_function_type
                             "ScmForeignPointer*"
                             (sizeof (.type void*))
@@ -1118,19 +1131,51 @@
                             (Scm_Cons (SCM_MAKE_BOOL varargs?)
                                       (Scm_Cons return-type
                                                 argument-types))
-                            native_pointerP
+                            native_ptrP
                             NULL NULL)))
 
-(define (make-c-function-type return-type
-                              argument-types
-                              varargs?)
+(define (make-native-function-type return-type
+                                   argument-types
+                                   varargs?)
   (assume-type return-type <native-type>)
   (dolist [arg-type argument-types]
     (assume-type arg-type <native-type>))
-  (%make-c-function-type "<c-function>"
-                         return-type
-                         argument-types
-                         (boolean varargs?)))
+  (%make-native-function-type "<native-function>" ;TODO syntesize better name
+                              return-type
+                              argument-types
+                              (boolean varargs?)))
+
+(define-cproc %make-native-array-type (type-name::<const-cstring>
+                                       element-type
+                                       dimensions)
+  (return (make-native-type type-name
+                            native_array_type
+                            "ScmForeignPointer*"
+                            (sizeof (.type void*))
+                            (SCM_ALIGNOF (.type void*))
+                            (Scm_Cons element-type dimensions)
+                            native_ptrP
+                            NULL NULL)))
+
+(define (make-native-array-type element-type dimensions)
+  (assume-type element-type <native-type>)
+  (let loop ([dims dimensions])
+    (cond [(not (pair? dims))
+           (error "Bad native array dimensions; must be a proper list, but got:"
+                  dimensions)]
+          [(and (null? (cdr dims))
+                (eq? (car dims) '*))]   ;last dimension can be *
+          [(and (exact-integer? (car dims))
+                (>= (car dims) 0))
+           (loop (cdr dims))]
+          [else
+           (error "Bad native array dimensions; must be a list of nonnegative \
+                   integers, or '* at the last position, but got:"
+                  dimensions)]))
+  (let1 name (format "<native-array ~a ~a>"
+                     (~ element-type 'name)
+                     dimensions)
+    (%make-native-array-type name element-type dimensions)))
 
 ;;;
 ;;; Make exported symbol visible from outside
