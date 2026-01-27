@@ -52,28 +52,35 @@
 ;; native pointer type
 ;; type must be a subtype of <native-pointer>
 (define-cproc %native-pointer-ref (type::<native-type>
-                                   fp::<foreign-pointer>)
+                                   fp::<foreign-pointer>
+                                   offset::<fixnum>)
   (let* ([p::void* (Scm_ForeignPointerRef fp)]
-         [c-ref::(.function (p::void*)::ScmObj *) (-> type c-ref)])
-    (if (!= c-ref NULL)
-      (return (c-ref p))
-      (begin (Scm_Error "Cannot dereference foreign pinter: %S" fp)
-             (return SCM_UNDEFINED))))) ;dummy
+         [inner::ScmNativeType* (Scm_NativePointerPointeeType type)]
+         [c-ref::(.function (p::void*)::ScmObj *) (-> inner c-ref)])
+    (when (== c-ref NULL)
+      (Scm_Error "Cannot dereference foreign pointer: %S" fp))
+    (unless (== offset 0)
+      (set! p (+ p (* offset (-> inner size)))))
+    (return (c-ref p))))
 
 (define-cproc %native-pointer-set! (type::<native-type>
                                     fp::<foreign-pointer>
+                                    offset::<fixnum>
                                     val)
   ::<void>
   (let* ([p::void* (Scm_ForeignPointerRef fp)]
-         [c-of-type::(.function (v::ScmObj)::int *) (-> type c-of-type)]
-         [c-set::(.function (p::void* v::ScmObj)::void *) (-> type c-set)])
+         [inner::ScmNativeType* (Scm_NativePointerPointeeType type)]
+         [c-of-type::(.function (v::ScmObj)::int *) (-> inner c-of-type)]
+         [c-set::(.function (p::void* v::ScmObj)::void *) (-> inner c-set)])
     (unless (c-of-type val)
       (Scm_Error "Invalid object to set to %S: %S" fp val))
-    (if (!= c-set  NULL)
-      (c-set p val)
-      (Scm_Error "Cannot set foreign pinter: %S" fp))))
+    (when (== c-set NULL)
+      (Scm_Error "Cannot set foreign pointer: %S" fp))
+    (unless (== offset 0)
+      (set! p (+ p (* offset (-> inner size)))))
+    (c-set p val)))
 
-(define (native-ref fp :optional (type #f))
+(define (native-ref fp selector :optional (type #f))
   (assume-type fp <foreign-pointer>)
   (let1 t (or ((with-module gauche.internal foreign-pointer-type fp) fp)
               type)
@@ -81,12 +88,13 @@
       (error "Can't dereference a foreign pointer: type unknown:" fp))
     (cond
      [(subtype? t <native-pointer>)
-      (%native-pointer-ref t fp)]
+      (assume-type selector <fixnum>)
+      (%native-pointer-ref t fp selector)]
      ;; more to come
      [else
       (errorf "Can't dereference a foreign pointer of type %S: %S" t fp)])))
 
-(define (native-set! fp val :optional (type #f))
+(define (native-set! fp selector val :optional (type #f))
   (assume-type fp <foreign-pointer>)
   (let1 t (or ((with-module gauche.internal foreign-pointer-type fp) fp)
               type)
@@ -94,7 +102,8 @@
       (error "Can't set a foreign pointer: type unknown:" fp))
     (cond
      [(subtype? t <native-pointer>)
-      (%native-pointer-set! t fp val)]
+      (assume-type selector <fixnum>)
+      (%native-pointer-set! t fp selector val)]
      ;; more to come
      [else
       (errorf "Can't set a foreign pointer of type %S: %S" t fp)])))
