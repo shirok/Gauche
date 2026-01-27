@@ -70,4 +70,16 @@ SCM_CLASS_DECL(Scm_NativeTypeClass);
 #define SCM_NATIVE_TYPE(obj)     ((ScmNativeType*)(obj))
 #define SCM_NATIVE_TYPE_P(obj)   (SCM_ISA(obj, SCM_CLASS_NATIVE_TYPE))
 
+SCM_EXTERN _Bool Scm_NativePointerP(ScmNativeType*);
+SCM_EXTERN ScmNativeType *Scm_NativePointerPointeeType(ScmNativeType*);
+
+SCM_EXTERN _Bool Scm_NativeFunctionP(ScmNativeType*);
+SCM_EXTERN ScmNativeType *Scm_NativeFunctionReturnType(ScmNativeType*);
+SCM_EXTERN _Bool Scm_NativeFunctionVarargsP(ScmNativeType*);
+SCM_EXTERN ScmObj Scm_NativeFunctionArgTypes(ScmNativeType*);
+
+SCM_EXTERN _Bool Scm_NativeArrayP(ScmNativeType*);
+SCM_EXTERN ScmNativeType *Scm_NativeArrayElementType(ScmNativeType*);
+SCM_EXTERN ScmObj Scm_NativeArrayDimensions(ScmNativeType*);
+
 #endif  /*GAUCHE_PRIV_TYPEP_H*/

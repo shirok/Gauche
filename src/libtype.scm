@@ -1049,7 +1049,7 @@
   ))
 
 ;;
-;; Native pointers
+;; Native composite types
 ;;
 
 (inline-stub
@@ -1098,6 +1098,76 @@
                    (SCM_SYMBOL '<native-pointer>)
                    native_pointer_type
                    SCM_BINDING_INLINABLE))
+
+ ;; Check if a <native-type> is a pointer, a function, etc.
+ ;; Note that they return false if the argument is the 'base type',
+ ;; e.g. <native-pointer>.  They return true only on the 'concrete'
+ ;; types, in which the 'inner' slot should contain valid data.
+ (define-cfn native-compound-type-p (np::ScmNativeType* base)
+   ::_Bool :static
+   (loop
+    (let* ([sup (-> np super)])
+      (cond [(SCM_EQ sup base) (return TRUE)]
+            [(SCM_NATIVE_TYPE_P sup) (set! np (SCM_NATIVE_TYPE sup))]
+            [else (return FALSE)]))))
+
+ (define-cfn Scm_NativePointerP (np::ScmNativeType*) ::_Bool
+   (return (native-compound-type-p np native-pointer-type)))
+
+ (define-cfn Scm_NativeFunctionP (np::ScmNativeType*) ::_Bool
+   (return (native-compound-type-p np native-function-type)))
+
+ (define-cfn Scm_NativeArrayP (np::ScmNativeType*) ::_Bool
+   (return (native-compound-type-p np native-array-type)))
+
+ ;; Accessor of ancillary info.  The code should never directly access
+ ;; 'inner' field.  Use these instead.
+ (define-cfn Scm_NativePointerPointeeType (np::ScmNativeType*) ::ScmNativeType*
+   (unless (Scm_NativePointerP np)
+     (Scm_Error "Concrete native pointer required, but got: %S" np))
+   (let* ([inner (-> np inner)])
+     (SCM_ASSERT (SCM_NATIVE_TYPE_P inner))
+     (return (SCM_NATIVE_TYPE inner))))
+
+ (define-cfn Scm_NativeFunctionReturnType (np::ScmNativeType*) ::ScmNativeType*
+   (unless (Scm_NativeFunctionP np)
+     (Scm_Error "Concrete native function required, but got: %S" np))
+   (let* ([inner (-> np inner)])
+     (SCM_ASSERT (SCM_PAIRP inner))
+     (SCM_ASSERT (SCM_PAIRP (SCM_CDR inner)))
+     (let* ([rt (SCM_CADR inner)])
+       (SCM_ASSERT (SCM_NATIVE_TYPE_P rt))
+       (return (SCM_NATIVE_TYPE rt)))))
+
+ (define-cfn Scm_NativeFunctionVarargsP (np::ScmNativeType*) ::_Bool
+   (unless (Scm_NativeFunctionP np)
+     (Scm_Error "Concrete native function required, but got: %S" np))
+   (let* ([inner (-> np inner)])
+     (SCM_ASSERT (SCM_PAIRP inner))
+     (return (SCM_BOOL_VALUE (SCM_CAR inner)))))
+
+ (define-cfn Scm_NativeFunctionArgTypes (np::ScmNativeType*) ::ScmObj
+   (unless (Scm_NativeFunctionP np)
+     (Scm_Error "Concrete native function required, but got: %S" np))
+   (let* ([inner (-> np inner)])
+     (SCM_ASSERT (SCM_PAIRP inner))
+     (SCM_ASSERT (SCM_PAIRP (SCM_CDR inner)))
+     (return (SCM_CDDR inner))))
+
+ (define-cfn Scm_NativeArrayElementType (np::ScmNativeType*) ::ScmNativeType*
+   (unless (Scm_NativeArrayP np)
+     (Scm_Error "Concrete native array required, but got: %S" np))
+   (let* ([inner (-> np inner)])
+     (SCM_ASSERT (SCM_PAIRP inner))
+     (SCM_ASSERT (SCM_NATIVE_TYPE_P (SCM_CAR inner)))
+     (return (SCM_NATIVE_TYPE (SCM_CAR inner)))))
+
+ (define-cfn Scm_NativeArrayDimensions (np::ScmNativeType*) ::ScmObj
+   (unless (Scm_NativeArrayP np)
+     (Scm_Error "Concrete native array required, but got: %S" np))
+   (let* ([inner (-> np inner)])
+     (SCM_ASSERT (SCM_PAIRP inner))
+     (return (SCM_CDR inner))))
  )
 
 (define-cproc %make-pointer-type (pointer-type-name::<const-cstring>
