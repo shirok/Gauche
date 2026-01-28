@@ -14,6 +14,7 @@
 * Generating build files::      gauche.configure
 * Connection framework::        gauche.connection
 * Dictionary framework::        gauche.dictionary
+* Foreign Function Interface::  gauche.ffi
 * Low-level file operations::   gauche.fcntl
 * Generators::                  gauche.generator
 * Hooks::                       gauche.hook
@@ -10484,6 +10485,173 @@ suidビットとsgidビットを無視します。
 @c COMMON
 @end defvr
 
+@c ----------------------------------------------------------------------
+@node Foreign Function Interface, Library modules - Gauche extensions
+@section @code{gauche.dictionary} - Dictionary framework
+
+@deftp {Module} gauche.ffi
+@mdindex gauche.ffi
+@c EN
+Foreign Function Interface to C using libffi.
+@c JP
+TODO
+@c COMMON
+@end deftp
+
+@defun open-shared-library path :optional versions
+@end defun
+
+file must be a string.
+
+Opens given file shared library and returns its pointer. If versions are given
+then last version found is used. Version is added into the end of file after
+suffix and a dot.
+
+If library is not found error is raised.
+
+The internal process of open-shared-library is depending on the platform.
+
+@defun close-shared-librar shared-library
+@end defun
+
+Closes the given shared library.
+
+@defun shared-object-suffix
+@end defun
+
+Returns the platform dependendant shared object suffix.
+
+@defun  c-function shared-library return-type name :optional (argument-types ...)
+@end defun
+
+Creates a c-function object and returns a Scheme procedure.
+
+shared-library must be opened shared-library.
+
+return-type must be one of the following:
+
+    'int8
+    'uint8
+    'int16
+    'uint16
+    'int32
+    'uint32
+    'int64
+    'uint64
+    'char
+    'unsigned-char
+    'short
+    'unsigned-short
+    'int
+    'unsigned-int
+    'long
+    'unsigned-long
+    'float
+    'double
+    'pointer
+    'void
+
+@defun make-c-function shared-library return-type name argument-types
+@end defun
+
+Creates C function. This procedure is underlying procedure for c-function.
+The arguments are the same as c-function, only argument-types must be a list of
+types.
+
+@defun pointer? object
+@end defun
+
+Returns #t if object is pointer object, otherwise #f.
+
+@defun integer->pointer integer
+@end defun
+
+Converts given integer to pointer object.
+
+To represents NULL pointer, you can write like this:
+
+(integer->pointer 0)
+
+@defun pointer->integer pointer
+@end defun
+
+Converts given pointer to integer.
+
+@defun string->pointer string
+@end defun
+
+Convert given Scheme string into pointer.
+
+@defun pointer->string pointer
+@end defun
+
+Convert given pointer into Scheme string.
+
+@defun allocate-pointer size
+@end defun
+
+Allocates a size of byte memory and returns an pointer object.
+
+@defun null-pointer
+@end defun
+
+Creates a NULL pointer.
+
+@defun null-pointer? object
+@end defun
+
+Returns #t when obj is a pointer representing NULL otherwise #f.
+
+@defun pointer-ref-c- type pointer offset
+@end defun
+
+For example pointer-ref-c-int.
+
+Returns an integer value of offset offset of pointer depending on the type.
+
+type must be one of the following:
+
+    int8
+    uint8
+    int16
+    uint16
+    int32
+    uint32
+    int64
+    uint64
+    char
+    unsigned-char
+    short
+    unsigned-short
+    int
+    unsigned-int
+    long
+    unsigned-long
+    float
+    double
+    pointer
+    void
+
+@defun pointer-set-c- type! pointer offset
+@end defun
+
+For example pointer-set-c-int!.
+
+Sets value to offset offset of pointer. Supporting types are the same as
+pointer-ref-c- type.
+
+@defun size-of-type type
+@end defun
+
+Returns the size of C type.
+
+@defun align-of-type type
+@end defun
+
+Returns the align of C type.
+
+@defun {Generic function} dict-get (dict @code{<dictionary>}) key :optional default
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Generators, Hooks, Low-level file operations, Library modules - Gauche extensions
