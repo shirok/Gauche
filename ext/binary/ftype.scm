@@ -47,38 +47,106 @@
 (select-module binary.ftype)
 
 (inline-stub
- (.include "gauche/priv/typeP.h"))
+ (.include "gauche/priv/typeP.h")
+
+ ;; Access p[offset], where
+ ;;   etype is the type of element
+ ;;   fp is a foreign pointer for p
+ ;;   offset is the element index
+ (define-cfn %aref (element-type::ScmNativeType*
+                    fp::ScmForeignPointer*
+                    offset::ScmSmallInt)
+   :static
+   (let* ([p::void* (Scm_ForeignPointerRef fp)]
+          [c-ref::(.function (p::void*)::ScmObj *)
+                  (-> element-type c-ref)])
+     (when (== c-ref NULL)
+       (Scm_Error "Cannot dereference foreign pointer: %S" fp))
+    (unless (== offset 0)
+      (set! p (+ p (* offset (-> element-type size)))))
+    (return (c-ref p))))
+
+ ;; Set p[offset] = val
+ (define-cfn %aset! (element-type::ScmNativeType*
+                     fp::ScmForeignPointer*
+                     offset::ScmSmallInt
+                     val)
+   ::void :static
+   (let* ([p::void* (Scm_ForeignPointerRef fp)]
+          [c-of-type::(.function (v::ScmObj)::int *) (-> element-type c-of-type)]
+          [c-set::(.function (p::void* v::ScmObj)::void *) (-> element-type c-set)])
+    (unless (c-of-type val)
+      (Scm_Error "Invalid object to set to %S: %S" fp val))
+    (when (== c-set NULL)
+      (Scm_Error "Cannot set foreign pointer: %S" fp))
+    (unless (== offset 0)
+      (set! p (+ p (* offset (-> element-type size)))))
+    (c-set p val)))
+ )
 
 ;; native pointer type
 ;; type must be a subtype of <native-pointer>
 (define-cproc %native-pointer-ref (type::<native-type>
                                    fp::<foreign-pointer>
                                    offset::<fixnum>)
-  (let* ([p::void* (Scm_ForeignPointerRef fp)]
-         [inner::ScmNativeType* (Scm_NativePointerPointeeType type)]
-         [c-ref::(.function (p::void*)::ScmObj *) (-> inner c-ref)])
-    (when (== c-ref NULL)
-      (Scm_Error "Cannot dereference foreign pointer: %S" fp))
-    (unless (== offset 0)
-      (set! p (+ p (* offset (-> inner size)))))
-    (return (c-ref p))))
+  (let* ([inner::ScmNativeType* (Scm_NativePointerPointeeType type)])
+    (%aref inner fp offset)))
 
 (define-cproc %native-pointer-set! (type::<native-type>
                                     fp::<foreign-pointer>
                                     offset::<fixnum>
                                     val)
   ::<void>
-  (let* ([p::void* (Scm_ForeignPointerRef fp)]
-         [inner::ScmNativeType* (Scm_NativePointerPointeeType type)]
-         [c-of-type::(.function (v::ScmObj)::int *) (-> inner c-of-type)]
-         [c-set::(.function (p::void* v::ScmObj)::void *) (-> inner c-set)])
-    (unless (c-of-type val)
-      (Scm_Error "Invalid object to set to %S: %S" fp val))
-    (when (== c-set NULL)
-      (Scm_Error "Cannot set foreign pointer: %S" fp))
-    (unless (== offset 0)
-      (set! p (+ p (* offset (-> inner size)))))
-    (c-set p val)))
+  (let* ([inner::ScmNativeType* (Scm_NativePointerPointeeType type)])
+    (%aset! inner fp offset val)))
+
+(define-cproc %native-array-element-type (type::<native-type>)
+  (return (SCM_OBJ (Scm_NativeArrayElementType type))))
+
+(define-cproc %native-array-dimensions (type::<native-type>)
+  (return (Scm_NativeArrayDimensions type)))
+
+(define-cproc %native-array-ref (type::<native-type>
+                                 fp::<foreign-pointer>
+                                 offset::<fixnum>)
+  (let* ([etype::ScmNativeType* (Scm_NativeArrayElementType type)])
+    (%aref etype fp offset)))
+
+(define-cproc %native-array-set! (type::<native-type>
+                                  fp::<foreign-pointer>
+                                  offset::<fixnum>
+                                  val)
+  (let* ([etype::ScmNativeType* (Scm_NativeArrayElementType type)])
+    (%aset! etype fp offset val)))
+
+(define (native-type-offset type selector)
+  (assume-type type <native-type>)
+  (cond
+   [(subtype? type <native-pointer>)
+    (assume-type selector <fixnum>)
+    selector]
+   [(subtype? type <native-array>)
+    (let ([etype (%native-array-element-type type)]
+          [dims (%native-array-dimensions type)])
+      (unless (length=? selector dims)
+        (errorf "Native array selector ~s doesn't match the dimensions ~s"
+                selector dims))
+      (unless (every (every-pred fixnum? positive?) selector)
+        (error "Invalid native array selector:" selector))
+      (let loop ([ds (reverse dims)]
+                 [ss (reverse selector)]
+                 [step 1]
+                 [i 0])
+        (cond [(null? ds) i]
+              [(eq? (car ds) '*) ; this can only appear in the 1st dim
+               (+ (car ss) i)]
+              [(< (car ss) (car ds))
+               (loop (cdr ds) (cdr ss) (* step (car ds))
+                     (+ (* (car ss) step) i))]
+              [else
+               (error "Native array selector is out of range:" selector)])))]
+   [else
+    (error "Unsupported native aggregate type:" type)]))
 
 (define (native-ref fp selector :optional (type #f))
   (assume-type fp <foreign-pointer>)
@@ -86,13 +154,11 @@
               type)
     (unless t
       (error "Can't dereference a foreign pointer: type unknown:" fp))
-    (cond
-     [(subtype? t <native-pointer>)
-      (assume-type selector <fixnum>)
-      (%native-pointer-ref t fp selector)]
-     ;; more to come
-     [else
-      (errorf "Can't dereference a foreign pointer of type %S: %S" t fp)])))
+    (let1 offset (native-type-offset t selector)
+      (cond
+       [(subtype? t <native-pointer>) (%native-pointer-ref t fp offset)]
+       [(subtype? t <native-array>) (%native-array-ref t fp offset)]
+       [else (error "Unsupported native aggregate type:" t)]))))
 
 (define (native-set! fp selector val :optional (type #f))
   (assume-type fp <foreign-pointer>)
@@ -100,10 +166,8 @@
               type)
     (unless t
       (error "Can't set a foreign pointer: type unknown:" fp))
-    (cond
-     [(subtype? t <native-pointer>)
-      (assume-type selector <fixnum>)
-      (%native-pointer-set! t fp selector val)]
-     ;; more to come
-     [else
-      (errorf "Can't set a foreign pointer of type %S: %S" t fp)])))
+    (let1 offset (native-type-offset t selector)
+      (cond
+       [(subtype? t <native-pointer>) (%native-pointer-set! t fp offset val)]
+       [(subtype? t <native-array>) (%native-array-set! t fp offset val)]
+       [else (error "Unsupported native aggregate type:" t)]))))

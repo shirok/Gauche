@@ -1097,6 +1097,14 @@
   (Scm_MakeBinding (Scm_GaucheModule)
                    (SCM_SYMBOL '<native-pointer>)
                    native_pointer_type
+                   SCM_BINDING_INLINABLE)
+  (Scm_MakeBinding (Scm_GaucheModule)
+                   (SCM_SYMBOL '<native-function>)
+                   native_function_type
+                   SCM_BINDING_INLINABLE)
+  (Scm_MakeBinding (Scm_GaucheModule)
+                   (SCM_SYMBOL '<native-array>)
+                   native_array_type
                    SCM_BINDING_INLINABLE))
 
  ;; Check if a <native-type> is a pointer, a function, etc.
@@ -1215,6 +1223,9 @@
                               argument-types
                               (boolean varargs?)))
 
+;; For array, we keep (<element-type> <dim> ...) in inner.
+;; Each <dim> is a nonnegative fixnum.  The first <dim> can be -1,
+;; indicating it is not specified (C allows it).
 (define-cproc %make-native-array-type (type-name::<const-cstring>
                                        element-type
                                        dimensions)
@@ -1233,8 +1244,8 @@
     (cond [(not (pair? dims))
            (error "Bad native array dimensions; must be a proper list, but got:"
                   dimensions)]
-          [(and (null? (cdr dims))
-                (eq? (car dims) '*))]   ;last dimension can be *
+          [(and (eq? dims dimensions)
+                (eq? (car dims) '*))]   ;first dimension can be *
           [(and (exact-integer? (car dims))
                 (>= (car dims) 0))
            (loop (cdr dims))]
