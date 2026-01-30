@@ -697,6 +697,105 @@
            (native-bytevector-ref data 8 int64* 0)))
   )
 
+(let ([data (u8vector-copy *fobject-storage*)]
+      [int8a (make-native-array-type <int8> '(* 4 2))]
+      [uint8a (make-native-array-type <uint8> '(2 4 2))]
+      [int16a (make-native-array-type <int16> '(* 4 2))]
+      [uint16a (make-native-array-type <uint16> '(2 4 2))]
+      [int32a (make-native-array-type <int32> '(* 3 2))]
+      [uint32a (make-native-array-type <uint32> '(2 3 2))]
+      [int64a (make-native-array-type <int64> '(* 2))]
+      [uint64a (make-native-array-type <uint64> '(2 2))])
+  (test* "uint8 array ref" '(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
+                                  #x08 #x09)
+         (list (native-bytevector-ref data 0 uint8a '(0 0 0))
+               (native-bytevector-ref data 0 uint8a '(0 0 1))
+               (native-bytevector-ref data 0 uint8a '(0 1 0))
+               (native-bytevector-ref data 0 uint8a '(0 1 1))
+               (native-bytevector-ref data 0 uint8a '(0 2 0))
+               (native-bytevector-ref data 0 uint8a '(0 2 1))
+               (native-bytevector-ref data 0 uint8a '(0 3 0))
+               (native-bytevector-ref data 0 uint8a '(0 3 1))
+               (native-bytevector-ref data 0 uint8a '(1 0 0))
+               (native-bytevector-ref data 0 uint8a '(1 0 1))))
+  (test* "int8 array ref" '(#x-80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
+                                  #x08 #x09 #x18)
+         (list (native-bytevector-ref data 0 int8a '(0 0 0))
+               (native-bytevector-ref data 0 int8a '(0 0 1))
+               (native-bytevector-ref data 0 int8a '(0 1 0))
+               (native-bytevector-ref data 0 int8a '(0 1 1))
+               (native-bytevector-ref data 0 int8a '(0 2 0))
+               (native-bytevector-ref data 0 int8a '(0 2 1))
+               (native-bytevector-ref data 0 int8a '(0 3 0))
+               (native-bytevector-ref data 0 int8a '(0 3 1))
+               (native-bytevector-ref data 0 int8a '(1 0 0))
+               (native-bytevector-ref data 0 int8a '(1 0 1))
+               (native-bytevector-ref data 0 int8a '(3 0 0))))
+
+  (test* "uint16 array ref"
+         (case (native-endian)
+           [(big-endian) '(#x8001 #x0203 #x0405 #x0e0f
+                           #x1011 #x1e1f)]
+           [else         '(#x0180 #x0302 #x0504 #x0f0e
+                           #x1110 #x1f1e)])
+         (list (native-bytevector-ref data 0 uint16a '(0 0 0))
+               (native-bytevector-ref data 0 uint16a '(0 0 1))
+               (native-bytevector-ref data 0 uint16a '(0 1 0))
+               (native-bytevector-ref data 0 uint16a '(0 3 1))
+               (native-bytevector-ref data 0 uint16a '(1 0 0))
+               (native-bytevector-ref data 0 uint16a '(1 3 1))))
+  (test* "int16 array ref"
+         (case (native-endian)
+           [(big-endian) '(#x0203 #x0405 #x0e0f
+                           #x1011 #x1e1f #xfeff)]
+           [else         '(#x0302 #x0504 #x0f0e
+                           #x1110 #x1f1e #x-0002)])
+         (list (native-bytevector-ref data 0 int16a '(0 0 1))
+               (native-bytevector-ref data 0 int16a '(0 1 0))
+               (native-bytevector-ref data 0 int16a '(0 3 1))
+               (native-bytevector-ref data 0 int16a '(1 0 0))
+               (native-bytevector-ref data 0 int16a '(1 3 1))
+               (native-bytevector-ref data 0 int16a '(4 3 1))))
+
+  (test* "uint32 array ref"
+         (case (native-endian)
+           [(big-endian) '(#x80010203 #x04050607
+                           #x10111213 #x2c2d2e2f)]
+           [else         '(#x03020180 #x07060504
+                           #x13121110 #x2f2e2d2c)])
+         (list (native-bytevector-ref data 0 uint32a '(0 0 0))
+               (native-bytevector-ref data 0 uint32a '(0 0 1))
+               (native-bytevector-ref data 0 uint32a '(0 2 0))
+               (native-bytevector-ref data 0 uint32a '(1 2 1))))
+  (test* "int32 array ref"
+         (case (native-endian)
+           [(big-endian) '(#x80010203 #x04050607
+                           #x10111213 #x-03020101)]
+           [else         '(#x03020180 #x07060504
+                           #x13121110 #x-00010204)])
+         (list (native-bytevector-ref data 0 int32a '(0 0 0))
+               (native-bytevector-ref data 0 int32a '(0 0 1))
+               (native-bytevector-ref data 0 int32a '(0 2 0))
+               (native-bytevector-ref data 0 int32a '(3 0 1))))
+
+  (test* "uint64 array ref"
+         (case (native-endian)
+           [(big-endian) '(#x8001020304050607
+                           #x18191a1b1c1d1e1f)]
+           [else         '(#x0706050403020180
+                           #x1f1e1d1c1b1a1918)])
+         (list (native-bytevector-ref data 0 uint64a '(0 0))
+               (native-bytevector-ref data 0 uint64a '(1 1))))
+  (test* "int64 array ref"
+         (case (native-endian)
+           [(big-endian) '(#x8001020304050607
+                           #x-0706050403020101)]
+           [else         '(#x0706050403020180
+                           #x-0001020304050608)])
+         (list (native-bytevector-ref data 0 int64a '(0 0))
+               (native-bytevector-ref data 0 int64a '(4 1))))
+  )
+
 #| ;; Temporarily disabled while we're rewriting binary.ftype
 
 (define *fobject-storage*

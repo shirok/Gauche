@@ -139,7 +139,7 @@
       (unless (length=? selector dims)
         (errorf "Native array selector ~s doesn't match the dimensions ~s"
                 selector dims))
-      (unless (every (every-pred fixnum? positive?) selector)
+      (unless (every (every-pred fixnum? (complement negative?)) selector)
         (error "Invalid native array selector:" selector))
       (let loop ([ds (reverse dims)]
                  [ss (reverse selector)]
@@ -147,7 +147,7 @@
                  [i 0])
         (cond [(null? ds) i]
               [(eq? (car ds) '*) ; this can only appear in the 1st dim
-               (+ (car ss) i)]
+               (+ (* (car ss) step) i)]
               [(< (car ss) (car ds))
                (loop (cdr ds) (cdr ss) (* step (car ds))
                      (+ (* (car ss) step) i))]

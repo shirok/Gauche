@@ -1241,7 +1241,8 @@
 (define (make-native-array-type element-type dimensions)
   (assume-type element-type <native-type>)
   (let loop ([dims dimensions])
-    (cond [(not (pair? dims))
+    (cond [(null? dims)]
+          [(not (pair? dims))
            (error "Bad native array dimensions; must be a proper list, but got:"
                   dimensions)]
           [(and (eq? dims dimensions)
