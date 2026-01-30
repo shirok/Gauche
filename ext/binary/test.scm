@@ -610,9 +610,7 @@
       [int32* (make-pointer-type <int32>)]
       [uint32* (make-pointer-type <uint32>)]
       [int64* (make-pointer-type <int64>)]
-      [uint64* (make-pointer-type <uint64>)]
-      [float* (make-pointer-type <float>)]
-      [double* (make-pointer-type <double>)])
+      [uint64* (make-pointer-type <uint64>)])
 
   (test* "uint8* deref" '(#x80 #x09 #x3f)
          (list (native-bytevector-ref data 0 uint8* 0)
@@ -794,6 +792,117 @@
                            #x-0001020304050608)])
          (list (native-bytevector-ref data 0 int64a '(0 0))
                (native-bytevector-ref data 0 int64a '(4 1))))
+
+  (test* "uint8 array modify" #xff
+         (begin
+           (native-bytevector-set! data 0 uint8a '(0 0 1) #xff)
+           (native-bytevector-ref data 0 uint8a '(0 0 1))))
+  (test* "int8 array modify" -2
+         (begin
+           (native-bytevector-set! data 0 int8a '(0 0 1) -2)
+           (native-bytevector-ref data 0 int8a '(0 0 1))))
+
+  (test* "uint16 array modify" #xabcd
+         (begin
+           (native-bytevector-set! data 0 uint16a '(0 0 1) #xabcd)
+           (native-bytevector-ref data 0 uint16a '(0 0 1))))
+  (test* "int16 array modify" #x-1234
+         (begin
+           (native-bytevector-set! data 0 int16a '(0 0 1) #x-1234)
+           (native-bytevector-ref data 0 int16a '(0 0 1))))
+
+  (test* "uint32 array modify" #x89abcdef
+         (begin
+           (native-bytevector-set! data 0 uint32a '(0 2 0) #x89abcdef)
+           (native-bytevector-ref data 0 uint32a '(0 2 0))))
+  (test* "int32 array modify" #x-789abcde
+         (begin
+           (native-bytevector-set! data 0 int32a '(0 2 0) #x-789abcde)
+           (native-bytevector-ref data 0 int32a '(0 2 0))))
+
+  (test* "uint64 array modify" #x0123456789abcdef
+         (begin
+           (native-bytevector-set! data 0 uint64a '(0 0) #x0123456789abcdef)
+           (native-bytevector-ref data 0 uint64a '(0 0))))
+  (test* "int64 array modify" #x-0123456789abcdef
+         (begin
+           (native-bytevector-set! data 0 int64a '(0 0) #x-0123456789abcdef)
+           (native-bytevector-ref data 0 int64a '(0 0))))
+  )
+
+(let ([data (case (native-endian)
+              [(big-endian)
+               (u8vector
+                ;; floats (big-endian)
+                #x3f #x80 #x00 #x00    ;  1.0f
+                #xbf #x80 #x00 #x00    ; -1.0f
+                #x40 #x60 #x00 #x00    ;  3.5f
+                ;; doubles (big-endian)
+                #x3f #xf0 #x00 #x00 #x00 #x00 #x00 #x00  ;  1.0
+                #xbf #xf0 #x00 #x00 #x00 #x00 #x00 #x00  ; -1.0
+                #x40 #x04 #x00 #x00 #x00 #x00 #x00 #x00  ;  2.5
+                )]
+              [(little-endian)
+               (u8vector
+                ;; floats (little-endian)
+                #x00 #x00 #x80 #x3f    ;  1.0f
+                #x00 #x00 #x80 #xbf    ; -1.0f
+                #x00 #x00 #x60 #x40    ;  3.5f
+                ;; doubles (little-endian)
+                #x00 #x00 #x00 #x00 #x00 #x00 #xf0 #x3f  ;  1.0
+                #x00 #x00 #x00 #x00 #x00 #x00 #xf0 #xbf  ; -1.0
+                #x00 #x00 #x00 #x00 #x00 #x00 #x04 #x40  ;  2.5
+                )]
+              [(arm-little-endian)
+               (u8vector
+                ;; floats (little-endian)
+                #x00 #x00 #x80 #x3f    ;  1.0f
+                #x00 #x00 #x80 #xbf    ; -1.0f
+                #x00 #x00 #x60 #x40    ;  3.5f
+                ;; doubles (little-endian)
+                #x00 #x00 #xf0 #x3f #x00 #x00 #x00 #x00  ;  1.0
+                #x00 #x00 #xf0 #xbf #x00 #x00 #x00 #x00  ; -1.0
+                #x00 #x00 #x04 #x40 #x00 #x00 #x00 #x00  ;  2.5
+                )])]
+      [float* (make-pointer-type <float>)]
+      [double* (make-pointer-type <double>)]
+      [floata (make-native-array-type <float> '(3))]
+      [doublea (make-native-array-type <double> '(3))])
+
+  (test* "float* deref" '(1.0 -1.0 3.5)
+         (list (native-bytevector-ref data 0 float* 0)
+               (native-bytevector-ref data 0 float* 1)
+               (native-bytevector-ref data 0 float* 2)))
+  (test* "double* deref" '(1.0 -1.0 2.5)
+         (list (native-bytevector-ref data 12 double* 0)
+               (native-bytevector-ref data 12 double* 1)
+               (native-bytevector-ref data 12 double* 2)))
+  (test* "float array ref" '(1.0 -1.0 3.5)
+         (list (native-bytevector-ref data 0 floata '(0))
+               (native-bytevector-ref data 0 floata '(1))
+               (native-bytevector-ref data 0 floata '(2))))
+  (test* "double array ref" '(1.0 -1.0 2.5)
+         (list (native-bytevector-ref data 12 doublea '(0))
+               (native-bytevector-ref data 12 doublea '(1))
+               (native-bytevector-ref data 12 doublea '(2))))
+
+  (test* "float* modify" -2.0
+         (begin
+           (native-bytevector-set! data 0 float* 1 -2.0)
+           (native-bytevector-ref data 0 float* 1)))
+  (test* "float array modify" -2.0
+         (begin
+           (native-bytevector-set! data 0 floata '(1) -2.0)
+           (native-bytevector-ref data 0 floata '(1))))
+
+  (test* "double* modify" -4.5
+         (begin
+           (native-bytevector-set! data 12 double* 1 -4.5)
+           (native-bytevector-ref data 12 double* 1)))
+  (test* "double array modify" -4.5
+         (begin
+           (native-bytevector-set! data 12 doublea '(1) -4.5)
+           (native-bytevector-ref data 12 doublea '(1))))
   )
 
 #| ;; Temporarily disabled while we're rewriting binary.ftype
