@@ -589,6 +589,114 @@
 (use binary.ftype)
 (test-module 'binary.ftype)
 
+(define *fobject-storage*
+  '#u8(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
+       #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
+       #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
+       #x18 #x19 #x1a #x1b #x1c #x1d #x1e #x1f
+       #x20 #x21 #x22 #x23 #x24 #x25 #x26 #x27
+       #x28 #x29 #x2a #x2b #x2c #x2d #x2e #x2f
+       #x30 #x31 #x32 #x33 #x34 #x35 #x36 #x37
+       #x38 #x39 #x3a #x3b #x3c #x3d #x3e #x3f
+       #xf0 #xf1 #xf2 #xf3 #xf4 #xf5 #xf6 #xf7
+       #xf8 #xf9 #xfa #xfb #xfc #xfd #xfe #xff
+       ))
+
+(let ([data (u8vector-copy *fobject-storage*)]
+      [int8* (make-pointer-type <int8>)]
+      [uint8* (make-pointer-type <uint8>)]
+      [int16* (make-pointer-type <int16>)]
+      [uint16* (make-pointer-type <uint16>)]
+      [int32* (make-pointer-type <int32>)]
+      [uint32* (make-pointer-type <uint32>)]
+      [int64* (make-pointer-type <int64>)]
+      [uint64* (make-pointer-type <uint64>)]
+      [float* (make-pointer-type <float>)]
+      [double* (make-pointer-type <double>)])
+
+  (test* "uint8* deref" '(#x80 #x09 #x3f)
+         (list (native-bytevector-ref data 0 uint8* 0)
+               (native-bytevector-ref data 9 uint8* 0)
+               (native-bytevector-ref data 56 uint8* 7)))
+  (test* "int8* deref" '(#x-80 #x09 #x3f)
+         (list (native-bytevector-ref data 0 int8* 0)
+               (native-bytevector-ref data 9 int8* 0)
+               (native-bytevector-ref data 56 int8* 7)))
+
+  (test* "uint16* deref" (case (native-endian)
+                           [(big-endian) '(#x0809 #xfeff)]
+                           [else         '(#x0908 #xfffe)])
+         (list (native-bytevector-ref data 8 uint16* 0)
+               (native-bytevector-ref data 72 uint16* 3)))
+  (test* "int16* deref" (case (native-endian)
+                          [(big-endian) '(#x0809 #x-0101)]
+                          [else         '(#x0908 #x-0002)])
+         (list (native-bytevector-ref data 8 int16* 0)
+               (native-bytevector-ref data 72 int16* 3)))
+
+  (test* "uint32* deref" (case (native-endian)
+                           [(big-endian) '(#x10111213 #xf8f9fafb)]
+                           [else         '(#x13121110 #xfbfaf9f8)])
+         (list (native-bytevector-ref data 16 uint32* 0)
+               (native-bytevector-ref data 64 uint32* 2)))
+  (test* "int32* deref" (case (native-endian)
+                          [(big-endian) '(#x10111213 #x-07060505)]
+                          [else         '(#x13121110 #x-04050608)])
+         (list (native-bytevector-ref data 16 int32* 0)
+               (native-bytevector-ref data 64 int32* 2)))
+
+  (test* "uint64* deref" (case (native-endian)
+                           [(big-endian) '(#x2021222324252627
+                                           #xf0f1f2f3f4f5f6f7)]
+                           [else         '(#x2726252423222120
+                                           #xf7f6f5f4f3f2f1f0)])
+         (list (native-bytevector-ref data 32 uint64* 0)
+               (native-bytevector-ref data 32 uint64* 4)))
+  (test* "int64* deref" (case (native-endian)
+                          [(big-endian) '(#x2021222324252627
+                                          #x-0f0e0d0c0b0a0909)]
+                          [else         '(#x2726252423222120
+                                          #x-08090a0b0c0d0e10)])
+         (list (native-bytevector-ref data 32 int64* 0)
+               (native-bytevector-ref data 32 int64* 4)))
+
+  (test* "uint8* modify" #xff
+         (begin
+           (native-bytevector-set! data 0 uint8* 1 #xff)
+           (native-bytevector-ref data 1 uint8* 0)))
+  (test* "int8* modify" -2
+         (begin
+           (native-bytevector-set! data 0 int8* 1 -2)
+           (native-bytevector-ref data 1 int8* 0)))
+
+  (test* "uint16* modify" #xabcd
+         (begin
+           (native-bytevector-set! data 0 uint16* 1 #xabcd)
+           (native-bytevector-ref data 2 uint16* 0)))
+  (test* "int16* modify" #x-1234
+         (begin
+           (native-bytevector-set! data 0 int16* 1 #x-1234)
+           (native-bytevector-ref data 2 int16* 0)))
+
+  (test* "uint32* modify" #x89abcdef
+         (begin
+           (native-bytevector-set! data 0 uint32* 1 #x89abcdef)
+           (native-bytevector-ref data 4 uint32* 0)))
+  (test* "int32* modify" #x-789abcde
+         (begin
+           (native-bytevector-set! data 0 int32* 1 #x-789abcde)
+           (native-bytevector-ref data 4 int32* 0)))
+
+  (test* "uint64* modify" #x0123456789abcdef
+         (begin
+           (native-bytevector-set! data 0 uint64* 1 #x0123456789abcdef)
+           (native-bytevector-ref data 8 uint64* 0)))
+  (test* "int64* modify" #x-0123456789abcdef
+         (begin
+           (native-bytevector-set! data 0 int64* 1 #x-0123456789abcdef)
+           (native-bytevector-ref data 8 int64* 0)))
+  )
+
 #| ;; Temporarily disabled while we're rewriting binary.ftype
 
 (define *fobject-storage*
