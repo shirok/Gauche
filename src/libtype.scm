@@ -915,7 +915,7 @@
    (return (or (SCM_INTP obj)
                (and (SCM_BIGNUMP obj)
                     (>= (Scm_NumCmp obj '#x-8000_0000_0000_0000) 0)
-                    (<= (Scm_NumCmp obj '#x-7fff_ffff_ffff_ffff) 0)))))
+                    (<= (Scm_NumCmp obj '#x7fff_ffff_ffff_ffff) 0)))))
  (define-cfn native_u64P (obj) ::int :static
    (return (or (and (SCM_INTP obj)
                     (>= (SCM_INT_VALUE obj) 0))
