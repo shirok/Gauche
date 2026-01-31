@@ -8623,46 +8623,79 @@ to specify the keyword argument.
 
 @defun sparse-matrix-num-entries mat
 @c MOD data.sparse
+@c EN
 Returns the number of entries explicitly set in a sparse matrix @var{mat}.
+@c JP
+疎な行列@var{mat}に明示的にセットされたエントリの数を返します。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-ref mat x y :optional fallback
 @c MOD data.sparse
+@c EN
 Returns an element indexed by (@var{x}, @var{y}) in a sparse matrix @var{mat}.
 If the indexed element isn't set, @var{fallback} is returned if provided;
 otherwise, if the matrix has the default value, it is returned; otherwise,
 an error is raised.
+@c JP
+疎な行列@var{mat}の(@var{x}, @var{y})で指される要素を返します。
+その要素がセットされていなかった場合、@var{fallback}が与えられていれば
+それが返され、そうでなければ、行列のデフォルト値が返されます。
+行列がデフォルト値も持っていなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-set! mat x y value
 @c MOD data.sparse
+@c EN
 Set @var{value} to the sparse matrix @var{mat} at the location
 (@var{x}, @var{y}).
+@c JP
+疎な行列@var{mat}の(@var{x}, @var{y})に@var{value}をセットします。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-exists? mat x y
 @c MOD data.sparse
+@c EN
 Returns @code{#t} iff the sparse matrix @var{mat} has a value at
 (@var{x}, @var{y}).
+@c JP
+疎な行列@var{mat}の(@var{x}, @var{y})に明示的に値がセットされていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-clear! mat
 @c MOD data.sparse
+@c EN
 Empties the sparse matrix @var{mat}.
+@c JP
+疎な行列@var{mat}を空にします。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-delete! mat x y
 @c MOD data.sparse
+@c EN
 Remove the value at (@var{x}, @var{y}) from the sparse matrix @var{mat}.
+@c JP
+疎な行列@var{mat}の(@var{x}, @var{y})の要素を取り除きます。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-copy mat
 @c MOD data.sparse
+@c EN
 Returns a fresh copy of @var{mat}.
+@c JP
+@var{mat}のコピーを新たに作って返します。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-update! mat x y proc :optional fallback
 @c MOD data.sparse
+@c EN
 Call @var{proc} with the value at (@var{x}, @var{y}) of the sparse matrix,
 and sets the result of @var{proc} as the new value of the location.
 
@@ -8672,6 +8705,17 @@ matrix doesn't have a value at (@var{x}, @var{y}).
 If @var{fallback} isn't provided and the matrix doesn't have a value
 at the location, the default value of the matrix is used if it has one.
 Otherwise, an error is signalled.
+@c JP
+疎な行列の(@var{x}, @var{y})の要素の値を引数にして@var{proc}を呼び出し、
+その返り値を新たな値としてセットします。
+
+省略可能な@var{fallback}は@code{sparse-matrix-ref}と同様です。
+(@var{x}, @var{y})に要素がセットされていない時、
+@var{fallback}が与えられていればそれがが@var{proc}に渡されます。
+@var{fallback}が与えられず、しかし配列のデフォルト値が設定されていれば
+そのデフォルト値が@var{proc}に渡されます。
+デフォルト値も設定されていなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-inc! mat x y delta :optional fallback
@@ -8698,6 +8742,7 @@ Otherwise, an error is signalled.
 
 @defun sparse-matrix-fold mat proc seed
 @c MOD data.sparse
+@c EN
 Loop over values in the sparse matrix @var{mat}.  The procedure
 @var{proc} is called with four arguments, @var{x}, @var{y}, @var{val}
 and @var{seed}, for each index (@var{x}, @var{y}) which has the value
@@ -8708,6 +8753,17 @@ from @code{sparse-matrix-fold}.
 
 The procedure @var{proc} is only called on the entries that's actually
 has a value, and the order of which the procedure is called is undefined.
+@c JP
+疎な行列@var{mat}の要素についてループします。
+@var{proc}は@var{mat}の各インデックス(@var{x}, @var{y})とその場所の値@var{val}
+について、4つの引数 @var{x}、@var{y}、@var{val}、@var{seed}で呼ばれます。
+最初の@var{seed}は@code{sparse-matrix-fold}に渡された@var{seed}であり、
+@var{proc}の返り値が次の呼び出しの@var{seed}に渡されてゆきます。
+最後の@var{proc}の返り値が@code{sparse-matrix-fold}の返り値となります。
+
+@var{proc}は、明示的にセットされたエントリに対してのみ呼ばれます。
+また、それが呼ばれる順序は不定です。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-map mat proc
