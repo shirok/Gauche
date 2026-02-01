@@ -18111,14 +18111,14 @@ with @code{text.fill} (@pxref{Text filling}).
 @c COMMON
 
 @c EN
-@var{option-spec} is a string that specifies the name of the option and
+@var{option-spec} is a string literal that specifies the name of the option and
 how the option takes the arguments.  An alphanumeric characters, underscore,
 plus and minus sign is allowed for option's names, except that
 minus sign can't be the first character, i.e. the valid option name
 matches a regexp @code{#/[\w+][-\w+]*/}.
 @c JP
 @var{option-spec} は、オプションの名前とそのオプションがどのように引数を取るか
-を指定する文字列です。オプションの名前には、アルファベット文字、数字、
+を指定する文字列リテラルです。オプションの名前には、アルファベット文字、数字、
 アンダースコア、プラス記号、ハイフンが許されますが、ハイフンは最初の文字としては
 使えません。すなわち、有効なオプションの名前は、@code{#/[\w+][-\w+]*/} という
 正規表現にマッチするものです。
