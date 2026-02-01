@@ -8801,6 +8801,7 @@ has a value, and the order of which the procedure is called is undefined.
 @deftp {Class} <sparse-table>
 @clindex sparse-table
 @c MOD data.sparse
+@c EN
 A class for sparse table.  Inherits @code{<dictionary>} and
 @code{<collection>}.
 
@@ -8808,10 +8809,20 @@ Operationally sparse tables are the same as hash tables, but
 the former consumes less memory in trade of slight slower access.
 (Roughly x1.5 to x2 access time when the table is small.
 As the table gets larger the difference becomes smaller.)
+@c JP
+疎なテーブルのクラスです。@code{<dictionary>}と
+@code{<collection>}を継承しています。
+
+操作から見ると、疎なテーブルはハッシュテーブルと同じです。
+ただ、アクセスが多少遅いかわりに、メモリ消費量が抑えられます。
+(テーブルが小さいうちは、およそ1.5〜2倍アクセスが遅いですが、
+デーブルが大きくなるにつれ差は縮まります。)
+@c COMMON
 @end deftp
 
 @defun make-sparse-table comparator
 @c MOD data.sparse
+@c EN
 Creates and returns an empty sparse table.
 The @var{comparator} argument specifies how to compare and hash keys;
 it must be either a comparator (@pxref{Basic comparators}),
@@ -8819,51 +8830,98 @@ or one of the symbols @code{eq?}, @code{eqv?}, @code{equal?} and
 @code{string=?}, like hash tables (@pxref{Hashtables}).   If it is a symbol,
 @code{eq-comparator}, @code{eqv-comparator}, @code{equal-comparator} or
 @code{string-comparator} are used, respectively.
+@c JP
+空の疎なテーブルを作って返します。
+@var{comparator}は、キーの比較とハッシュに使われる比較器
+(@ref{Basic comparators}参照)、もしくはシンボル
+@code{eq?}、@code{eqv?}、@code{equal?}、@code{string=?}のいずれかです
+(これはハッシュテーブルと同じです。@ref{Hashtables}参照)。
+シンボルの場合は、それぞれ
+@code{eq-comparator}、@code{eqv-comparator}、@code{equal-comparator}、
+@code{string-comparator}が使われます。
+@c COMMON
 @end defun
 
 @defun sparse-table-comparator st
 @c MOD data.sparse
+@c EN
 Returns the comparator used in the sparse table @var{st}.
+@c JP
+疎なテーブル@var{st}の比較器を返します。
+@c COMMON
 @end defun
 
 @defun sparse-table-copy st
 @c MOD data.sparse
+@c EN
 Returns a copy of a sparse table @var{st}.
+@c JP
+疎なテーブル@var{st}のコピーを作って返します。
+@c COMMON
 @end defun
 
 @defun sparse-table-num-entries st
 @c MOD data.sparse
+@c EN
 Returns the number of entries in a sparse table @var{st}.
+@c JP
+疎なテーブル@var{st}のエントリ数を返します。
+@c COMMON
 @end defun
 
 @defun sparse-table-ref st key :optional fallback
 @c MOD data.sparse
+@c EN
 Retrieves a value associated to the @var{key} in @var{st}.
 If no entry with @var{key} exists, @var{fallback} is returned
 when it is provided, or an error is signaled otherwise.
+@c JP
+疎なテーブル@var{st}中の、キー@var{key}に関連付けられた値を返します。
+キーがテーブル中にない場合、@var{fallback}が与えられればそれが返され、
+与えられなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun sparse-table-set! st key value
 @c MOD data.sparse
+@c EN
 Sets @var{value} with @var{key} in @var{st}.
+@c JP
+疎なテーブル@var{st}に、キー@var{key}と値@var{value}の関連づけを格納します。
+@c COMMON
 @end defun
 
 @defun sparse-table-exists? st key
 @c MOD data.sparse
+@c EN
 Returns @code{#t} if an entry with @var{key} exists in @var{st},
 @code{#f} otherwise.
+@c JP
+疎なテーブル@var{st}に、キー@var{key}を持つエントリがあれば
+@code{#t}を、なければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun sparse-table-delete! st key
 @c MOD data.sparse
+@c EN
 Deletes an entry with @var{key} in @var{st} if it exists.
 Returns @code{#t} if an entry is actually deleted, or @code{#f}
 if there hasn't been an entry with @var{key}.
+@c JP
+疎なテーブル@var{st}から、キー@var{key}を持つエントリを削除します。
+エントリが実際に削除されたら@code{#t}お、エントリがもともと存在しなければ
+@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun sparse-table-clear! st
 @c MOD data.sparse
+@c EN
 Empties @var{st}.
+@c JP
+疎なテーブル@var{st}を空にします。
+@c COMMON
 @end defun
 
 @defun sparse-table-update! st key proc :optional fallback
