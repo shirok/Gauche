@@ -40,11 +40,16 @@
 
 (define-module binary.ftype
   (use util.match)
+  (use gauche.record)
   (extend gauche.typeutil)              ;access internal routines
   (export native-ref
           native-set!
           native-bytevector-ref
           native-bytevector-set!
+
+          make-bytevector-cursor
+          bytevector-cursor-storage
+          bytevector-cursor-pos
 
           ;; TRANSIENT: We want better (more concise, but distinct) names
           ;; for these.  At the moment, we just reexport them from
@@ -53,6 +58,18 @@
           ;make-native-functon-type
           make-native-array-type))
 (select-module binary.ftype)
+
+;; Used to point to a specific location within the given bytevector.
+(define-record-type <bytevector-cursor>
+    (%make-bytevector-cursor storage pos)
+    bytevector-cursor?
+  (storage bytevector-cursor-storage)
+  (pos bytevector-cursor-pos))
+
+(define (make-bytevector-cursor bytevector pos)
+  (assume-type bytevector <u8vector>)
+  (assume (and (fixnum? pos) (>= pos 0)))
+  (%make-bytevector-cursor bytevector pos))
 
 (inline-stub
  (.include "gauche/priv/typeP.h")
@@ -184,26 +201,36 @@
         (%aset! (%native-array-element-type t) fp offset val)]
        [else (error "Unsupported native aggregate type:" t)]))))
 
-(define (native-bytevector-ref bv start type selector)
-  (assume-type bv <u8vector>)
-  (assume-type start <fixnum>)
+(define (native-bytevector-ref bvcursor type selector)
+  (assume-type bvcursor <bytevector-cursor>)
   (assume-type type <native-type>)
   (let1 offset (native-type-offset type selector)
     (cond
      [(subtype? type <native-pointer>)
-      (%bvref (%native-pointer-pointee-type type) bv start offset)]
+      (%bvref (%native-pointer-pointee-type type)
+              (bytevector-cursor-storage bvcursor)
+              (bytevector-cursor-pos bvcursor)
+              offset)]
      [(subtype? type <native-array>)
-      (%bvref (%native-array-element-type type) bv start offset)]
+      (%bvref (%native-array-element-type type)
+              (bytevector-cursor-storage bvcursor)
+              (bytevector-cursor-pos bvcursor)
+              offset)]
      [else (error "Unsupported native aggregate type:" type)])))
 
-(define (native-bytevector-set! bv start type selector val)
-  (assume-type bv <u8vector>)
-  (assume-type start <fixnum>)
+(define (native-bytevector-set! bvcursor type selector val)
+  (assume-type bvcursor <bytevector-cursor>)
   (assume-type type <native-type>)
   (let1 offset (native-type-offset type selector)
     (cond
      [(subtype? type <native-pointer>)
-      (%bvset! (%native-pointer-pointee-type type) bv start offset val)]
+      (%bvset! (%native-pointer-pointee-type type)
+               (bytevector-cursor-storage bvcursor)
+               (bytevector-cursor-pos bvcursor)
+               offset val)]
      [(subtype? type <native-array>)
-      (%bvset! (%native-array-element-type type) bv start offset val)]
+      (%bvset! (%native-array-element-type type)
+               (bytevector-cursor-storage bvcursor)
+               (bytevector-cursor-pos bvcursor)
+               offset val)]
      [else (error "Unsupported native aggregate type:" type)])))
