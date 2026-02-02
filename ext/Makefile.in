@@ -45,7 +45,7 @@ srfi: scheme
 
 text: uvector gauche data srfi charconv windows
 
-bcrypt sxml mt-random digest zlib termios windows: uvector
+bcrypt binary sxml mt-random digest zlib termios windows: uvector
 
 vport: gauche uvector
 
