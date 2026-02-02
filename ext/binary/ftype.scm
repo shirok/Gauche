@@ -154,15 +154,25 @@
     (assume-type selector <fixnum>)
     selector]
    [(subtype? type <native-array>)
-    (let ([etype (%native-array-element-type type)]
-          [dims (%native-array-dimensions type)])
-      (unless (length=? selector dims)
-        (errorf "Native array selector ~s doesn't match the dimensions ~s"
-                selector dims))
-      (unless (every (every-pred fixnum? (complement negative?)) selector)
-        (error "Invalid native array selector:" selector))
+    (unless (every (every-pred fixnum? (complement negative?)) selector)
+      (error "Invalid native array selector:" selector))
+    (let* ([etype (%native-array-element-type type)]
+           [dims (%native-array-dimensions type)]
+           [sels (cond
+                  [(length<? selector dims)
+                   ;; Arrays can be dereferenced with partial index, e.g.
+                   ;; array int a[2][3][4] can be dereferenced as
+                   ;; a[2][3], returning int [4].  Offset is computed
+                   ;; by setting unspecified index to zero.
+                   (append selector
+                           (make-list (- (length dims) (length selector)) 0))]
+                  [(length=? selector dims) selector]
+                  [else
+                   (errorf "Native array selector ~s doesn't match the \
+                            dimensions ~s"
+                           selector dims)])])
       (let loop ([ds (reverse dims)]
-                 [ss (reverse selector)]
+                 [ss (reverse sels)]
                  [step 1]
                  [i 0])
         (cond [(null? ds) i]
@@ -176,6 +186,17 @@
    [else
     (error "Unsupported native aggregate type:" type)]))
 
+;; Returns an array type if selector does not specify a single element
+;; in the array.
+(define (%partial-array-dereference-type atype selector)
+  (let1 etype (%native-array-element-type atype)
+    (let loop ([dims (%native-array-dimensions atype)]
+               [sels selector])
+      (if (null? sels)
+        (and (not (null? dims))
+             (make-native-array-type etype dims))
+        (loop (cdr dims) (cdr sels))))))
+
 (define (native-ref fp selector :optional (type #f))
   (assume-type fp <foreign-pointer>)
   (let1 t (or ((with-module gauche.internal foreign-pointer-type fp) fp)
@@ -187,7 +208,10 @@
        [(subtype? t <native-pointer>)
         (%aref (%native-pointer-pointee-type t) fp offset)]
        [(subtype? t <native-array>)
-        (%aref (%native-array-element-type t) fp offset)]
+        (if-let1 partial (%partial-array-dereference-type t selector)
+          (error "[Internal] Partial array reference is not yet supported \
+                  for foreign pointer:" selector)
+          (%aref (%native-array-element-type t) fp offset))]
        [else (error "Unsupported native aggregate type:" t)]))))
 
 (define (native-set! fp selector val :optional (type #f))
@@ -201,45 +225,55 @@
        [(subtype? t <native-pointer>)
         (%aset! (%native-pointer-pointee-type t) fp offset val)]
        [(subtype? t <native-array>)
-        (%aset! (%native-array-element-type t) fp offset val)]
+        (if-let1 partial (%partial-array-dereference-type t selector)
+          (error "Setting an array element needs to specify exactly one element:"
+                 selector)
+          (%aset! (%native-array-element-type t) fp offset val))]
        [else (error "Unsupported native aggregate type:" t)]))))
 
 (define (native-bytevector-ref bvcursor type selector)
   (assume-type bvcursor <bytevector-cursor>)
-  (assume-type type <native-type>)
-  (let ([offset (native-type-offset type selector)]
-        [t (or type (bytevector-cursor-type bvcursor))])
+  (assume-type type (<?> <native-type>))
+  (let1 t (or type (bytevector-cursor-type bvcursor))
     (unless t
       (error "Unknown type to dereference:" bvcursor))
-    (cond
-     [(subtype? t <native-pointer>)
-      (%bvref (%native-pointer-pointee-type t)
-              (bytevector-cursor-storage bvcursor)
-              (bytevector-cursor-pos bvcursor)
-              offset)]
-     [(subtype? t <native-array>)
-      (%bvref (%native-array-element-type t)
-              (bytevector-cursor-storage bvcursor)
-              (bytevector-cursor-pos bvcursor)
-              offset)]
-     [else (error "Unsupported native aggregate type:" t)])))
+    (let1 offset (native-type-offset t selector)
+      (cond
+       [(subtype? t <native-pointer>)
+        (%bvref (%native-pointer-pointee-type t)
+                (bytevector-cursor-storage bvcursor)
+                (bytevector-cursor-pos bvcursor)
+                offset)]
+       [(subtype? t <native-array>)
+        (if-let1 partial (%partial-array-dereference-type t selector)
+          (make-bytevector-cursor (bytevector-cursor-storage bvcursor)
+                                  offset
+                                  partial)
+          (%bvref (%native-array-element-type t)
+                  (bytevector-cursor-storage bvcursor)
+                  (bytevector-cursor-pos bvcursor)
+                  offset))]
+       [else (error "Unsupported native aggregate type:" t)]))))
 
 (define (native-bytevector-set! bvcursor type selector val)
   (assume-type bvcursor <bytevector-cursor>)
   (assume-type type (<?> <native-type>))
-  (let ([offset (native-type-offset type selector)]
-        [t (or type (bytevector-cursor-type bvcursor))])
+  (let1 t (or type (bytevector-cursor-type bvcursor))
     (unless t
       (error "Unknown type to dereference:" bvcursor))
-    (cond
-     [(subtype? t <native-pointer>)
-      (%bvset! (%native-pointer-pointee-type t)
-               (bytevector-cursor-storage bvcursor)
-               (bytevector-cursor-pos bvcursor)
-               offset val)]
-     [(subtype? type <native-array>)
-      (%bvset! (%native-array-element-type t)
-               (bytevector-cursor-storage bvcursor)
-               (bytevector-cursor-pos bvcursor)
-               offset val)]
-     [else (error "Unsupported native aggregate type:" t)])))
+    (let1 offset (native-type-offset t selector)
+      (cond
+       [(subtype? t <native-pointer>)
+        (%bvset! (%native-pointer-pointee-type t)
+                 (bytevector-cursor-storage bvcursor)
+                 (bytevector-cursor-pos bvcursor)
+                 offset val)]
+       [(subtype? t <native-array>)
+        (if-let1 partial (%partial-array-dereference-type t selector)
+          (error "Setting an array element needs to specify exactly one element:"
+                 selector)
+          (%bvset! (%native-array-element-type t)
+                   (bytevector-cursor-storage bvcursor)
+                   (bytevector-cursor-pos bvcursor)
+                   offset val))]
+       [else (error "Unsupported native aggregate type:" t)]))))

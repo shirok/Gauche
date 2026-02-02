@@ -831,7 +831,15 @@
          (begin
            (native-bytevector-set! (bc 0) int64a '(0 0) #x-0123456789abcdef)
            (native-bytevector-ref (bc 0) int64a '(0 0))))
+
+  ;; partial index
+  (test* "int8 array partial dereference" #x17
+         (let1 a (native-bytevector-ref (bc 0) int8a '(2 3))
+           (native-bytevector-ref a #f '(1))))
   )
+
+(test-end)
+(exit)
 
 (let ([data (case (native-endian)
               [(big-endian)
