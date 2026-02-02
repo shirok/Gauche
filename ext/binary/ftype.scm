@@ -50,6 +50,7 @@
           make-bytevector-cursor
           bytevector-cursor-storage
           bytevector-cursor-pos
+          bytevector-cursor-type
 
           ;; TRANSIENT: We want better (more concise, but distinct) names
           ;; for these.  At the moment, we just reexport them from
@@ -61,15 +62,17 @@
 
 ;; Used to point to a specific location within the given bytevector.
 (define-record-type <bytevector-cursor>
-    (%make-bytevector-cursor storage pos)
+    (%make-bytevector-cursor storage pos type)
     bytevector-cursor?
   (storage bytevector-cursor-storage)
-  (pos bytevector-cursor-pos))
+  (pos bytevector-cursor-pos)
+  (type bytevector-cursor-type))
 
-(define (make-bytevector-cursor bytevector pos)
+(define (make-bytevector-cursor bytevector pos :optional (type #f))
   (assume-type bytevector <u8vector>)
   (assume (and (fixnum? pos) (>= pos 0)))
-  (%make-bytevector-cursor bytevector pos))
+  (assume-type type (<?> <native-type>))
+  (%make-bytevector-cursor bytevector pos type))
 
 (inline-stub
  (.include "gauche/priv/typeP.h")
@@ -204,33 +207,39 @@
 (define (native-bytevector-ref bvcursor type selector)
   (assume-type bvcursor <bytevector-cursor>)
   (assume-type type <native-type>)
-  (let1 offset (native-type-offset type selector)
+  (let ([offset (native-type-offset type selector)]
+        [t (or type (bytevector-cursor-type bvcursor))])
+    (unless t
+      (error "Unknown type to dereference:" bvcursor))
     (cond
-     [(subtype? type <native-pointer>)
-      (%bvref (%native-pointer-pointee-type type)
+     [(subtype? t <native-pointer>)
+      (%bvref (%native-pointer-pointee-type t)
               (bytevector-cursor-storage bvcursor)
               (bytevector-cursor-pos bvcursor)
               offset)]
-     [(subtype? type <native-array>)
-      (%bvref (%native-array-element-type type)
+     [(subtype? t <native-array>)
+      (%bvref (%native-array-element-type t)
               (bytevector-cursor-storage bvcursor)
               (bytevector-cursor-pos bvcursor)
               offset)]
-     [else (error "Unsupported native aggregate type:" type)])))
+     [else (error "Unsupported native aggregate type:" t)])))
 
 (define (native-bytevector-set! bvcursor type selector val)
   (assume-type bvcursor <bytevector-cursor>)
-  (assume-type type <native-type>)
-  (let1 offset (native-type-offset type selector)
+  (assume-type type (<?> <native-type>))
+  (let ([offset (native-type-offset type selector)]
+        [t (or type (bytevector-cursor-type bvcursor))])
+    (unless t
+      (error "Unknown type to dereference:" bvcursor))
     (cond
-     [(subtype? type <native-pointer>)
-      (%bvset! (%native-pointer-pointee-type type)
+     [(subtype? t <native-pointer>)
+      (%bvset! (%native-pointer-pointee-type t)
                (bytevector-cursor-storage bvcursor)
                (bytevector-cursor-pos bvcursor)
                offset val)]
      [(subtype? type <native-array>)
-      (%bvset! (%native-array-element-type type)
+      (%bvset! (%native-array-element-type t)
                (bytevector-cursor-storage bvcursor)
                (bytevector-cursor-pos bvcursor)
                offset val)]
-     [else (error "Unsupported native aggregate type:" type)])))
+     [else (error "Unsupported native aggregate type:" t)])))
