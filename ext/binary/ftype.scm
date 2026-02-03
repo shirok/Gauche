@@ -65,33 +65,33 @@
  )
 
 ;;;
-;;; Secondary pointers
+;;; Internal pointers
 ;;;
 
 ;; The pointers pointing into a structure which is originally pointed by
 ;; foreign pointers obtained form outside (e.g. dlsym()).
 
 (inline-stub
- (define-cvar secondary-pointer-class::ScmClass* :static)
+ (define-cvar internal-pointer-class::ScmClass* :static)
 
  (initcode
-  (set! secondary-pointer-class
+  (set! internal-pointer-class
         (Scm_MakeForeignPointerClass (Scm_CurrentModule)
-                                     "<secondary-pointer>"
+                                     "<internal-pointer>"
                                      NULL NULL 0))
   ))
 
-(define-cproc %make-secondary-pointer (base::<foreign-pointer>
+(define-cproc %make-internal-pointer (base::<foreign-pointer>
                                        offset::<fixnum>)
   (let* ([p::void* (Scm_ForeignPointerRef base)])
-    (return (Scm_MakeForeignPointer secondary-pointer-class
+    (return (Scm_MakeForeignPointer internal-pointer-class
                                     (+ p offset)))))
 
-(define (make-secondary-pointer base offset type)
+(define (make-internal-pointer base offset type)
   (assume-type base <foreign-pointer>)
   (assume-type offset <fixnum>)
   (assume-type type <native-type>)
-  (rlet1 sndptr (%make-secondary-pointer base offset)
+  (rlet1 sndptr (%make-internal-pointer base offset)
     ((with-module gauche.internal foreign-pointer-type-set!)
      sndptr type)))
 
@@ -254,8 +254,7 @@
         (%aref (%native-pointer-pointee-type t) fp offset)]
        [(subtype? t <native-array>)
         (if-let1 partial (%partial-array-dereference-type t selector)
-          (error "[Internal] Partial array reference is not yet supported \
-                  for foreign pointer:" selector)
+          (make-internal-pointer fp offset partial)
           (%aref (%native-array-element-type t) fp offset))]
        [else (error "Unsupported native aggregate type:" t)]))))
 
