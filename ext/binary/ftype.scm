@@ -60,6 +60,45 @@
           make-native-array-type))
 (select-module binary.ftype)
 
+(inline-stub
+ (.include "gauche/priv/typeP.h")
+ )
+
+;;;
+;;; Secondary pointers
+;;;
+
+;; The pointers pointing into a structure which is originally pointed by
+;; foreign pointers obtained form outside (e.g. dlsym()).
+
+(inline-stub
+ (define-cvar secondary-pointer-class::ScmClass* :static)
+
+ (initcode
+  (set! secondary-pointer-class
+        (Scm_MakeForeignPointerClass (Scm_CurrentModule)
+                                     "<secondary-pointer>"
+                                     NULL NULL 0))
+  ))
+
+(define-cproc %make-secondary-pointer (base::<foreign-pointer>
+                                       offset::<fixnum>)
+  (let* ([p::void* (Scm_ForeignPointerRef base)])
+    (return (Scm_MakeForeignPointer secondary-pointer-class
+                                    (+ p offset)))))
+
+(define (make-secondary-pointer base offset type)
+  (assume-type base <foreign-pointer>)
+  (assume-type offset <fixnum>)
+  (assume-type type <native-type>)
+  (rlet1 sndptr (%make-secondary-pointer base offset)
+    ((with-module gauche.internal foreign-pointer-type-set!)
+     sndptr type)))
+
+;;;
+;;; Pointer equivalent into bytevector storage
+;;;
+
 ;; Used to point to a specific location within the given bytevector.
 (define-record-type <bytevector-cursor>
     (%make-bytevector-cursor storage pos type)
@@ -74,9 +113,11 @@
   (assume-type type (<?> <native-type>))
   (%make-bytevector-cursor bytevector pos type))
 
-(inline-stub
- (.include "gauche/priv/typeP.h")
+;;;
+;;; Low-level accessor/modifier
+;;;
 
+(inline-stub
  ;; Access p[offset], where
  ;;   etype is the type of element
  ;;   fp is a foreign pointer for p
@@ -196,6 +237,10 @@
         (and (not (null? dims))
              (make-native-array-type etype dims))
         (loop (cdr dims) (cdr sels))))))
+
+;;;
+;;;  Public accessor/modifier
+;;;
 
 (define (native-ref fp selector :optional (type #f))
   (assume-type fp <foreign-pointer>)
