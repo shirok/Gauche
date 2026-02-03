@@ -47,10 +47,10 @@
           native-bytevector-ref
           native-bytevector-set!
 
-          make-bytevector-cursor
-          bytevector-cursor-storage
-          bytevector-cursor-pos
-          bytevector-cursor-type
+          make-domestic-pointer
+          domestic-pointer-storage
+          domestic-pointer-pos
+          domestic-pointer-type
 
           ;; TRANSIENT: We want better (more concise, but distinct) names
           ;; for these.  At the moment, we just reexport them from
@@ -100,18 +100,18 @@
 ;;;
 
 ;; Used to point to a specific location within the given bytevector.
-(define-record-type <bytevector-cursor>
-    (%make-bytevector-cursor storage pos type)
-    bytevector-cursor?
-  (storage bytevector-cursor-storage)
-  (pos bytevector-cursor-pos)
-  (type bytevector-cursor-type))
+(define-record-type <domestic-pointer>
+    (%make-domestic-pointer storage pos type)
+    domestic-pointer?
+  (storage domestic-pointer-storage)
+  (pos domestic-pointer-pos)
+  (type domestic-pointer-type))
 
-(define (make-bytevector-cursor bytevector pos :optional (type #f))
+(define (make-domestic-pointer bytevector pos :optional (type #f))
   (assume-type bytevector <u8vector>)
   (assume (and (fixnum? pos) (>= pos 0)))
   (assume-type type (<?> <native-type>))
-  (%make-bytevector-cursor bytevector pos type))
+  (%make-domestic-pointer bytevector pos type))
 
 ;;;
 ;;; Low-level accessor/modifier
@@ -276,48 +276,48 @@
        [else (error "Unsupported native aggregate type:" t)]))))
 
 (define (native-bytevector-ref bvcursor type selector)
-  (assume-type bvcursor <bytevector-cursor>)
+  (assume-type bvcursor <domestic-pointer>)
   (assume-type type (<?> <native-type>))
-  (let1 t (or type (bytevector-cursor-type bvcursor))
+  (let1 t (or type (domestic-pointer-type bvcursor))
     (unless t
       (error "Unknown type to dereference:" bvcursor))
     (let1 offset (native-type-offset t selector)
       (cond
        [(subtype? t <native-pointer>)
         (%bvref (%native-pointer-pointee-type t)
-                (bytevector-cursor-storage bvcursor)
-                (bytevector-cursor-pos bvcursor)
+                (domestic-pointer-storage bvcursor)
+                (domestic-pointer-pos bvcursor)
                 offset)]
        [(subtype? t <native-array>)
         (if-let1 partial (%partial-array-dereference-type t selector)
-          (make-bytevector-cursor (bytevector-cursor-storage bvcursor)
+          (make-domestic-pointer (domestic-pointer-storage bvcursor)
                                   offset
                                   partial)
           (%bvref (%native-array-element-type t)
-                  (bytevector-cursor-storage bvcursor)
-                  (bytevector-cursor-pos bvcursor)
+                  (domestic-pointer-storage bvcursor)
+                  (domestic-pointer-pos bvcursor)
                   offset))]
        [else (error "Unsupported native aggregate type:" t)]))))
 
 (define (native-bytevector-set! bvcursor type selector val)
-  (assume-type bvcursor <bytevector-cursor>)
+  (assume-type bvcursor <domestic-pointer>)
   (assume-type type (<?> <native-type>))
-  (let1 t (or type (bytevector-cursor-type bvcursor))
+  (let1 t (or type (domestic-pointer-type bvcursor))
     (unless t
       (error "Unknown type to dereference:" bvcursor))
     (let1 offset (native-type-offset t selector)
       (cond
        [(subtype? t <native-pointer>)
         (%bvset! (%native-pointer-pointee-type t)
-                 (bytevector-cursor-storage bvcursor)
-                 (bytevector-cursor-pos bvcursor)
+                 (domestic-pointer-storage bvcursor)
+                 (domestic-pointer-pos bvcursor)
                  offset val)]
        [(subtype? t <native-array>)
         (if-let1 partial (%partial-array-dereference-type t selector)
           (error "Setting an array element needs to specify exactly one element:"
                  selector)
           (%bvset! (%native-array-element-type t)
-                   (bytevector-cursor-storage bvcursor)
-                   (bytevector-cursor-pos bvcursor)
+                   (domestic-pointer-storage bvcursor)
+                   (domestic-pointer-pos bvcursor)
                    offset val))]
        [else (error "Unsupported native aggregate type:" t)]))))

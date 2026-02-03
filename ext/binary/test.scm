@@ -611,7 +611,7 @@
       [uint32* (make-pointer-type <uint32>)]
       [int64* (make-pointer-type <int64>)]
       [uint64* (make-pointer-type <uint64>)])
-  (define (bc pos) (make-bytevector-cursor data pos))
+  (define (bc pos) (make-domestic-pointer data pos))
 
   (test* "uint8* deref" '(#x80 #x09 #x3f)
          (list (native-bytevector-ref (bc 0) uint8* 0)
@@ -705,7 +705,7 @@
       [uint32a (make-native-array-type <uint32> '(2 3 2))]
       [int64a (make-native-array-type <int64> '(* 2))]
       [uint64a (make-native-array-type <uint64> '(2 2))])
-  (define (bc pos) (make-bytevector-cursor data pos))
+  (define (bc pos) (make-domestic-pointer data pos))
 
   (test* "uint8 array ref" '(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                                   #x08 #x09)
@@ -879,7 +879,7 @@
       [double* (make-pointer-type <double>)]
       [floata (make-native-array-type <float> '(3))]
       [doublea (make-native-array-type <double> '(3))])
-  (define (bc pos) (make-bytevector-cursor data pos))
+  (define (bc pos) (make-domestic-pointer data pos))
 
   (test* "float* deref" '(1.0 -1.0 3.5)
          (list (native-bytevector-ref (bc 0) float* 0)
