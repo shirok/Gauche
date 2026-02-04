@@ -163,6 +163,7 @@ test.record
 /ext/windows/console.c
 /ext/windows/winapi.c
 /ext/zlib/rfc--zlib.c
+/ext/ffi/gauche--ffi.c
 /gc/.deps/
 /gc/.libs/
 /gc/atomic_ops.c

@@ -1,0 +1,87 @@
+dnl
+dnl Configure ext/ffi
+dnl This file is included by the toplevel configure.ac
+dnl
+
+dnl
+dnl process with-ffi
+dnl
+
+dnl Use ffi unless explicitly specified otherwise
+ac_cv_use_ffi=yes
+FFI_CPPFLAGS=
+FFI_LDFLAGS=
+
+AC_ARG_WITH(ffi,
+  AS_HELP_STRING([--with-ffi=PATH],
+                 [Use ffi library installed under PATH.
+The gauche.ffi module uses libffi if it is available.  If your system has
+libffi library in non-trivial location, specify this option.
+The include file is looked for in PATH/include,
+and the library file is looked for in PATH/lib.
+If you don't want to use ffi for some reason, say --without-ffi. ]),
+  [
+  AS_CASE([$with_ffi],
+    [no],  [ac_cv_use_ffi=no],
+    [yes], [],
+           [FFI_CPPFLAGS="-I$with_ffi/include"
+            FFI_LDFLAGS="-L$with_ffi/lib"])
+ ])
+
+dnl
+dnl Check ffi.h
+dnl
+
+AS_IF([test "$ac_cv_use_ffi" != no], [
+  save_cppflags=$CPPFLAGS
+  CPPFLAGS="$CPPFLAGS $FFI_CPPFLAGS"
+  AC_CHECK_HEADER(ffi.h,
+     AC_DEFINE(HAVE_FFI_H,1,[Define if you have ffi.h and want to use it]),
+     [AC_MSG_WARN("Can't find ffi.h so I turned off using ffi; you may want to use --with-ffi=PATH.")
+      ac_cv_use_ffi=no])
+  CPPFLAGS=$save_cppflags
+])
+
+dnl
+dnl Check libffi.
+dnl
+
+AS_IF([test "$ac_cv_use_ffi" = yes], [
+  save_cflags="$CFLAGS"
+  save_ldflags="$LDFLAGS"
+  save_libs="$LIBS"
+  CFLAGS="$CFLAGS $FFI_CPPFLAGS"
+  LDFLAGS="$LDFLAGS $FFI_LDFLAGS"
+  LIBS="$LIBS -lffi"
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([@%:@include <ffi.h>],
+                     [[ffi_cif cif;]])],
+    [FFI_LIB="-lffi"],
+    [AC_MSG_WARN("Can't find libffi so I turned off using ffi; you may want to use --with-ffi=PATH")
+      ac_cv_use_ffi=no])
+  CFLAGS="$save_cflags"
+  LDFLAGS="$save_ldflags"
+  LIBS="$save_libs"
+])
+
+AS_IF([test "$ac_cv_use_ffi" = yes], [
+  dnl Force static linking on MinGW
+  AS_CASE(["$target"],
+    [*mingw*], [FFI_LIB="-Wl,-dn,$FFI_LIB,-dy"])
+
+  AC_DEFINE(USE_FFI, [], [Define if uses libffi])
+  FFI_ARCHFILES=gauche--ffi.$SHLIB_SO_SUFFIX
+  AC_SUBST(FFI_ARCHFILES)
+  FFI_SCMFILES=ffi.sci
+  AC_SUBST(FFI_SCMFILES)
+  FFI_OBJECTS="gauche-ffi.$OBJEXT gauche--ffi.$OBJEXT"
+  AC_SUBST(FFI_OBJECTS)
+  EXT_LIBS="$EXT_LIBS $FFI_LIB"
+])
+AC_SUBST(FFI_CPPFLAGS)
+AC_SUBST(FFI_LDFLAGS)
+AC_SUBST(FFI_LIB)
+
+dnl Local variables:
+dnl mode: autoconf
+dnl end:
