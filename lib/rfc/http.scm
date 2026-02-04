@@ -890,7 +890,8 @@
   (and-let* ([user (~ conn 'auth-user)]
              [pass (or (~ conn 'auth-password) "")])
     `(:authorization ,($ format "Basic ~a"
-                         $ base64-encode-string #"~|user|:~|pass|"))))
+                         $ base64-encode-message #"~|user|:~|pass|"
+                         :line-width #f))))
 
 (define http-default-auth-handler
   (make-parameter http-basic-auth-handler))

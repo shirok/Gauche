@@ -581,6 +581,21 @@
        (list? alis2)
        (equal? (%sort alis1) (%sort alis2))))
 
+;; Test default auth handler (not connecting to actual server)
+;; https://github.com/shirok/Gauche/issues/1208
+(let* ([user (make-string 40 #\a)]
+       [pass (make-string 40 #\Z)]
+       [conn (make-http-connection "localhost"
+                                   :auth-user user
+                                   :auth-password pass)])
+  (test* "basic auth handler"
+         #"~|user|:~|pass|"
+         (match ((http-default-auth-handler) conn)
+           [(':authorization s)
+            (base64-decode-string-to <string>
+                                     (rxmatch->string #/Basic\s+([\S]+)/ s 1))]
+           [x x])))
+
 (define *simple-httpd*
   '(
     (use gauche.net)

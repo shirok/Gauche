@@ -1,3 +1,9 @@
+2026-02-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-basic-auth-handler): Prevent authorization
+	  header to be broken by newlines.
+	  https://github.com/shirok/Gauche/issues/1208
+
 2026-01-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmisc.scm (foreign-pointer-type{-set!}): Added. (internal API)
