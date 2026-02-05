@@ -44,8 +44,6 @@
   (extend gauche.typeutil)              ;access internal routines
   (export native-ref
           native-set!
-          native-bytevector-ref
-          native-bytevector-set!
 
           make-domestic-pointer
           domestic-pointer-storage
@@ -238,86 +236,78 @@
              (make-native-array-type etype dims))
         (loop (cdr dims) (cdr sels))))))
 
+;; Common routine to allow type override.
+;; ptr can be <foreign-pointer> or <domestic-pointer>.
+(define (%ptr-type ptr type-override)
+  (or type-override
+      (etypecase ptr
+        [<foreign-pointer>
+         ((with-module gauche.internal foreign-pointer-type) ptr)]
+        [<domestic-pointer>
+         (domestic-pointer-type ptr)])
+      (error "Can't dereference a pointer with unknown type:" ptr)))
+
 ;;;
 ;;;  Public accessor/modifier
 ;;;
 
-(define (native-ref fp selector :optional (type #f))
-  (assume-type fp <foreign-pointer>)
-  (let1 t (or ((with-module gauche.internal foreign-pointer-type fp) fp)
-              type)
-    (unless t
-      (error "Can't dereference a foreign pointer: type unknown:" fp))
-    (let1 offset (native-type-offset t selector)
-      (cond
-       [(subtype? t <native-pointer>)
-        (%aref (%native-pointer-pointee-type t) fp offset)]
-       [(subtype? t <native-array>)
-        (if-let1 partial (%partial-array-dereference-type t selector)
-          (make-internal-pointer fp offset partial)
-          (%aref (%native-array-element-type t) fp offset))]
-       [else (error "Unsupported native aggregate type:" t)]))))
+;; NB: We refrain from using (</> <foreign-pointer> <domestic-pointer>))
+;; for now, because of the issue of precompiler
+;; https://github.com/shirok/Gauche/issues/1209
 
-(define (native-set! fp selector val :optional (type #f))
-  (assume-type fp <foreign-pointer>)
-  (let1 t (or ((with-module gauche.internal foreign-pointer-type fp) fp)
-              type)
-    (unless t
-      (error "Can't set a foreign pointer: type unknown:" fp))
-    (let1 offset (native-type-offset t selector)
-      (cond
-       [(subtype? t <native-pointer>)
-        (%aset! (%native-pointer-pointee-type t) fp offset val)]
-       [(subtype? t <native-array>)
-        (if-let1 partial (%partial-array-dereference-type t selector)
-          (error "Setting an array element needs to specify exactly one element:"
-                 selector)
-          (%aset! (%native-array-element-type t) fp offset val))]
-       [else (error "Unsupported native aggregate type:" t)]))))
-
-(define (native-bytevector-ref bvcursor type selector)
-  (assume-type bvcursor <domestic-pointer>)
-  (assume-type type (<?> <native-type>))
-  (let1 t (or type (domestic-pointer-type bvcursor))
-    (unless t
-      (error "Unknown type to dereference:" bvcursor))
-    (let1 offset (native-type-offset t selector)
-      (cond
-       [(subtype? t <native-pointer>)
+(define (native-ref ptr selector :optional (type #f))
+  ;;(assume-type ptr (</> <foreign-pointer> <domestic-pointer>))
+  (assume (or (is-a? ptr <foreign-pointer>)
+              (is-a? ptr <domestic-pointer>))
+    "Foreign pointer of domestic pointer expected, but got:" ptr)
+  (let* ([t (%ptr-type ptr type)]
+         [offset (native-type-offset t selector)])
+    (cond
+     [(subtype? t <native-pointer>)
+      (if (is-a? ptr <foreign-pointer>)
+        (%aref (%native-pointer-pointee-type t) ptr offset)
         (%bvref (%native-pointer-pointee-type t)
-                (domestic-pointer-storage bvcursor)
-                (domestic-pointer-pos bvcursor)
-                offset)]
-       [(subtype? t <native-array>)
-        (if-let1 partial (%partial-array-dereference-type t selector)
-          (make-domestic-pointer (domestic-pointer-storage bvcursor)
-                                  offset
-                                  partial)
+                (domestic-pointer-storage ptr)
+                (domestic-pointer-pos ptr)
+                offset))]
+     [(subtype? t <native-array>)
+      (if-let1 partial (%partial-array-dereference-type t selector)
+        (if (is-a? ptr <foreign-pointer>)
+          (make-internal-pointer ptr offset partial)
+          (make-domestic-pointer (domestic-pointer-storage ptr)
+                                 offset
+                                 partial))
+        (if (is-a? ptr <foreign-pointer>)
+          (%aref (%native-array-element-type t) ptr offset)
           (%bvref (%native-array-element-type t)
-                  (domestic-pointer-storage bvcursor)
-                  (domestic-pointer-pos bvcursor)
-                  offset))]
-       [else (error "Unsupported native aggregate type:" t)]))))
+                  (domestic-pointer-storage ptr)
+                  (domestic-pointer-pos ptr)
+                  offset)))]
+     [else (error "Unsupported native aggregate type:" ptr)])))
 
-(define (native-bytevector-set! bvcursor type selector val)
-  (assume-type bvcursor <domestic-pointer>)
-  (assume-type type (<?> <native-type>))
-  (let1 t (or type (domestic-pointer-type bvcursor))
-    (unless t
-      (error "Unknown type to dereference:" bvcursor))
-    (let1 offset (native-type-offset t selector)
-      (cond
-       [(subtype? t <native-pointer>)
+(define (native-set! ptr selector val :optional (type #f))
+  ;;(assume-type ptr (</> <foreign-pointer> <domestic-pointer>))
+  (assume (or (is-a? ptr <foreign-pointer>)
+              (is-a? ptr <domestic-pointer>))
+    "Foreign pointer of domestic pointer expected, but got:" ptr)
+  (let* ([t (%ptr-type ptr type)]
+         [offset (native-type-offset t selector)])
+    (cond
+     [(subtype? t <native-pointer>)
+      (if (is-a? ptr <foreign-pointer>)
+        (%aset! (%native-pointer-pointee-type t) ptr offset val)
         (%bvset! (%native-pointer-pointee-type t)
-                 (domestic-pointer-storage bvcursor)
-                 (domestic-pointer-pos bvcursor)
-                 offset val)]
-       [(subtype? t <native-array>)
-        (if-let1 partial (%partial-array-dereference-type t selector)
-          (error "Setting an array element needs to specify exactly one element:"
-                 selector)
+                 (domestic-pointer-storage ptr)
+                 (domestic-pointer-pos ptr)
+                 offset val))]
+     [(subtype? t <native-array>)
+      (if-let1 partial (%partial-array-dereference-type t selector)
+        (error "Setting an array element needs to specify exactly one element:"
+               selector)
+        (if (is-a? ptr <foreign-pointer>)
+          (%aset! (%native-array-element-type t) ptr offset val)
           (%bvset! (%native-array-element-type t)
-                   (domestic-pointer-storage bvcursor)
-                   (domestic-pointer-pos bvcursor)
-                   offset val))]
-       [else (error "Unsupported native aggregate type:" t)]))))
+                   (domestic-pointer-storage ptr)
+                   (domestic-pointer-pos ptr)
+                   offset val)))]
+     [else (error "Unsupported native aggregate type:" t)])))

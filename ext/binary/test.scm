@@ -611,89 +611,89 @@
       [uint32* (make-pointer-type <uint32>)]
       [int64* (make-pointer-type <int64>)]
       [uint64* (make-pointer-type <uint64>)])
-  (define (bc pos) (make-domestic-pointer data pos))
+  (define (bc pos type) (make-domestic-pointer data pos type))
 
   (test* "uint8* deref" '(#x80 #x09 #x3f)
-         (list (native-bytevector-ref (bc 0) uint8* 0)
-               (native-bytevector-ref (bc 9) uint8* 0)
-               (native-bytevector-ref (bc 56) uint8* 7)))
+         (list (native-ref (bc 0 uint8*) 0)
+               (native-ref (bc 9 uint8*) 0)
+               (native-ref (bc 56 uint8*) 7)))
   (test* "int8* deref" '(#x-80 #x09 #x3f)
-         (list (native-bytevector-ref (bc 0) int8* 0)
-               (native-bytevector-ref (bc 9) int8* 0)
-               (native-bytevector-ref (bc 56) int8* 7)))
+         (list (native-ref (bc 0 int8*) 0)
+               (native-ref (bc 9 int8*) 0)
+               (native-ref (bc 56 int8*) 7)))
 
   (test* "uint16* deref" (case (native-endian)
                            [(big-endian) '(#x0809 #xfeff)]
                            [else         '(#x0908 #xfffe)])
-         (list (native-bytevector-ref (bc 8) uint16* 0)
-               (native-bytevector-ref (bc 72) uint16* 3)))
+         (list (native-ref (bc 8 uint16*) 0)
+               (native-ref (bc 72 uint16*) 3)))
   (test* "int16* deref" (case (native-endian)
                           [(big-endian) '(#x0809 #x-0101)]
                           [else         '(#x0908 #x-0002)])
-         (list (native-bytevector-ref (bc 8) int16* 0)
-               (native-bytevector-ref (bc 72) int16* 3)))
+         (list (native-ref (bc 8 int16*) 0)
+               (native-ref (bc 72 int16*) 3)))
 
   (test* "uint32* deref" (case (native-endian)
                            [(big-endian) '(#x10111213 #xf8f9fafb)]
                            [else         '(#x13121110 #xfbfaf9f8)])
-         (list (native-bytevector-ref (bc 16) uint32* 0)
-               (native-bytevector-ref (bc 64) uint32* 2)))
+         (list (native-ref (bc 16 uint32*) 0)
+               (native-ref (bc 64 uint32*) 2)))
   (test* "int32* deref" (case (native-endian)
                           [(big-endian) '(#x10111213 #x-07060505)]
                           [else         '(#x13121110 #x-04050608)])
-         (list (native-bytevector-ref (bc 16) int32* 0)
-               (native-bytevector-ref (bc 64) int32* 2)))
+         (list (native-ref (bc 16 int32*) 0)
+               (native-ref (bc 64 int32*) 2)))
 
   (test* "uint64* deref" (case (native-endian)
                            [(big-endian) '(#x2021222324252627
                                            #xf0f1f2f3f4f5f6f7)]
                            [else         '(#x2726252423222120
                                            #xf7f6f5f4f3f2f1f0)])
-         (list (native-bytevector-ref (bc 32) uint64* 0)
-               (native-bytevector-ref (bc 32) uint64* 4)))
+         (list (native-ref (bc 32 uint64*) 0)
+               (native-ref (bc 32 uint64*) 4)))
   (test* "int64* deref" (case (native-endian)
                           [(big-endian) '(#x2021222324252627
                                           #x-0f0e0d0c0b0a0909)]
                           [else         '(#x2726252423222120
                                           #x-08090a0b0c0d0e10)])
-         (list (native-bytevector-ref (bc 32) int64* 0)
-               (native-bytevector-ref (bc 32) int64* 4)))
+         (list (native-ref (bc 32 int64*) 0)
+               (native-ref (bc 32 int64*) 4)))
 
   (test* "uint8* modify" #xff
          (begin
-           (native-bytevector-set! (bc 0) uint8* 1 #xff)
-           (native-bytevector-ref (bc 1) uint8* 0)))
+           (native-set! (bc 0 uint8*) 1 #xff)
+           (native-ref (bc 1 uint8*) 0)))
   (test* "int8* modify" -2
          (begin
-           (native-bytevector-set! (bc 0) int8* 1 -2)
-           (native-bytevector-ref (bc 1) int8* 0)))
+           (native-set! (bc 0 int8*) 1 -2)
+           (native-ref (bc 1 int8*) 0)))
 
   (test* "uint16* modify" #xabcd
          (begin
-           (native-bytevector-set! (bc 0) uint16* 1 #xabcd)
-           (native-bytevector-ref (bc 2) uint16* 0)))
+           (native-set! (bc 0 uint16*) 1 #xabcd)
+           (native-ref (bc 2 uint16*) 0)))
   (test* "int16* modify" #x-1234
          (begin
-           (native-bytevector-set! (bc 0) int16* 1 #x-1234)
-           (native-bytevector-ref (bc 2) int16* 0)))
+           (native-set! (bc 0 int16*) 1 #x-1234)
+           (native-ref (bc 2 int16*) 0)))
 
   (test* "uint32* modify" #x89abcdef
          (begin
-           (native-bytevector-set! (bc 0) uint32* 1 #x89abcdef)
-           (native-bytevector-ref (bc 4) uint32* 0)))
+           (native-set! (bc 0 uint32*) 1 #x89abcdef)
+           (native-ref (bc 4 uint32*) 0)))
   (test* "int32* modify" #x-789abcde
          (begin
-           (native-bytevector-set! (bc 0) int32* 1 #x-789abcde)
-           (native-bytevector-ref (bc 4) int32* 0)))
+           (native-set! (bc 0 int32*) 1 #x-789abcde)
+           (native-ref (bc 4 int32*) 0)))
 
   (test* "uint64* modify" #x0123456789abcdef
          (begin
-           (native-bytevector-set! (bc 0) uint64* 1 #x0123456789abcdef)
-           (native-bytevector-ref (bc 8) uint64* 0)))
+           (native-set! (bc 0 uint64*) 1 #x0123456789abcdef)
+           (native-ref (bc 8 uint64*) 0)))
   (test* "int64* modify" #x-0123456789abcdef
          (begin
-           (native-bytevector-set! (bc 0) int64* 1 #x-0123456789abcdef)
-           (native-bytevector-ref (bc 8) int64* 0)))
+           (native-set! (bc 0 int64*) 1 #x-0123456789abcdef)
+           (native-ref (bc 8 int64*) 0)))
   )
 
 (let ([data (u8vector-copy *fobject-storage*)]
@@ -705,33 +705,33 @@
       [uint32a (make-native-array-type <uint32> '(2 3 2))]
       [int64a (make-native-array-type <int64> '(* 2))]
       [uint64a (make-native-array-type <uint64> '(2 2))])
-  (define (bc pos) (make-domestic-pointer data pos))
+  (define (bc pos type) (make-domestic-pointer data pos type))
 
   (test* "uint8 array ref" '(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                                   #x08 #x09)
-         (list (native-bytevector-ref (bc 0) uint8a '(0 0 0))
-               (native-bytevector-ref (bc 0) uint8a '(0 0 1))
-               (native-bytevector-ref (bc 0) uint8a '(0 1 0))
-               (native-bytevector-ref (bc 0) uint8a '(0 1 1))
-               (native-bytevector-ref (bc 0) uint8a '(0 2 0))
-               (native-bytevector-ref (bc 0) uint8a '(0 2 1))
-               (native-bytevector-ref (bc 0) uint8a '(0 3 0))
-               (native-bytevector-ref (bc 0) uint8a '(0 3 1))
-               (native-bytevector-ref (bc 0) uint8a '(1 0 0))
-               (native-bytevector-ref (bc 0) uint8a '(1 0 1))))
+         (list (native-ref (bc 0 uint8a) '(0 0 0))
+               (native-ref (bc 0 uint8a) '(0 0 1))
+               (native-ref (bc 0 uint8a) '(0 1 0))
+               (native-ref (bc 0 uint8a) '(0 1 1))
+               (native-ref (bc 0 uint8a) '(0 2 0))
+               (native-ref (bc 0 uint8a) '(0 2 1))
+               (native-ref (bc 0 uint8a) '(0 3 0))
+               (native-ref (bc 0 uint8a) '(0 3 1))
+               (native-ref (bc 0 uint8a) '(1 0 0))
+               (native-ref (bc 0 uint8a) '(1 0 1))))
   (test* "int8 array ref" '(#x-80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                                   #x08 #x09 #x18)
-         (list (native-bytevector-ref (bc 0) int8a '(0 0 0))
-               (native-bytevector-ref (bc 0) int8a '(0 0 1))
-               (native-bytevector-ref (bc 0) int8a '(0 1 0))
-               (native-bytevector-ref (bc 0) int8a '(0 1 1))
-               (native-bytevector-ref (bc 0) int8a '(0 2 0))
-               (native-bytevector-ref (bc 0) int8a '(0 2 1))
-               (native-bytevector-ref (bc 0) int8a '(0 3 0))
-               (native-bytevector-ref (bc 0) int8a '(0 3 1))
-               (native-bytevector-ref (bc 0) int8a '(1 0 0))
-               (native-bytevector-ref (bc 0) int8a '(1 0 1))
-               (native-bytevector-ref (bc 0) int8a '(3 0 0))))
+         (list (native-ref (bc 0 int8a) '(0 0 0))
+               (native-ref (bc 0 int8a) '(0 0 1))
+               (native-ref (bc 0 int8a) '(0 1 0))
+               (native-ref (bc 0 int8a) '(0 1 1))
+               (native-ref (bc 0 int8a) '(0 2 0))
+               (native-ref (bc 0 int8a) '(0 2 1))
+               (native-ref (bc 0 int8a) '(0 3 0))
+               (native-ref (bc 0 int8a) '(0 3 1))
+               (native-ref (bc 0 int8a) '(1 0 0))
+               (native-ref (bc 0 int8a) '(1 0 1))
+               (native-ref (bc 0 int8a) '(3 0 0))))
 
   (test* "uint16 array ref"
          (case (native-endian)
@@ -739,24 +739,24 @@
                            #x1011 #x1e1f)]
            [else         '(#x0180 #x0302 #x0504 #x0f0e
                            #x1110 #x1f1e)])
-         (list (native-bytevector-ref (bc 0) uint16a '(0 0 0))
-               (native-bytevector-ref (bc 0) uint16a '(0 0 1))
-               (native-bytevector-ref (bc 0) uint16a '(0 1 0))
-               (native-bytevector-ref (bc 0) uint16a '(0 3 1))
-               (native-bytevector-ref (bc 0) uint16a '(1 0 0))
-               (native-bytevector-ref (bc 0) uint16a '(1 3 1))))
+         (list (native-ref (bc 0 uint16a) '(0 0 0))
+               (native-ref (bc 0 uint16a) '(0 0 1))
+               (native-ref (bc 0 uint16a) '(0 1 0))
+               (native-ref (bc 0 uint16a) '(0 3 1))
+               (native-ref (bc 0 uint16a) '(1 0 0))
+               (native-ref (bc 0 uint16a) '(1 3 1))))
   (test* "int16 array ref"
          (case (native-endian)
            [(big-endian) '(#x0203 #x0405 #x0e0f
                            #x1011 #x1e1f #xfeff)]
            [else         '(#x0302 #x0504 #x0f0e
                            #x1110 #x1f1e #x-0002)])
-         (list (native-bytevector-ref (bc 0) int16a '(0 0 1))
-               (native-bytevector-ref (bc 0) int16a '(0 1 0))
-               (native-bytevector-ref (bc 0) int16a '(0 3 1))
-               (native-bytevector-ref (bc 0) int16a '(1 0 0))
-               (native-bytevector-ref (bc 0) int16a '(1 3 1))
-               (native-bytevector-ref (bc 0) int16a '(4 3 1))))
+         (list (native-ref (bc 0 int16a) '(0 0 1))
+               (native-ref (bc 0 int16a) '(0 1 0))
+               (native-ref (bc 0 int16a) '(0 3 1))
+               (native-ref (bc 0 int16a) '(1 0 0))
+               (native-ref (bc 0 int16a) '(1 3 1))
+               (native-ref (bc 0 int16a) '(4 3 1))))
 
   (test* "uint32 array ref"
          (case (native-endian)
@@ -764,20 +764,20 @@
                            #x10111213 #x2c2d2e2f)]
            [else         '(#x03020180 #x07060504
                            #x13121110 #x2f2e2d2c)])
-         (list (native-bytevector-ref (bc 0) uint32a '(0 0 0))
-               (native-bytevector-ref (bc 0) uint32a '(0 0 1))
-               (native-bytevector-ref (bc 0) uint32a '(0 2 0))
-               (native-bytevector-ref (bc 0) uint32a '(1 2 1))))
+         (list (native-ref (bc 0 uint32a) '(0 0 0))
+               (native-ref (bc 0 uint32a) '(0 0 1))
+               (native-ref (bc 0 uint32a) '(0 2 0))
+               (native-ref (bc 0 uint32a) '(1 2 1))))
   (test* "int32 array ref"
          (case (native-endian)
            [(big-endian) '(#x80010203 #x04050607
                            #x10111213 #x-03020101)]
            [else         '(#x03020180 #x07060504
                            #x13121110 #x-00010204)])
-         (list (native-bytevector-ref (bc 0) int32a '(0 0 0))
-               (native-bytevector-ref (bc 0) int32a '(0 0 1))
-               (native-bytevector-ref (bc 0) int32a '(0 2 0))
-               (native-bytevector-ref (bc 0) int32a '(3 0 1))))
+         (list (native-ref (bc 0 int32a) '(0 0 0))
+               (native-ref (bc 0 int32a) '(0 0 1))
+               (native-ref (bc 0 int32a) '(0 2 0))
+               (native-ref (bc 0 int32a) '(3 0 1))))
 
   (test* "uint64 array ref"
          (case (native-endian)
@@ -785,57 +785,57 @@
                            #x18191a1b1c1d1e1f)]
            [else         '(#x0706050403020180
                            #x1f1e1d1c1b1a1918)])
-         (list (native-bytevector-ref (bc 0) uint64a '(0 0))
-               (native-bytevector-ref (bc 0) uint64a '(1 1))))
+         (list (native-ref (bc 0 uint64a) '(0 0))
+               (native-ref (bc 0 uint64a) '(1 1))))
   (test* "int64 array ref"
          (case (native-endian)
            [(big-endian) '(#x8001020304050607
                            #x-0706050403020101)]
            [else         '(#x0706050403020180
                            #x-0001020304050608)])
-         (list (native-bytevector-ref (bc 0) int64a '(0 0))
-               (native-bytevector-ref (bc 0) int64a '(4 1))))
+         (list (native-ref (bc 0 int64a) '(0 0))
+               (native-ref (bc 0 int64a) '(4 1))))
 
   (test* "uint8 array modify" #xff
          (begin
-           (native-bytevector-set! (bc 0) uint8a '(0 0 1) #xff)
-           (native-bytevector-ref (bc 0) uint8a '(0 0 1))))
+           (native-set! (bc 0 uint8a) '(0 0 1) #xff)
+           (native-ref (bc 0 uint8a) '(0 0 1))))
   (test* "int8 array modify" -2
          (begin
-           (native-bytevector-set! (bc 0) int8a '(0 0 1) -2)
-           (native-bytevector-ref (bc 0) int8a '(0 0 1))))
+           (native-set! (bc 0 int8a) '(0 0 1) -2)
+           (native-ref (bc 0 int8a) '(0 0 1))))
 
   (test* "uint16 array modify" #xabcd
          (begin
-           (native-bytevector-set! (bc 0) uint16a '(0 0 1) #xabcd)
-           (native-bytevector-ref (bc 0) uint16a '(0 0 1))))
+           (native-set! (bc 0 uint16a) '(0 0 1) #xabcd)
+           (native-ref (bc 0 uint16a) '(0 0 1))))
   (test* "int16 array modify" #x-1234
          (begin
-           (native-bytevector-set! (bc 0) int16a '(0 0 1) #x-1234)
-           (native-bytevector-ref (bc 0) int16a '(0 0 1))))
+           (native-set! (bc 0 int16a) '(0 0 1) #x-1234)
+           (native-ref (bc 0 int16a) '(0 0 1))))
 
   (test* "uint32 array modify" #x89abcdef
          (begin
-           (native-bytevector-set! (bc 0) uint32a '(0 2 0) #x89abcdef)
-           (native-bytevector-ref (bc 0) uint32a '(0 2 0))))
+           (native-set! (bc 0 uint32a) '(0 2 0) #x89abcdef)
+           (native-ref (bc 0 uint32a) '(0 2 0))))
   (test* "int32 array modify" #x-789abcde
          (begin
-           (native-bytevector-set! (bc 0) int32a '(0 2 0) #x-789abcde)
-           (native-bytevector-ref (bc 0) int32a '(0 2 0))))
+           (native-set! (bc 0 int32a) '(0 2 0) #x-789abcde)
+           (native-ref (bc 0 int32a) '(0 2 0))))
 
   (test* "uint64 array modify" #x0123456789abcdef
          (begin
-           (native-bytevector-set! (bc 0) uint64a '(0 0) #x0123456789abcdef)
-           (native-bytevector-ref (bc 0) uint64a '(0 0))))
+           (native-set! (bc 0 uint64a) '(0 0) #x0123456789abcdef)
+           (native-ref (bc 0 uint64a) '(0 0))))
   (test* "int64 array modify" #x-0123456789abcdef
          (begin
-           (native-bytevector-set! (bc 0) int64a '(0 0) #x-0123456789abcdef)
-           (native-bytevector-ref (bc 0) int64a '(0 0))))
+           (native-set! (bc 0 int64a) '(0 0) #x-0123456789abcdef)
+           (native-ref (bc 0 int64a) '(0 0))))
 
   ;; partial index
   (test* "int8 array partial dereference" #x17
-         (let1 a (native-bytevector-ref (bc 0) int8a '(2 3))
-           (native-bytevector-ref a #f '(1))))
+         (let1 a (native-ref (bc 0 int8a) '(2 3))
+           (native-ref a '(1))))
   )
 
 (test-end)
@@ -879,42 +879,42 @@
       [double* (make-pointer-type <double>)]
       [floata (make-native-array-type <float> '(3))]
       [doublea (make-native-array-type <double> '(3))])
-  (define (bc pos) (make-domestic-pointer data pos))
+  (define (bc pos type) (make-domestic-pointer data pos type))
 
   (test* "float* deref" '(1.0 -1.0 3.5)
-         (list (native-bytevector-ref (bc 0) float* 0)
-               (native-bytevector-ref (bc 0) float* 1)
-               (native-bytevector-ref (bc 0) float* 2)))
+         (list (native-ref (bc 0 float*) 0)
+               (native-ref (bc 0 float*) 1)
+               (native-ref (bc 0 float*) 2)))
   (test* "double* deref" '(1.0 -1.0 2.5)
-         (list (native-bytevector-ref (bc 12) double* 0)
-               (native-bytevector-ref (bc 12) double* 1)
-               (native-bytevector-ref (bc 12) double* 2)))
+         (list (native-ref (bc 12 double*) 0)
+               (native-ref (bc 12 double*) 1)
+               (native-ref (bc 12 double*) 2)))
   (test* "float array ref" '(1.0 -1.0 3.5)
-         (list (native-bytevector-ref (bc 0) floata '(0))
-               (native-bytevector-ref (bc 0) floata '(1))
-               (native-bytevector-ref (bc 0) floata '(2))))
+         (list (native-ref (bc 0 floata) '(0))
+               (native-ref (bc 0 floata) '(1))
+               (native-ref (bc 0 floata) '(2))))
   (test* "double array ref" '(1.0 -1.0 2.5)
-         (list (native-bytevector-ref (bc 12) doublea '(0))
-               (native-bytevector-ref (bc 12) doublea '(1))
-               (native-bytevector-ref (bc 12) doublea '(2))))
+         (list (native-ref (bc 12 doublea) '(0))
+               (native-ref (bc 12 doublea) '(1))
+               (native-ref (bc 12 doublea) '(2))))
 
   (test* "float* modify" -2.0
          (begin
-           (native-bytevector-set! (bc 0) float* 1 -2.0)
-           (native-bytevector-ref (bc 0) float* 1)))
+           (native-set! (bc 0 float*) 1 -2.0)
+           (native-ref (bc 0 float*) 1)))
   (test* "float array modify" -2.0
          (begin
-           (native-bytevector-set! (bc 0) floata '(1) -2.0)
-           (native-bytevector-ref (bc 0) floata '(1))))
+           (native-set! (bc 0 floata) '(1) -2.0)
+           (native-ref (bc 0 floata) '(1))))
 
   (test* "double* modify" -4.5
          (begin
-           (native-bytevector-set! (bc 12) double* 1 -4.5)
-           (native-bytevector-ref (bc 12) double* 1)))
+           (native-set! (bc 12 double*) 1 -4.5)
+           (native-ref (bc 12 double*) 1)))
   (test* "double array modify" -4.5
          (begin
-           (native-bytevector-set! (bc 12) doublea '(1) -4.5)
-           (native-bytevector-ref (bc 12) doublea '(1))))
+           (native-set! (bc 12 doublea) '(1) -4.5)
+           (native-ref (bc 12 doublea) '(1))))
   )
 
 #| ;; Temporarily disabled while we're rewriting binary.ftype
