@@ -41,9 +41,11 @@
 (define-module binary.ftype
   (use util.match)
   (use gauche.record)
+  (use gauche.uvector)
   (extend gauche.typeutil)              ;access internal routines
   (export native-ref
           native-set!
+          native-pointer+
 
           make-domestic-pointer
           domestic-pointer-storage
@@ -85,6 +87,8 @@
     (return (Scm_MakeForeignPointer internal-pointer-class
                                     (+ p offset)))))
 
+;; Returns a new foreign pointer derived from BASE, with byte offset
+;; OFFSET and type TYPE.
 (define (make-internal-pointer base offset type)
   (assume-type base <foreign-pointer>)
   (assume-type offset <fixnum>)
@@ -105,11 +109,20 @@
   (pos domestic-pointer-pos)
   (type domestic-pointer-type))
 
+;; Returns a new domestic pointer points to the byte offset POS
+;; into a bytevector BYTEVECTOR, with type TYPE.
 (define (make-domestic-pointer bytevector pos :optional (type #f))
   (assume-type bytevector <u8vector>)
   (assume (and (fixnum? pos) (>= pos 0)))
   (assume-type type (<?> <native-type>))
+  (unless (ineq 0 <= pos < (u8vector-length bytevector))
+    (error "Domestic pointer position out of range:" pos))
   (%make-domestic-pointer bytevector pos type))
+
+(define-method write-object ((obj <domestic-pointer>) port)
+  (format port "#<domestic-pointer ~a[~a]>"
+          (domestic-pointer-type obj)
+          (domestic-pointer-pos obj)))
 
 ;;;
 ;;; Low-level accessor/modifier
@@ -311,3 +324,19 @@
                    (domestic-pointer-pos ptr)
                    offset val)))]
      [else (error "Unsupported native aggregate type:" t)])))
+
+(define (native-pointer+ ptr delta :optional (type #f))
+  ;;(assume-type ptr (</> <foreign-pointer> <domestic-pointer>))
+  (assume (or (is-a? ptr <foreign-pointer>)
+              (is-a? ptr <domestic-pointer>))
+    "Foreign pointer of domestic pointer expected, but got:" ptr)
+  (assume-type delta <fixnum>)
+  (let* ([t (%ptr-type ptr type)]
+         [offset (* delta (~ (%native-pointer-pointee-type t)'size))])
+    (typecase ptr
+      [<foreign-pointer>
+       (make-internal-pointer ptr offset t)]
+      [<domestic-pointer>
+       (make-domestic-pointer (domestic-pointer-storage ptr)
+                              (+ (domestic-pointer-pos ptr) offset)
+                              t)])))

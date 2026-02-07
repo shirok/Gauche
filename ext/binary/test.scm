@@ -659,6 +659,15 @@
          (list (native-ref (bc 32 int64*) 0)
                (native-ref (bc 32 int64*) 4)))
 
+  (test* "native-pointer+" (case (native-endian)
+                             [(big-endian) '(#x08090a0b #x14151617)]
+                             [else         '(#x0b0a0908 #x17161514)])
+         (let* ([p (make-domestic-pointer data 0 uint32*)]
+                [p2 (native-pointer+ p 2)]
+                [p5 (native-pointer+ p2 3)])
+           (list (native-ref p2 0)
+                 (native-ref p5 0))))
+
   (test* "uint8* modify" #xff
          (begin
            (native-set! (bc 0 uint8*) 1 #xff)
