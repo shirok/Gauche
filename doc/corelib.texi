@@ -16216,6 +16216,17 @@ value, over all the entries in the hash table @var{ht}.
 ハッシュテーブル@var{ht}内の全てのエントリについて、各エントリのキーと値を
 2つの引数として手続き@var{proc}を呼びます。
 @c COMMON
+
+@c EN
+@code{hash-table-map} returns a list of the result of @var{proc},
+while @code{hash-table-for-each} discards the result of @var{proc}
+and returns @code{#<undef>}.  The order of the result of @code{hash-table-map}
+is unspecified.
+@c JP
+@code{hash-table-map}は@var{proc}の結果をリストにして返します。
+@code{hash-table-for-each}は@var{proc}の結果を捨てて@code{#<undef>}を返します。
+@code{hash-table-map}の値の順序は未定義です。
+@c COMMON
 @end defun
 
 @defun hash-table-fold ht kons knil

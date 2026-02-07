@@ -8928,17 +8928,40 @@ Empties @var{st}.
 @defunx sparse-table-push! st key val
 @defunx sparse-table-pop! st key :optional fallback
 @c MOD data.sparse
+@c EN
+These are sparse-table version of @code{hash-table-update!},
+@code{hash-table-push!}, and @code{hash-table-pop!}, respectively.
+@xref{Hashtables}, for the details.
+@c JP
+これらはそれぞれ@code{hash-table-update!}、
+@code{hash-table-push!}、@code{hash-table-pop!}の疎なテーブル版です。
+詳しくは@ref{Hashtables}を参照してください。
+@c COMMON
 @end defun
 
 @defun sparse-table-fold st proc seed
 @defunx sparse-table-for-each st proc
 @defunx sparse-table-map st proc
 @c MOD data.sparse
+@c EN
+These are sparse-table version of @code{hash-table-fold},
+@code{hash-table-for-each}, and @code{hash-table-map}, respectively.
+@xref{Hashtables}, for the details.
+@c JP
+これらはそれぞれ@code{hash-table-fold}、
+@code{hash-table-for-each}、@code{hash-table-map}の疎なテーブル版です。
+詳しくは@ref{Hashtables}を参照してください。
+@c COMMON
 @end defun
 
 @defun sparse-table-keys st
 @defunx sparse-table-values st
 @c MOD data.sparse
+@c EN
+Returns a list of all keys and values in a sparse table @var{st}, respectively.
+@c JP
+それぞれ、素なテーブル@var{st}中の全てのキーまたは値をリストにして返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
