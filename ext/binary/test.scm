@@ -715,6 +715,18 @@
       [int64a (make-native-array-type <int64> '(* 2))]
       [uint64a (make-native-array-type <uint64> '(2 2))])
   (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (tsa type expect)
+    (test* #"~|type| size&alignment" expect
+           (list (~ type'size) (~ type'alignment))))
+
+  (tsa int8a '(0 1))
+  (tsa uint8a '(16 1))
+  (tsa int16a '(0 2))
+  (tsa uint16a '(32 2))
+  (tsa int32a '(0 4))
+  (tsa uint32a '(48 4))
+  (tsa int64a '(0 8))
+  (tsa uint64a '(32 8))
 
   (test* "uint8 array ref" '(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                                   #x08 #x09)
@@ -728,6 +740,7 @@
                (native-ref (bc 0 uint8a) '(0 3 1))
                (native-ref (bc 0 uint8a) '(1 0 0))
                (native-ref (bc 0 uint8a) '(1 0 1))))
+
   (test* "int8 array ref" '(#x-80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                                   #x08 #x09 #x18)
          (list (native-ref (bc 0 int8a) '(0 0 0))
@@ -889,6 +902,12 @@
       [floata (make-native-array-type <float> '(3))]
       [doublea (make-native-array-type <double> '(3))])
   (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (tsa type expect)
+    (test* #"~|type| size&alignment" expect
+           (list (~ type'size) (~ type'alignment))))
+
+  (tsa floata '(12 4))
+  (tsa doublea '(24 8))
 
   (test* "float* deref" '(1.0 -1.0 3.5)
          (list (native-ref (bc 0 float*) 0)

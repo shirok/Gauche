@@ -1056,8 +1056,9 @@
  (define-cvar native_pointer_type)
  (define-cvar native_function_type)     ;root of c-function pointer
  (define-cvar native_array_type)
+ (define-cvar native_struct_type)
 
- ;; This predicate covers all native types that uses foreign pointer as
+ ;; This predicate covers all native types that use foreign pointer as
  ;; instance.
  (define-cfn native_ptrP (obj) ::int :static
    (return (SCM_FOREIGN_POINTER_P obj)))
@@ -1087,8 +1088,8 @@
         (make_native_type "<native-array>"
                           (SCM_OBJ SCM_CLASS_TOP)
                           "ScmForeignPointer*"
-                          (sizeof (.type void*))
-                          (SCM_ALIGNOF (.type void*))
+                          0             ; concrete type computes size
+                          1             ; concrete type computes align
                           SCM_FALSE
                           native_ptrP
                           NULL
@@ -1228,12 +1229,14 @@
 ;; indicating it is not specified (C allows it).
 (define-cproc %make-native-array-type (type-name::<const-cstring>
                                        element-type
+                                       size::<fixnum>
+                                       alignment::<fixnum>
                                        dimensions)
   (return (make-native-type type-name
                             native_array_type
                             "ScmForeignPointer*"
-                            (sizeof (.type void*))
-                            (SCM_ALIGNOF (.type void*))
+                            size
+                            alignment
                             (Scm_Cons element-type dimensions)
                             native_ptrP
                             NULL NULL)))
@@ -1254,10 +1257,17 @@
            (error "Bad native array dimensions; must be a list of nonnegative \
                    integers, or '* at the last position, but got:"
                   dimensions)]))
-  (let1 name (format "<native-array ~a ~a>"
-                     (~ element-type 'name)
-                     dimensions)
-    (%make-native-array-type name element-type dimensions)))
+  (let ([name (format "<native-array ~a ~a>"
+                      (~ element-type 'name)
+                      dimensions)]
+        [num-elts (if (eq? (car dimensions) '*)
+                    0                   ; unknown sized array
+                    (fold * 1 dimensions))]
+        [elt-size (~ element-type'size)])
+    (%make-native-array-type name element-type
+                             (* elt-size num-elts)
+                             (~ element-type'alignment)
+                             dimensions)))
 
 ;;;
 ;;; Make exported symbol visible from outside
