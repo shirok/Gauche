@@ -224,6 +224,17 @@
               (lambda () (push! x 'g)))))
           (reverse x))))
 
+(prim-test "cascading error 7 (rewind-before)" '(a)
+     (lambda ()
+       (let ((x '()))
+         (with-error-handler
+             (lambda (_) x)
+           (lambda ()
+             (with-error-handler
+                 (lambda (e) (push! x 'a) (raise e))
+               (lambda () (raise 'z))
+               :rewind-before #t))))))
+
 ;;----------------------------------------------------------------
 (test-section "error in before/after thunk")
 

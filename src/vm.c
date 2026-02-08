@@ -2745,10 +2745,17 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
        handlers should be rewound before we invoke the guard clause.
 
        If an error is raised within the dynamic handlers, it will be
-       captured by the same error handler. */
+       captured by the same error handler.
+
+       Note: calling dynamic handlers may change dynamic env, but
+       we need to call exception handler on the same denv when
+       handle_escape entered.  So we save and restore it.
+    */
     if (ep->rewindBefore) {
+        ScmObj denv = vm->denv;
         call_dynamic_handlers(vm, ep->dynamicHandlers,
                               get_dynamic_handlers(vm));
+        vm->denv = denv;
     }
 
     vm->errorHandlerContinuable = FALSE;

@@ -1,3 +1,8 @@
+2026-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (handle_escape): Fix exception handler pop/push bug
+	  https://github.com/shirok/Gauche/issues/1210
+
 2026-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-basic-auth-handler): Prevent authorization
