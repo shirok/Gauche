@@ -62,13 +62,48 @@ typedef struct ScmNativeTypeRec {
     const char *c_type_name;
     size_t   size;
     size_t   alignment;
-    ScmObj   inner;
 } ScmNativeType;
 
 SCM_CLASS_DECL(Scm_NativeTypeClass);
 #define SCM_CLASS_NATIVE_TYPE    (&Scm_NativeTypeClass)
 #define SCM_NATIVE_TYPE(obj)     ((ScmNativeType*)(obj))
 #define SCM_NATIVE_TYPE_P(obj)   (SCM_ISA(obj, SCM_CLASS_NATIVE_TYPE))
+
+/* <native-pointer> - a pointer to another native type */
+typedef struct ScmNativePointerRec {
+    ScmNativeType common;
+    ScmNativeType *pointee_type;
+} ScmNativePointer;
+
+#define SCM_NATIVE_POINTER(obj)  ((ScmNativePointer*)(obj))
+
+/* <native-function> - a function pointer type */
+typedef struct ScmNativeFunctionRec {
+    ScmNativeType common;
+    ScmNativeType *return_type;
+    ScmObj arg_types;            /* list of ScmNativeType* */
+    int varargs;                 /* boolean: does it accept varargs? */
+} ScmNativeFunction;
+
+#define SCM_NATIVE_FUNCTION(obj) ((ScmNativeFunction*)(obj))
+
+/* <native-array> - an array of a native type */
+typedef struct ScmNativeArrayRec {
+    ScmNativeType common;
+    ScmNativeType *element_type;
+    ScmObj dimensions;           /* list of fixnums */
+} ScmNativeArray;
+
+#define SCM_NATIVE_ARRAY(obj)    ((ScmNativeArray*)(obj))
+
+/* <native-struct> - a C struct type */
+typedef struct ScmNativeStructRec {
+    ScmNativeType common;
+    ScmObj tag;                  /* symbol or #f */
+    ScmObj fields;               /* list of (name type offset) */
+} ScmNativeStruct;
+
+#define SCM_NATIVE_STRUCT(obj)   ((ScmNativeStruct*)(obj))
 
 SCM_EXTERN _Bool Scm_NativePointerP(ScmNativeType*);
 SCM_EXTERN ScmNativeType *Scm_NativePointerPointeeType(ScmNativeType*);
