@@ -1138,8 +1138,8 @@
  (define-cfn Scm_NativeStructP (np::ScmNativeType*) ::_Bool
    (return (native-compound-type-p np native-struct-type)))
 
- ;; Accessor of ancillary info.  The code should never directly access
- ;; 'inner' field.  Use these instead.
+ ;; Accessor of ancillary info.  These access type-specific fields
+ ;; in the composite native type structs.
  (define-cfn Scm_NativePointerPointeeType (np::ScmNativeType*) ::ScmNativeType*
    (unless (Scm_NativePointerP np)
      (Scm_Error "Concrete native pointer required, but got: %S" np))
