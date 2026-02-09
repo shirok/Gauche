@@ -1179,6 +1179,26 @@
    (unless (Scm_NativeStructP np)
      (Scm_Error "Concrete native struct required, but got: %S" np))
    (return (-> (SCM_NATIVE_STRUCT np) fields)))
+
+ ;; Helper function to initialize common fields of composite native types
+ (define-cfn init-native-type-common (nt::ScmNativeType*
+                                      name::(const char*)
+                                      super::ScmObj
+                                      c-type-name::(const char*)
+                                      size::size_t
+                                      alignment::size_t
+                                      c-of-type::(.function (obj)::int *)
+                                      c-ref::(.function (ptr::void*)::ScmObj *)
+                                      c-set::(.function (ptr::void* obj)::void *))
+   ::void :static
+   (set! (-> nt name) (SCM_INTERN name))
+   (set! (-> nt super) super)
+   (set! (-> nt c-type-name) c-type-name)
+   (set! (-> nt c-of-type) c-of-type)
+   (set! (-> nt c-ref) c-ref)
+   (set! (-> nt c-set) c-set)
+   (set! (-> nt size) size)
+   (set! (-> nt alignment) alignment))
  )
 
 (define-cproc %make-pointer-type (pointer-type-name::<const-cstring>
@@ -1186,14 +1206,15 @@
   (let* ([z::ScmNativePointer*
           (SCM_NEW_INSTANCE ScmNativePointer (& Scm_NativeTypeClass))])
     ;; Fill in common fields
-    (set! (-> z common.name) (SCM_INTERN pointer-type-name))
-    (set! (-> z common.super) native_pointer_type)
-    (set! (-> z common.c-type-name) "ScmForeignPointer*")
-    (set! (-> z common.c-of-type) native_ptrP)
-    (set! (-> z common.c-ref) NULL)
-    (set! (-> z common.c-set) NULL)
-    (set! (-> z common.size) (sizeof (.type void*)))
-    (set! (-> z common.alignment) (SCM_ALIGNOF (.type void*)))
+    (init-native-type-common (& (-> z common))
+                             pointer-type-name
+                             native_pointer_type
+                             "ScmForeignPointer*"
+                             (sizeof (.type void*))
+                             (SCM_ALIGNOF (.type void*))
+                             native_ptrP
+                             NULL
+                             NULL)
     ;; Fill in type-specific fields
     (SCM_ASSERT (SCM_NATIVE_TYPE_P pointee-type))
     (set! (-> z pointee_type) (SCM_NATIVE_TYPE pointee-type))
@@ -1214,14 +1235,15 @@
   (let* ([z::ScmNativeFunction*
           (SCM_NEW_INSTANCE ScmNativeFunction (& Scm_NativeTypeClass))])
     ;; Fill in common fields
-    (set! (-> z common.name) (SCM_INTERN type-name))
-    (set! (-> z common.super) native_function_type)
-    (set! (-> z common.c-type-name) "ScmForeignPointer*")
-    (set! (-> z common.c-of-type) native_ptrP)
-    (set! (-> z common.c-ref) NULL)
-    (set! (-> z common.c-set) NULL)
-    (set! (-> z common.size) (sizeof (.type void*)))
-    (set! (-> z common.alignment) (SCM_ALIGNOF (.type void*)))
+    (init-native-type-common (& (-> z common))
+                             type-name
+                             native_function_type
+                             "ScmForeignPointer*"
+                             (sizeof (.type void*))
+                             (SCM_ALIGNOF (.type void*))
+                             native_ptrP
+                             NULL
+                             NULL)
     ;; Fill in type-specific fields
     (SCM_ASSERT (SCM_NATIVE_TYPE_P return-type))
     (set! (-> z return_type) (SCM_NATIVE_TYPE return-type))
@@ -1255,14 +1277,15 @@
   (let* ([z::ScmNativeArray*
           (SCM_NEW_INSTANCE ScmNativeArray (& Scm_NativeTypeClass))])
     ;; Fill in common fields
-    (set! (-> z common.name) (SCM_INTERN type-name))
-    (set! (-> z common.super) native_array_type)
-    (set! (-> z common.c-type-name) "ScmForeignPointer*")
-    (set! (-> z common.c-of-type) native_ptrP)
-    (set! (-> z common.c-ref) NULL)
-    (set! (-> z common.c-set) NULL)
-    (set! (-> z common.size) size)
-    (set! (-> z common.alignment) alignment)
+    (init-native-type-common (& (-> z common))
+                             type-name
+                             native_array_type
+                             "ScmForeignPointer*"
+                             size
+                             alignment
+                             native_ptrP
+                             NULL
+                             NULL)
     ;; Fill in type-specific fields
     (SCM_ASSERT (SCM_NATIVE_TYPE_P element-type))
     (set! (-> z element_type) (SCM_NATIVE_TYPE element-type))
@@ -1310,14 +1333,15 @@
   (let* ([z::ScmNativeStruct*
           (SCM_NEW_INSTANCE ScmNativeStruct (& Scm_NativeTypeClass))])
     ;; Fill in common fields
-    (set! (-> z common.name) (SCM_INTERN type-name))
-    (set! (-> z common.super) native_struct_type)
-    (set! (-> z common.c-type-name) "ScmForeignPointer*")
-    (set! (-> z common.c-of-type) native_ptrP)
-    (set! (-> z common.c-ref) NULL)
-    (set! (-> z common.c-set) NULL)
-    (set! (-> z common.size) size)
-    (set! (-> z common.alignment) alignment)
+    (init-native-type-common (& (-> z common))
+                             type-name
+                             native_struct_type
+                             "ScmForeignPointer*"
+                             size
+                             alignment
+                             native_ptrP
+                             NULL
+                             NULL)
     ;; Fill in type-specific fields
     (set! (-> z tag) (SCM_OBJ tag-name))
     (set! (-> z fields) field-list)
