@@ -1094,6 +1094,16 @@
                           native_ptrP
                           NULL
                           NULL))
+  (set! native_struct_type
+        (make_native_type "<native-struct>"
+                          (SCM_OBJ SCM_CLASS_TOP)
+                          "ScmForeignPointer*"
+                          0             ; concrete type computes size
+                          1             ; concrete type computes align
+                          SCM_FALSE
+                          native_ptrP
+                          NULL
+                          NULL))
 
   (Scm_MakeBinding (Scm_GaucheModule)
                    (SCM_SYMBOL '<native-pointer>)
@@ -1106,6 +1116,10 @@
   (Scm_MakeBinding (Scm_GaucheModule)
                    (SCM_SYMBOL '<native-array>)
                    native_array_type
+                   SCM_BINDING_INLINABLE)
+  (Scm_MakeBinding (Scm_GaucheModule)
+                   (SCM_SYMBOL '<native-struct>)
+                   native_struct_type
                    SCM_BINDING_INLINABLE))
 
  ;; Check if a <native-type> is a pointer, a function, etc.
@@ -1128,6 +1142,9 @@
 
  (define-cfn Scm_NativeArrayP (np::ScmNativeType*) ::_Bool
    (return (native-compound-type-p np native-array-type)))
+
+ (define-cfn Scm_NativeStructP (np::ScmNativeType*) ::_Bool
+   (return (native-compound-type-p np native-struct-type)))
 
  ;; Accessor of ancillary info.  The code should never directly access
  ;; 'inner' field.  Use these instead.
@@ -1174,6 +1191,20 @@
  (define-cfn Scm_NativeArrayDimensions (np::ScmNativeType*) ::ScmObj
    (unless (Scm_NativeArrayP np)
      (Scm_Error "Concrete native array required, but got: %S" np))
+   (let* ([inner (-> np inner)])
+     (SCM_ASSERT (SCM_PAIRP inner))
+     (return (SCM_CDR inner))))
+
+ (define-cfn Scm_NativeStructTag (np::ScmNativeType*) ::ScmObj
+   (unless (Scm_NativeStructP np)
+     (Scm_Error "Concrete native struct required, but got: %S" np))
+   (let* ([inner (-> np inner)])
+     (SCM_ASSERT (SCM_PAIRP inner))
+     (return (SCM_CAR inner))))
+
+ (define-cfn Scm_NativeStructFields (np::ScmNativeType*) ::ScmObj
+   (unless (Scm_NativeStructP np)
+     (Scm_Error "Concrete native struct required, but got: %S" np))
    (let* ([inner (-> np inner)])
      (SCM_ASSERT (SCM_PAIRP inner))
      (return (SCM_CDR inner))))
@@ -1268,6 +1299,45 @@
                              (* elt-size num-elts)
                              (~ element-type'alignment)
                              dimensions)))
+
+;; For struct, we keep (<tag-name> (<field-name> <field-type>) ...) in inner.
+(define-cproc %make-native-struct-type (type-name::<const-cstring>
+                                        size::<fixnum>
+                                        alignment::<fixnum>
+                                        tag-name::<symbol>?
+                                        field-list)
+  (return (make-native-type type-name
+                            native_struct_type
+                            "ScmForeignPointer*"
+                            size
+                            alignment
+                            (Scm_Cons (SCM_OBJ tag-name) field-list)
+                            native_ptrP
+                            NULL NULL)))
+
+(define (struct-size-roundup size alignment)
+  (* alignment (quotient (+ size alignment -1) alignment)))
+
+(define (make-native-struct-type tag fields)
+  (let loop ([fs fields] [offset 0] [alignment 1] [descs '()])
+    (match fs
+      [()
+       (let* ([size (struct-size-roundup offset alignment)]
+              [name (format "<native-struct ~a>" tag)])
+         (%make-native-struct-type name size alignment tag (reverse descs)))]
+      [(((? symbol? fname) ftype) . rest)
+       (assume-type ftype <native-type>)
+       (let* ([falign (~ ftype'alignment)]
+              [foffset (struct-size-roundup offset falign)]
+              [next (+ foffset (~ ftype'size))]
+              [new-align (max alignment falign)])
+         (loop rest
+               next
+               new-align
+               (cons (list fname ftype foffset) descs)))]
+      [_
+       (error "Bad native struct fields; must be a proper list, but got:"
+              fields)])))
 
 ;;;
 ;;; Make exported symbol visible from outside

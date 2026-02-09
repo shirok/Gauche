@@ -57,7 +57,8 @@
           ;; gauche.typeutil
           make-pointer-type
           ;make-native-functon-type
-          make-native-array-type))
+          make-native-array-type
+          make-native-struct-type))
 (select-module binary.ftype)
 
 (inline-stub
@@ -129,11 +130,11 @@
 ;;;
 
 (inline-stub
- ;; Access p[offset], where
+ ;; Access p+offset, where
  ;;   etype is the type of element
  ;;   fp is a foreign pointer for p
- ;;   offset is the element index
- (define-cproc %aref (element-type::<native-type>
+ ;;   offset is the byte offset
+ (define-cproc %fpref (element-type::<native-type>
                       fp::<foreign-pointer>
                       offset::<fixnum>)
    (let* ([p::void* (Scm_ForeignPointerRef fp)]
@@ -145,8 +146,8 @@
        (set! p (+ p (* offset (-> element-type size)))))
      (return (c-ref p))))
 
- ;; Set p[offset] = val
- (define-cproc %aset! (element-type::<native-type>
+ ;; Set p+offset = val
+ (define-cproc %fpset! (element-type::<native-type>
                        fp::<foreign-pointer>
                        offset::<fixnum>
                        val)
@@ -159,11 +160,11 @@
     (when (== c-set NULL)
       (Scm_Error "Cannot set value of type %S" element-type))
     (unless (== offset 0)
-      (set! p (+ p (* offset (-> element-type size)))))
+      (set! p (+ p offset)))
     (c-set p val)))
 
  ;; Similar, for bytevector access
- (define-cproc %bvref (element-type::<native-type>
+ (define-cproc %dpref (element-type::<native-type>
                        bv::<u8vector>
                        start::<fixnum>
                        offset::<fixnum>)
@@ -172,9 +173,9 @@
                   (-> element-type c-ref)])
      (when (== c-ref NULL)
        (Scm_Error "Cannot dereference type %S" element-type))
-     (return (c-ref (+ p (+ start (* offset (-> element-type size))))))))
+     (return (c-ref (+ p (+ start offset))))))
 
- (define-cproc %bvset! (element-type::<native-type>
+ (define-cproc %dpset! (element-type::<native-type>
                         bv::<u8vector>
                         start::<fixnum>
                         offset::<fixnum>
@@ -187,7 +188,7 @@
       (Scm_Error "Invalid object to set to %S: %S" bv val))
     (when (== c-set NULL)
       (Scm_Error "Cannot set value of type %S" element-type))
-    (c-set (+ p (+ start (* offset (-> element-type size)))) val)))
+    (c-set (+ p start offset) val)))
  )
 
 (define-cproc %native-pointer-pointee-type (type::<native-type>)
@@ -199,12 +200,23 @@
 (define-cproc %native-array-dimensions (type::<native-type>)
   (return (Scm_NativeArrayDimensions type)))
 
+(define-cproc %native-struct-fields (type::<native-type>)
+  (return (Scm_NativeStructFields type)))
+
+(define (native-struct-field type selector)
+  (assume-type selector <symbol>)
+  (if-let1 field (assq selector (%native-struct-fields type))
+    field
+    (errorf "Unknown native struct field ~s for ~s" selector type)))
+
+;; Returns a byte offset
 (define (native-type-offset type selector)
   (assume-type type <native-type>)
   (cond
    [(subtype? type <native-pointer>)
+    ;; Selector is an element index
     (assume-type selector <fixnum>)
-    selector]
+    (* selector (~ (%native-pointer-pointee-type type)'size))]
    [(subtype? type <native-array>)
     (unless (every (every-pred fixnum? (complement negative?)) selector)
       (error "Invalid native array selector:" selector))
@@ -227,14 +239,16 @@
                  [ss (reverse sels)]
                  [step 1]
                  [i 0])
-        (cond [(null? ds) i]
+        (cond [(null? ds) (* i (~ etype'size))]
               [(eq? (car ds) '*) ; this can only appear in the 1st dim
-               (+ (* (car ss) step) i)]
+               (* (+ (* (car ss) step) i) (~ etype'size))]
               [(< (car ss) (car ds))
                (loop (cdr ds) (cdr ss) (* step (car ds))
                      (+ (* (car ss) step) i))]
               [else
                (error "Native array selector is out of range:" selector)])))]
+   [(subtype? type <native-struct>)
+    (caddr (native-struct-field type selector))]
    [else
     (error "Unsupported native aggregate type:" type)]))
 
@@ -278,8 +292,8 @@
     (cond
      [(subtype? t <native-pointer>)
       (if (is-a? ptr <foreign-pointer>)
-        (%aref (%native-pointer-pointee-type t) ptr offset)
-        (%bvref (%native-pointer-pointee-type t)
+        (%fpref (%native-pointer-pointee-type t) ptr offset)
+        (%dpref (%native-pointer-pointee-type t)
                 (domestic-pointer-storage ptr)
                 (domestic-pointer-pos ptr)
                 offset))]
@@ -291,8 +305,16 @@
                                  offset
                                  partial))
         (if (is-a? ptr <foreign-pointer>)
-          (%aref (%native-array-element-type t) ptr offset)
-          (%bvref (%native-array-element-type t)
+          (%fpref (%native-array-element-type t) ptr offset)
+          (%dpref (%native-array-element-type t)
+                  (domestic-pointer-storage ptr)
+                  (domestic-pointer-pos ptr)
+                  offset)))]
+     [(subtype? t <native-struct>)
+      (let1 ftype (cadr (native-struct-field t selector))
+        (if (is-a? ptr <foreign-pointer>)
+          (%fpref ftype ptr offset)
+          (%dpref ftype
                   (domestic-pointer-storage ptr)
                   (domestic-pointer-pos ptr)
                   offset)))]
@@ -308,8 +330,8 @@
     (cond
      [(subtype? t <native-pointer>)
       (if (is-a? ptr <foreign-pointer>)
-        (%aset! (%native-pointer-pointee-type t) ptr offset val)
-        (%bvset! (%native-pointer-pointee-type t)
+        (%fpset! (%native-pointer-pointee-type t) ptr offset val)
+        (%dpset! (%native-pointer-pointee-type t)
                  (domestic-pointer-storage ptr)
                  (domestic-pointer-pos ptr)
                  offset val))]
@@ -318,8 +340,16 @@
         (error "Setting an array element needs to specify exactly one element:"
                selector)
         (if (is-a? ptr <foreign-pointer>)
-          (%aset! (%native-array-element-type t) ptr offset val)
-          (%bvset! (%native-array-element-type t)
+          (%fpset! (%native-array-element-type t) ptr offset val)
+          (%dpset! (%native-array-element-type t)
+                   (domestic-pointer-storage ptr)
+                   (domestic-pointer-pos ptr)
+                   offset val)))]
+     [(subtype? t <native-struct>)
+      (let1 ftype (cadr (native-struct-field t selector))
+        (if (is-a? ptr <foreign-pointer>)
+          (%fpset! ftype ptr offset val)
+          (%dpset! ftype
                    (domestic-pointer-storage ptr)
                    (domestic-pointer-pos ptr)
                    offset val)))]

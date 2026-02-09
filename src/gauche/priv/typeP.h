@@ -82,4 +82,8 @@ SCM_EXTERN _Bool Scm_NativeArrayP(ScmNativeType*);
 SCM_EXTERN ScmNativeType *Scm_NativeArrayElementType(ScmNativeType*);
 SCM_EXTERN ScmObj Scm_NativeArrayDimensions(ScmNativeType*);
 
+SCM_EXTERN _Bool Scm_NativeStructP(ScmNativeType*);
+SCM_EXTERN ScmObj Scm_NativeStructTag(ScmNativeType*);
+SCM_EXTERN ScmObj Scm_NativeStructFields(ScmNativeType*);
+
 #endif  /*GAUCHE_PRIV_TYPEP_H*/

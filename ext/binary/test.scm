@@ -860,9 +860,6 @@
            (native-ref a '(1))))
   )
 
-(test-end)
-(exit)
-
 (let ([data (case (native-endian)
               [(big-endian)
                (u8vector
@@ -944,6 +941,71 @@
            (native-set! (bc 12 doublea) '(1) -4.5)
            (native-ref (bc 12 doublea) '(1))))
   )
+
+(let ([data (u8vector-copy *fobject-storage*)]
+      [s1 (make-native-struct-type 's1
+                                   `((a ,<int8>)
+                                     (b ,<uint32>)
+                                     (c ,<uint16>)
+                                     (d ,<uint8>)))]
+      [s2 (make-native-struct-type 's2
+                                   `((a ,<uint8>)
+                                     (b ,<uint64>)
+                                     (c ,<int16>)))]
+      [s0 (make-native-struct-type 's0 '())])
+  (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (tsa type expect)
+    (test* #"~|type| size&alignment" expect
+           (list (~ type'size) (~ type'alignment))))
+  (define native-type-offset*
+    (with-module binary.ftype native-type-offset))
+  (define (offsets type fields)
+    (map (cut native-type-offset* type <>) fields))
+
+  (tsa s0 '(0 1))
+  (tsa s1 '(12 4))
+  (tsa s2 '(24 8))
+
+  (test* "native struct offsets s1" '(0 4 8 10)
+         (offsets s1 '(a b c d)))
+  (test* "native struct offsets s2" '(0 8 16)
+         (offsets s2 '(a b c)))
+
+  (test* "native struct ref s1"
+         (case (native-endian)
+           [(big-endian) '(#x-80 #x04050607 #x0809 #x0a)]
+           [else         '(#x-80 #x07060504 #x0908 #x0a)])
+         (list (native-ref (bc 0 s1) 'a)
+               (native-ref (bc 0 s1) 'b)
+               (native-ref (bc 0 s1) 'c)
+               (native-ref (bc 0 s1) 'd)))
+  (test* "native struct ref s2"
+         (case (native-endian)
+           [(big-endian) '(#x80 #x08090a0b0c0d0e0f #x1011)]
+           [else         '(#x80 #x0f0e0d0c0b0a0908 #x1110)])
+         (list (native-ref (bc 0 s2) 'a)
+               (native-ref (bc 0 s2) 'b)
+               (native-ref (bc 0 s2) 'c)))
+
+  (test* "native struct modify s1" '(#x-1 #x11223344 #xabcd #xfe)
+         (begin
+           (native-set! (bc 0 s1) 'a -1)
+           (native-set! (bc 0 s1) 'b #x11223344)
+           (native-set! (bc 0 s1) 'c #xabcd)
+           (native-set! (bc 0 s1) 'd #xfe)
+           (list (native-ref (bc 0 s1) 'a)
+                 (native-ref (bc 0 s1) 'b)
+                 (native-ref (bc 0 s1) 'c)
+                 (native-ref (bc 0 s1) 'd))))
+
+  (test* "native struct modify s2" '(#xaa #x0123456789abcdef #x-2)
+         (begin
+           (native-set! (bc 0 s2) 'a #xaa)
+           (native-set! (bc 0 s2) 'b #x0123456789abcdef)
+           (native-set! (bc 0 s2) 'c -2)
+           (list (native-ref (bc 0 s2) 'a)
+                 (native-ref (bc 0 s2) 'b)
+                 (native-ref (bc 0 s2) 'c)))))
 
 #| ;; Temporarily disabled while we're rewriting binary.ftype
 
