@@ -129,32 +129,31 @@
 ;;; Low-level accessor/modifier
 ;;;
 
-(inline-stub
- ;; Access p+offset, where
- ;;   etype is the type of element
- ;;   fp is a foreign pointer for p
- ;;   offset is the byte offset
- (define-cproc %fpref (element-type::<native-type>
+;; Access p+offset, where
+;;   etype is the type of element
+;;   fp is a foreign pointer for p
+;;   offset is the byte offset
+(define-cproc %fpref (element-type::<native-type>
                       fp::<foreign-pointer>
                       offset::<fixnum>)
-   (let* ([p::void* (Scm_ForeignPointerRef fp)]
-          [c-ref::(.function (p::void*)::ScmObj *)
-                  (-> element-type c-ref)])
-     (when (== c-ref NULL)
-       (Scm_Error "Cannot dereference type %S" element-type))
-     (unless (== offset 0)
-       (set! p (+ p (* offset (-> element-type size)))))
-     (return (c-ref p))))
+  (let* ([p::void* (Scm_ForeignPointerRef fp)]
+         [c-ref::(.function (p::void*)::ScmObj *)
+                 (-> element-type c-ref)])
+    (when (== c-ref NULL)
+      (Scm_Error "Cannot dereference type %S" element-type))
+    (unless (== offset 0)
+      (set! p (+ p (* offset (-> element-type size)))))
+    (return (c-ref p))))
 
- ;; Set p+offset = val
- (define-cproc %fpset! (element-type::<native-type>
+;; Set p+offset = val
+(define-cproc %fpset! (element-type::<native-type>
                        fp::<foreign-pointer>
                        offset::<fixnum>
                        val)
-   ::<void>
-   (let* ([p::void* (Scm_ForeignPointerRef fp)]
-          [c-of-type::(.function (v::ScmObj)::int *) (-> element-type c-of-type)]
-          [c-set::(.function (p::void* v::ScmObj)::void *) (-> element-type c-set)])
+  ::<void>
+  (let* ([p::void* (Scm_ForeignPointerRef fp)]
+         [c-of-type::(.function (v::ScmObj)::int *) (-> element-type c-of-type)]
+         [c-set::(.function (p::void* v::ScmObj)::void *) (-> element-type c-set)])
     (unless (c-of-type val)
       (Scm_Error "Invalid object to set to %S: %S" fp val))
     (when (== c-set NULL)
@@ -163,33 +162,48 @@
       (set! p (+ p offset)))
     (c-set p val)))
 
- ;; Similar, for bytevector access
- (define-cproc %dpref (element-type::<native-type>
+;; Similar, for bytevector access
+(define-cproc %dpref (element-type::<native-type>
+                      bv::<u8vector>
+                      start::<fixnum>
+                      offset::<fixnum>)
+  (let* ([p::uint8_t* (SCM_U8VECTOR_ELEMENTS bv)]
+         [c-ref::(.function (p::void*)::ScmObj *)
+                 (-> element-type c-ref)])
+    (when (== c-ref NULL)
+      (Scm_Error "Cannot dereference type %S" element-type))
+    (return (c-ref (+ p (+ start offset))))))
+
+(define-cproc %dpset! (element-type::<native-type>
                        bv::<u8vector>
                        start::<fixnum>
-                       offset::<fixnum>)
-   (let* ([p::uint8_t* (SCM_U8VECTOR_ELEMENTS bv)]
-          [c-ref::(.function (p::void*)::ScmObj *)
-                  (-> element-type c-ref)])
-     (when (== c-ref NULL)
-       (Scm_Error "Cannot dereference type %S" element-type))
-     (return (c-ref (+ p (+ start offset))))))
-
- (define-cproc %dpset! (element-type::<native-type>
-                        bv::<u8vector>
-                        start::<fixnum>
-                        offset::<fixnum>
-                        val)
-   ::<void>
-   (let* ([p::uint8_t* (SCM_U8VECTOR_ELEMENTS bv)]
-          [c-of-type::(.function (v::ScmObj)::int *) (-> element-type c-of-type)]
-          [c-set::(.function (p::void* v::ScmObj)::void *) (-> element-type c-set)])
+                       offset::<fixnum>
+                       val)
+  ::<void>
+  (let* ([p::uint8_t* (SCM_U8VECTOR_ELEMENTS bv)]
+         [c-of-type::(.function (v::ScmObj)::int *) (-> element-type c-of-type)]
+         [c-set::(.function (p::void* v::ScmObj)::void *) (-> element-type c-set)])
     (unless (c-of-type val)
       (Scm_Error "Invalid object to set to %S: %S" bv val))
     (when (== c-set NULL)
       (Scm_Error "Cannot set value of type %S" element-type))
     (c-set (+ p start offset) val)))
- )
+
+(define (%pref type ptr offset)
+  (etypecase ptr
+    [<foreign-pointer> (%fpref type ptr offset)]
+    [<domestic-pointer> (%dpref type
+                                (domestic-pointer-storage ptr)
+                                (domestic-pointer-pos ptr)
+                                offset)]))
+
+(define (%pset! type ptr offset val)
+  (etypecase ptr
+    [<foreign-pointer> (%fpset! type ptr offset val)]
+    [<domestic-pointer> (%dpset! type
+                                 (domestic-pointer-storage ptr)
+                                 (domestic-pointer-pos ptr)
+                                 offset val)]))
 
 (define-cproc %native-pointer-pointee-type (type::<native-type>)
   (return (SCM_OBJ (Scm_NativePointerPointeeType type))))
@@ -291,12 +305,7 @@
          [offset (native-type-offset t selector)])
     (cond
      [(subtype? t <native-pointer>)
-      (if (is-a? ptr <foreign-pointer>)
-        (%fpref (%native-pointer-pointee-type t) ptr offset)
-        (%dpref (%native-pointer-pointee-type t)
-                (domestic-pointer-storage ptr)
-                (domestic-pointer-pos ptr)
-                offset))]
+      (%pref (%native-pointer-pointee-type t) ptr offset)]
      [(subtype? t <native-array>)
       (if-let1 partial (%partial-array-dereference-type t selector)
         (if (is-a? ptr <foreign-pointer>)
@@ -304,20 +313,10 @@
           (make-domestic-pointer (domestic-pointer-storage ptr)
                                  offset
                                  partial))
-        (if (is-a? ptr <foreign-pointer>)
-          (%fpref (%native-array-element-type t) ptr offset)
-          (%dpref (%native-array-element-type t)
-                  (domestic-pointer-storage ptr)
-                  (domestic-pointer-pos ptr)
-                  offset)))]
+        (%pref (%native-array-element-type t) ptr offset))]
      [(subtype? t <native-struct>)
       (let1 ftype (cadr (native-struct-field t selector))
-        (if (is-a? ptr <foreign-pointer>)
-          (%fpref ftype ptr offset)
-          (%dpref ftype
-                  (domestic-pointer-storage ptr)
-                  (domestic-pointer-pos ptr)
-                  offset)))]
+        (%pref ftype ptr offset))]
      [else (error "Unsupported native aggregate type:" ptr)])))
 
 (define (native-set! ptr selector val :optional (type #f))
@@ -329,30 +328,15 @@
          [offset (native-type-offset t selector)])
     (cond
      [(subtype? t <native-pointer>)
-      (if (is-a? ptr <foreign-pointer>)
-        (%fpset! (%native-pointer-pointee-type t) ptr offset val)
-        (%dpset! (%native-pointer-pointee-type t)
-                 (domestic-pointer-storage ptr)
-                 (domestic-pointer-pos ptr)
-                 offset val))]
+      (%pset! (%native-pointer-pointee-type t) ptr offset val)]
      [(subtype? t <native-array>)
       (if-let1 partial (%partial-array-dereference-type t selector)
         (error "Setting an array element needs to specify exactly one element:"
                selector)
-        (if (is-a? ptr <foreign-pointer>)
-          (%fpset! (%native-array-element-type t) ptr offset val)
-          (%dpset! (%native-array-element-type t)
-                   (domestic-pointer-storage ptr)
-                   (domestic-pointer-pos ptr)
-                   offset val)))]
+        (%pset! (%native-array-element-type t) ptr offset val))]
      [(subtype? t <native-struct>)
       (let1 ftype (cadr (native-struct-field t selector))
-        (if (is-a? ptr <foreign-pointer>)
-          (%fpset! ftype ptr offset val)
-          (%dpset! ftype
-                   (domestic-pointer-storage ptr)
-                   (domestic-pointer-pos ptr)
-                   offset val)))]
+        (%pset! ftype ptr offset val))]
      [else (error "Unsupported native aggregate type:" t)])))
 
 (define (native-pointer+ ptr delta :optional (type #f))
