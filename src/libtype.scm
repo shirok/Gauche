@@ -207,6 +207,40 @@
     (size :type <size_t>)
     (alignment :type <size_t>))
    (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
+
+ ;; CPL array for native type subclasses
+ (define-cvar native-type-cpl::(.array ScmClass* (*)) :static
+   #((SCM_CLASS_STATIC_PTR Scm_NativeTypeClass)
+     (SCM_CLASS_STATIC_PTR Scm_TopClass)
+     NULL))
+
+ (define-cclass <native-pointer> :base :no-meta
+   "ScmNativePointer*" "Scm_NativePointerClass"
+   (c "native_type_cpl")
+   ((pointee-type :type <native-type> :c-name "pointee_type"))
+   (printer (Scm_Printf port "#<native-pointer %S>" (-> (& (-> (SCM_NATIVE_POINTER obj) common)) name))))
+
+ (define-cclass <native-function> :base :no-meta
+   "ScmNativeFunction*" "Scm_NativeFunctionClass"
+   (c "native_type_cpl")
+   ((return-type :type <native-type> :c-name "return_type")
+    (arg-types :c-name "arg_types")
+    (varargs))
+   (printer (Scm_Printf port "#<native-function %S>" (-> (& (-> (SCM_NATIVE_FUNCTION obj) common)) name))))
+
+ (define-cclass <native-array> :base :no-meta
+   "ScmNativeArray*" "Scm_NativeArrayClass"
+   (c "native_type_cpl")
+   ((element-type :type <native-type> :c-name "element_type")
+    (dimensions))
+   (printer (Scm_Printf port "#<native-array %S>" (-> (& (-> (SCM_NATIVE_ARRAY obj) common)) name))))
+
+ (define-cclass <native-struct> :base :no-meta
+   "ScmNativeStruct*" "Scm_NativeStructClass"
+   (c "native_type_cpl")
+   ((tag)
+    (fields))
+   (printer (Scm_Printf port "#<native-struct %S>" (-> (& (-> (SCM_NATIVE_STRUCT obj) common)) name))))
  )
 
 (define-method initialize ((c <type-constructor-meta>) initargs)
@@ -1204,7 +1238,7 @@
 (define-cproc %make-pointer-type (pointer-type-name::<const-cstring>
                                   pointee-type)
   (let* ([z::ScmNativePointer*
-          (SCM_NEW_INSTANCE ScmNativePointer (& Scm_NativeTypeClass))])
+          (SCM_NEW_INSTANCE ScmNativePointer (& Scm_NativePointerClass))])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              pointer-type-name
@@ -1233,7 +1267,7 @@
                                           argument-types
                                           varargs?::<boolean>)
   (let* ([z::ScmNativeFunction*
-          (SCM_NEW_INSTANCE ScmNativeFunction (& Scm_NativeTypeClass))])
+          (SCM_NEW_INSTANCE ScmNativeFunction (& Scm_NativeFunctionClass))])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1275,7 +1309,7 @@
                                        alignment::<fixnum>
                                        dimensions)
   (let* ([z::ScmNativeArray*
-          (SCM_NEW_INSTANCE ScmNativeArray (& Scm_NativeTypeClass))])
+          (SCM_NEW_INSTANCE ScmNativeArray (& Scm_NativeArrayClass))])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1331,7 +1365,7 @@
                                         tag-name::<symbol>?
                                         field-list)
   (let* ([z::ScmNativeStruct*
-          (SCM_NEW_INSTANCE ScmNativeStruct (& Scm_NativeTypeClass))])
+          (SCM_NEW_INSTANCE ScmNativeStruct (& Scm_NativeStructClass))])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name

@@ -75,7 +75,10 @@ typedef struct ScmNativePointerRec {
     ScmNativeType *pointee_type;
 } ScmNativePointer;
 
+SCM_CLASS_DECL(Scm_NativePointerClass);
+#define SCM_CLASS_NATIVE_POINTER (&Scm_NativePointerClass)
 #define SCM_NATIVE_POINTER(obj)  ((ScmNativePointer*)(obj))
+#define SCM_NATIVE_POINTER_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_POINTER))
 
 /* <native-function> - a function pointer type */
 typedef struct ScmNativeFunctionRec {
@@ -85,7 +88,10 @@ typedef struct ScmNativeFunctionRec {
     int varargs;                 /* boolean: does it accept varargs? */
 } ScmNativeFunction;
 
+SCM_CLASS_DECL(Scm_NativeFunctionClass);
+#define SCM_CLASS_NATIVE_FUNCTION (&Scm_NativeFunctionClass)
 #define SCM_NATIVE_FUNCTION(obj) ((ScmNativeFunction*)(obj))
+#define SCM_NATIVE_FUNCTION_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_FUNCTION))
 
 /* <native-array> - an array of a native type */
 typedef struct ScmNativeArrayRec {
@@ -94,7 +100,10 @@ typedef struct ScmNativeArrayRec {
     ScmObj dimensions;           /* list of fixnums */
 } ScmNativeArray;
 
+SCM_CLASS_DECL(Scm_NativeArrayClass);
+#define SCM_CLASS_NATIVE_ARRAY   (&Scm_NativeArrayClass)
 #define SCM_NATIVE_ARRAY(obj)    ((ScmNativeArray*)(obj))
+#define SCM_NATIVE_ARRAY_P(obj)  (SCM_ISA(obj, SCM_CLASS_NATIVE_ARRAY))
 
 /* <native-struct> - a C struct type */
 typedef struct ScmNativeStructRec {
@@ -103,7 +112,10 @@ typedef struct ScmNativeStructRec {
     ScmObj fields;               /* list of (name type offset) */
 } ScmNativeStruct;
 
+SCM_CLASS_DECL(Scm_NativeStructClass);
+#define SCM_CLASS_NATIVE_STRUCT  (&Scm_NativeStructClass)
 #define SCM_NATIVE_STRUCT(obj)   ((ScmNativeStruct*)(obj))
+#define SCM_NATIVE_STRUCT_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_STRUCT))
 
 SCM_EXTERN _Bool Scm_NativePointerP(ScmNativeType*);
 SCM_EXTERN ScmNativeType *Scm_NativePointerPointeeType(ScmNativeType*);
