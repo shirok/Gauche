@@ -1007,6 +1007,39 @@
                  (native-ref (bc 0 s2) 'b)
                  (native-ref (bc 0 s2) 'c)))))
 
+(let* ([data (u8vector-copy *fobject-storage*)]
+       [u16x2 (make-native-array-type <uint16> '(2))]
+       [s3 (make-native-struct-type 's3
+                                    `((arr ,u16x2)
+                                      (b ,<uint8>)))])
+  (define (bc pos type) (make-domestic-pointer data pos type))
+  (define native-type-offset*
+    (with-module binary.ftype native-type-offset))
+  (define (offsets type fields)
+    (map (cut native-type-offset* type <>) fields))
+
+  (test* "native struct array member size&alignment" '(6 2)
+         (list (~ s3'size) (~ s3'alignment)))
+  (test* "native struct array member offsets" '(0 4)
+         (offsets s3 '(arr b)))
+
+  (test* "native struct array member ref"
+         (case (native-endian)
+           [(big-endian) '(#x8001 #x0203 #x04)]
+           [else         '(#x0180 #x0302 #x04)])
+         (let1 arr (native-ref (bc 0 s3) 'arr)
+           (list (native-ref arr '(0))
+                 (native-ref arr '(1))
+                 (native-ref (bc 0 s3) 'b))))
+
+  (test* "native struct array member modify"
+         '(#xabcd #xfe)
+         (let1 arr (native-ref (bc 0 s3) 'arr)
+           (native-set! arr '(1) #xabcd)
+           (native-set! (bc 0 s3) 'b #xfe)
+           (list (native-ref arr '(1))
+                 (native-ref (bc 0 s3) 'b)))))
+
 #| ;; Temporarily disabled while we're rewriting binary.ftype
 
 (define *fobject-storage*

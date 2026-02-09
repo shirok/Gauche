@@ -1244,6 +1244,10 @@
                             native_ptrP
                             NULL NULL)))
 
+(define-cproc native-pointer? (obj) ::<boolean>
+  (return (and (SCM_NATIVE_TYPE_P obj)
+               (Scm_NativePointerP (SCM_NATIVE_TYPE obj)))))
+
 (define (make-native-function-type return-type
                                    argument-types
                                    varargs?)
@@ -1271,6 +1275,10 @@
                             (Scm_Cons element-type dimensions)
                             native_ptrP
                             NULL NULL)))
+
+(define-cproc native-function? (obj) ::<boolean>
+  (return (and (SCM_NATIVE_TYPE_P obj)
+               (Scm_NativeFunctionP (SCM_NATIVE_TYPE obj)))))
 
 (define (make-native-array-type element-type dimensions)
   (assume-type element-type <native-type>)
@@ -1315,6 +1323,10 @@
                             native_ptrP
                             NULL NULL)))
 
+(define-cproc native-array? (obj) ::<boolean>
+  (return (and (SCM_NATIVE_TYPE_P obj)
+               (Scm_NativeArrayP (SCM_NATIVE_TYPE obj)))))
+
 (define (struct-size-roundup size alignment)
   (* alignment (quotient (+ size alignment -1) alignment)))
 
@@ -1338,6 +1350,10 @@
       [_
        (error "Bad native struct fields; must be a proper list, but got:"
               fields)])))
+
+(define-cproc native-struct? (obj) ::<boolean>
+  (return (and (SCM_NATIVE_TYPE_P obj)
+               (Scm_NativeStructP (SCM_NATIVE_TYPE obj)))))
 
 ;;;
 ;;; Make exported symbol visible from outside

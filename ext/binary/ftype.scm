@@ -129,6 +129,10 @@
 ;;; Low-level accessor/modifier
 ;;;
 
+(define (aggregate-type? type)
+  (or (native-array? type)
+      (native-struct? type)))
+
 ;; Access p+offset, where
 ;;   etype is the type of element
 ;;   fp is a foreign pointer for p
@@ -191,13 +195,23 @@
 
 (define (%pref type ptr offset)
   (etypecase ptr
-    [<foreign-pointer> (%fpref type ptr offset)]
-    [<domestic-pointer> (%dpref type
-                                (domestic-pointer-storage ptr)
-                                (domestic-pointer-pos ptr)
-                                offset)]))
+    [<foreign-pointer>
+     (if (aggregate-type? type)
+       (make-internal-pointer ptr offset type)
+       (%fpref type ptr offset))]
+    [<domestic-pointer>
+     (if (aggregate-type? type)
+       (make-domestic-pointer (domestic-pointer-storage ptr) offset type)
+       (%dpref type
+               (domestic-pointer-storage ptr)
+               (domestic-pointer-pos ptr)
+               offset))]))
 
 (define (%pset! type ptr offset val)
+  (when (aggregate-type? type)
+    ;; For now, we reject it.  Technically we can copy aggregate type
+    ;; content into the target aggregate.
+    (errorf "Can't set a value of type ~s into ~s" type ptr))
   (etypecase ptr
     [<foreign-pointer> (%fpset! type ptr offset val)]
     [<domestic-pointer> (%dpset! type
@@ -268,13 +282,14 @@
 
 ;; Returns an array type if selector does not specify a single element
 ;; in the array.
-(define (%partial-array-dereference-type atype selector)
+(define (%array-dereference-type atype selector)
   (let1 etype (%native-array-element-type atype)
     (let loop ([dims (%native-array-dimensions atype)]
                [sels selector])
       (if (null? sels)
-        (and (not (null? dims))
-             (make-native-array-type etype dims))
+        (if (not (null? dims))
+          (make-native-array-type etype dims)
+          etype)
         (loop (cdr dims) (cdr sels))))))
 
 ;; Common routine to allow type override.
@@ -307,13 +322,7 @@
      [(subtype? t <native-pointer>)
       (%pref (%native-pointer-pointee-type t) ptr offset)]
      [(subtype? t <native-array>)
-      (if-let1 partial (%partial-array-dereference-type t selector)
-        (if (is-a? ptr <foreign-pointer>)
-          (make-internal-pointer ptr offset partial)
-          (make-domestic-pointer (domestic-pointer-storage ptr)
-                                 offset
-                                 partial))
-        (%pref (%native-array-element-type t) ptr offset))]
+      (%pref (%array-dereference-type t selector) ptr offset)]
      [(subtype? t <native-struct>)
       (let1 ftype (cadr (native-struct-field t selector))
         (%pref ftype ptr offset))]
@@ -330,10 +339,7 @@
      [(subtype? t <native-pointer>)
       (%pset! (%native-pointer-pointee-type t) ptr offset val)]
      [(subtype? t <native-array>)
-      (if-let1 partial (%partial-array-dereference-type t selector)
-        (error "Setting an array element needs to specify exactly one element:"
-               selector)
-        (%pset! (%native-array-element-type t) ptr offset val))]
+      (%pset! (%array-dereference-type t selector) ptr offset val)]
      [(subtype? t <native-struct>)
       (let1 ftype (cadr (native-struct-field t selector))
         (%pset! ftype ptr offset val))]
