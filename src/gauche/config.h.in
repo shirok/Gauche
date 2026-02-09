@@ -1,9 +1,13 @@
-/*
- * Public definitions of configuration.  Definitions here are visible
- * from the user code that include <gauche.h>.
- *
- * Do not run autoheader, for it clobbers this file.
- */
+/* src/gauche/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
+/* Define to 1 if using 'alloca.c'. */
+#undef C_ALLOCA
+
+/* Define to use mixed endian ARM processor */
+#undef DOUBLE_ARMENDIAN
 
 /* Gauche ABI version string */
 #undef GAUCHE_ABI_VERSION
@@ -26,7 +30,7 @@
 /* Define to use system CA */
 #undef GAUCHE_CA_BUNDLE_SYSTEM
 
-/* Define 1 if unsafe JIT API is enabled (TEMPORARY OPTION) */
+/* Define 1 if unsafe JIT API is enabled */
 #undef GAUCHE_ENABLE_UNSAFE_JIT_API
 
 /* Define 1 if building framework on MacOSX */
@@ -44,11 +48,8 @@
 /* Gauche signature string */
 #undef GAUCHE_SIGNATURE
 
-/* Gauche snapshot id */
+/* Gauche snapshot ID */
 #undef GAUCHE_SNAPSHOT_ID
-
-/* Define if you use axTLS */
-#undef GAUCHE_USE_AXTLS
 
 /* Define if you use mbed TLS */
 #undef GAUCHE_USE_MBEDTLS
@@ -479,6 +480,27 @@
 /* Define if time_t is typedef'ed to an integral type */
 #undef INTEGRAL_TIME_T
 
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
 /* Define to use i386 optimizations */
 #undef SCM_TARGET_I386
 
@@ -521,6 +543,17 @@
 /* The size of `uintptr_t', as computed by sizeof. */
 #undef SIZEOF_UINTPTR_T
 
+/* Slib installation path */
+#undef SLIB_DIR
+
+/* If using the C implementation of alloca, define if you know the
+   direction of stack growth for your system; otherwise it will be
+   automatically deduced at runtime.
+	STACK_DIRECTION > 0 => grows toward higher addresses
+	STACK_DIRECTION < 0 => grows toward lower addresses
+	STACK_DIRECTION = 0 => direction of growth unknown */
+#undef STACK_DIRECTION
+
 /* Define to 1 if all of the C90 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
@@ -534,6 +567,18 @@
 
 /* Define if uses zlib */
 #undef USE_ZLIB
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
