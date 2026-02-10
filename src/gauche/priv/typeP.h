@@ -117,4 +117,14 @@ SCM_CLASS_DECL(Scm_NativeStructClass);
 #define SCM_NATIVE_STRUCT(obj)   ((ScmNativeStruct*)(obj))
 #define SCM_NATIVE_STRUCT_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_STRUCT))
 
+/* <native-union> - a C union type.
+   The C-level structure is the same as native-struct;
+   the difference (all field offsets are 0) is handled at the Scheme level. */
+typedef ScmNativeStruct ScmNativeUnion;
+
+SCM_CLASS_DECL(Scm_NativeUnionClass);
+#define SCM_CLASS_NATIVE_UNION   (&Scm_NativeUnionClass)
+#define SCM_NATIVE_UNION(obj)    ((ScmNativeUnion*)(obj))
+#define SCM_NATIVE_UNION_P(obj)  (SCM_ISA(obj, SCM_CLASS_NATIVE_UNION))
+
 #endif  /*GAUCHE_PRIV_TYPEP_H*/

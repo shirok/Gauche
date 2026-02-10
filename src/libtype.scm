@@ -241,6 +241,13 @@
    ((tag)
     (fields))
    (printer (Scm_Printf port "#<native-struct %S>" (-> (& (-> (SCM_NATIVE_STRUCT obj) common)) name))))
+
+ (define-cclass <native-union> :base :no-meta
+   "ScmNativeUnion*" "Scm_NativeUnionClass"
+   (c "native_type_cpa")
+   ((tag)
+    (fields))
+   (printer (Scm_Printf port "#<native-union %S>" (-> (& (-> (SCM_NATIVE_UNION obj) common)) name))))
  )
 
 (define-method initialize ((c <type-constructor-meta>) initargs)
@@ -1222,14 +1229,14 @@
                              (~ element-type'alignment)
                              dimensions)))
 
-;; For struct, we keep tag and field-list in dedicated fields.
-(define-cproc %make-native-struct-type (type-name::<const-cstring>
-                                        size::<fixnum>
-                                        alignment::<fixnum>
-                                        tag-name::<symbol>?
-                                        field-list)
-  (let* ([z::ScmNativeStruct*
-          (SCM_NEW_INSTANCE ScmNativeStruct (& Scm_NativeStructClass))])
+;; For struct/union, we keep tag and field-list in dedicated fields.
+(define-cproc %make-native-struct/union-type (klass::<class>
+                                              type-name::<const-cstring>
+                                              size::<fixnum>
+                                              alignment::<fixnum>
+                                              tag-name::<symbol>?
+                                              field-list)
+  (let* ([z::ScmNativeStruct* (SCM_NEW_INSTANCE ScmNativeStruct klass)])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1248,18 +1255,24 @@
 (define (struct-size-roundup size alignment)
   (* alignment (quotient (+ size alignment -1) alignment)))
 
-(define (make-native-struct-type tag fields)
+(define (make-native-struct/union-type tag fields struct?)
   (let loop ([fs fields] [offset 0] [alignment 1] [descs '()])
     (match fs
       [()
        (let* ([size (struct-size-roundup offset alignment)]
               [name (format "<native-struct ~a>" tag)])
-         (%make-native-struct-type name size alignment tag (reverse descs)))]
+         (%make-native-struct/union-type
+          (if struct? <native-struct> <native-union>)
+          name size alignment tag (reverse descs)))]
       [(((? symbol? fname) ftype) . rest)
        (assume-type ftype <native-type>)
        (let* ([falign (~ ftype'alignment)]
-              [foffset (struct-size-roundup offset falign)]
-              [next (+ foffset (~ ftype'size))]
+              [foffset (if struct?
+                         (struct-size-roundup offset falign)
+                         0)]
+              [next (if struct?
+                      (+ foffset (~ ftype'size))
+                      (max offset (~ ftype'size)))]
               [new-align (max alignment falign)])
          (loop rest
                next
@@ -1268,6 +1281,12 @@
       [_
        (error "Bad native struct fields; must be a proper list, but got:"
               fields)])))
+
+(define (make-native-struct-type tag fields)
+  (make-native-struct/union-type tag fields #t))
+
+(define (make-native-union-type tag fields)
+  (make-native-struct/union-type tag fields #f))
 
 ;;;
 ;;; Make exported symbol visible from outside

@@ -58,7 +58,8 @@
           make-pointer-type
           ;make-native-functon-type
           make-native-array-type
-          make-native-struct-type))
+          make-native-struct-type
+          make-native-union-type))
 (select-module binary.ftype)
 
 (inline-stub
@@ -131,7 +132,8 @@
 
 (define (aggregate-type? type)
   (or (is-a? type <native-array>)
-      (is-a? type <native-struct>)))
+      (is-a? type <native-struct>)
+      (is-a? type <native-union>)))
 
 ;; Access p+offset, where
 ;;   etype is the type of element
@@ -220,7 +222,7 @@
                                  offset val)]))
 
 (define (native-struct-field type selector)
-  (assume-type type <native-struct>)
+  (assume-type type (</> <native-struct> <native-union>))
   (assume-type selector <symbol>)
   (if-let1 field (assq selector (~ type'fields))
     field
@@ -264,7 +266,7 @@
                       (+ (* (car ss) step) i))]
                [else
                 (error "Native array selector is out of range:" selector)])))]
-    [<native-struct>
+    [(</> <native-struct> <native-union>)
      (caddr (native-struct-field type selector))]
     [else
      (error "Unsupported native aggregate type:" type)]))
@@ -312,7 +314,7 @@
        (%pref (~ t'pointee-type) ptr offset)]
       [<native-array>
        (%pref (%array-dereference-type t selector) ptr offset)]
-      [<native-struct>
+      [(</> <native-struct> <native-union>)
        (let1 ftype (cadr (native-struct-field t selector))
          (%pref ftype ptr offset))]
       [else (error "Unsupported native aggregate type:" ptr)])))
@@ -329,7 +331,7 @@
        (%pset! (~ t'pointee-type) ptr offset val)]
       [<native-array>
        (%pset! (%array-dereference-type t selector) ptr offset val)]
-      [<native-struct>
+      [(</> <native-struct> <native-union>)
        (let1 ftype (cadr (native-struct-field t selector))
          (%pset! ftype ptr offset val))]
       [else (error "Unsupported native aggregate type:" t)])))

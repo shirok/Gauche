@@ -1040,6 +1040,90 @@
            (list (native-ref arr '(1))
                  (native-ref (bc 0 s3) 'b)))))
 
+;; native-union tests
+(let ([data (u8vector-copy *fobject-storage*)]
+      [u1 (make-native-union-type 'u1
+                                  `((a ,<int8>)
+                                    (b ,<uint32>)
+                                    (c ,<uint16>)))]
+      [u2 (make-native-union-type 'u2
+                                  `((x ,<uint8>)
+                                    (y ,<uint64>)
+                                    (z ,<int16>)))]
+      [u0 (make-native-union-type 'u0 '())])
+  (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (tsa type expect)
+    (test* #"~|type| size&alignment" expect
+           (list (~ type'size) (~ type'alignment))))
+  (define native-type-offset*
+    (with-module binary.ftype native-type-offset))
+  (define (offsets type fields)
+    (map (cut native-type-offset* type <>) fields))
+
+  ;; Union size is max of all field sizes, rounded up to alignment.
+  ;; u1: fields are int8(1), uint32(4), uint16(2) => max size=4, alignment=4 => size=4
+  ;; u2: fields are uint8(1), uint64(8), int16(2) => max size=8, alignment=8 => size=8
+  (tsa u0 '(0 1))
+  (tsa u1 '(4 4))
+  (tsa u2 '(8 8))
+
+  ;; All offsets in a union should be 0
+  (test* "native union offsets u1" '(0 0 0)
+         (offsets u1 '(a b c)))
+  (test* "native union offsets u2" '(0 0 0)
+         (offsets u2 '(x y z)))
+
+  ;; Reading via different fields interprets the same bytes differently
+  (test* "native union ref u1"
+         (case (native-endian)
+           [(big-endian) (list #x-80           ; a: int8 at offset 0
+                               #x80010203      ; b: uint32 at offset 0
+                               #x8001)]        ; c: uint16 at offset 0
+           [else         (list #x-80           ; a: int8 at offset 0
+                               #x03020180      ; b: uint32 at offset 0
+                               #x0180)])       ; c: uint16 at offset 0
+         (list (native-ref (bc 0 u1) 'a)
+               (native-ref (bc 0 u1) 'b)
+               (native-ref (bc 0 u1) 'c)))
+
+  (test* "native union ref u2"
+         (case (native-endian)
+           [(big-endian) (list #x80                     ; x: uint8
+                               #x8001020304050607       ; y: uint64
+                               #x8001)]                 ; z: int16
+           [else         (list #x80                     ; x: uint8
+                               #x0706050403020180       ; y: uint64
+                               #x0180)])                ; z: int16 (positive)
+         (list (native-ref (bc 0 u2) 'x)
+               (native-ref (bc 0 u2) 'y)
+               (native-ref (bc 0 u2) 'z)))
+
+  ;; Writing to one field and reading back via the same field
+  (test* "native union modify via b, read b" #x11223344
+         (begin
+           (native-set! (bc 0 u1) 'b #x11223344)
+           (native-ref (bc 0 u1) 'b)))
+
+  ;; Writing to one field and reading via a different field
+  ;; (all fields share offset 0, so writing b overwrites a and c's bytes too)
+  (test* "native union modify via b, read a"
+         (case (native-endian)
+           [(big-endian) #x11]
+           [else         #x44])
+         (native-ref (bc 0 u1) 'a))
+
+  (test* "native union modify via b, read c"
+         (case (native-endian)
+           [(big-endian) #x1122]
+           [else         #x3344])
+         (native-ref (bc 0 u1) 'c))
+
+  (test* "native union modify u2" #x0123456789abcdef
+         (begin
+           (native-set! (bc 0 u2) 'y #x0123456789abcdef)
+           (native-ref (bc 0 u2) 'y)))
+  )
+
 #| ;; Temporarily disabled while we're rewriting binary.ftype
 
 (define *fobject-storage*
