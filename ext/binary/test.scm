@@ -589,6 +589,56 @@
 (use binary.ftype)
 (test-module 'binary.ftype)
 
+;; Type equivalences
+(let* ([int* (make-pointer-type <int>)]
+       [int8* (make-pointer-type <int8>)]
+       [int8a (make-native-array-type <int8> '(2 2))]
+       [int8a2 (make-native-array-type <int8> '(2 2))]
+       [int8a4 (make-native-array-type <int8> '(4))]
+       [u8a2 (make-native-array-type <uint8> '(2 2))]
+       [fn1 (make-native-function-type <int> `(,<int8> ,<uint16>))]
+       [fn2 (make-native-function-type <int> `(,<int8> ,<uint16>))]
+       [fn-var (make-native-function-type <int> `(,<int8> ,<uint16> ...))]
+       [s1 (make-native-struct-type 's1 `((a ,<int8>) (b ,<uint16>)))]
+       [s1b (make-native-struct-type 's1 `((a ,<int8>) (b ,<uint16>)))]
+       [s2 (make-native-struct-type 's2 `((a ,<int8>) (b ,<uint16>)))]
+       [u1 (make-native-union-type 'u1 `((a ,<int8>) (b ,<uint16>)))]
+       [u1b (make-native-union-type 'u1 `((a ,<int8>) (b ,<uint16>)))]
+       [u2 (make-native-union-type 'u2 `((a ,<int8>) (b ,<uint16>)))])
+  ;; equivalent cases
+  (test* "native type equal? pointer" #t
+         (equal? (make-pointer-type <int>) (make-pointer-type <int>)))
+  (test* "native type equal? array" #t
+         (equal? int8a int8a2))
+  (test* "native type equal? function" #t
+         (equal? fn1 fn2))
+  (test* "native type equal? struct" #t
+         (equal? s1 s1b))
+  (test* "native type equal? union" #t
+         (equal? u1 u1b))
+
+  ;; inequivalent cases
+  (test* "native type equal? pointer mismatch" #f
+         (equal? int* int8*))
+  (test* "native type equal? array dims mismatch" #f
+         (equal? int8a int8a4))
+  (test* "native type equal? array element mismatch" #f
+         (equal? int8a u8a2))
+  (test* "native type equal? function varargs mismatch" #f
+         (equal? fn1 fn-var))
+  (test* "native type equal? struct tag mismatch" #f
+         (equal? s1 s2))
+  (test* "native type equal? union tag mismatch" #f
+         (equal? u1 u2))
+
+  ;; cross-type comparisons
+  (test* "native type equal? struct vs pointer" #f
+         (equal? s1 int*))
+  (test* "native type equal? union vs array" #f
+         (equal? u1 int8a))
+  (test* "native type equal? function vs struct" #f
+         (equal? fn1 s1)))
+
 (define *fobject-storage*
   '#u8(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
        #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f

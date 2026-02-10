@@ -1169,16 +1169,21 @@
     (set! (-> z varargs) (?: varargs? 1 0))
     (return (SCM_OBJ z))))
 
+;; Argument-types are list of native types, optionally end with
+;; a symbol ... for varargs.
 (define (make-native-function-type return-type
-                                   argument-types
-                                   varargs?)
+                                   argument-types)
   (assume-type return-type <native-type>)
-  (dolist [arg-type argument-types]
-    (assume-type arg-type <native-type>))
-  (%make-native-function-type "<native-function>" ;TODO syntesize better name
-                              return-type
-                              argument-types
-                              (boolean varargs?)))
+  (receive (arg-types vararg?)
+      (if (and (pair? argument-types) (eq? (last argument-types) '...))
+        (values (drop-right argument-types 1) #t)
+        (values argument-types #f))
+    (dolist [arg-type arg-types]
+      (assume-type arg-type <native-type>))
+    (%make-native-function-type "<native-function>" ;TODO syntesize better name
+                                return-type
+                                arg-types
+                                vararg?)))
 
 ;; For array, we keep element-type and dimensions in dedicated fields.
 ;; Each <dim> is a nonnegative fixnum.  The first <dim> can be -1,

@@ -56,7 +56,7 @@
           ;; for these.  At the moment, we just reexport them from
           ;; gauche.typeutil
           make-pointer-type
-          ;make-native-functon-type
+          make-native-function-type
           make-native-array-type
           make-native-struct-type
           make-native-union-type))
