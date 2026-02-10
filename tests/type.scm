@@ -147,9 +147,14 @@
 
 (let* ([int*  ((with-module gauche.typeutil make-pointer-type) <int>)]
        [int** ((with-module gauche.typeutil make-pointer-type) int*)])
-  (t-subtype int* <native-pointer> #t)
-  (t-subtype int** <native-pointer> #t)
-  (t-subtype int** int* #f))
+  (test* "int* native-pointer" #t
+        (is-a? int* <native-pointer>))
+  (test* "int** native-pointer" #t
+         (is-a? int** <native-pointer>))
+  (t-subtype int** int* #f)
+  (test* "int* poointee" <int> (~ int*'pointee-type))
+  (test* "int** poointee" int* (~ int**'pointee-type))
+  )
 
 (test-section "built-in type constructors")
 

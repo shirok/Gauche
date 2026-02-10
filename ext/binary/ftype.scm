@@ -130,8 +130,8 @@
 ;;;
 
 (define (aggregate-type? type)
-  (or (native-array? type)
-      (native-struct? type)))
+  (or (is-a? type <native-array>)
+      (is-a? type <native-struct>)))
 
 ;; Access p+offset, where
 ;;   etype is the type of element
@@ -219,72 +219,61 @@
                                  (domestic-pointer-pos ptr)
                                  offset val)]))
 
-(define-cproc %native-pointer-pointee-type (type::<native-type>)
-  (return (SCM_OBJ (Scm_NativePointerPointeeType type))))
-
-(define-cproc %native-array-element-type (type::<native-type>)
-  (return (SCM_OBJ (Scm_NativeArrayElementType type))))
-
-(define-cproc %native-array-dimensions (type::<native-type>)
-  (return (Scm_NativeArrayDimensions type)))
-
-(define-cproc %native-struct-fields (type::<native-type>)
-  (return (Scm_NativeStructFields type)))
-
 (define (native-struct-field type selector)
+  (assume-type type <native-struct>)
   (assume-type selector <symbol>)
-  (if-let1 field (assq selector (%native-struct-fields type))
+  (if-let1 field (assq selector (~ type'fields))
     field
     (errorf "Unknown native struct field ~s for ~s" selector type)))
 
 ;; Returns a byte offset
 (define (native-type-offset type selector)
   (assume-type type <native-type>)
-  (cond
-   [(subtype? type <native-pointer>)
-    ;; Selector is an element index
-    (assume-type selector <fixnum>)
-    (* selector (~ (%native-pointer-pointee-type type)'size))]
-   [(subtype? type <native-array>)
-    (unless (every (every-pred fixnum? (complement negative?)) selector)
-      (error "Invalid native array selector:" selector))
-    (let* ([etype (%native-array-element-type type)]
-           [dims (%native-array-dimensions type)]
-           [sels (cond
-                  [(length<? selector dims)
-                   ;; Arrays can be dereferenced with partial index, e.g.
-                   ;; array int a[2][3][4] can be dereferenced as
-                   ;; a[2][3], returning int [4].  Offset is computed
-                   ;; by setting unspecified index to zero.
-                   (append selector
-                           (make-list (- (length dims) (length selector)) 0))]
-                  [(length=? selector dims) selector]
-                  [else
-                   (errorf "Native array selector ~s doesn't match the \
+  (typecase type
+    [<native-pointer>
+     ;; Selector is an element index
+     (assume-type selector <fixnum>)
+     (* selector (~ type'pointee-type'size))]
+    [<native-array>
+     (unless (every (every-pred fixnum? (complement negative?)) selector)
+       (error "Invalid native array selector:" selector))
+     (let* ([etype (~ type'element-type)]
+            [dims (~ type'dimensions)]
+            [sels (cond
+                   [(length<? selector dims)
+                    ;; Arrays can be dereferenced with partial index, e.g.
+                    ;; array int a[2][3][4] can be dereferenced as
+                    ;; a[2][3], returning int [4].  Offset is computed
+                    ;; by setting unspecified index to zero.
+                    (append selector
+                            (make-list (- (length dims) (length selector)) 0))]
+                   [(length=? selector dims) selector]
+                   [else
+                    (errorf "Native array selector ~s doesn't match the \
                             dimensions ~s"
-                           selector dims)])])
-      (let loop ([ds (reverse dims)]
-                 [ss (reverse sels)]
-                 [step 1]
-                 [i 0])
-        (cond [(null? ds) (* i (~ etype'size))]
-              [(eq? (car ds) '*) ; this can only appear in the 1st dim
-               (* (+ (* (car ss) step) i) (~ etype'size))]
-              [(< (car ss) (car ds))
-               (loop (cdr ds) (cdr ss) (* step (car ds))
-                     (+ (* (car ss) step) i))]
-              [else
-               (error "Native array selector is out of range:" selector)])))]
-   [(subtype? type <native-struct>)
-    (caddr (native-struct-field type selector))]
-   [else
-    (error "Unsupported native aggregate type:" type)]))
+                            selector dims)])])
+       (let loop ([ds (reverse dims)]
+                  [ss (reverse sels)]
+                  [step 1]
+                  [i 0])
+         (cond [(null? ds) (* i (~ etype'size))]
+               [(eq? (car ds) '*) ; this can only appear in the 1st dim
+                (* (+ (* (car ss) step) i) (~ etype'size))]
+               [(< (car ss) (car ds))
+                (loop (cdr ds) (cdr ss) (* step (car ds))
+                      (+ (* (car ss) step) i))]
+               [else
+                (error "Native array selector is out of range:" selector)])))]
+    [<native-struct>
+     (caddr (native-struct-field type selector))]
+    [else
+     (error "Unsupported native aggregate type:" type)]))
 
 ;; Returns an array type if selector does not specify a single element
 ;; in the array.
 (define (%array-dereference-type atype selector)
-  (let1 etype (%native-array-element-type atype)
-    (let loop ([dims (%native-array-dimensions atype)]
+  (let1 etype (~ atype'element-type)
+    (let loop ([dims (~ atype'dimensions)]
                [sels selector])
       (if (null? sels)
         (if (not (null? dims))
@@ -318,15 +307,15 @@
     "Foreign pointer of domestic pointer expected, but got:" ptr)
   (let* ([t (%ptr-type ptr type)]
          [offset (native-type-offset t selector)])
-    (cond
-     [(subtype? t <native-pointer>)
-      (%pref (%native-pointer-pointee-type t) ptr offset)]
-     [(subtype? t <native-array>)
-      (%pref (%array-dereference-type t selector) ptr offset)]
-     [(subtype? t <native-struct>)
-      (let1 ftype (cadr (native-struct-field t selector))
-        (%pref ftype ptr offset))]
-     [else (error "Unsupported native aggregate type:" ptr)])))
+    (typecase t
+      [<native-pointer>
+       (%pref (~ t'pointee-type) ptr offset)]
+      [<native-array>
+       (%pref (%array-dereference-type t selector) ptr offset)]
+      [<native-struct>
+       (let1 ftype (cadr (native-struct-field t selector))
+         (%pref ftype ptr offset))]
+      [else (error "Unsupported native aggregate type:" ptr)])))
 
 (define (native-set! ptr selector val :optional (type #f))
   ;;(assume-type ptr (</> <foreign-pointer> <domestic-pointer>))
@@ -335,15 +324,15 @@
     "Foreign pointer of domestic pointer expected, but got:" ptr)
   (let* ([t (%ptr-type ptr type)]
          [offset (native-type-offset t selector)])
-    (cond
-     [(subtype? t <native-pointer>)
-      (%pset! (%native-pointer-pointee-type t) ptr offset val)]
-     [(subtype? t <native-array>)
-      (%pset! (%array-dereference-type t selector) ptr offset val)]
-     [(subtype? t <native-struct>)
-      (let1 ftype (cadr (native-struct-field t selector))
-        (%pset! ftype ptr offset val))]
-     [else (error "Unsupported native aggregate type:" t)])))
+    (typecase t
+      [<native-pointer>
+       (%pset! (~ t'pointee-type) ptr offset val)]
+      [<native-array>
+       (%pset! (%array-dereference-type t selector) ptr offset val)]
+      [<native-struct>
+       (let1 ftype (cadr (native-struct-field t selector))
+         (%pset! ftype ptr offset val))]
+      [else (error "Unsupported native aggregate type:" t)])))
 
 (define (native-pointer+ ptr delta :optional (type #f))
   ;;(assume-type ptr (</> <foreign-pointer> <domestic-pointer>))
@@ -352,7 +341,7 @@
     "Foreign pointer of domestic pointer expected, but got:" ptr)
   (assume-type delta <fixnum>)
   (let* ([t (%ptr-type ptr type)]
-         [offset (* delta (~ (%native-pointer-pointee-type t)'size))])
+         [offset (* delta (~ t'pointee-type'size))])
     (typecase ptr
       [<foreign-pointer>
        (make-internal-pointer ptr offset t)]

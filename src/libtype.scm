@@ -205,9 +205,42 @@
     (super)
     (c-type-name :type <const-cstring>)
     (size :type <size_t>)
-    (alignment :type <size_t>)
-    (inner))   ; pointed-to type, or aggregate members
+    (alignment :type <size_t>))
    (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
+
+ ;; CPA for native type subclasses
+ (define-cvar native-type-cpa::(.array ScmClass* (*)) :static
+   #((SCM_CLASS_STATIC_PTR Scm_NativeTypeClass)
+     (SCM_CLASS_STATIC_PTR Scm_TopClass)
+     NULL))
+
+ (define-cclass <native-pointer> :base :no-meta
+   "ScmNativePointer*" "Scm_NativePointerClass"
+   (c "native_type_cpa")
+   ((pointee-type :type <native-type> :c-name "pointee_type"))
+   (printer (Scm_Printf port "#<native-pointer %S>" (-> (& (-> (SCM_NATIVE_POINTER obj) common)) name))))
+
+ (define-cclass <native-function> :base :no-meta
+   "ScmNativeFunction*" "Scm_NativeFunctionClass"
+   (c "native_type_cpa")
+   ((return-type :type <native-type> :c-name "return_type")
+    (arg-types :c-name "arg_types")
+    (varargs :type <boolean>))
+   (printer (Scm_Printf port "#<native-function %S>" (-> (& (-> (SCM_NATIVE_FUNCTION obj) common)) name))))
+
+ (define-cclass <native-array> :base :no-meta
+   "ScmNativeArray*" "Scm_NativeArrayClass"
+   (c "native_type_cpa")
+   ((element-type :type <native-type> :c-name "element_type")
+    (dimensions))
+   (printer (Scm_Printf port "#<native-array %S>" (-> (& (-> (SCM_NATIVE_ARRAY obj) common)) name))))
+
+ (define-cclass <native-struct> :base :no-meta
+   "ScmNativeStruct*" "Scm_NativeStructClass"
+   (c "native_type_cpa")
+   ((tag)
+    (fields))
+   (printer (Scm_Printf port "#<native-struct %S>" (-> (& (-> (SCM_NATIVE_STRUCT obj) common)) name))))
  )
 
 (define-method initialize ((c <type-constructor-meta>) initargs)
@@ -815,7 +848,6 @@
                                c-type-name::(const char*)
                                size::size_t
                                alignment::size_t
-                               inner
                                c-of-type::(.function (obj)::int *)
                                c-ref::(.function (ptr::void*)::ScmObj *)
                                c-set::(.function (ptr::void* obj)::void *))
@@ -830,7 +862,6 @@
      (set! (-> z c-set) c-set)
      (set! (-> z size) size)
      (set! (-> z alignment) alignment)
-     (set! (-> z inner) inner)
      (return (SCM_OBJ z))))
 
  ;; define-native-type NAME SUPER CTYPE PRED BOX UNBOX
@@ -864,7 +895,6 @@
                                  (SCM_OBJ ,super) ,(x->string ctype)
                                  (sizeof (.type ,ctype))
                                  (SCM_ALIGNOF (.type ,ctype))
-                                 SCM_FALSE
                                  ,pred
                                  ,c-ref-name
                                  ,c-set-name)])
@@ -1053,173 +1083,48 @@
 ;;
 
 (inline-stub
- (define-cvar native_pointer_type)
- (define-cvar native_function_type)     ;root of c-function pointer
- (define-cvar native_array_type)
- (define-cvar native_struct_type)
-
- ;; This predicate covers all native types that use foreign pointer as
- ;; instance.
  (define-cfn native_ptrP (obj) ::int :static
    (return (SCM_FOREIGN_POINTER_P obj)))
 
- (initcode
-  (set! native_pointer_type
-        (make_native_type "<native-pointer>"
-                          (SCM_OBJ SCM_CLASS_TOP)
-                          "ScmForeignPointer*"
-                          (sizeof (.type void*))
-                          (SCM_ALIGNOF (.type void*))
-                          SCM_FALSE
-                          native_ptrP
-                          NULL
-                          NULL))
-  (set! native_function_type
-        (make_native_type "<native-function>"
-                          (SCM_OBJ SCM_CLASS_TOP)
-                          "ScmForeignPointer*"
-                          (sizeof (.type void*))
-                          (SCM_ALIGNOF (.type void*))
-                          SCM_FALSE
-                          native_ptrP
-                          NULL
-                          NULL))
-  (set! native_array_type
-        (make_native_type "<native-array>"
-                          (SCM_OBJ SCM_CLASS_TOP)
-                          "ScmForeignPointer*"
-                          0             ; concrete type computes size
-                          1             ; concrete type computes align
-                          SCM_FALSE
-                          native_ptrP
-                          NULL
-                          NULL))
-  (set! native_struct_type
-        (make_native_type "<native-struct>"
-                          (SCM_OBJ SCM_CLASS_TOP)
-                          "ScmForeignPointer*"
-                          0             ; concrete type computes size
-                          1             ; concrete type computes align
-                          SCM_FALSE
-                          native_ptrP
-                          NULL
-                          NULL))
-
-  (Scm_MakeBinding (Scm_GaucheModule)
-                   (SCM_SYMBOL '<native-pointer>)
-                   native_pointer_type
-                   SCM_BINDING_INLINABLE)
-  (Scm_MakeBinding (Scm_GaucheModule)
-                   (SCM_SYMBOL '<native-function>)
-                   native_function_type
-                   SCM_BINDING_INLINABLE)
-  (Scm_MakeBinding (Scm_GaucheModule)
-                   (SCM_SYMBOL '<native-array>)
-                   native_array_type
-                   SCM_BINDING_INLINABLE)
-  (Scm_MakeBinding (Scm_GaucheModule)
-                   (SCM_SYMBOL '<native-struct>)
-                   native_struct_type
-                   SCM_BINDING_INLINABLE))
-
- ;; Check if a <native-type> is a pointer, a function, etc.
- ;; Note that they return false if the argument is the 'base type',
- ;; e.g. <native-pointer>.  They return true only on the 'concrete'
- ;; types, in which the 'inner' slot should contain valid data.
- (define-cfn native-compound-type-p (np::ScmNativeType* base)
-   ::_Bool :static
-   (loop
-    (let* ([sup (-> np super)])
-      (cond [(SCM_EQ sup base) (return TRUE)]
-            [(SCM_NATIVE_TYPE_P sup) (set! np (SCM_NATIVE_TYPE sup))]
-            [else (return FALSE)]))))
-
- (define-cfn Scm_NativePointerP (np::ScmNativeType*) ::_Bool
-   (return (native-compound-type-p np native-pointer-type)))
-
- (define-cfn Scm_NativeFunctionP (np::ScmNativeType*) ::_Bool
-   (return (native-compound-type-p np native-function-type)))
-
- (define-cfn Scm_NativeArrayP (np::ScmNativeType*) ::_Bool
-   (return (native-compound-type-p np native-array-type)))
-
- (define-cfn Scm_NativeStructP (np::ScmNativeType*) ::_Bool
-   (return (native-compound-type-p np native-struct-type)))
-
- ;; Accessor of ancillary info.  The code should never directly access
- ;; 'inner' field.  Use these instead.
- (define-cfn Scm_NativePointerPointeeType (np::ScmNativeType*) ::ScmNativeType*
-   (unless (Scm_NativePointerP np)
-     (Scm_Error "Concrete native pointer required, but got: %S" np))
-   (let* ([inner (-> np inner)])
-     (SCM_ASSERT (SCM_NATIVE_TYPE_P inner))
-     (return (SCM_NATIVE_TYPE inner))))
-
- (define-cfn Scm_NativeFunctionReturnType (np::ScmNativeType*) ::ScmNativeType*
-   (unless (Scm_NativeFunctionP np)
-     (Scm_Error "Concrete native function required, but got: %S" np))
-   (let* ([inner (-> np inner)])
-     (SCM_ASSERT (SCM_PAIRP inner))
-     (SCM_ASSERT (SCM_PAIRP (SCM_CDR inner)))
-     (let* ([rt (SCM_CADR inner)])
-       (SCM_ASSERT (SCM_NATIVE_TYPE_P rt))
-       (return (SCM_NATIVE_TYPE rt)))))
-
- (define-cfn Scm_NativeFunctionVarargsP (np::ScmNativeType*) ::_Bool
-   (unless (Scm_NativeFunctionP np)
-     (Scm_Error "Concrete native function required, but got: %S" np))
-   (let* ([inner (-> np inner)])
-     (SCM_ASSERT (SCM_PAIRP inner))
-     (return (SCM_BOOL_VALUE (SCM_CAR inner)))))
-
- (define-cfn Scm_NativeFunctionArgTypes (np::ScmNativeType*) ::ScmObj
-   (unless (Scm_NativeFunctionP np)
-     (Scm_Error "Concrete native function required, but got: %S" np))
-   (let* ([inner (-> np inner)])
-     (SCM_ASSERT (SCM_PAIRP inner))
-     (SCM_ASSERT (SCM_PAIRP (SCM_CDR inner)))
-     (return (SCM_CDDR inner))))
-
- (define-cfn Scm_NativeArrayElementType (np::ScmNativeType*) ::ScmNativeType*
-   (unless (Scm_NativeArrayP np)
-     (Scm_Error "Concrete native array required, but got: %S" np))
-   (let* ([inner (-> np inner)])
-     (SCM_ASSERT (SCM_PAIRP inner))
-     (SCM_ASSERT (SCM_NATIVE_TYPE_P (SCM_CAR inner)))
-     (return (SCM_NATIVE_TYPE (SCM_CAR inner)))))
-
- (define-cfn Scm_NativeArrayDimensions (np::ScmNativeType*) ::ScmObj
-   (unless (Scm_NativeArrayP np)
-     (Scm_Error "Concrete native array required, but got: %S" np))
-   (let* ([inner (-> np inner)])
-     (SCM_ASSERT (SCM_PAIRP inner))
-     (return (SCM_CDR inner))))
-
- (define-cfn Scm_NativeStructTag (np::ScmNativeType*) ::ScmObj
-   (unless (Scm_NativeStructP np)
-     (Scm_Error "Concrete native struct required, but got: %S" np))
-   (let* ([inner (-> np inner)])
-     (SCM_ASSERT (SCM_PAIRP inner))
-     (return (SCM_CAR inner))))
-
- (define-cfn Scm_NativeStructFields (np::ScmNativeType*) ::ScmObj
-   (unless (Scm_NativeStructP np)
-     (Scm_Error "Concrete native struct required, but got: %S" np))
-   (let* ([inner (-> np inner)])
-     (SCM_ASSERT (SCM_PAIRP inner))
-     (return (SCM_CDR inner))))
+ ;; Helper function to initialize common fields of composite native types
+ (define-cfn init-native-type-common (nt::ScmNativeType*
+                                      name::(const char*)
+                                      super::ScmObj
+                                      c-type-name::(const char*)
+                                      size::size_t
+                                      alignment::size_t
+                                      c-of-type::(.function (obj)::int *)
+                                      c-ref::(.function (ptr::void*)::ScmObj *)
+                                      c-set::(.function (ptr::void* obj)::void *))
+   ::void :static
+   (set! (-> nt name) (SCM_INTERN name))
+   (set! (-> nt super) super)
+   (set! (-> nt c-type-name) c-type-name)
+   (set! (-> nt c-of-type) c-of-type)
+   (set! (-> nt c-ref) c-ref)
+   (set! (-> nt c-set) c-set)
+   (set! (-> nt size) size)
+   (set! (-> nt alignment) alignment))
  )
 
 (define-cproc %make-pointer-type (pointer-type-name::<const-cstring>
                                   pointee-type)
-  (return (make-native-type pointer-type-name
-                            native_pointer_type
-                            "ScmForeignPointer*"
-                            (sizeof (.type void*))
-                            (SCM_ALIGNOF (.type void*))
-                            pointee-type
-                            native_ptrP
-                            NULL NULL)))
+  (let* ([z::ScmNativePointer*
+          (SCM_NEW_INSTANCE ScmNativePointer (& Scm_NativePointerClass))])
+    ;; Fill in common fields
+    (init-native-type-common (& (-> z common))
+                             pointer-type-name
+                             (SCM_OBJ SCM_CLASS_TOP)
+                             "ScmForeignPointer*"
+                             (sizeof (.type void*))
+                             (SCM_ALIGNOF (.type void*))
+                             native_ptrP
+                             NULL
+                             NULL)
+    ;; Fill in type-specific fields
+    (SCM_ASSERT (SCM_NATIVE_TYPE_P pointee-type))
+    (set! (-> z pointee_type) (SCM_NATIVE_TYPE pointee-type))
+    (return (SCM_OBJ z))))
 
 (define (make-pointer-type pointee-type)
   (assume-type pointee-type <native-type>)
@@ -1233,20 +1138,24 @@
                                           return-type
                                           argument-types
                                           varargs?::<boolean>)
-  (return (make-native-type type-name
-                            native_function_type
-                            "ScmForeignPointer*"
-                            (sizeof (.type void*))
-                            (SCM_ALIGNOF (.type void*))
-                            (Scm_Cons (SCM_MAKE_BOOL varargs?)
-                                      (Scm_Cons return-type
-                                                argument-types))
-                            native_ptrP
-                            NULL NULL)))
-
-(define-cproc native-pointer? (obj) ::<boolean>
-  (return (and (SCM_NATIVE_TYPE_P obj)
-               (Scm_NativePointerP (SCM_NATIVE_TYPE obj)))))
+  (let* ([z::ScmNativeFunction*
+          (SCM_NEW_INSTANCE ScmNativeFunction (& Scm_NativeFunctionClass))])
+    ;; Fill in common fields
+    (init-native-type-common (& (-> z common))
+                             type-name
+                             (SCM_OBJ SCM_CLASS_TOP)
+                             "ScmForeignPointer*"
+                             (sizeof (.type void*))
+                             (SCM_ALIGNOF (.type void*))
+                             native_ptrP
+                             NULL
+                             NULL)
+    ;; Fill in type-specific fields
+    (SCM_ASSERT (SCM_NATIVE_TYPE_P return-type))
+    (set! (-> z return_type) (SCM_NATIVE_TYPE return-type))
+    (set! (-> z arg_types) argument-types)
+    (set! (-> z varargs) (?: varargs? 1 0))
+    (return (SCM_OBJ z))))
 
 (define (make-native-function-type return-type
                                    argument-types
@@ -1259,7 +1168,7 @@
                               argument-types
                               (boolean varargs?)))
 
-;; For array, we keep (<element-type> <dim> ...) in inner.
+;; For array, we keep element-type and dimensions in dedicated fields.
 ;; Each <dim> is a nonnegative fixnum.  The first <dim> can be -1,
 ;; indicating it is not specified (C allows it).
 (define-cproc %make-native-array-type (type-name::<const-cstring>
@@ -1267,18 +1176,23 @@
                                        size::<fixnum>
                                        alignment::<fixnum>
                                        dimensions)
-  (return (make-native-type type-name
-                            native_array_type
-                            "ScmForeignPointer*"
-                            size
-                            alignment
-                            (Scm_Cons element-type dimensions)
-                            native_ptrP
-                            NULL NULL)))
-
-(define-cproc native-function? (obj) ::<boolean>
-  (return (and (SCM_NATIVE_TYPE_P obj)
-               (Scm_NativeFunctionP (SCM_NATIVE_TYPE obj)))))
+  (let* ([z::ScmNativeArray*
+          (SCM_NEW_INSTANCE ScmNativeArray (& Scm_NativeArrayClass))])
+    ;; Fill in common fields
+    (init-native-type-common (& (-> z common))
+                             type-name
+                             (SCM_OBJ SCM_CLASS_TOP)
+                             "ScmForeignPointer*"
+                             size
+                             alignment
+                             native_ptrP
+                             NULL
+                             NULL)
+    ;; Fill in type-specific fields
+    (SCM_ASSERT (SCM_NATIVE_TYPE_P element-type))
+    (set! (-> z element_type) (SCM_NATIVE_TYPE element-type))
+    (set! (-> z dimensions) dimensions)
+    (return (SCM_OBJ z))))
 
 (define (make-native-array-type element-type dimensions)
   (assume-type element-type <native-type>)
@@ -1308,24 +1222,28 @@
                              (~ element-type'alignment)
                              dimensions)))
 
-;; For struct, we keep (<tag-name> (<field-name> <field-type>) ...) in inner.
+;; For struct, we keep tag and field-list in dedicated fields.
 (define-cproc %make-native-struct-type (type-name::<const-cstring>
                                         size::<fixnum>
                                         alignment::<fixnum>
                                         tag-name::<symbol>?
                                         field-list)
-  (return (make-native-type type-name
-                            native_struct_type
-                            "ScmForeignPointer*"
-                            size
-                            alignment
-                            (Scm_Cons (SCM_OBJ tag-name) field-list)
-                            native_ptrP
-                            NULL NULL)))
-
-(define-cproc native-array? (obj) ::<boolean>
-  (return (and (SCM_NATIVE_TYPE_P obj)
-               (Scm_NativeArrayP (SCM_NATIVE_TYPE obj)))))
+  (let* ([z::ScmNativeStruct*
+          (SCM_NEW_INSTANCE ScmNativeStruct (& Scm_NativeStructClass))])
+    ;; Fill in common fields
+    (init-native-type-common (& (-> z common))
+                             type-name
+                             (SCM_OBJ SCM_CLASS_TOP)
+                             "ScmForeignPointer*"
+                             size
+                             alignment
+                             native_ptrP
+                             NULL
+                             NULL)
+    ;; Fill in type-specific fields
+    (set! (-> z tag) (SCM_OBJ tag-name))
+    (set! (-> z fields) field-list)
+    (return (SCM_OBJ z))))
 
 (define (struct-size-roundup size alignment)
   (* alignment (quotient (+ size alignment -1) alignment)))
@@ -1351,10 +1269,6 @@
        (error "Bad native struct fields; must be a proper list, but got:"
               fields)])))
 
-(define-cproc native-struct? (obj) ::<boolean>
-  (return (and (SCM_NATIVE_TYPE_P obj)
-               (Scm_NativeStructP (SCM_NATIVE_TYPE obj)))))
-
 ;;;
 ;;; Make exported symbol visible from outside
 ;;;
@@ -1364,7 +1278,8 @@
         (find-module 'gauche)
         '(<type-constructor-meta>
           <descriptive-type>
-          <native-type>
+          <native-type> <native-pointer> <native-function>
+          <native-array> <native-struct>
           <^> </> <?> <Tuple> <List> <Vector> <Assortment>
           type? subtype? of-type?))
   (xfer (current-module)

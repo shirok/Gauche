@@ -62,7 +62,6 @@ typedef struct ScmNativeTypeRec {
     const char *c_type_name;
     size_t   size;
     size_t   alignment;
-    ScmObj   inner;
 } ScmNativeType;
 
 SCM_CLASS_DECL(Scm_NativeTypeClass);
@@ -70,20 +69,52 @@ SCM_CLASS_DECL(Scm_NativeTypeClass);
 #define SCM_NATIVE_TYPE(obj)     ((ScmNativeType*)(obj))
 #define SCM_NATIVE_TYPE_P(obj)   (SCM_ISA(obj, SCM_CLASS_NATIVE_TYPE))
 
-SCM_EXTERN _Bool Scm_NativePointerP(ScmNativeType*);
-SCM_EXTERN ScmNativeType *Scm_NativePointerPointeeType(ScmNativeType*);
+/* <native-pointer> - a pointer to another native type */
+typedef struct ScmNativePointerRec {
+    ScmNativeType common;
+    ScmNativeType *pointee_type;
+} ScmNativePointer;
 
-SCM_EXTERN _Bool Scm_NativeFunctionP(ScmNativeType*);
-SCM_EXTERN ScmNativeType *Scm_NativeFunctionReturnType(ScmNativeType*);
-SCM_EXTERN _Bool Scm_NativeFunctionVarargsP(ScmNativeType*);
-SCM_EXTERN ScmObj Scm_NativeFunctionArgTypes(ScmNativeType*);
+SCM_CLASS_DECL(Scm_NativePointerClass);
+#define SCM_CLASS_NATIVE_POINTER (&Scm_NativePointerClass)
+#define SCM_NATIVE_POINTER(obj)  ((ScmNativePointer*)(obj))
+#define SCM_NATIVE_POINTER_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_POINTER))
 
-SCM_EXTERN _Bool Scm_NativeArrayP(ScmNativeType*);
-SCM_EXTERN ScmNativeType *Scm_NativeArrayElementType(ScmNativeType*);
-SCM_EXTERN ScmObj Scm_NativeArrayDimensions(ScmNativeType*);
+/* <native-function> - a function pointer type */
+typedef struct ScmNativeFunctionRec {
+    ScmNativeType common;
+    ScmNativeType *return_type;
+    ScmObj arg_types;            /* list of ScmNativeType* */
+    int varargs;                 /* boolean: does it accept varargs? */
+} ScmNativeFunction;
 
-SCM_EXTERN _Bool Scm_NativeStructP(ScmNativeType*);
-SCM_EXTERN ScmObj Scm_NativeStructTag(ScmNativeType*);
-SCM_EXTERN ScmObj Scm_NativeStructFields(ScmNativeType*);
+SCM_CLASS_DECL(Scm_NativeFunctionClass);
+#define SCM_CLASS_NATIVE_FUNCTION (&Scm_NativeFunctionClass)
+#define SCM_NATIVE_FUNCTION(obj) ((ScmNativeFunction*)(obj))
+#define SCM_NATIVE_FUNCTION_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_FUNCTION))
+
+/* <native-array> - an array of a native type */
+typedef struct ScmNativeArrayRec {
+    ScmNativeType common;
+    ScmNativeType *element_type;
+    ScmObj dimensions;           /* list of fixnums */
+} ScmNativeArray;
+
+SCM_CLASS_DECL(Scm_NativeArrayClass);
+#define SCM_CLASS_NATIVE_ARRAY   (&Scm_NativeArrayClass)
+#define SCM_NATIVE_ARRAY(obj)    ((ScmNativeArray*)(obj))
+#define SCM_NATIVE_ARRAY_P(obj)  (SCM_ISA(obj, SCM_CLASS_NATIVE_ARRAY))
+
+/* <native-struct> - a C struct type */
+typedef struct ScmNativeStructRec {
+    ScmNativeType common;
+    ScmObj tag;                  /* symbol or #f */
+    ScmObj fields;               /* list of (name type offset) */
+} ScmNativeStruct;
+
+SCM_CLASS_DECL(Scm_NativeStructClass);
+#define SCM_CLASS_NATIVE_STRUCT  (&Scm_NativeStructClass)
+#define SCM_NATIVE_STRUCT(obj)   ((ScmNativeStruct*)(obj))
+#define SCM_NATIVE_STRUCT_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_STRUCT))
 
 #endif  /*GAUCHE_PRIV_TYPEP_H*/
