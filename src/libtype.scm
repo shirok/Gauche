@@ -218,7 +218,8 @@
    "ScmNativePointer*" "Scm_NativePointerClass"
    (c "native_type_cpa")
    ((pointee-type :type <native-type> :c-name "pointee_type"))
-   (printer (Scm_Printf port "#<native-pointer %S>" (-> (& (-> (SCM_NATIVE_POINTER obj) common)) name))))
+   (printer (Scm_Printf port "#<native-pointer %S>" (-> (& (-> (SCM_NATIVE_POINTER obj) common)) name)))
+   (comparer (c Scm_ObjectCompare)))
 
  (define-cclass <native-function> :base :no-meta
    "ScmNativeFunction*" "Scm_NativeFunctionClass"
@@ -226,28 +227,32 @@
    ((return-type :type <native-type> :c-name "return_type")
     (arg-types :c-name "arg_types")
     (varargs :type <boolean>))
-   (printer (Scm_Printf port "#<native-function %S>" (-> (& (-> (SCM_NATIVE_FUNCTION obj) common)) name))))
+   (printer (Scm_Printf port "#<native-function %S>" (-> (& (-> (SCM_NATIVE_FUNCTION obj) common)) name)))
+   (comparer (c Scm_ObjectCompare)))
 
  (define-cclass <native-array> :base :no-meta
    "ScmNativeArray*" "Scm_NativeArrayClass"
    (c "native_type_cpa")
    ((element-type :type <native-type> :c-name "element_type")
     (dimensions))
-   (printer (Scm_Printf port "#<native-array %S>" (-> (& (-> (SCM_NATIVE_ARRAY obj) common)) name))))
+   (printer (Scm_Printf port "#<native-array %S>" (-> (& (-> (SCM_NATIVE_ARRAY obj) common)) name)))
+   (comparer (c Scm_ObjectCompare)))
 
  (define-cclass <native-struct> :base :no-meta
    "ScmNativeStruct*" "Scm_NativeStructClass"
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<native-struct %S>" (-> (& (-> (SCM_NATIVE_STRUCT obj) common)) name))))
+   (printer (Scm_Printf port "#<native-struct %S>" (-> (& (-> (SCM_NATIVE_STRUCT obj) common)) name)))
+   (comparer (c Scm_ObjectCompare)))
 
  (define-cclass <native-union> :base :no-meta
    "ScmNativeUnion*" "Scm_NativeUnionClass"
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<native-union %S>" (-> (& (-> (SCM_NATIVE_UNION obj) common)) name))))
+   (printer (Scm_Printf port "#<native-union %S>" (-> (& (-> (SCM_NATIVE_UNION obj) common)) name)))
+   (comparer (c Scm_ObjectCompare)))
  )
 
 (define-method initialize ((c <type-constructor-meta>) initargs)

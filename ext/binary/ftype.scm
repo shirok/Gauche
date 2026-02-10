@@ -351,3 +351,24 @@
        (make-domestic-pointer (domestic-pointer-storage ptr)
                               (+ (domestic-pointer-pos ptr) offset)
                               t)])))
+
+;; Compare native types
+(define-method object-equal? ((s <native-pointer>) (t <native-pointer>))
+  (equal? (~ s'pointee-type) (~ t'pointee-type)))
+
+(define-method object-equal? ((s <native-function>) (t <native-function>))
+  (and (equal? (~ s'return-type) (~ t'return-type))
+       (equal? (~ s'arg-types) (~ t'arg-types))
+       (equal/ (~ s'varargs) (~ t'varargs))))
+
+(define-method object-equal? ((s <native-array>) (t <native-array>))
+  (and (equal? (~ s'element-type) (~ t'element-type))
+       (equal? (~ s'dimensions) (~ t'dimensions))))
+
+(define-method object-equal? ((s <native-struct>) (t <native-struct>))
+  (and (equal? (~ s'tag) (~ t'tag))
+       (equal? (~ s'fields) (~ t'fields))))
+
+(define-method object-equal? ((s <native-union>) (t <native-union>))
+  (and (equal? (~ s'tag) (~ t'tag))
+       (equal? (~ s'fields) (~ t'fields))))
