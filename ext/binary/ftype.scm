@@ -359,7 +359,7 @@
 (define-method object-equal? ((s <native-function>) (t <native-function>))
   (and (equal? (~ s'return-type) (~ t'return-type))
        (equal? (~ s'arg-types) (~ t'arg-types))
-       (equal/ (~ s'varargs) (~ t'varargs))))
+       (equal? (~ s'varargs) (~ t'varargs))))
 
 (define-method object-equal? ((s <native-array>) (t <native-array>))
   (and (equal? (~ s'element-type) (~ t'element-type))
