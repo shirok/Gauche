@@ -804,7 +804,7 @@
 
 ;; ~{...~}
 (define (make-format-iter fmtstr open-flags params close-flags body)
-  (define force-once? (has-:? close-flags))
+  (define min-once? (has-:? close-flags))  ; Execute at least once even if empty
   (define maxiter (if (null? params) #f (car params)))
   
   ;; Compile body formatter once (not inside the runtime closure)
@@ -813,16 +813,20 @@
       #f  ; Will be obtained at runtime from next arg
       (formatter-compile-rec fmtstr body)))
   
+  ;; Helper to get body formatter at runtime (for empty body case)
+  (define (get-body-formatter argptr)
+    (if body-formatter
+      body-formatter
+      (let1 fmt-str (fr-next-arg! fmtstr argptr)
+        (formatter-compile-rec fmt-str (formatter-parse (formatter-lex fmt-str))))))
+  
   (cond
    ;; ~@{...~} - iterate over remaining args
    [(and (has-@? open-flags) (not (has-:? open-flags)))
     (^[argptr port ctl]
-      (let1 bf (if body-formatter
-                 body-formatter
-                 (let1 fmt-str (fr-next-arg! fmtstr argptr)
-                   (formatter-compile-rec fmt-str (formatter-parse (formatter-lex fmt-str)))))
-        (if (and force-once? (null? (cdr argptr)))
-          ;; Force once even with no args
+      (let1 bf (get-body-formatter argptr)
+        (if (and min-once? (null? (cdr argptr)))
+          ;; Execute once even with no args
           (begin (bf argptr port ctl) argptr)
           ;; Normal iteration
           (let loop ([count 0])
@@ -836,12 +840,9 @@
    ;; ~:@{...~} - remaining args as sublists
    [(and (has-@? open-flags) (has-:? open-flags))
     (^[argptr port ctl]
-      (let1 bf (if body-formatter
-                 body-formatter
-                 (let1 fmt-str (fr-next-arg! fmtstr argptr)
-                   (formatter-compile-rec fmt-str (formatter-parse (formatter-lex fmt-str)))))
-        (if (and force-once? (null? (cdr argptr)))
-          ;; Force once even with no args
+      (let1 bf (get-body-formatter argptr)
+        (if (and min-once? (null? (cdr argptr)))
+          ;; Execute once even with no args
           (let1 sub-argptr (fr-make-argptr '())
             (bf sub-argptr port ctl)
             argptr)
@@ -853,7 +854,7 @@
              [else
               (let1 sublist (fr-next-arg! fmtstr argptr)
                 (unless (list? sublist)
-                  (errorf "Argument for ~:@{ must be a list, but got ~s" sublist))
+                  (errorf "Each argument for ~:@{ must be a list (for sublist iteration), but got ~s" sublist))
                 (let1 sub-argptr (fr-make-argptr sublist)
                   (bf sub-argptr port ctl)))
               (loop (+ count 1))])))))]
@@ -861,15 +862,12 @@
    ;; ~:{...~} - list of sublists
    [(has-:? open-flags)
     (^[argptr port ctl]
-      (let1 bf (if body-formatter
-                 body-formatter
-                 (let1 fmt-str (fr-next-arg! fmtstr argptr)
-                   (formatter-compile-rec fmt-str (formatter-parse (formatter-lex fmt-str)))))
+      (let1 bf (get-body-formatter argptr)
         (let1 list-arg (fr-next-arg! fmtstr argptr)
           (unless (list? list-arg)
             (errorf "Argument for ~:{ must be a list, but got ~s" list-arg))
-          (if (and force-once? (null? list-arg))
-            ;; Force once even with empty list
+          (if (and min-once? (null? list-arg))
+            ;; Execute once even with empty list
             (let1 sub-argptr (fr-make-argptr '())
               (bf sub-argptr port ctl)
               argptr)
@@ -881,7 +879,7 @@
                [else
                 (let1 sublist (car lst)
                   (unless (list? sublist)
-                    (errorf "Element of argument for ~:{ must be a list, but got ~s" sublist))
+                    (errorf "Each element in the argument list for ~:{ must be a list, but got ~s" sublist))
                   (let1 sub-argptr (fr-make-argptr sublist)
                     (bf sub-argptr port ctl)))
                 (loop (cdr lst) (+ count 1))]))))))]
@@ -889,16 +887,13 @@
    ;; ~{...~} - basic iteration over list
    [else
     (^[argptr port ctl]
-      (let1 bf (if body-formatter
-                 body-formatter
-                 (let1 fmt-str (fr-next-arg! fmtstr argptr)
-                   (formatter-compile-rec fmt-str (formatter-parse (formatter-lex fmt-str)))))
+      (let1 bf (get-body-formatter argptr)
         (let1 list-arg (fr-next-arg! fmtstr argptr)
           (unless (list? list-arg)
             (errorf "Argument for ~{ must be a list, but got ~s" list-arg))
           (let1 iter-argptr (fr-make-argptr list-arg)
-            (if (and force-once? (null? (cdr iter-argptr)))
-              ;; Force once even with empty list
+            (if (and min-once? (null? (cdr iter-argptr)))
+              ;; Execute once even with empty list
               (begin
                 (bf iter-argptr port ctl)
                 argptr)
