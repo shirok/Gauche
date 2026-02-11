@@ -393,6 +393,15 @@
        "1+2 3+4 "
        (format "~{~a+~a ~}" '(1 2 3 4)))
 
+;; Error cases
+(test* "format iteration (invalid maxiter)"
+       (test-error)
+       (format "~-1{~a ~}" '(1 2 3)))
+
+(test* "format iteration (non-integer maxiter)"
+       (test-error)
+       (format "~a{~a ~}" '(1 2 3)))
+
 ;; Ensure `format` does _not_ cache in this case.
 (test* "formatter cache"
        '("a" "~s")

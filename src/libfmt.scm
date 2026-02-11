@@ -805,7 +805,13 @@
 ;; ~{...~}
 (define (make-format-iter fmtstr open-flags params close-flags body)
   (define min-once? (has-:? close-flags))  ; Execute at least once even if empty
-  (define maxiter (if (null? params) #f (car params)))
+  (define maxiter 
+    (if (null? params) 
+      #f 
+      (let1 n (car params)
+        (unless (and (exact-integer? n) (>= n 0))
+          (errorf "Max iteration count for ~{ must be a non-negative integer, but got ~s" n))
+        n)))
   
   ;; Compile body formatter once (not inside the runtime closure)
   (define body-formatter
