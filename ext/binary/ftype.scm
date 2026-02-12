@@ -59,7 +59,10 @@
           make-native-function-type
           make-native-array-type
           make-native-struct-type
-          make-native-union-type))
+          make-native-union-type
+
+          native-alloc
+          native-free))
 (select-module binary.ftype)
 
 (inline-stub
@@ -84,7 +87,7 @@
   ))
 
 (define-cproc %make-internal-pointer (base::<foreign-pointer>
-                                       offset::<fixnum>)
+                                      offset::<fixnum>)
   (let* ([p::void* (Scm_ForeignPointerRef base)])
     (return (Scm_MakeForeignPointer internal-pointer-class
                                     (+ p offset)))))
@@ -372,3 +375,54 @@
 (define-method object-equal? ((s <native-union>) (t <native-union>))
   (and (equal? (~ s'tag) (~ t'tag))
        (equal? (~ s'fields) (~ t'fields))))
+
+;;;
+;;;  Raw memory
+;;;
+
+;; This should actually belong to FFI module.  For now, however,
+;; since this depends heavily on native compound types, we put it
+;; here for experimenting.
+
+(inline-stub
+ (define-cvar raw-memory-class::ScmClass* :static)
+
+ (initcode
+  (set! raw-memory-class
+        (Scm_MakeForeignPointerClass (Scm_CurrentModule)
+                                     "<raw-memory>"
+                                     NULL NULL 0)))
+ )
+
+(define-cproc %native-alloc (size::<fixnum>)
+  (let* ([p::void* (malloc size)])
+    (when (== p NULL)
+      (Scm_Error "malloc failed (size %ld\n)" size))
+    (return (Scm_MakeForeignPointer raw-memory-class p))))
+
+(define (native-alloc size-or-type)
+  (assume-type size-or-type (</> <fixnum> <native-type>))
+  (let ([realsize (typecase size-or-type
+                    [<fixnum> size-or-type]
+                    [<native-type> (~ size-or-type'size)])]
+        [ptype (cond
+                [(aggregate-type? size-or-type) size-or-type]
+                [(is-a? size-or-type <native-type>)
+                 (make-pointer-type size-or-type)]
+                [else (make-pointer-type <void>)])])
+    (rlet1 fp (%native-alloc realsize)
+      ((with-module gauche.internal foreign-pointer-type-set!) fp ptype)
+      ((with-module gauche.internal foreign-pointer-attribute-set!)
+       fp 'name ptype))))
+
+(define-cproc %native-free (fp::<foreign-pointer>) ::<void>
+  (let* ([p::void* (Scm_ForeignPointerRef fp)])
+    (free p)))
+
+(define (native-free raw-memory)
+  (assume-type raw-memory <raw-memory>)
+  (when (foreign-pointer-invalid? raw-memory)
+    (error "Attempt to double-free memory:" raw-memory))
+  (%native-free raw-memory)
+  (foreign-pointer-invalidate! raw-memory)
+  (undefined))
