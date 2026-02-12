@@ -1217,6 +1217,7 @@
     ;; Scm_VMUVectorRef.
     ($w/argp vec
       ($type-check k SCM_INTP "fixnum")
+      ($type-check vec SCM_UVECTORP "uvector")
       ($result (Scm_VMUVectorRef (SCM_UVECTOR vec) utype (SCM_INT_VALUE k)
                                  SCM_UNBOUND)))))
 

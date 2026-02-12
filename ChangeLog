@@ -1,3 +1,8 @@
+2026-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm (UVEC-REF): Fix to type check arg
+	  https://github.com/shirok/Gauche/issues/1213
+
 2026-02-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (fptr_print): Avoid using SCM_FOREIGN_POINTER_REF,

@@ -198,6 +198,12 @@
 (uvrefset-test-c128 '(0.0 -1-i 1+i)
                     '#c128(0.0 -1-i 1+i))
 
+;; UVEC-REF type check
+;; https://github.com/shirok/Gauche/issues/1213
+(test* "UVEC-REF type check"
+       (test-error <error> #/uvector required/)
+       (u8vector-ref (eof-object) 0))
+
 (expand-uvec
  (u8 s8 u16 s16 u32 s32 u64 s64)
  (define (uvset-clamp-test-@ expect value)
