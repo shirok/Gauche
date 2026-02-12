@@ -65,9 +65,13 @@
 ;;         | (& flags count)
 ;;         | (P flags)
 ;;         | (char flags <char> count) ; single-character insertion
-;;         | (bra flags)   ; ~[, beginning of conditional
-;;         | (sep flags)   ; ~;, separator of conditional
-;;         | (ket flags)   ; ~], end of conditional
+;;         | (bra flags cnt)   ; ~[, beginning of conditional
+;;         | (sep flags)       ; ~;, separator of conditional
+;;         | (ket flags)       ; ~], end of conditional
+;;         | (paren flags)     ; ~(, case conversion
+;;         | (thesis flags)    ; ~)
+;;         | (curly flags cnt) ; ~{, iteration
+;;         | (brace flags)     ; ~}
 ;; flags : '() | (Cons #\@ flags) | (Cons #\: flags)
 
 ;; NB: This procedure is written in a way that all closures can be
@@ -86,7 +90,7 @@
         (~ 1 #\~) (% 1 #\newline) (T 1 #\tab) (|\|| 1 #\page)
         ;; tokens for structures
         (|(| 0 paren) (|)| 0 thesis) (|[| 1 bra) (|]| 0 ket)
-        (|{| 0 curly) (|}| 0 brace) (|\;| 0 sep)))
+        (|{| 1 curly) (|}| 0 brace) (|\;| 0 sep)))
     (define (flag? c) (memv c '(#\@ #\:)))
     (define (next p)
       (rlet1 c (read-char p)
@@ -234,6 +238,7 @@
 ;;      | (case (Tree ...) Tree)
 ;;      | (if Tree Tree)    ; NB: if arg is #f, the first clause is chosen
 ;;      | (maybe Tree)
+;;      | (iter flags Tree)        ; ~{...~}
 ;;
 (define formatter-parse
   (let ()
@@ -291,6 +296,18 @@
         (match rest
           [(('ket . _) . rest) (values `(maybe ,(treefy trees)) rest)]
           [_ (unterminated "~@[")])))
+    ;; Parsing ~{...~}
+    (define (iteration-node node ds)
+      (receive (tree rest) (iter-tree node ds)
+        (receive (trees rest) (parse rest)
+          (values (cons tree trees) rest))))
+    (define (iter-tree node ds)
+      (receive (trees rest) (parse ds)
+        (match rest
+          [(('brace flags) . rest)
+           (values `(iter ,(cadr node) ,(cddr node) ,flags ,(treefy trees))
+                   rest)]
+          [_ (unterminated "~{")])))
     ;; [Tree] -> Tree
     (define (treefy trees)
       (match trees
@@ -307,6 +324,8 @@
            [('bra flags) (conditional-node n rest)]
            [('ket . _)   (values '() ds)]
            [('sep . _)   (values '() ds)]
+           [('curly flags . params) (iteration-node n rest)]
+           [('brace . _) (values '() ds)]
            [_ (simple-node n rest)])]))
     ;; Main body of formatter-parse.
     ;; (We don't utilize # of parameters yet).
@@ -788,6 +807,123 @@
       (begin (fr-jump-arg-relative! argptr 1)
              (^[argptr port ctl] argptr)))))
 
+;; ~{...~}
+(define (make-format-iter fmtstr open-flags params close-flags body)
+  (define min-once? (has-:? close-flags))  ; Execute at least once even if empty
+  (define maxiter
+    (if (null? params)
+      #f
+      (rlet1 n (car params)
+        (unless (and (exact-integer? n) (>= n 0))
+          (error "Max iteration count for ~{ must be a non-negative integer, \
+                  but got:" n)))))
+
+  ;; Compile body formatter once (not inside the runtime closure)
+  (define body-formatter
+    (and (not (equal? body '(Seq)))
+         (formatter-compile-rec fmtstr body)))
+
+  ;; Helper to get body formatter at runtime (for empty body case)
+  (define (get-body-formatter argptr)
+    (or body-formatter
+        (let1 fmt-str (fr-next-arg! fmtstr argptr)
+          ($ formatter-compile-rec fmt-str
+             (formatter-parse (formatter-lex fmt-str))))))
+
+  (cond
+   ;; ~@{...~} - iterate over remaining args
+   [(and (has-@? open-flags) (not (has-:? open-flags)))
+    (^[argptr port ctl]
+      (let1 bf (get-body-formatter argptr)
+        (if (and min-once? (null? (cdr argptr)))
+          ;; Execute once even with no args
+          (begin (bf argptr port ctl) argptr)
+          ;; Normal iteration
+          (let loop ([count 0])
+            (cond
+             ;; If we exit early by maxiter, we mark argptr so that
+             ;; we won't issue "too many args given" error.
+             [(and maxiter (>= count maxiter))
+              (fr-jump-arg-relative! argptr 0)
+              argptr]
+             [(null? (cdr argptr)) argptr]
+             [else
+              (bf argptr port ctl)
+              (loop (+ count 1))])))))]
+
+   ;; ~:@{...~} - remaining args as sublists
+   [(and (has-@? open-flags) (has-:? open-flags))
+    (^[argptr port ctl]
+      (let1 bf (get-body-formatter argptr)
+        (if (and min-once? (null? (cdr argptr)))
+          ;; Execute once even with no args
+          (let1 sub-argptr (fr-make-argptr '())
+            (bf sub-argptr port ctl)
+            argptr)
+          ;; Normal iteration
+          (let loop ([count 0])
+            (cond
+             [(and maxiter (>= count maxiter))
+              (fr-jump-arg-relative! argptr 0) ;see above
+              argptr]
+             [(null? (cdr argptr)) argptr]
+             [else
+              (let1 sublist (fr-next-arg! fmtstr argptr)
+                (unless (list? sublist)
+                  (error "Each argument for ~:@{ must be a list (for sublist iteration), but got:" sublist))
+                (let1 sub-argptr (fr-make-argptr sublist)
+                  (bf sub-argptr port ctl)))
+              (loop (+ count 1))])))))]
+
+   ;; ~:{...~} - list of sublists
+   [(has-:? open-flags)
+    (^[argptr port ctl]
+      (let1 bf (get-body-formatter argptr)
+        (let1 list-arg (fr-next-arg! fmtstr argptr)
+          (unless (list? list-arg)
+            (error "Argument for ~:{ must be a list, but got:" list-arg))
+          (if (and min-once? (null? list-arg))
+            ;; Execute once even with empty list
+            (let1 sub-argptr (fr-make-argptr '())
+              (bf sub-argptr port ctl)
+              argptr)
+            ;; Normal iteration
+            (let loop ([lst list-arg] [count 0])
+              (cond
+               [(and maxiter (>= count maxiter))
+                (fr-jump-arg-relative! argptr 0) ;see above
+                argptr]
+               [(null? lst) argptr]
+               [else
+                (let1 sublist (car lst)
+                  (unless (list? sublist)
+                    (error "Each element in the argument list for ~:{ must be a list, but got:" sublist))
+                  (let1 sub-argptr (fr-make-argptr sublist)
+                    (bf sub-argptr port ctl)))
+                (loop (cdr lst) (+ count 1))]))))))]
+
+   ;; ~{...~} - basic iteration over list
+   [else
+    (^[argptr port ctl]
+      (let1 bf (get-body-formatter argptr)
+        (let1 list-arg (fr-next-arg! fmtstr argptr)
+          (unless (list? list-arg)
+            (error "Argument for ~{ must be a list, but got:" list-arg))
+          (let1 iter-argptr (fr-make-argptr list-arg)
+            (if (and min-once? (null? (cdr iter-argptr)))
+              ;; Execute once even with empty list
+              (begin
+                (bf iter-argptr port ctl)
+                argptr)
+              ;; Normal iteration
+              (let loop ([count 0])
+                (cond
+                 [(and maxiter (>= count maxiter)) argptr]
+                 [(null? (cdr iter-argptr)) argptr]
+                 [else
+                  (bf iter-argptr port ctl)
+                  (loop (+ count 1))])))))))]))
+
 ;; Tree -> Formatter
 ;; src : source format string for error message
 (define (formatter-compile-rec src tree)
@@ -818,6 +954,8 @@
     [('case cls default) (make-format-case src cls default)]
     [('if alt csq) (make-format-if src alt csq)]
     [('maybe csq) (make-format-maybe src csq)]
+    [('iter open-flags params close-flags body)
+     (make-format-iter src open-flags params close-flags body)]
     [_ (error "Unsupported formatter directive:" tree)]))
 
 ;; Toplevel compiler

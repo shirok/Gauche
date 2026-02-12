@@ -340,6 +340,63 @@
        '("Don't worry." "It's OK. Don't worry.")
        (map (cut format "~@[It's ~a. ~]~a." <> "Don't worry") '(#f "OK")))
 
+;; ~{...~} iteration tests
+(test* "format iteration (basic)" "1 2 3 "
+       (format "~{~a ~}" '(1 2 3)))
+
+(test* "format iteration (empty list)" ""
+       (format "~{~a ~}" '()))
+
+(test* "format iteration (sublists)" "1-2 3-4 5-6 "
+       (format "~:{~a-~a ~}" '((1 2) (3 4) (5 6))))
+
+(test* "format iteration (@)" "1 2 3 "
+       (format "~@{~a ~}" 1 2 3))
+
+(test* "format iteration (:@)" "1-2 3-4 "
+       (format "~:@{~a-~a ~}" '(1 2) '(3 4)))
+
+(test* "format iteration (max count)" "1 2 "
+       (format "~2{~a ~}" '(1 2 3 4 5)))
+
+(test* "format iteration (max count, ensure args are used up)"
+       (test-error <error> #/Running out arguments/)
+       (format "~2{~a ~}~a" '(1 2 3 4 5)))
+
+(test* "format iteration (force once)" "done "
+       (format "~{done ~:}" '()))
+
+(test* "format iteration (force once)" "done 1 done 2 "
+       (format "~{done ~a ~:}" '(1 2)))
+
+(test* "format iteration (force once)"
+       (test-error <error> #/Running out arguments/)
+       (format "~{done ~a ~:}" '()))
+
+(test* "format iteration (empty body)" "1 2 3 "
+       (format "~{~}" "~a " '(1 2 3)))
+
+(test* "format iteration (@ empty body)" "1 2 3 "
+       (format "~@{~}" "~a " 1 2 3))
+
+(test* "format iteration (:@ max count)" "1-2 "
+       (format "~1:@{~a-~a ~}" '(1 2) '(3 4)))
+
+(test* "format iteration (:, empty)" ""
+       (format "~:{~a ~}" '()))
+
+(test* "format iteration (multi-arg)" "1+2 3+4 "
+       (format "~{~a+~a ~}" '(1 2 3 4)))
+
+;; Error cases
+(test* "format iteration (invalid maxiter)"
+       (test-error <error> #/Max iteration count/)
+       (format "~-1{~a ~}" '(1 2 3)))
+
+(test* "format iteration (non-integer maxiter)"
+       (test-error)
+       (format "~v{~a ~}" '(1 2 3)))
+
 ;; Ensure `format` does _not_ cache in this case.
 (test* "formatter cache"
        '("a" "~s")

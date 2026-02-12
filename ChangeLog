@@ -1,3 +1,7 @@
+2026-02-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm: Add support of ~{...~} format directive.
+
 2026-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (handle_escape): Fix exception handler pop/push bug
