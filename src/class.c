@@ -3052,11 +3052,13 @@ static void fptr_print(ScmObj obj, ScmPort *port,
     ScmForeignPointer *fptr = SCM_FOREIGN_POINTER(obj);
     ScmClass *klass = SCM_CLASS_OF(obj);
     ScmObj name = Scm_ForeignPointerAttrGet(fptr, SCM_SYM_NAME, SCM_UNDEFINED);
-    void *ptr = SCM_FOREIGN_POINTER_REF(void*, fptr);
+    /* Directly access ptr.  We want to print it even fptr is invalid. */
+    void *ptr = fptr->ptr;
+    const char *invalid = Scm_ForeignPointerInvalidP(fptr)? " invalid" : "";
     if (SCM_UNDEFINEDP(name)) {
-        Scm_Printf(port, "#<%A @%p>", Scm_ShortClassName(klass), ptr);
+        Scm_Printf(port, "#<%A @%p%s>", Scm_ShortClassName(klass), ptr, invalid);
     } else {
-        Scm_Printf(port, "#<%A %S@%p>", Scm_ShortClassName(klass), name, ptr);
+        Scm_Printf(port, "#<%A %S@%p%s>", Scm_ShortClassName(klass), name, ptr, invalid);
     }
 }
 

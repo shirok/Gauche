@@ -1,5 +1,9 @@
 2026-02-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c (fptr_print): Avoid using SCM_FOREIGN_POINTER_REF,
+	  for it throws an error on invalid foreign pointer.  We still want
+	  to be able to print invalid fp.
+
 	* src/libfmt.scm: Add support of ~{...~} format directive.
 
 2026-02-07  Shiro Kawai  <shiro@acm.org>
