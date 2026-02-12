@@ -201,7 +201,7 @@
 ;; UVEC-REF type check
 ;; https://github.com/shirok/Gauche/issues/1213
 (test* "UVEC-REF type check"
-       (test-error <error> #/uvector required/)
+       (test-error <assertion-violation> #/of type uvector, but got/)
        (u8vector-ref (eof-object) 0))
 
 (expand-uvec

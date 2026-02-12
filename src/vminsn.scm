@@ -232,7 +232,7 @@
 (define-cise-stmt $type-check
   [(_ var pred what)
    `(unless (,pred ,var)
-      ($vm-err "%s required, but got %S" ,what ,var))])
+      (SCM_TYPE_ERROR ,var ,what))])
 
 ;;
 ;; ($goto-insn INSN)
