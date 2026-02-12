@@ -206,7 +206,7 @@
     (c-type-name :type <const-cstring>)
     (size :type <size_t>)
     (alignment :type <size_t>))
-   (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
+   (printer (Scm_Printf port "#<native-type %A>" (-> (SCM_NATIVE_TYPE obj) name))))
 
  ;; CPA for native type subclasses
  (define-cvar native-type-cpa::(.array ScmClass* (*)) :static
@@ -218,7 +218,7 @@
    "ScmNativePointer*" "Scm_NativePointerClass"
    (c "native_type_cpa")
    ((pointee-type :type <native-type> :c-name "pointee_type"))
-   (printer (Scm_Printf port "#<native-pointer %S>" (-> (& (-> (SCM_NATIVE_POINTER obj) common)) name)))
+   (printer (Scm_Printf port "#<native-pointer %A>" (-> (& (-> (SCM_NATIVE_POINTER obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
  (define-cclass <native-function> :base :no-meta
@@ -227,7 +227,7 @@
    ((return-type :type <native-type> :c-name "return_type")
     (arg-types :c-name "arg_types")
     (varargs :type <boolean>))
-   (printer (Scm_Printf port "#<native-function %S>" (-> (& (-> (SCM_NATIVE_FUNCTION obj) common)) name)))
+   (printer (Scm_Printf port "#<native-function%A>" (-> (& (-> (SCM_NATIVE_FUNCTION obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
  (define-cclass <native-array> :base :no-meta
@@ -235,7 +235,7 @@
    (c "native_type_cpa")
    ((element-type :type <native-type> :c-name "element_type")
     (dimensions))
-   (printer (Scm_Printf port "#<native-array %S>" (-> (& (-> (SCM_NATIVE_ARRAY obj) common)) name)))
+   (printer (Scm_Printf port "#<native-array %A>" (-> (& (-> (SCM_NATIVE_ARRAY obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
  (define-cclass <native-struct> :base :no-meta
@@ -243,7 +243,7 @@
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<native-struct %S>" (-> (& (-> (SCM_NATIVE_STRUCT obj) common)) name)))
+   (printer (Scm_Printf port "#<native-struct %A>" (-> (& (-> (SCM_NATIVE_STRUCT obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
  (define-cclass <native-union> :base :no-meta
@@ -251,7 +251,7 @@
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<native-union %S>" (-> (& (-> (SCM_NATIVE_UNION obj) common)) name)))
+   (printer (Scm_Printf port "#<native-union %A>" (-> (& (-> (SCM_NATIVE_UNION obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
  )
 
@@ -1180,10 +1180,11 @@
         (values argument-types #f))
     (dolist [arg-type arg-types]
       (assume-type arg-type <native-type>))
-    (%make-native-function-type "<native-function>" ;TODO syntesize better name
-                                return-type
-                                arg-types
-                                vararg?)))
+    (%make-native-function-type
+     (format "~{ ~a~}~:[~; ...~] -> ~a"
+             (map (cut ~ <>'name) arg-types) vararg?
+             (~ return-type'name))
+     return-type arg-types vararg?)))
 
 ;; For array, we keep element-type and dimensions in dedicated fields.
 ;; Each <dim> is a nonnegative fixnum.  The first <dim> can be -1,
@@ -1219,7 +1220,8 @@
            (error "Bad native array dimensions; must be a proper list, but got:"
                   dimensions)]
           [(and (eq? dims dimensions)
-                (eq? (car dims) '*))]   ;first dimension can be *
+                (eq? (car dims) '*))
+           (loop (cdr dims))]   ;first dimension can be *
           [(and (exact-integer? (car dims))
                 (>= (car dims) 0))
            (loop (cdr dims))]
@@ -1227,9 +1229,7 @@
            (error "Bad native array dimensions; must be a list of nonnegative \
                    integers, or '* at the last position, but got:"
                   dimensions)]))
-  (let ([name (format "<native-array ~a ~a>"
-                      (~ element-type 'name)
-                      dimensions)]
+  (let ([name (format "~a~a" (~ element-type 'name) dimensions)]
         [num-elts (if (eq? (car dimensions) '*)
                     0                   ; unknown sized array
                     (fold * 1 dimensions))]
@@ -1270,7 +1270,7 @@
     (match fs
       [()
        (let* ([size (struct-size-roundup offset alignment)]
-              [name (format "<native-struct ~a>" tag)])
+              [name (x->string tag)])
          (%make-native-struct/union-type
           (if struct? <native-struct> <native-union>)
           name size alignment tag (reverse descs)))]
