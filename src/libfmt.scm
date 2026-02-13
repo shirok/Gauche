@@ -830,99 +830,49 @@
           ($ formatter-compile-rec fmt-str
              (formatter-parse (formatter-lex fmt-str))))))
 
-  (cond
-   ;; ~@{...~} - iterate over remaining args
-   [(and (has-@? open-flags) (not (has-:? open-flags)))
-    (^[argptr port ctl]
-      (let1 bf (get-body-formatter argptr)
-        (if (and min-once? (null? (cdr argptr)))
-          ;; Execute once even with no args
-          (begin (bf argptr port ctl) argptr)
-          ;; Normal iteration
-          (let loop ([count 0])
-            (cond
-             ;; If we exit early by maxiter, we mark argptr so that
-             ;; we won't issue "too many args given" error.
-             [(and maxiter (>= count maxiter))
-              (fr-jump-arg-relative! argptr 0)
-              argptr]
-             [(null? (cdr argptr)) argptr]
-             [else
-              (bf argptr port ctl)
-              (loop (+ count 1))])))))]
+  ;; If @ flag is given, the remaining args passed to format will
+  ;; be processed, instaead of the next arg.
+  (define use-remaining-args? (has-@? open-flags))
 
-   ;; ~:@{...~} - remaining args as sublists
-   [(and (has-@? open-flags) (has-:? open-flags))
-    (^[argptr port ctl]
-      (let1 bf (get-body-formatter argptr)
-        (if (and min-once? (null? (cdr argptr)))
-          ;; Execute once even with no args
-          (let1 sub-argptr (fr-make-argptr '())
-            (bf sub-argptr port ctl)
-            argptr)
-          ;; Normal iteration
-          (let loop ([count 0])
-            (cond
-             [(and maxiter (>= count maxiter))
-              (fr-jump-arg-relative! argptr 0) ;see above
-              argptr]
-             [(null? (cdr argptr)) argptr]
-             [else
-              (let1 sublist (fr-next-arg! fmtstr argptr)
-                (unless (list? sublist)
-                  (error "Each argument for ~:@{ must be a list (for sublist iteration), but got:" sublist))
-                (let1 sub-argptr (fr-make-argptr sublist)
-                  (bf sub-argptr port ctl)))
-              (loop (+ count 1))])))))]
+  ;; If : flag is given, the argument must be a list of sublists,
+  ;; and each sublist is consumed per iteration.
+  (define use-sublists? (has-:? open-flags))
 
-   ;; ~:{...~} - list of sublists
-   [(has-:? open-flags)
-    (^[argptr port ctl]
-      (let1 bf (get-body-formatter argptr)
-        (let1 list-arg (fr-next-arg! fmtstr argptr)
-          (unless (list? list-arg)
-            (error "Argument for ~:{ must be a list, but got:" list-arg))
-          (if (and min-once? (null? list-arg))
-            ;; Execute once even with empty list
-            (let1 sub-argptr (fr-make-argptr '())
-              (bf sub-argptr port ctl)
-              argptr)
-            ;; Normal iteration
-            (let loop ([lst list-arg] [count 0])
-              (cond
-               [(and maxiter (>= count maxiter))
-                (fr-jump-arg-relative! argptr 0) ;see above
-                argptr]
-               [(null? lst) argptr]
-               [else
-                (let1 sublist (car lst)
-                  (unless (list? sublist)
-                    (error "Each element in the argument list for ~:{ must be a list, but got:" sublist))
-                  (let1 sub-argptr (fr-make-argptr sublist)
-                    (bf sub-argptr port ctl)))
-                (loop (cdr lst) (+ count 1))]))))))]
+  ;; With : flag, inner loop need to scan a sublist using argptr.
+  (define (make-sublist-argptr list-arg)
+    (if (list? list-arg)
+      (fr-make-argptr list-arg)
+      (errorf "Argument for ~~~a~a{ must be a list, but got:"
+              (if has-:? ":" "")
+              (if has-@? "@" "")
+              list-arg)))
 
-   ;; ~{...~} - basic iteration over list
-   [else
-    (^[argptr port ctl]
-      (let1 bf (get-body-formatter argptr)
-        (let1 list-arg (fr-next-arg! fmtstr argptr)
-          (unless (list? list-arg)
-            (error "Argument for ~{ must be a list, but got:" list-arg))
-          (let1 iter-argptr (fr-make-argptr list-arg)
-            (if (and min-once? (null? (cdr iter-argptr)))
-              ;; Execute once even with empty list
-              (begin
-                (bf iter-argptr port ctl)
-                argptr)
-              ;; Normal iteration
-              (let loop ([count 0])
-                (cond
-                 [(and maxiter (>= count maxiter)) argptr]
-                 [(null? (cdr iter-argptr)) argptr]
-                 [else
-                  (bf iter-argptr port ctl)
-                  (loop (+ count 1))])))))))]))
+  ;; Build main iterator
+  (^[argptr port ctl]
+    (let* ([bf (get-body-formatter argptr)]
+           [xargptr (if use-remaining-args?
+                      argptr
+                      (make-sublist-argptr (fr-next-arg! fmtstr argptr)))]
+           [done? (^[] (null? (cdr xargptr)))])
+      (if (and min-once? (done?))
+        ;; Execute body once even with an empty source
+        (begin (bf (fr-make-argptr '()) port ctl) argptr)
+        ;; Normal iteration loop
+        (let loop ([count 0])
+          (cond
+           [(and maxiter (>= count maxiter))
+            (when use-remaining-args?
+              ;; If we didn't use up the remaining args, mark the argptr
+              ;; out-of-order so that format won't complain it get
+              ;; too many args.
+              (fr-jump-arg-relative! argptr 0))
+            argptr]
+           [(done?) argptr]
+           [else
+            (if use-sublists?
+              (bf (make-sublist-argptr (fr-next-arg! fmtstr xargptr)) port ctl)
+              (bf xargptr port ctl))
+            (loop (+ count 1))]))))))
 
 ;; Tree -> Formatter
 ;; src : source format string for error message
