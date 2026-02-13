@@ -359,6 +359,15 @@
 (test* "format iteration (max count)" "1 2 "
        (format "~2{~a ~}" '(1 2 3 4 5)))
 
+(test* "format iteration (max count, negative = no iteration)" ""
+       (format "~-1{~a ~}" '(1 2 3 4 5)))
+
+(test* "format iteration (max count given by args)" "1 2 3 "
+       (format "~v{~a ~}" 3 '(1 2 3 4 5)))
+
+(test* "format iteration (max count given by args, @-flag)" "1 2 3 "
+       (format "~v@{~a ~}" 3 1 2 3 4 5))
+
 (test* "format iteration (max count, ensure args are used up)"
        (test-error <error> #/Running out arguments/)
        (format "~2{~a ~}~a" '(1 2 3 4 5)))
@@ -391,10 +400,10 @@
 ;; Error cases
 (test* "format iteration (invalid maxiter)"
        (test-error <error> #/Max iteration count/)
-       (format "~-1{~a ~}" '(1 2 3)))
+       (format "~'1{~a ~}" '(1 2 3)))
 
 (test* "format iteration (non-integer maxiter)"
-       (test-error)
+       (test-error <error> #/Max iteration count/)
        (format "~v{~a ~}" '(1 2 3)))
 
 ;; Ensure `format` does _not_ cache in this case.

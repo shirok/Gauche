@@ -810,13 +810,6 @@
 ;; ~{...~}
 (define (make-format-iter fmtstr open-flags params close-flags body)
   (define min-once? (has-:? close-flags))  ; Execute at least once even if empty
-  (define maxiter
-    (if (null? params)
-      #f
-      (rlet1 n (car params)
-        (unless (and (exact-integer? n) (>= n 0))
-          (error "Max iteration count for ~{ must be a non-negative integer, \
-                  but got:" n)))))
 
   ;; Compile body formatter once (not inside the runtime closure)
   (define body-formatter
@@ -848,31 +841,34 @@
               list-arg)))
 
   ;; Build main iterator
-  (^[argptr port ctl]
-    (let* ([bf (get-body-formatter argptr)]
-           [xargptr (if use-remaining-args?
-                      argptr
-                      (make-sublist-argptr (fr-next-arg! fmtstr argptr)))]
-           [done? (^[] (null? (cdr xargptr)))])
-      (if (and min-once? (done?))
-        ;; Execute body once even with an empty source
-        (begin (bf (fr-make-argptr '()) port ctl) argptr)
-        ;; Normal iteration loop
-        (let loop ([count 0])
-          (cond
-           [(and maxiter (>= count maxiter))
-            (when use-remaining-args?
-              ;; If we didn't use up the remaining args, mark the argptr
-              ;; out-of-order so that format won't complain it get
-              ;; too many args.
-              (fr-jump-arg-relative! argptr 0))
-            argptr]
-           [(done?) argptr]
-           [else
-            (if use-sublists?
-              (bf (make-sublist-argptr (fr-next-arg! fmtstr xargptr)) port ctl)
-              (bf xargptr port ctl))
-            (loop (+ count 1))]))))))
+  ($ with-format-params ([maxiter #f])
+     (assume (or (eqv? maxiter #f) (exact-integer? maxiter))
+       "Max iteration count for ~{ needs to be nonnegatiev exact integer \
+        or #f, but got:" maxiter)
+     (let* ([bf (get-body-formatter argptr)]
+            [xargptr (if use-remaining-args?
+                       argptr
+                       (make-sublist-argptr (fr-next-arg! fmtstr argptr)))]
+            [done? (^[] (null? (cdr xargptr)))])
+       (if (and min-once? (done?))
+         ;; Execute body once even with an empty source
+         (begin (bf (fr-make-argptr '()) port ctrl) argptr)
+         ;; Normal iteration loop
+         (let loop ([count 0])
+           (cond
+            [(and maxiter (>= count maxiter))
+             (when use-remaining-args?
+               ;; If we didn't use up the remaining args, mark the argptr
+               ;; out-of-order so that format won't complain it get
+               ;; too many args.
+               (fr-jump-arg-relative! argptr 0))
+             argptr]
+            [(done?) argptr]
+            [else
+             (if use-sublists?
+               (bf (make-sublist-argptr (fr-next-arg! fmtstr xargptr)) port ctrl)
+               (bf xargptr port ctrl))
+             (loop (+ count 1))]))))))
 
 ;; Tree -> Formatter
 ;; src : source format string for error message
