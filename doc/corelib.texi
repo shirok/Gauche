@@ -28149,6 +28149,133 @@ to consume one argument.
   @result{} ("" "I got rhythm")
 @end example
 
+@item @b{~@{}
+@c EN
+Parameter: @var{maxiter}
+
+Iteration.  Iterates the body (between @code{~@{} and @code{~@}})
+over the elements of a list argument.
+@c JP
+パラメータ: @var{maxiter}
+
+繰り返し。@code{~@{}と@code{~@}}の間のフォーマット指示を、
+リストで与えられる引数の要素に繰り返し適用します。
+@c COMMON
+
+@c EN
+In the basic form @code{~@{@var{body}~@}}, the next argument must be
+a list, and @var{body} is applied repeatedly, consuming elements from
+the list on each directive, until all the elements are used up.
+Note: If @var{body} has multiple directives and the list is used
+up in the middle of @var{body}, an error is signalled.  The list needs
+to be used up at the end of iteration.
+@c JP
+基本的な形@code{~@{@var{body}~@}}では、次の引数はリストでなければ
+ならず、@var{body}が繰り返し適用され、そのなかで引数を消費する指示子が
+あればそれがリストから順に取られます。全ての要素が消費されたら繰り返しが終わります。
+註: @var{body}に複数の指示子があって、@var{body}の途中でリストが使い切られて
+しまった場合は、エラーが投げられます。リストは@var{body}の終わりでちょうど
+使い切られなければなりません。
+@c COMMON
+
+@example
+(format "~@{~a ~@}" '(1 2 3))
+  @result{} "1 2 3 "
+
+(format "~@{~a ~@}" '())
+  @result{} ""
+@end example
+
+@c EN
+If the @code{@@} flag is given (@code{~@@@{}), the remaining arguments
+(instead of a single list argument) are used as the iteration source.
+@c JP
+@code{@@}フラグが与えられた場合(@code{~@@@{})は、残りの引数全てを
+リストみなして、それに対して@var{body}を繰り返します。
+@c COMMON
+
+@example
+(format "~@@@{~a ~@}" 1 2 3)
+  @result{} "1 2 3 "
+@end example
+
+@c EN
+If the @code{:} flag is given (@code{~:@{}), the argument must be a list
+of sublists, and each iteration processes one sublist.
+@c JP
+@code{:}フラグが与えられた場合(@code{~:@{})は、引数はリストのリストでなければ
+なりません。内側のリストが@var{body}への引数リストとして使われます。
+@c COMMON
+
+@example
+(format "~:@{~a-~a ~@}" '((1 2) (3 4) (5 6)))
+  @result{} "1-2 3-4 5-6 "
+@end example
+
+@c EN
+When both @code{:} and @code{@@} flags are given (@code{~:@@@{}),
+each remaining argument is a sublist.
+@c JP
+@code{:}と@code{@@}の両方のフラグが与えられた場合(@code{~:@@@{})は
+両者の組み合わせ、つまり残りの引数はそれぞれがリストで、各リストが
+@var{body}への引数リストになります。
+@c COMMON
+
+@example
+(format "~:@@@{~a-~a ~@}" '(1 2) '(3 4))
+  @result{} "1-2 3-4 "
+@end example
+
+@c EN
+The parameter @var{maxiter} limits the number of iterations.
+It must be an exact integer.
+@c JP
+パラメータ@var{maxiter}が与えられた場合は、それは正確な整数でなければならず、
+繰り返しの最高回数を指定します。
+@c COMMON
+
+@example
+(format "~2@{~a ~@}" '(1 2 3 4 5))
+  @result{} "1 2 "
+@end example
+
+@c EN
+If @code{@@} flag is not given, unused portion of the list argument
+are discarded.
+If @code{@@} flag is present, the rest of arguments are available
+for subsequent directives.
+@c JP
+@code{@@}フラグがない場合、リスト引数の使われなかった部分は捨てられます。
+@code{@@}フラグが与えられた場合は、残りの引数のうち使われなかった部分は
+続くフォーマット指示子で使うことができます。
+@c COMMON
+
+@c EN
+If the closing delimiter has the @code{:} flag (@code{~:@}}),
+the body is executed at least once, even if the list is empty.
+@c JP
+閉じ波括弧に@code{:}フラグが与えられた場合(@code{~:@}})、
+入力リストが空でも@var{body}は少なくとも一回、実行されます。
+@c COMMON
+
+@example
+(format "~@{done ~:@}" '())
+  @result{} "done "
+@end example
+
+@c EN
+If the body is empty (@code{~@{~@}}), the next argument is used as
+a format string for the body.
+@c JP
+@var{body}が空の場合(@code{~@{~@}})、次の引数が
+@var{body}のフォーマット文字列として使われます。
+@c COMMON
+
+@example
+(format "~@{~@}" "~a " '(1 2 3))
+  @result{} "1 2 3 "
+@end example
+
 @end table
 @end defun
 
