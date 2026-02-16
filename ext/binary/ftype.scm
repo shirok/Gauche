@@ -88,6 +88,7 @@
                             p
                             max
                             (SCM_OBJ uv)
+                            SCM_NIL
                             0))))
 
 ;; The handle pointing into a region originally pointed
@@ -106,6 +107,7 @@
                             (-> base region-min)
                             (-> base region-max)
                             (-> base owner)
+                            SCM_NIL
                             0))))
 
 ;;;
@@ -291,7 +293,8 @@
 ;; here for experimenting.
 
 (define-cproc %native-alloc (size::<fixnum> type::<native-type>)
-  (let* ([p::void* (malloc size)])
+  (let* ([p::void* (malloc size)]
+         [attrs (SCM_LIST1 (Scm_Cons 'malloc '#t))])
     (when (== p NULL)
       (Scm_Error "malloc failed (size %ld\n)" size))
     (return
@@ -301,6 +304,7 @@
                             p
                             (+ p size)
                             SCM_UNDEFINED
+                            attrs
                             0))))
 
 (define (native-alloc size-or-type)
@@ -316,5 +320,12 @@
     (%native-alloc realsize ptype)))
 
 (define-cproc native-free (handle::<native-handle>) ::<void>
-  (let* ([p::void* (-> handle ptr)])
-    (free p)))
+  (when (SCM_FALSEP (Scm_Assq 'malloc (-> handle attrs)))
+    (Scm_Error "Attempt to free a handle which is not malloc'ed: %S"
+               handle))
+  (unless (SCM_FALSEP (Scm_Assq 'freed (-> handle attrs)))
+    (Scm_Error "Attempt to free an already-freed handle: %S"
+               handle))
+  (set! (-> handle attrs)
+        (Scm_Acons 'freed '#t (-> handle attrs)))
+  (free (-> handle ptr)))

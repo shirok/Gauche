@@ -159,6 +159,7 @@ typedef struct ScmNativeHandleRec {
     ScmObj owner;               /* If this points to another Gauche-
                                    allocated object, keep it here to prevent
                                    it from GC-ed.  Can be #<undef>. */
+    ScmObj attrs;               /* Alist of attributes */
     u_long flags;               /* Reserved. */
 } ScmNativeHandle;
 
@@ -173,6 +174,9 @@ SCM_EXTERN ScmObj Scm__MakeNativeHandle(void *ptr,
                                         void *region_min,
                                         void *region_max,
                                         ScmObj owner,
+                                        ScmObj attrs,
                                         u_long flags);
+
+
 
 #endif  /*GAUCHE_PRIV_TYPEP_H*/

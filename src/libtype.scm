@@ -1111,6 +1111,7 @@
                                     region-min::void*
                                     region-max::void*
                                     owner::ScmObj
+                                    attrs::ScmObj
                                     flags::u_long)
    (let* ([h::ScmNativeHandle* (SCM_NEW ScmNativeHandle)])
      (SCM_SET_CLASS h SCM_CLASS_NATIVE_HANDLE)
@@ -1120,6 +1121,7 @@
            (-> h region-min) region-min
            (-> h region-max) region-max
            (-> h owner) owner
+           (-> h attrs) attrs
            (-> h flags) flags)
      (return (SCM_OBJ h))))
  )
