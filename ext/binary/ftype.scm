@@ -67,20 +67,28 @@
  (declare-stub-type <native-handle> ScmNativeHandle*)
  )
 
+(define (aggregate-type? type)
+  (or (is-a? type <native-array>)
+      (is-a? type <native-struct>)
+      (is-a? type <native-union>)))
+
 ;;;
 ;;; Native handles
 ;;;
 
 ;; Native handles can be created with several ways.
 
-(define-cproc uvector->native-handle (uv::<uvector>
-                                      type::<native-type>
-                                      :optional (offset::<fixnum> 0))
+;;
+(define-cproc %uvector->native-handle (uv::<uvector>
+                                       type::<native-type>
+                                       offset::<fixnum>)
   (let* ([p::void* (SCM_UVECTOR_ELEMENTS uv)]
-         [size::ScmSmallInt (Scm_UVectorSizeInBytes uv)]
+         [vecsize::ScmSmallInt (Scm_UVectorSizeInBytes uv)]
+         [datasize::ScmSmallInt (-> type size)]
          [max::void* (+ p (Scm_UVectorSizeInBytes uv))])
-    (unless (and (<= 0 offset) (< offset size))
-      (Scm_Error "Offset out of range: %S" offset))
+    (unless (and (<= 0 offset) (<= (+ offset datasize) vecsize))
+      (Scm_Error "Offset %ld out of range, or type size %ld too big."
+                 offset datasize))
     (return
      (Scm__MakeNativeHandle (+ p offset)
                             type
@@ -90,6 +98,12 @@
                             (SCM_OBJ uv)
                             SCM_NIL
                             0))))
+
+(define (uvector->native-handle uv type :optional (offset 0))
+  (assume-type uv <uvector>)
+  (assume (aggregate-type? type)
+    "Type must be native aggregate type, but got:" type)
+  (%uvector->native-handle uv type offset))
 
 ;; The handle pointing into a region originally pointed
 (define-cproc make-internal-handle (base::<native-handle>
@@ -113,11 +127,6 @@
 ;;;
 ;;; Low-level accessor/modifier
 ;;;
-
-(define (aggregate-type? type)
-  (or (is-a? type <native-array>)
-      (is-a? type <native-struct>)
-      (is-a? type <native-union>)))
 
 ;; Access handle's ptr + offset
 (define-cproc %pref (element-type::<native-type>
