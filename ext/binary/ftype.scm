@@ -70,8 +70,27 @@
  )
 
 ;;;
-;;; Internal pointers
+;;; Native handles
 ;;;
+
+;; Native handles can be created with several ways.
+
+(define-cproc uvector->native-handle (uv::<uvector>
+                                      type::<native-type>
+                                      :optional (offset::<fixnum> 0))
+  (let* ([p::void* (SCM_UVECTOR_ELEMENTS uv)]
+         [size::ScmSmallInt (Scm_UVectorSizeInBytes uv)]
+         [max::void* (+ p (Scm_UVectorSizeInBytes uv))])
+    (unless (and (<= 0 offset) (< offset size))
+      (Scm_Error "Offset of of range: %S" offset))
+    (return
+     (Scm__MakeNativeHandle (+ p offset)
+                            type
+                            (-> type name) ; temporary
+                            p
+                            max
+                            (SCM_OBJ uv)
+                            0))))
 
 ;; The pointers pointing into a structure which is originally pointed by
 ;; foreign pointers obtained form outside (e.g. dlsym()).
