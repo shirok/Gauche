@@ -101,8 +101,9 @@
 
 (define (uvector->native-handle uv type :optional (offset 0))
   (assume-type uv <uvector>)
-  (assume (aggregate-type? type)
-    "Type must be native aggregate type, but got:" type)
+  (assume (or (is-a? type <native-pointer>)
+              (aggregate-type? type))
+    "Type must be native pointer or aggregate type, but got:" type)
   (%uvector->native-handle uv type offset))
 
 ;; The handle pointing into a region originally pointed
