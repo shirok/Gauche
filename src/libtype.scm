@@ -1091,6 +1091,40 @@
   ))
 
 ;;
+;; Native handle
+;;
+;;  The struct definition is in priv/typeP.h
+
+(inline-stub
+ (define-cclass <native-handle> :base :no-meta
+   "ScmNativeHandle*" "Scm_NativeHandleClass"
+   (c "SCM_CLASS_DEFAULT_CPL")
+   ((name)
+    (type :type <native-type>))
+   (printer (Scm_Printf port "#<native-handle %A@%p>"
+                        (-> (SCM_NATIVE_HANDLE obj) name)
+                        (-> (SCM_NATIVE_HANDLE obj) ptr))))
+
+ (define-cfn Scm__MakeNativeHandle (ptr::void*
+                                    type::ScmNativeType*
+                                    name::ScmObj
+                                    region-min::void*
+                                    region-max::void*
+                                    owner::ScmObj
+                                    flags::u_long)
+   (let* ([h::ScmNativeHandle* (SCM_NEW ScmNativeHandle)])
+     (SCM_SET_CLASS h SCM_CLASS_NATIVE_HANDLE)
+     (set! (-> h ptr) ptr
+           (-> h type) type
+           (-> h name) name
+           (-> h region-min) region-min
+           (-> h region-max) region-max
+           (-> h owner) owner
+           (-> h flags) flags)
+     (return (SCM_OBJ h))))
+ )
+
+;;
 ;; Native composite types
 ;;
 

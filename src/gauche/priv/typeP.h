@@ -127,4 +127,52 @@ SCM_CLASS_DECL(Scm_NativeUnionClass);
 #define SCM_NATIVE_UNION(obj)    ((ScmNativeUnion*)(obj))
 #define SCM_NATIVE_UNION_P(obj)  (SCM_ISA(obj, SCM_CLASS_NATIVE_UNION))
 
+/*
+ * Native handle
+ *
+ *  <native-handle> is a typed handle to access low-level data structure;
+ *  foreign pointers and other data structues can be accessed from Scheme
+ *  world via native handles.
+ *  (It is effectively a wrapped pointer, but it may be a C pointer
+ *  or C struct; e.g. in the contect of FFI, we need to distinguish
+ *  "C pointer to a struct" and "C struct itself".  To avoid confusion,
+ *  we expose 'handle' to the Scheme world.)
+ */
+
+typedef struct ScmNativeHandleRec {
+    SCM_HEADER;
+    void *ptr;                  /* If it is <native-pointer>, this is
+                                   the pointer value.  Otherwise, this
+                                   is a pointer to the typed value.
+                                   (In another word, <native-pointer>
+                                   does not have extra indirection).
+                                */
+    ScmNativeType *type;        /* One of native aggregate types.
+                                   Can be <native-pointer <void*>) */
+    void *region_min;
+    void *region_max;           /* Specifies valid memory region, min
+                                   inclusive, max exclusive.
+                                   Used to validate pointer arithmetics.
+                                */
+    ScmObj name;                /* Typically simplified type name,
+                                   used for printing. */
+    ScmObj owner;               /* If this points to another Gauche-
+                                   allocated object, keep it here to prevent
+                                   it from GC-ed.  Can be #<undef>. */
+    u_long flags;               /* Reserved. */
+} ScmNativeHandle;
+
+SCM_CLASS_DECL(Scm_NativeHandleClass);
+#define SCM_CLASS_NATIVE_HANDLE   (&Scm_NativeHandleClass)
+#define SCM_NATIVE_HANDLE(obj)    ((ScmNativeHandle*)(obj))
+#define SCM_NATIVE_HANDLE_P(obj)  (SCM_ISA(obj, SCM_CLASS_NATIVE_HANDLE))
+
+SCM_EXTERN ScmObj Scm__MakeNativeHandle(void *ptr,
+                                        ScmNativeType *type,
+                                        ScmObj name,
+                                        void *region_min,
+                                        void *region_max,
+                                        ScmObj owner,
+                                        u_long flags);
+
 #endif  /*GAUCHE_PRIV_TYPEP_H*/
