@@ -1129,8 +1129,8 @@
 ;;
 
 (inline-stub
- (define-cfn native_ptrP (obj) ::int :static
-   (return (SCM_FOREIGN_POINTER_P obj)))
+ (define-cfn native_handleP (obj) ::int :static
+   (return (SCM_NATIVE_HANDLE_P obj)))
 
  ;; Helper function to initialize common fields of composite native types
  (define-cfn init-native-type-common (nt::ScmNativeType*
@@ -1161,10 +1161,10 @@
     (init-native-type-common (& (-> z common))
                              pointer-type-name
                              (SCM_OBJ SCM_CLASS_TOP)
-                             "ScmForeignPointer*"
+                             "ScmNativeHandle*"
                              (sizeof (.type void*))
                              (SCM_ALIGNOF (.type void*))
-                             native_ptrP
+                             native_handleP
                              NULL
                              NULL)
     ;; Fill in type-specific fields
@@ -1190,10 +1190,10 @@
     (init-native-type-common (& (-> z common))
                              type-name
                              (SCM_OBJ SCM_CLASS_TOP)
-                             "ScmForeignPointer*"
+                             "ScmNativeHandle*"
                              (sizeof (.type void*))
                              (SCM_ALIGNOF (.type void*))
-                             native_ptrP
+                             native_handleP
                              NULL
                              NULL)
     ;; Fill in type-specific fields
@@ -1234,10 +1234,10 @@
     (init-native-type-common (& (-> z common))
                              type-name
                              (SCM_OBJ SCM_CLASS_TOP)
-                             "ScmForeignPointer*"
+                             "ScmNativeHandle*"
                              size
                              alignment
-                             native_ptrP
+                             native_handleP
                              NULL
                              NULL)
     ;; Fill in type-specific fields
@@ -1285,10 +1285,10 @@
     (init-native-type-common (& (-> z common))
                              type-name
                              (SCM_OBJ SCM_CLASS_TOP)
-                             "ScmForeignPointer*"
+                             "ScmNativeHandle*"
                              size
                              alignment
-                             native_ptrP
+                             native_handleP
                              NULL
                              NULL)
     ;; Fill in type-specific fields

@@ -661,7 +661,7 @@
       [uint32* (make-pointer-type <uint32>)]
       [int64* (make-pointer-type <int64>)]
       [uint64* (make-pointer-type <uint64>)])
-  (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (bc pos type) (uvector->native-handle data type pos))
 
   (test* "uint8* deref" '(#x80 #x09 #x3f)
          (list (native-ref (bc 0 uint8*) 0)
@@ -709,15 +709,6 @@
          (list (native-ref (bc 32 int64*) 0)
                (native-ref (bc 32 int64*) 4)))
 
-  (test* "native-pointer+" (case (native-endian)
-                             [(big-endian) '(#x08090a0b #x14151617)]
-                             [else         '(#x0b0a0908 #x17161514)])
-         (let* ([p (make-domestic-pointer data 0 uint32*)]
-                [p2 (native-pointer+ p 2)]
-                [p5 (native-pointer+ p2 3)])
-           (list (native-ref p2 0)
-                 (native-ref p5 0))))
-
   (test* "uint8* modify" #xff
          (begin
            (native-set! (bc 0 uint8*) 1 #xff)
@@ -764,7 +755,7 @@
       [uint32a (make-native-array-type <uint32> '(2 3 2))]
       [int64a (make-native-array-type <int64> '(* 2))]
       [uint64a (make-native-array-type <uint64> '(2 2))])
-  (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (bc pos type) (uvector->native-handle data type pos))
   (define (tsa type expect)
     (test* #"~|type| size&alignment" expect
            (list (~ type'size) (~ type'alignment))))
@@ -948,7 +939,7 @@
       [double* (make-pointer-type <double>)]
       [floata (make-native-array-type <float> '(3))]
       [doublea (make-native-array-type <double> '(3))])
-  (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (bc pos type) (uvector->native-handle data type pos))
   (define (tsa type expect)
     (test* #"~|type| size&alignment" expect
            (list (~ type'size) (~ type'alignment))))
@@ -1003,7 +994,7 @@
                                      (b ,<uint64>)
                                      (c ,<int16>)))]
       [s0 (make-native-struct-type 's0 '())])
-  (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (bc pos type) (uvector->native-handle data type pos))
   (define (tsa type expect)
     (test* #"~|type| size&alignment" expect
            (list (~ type'size) (~ type'alignment))))
@@ -1062,7 +1053,7 @@
        [s3 (make-native-struct-type 's3
                                     `((arr ,u16x2)
                                       (b ,<uint8>)))])
-  (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (bc pos type) (uvector->native-handle data type pos))
   (define native-type-offset*
     (with-module binary.ftype native-type-offset))
   (define (offsets type fields)
@@ -1101,7 +1092,7 @@
                                     (y ,<uint64>)
                                     (z ,<int16>)))]
       [u0 (make-native-union-type 'u0 '())])
-  (define (bc pos type) (make-domestic-pointer data pos type))
+  (define (bc pos type) (uvector->native-handle data type pos))
   (define (tsa type expect)
     (test* #"~|type| size&alignment" expect
            (list (~ type'size) (~ type'alignment))))

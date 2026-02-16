@@ -45,12 +45,8 @@
   (extend gauche.typeutil)              ;access internal routines
   (export native-ref
           native-set!
-          native-pointer+
 
-          make-domestic-pointer
-          domestic-pointer-storage
-          domestic-pointer-pos
-          domestic-pointer-type
+          uvector->native-handle
 
           ;; TRANSIENT: We want better (more concise, but distinct) names
           ;; for these.  At the moment, we just reexport them from
@@ -67,6 +63,8 @@
 
 (inline-stub
  (.include "gauche/priv/typeP.h")
+
+ (declare-stub-type <native-handle> ScmNativeHandle*)
  )
 
 ;;;
@@ -82,7 +80,7 @@
          [size::ScmSmallInt (Scm_UVectorSizeInBytes uv)]
          [max::void* (+ p (Scm_UVectorSizeInBytes uv))])
     (unless (and (<= 0 offset) (< offset size))
-      (Scm_Error "Offset of of range: %S" offset))
+      (Scm_Error "Offset out of range: %S" offset))
     (return
      (Scm__MakeNativeHandle (+ p offset)
                             type
@@ -92,61 +90,23 @@
                             (SCM_OBJ uv)
                             0))))
 
-;; The pointers pointing into a structure which is originally pointed by
-;; foreign pointers obtained form outside (e.g. dlsym()).
-
-(inline-stub
- (define-cvar internal-pointer-class::ScmClass* :static)
-
- (initcode
-  (set! internal-pointer-class
-        (Scm_MakeForeignPointerClass (Scm_CurrentModule)
-                                     "<internal-pointer>"
-                                     NULL NULL 0))
-  ))
-
-(define-cproc %make-internal-pointer (base::<foreign-pointer>
-                                      offset::<fixnum>)
-  (let* ([p::void* (Scm_ForeignPointerRef base)])
-    (return (Scm_MakeForeignPointer internal-pointer-class
-                                    (+ p offset)))))
-
-;; Returns a new foreign pointer derived from BASE, with byte offset
-;; OFFSET and type TYPE.
-(define (make-internal-pointer base offset type)
-  (assume-type base <foreign-pointer>)
-  (assume-type offset <fixnum>)
-  (assume-type type <native-type>)
-  (rlet1 sndptr (%make-internal-pointer base offset)
-    ((with-module gauche.internal foreign-pointer-type-set!)
-     sndptr type)))
-
-;;;
-;;; Pointer equivalent into bytevector storage
-;;;
-
-;; Used to point to a specific location within the given bytevector.
-(define-record-type <domestic-pointer>
-    (%make-domestic-pointer storage pos type)
-    domestic-pointer?
-  (storage domestic-pointer-storage)
-  (pos domestic-pointer-pos)
-  (type domestic-pointer-type))
-
-;; Returns a new domestic pointer points to the byte offset POS
-;; into a bytevector BYTEVECTOR, with type TYPE.
-(define (make-domestic-pointer bytevector pos :optional (type #f))
-  (assume-type bytevector <u8vector>)
-  (assume (and (fixnum? pos) (>= pos 0)))
-  (assume-type type (<?> <native-type>))
-  (unless (ineq 0 <= pos < (u8vector-length bytevector))
-    (error "Domestic pointer position out of range:" pos))
-  (%make-domestic-pointer bytevector pos type))
-
-(define-method write-object ((obj <domestic-pointer>) port)
-  (format port "#<domestic-pointer ~a[~a]>"
-          (domestic-pointer-type obj)
-          (domestic-pointer-pos obj)))
+;; The handle pointing into a region originally pointed
+(define-cproc make-internal-handle (base::<native-handle>
+                                    offset::<fixnum>
+                                    :optional (type::<native-type>? NULL))
+  (let* ([p::void* (+ (-> base ptr) offset)]
+         [t::ScmNativeType* (?: type type (-> base type))])
+    (unless (and (<= (-> base region-min) p)
+                 (<   p (-> base region-max)))
+      (Scm_Error "Offset out of range: %S" offset))
+    (return
+     (Scm__MakeNativeHandle p
+                            t
+                            (-> t name) ; temporary
+                            (-> base region-min)
+                            (-> base region-max)
+                            (-> base owner)
+                            0))))
 
 ;;;
 ;;; Low-level accessor/modifier
@@ -157,91 +117,49 @@
       (is-a? type <native-struct>)
       (is-a? type <native-union>)))
 
-;; Access p+offset, where
-;;   etype is the type of element
-;;   fp is a foreign pointer for p
-;;   offset is the byte offset
-(define-cproc %fpref (element-type::<native-type>
-                      fp::<foreign-pointer>
-                      offset::<fixnum>)
-  (let* ([p::void* (Scm_ForeignPointerRef fp)]
+;; Access handle's ptr + offset
+(define-cproc %pref (element-type::<native-type>
+                     handle::<native-handle>
+                     offset::<fixnum>)
+  (let* ([p::void* (+ (-> handle ptr) offset)]
          [c-ref::(.function (p::void*)::ScmObj *)
                  (-> element-type c-ref)])
     (when (== c-ref NULL)
       (Scm_Error "Cannot dereference type %S" element-type))
-    (unless (== offset 0)
-      (set! p (+ p (* offset (-> element-type size)))))
+    (unless (and (<= (-> handle region-min) p)
+                 (<  p (-> handle region-max)))
+      (Scm_Error "Offset out of range: %ld" offset))
     (return (c-ref p))))
 
-;; Set p+offset = val
-(define-cproc %fpset! (element-type::<native-type>
-                       fp::<foreign-pointer>
-                       offset::<fixnum>
-                       val)
+;; Unified set: set handle's ptr + offset = val
+(define-cproc %pset! (element-type::<native-type>
+                      handle::<native-handle>
+                      offset::<fixnum>
+                      val)
   ::<void>
-  (let* ([p::void* (Scm_ForeignPointerRef fp)]
+  (let* ([p::void* (+ (-> handle ptr) offset)]
          [c-of-type::(.function (v::ScmObj)::int *) (-> element-type c-of-type)]
          [c-set::(.function (p::void* v::ScmObj)::void *) (-> element-type c-set)])
     (unless (c-of-type val)
-      (Scm_Error "Invalid object to set to %S: %S" fp val))
+      (Scm_Error "Invalid object to set to %S: %S" handle val))
     (when (== c-set NULL)
       (Scm_Error "Cannot set value of type %S" element-type))
-    (unless (== offset 0)
-      (set! p (+ p offset)))
+    (unless (and (<= (-> handle region-min) p)
+                 (<  p (-> handle region-max)))
+      (Scm_Error "Offset out of range: %ld" offset))
     (c-set p val)))
 
-;; Similar, for bytevector access
-(define-cproc %dpref (element-type::<native-type>
-                      bv::<u8vector>
-                      start::<fixnum>
-                      offset::<fixnum>)
-  (let* ([p::uint8_t* (SCM_U8VECTOR_ELEMENTS bv)]
-         [c-ref::(.function (p::void*)::ScmObj *)
-                 (-> element-type c-ref)])
-    (when (== c-ref NULL)
-      (Scm_Error "Cannot dereference type %S" element-type))
-    (return (c-ref (+ p (+ start offset))))))
+(define (%handle-ref type handle offset)
+  (if (aggregate-type? type)
+    (make-internal-handle handle offset type)
+    (%pref type handle offset)))
 
-(define-cproc %dpset! (element-type::<native-type>
-                       bv::<u8vector>
-                       start::<fixnum>
-                       offset::<fixnum>
-                       val)
-  ::<void>
-  (let* ([p::uint8_t* (SCM_U8VECTOR_ELEMENTS bv)]
-         [c-of-type::(.function (v::ScmObj)::int *) (-> element-type c-of-type)]
-         [c-set::(.function (p::void* v::ScmObj)::void *) (-> element-type c-set)])
-    (unless (c-of-type val)
-      (Scm_Error "Invalid object to set to %S: %S" bv val))
-    (when (== c-set NULL)
-      (Scm_Error "Cannot set value of type %S" element-type))
-    (c-set (+ p start offset) val)))
-
-(define (%pref type ptr offset)
-  (etypecase ptr
-    [<foreign-pointer>
-     (if (aggregate-type? type)
-       (make-internal-pointer ptr offset type)
-       (%fpref type ptr offset))]
-    [<domestic-pointer>
-     (if (aggregate-type? type)
-       (make-domestic-pointer (domestic-pointer-storage ptr) offset type)
-       (%dpref type
-               (domestic-pointer-storage ptr)
-               (domestic-pointer-pos ptr)
-               offset))]))
-
-(define (%pset! type ptr offset val)
+(define (%handle-set! type handle offset val)
   (when (aggregate-type? type)
     ;; For now, we reject it.  Technically we can copy aggregate type
     ;; content into the target aggregate.
-    (errorf "Can't set a value of type ~s into ~s" type ptr))
-  (etypecase ptr
-    [<foreign-pointer> (%fpset! type ptr offset val)]
-    [<domestic-pointer> (%dpset! type
-                                 (domestic-pointer-storage ptr)
-                                 (domestic-pointer-pos ptr)
-                                 offset val)]))
+    (errorf "Can't set a value of type ~s into ~s" type handle))
+  (%pset! type handle offset val))
 
 (define (native-struct-field type selector)
   (assume-type type (</> <native-struct> <native-union>))
@@ -306,73 +224,42 @@
         (loop (cdr dims) (cdr sels))))))
 
 ;; Common routine to allow type override.
-;; ptr can be <foreign-pointer> or <domestic-pointer>.
-(define (%ptr-type ptr type-override)
+(define (%handle-type handle type-override)
   (or type-override
-      (etypecase ptr
-        [<foreign-pointer>
-         ((with-module gauche.internal foreign-pointer-type) ptr)]
-        [<domestic-pointer>
-         (domestic-pointer-type ptr)])
-      (error "Can't dereference a pointer with unknown type:" ptr)))
+      (~ handle'type)
+      (error "Can't dereference a pointer with unknown type:" handle)))
 
 ;;;
 ;;;  Public accessor/modifier
 ;;;
 
-;; NB: We refrain from using (</> <foreign-pointer> <domestic-pointer>))
-;; for now, because of the issue of precompiler
-;; https://github.com/shirok/Gauche/issues/1209
-
-(define (native-ref ptr selector :optional (type #f))
-  ;;(assume-type ptr (</> <foreign-pointer> <domestic-pointer>))
-  (assume (or (is-a? ptr <foreign-pointer>)
-              (is-a? ptr <domestic-pointer>))
-    "Foreign pointer of domestic pointer expected, but got:" ptr)
-  (let* ([t (%ptr-type ptr type)]
+(define (native-ref handle selector :optional (type #f))
+  (assume-type handle <native-handle>)
+  (let* ([t (%handle-type handle type)]
          [offset (native-type-offset t selector)])
     (typecase t
       [<native-pointer>
-       (%pref (~ t'pointee-type) ptr offset)]
+       (%handle-ref (~ t'pointee-type) handle offset)]
       [<native-array>
-       (%pref (%array-dereference-type t selector) ptr offset)]
+       (%handle-ref (%array-dereference-type t selector) handle offset)]
       [(</> <native-struct> <native-union>)
        (let1 ftype (cadr (native-struct-field t selector))
-         (%pref ftype ptr offset))]
-      [else (error "Unsupported native aggregate type:" ptr)])))
+         (%handle-ref ftype handle offset))]
+      [else (error "Unsupported native aggregate type:" handle)])))
 
-(define (native-set! ptr selector val :optional (type #f))
-  ;;(assume-type ptr (</> <foreign-pointer> <domestic-pointer>))
-  (assume (or (is-a? ptr <foreign-pointer>)
-              (is-a? ptr <domestic-pointer>))
-    "Foreign pointer of domestic pointer expected, but got:" ptr)
-  (let* ([t (%ptr-type ptr type)]
+(define (native-set! handle selector val :optional (type #f))
+  (assume-type handle <native-handle>)
+  (let* ([t (%handle-type handle type)]
          [offset (native-type-offset t selector)])
     (typecase t
       [<native-pointer>
-       (%pset! (~ t'pointee-type) ptr offset val)]
+       (%handle-set! (~ t'pointee-type) handle offset val)]
       [<native-array>
-       (%pset! (%array-dereference-type t selector) ptr offset val)]
+       (%handle-set! (%array-dereference-type t selector) handle offset val)]
       [(</> <native-struct> <native-union>)
        (let1 ftype (cadr (native-struct-field t selector))
-         (%pset! ftype ptr offset val))]
+         (%handle-set! ftype handle offset val))]
       [else (error "Unsupported native aggregate type:" t)])))
-
-(define (native-pointer+ ptr delta :optional (type #f))
-  ;;(assume-type ptr (</> <foreign-pointer> <domestic-pointer>))
-  (assume (or (is-a? ptr <foreign-pointer>)
-              (is-a? ptr <domestic-pointer>))
-    "Foreign pointer of domestic pointer expected, but got:" ptr)
-  (assume-type delta <fixnum>)
-  (let* ([t (%ptr-type ptr type)]
-         [offset (* delta (~ t'pointee-type'size))])
-    (typecase ptr
-      [<foreign-pointer>
-       (make-internal-pointer ptr offset t)]
-      [<domestic-pointer>
-       (make-domestic-pointer (domestic-pointer-storage ptr)
-                              (+ (domestic-pointer-pos ptr) offset)
-                              t)])))
 
 ;; Compare native types
 (define-method object-equal? ((s <native-pointer>) (t <native-pointer>))
@@ -403,21 +290,18 @@
 ;; since this depends heavily on native compound types, we put it
 ;; here for experimenting.
 
-(inline-stub
- (define-cvar raw-memory-class::ScmClass* :static)
-
- (initcode
-  (set! raw-memory-class
-        (Scm_MakeForeignPointerClass (Scm_CurrentModule)
-                                     "<raw-memory>"
-                                     NULL NULL 0)))
- )
-
-(define-cproc %native-alloc (size::<fixnum>)
+(define-cproc %native-alloc (size::<fixnum> type::<native-type>)
   (let* ([p::void* (malloc size)])
     (when (== p NULL)
       (Scm_Error "malloc failed (size %ld\n)" size))
-    (return (Scm_MakeForeignPointer raw-memory-class p))))
+    (return
+     (Scm__MakeNativeHandle p
+                            type
+                            (-> type name)
+                            p
+                            (+ p size)
+                            SCM_UNDEFINED
+                            0))))
 
 (define (native-alloc size-or-type)
   (assume-type size-or-type (</> <fixnum> <native-type>))
@@ -429,19 +313,8 @@
                 [(is-a? size-or-type <native-type>)
                  (make-pointer-type size-or-type)]
                 [else (make-pointer-type <void>)])])
-    (rlet1 fp (%native-alloc realsize)
-      ((with-module gauche.internal foreign-pointer-type-set!) fp ptype)
-      ((with-module gauche.internal foreign-pointer-attribute-set!)
-       fp 'name ptype))))
+    (%native-alloc realsize ptype)))
 
-(define-cproc %native-free (fp::<foreign-pointer>) ::<void>
-  (let* ([p::void* (Scm_ForeignPointerRef fp)])
+(define-cproc native-free (handle::<native-handle>) ::<void>
+  (let* ([p::void* (-> handle ptr)])
     (free p)))
-
-(define (native-free raw-memory)
-  (assume-type raw-memory <raw-memory>)
-  (when (foreign-pointer-invalid? raw-memory)
-    (error "Attempt to double-free memory:" raw-memory))
-  (%native-free raw-memory)
-  (foreign-pointer-invalidate! raw-memory)
-  (undefined))

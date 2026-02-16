@@ -1,3 +1,10 @@
+2026-02-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (<native-handle>), ext/binary/ftype.scm:
+	  Switch to use <native-handle> instead of various foreign pointers
+	  to deal with native data access.
+	  https://github.com/shirok/Gauche/issues/1215
+
 2026-02-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (UVEC-REF): Fix to type check arg
