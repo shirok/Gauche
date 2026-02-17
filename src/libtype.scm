@@ -876,6 +876,17 @@
      (set! (-> z alignment) alignment)
      (return (SCM_OBJ z))))
 
+ ;; Primitive native type name -> native type instance
+ (define-cvar builtin-native-types :static)
+
+ (initcode
+  (set! builtin-native-types (Scm_MakeHashTableSimple SCM_HASH_EQ 16)))
+
+ (define-cproc %builtin-native-type-lookup (name::<symbol>)
+    (return (Scm_HashTableRef (SCM_HASH_TABLE builtin-native-types)
+                              (SCM_OBJ name)
+                              SCM_FALSE)))
+
  ;; define-native-type NAME SUPER CTYPE PRED BOX UNBOX
  ;;   NAME - Symbol for Scheme name
  ;;   SUPER - C macro name for superclass
@@ -910,6 +921,8 @@
                                  ,pred
                                  ,c-ref-name
                                  ,c-set-name)])
+       (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
+                         ',ctype (SCM_OBJ z) 0)
        (Scm_MakeBinding (Scm_GaucheModule)
                         (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
                         SCM_BINDING_INLINABLE))])
@@ -1344,7 +1357,7 @@
         '(<type-constructor-meta>
           <descriptive-type>
           <native-type> <native-pointer> <native-function>
-          <native-array> <native-struct>
+          <native-array> <native-struct> <native-union>
           <^> </> <?> <Tuple> <List> <Vector> <Assortment>
           type? subtype? of-type?))
   (xfer (current-module)
