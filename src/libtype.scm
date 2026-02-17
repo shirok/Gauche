@@ -1027,6 +1027,14 @@
  (define-cfn native_realP (obj) ::int :static
    (return (SCM_REALP obj)))
 
+ ;; In C, char used to be used for both 'character' and 'one byte integer'.
+ ;; Four our purpose, we map native char type to our char (in 1 byte range).
+ ;; Foreign functions that uses char as one byte integer, we can use <int8>
+ ;; or <uint8>.
+ (define-cfn native_charP (obj) ::int :static
+   (return (and (SCM_CHARP obj)
+                (<= (SCM_CHAR_VALUE obj) 255))))
+
  (define-cfn native_cstrP (obj) ::int :static
    (return (SCM_STRINGP obj)))
  (define-cfn get_cstr (obj) ::(const char*) :static
@@ -1075,6 +1083,11 @@
     Scm_MakeInteger64 Scm_GetInteger64)
   (define-native-type <uint64>  SCM_CLASS_INTEGER uint64_t native_u64P
     Scm_MakeIntegerU64 Scm_GetIntegerU64)
+
+  ;; We use <native-char>, for <char> is already used for Scheme characters.
+  (define-native-type <native-char> SCM_CLASS_INTEGER char native_charP
+    SCM_MAKE_CHAR SCM_CHAR_VALUE)
+
   (define-native-type <size_t>  SCM_CLASS_INTEGER size_t Scm_IntegerFitsSizeP
     Scm_SizeToInteger Scm_IntegerToSize)
   (define-native-type <ssize_t> SCM_CLASS_INTEGER ssize_t Scm_IntegerFitsSsizeP
@@ -1087,10 +1100,12 @@
     Scm_IntptrToInteger Scm_IntegerToIntptr)
   (define-native-type <uintptr_t> SCM_CLASS_INTEGER uintptr_t Scm_IntegerFitsUintptrP
     Scm_UintptrToInteger Scm_IntegerToUintptr)
+
   (define-native-type <float>   SCM_CLASS_REAL float native_realP
     Scm_MakeFlonum Scm_GetDouble)
   (define-native-type <double>  SCM_CLASS_REAL double native_realP
     Scm_MakeFlonum Scm_GetDouble)
+
   (define-native-type <const-cstring> SCM_CLASS_STRING "const char*" native_cstrP
     SCM_MAKE_STR_COPYING get_cstr)
   (define-native-type <input-port>  SCM_CLASS_PORT ScmPort* native_iportP
@@ -1099,8 +1114,14 @@
     SCM_OBJ SCM_PORT)
   (define-native-type <closure> SCM_CLASS_PROCEDURE ScmClosure* native_closureP
     SCM_OBJ SCM_CLOSURE)
-  (define-native-type <void>    SCM_CLASS_TOP ScmObj native_voidP
-    SCM_OBJ SCM_OBJ)
+
+  ;; <void> needs special care, as it doesn't have a real C type.
+  (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"
+                              0 1 native_voidP NULL NULL)])
+    (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
+                      'void (SCM_OBJ z) 0)
+    (Scm_MakeBinding (Scm_GaucheModule) (SCM_SYMBOL '<void>) z
+                     SCM_BINDING_INLINABLE))
   ))
 
 ;;
