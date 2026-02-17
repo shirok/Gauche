@@ -660,7 +660,8 @@
       [int32* (make-pointer-type <int32>)]
       [uint32* (make-pointer-type <uint32>)]
       [int64* (make-pointer-type <int64>)]
-      [uint64* (make-pointer-type <uint64>)])
+      [uint64* (make-pointer-type <uint64>)]
+      [char* (make-pointer-type <native-char>)])
   (define (bc pos type) (uvector->native-handle data type pos))
 
   (test* "uint8* deref" '(#x80 #x09 #x3f)
@@ -709,6 +710,10 @@
          (list (native-ref (bc 32 int64*) 0)
                (native-ref (bc 32 int64*) 4)))
 
+  (test* "char* deref" '(#\space #\!)
+         (list (native-ref (bc 32 char*) 0)
+               (native-ref (bc 32 char*) 1)))
+
   (test* "uint8* modify" #xff
          (begin
            (native-set! (bc 0 uint8*) 1 #xff)
@@ -744,6 +749,11 @@
          (begin
            (native-set! (bc 0 int64*) 1 #x-0123456789abcdef)
            (native-ref (bc 8 int64*) 0)))
+
+  (test* "native-char modify" #\Z
+         (begin
+           (native-set! (bc 32 char*) 0 #\Z)
+           (native-ref (bc 0 char*) 32)))
   )
 
 (let ([data (u8vector-copy *fobject-storage*)]
@@ -1165,132 +1175,291 @@
            (native-ref (bc 0 u2) 'y)))
   )
 
-#| ;; Temporarily disabled while we're rewriting binary.ftype
+;;;
+;;; native-type: type signature parser
+;;;
+(test-section "type signature parser")
 
-(define *fobject-storage*
-  '#u8(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
-       #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
-       #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
-       #x18 #x19 #x1a #x1b #x1c #x1d #x1e #x1f
-       #x20 #x21 #x22 #x23 #x24 #x25 #x26 #x27
-       #x28 #x29 #x2a #x2b #x2c #x2d #x2e #x2f
-       #x30 #x31 #x32 #x33 #x34 #x35 #x36 #x37
-       #x38 #x39 #x3a #x3b #x3c #x3d #x3e #x3f
-       ))
+;; Primitive types via C-style names
 
-;; procedural interface
-(let ([ft1 (make-fstruct-type 'ft1
-                              `((a ,ftype:schar)
-                                (b ,ftype:uchar)
-                                (c ,ftype:short)
-                                (d ,ftype:schar)
-                                (e ,ftype:short)
-                                (f ,ftype:schar)
-                                (g ,ftype:int)
-                                (h ,ftype:schar)
-                                (i ,ftype:long))
-                              #f #f)]
-      [ft2 (make-fstruct-type 'ft2      ;fully packed
-                              `((a ,ftype:schar)
-                                (b ,ftype:uchar)
-                                (c ,ftype:short)
-                                (d ,ftype:schar)
-                                (e ,ftype:short)
-                                (f ,ftype:schar)
-                                (g ,ftype:int)
-                                (h ,ftype:schar)
-                                (i ,ftype:long))
-                              #f 0)])
-  (define (read-all-slots ft endian :optional (off 0))
-    (parameterize ([default-endian endian])
-      (map (cut fobject-ref/uv ft <> *fobject-storage* off)
-           '(a b c d e f g h i))))
+(test* "native-type int" <int> (native-type 'int))
+(test* "native-type uint" <uint> (native-type 'u_int))
+(test* "native-type short" <short> (native-type 'short))
+(test* "native-type u_short" <ushort> (native-type 'u_short))
+(test* "native-type long" <long> (native-type 'long))
+(test* "native-type u_long" <ulong> (native-type 'u_long))
+(test* "native-type float" <float> (native-type 'float))
+(test* "native-type double" <double> (native-type 'double))
+(test* "native-type void" <void> (native-type 'void))
+(test* "native-type char" <native-char> (native-type 'char))
+(test* "native-type int8_t" <int8> (native-type 'int8_t))
+(test* "native-type uint8_t" <uint8> (native-type 'uint8_t))
+(test* "native-type int16_t" <int16> (native-type 'int16_t))
+(test* "native-type uint16_t" <uint16> (native-type 'uint16_t))
+(test* "native-type int32_t" <int32> (native-type 'int32_t))
+(test* "native-type uint32_t" <uint32> (native-type 'uint32_t))
+(test* "native-type int64_t" <int64> (native-type 'int64_t))
+(test* "native-type uint64_t" <uint64> (native-type 'uint64_t))
+(test* "native-type size_t" <size_t> (native-type 'size_t))
+(test* "native-type ssize_t" <ssize_t> (native-type 'ssize_t))
+(test* "native-type ptrdiff_t" <ptrdiff_t> (native-type 'ptrdiff_t))
 
-  (test* "big endian, natural alignment"
-         `(-128 1 #x0203 4 #x0607 8 #x0c0d0e0f #x10
-                ,(case (ftype-size ftype:long)
-                   [(4) #x14151617]
-                   [(8) #x18191a1b1c1d1e1f]))
-         (read-all-slots ft1 'big-endian))
-  (test* "little endian, natural alignment"
-         `(-128 1 #x0302 4 #x0706 8 #x0f0e0d0c #x10
-                ,(case (ftype-size ftype:long)
-                   [(4) #x17161514]
-                   [(8) #x1f1e1d1c1b1a1918]))
-         (read-all-slots ft1 'little-endian))
-  (test* "with offset"
-         `(8 9 #x0a0b 12 #x0e0f 16 #x14151617 24
-             ,(case (ftype-size ftype:long)
-                [(4) #x1c1d1e1f]
-                [(8) #x2021222324252627]))
-         (read-all-slots ft1 'big-endian 8))
+;; Pass-through of existing native type instances
+(test* "native-type pass-through" <int> (native-type <int>))
+(test* "native-type pass-through pointer" #t
+       (let1 p (make-pointer-type <int>)
+         (equal? p (native-type p))))
 
-  (test* "big endian, packed"
-         `(-128 1 #x0203 4 #x0506 7 #x08090a0b #x0c
-                ,(case (ftype-size ftype:long)
-                   [(4) #x0d0e0f10]
-                   [(8) #x0d0e0f1011121314]))
-         (read-all-slots ft2 'big-endian))
-  (test* "little endian, packed"
-         `(-128 1 #x0302 4 #x0605 7 #x0b0a0908 #x0c
-                ,(case (ftype-size ftype:long)
-                   [(4) #x100f0e0d]
-                   [(8) #x14131211100f0e0d]))
-         (read-all-slots ft2 'little-endian))
-  )
+(test* "native-type (const int)" <int>
+       (native-type '(const int)))
 
-;; define-fstruct-type macro
-(define-fstruct-type ft3 #t #t
-  ((a ftype:schar)
-   (b ftype:uchar)
-   (c ftype:short)
-   (d ftype:schar)
-   (e ftype:short)
-   (f ftype:schar)
-   (g ftype:int)
-   (h ftype:schar)
-   (i ftype:long)))
+;; Pointer types
+(test* "native-type int*" #t
+       (equal? (native-type 'int*) (make-pointer-type <int>)))
+(test* "native-type double*" #t
+       (equal? (native-type 'double*) (make-pointer-type <double>)))
+(test* "native-type void*" #t
+       (equal? (native-type 'void*) (make-pointer-type <void>)))
+(test* "native-type char*" #t
+       (equal? (native-type 'char*) (make-pointer-type <native-char>)))
 
-(let ([fs #f])
-  (test* "ft3 ctor and pred" #t
-         (begin
-           (set! fs (make-ft3 :a -1 :b 2 :c #x0304 :d 5
-                              :e -1 :f 6 :g #x0708090a
-                              :h 7 :i #x0b0c0d0e))
-           (ft3? fs)))
-  (test* "ft3 store"
-         (case (default-endian)
-           [(big-endian)
-            (case (ftype-size ftype:long)
-              [(4) '#u8(#xff 2 3 4 5 0 #xff #xff 6 0 0 0 7 8 9 10
-                        7 0 0 0 11 12 13 14)]
-              [(8) '#u8(#xff 2 3 4 5 0 #xff #xff 6 0 0 0 7 8 9 10
-                        7 0 0 0 0 0 0 0 0 0 0 0 11 12 13 14)])]
-           [(little-endian arm-little-endian)
-            (case (ftype-size ftype:long)
-              [(4) '#u8(#xff 2 4 3 5 0 #xff #xff 6 0 0 0 10 9 8 7
-                        7 0 0 0 14 13 12 11)]
-              [(8) '#u8(#xff 2 4 3 5 0 #xff #xff 6 0 0 0 10 9 8 7
-                        7 0 0 0 0 0 0 0 14 13 12 11 0 0 0 0)])])
-         (fobject-storage fs))
-  (test* "ft3 init w/offset" (fobject-storage fs)
-         (let1 v (make-u8vector (+ 5 (ftype-size ft3)))
-           (init-ft3! v 5
-                      :a -1 :b 2 :c #x0304 :d 5
-                      :e -1 :f 6 :g #x0708090a
-                      :h 7 :i #x0b0c0d0e)
-           (uvector-alias <u8vector> v 5)))
-  )
+;; Double pointer
+(test* "native-type int**" #t
+       (equal? (native-type 'int**)
+               (make-pointer-type (make-pointer-type <int>))))
 
-;; fstruct with bitfield
-(define-fstruct-type ft3 #t #t
-  ((a ftype:uchar)
-   (b0 (bitfield 3))
-   (b1 (bitfield 1))
-   (b2 (bitfield 6))
-   (c ftype:int32)))
+;; Triple pointer
+(test* "native-type char***" #t
+       (equal? (native-type 'char***)
+               (make-pointer-type
+                (make-pointer-type
+                 (make-pointer-type <native-char>)))))
 
-|#
+;; Pointer type is a <native-pointer>
+(test* "native-type int* is <native-pointer>" #t
+       (is-a? (native-type 'int*) <native-pointer>))
+(test* "native-type int* pointee-type" #t
+       (eq? (~ (native-type 'int*) 'pointee-type) <int>))
+
+;; Array types
+(test* "native-type (.array int (3))" #t
+       (equal? (native-type '(.array int (3)))
+               (make-native-array-type <int> '(3))))
+
+(test* "native-type (.array char (8))" #t
+       (equal? (native-type '(.array char (8)))
+               (make-native-array-type <native-char> '(8))))
+
+;; Multi-dimensional array
+(test* "native-type (.array int (2 3))" #t
+       (equal? (native-type '(.array int (2 3)))
+               (make-native-array-type <int> '(2 3))))
+
+(test* "native-type (.array uint8_t (4 4 4))" #t
+       (equal? (native-type '(.array uint8_t (4 4 4)))
+               (make-native-array-type <uint8> '(4 4 4))))
+
+;; Array type properties
+(let1 a (native-type '(.array int (5)))
+  (test* "native-type array element-type" #t
+         (eq? (~ a'element-type) <int>))
+  (test* "native-type array dimensions" '(5)
+         (~ a'dimensions))
+  (test* "native-type array is <native-array>" #t
+         (is-a? a <native-array>)))
+
+;; Array with unsized first dimension
+(test* "native-type (.array int (* 3))" #t
+       (equal? (native-type '(.array int (* 3)))
+               (make-native-array-type <int> '(* 3))))
+
+;; Struct/union
+
+(test* "native-type (.struct bar (x::int y::float))" #t
+       (equal? (native-type '(.struct bar (x::int y::float)))
+               (make-native-struct-type 'bar `((x ,<int>) (y ,<float>)))))
+(test* "native-type (.struct foo (a:: int b ::double))" #t
+       (equal? (native-type '(.struct foo (a:: int b ::double)))
+               (make-native-struct-type 'foo `((a ,<int>) (b ,<double>)))))
+
+;; Struct type properties
+(let1 s (native-type '(.struct pt (x::int y::int)))
+  (test* "native-type struct is <native-struct>" #t
+         (is-a? s <native-struct>))
+  (test* "native-type struct tag" 'pt
+         (~ s'tag)))
+
+;; Struct with nested array field
+(test* "native-type struct with array field" #t
+       (equal? (native-type '(.struct foo (a::int
+                                           b::(.array char (8)))))
+               (make-native-struct-type
+                'foo
+                `((a ,<int>)
+                  (b ,(make-native-array-type <native-char> '(8)))))))
+
+;; Struct with pointer field
+(test* "native-type struct with pointer field" #t
+       (let1 s (native-type '(.struct node (val::int next::int*)))
+         (and (is-a? s <native-struct>)
+              (eq? (~ s'tag) 'node)
+              (equal? (cadr (assq 'next (~ s'fields)))
+                      (make-pointer-type <int>)))))
+
+;; Struct equivalence: two identical signatures produce equal types
+(test* "native-type struct equivalence" #t
+       (equal? (native-type '(.struct s1 (a::int b::double)))
+               (native-type '(.struct s1 (a::int b::double)))))
+
+;; Struct inequivalence: different tags
+(test* "native-type struct different tags" #f
+       (equal? (native-type '(.struct s1 (a::int)))
+               (native-type '(.struct s2 (a::int)))))
+
+;; Unions
+(test* "native-type (.union u2 (x::int y::double))" #t
+       (equal? (native-type '(.union u2 (x::int y::double)))
+               (make-native-union-type 'u2 `((x ,<int>) (y ,<double>)))))
+(test* "native-type (.union u1 (a :: int  b :: float))" #t
+       (equal? (native-type '(.union u1 (a :: int b :: float)))
+               (make-native-union-type 'u1 `((a ,<int>) (b ,<float>)))))
+
+;; Union type properties
+(let1 u (native-type '(.union val (i::int f::float)))
+  (test* "native-type union is <native-union>" #t
+         (is-a? u <native-union>))
+  (test* "native-type union tag" 'val
+         (~ u'tag)))
+
+;; All union field offsets should be 0
+(let1 u (native-type '(.union uu (a::int b::double c::int8_t)))
+  (define native-type-offset*
+    (with-module binary.ftype native-type-offset))
+  (test* "native-type union offsets all zero" '(0 0 0)
+         (map (cut native-type-offset* u <>) '(a b c))))
+
+;; Function types
+
+(test* "native-type (.function (int int) double)" #t
+       (equal? (native-type '(.function (int int) double))
+               (make-native-function-type <double> `(,<int> ,<int>))))
+
+(test* "native-type (.function (int char*) void)" #t
+       (equal? (native-type '(.function (int char*) void))
+               (make-native-function-type
+                <void>
+                `(,<int> ,(make-pointer-type <native-char>)))))
+
+;; Varargs function
+(test* "native-type (.function (int ...) int)" #t
+       (equal? (native-type '(.function (int ...) int))
+               (make-native-function-type <int> `(,<int> ...))))
+
+;; Function type properties
+(let1 f (native-type '(.function (int double) float))
+  (test* "native-type function is <native-function>" #t
+         (is-a? f <native-function>))
+  (test* "native-type function return-type" #t
+         (eq? (~ f'return-type) <float>))
+  (test* "native-type function arg-types" #t
+         (equal? (~ f'arg-types) `(,<int> ,<double>))))
+
+;; No-arg function
+(test* "native-type (.function () int)" #t
+       (equal? (native-type '(.function () int))
+               (make-native-function-type <int> '())))
+
+;; Nested compound types
+
+;; Array of pointers (via nested native-type call in element type)
+(test* "native-type (.array int* (4))" #t
+       (equal? (native-type '(.array int* (4)))
+               (make-native-array-type (make-pointer-type <int>) '(4))))
+
+;; Struct containing struct (via nested (.struct ...) in field type)
+(test* "native-type nested struct" #t
+       (let1 outer (native-type '(.struct outer
+                                   (pos::(.struct point (x::int y::int))
+                                    val::double)))
+         (and (is-a? outer <native-struct>)
+              (is-a? (cadr (assq 'pos (~ outer'fields))) <native-struct>)
+              (eq? (~ (cadr (assq 'pos (~ outer'fields))) 'tag) 'point))))
+
+;; Struct containing array
+(test* "native-type struct with 2d array" #t
+       (let1 s (native-type '(.struct matrix (data::(.array double (3 3))
+                                              name::int)))
+         (and (is-a? s <native-struct>)
+              (is-a? (cadr (assq 'data (~ s'fields))) <native-array>)
+              (equal? (~ (cadr (assq 'data (~ s'fields))) 'dimensions)
+                      '(3 3)))))
+
+;; Integration with existing make-* constructors
+;; Verify that types produced by native-type work correctly with
+;; the existing native-ref/native-set! infrastructure.
+
+(let* ([data (u8vector-copy *fobject-storage*)]
+       [s1 (native-type '(.struct s1 (a::int8_t
+                                      b::uint32_t
+                                      c::uint16_t
+                                      d::uint8_t)))]
+       [s1-manual (make-native-struct-type 's1
+                    `((a ,<int8>) (b ,<uint32>) (c ,<uint16>) (d ,<uint8>)))])
+  (define (bc pos type) (uvector->native-handle data type pos))
+
+  (test* "native-type struct equals manual struct" #t
+         (equal? s1 s1-manual))
+
+  ;; Size and alignment should match
+  (test* "native-type struct size matches" #t
+         (= (~ s1'size) (~ s1-manual'size)))
+  (test* "native-type struct alignment matches" #t
+         (= (~ s1'alignment) (~ s1-manual'alignment)))
+
+  ;; Can actually dereference using the native-type constructed type
+  (test* "native-type struct ref works"
+         (native-ref (bc 0 s1-manual) 'a)
+         (native-ref (bc 0 s1) 'a))
+  (test* "native-type struct ref field b"
+         (native-ref (bc 0 s1-manual) 'b)
+         (native-ref (bc 0 s1) 'b)))
+
+;; native-type pointer used with native-ref
+(let* ([data (u8vector-copy *fobject-storage*)]
+       [int32* (native-type 'int32_t*)]
+       [int32*-manual (make-pointer-type <int32>)])
+  (define (bc pos type) (uvector->native-handle data type pos))
+
+  (test* "native-type pointer equals manual" #t
+         (equal? int32* int32*-manual))
+  (test* "native-type pointer deref works"
+         (native-ref (bc 0 int32*-manual) 0)
+         (native-ref (bc 0 int32*) 0)))
+
+;; native-type array used with native-ref
+(let* ([data (u8vector-copy *fobject-storage*)]
+       [u8a (native-type '(.array uint8_t (4 4)))]
+       [u8a-manual (make-native-array-type <uint8> '(4 4))])
+  (define (bc pos type) (uvector->native-handle data type pos))
+
+  (test* "native-type array equals manual" #t
+         (equal? u8a u8a-manual))
+  (test* "native-type array ref works"
+         (native-ref (bc 0 u8a-manual) '(0 0))
+         (native-ref (bc 0 u8a) '(0 0)))
+  (test* "native-type array ref (1 2)"
+         (native-ref (bc 0 u8a-manual) '(1 2))
+         (native-ref (bc 0 u8a) '(1 2))))
+
+(test* "native-type unknown symbol" (test-error)
+       (native-type 'nonexistent_type_xyz))
+
+(test* "native-type invalid signature" (test-error)
+       (native-type 42))
+
+(test* "native-type invalid field spec"
+       (test-error <error> #/missing type for field/)
+       (native-type '(.struct bad (invalid_no_separator))))
 
 ;;----------------------------------------------------------
 (test-section "binary.pack")

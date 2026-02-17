@@ -1,3 +1,9 @@
+2026-02-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/binary/ftype.scm (native-type): Added a convenience
+	  functon to conver CiSE-style type signature to native-type
+	  instance.
+
 2026-02-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm (<native-handle>), ext/binary/ftype.scm:

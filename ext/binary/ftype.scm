@@ -40,6 +40,7 @@
 
 (define-module binary.ftype
   (use util.match)
+  (use gauche.cgen)
   (use gauche.record)
   (use gauche.uvector)
   (extend gauche.typeutil)              ;access internal routines
@@ -56,6 +57,8 @@
           make-native-array-type
           make-native-struct-type
           make-native-union-type
+
+          native-type
 
           native-alloc
           native-free))
@@ -293,6 +296,102 @@
 (define-method object-equal? ((s <native-union>) (t <native-union>))
   (and (equal? (~ s'tag) (~ t'tag))
        (equal? (~ s'fields) (~ t'fields))))
+
+;;;
+;;;  Convert type signatures to native-type instance
+;;;
+
+;; Check if a symbol name ends with '*', indicating a pointer type.
+;; Returns (base-symbol . depth) or #f.
+(define (%pointer-type-decompose sym)
+  (and-let1 m (#/^([^*]*)(\*+)$/ (symbol->string sym))
+    `(,(string->symbol (m 1)) . ,(string-length (m 2)))))
+
+;; Wrap a native type in N layers of pointer type.
+(define (%wrap-pointer-type base-type depth)
+  (let loop ([t base-type] [d depth])
+    (if (= d 0)
+      t
+      (loop (make-pointer-type t) (- d 1)))))
+
+;; Parse a struct/union field spec.
+(define (%parse-field-specs specs)
+  (map (^e (match-let1 (member ':: type) e
+             (if type
+               (list member (native-type type))
+               (error "missing type for field:" member))))
+       (cgen-canonical-typed-var-list specs #f)))
+
+;; (native-type signature) => <native-type> instance
+;;
+;; Parse a type signature (using cise conventions) and return the
+;; corresponding native type.
+;;
+;; Examples:
+;;   (native-type int)                   => <int>
+;;   (native-type int*)                  => (make-pointer-type <int>)
+;;   (native-type char**)               => (make-pointer-type (make-pointer-type <int8>))
+;;   (native-type (.array int (3)))     => (make-native-array-type <int> '(3))
+;;   (native-type (.array char (2 3)))  => (make-native-array-type <int8> '(2 3))
+;;   (native-type (.struct foo (a::int b::double)))
+;;     => (make-native-struct-type 'foo `((a ,<int>) (b ,<double>)))
+;;   (native-type (.struct foo ((a::(.array char (8))))))
+;;     => (make-native-struct-type 'foo `((a ,(make-native-array-type <int8> '(8)))))
+;;   (native-type (.union u1 (a::int b::float)))
+;;     => (make-native-union-type 'u1 `((a ,<int>) (b ,<float>)))
+;;   (native-type (.function (int int) double))
+;;     => (make-native-function-type <double> `(,<int> ,<int>))
+;;   (native-type (.function (int char* ...) void))
+;;     => (make-native-function-type <void> `(,<int> ,(make-pointer-type <int8>) ...))
+;;
+(define (native-type signature)
+  (match signature
+    ;; Pass-through if already a native type instance
+    [(? (cut is-a? <> <native-type>)) signature]
+
+    ;; Compound types
+
+    ;; (.array element-type (dim ...))
+    [('.array etype (dims ...))
+     (make-native-array-type (native-type etype) dims)]
+
+    ;; (.struct tag (field-specs ...))
+    [('.struct (? symbol? tag) (field-specs ...))
+     (make-native-struct-type tag (%parse-field-specs field-specs))]
+    ;; (.struct (field-specs ...))  -- anonymous
+    [('.struct ((? (^x (or (symbol? x) (pair? x))) field-specs) ...))
+     (make-native-struct-type #f (%parse-field-specs field-specs))]
+
+    ;; (.union tag (field-specs ...))
+    [('.union (? symbol? tag) (field-specs ...))
+     (make-native-union-type tag (%parse-field-specs field-specs))]
+    ;; (.union (field-specs ...))  -- anonymous
+    [('.union ((? (^x (or (symbol? x) (pair? x))) field-specs) ...))
+     (make-native-union-type #f (%parse-field-specs field-specs))]
+
+    ;; (.function (arg-types ...) return-type)
+    [('.function (arg-types ...) ret-type)
+     (make-native-function-type
+      (native-type ret-type)
+      (map (^[a] (if (eq? a '...) '... (native-type a)))
+           arg-types))]
+
+    ;; We ignore 'const' for now
+    [('const type)
+     (native-type type)]
+
+    ;; Simple symbol types
+    [(? symbol?)
+     (or
+      ;; Direct table lookup
+      (%builtin-native-type-lookup signature)
+      ;; Pointer type (trailing *)
+      (and-let* ([decomp (%pointer-type-decompose signature)])
+        (%wrap-pointer-type (native-type (car decomp)) (cdr decomp)))
+      ;; Error
+      (error "Unknown native type:" signature))]
+
+    [_ (error "Invalid native type signature:" signature)]))
 
 ;;;
 ;;;  Raw memory
