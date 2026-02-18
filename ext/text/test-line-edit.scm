@@ -1,5 +1,6 @@
 ;;-------------------------------------------------------------------
 (use gauche.test)
+(use text.gap-buffer)
 (test-start "line-edit")
 (test-section "line-edit")
 (use text.line-edit)
