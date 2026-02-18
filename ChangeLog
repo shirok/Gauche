@@ -1,3 +1,7 @@
+2026-02-18  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/line-edit.scm (mark-sexp): Add mark-sexp command.
+
 2026-02-17  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/line-edit.scm: Add forward/backward-sexp cursor

@@ -1399,6 +1399,19 @@
   (set-mark! ctx buf)
   'moved)
 
+(define-edit-command (mark-sexp ctx buf key)
+  "Set mark at the end of the current s-expression, and select \
+   the region between the current cursor position and the mark. \
+   If the current sexp is unfinished, do nothing."
+  (let1 cur (gap-buffer-pos buf)
+    (if-let1 end (buffer-forward-sexp buf)
+      (begin
+        (gap-buffer-move! buf end)
+        (set-mark! ctx buf)
+        (gap-buffer-move! buf cur)
+        'moved)
+      'unchanged)))
+
 (define-edit-command (kill-line ctx buf key)
   "If the cursor is at the end of line, delete the newline character and \
    combine the line with the next line.  Otherwise, delete characters from \
@@ -2028,7 +2041,7 @@
 
 (define-key *default-keymap* #\x7f delete-backward-char)
 
-;;(define-key *default-keymap* (alt (ctrl #\space)) undefined-command)
+(define-key *default-keymap* (alt (ctrl #\@)) mark-sexp)
 ;;(define-key *default-keymap* (alt (ctrl #\a)) undefined-command)
 (define-key *default-keymap* (alt (ctrl #\b)) backward-sexp)
 ;;(define-key *default-keymap* (alt (ctrl #\c)) undefined-command)
