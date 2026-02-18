@@ -27787,7 +27787,7 @@ or '@code{((@@))} if it is absent and @var{aux-list} is present,
 or '@code{()} if both lists are absent.
 @c JP
 @var{attr-list}をリストにラップして返します。
-@var{attr-list}が存在せず@var{aun-list}がある場合は'@code{((@@))}を返します。
+@var{attr-list}が存在せず@var{aux-list}がある場合は'@code{((@@))}を返します。
 両方とも存在しない場合には'@code{()}を返します。
 @c COMMON
 @end defun
