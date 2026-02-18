@@ -14357,13 +14357,13 @@ Returns @code{#t} if @var{enum} is a member of @var{eset}, @code{#f} otherwise.
 @defun enum-set-empty? eset
 [SRFI-209]
 @c MOD srfi.209
-Returns a@code{#t} if @var{eset} is empty.
+Returns @code{#t} if @var{eset} is empty.
 @end defun
 
 @defun enum-set-disjoint? eset1 eset2
 [SRFI-209]
 @c MOD srfi.209
-Returns @var{#t} if two enum sets on the same enum type share
+Returns @code{#t} if two enum sets on the same enum type share
 no common enums.  An error is thrown unless @var{eset1} and @var{eset2}
 are for the same enum type..
 @end defun
