@@ -1798,7 +1798,7 @@ const char *Scm_StringCursorPointer(const ScmStringBody *sb, ScmObj sc,
         case STRING_CURSOR_FALLBACK_TO_END:
             return SCM_STRING_BODY_END(sb);
         default:
-            /* FALLTHROUGH */
+            /* FALLTHROUGH */;
         }
     }
 
