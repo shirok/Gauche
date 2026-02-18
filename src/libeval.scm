@@ -91,8 +91,8 @@
         (script-file (sys-normalize-pathname path
                                              :absolute #t :canonicalize #t)))
       (when (%load-verbose?)
-        (format (current-error-port) ";;~aLoading ~a~a...\n"
-                (make-string (* (length (current-load-history)) 2) #\space)
+        (format (current-error-port) ";;~v,aLoading ~a~a...\n"
+                (* (length (current-load-history)) 2) "" ; indent
                 path
                 (if hooked? " (hooked) " "")))
       (if (not (input-port? port))
