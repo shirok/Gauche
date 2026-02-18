@@ -789,6 +789,17 @@
 ;; Some buffer utilities
 ;;
 
+(define-constant *parens-alist*
+  '((#\( . #\)) (#\[ . #\]) (#\{ . #\})))
+(define-constant *open-parens* (map car *parens-alist*))
+(define-constant *close-parens* (map cdr *parens-alist*))
+
+(define (sexp-delimiter? ch)
+  (or (char-whitespace? ch)
+      (memv ch '(#\( #\) #\[ #\] #\{ #\} #\" #\; #\|))))
+
+;; Returns a cons of the current line and column number of the buffer position.
+;; Both are 0-based.
 (define (buffer-current-line&col buf)
   (generator-fold (^[ch p]
                     (match-let1 (row . col) p
@@ -827,7 +838,6 @@
 ;; We'd scan recursively, but once found-fn returns a true value,
 ;; we stop scanning and return those values to the top.
 (define (buffer-scan-matching-parens buf start end found-fn)
-  (define parens '((#\( . #\)) (#\[ . #\]) (#\{ . #\})))
   (define (scan i open-pos closer)
     (if (= i end)
       (values #f #f)
@@ -843,7 +853,7 @@
                  (case (gap-buffer-ref buf (+ i 1))
                    [(#\" #\/) => (^c (in-string (+ i 2) c open-pos closer))]
                    [else (scan (+ i 1) open-pos closer)]))]
-              [(assq-ref parens ch) =>
+              [(assq-ref *parens-alist* ch) =>
                (^[closer2]
                  (receive (close-pos result) (scan (+ i 1) i closer2)
                    (cond [result (values close-pos result)]
@@ -905,6 +915,320 @@
     (values (if (= start end) #f (gap-buffer->string buf start end))
             start
             end)))
+
+;; Some auxliary functions for sexp scanning.  These are used for sexp-based
+;; movement.
+
+;; Scan a character set #[...] starting at position i
+;; (which points to the '[' after '#').
+;; Returns the position after the closing ']', or #f.
+(define (buffer-scan-charset buf i)
+  (define len (gap-buffer-content-length buf))
+  (let loop ([j (+ i 1)])
+    (cond [(>= j len) #f]
+          [(eqv? (gap-buffer-ref buf j) #\])
+           (+ j 1)]
+          [(eqv? (gap-buffer-ref buf j) #\\)
+           (if (>= (+ j 1) len) #f (loop (+ j 2)))]
+          [(eqv? (gap-buffer-ref buf j) #\[)
+           ;; Could be a POSIX class like [:digit:]
+           ;; Scan to the next ']' for the inner bracket
+           (let inner ([k (+ j 1)])
+             (cond [(>= k len) #f]
+                   [(eqv? (gap-buffer-ref buf k) #\])
+                    (loop (+ k 1))]
+                   [else (inner (+ k 1))]))]
+          [else (loop (+ j 1))])))
+
+;; Move the cursor forward over one s-expression.
+;; Returns the end index (one past the last character of the sexp),
+;; or #f if no sexp is found from the current position to the end.
+(define (buffer-forward-sexp buf)
+  (define len (gap-buffer-content-length buf))
+
+  ;; Skip whitespace and comments forward from position i.
+  ;; Returns the position of the first non-whitespace/non-comment char,
+  ;; or len if we reach the end.
+  (define (skip-ws-forward i)
+    (cond [(>= i len) i]
+          [(char-whitespace? (gap-buffer-ref buf i))
+           (skip-ws-forward (+ i 1))]
+          [(eqv? (gap-buffer-ref buf i) #\;)
+           ;; line comment: skip to end of line
+           (let loop ([j (+ i 1)])
+             (cond [(>= j len) j]
+                   [(eqv? (gap-buffer-ref buf j) #\newline)
+                    (skip-ws-forward (+ j 1))]
+                   [else (loop (+ j 1))]))]
+          [else i]))
+
+  ;; Scan a balanced list starting at position i (which points to the opener).
+  ;; Returns the position after the matching closer, or #f if unmatched.
+  (define (scan-list i)
+    (let1 closer (assq-ref *parens-alist* (gap-buffer-ref buf i))
+      (let loop ([j (+ i 1)])
+        (let1 j (skip-ws-forward j)
+          (cond [(>= j len) #f]  ; unmatched
+                [(eqv? (gap-buffer-ref buf j) closer) (+ j 1)]
+                [else
+                 (let1 end (scan-sexp-from j)
+                   (if end
+                     (loop end)
+                     #f))])))))
+
+  ;; Scan a string or similar escaped sequence starting at position i
+  ;; (which points to the opening delimiter).
+  ;; Returns the position after the closing delimiter, or #f.
+  (define (scan-string i delim)
+    (let loop ([j (+ i 1)])
+      (cond [(>= j len) #f]
+            [(eqv? (gap-buffer-ref buf j) delim) (+ j 1)]
+            [(eqv? (gap-buffer-ref buf j) #\\)
+             (if (>= (+ j 1) len) #f (loop (+ j 2)))]
+            [else (loop (+ j 1))])))
+
+  ;; Scan a token (symbol, number, etc.) starting at position i.
+  ;; Returns the position after the token.
+  (define (scan-token i)
+    (let loop ([j i])
+      (cond [(>= j len) j]
+            [(sexp-delimiter? (gap-buffer-ref buf j)) j]
+            [(eqv? (gap-buffer-ref buf j) #\\)
+             ;; escaped char in a symbol
+             (if (>= (+ j 1) len) (+ j 1) (loop (+ j 2)))]
+            [else (loop (+ j 1))])))
+
+  ;; Scan one sexp starting at position i (already past whitespace).
+  ;; Returns position after the sexp, or #f.
+  (define (scan-sexp-from i)
+    (and (< i len)
+         (let1 ch (gap-buffer-ref buf i)
+           (cond
+            ;; Opening paren
+            [(memv ch *open-parens*) (scan-list i)]
+            ;; Closing paren - not a valid start of a sexp
+            [(memv ch *close-parens*) #f]
+            ;; String
+            [(eqv? ch #\") (scan-string i #\")]
+            ;; |symbol|
+            [(eqv? ch #\|) (scan-string i #\|)]
+            ;; Line comment
+            [(eqv? ch #\;)
+             ;; shouldn't reach here if skip-ws-forward works, but just in case
+             #f]
+            ;; Hash dispatch
+            [(eqv? ch #\#)
+             (if (>= (+ i 1) len)
+               len
+               (let1 c2 (gap-buffer-ref buf (+ i 1))
+                 (cond
+                  ;; #(...) vector
+                  [(eqv? c2 #\() (scan-list (+ i 1))]
+                  ;; #"..." string interp or #/.../ regexp
+                  [(eqv? c2 #\") (scan-string (+ i 1) #\")]
+                  [(eqv? c2 #\/) (scan-string (+ i 1) #\/)]
+                  ;; #[...] charset
+                  [(eqv? c2 #\[) (buffer-scan-charset buf (+ i 1))]
+                  ;; #\char
+                  [(eqv? c2 #\\)
+                   (if (>= (+ i 2) len)
+                     #f
+                     ;; read one char, then scan rest as token
+                     ;; (handles #\space, #\newline, etc.)
+                     (scan-token (+ i 2)))]
+                  ;; #t, #f, #<n>=, etc. - treat as token
+                  [else (scan-token i)])))]
+            ;; Quote, quasiquote, unquote
+            [(eqv? ch #\')
+             (let1 j (skip-ws-forward (+ i 1))
+               (and (< j len) (scan-sexp-from j)))]
+            [(eqv? ch #\`)
+             (let1 j (skip-ws-forward (+ i 1))
+               (and (< j len) (scan-sexp-from j)))]
+            [(eqv? ch #\,)
+             (let* ([j (+ i 1)]
+                    [j (if (and (< j len) (eqv? (gap-buffer-ref buf j) #\@))
+                         (+ j 1) j)]
+                    [j (skip-ws-forward j)])
+               (and (< j len) (scan-sexp-from j)))]
+            ;; Regular token (symbol, number, etc.)
+            [else (scan-token i)]))))
+
+  (let1 start (skip-ws-forward (gap-buffer-pos buf))
+    (and (< start len)
+         (scan-sexp-from start))))
+
+;; Find the start index of the sexp before the current cursor position.
+;; Returns the start index of the sexp before the cursor,
+;; or #f if no sexp is found.
+;; NB: We want to integrate this function with builtin `read` eventually.
+(define (buffer-backward-sexp buf)
+  ;; Skip whitespace (and trailing parts of line comments) backward.
+  ;; Returns the position of the last char of the previous token,
+  ;; or -1 if we reach the beginning.
+  ;; NB: Detecting line comments going backward is tricky.
+  ;; A simple approach: we just skip whitespace. If the char we land on
+  ;; is inside a comment, the sexp scanner will handle it.
+  (define (skip-ws-backward i)
+    (cond [(< i 0) i]
+          [(char-whitespace? (gap-buffer-ref buf i))
+           (skip-ws-backward (- i 1))]
+          [else i]))
+
+  ;; Adjust start position backward to account for prefix characters
+  ;; such as ' ` , ,@ #
+  (define (adjust-for-prefix s)
+    (if (< s 1)
+      s
+      (let1 prev (gap-buffer-ref buf (- s 1))
+        (cond
+         [(memv prev '(#\' #\` #\,))
+          (adjust-for-prefix (- s 1))]
+         [(and (eqv? prev #\@)
+               (>= s 2)
+               (eqv? (gap-buffer-ref buf (- s 2)) #\,))
+          (adjust-for-prefix (- s 2))]
+         [(eqv? prev #\#)
+          (adjust-for-prefix (- s 1))]
+         [else s]))))
+
+  ;; Scan backward over a balanced list ending at position i
+  ;; (which is on the closer).
+  ;; Returns the index of the matching opener, or #f.
+  (define (scan-list-backward i)
+    (let1 opener (rassq-ref *parens-alist* (gap-buffer-ref buf i))
+      (let loop ([j (- i 1)])
+        (let1 j (skip-ws-backward j)
+          (cond [(< j 0) #f]
+                [(eqv? (gap-buffer-ref buf j) opener)
+                 (adjust-for-prefix j)]
+                [else
+                 (let1 start (scan-sexp-backward-from j)
+                   (if start
+                     (loop (- start 1))
+                     #f))])))))
+
+  ;; Scan backward over a string ending at position i
+  ;; (which is on the closing delimiter).
+  ;; Returns the index of the opening delimiter, or #f.
+  ;; We need to handle backslash escapes properly.
+  (define (scan-string-backward i delim)
+    ;; Count consecutive backslashes immediately before position j
+    (define (count-backslashes j)
+      (let loop ([k j] [cnt 0])
+        (if (and (>= k 0) (eqv? (gap-buffer-ref buf k) #\\))
+          (loop (- k 1) (+ cnt 1))
+          cnt)))
+    (let loop ([j (- i 1)])
+      (cond [(< j 0) #f]
+            [(eqv? (gap-buffer-ref buf j) delim)
+             ;; Check if this delimiter is escaped
+             (let1 nbs (count-backslashes (- j 1))
+               (if (even? nbs)
+                 j  ; unescaped delimiter = the opening one
+                 (loop (- j 1))))]
+            [else (loop (- j 1))])))
+
+  ;; Scan backward over a token ending at position i.
+  ;; Returns the start index of the token.
+  (define (scan-token-backward i)
+    (let loop ([j i])
+      (cond [(< j 0) 0]
+            [(sexp-delimiter? (gap-buffer-ref buf j)) (+ j 1)]
+            ;; Check if char at j is preceded by a backslash (escaped char)
+            [(and (> j 0) (eqv? (gap-buffer-ref buf (- j 1)) #\\))
+             (loop (- j 2))]
+            [else (loop (- j 1))])))
+
+  ;; Scan backward over a character set ending at position i
+  ;; (which is on the closing ']').
+  ;; Returns the index of the '[' (not the '#'), or #f.
+  (define (scan-charset-backward i)
+    ;; We can't easily parse charsets backward due to POSIX classes
+    ;; and special ] rules. Instead, find the '#[' that precedes this
+    ;; and verify by scanning forward.
+    ;; Search backward for '#['.
+    (let loop ([j (- i 1)])
+      (cond [(< j 1) #f]
+            [(and (eqv? (gap-buffer-ref buf j) #\[)
+                  (eqv? (gap-buffer-ref buf (- j 1)) #\#))
+             ;; Found a candidate #[ at (- j 1). Verify by scanning forward.
+             (let1 end (buffer-scan-charset buf j)
+               (if (and end (= (- end 1) i))
+                 j    ; return position of '['
+                 ;; This #[ doesn't match our ], keep searching
+                 (loop (- j 1))))]
+            [else (loop (- j 1))])))
+
+  ;; Scan one sexp backward ending at (or before) position i.
+  ;; Returns the start position of the sexp, or #f.
+  (define (scan-sexp-backward-from i)
+    (cond
+     [(< i 0) #f]
+     [else
+      (let1 ch (gap-buffer-ref buf i)
+        (cond
+         ;; Closing paren
+         [(memv ch *close-parens*) (scan-list-backward i)]
+         ;; Opening paren - can't go backward past this
+         [(memv ch *open-parens*) #f]
+         ;; End of string
+         [(eqv? ch #\")
+          (let1 start (scan-string-backward i #\")
+            ;; Check if preceded by #  (i.e. #"...")
+            (and start
+                 (if (and (> start 0)
+                          (eqv? (gap-buffer-ref buf (- start 1)) #\#))
+                   (- start 1)
+                   start)))]
+         ;; End of |symbol|
+         [(eqv? ch #\|)
+          (scan-string-backward i #\|)]
+         ;; End of #/.../
+         [(eqv? ch #\/)
+          (let1 start (scan-string-backward i #\/)
+            (and start
+                 (if (and (> start 0)
+                          (eqv? (gap-buffer-ref buf (- start 1)) #\#))
+                   (- start 1)
+                   start)))]
+         ;; End of #[...]
+         [(eqv? ch #\])
+          ;; Could be a charset #[...] or bracket list [...]
+          ;; Try as charset first (look for preceding #)
+          (let1 start (scan-charset-backward i)
+            (if (and start (> start 0)
+                     (eqv? (gap-buffer-ref buf (- start 1)) #\#))
+              (- start 1)
+              ;; Try as balanced brackets
+              (scan-list-backward i)))]
+         ;; Token (symbol, number, keyword, #t, #f, #\char, etc.)
+         [else
+          (let1 start (scan-token-backward i)
+            ;; Check for prefixes: ' ` , ,@ #
+            (let adjust ([s start])
+              (if (< s 1)
+                s
+                (let1 prev (gap-buffer-ref buf (- s 1))
+                  (cond
+                   ;; Quote-like prefix
+                   [(memv prev '(#\' #\` #\,))
+                    (adjust (- s 1))]
+                   ;; ,@ prefix
+                   [(and (eqv? prev #\@)
+                         (>= s 2)
+                         (eqv? (gap-buffer-ref buf (- s 2)) #\,))
+                    (adjust (- s 2))]
+                   ;; # prefix (for #t, #f, #\x, #(...), etc.)
+                   [(eqv? prev #\#)
+                    (- s 1)]
+                   [else s])))))]))]
+     ))
+
+  (let1 end (skip-ws-backward (- (gap-buffer-pos buf) 1))
+    (if (< end 0)
+      #f
+      (scan-sexp-backward-from end))))
 
 ;;;
 ;;; Commands
@@ -1045,6 +1369,20 @@
   (let* ([res1 (move-word! buf 1 #[\W] 0)]
          [res2 (move-word! buf 1 #[\w] 0)])
     (if (or res1 res2) 'moved 'unchanged)))
+
+(define-edit-command (forward-sexp ctx buf key)
+  "Move the cursor forward over one s-expression."
+  (if-let1 pos (buffer-forward-sexp buf)
+    (begin (gap-buffer-move! buf pos)
+           'moved)
+    'unchanged))
+
+(define-edit-command (backward-sexp ctx buf key)
+  "Move the cursor backward over one s-expression."
+  (if-let1 pos (buffer-backward-sexp buf)
+    (begin (gap-buffer-move! buf pos)
+           'moved)
+    'unchanged))
 
 (define-edit-command (move-beginning-of-buffer ctx buf key)
   "Position the cursor at the beginning of the buffer."
@@ -1711,11 +2049,11 @@
 
 ;;(define-key *default-keymap* (alt (ctrl #\space)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\a)) undefined-command)
-;;(define-key *default-keymap* (alt (ctrl #\b)) undefined-command)
+(define-key *default-keymap* (alt (ctrl #\b)) backward-sexp)
 ;;(define-key *default-keymap* (alt (ctrl #\c)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\d)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\e)) undefined-command)
-;;(define-key *default-keymap* (alt (ctrl #\f)) undefined-command)
+(define-key *default-keymap* (alt (ctrl #\f)) forward-sexp)
 ;;(define-key *default-keymap* (alt (ctrl #\g)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\h)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\i)) undefined-command)
