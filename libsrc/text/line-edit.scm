@@ -926,8 +926,7 @@
   (define len (gap-buffer-content-length buf))
   (let loop ([j (+ i 1)])
     (cond [(>= j len) #f]
-          [(eqv? (gap-buffer-ref buf j) #\])
-           (+ j 1)]
+          [(eqv? (gap-buffer-ref buf j) #\]) (+ j 1)]
           [(eqv? (gap-buffer-ref buf j) #\\)
            (if (>= (+ j 1) len) #f (loop (+ j 2)))]
           [(eqv? (gap-buffer-ref buf j) #\[)
@@ -935,8 +934,7 @@
            ;; Scan to the next ']' for the inner bracket
            (let inner ([k (+ j 1)])
              (cond [(>= k len) #f]
-                   [(eqv? (gap-buffer-ref buf k) #\])
-                    (loop (+ k 1))]
+                   [(eqv? (gap-buffer-ref buf k) #\]) (loop (+ k 1))]
                    [else (inner (+ k 1))]))]
           [else (loop (+ j 1))])))
 
@@ -965,16 +963,12 @@
   ;; Scan a balanced list starting at position i (which points to the opener).
   ;; Returns the position after the matching closer, or #f if unmatched.
   (define (scan-list i)
-    (let1 closer (assq-ref *parens-alist* (gap-buffer-ref buf i))
-      (let loop ([j (+ i 1)])
-        (let1 j (skip-ws-forward j)
-          (cond [(>= j len) #f]  ; unmatched
-                [(eqv? (gap-buffer-ref buf j) closer) (+ j 1)]
-                [else
-                 (let1 end (scan-sexp-from j)
-                   (if end
-                     (loop end)
-                     #f))])))))
+    (let1 closer (alist-ref *parens-alist* (gap-buffer-ref buf i) eqv?)
+      (let loop ([j (skip-ws-forward (+ i 1))])
+        (cond [(>= j len) #f]  ; unmatched
+              [(eqv? (gap-buffer-ref buf j) closer) (+ j 1)]
+              [else (and-let1 end (scan-sexp-from j)
+                      (loop (skip-ws-forward end)))]))))
 
   ;; Scan a string or similar escaped sequence starting at position i
   ;; (which points to the opening delimiter).
@@ -1071,8 +1065,7 @@
   ;; is inside a comment, the sexp scanner will handle it.
   (define (skip-ws-backward i)
     (cond [(< i 0) i]
-          [(char-whitespace? (gap-buffer-ref buf i))
-           (skip-ws-backward (- i 1))]
+          [(char-whitespace? (gap-buffer-ref buf i)) (skip-ws-backward (- i 1))]
           [else i]))
 
   ;; Adjust start position backward to account for prefix characters
@@ -1082,31 +1075,24 @@
       s
       (let1 prev (gap-buffer-ref buf (- s 1))
         (cond
-         [(memv prev '(#\' #\` #\,))
-          (adjust-for-prefix (- s 1))]
+         [(memv prev '(#\' #\` #\, #\#)) (adjust-for-prefix (- s 1))]
          [(and (eqv? prev #\@)
                (>= s 2)
                (eqv? (gap-buffer-ref buf (- s 2)) #\,))
           (adjust-for-prefix (- s 2))]
-         [(eqv? prev #\#)
-          (adjust-for-prefix (- s 1))]
          [else s]))))
 
   ;; Scan backward over a balanced list ending at position i
   ;; (which is on the closer).
   ;; Returns the index of the matching opener, or #f.
   (define (scan-list-backward i)
-    (let1 opener (rassq-ref *parens-alist* (gap-buffer-ref buf i))
-      (let loop ([j (- i 1)])
-        (let1 j (skip-ws-backward j)
-          (cond [(< j 0) #f]
-                [(eqv? (gap-buffer-ref buf j) opener)
-                 (adjust-for-prefix j)]
-                [else
-                 (let1 start (scan-sexp-backward-from j)
-                   (if start
-                     (loop (- start 1))
-                     #f))])))))
+    (let1 opener (alist-key *parens-alist* (gap-buffer-ref buf i) eqv?)
+      (let loop ([j (skip-ws-backward (- i 1))])
+        (cond [(< j 0) #f]
+              [(eqv? (gap-buffer-ref buf j) opener) (adjust-for-prefix j)]
+              [else (let1 start (scan-sexp-backward-from j)
+                      (and start
+                           (loop (skip-ws-backward (- start 1)))))]))))
 
   ;; Scan backward over a string ending at position i
   ;; (which is on the closing delimiter).
@@ -1174,24 +1160,21 @@
          [(memv ch *open-parens*) #f]
          ;; End of string
          [(eqv? ch #\")
-          (let1 start (scan-string-backward i #\")
+          (and-let1 start (scan-string-backward i #\")
             ;; Check if preceded by #  (i.e. #"...")
-            (and start
-                 (if (and (> start 0)
-                          (eqv? (gap-buffer-ref buf (- start 1)) #\#))
-                   (- start 1)
-                   start)))]
+            (if (and (> start 0)
+                     (eqv? (gap-buffer-ref buf (- start 1)) #\#))
+              (- start 1)
+              start))]
          ;; End of |symbol|
-         [(eqv? ch #\|)
-          (scan-string-backward i #\|)]
+         [(eqv? ch #\|) (scan-string-backward i #\|)]
          ;; End of #/.../
          [(eqv? ch #\/)
-          (let1 start (scan-string-backward i #\/)
-            (and start
-                 (if (and (> start 0)
-                          (eqv? (gap-buffer-ref buf (- start 1)) #\#))
-                   (- start 1)
-                   start)))]
+          (and-let1 start (scan-string-backward i #\/)
+            (if (and (> start 0)
+                     (eqv? (gap-buffer-ref buf (- start 1)) #\#))
+              (- start 1)
+              start))]
          ;; End of #[...]
          [(eqv? ch #\])
           ;; Could be a charset #[...] or bracket list [...]
@@ -1212,16 +1195,14 @@
                 (let1 prev (gap-buffer-ref buf (- s 1))
                   (cond
                    ;; Quote-like prefix
-                   [(memv prev '(#\' #\` #\,))
-                    (adjust (- s 1))]
+                   [(memv prev '(#\' #\` #\,)) (adjust (- s 1))]
                    ;; ,@ prefix
                    [(and (eqv? prev #\@)
                          (>= s 2)
                          (eqv? (gap-buffer-ref buf (- s 2)) #\,))
                     (adjust (- s 2))]
                    ;; # prefix (for #t, #f, #\x, #(...), etc.)
-                   [(eqv? prev #\#)
-                    (- s 1)]
+                   [(eqv? prev #\#) (- s 1)]
                    [else s])))))]))]
      ))
 
