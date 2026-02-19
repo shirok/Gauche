@@ -1237,10 +1237,18 @@
 (define-syntax define-edit-command
   (syntax-rules ()
     [(_ (name . args) docstring . body)
-     (define name (make <edit-command>
-                    :name 'name
-                    :handler (^ args . body)
-                    :docstring docstring))]))
+     ;; TRANSIENT: We bind the handler to toplevel symbol so that
+     ;; test-module would scan its body.  This is a workaround for
+     ;; the current limitation of test-module; should be gone once
+     ;; the issue is fixed.
+     ;; The toplevel symbol 'handler' is renamed by the expander so
+     ;; it won't conflict with other handlers.
+     (begin
+       (define (handler . args) . body)
+       (define name (make <edit-command>
+                      :name 'name
+                      :handler handler
+                      :docstring docstring)))]))
 
 
 (define-edit-command (self-insert-command ctx buf key)
