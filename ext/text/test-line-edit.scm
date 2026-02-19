@@ -49,10 +49,10 @@
 
 ;; Test buffer-forward-sexp and buffer-backward-sexp
 (let ()
-  (define %buffer-forward-sexp
-    (with-module text.line-edit buffer-forward-sexp))
-  (define %buffer-backward-sexp
-    (with-module text.line-edit buffer-backward-sexp))
+  (define %buffer-scan-sexp-forward
+    (with-module text.line-edit buffer-scan-sexp-forward))
+  (define %buffer-scan-sexp-backward
+    (with-module text.line-edit buffer-scan-sexp-backward))
   (define (make-buf s pos)
     (let1 buf ((with-module text.gap-buffer string->gap-buffer) s)
       (gap-buffer-move! buf pos)
@@ -60,11 +60,11 @@
 
   ;; (t <input-string> <cursor-pos> <expected-result>)
   (define (tf s pos expect)
-    (test* (format "buffer-forward-sexp: ~s ~d" s pos) expect
-           (%buffer-forward-sexp (make-buf s pos))))
+    (test* (format "buffer-scan-sexp-forward: ~s ~d" s pos) expect
+           (%buffer-scan-sexp-forward (make-buf s pos) pos)))
   (define (tb s pos expect)
-    (test* (format "buffer-backward-sexp: ~s ~d" s pos) expect
-           (%buffer-backward-sexp (make-buf s pos))))
+    (test* (format "buffer-scan-sexp-backward: ~s ~d" s pos) expect
+           (%buffer-scan-sexp-backward (make-buf s pos) pos)))
 
   ;;----------------------------------------------
   ;; forward-sexp tests

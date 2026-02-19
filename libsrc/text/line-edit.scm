@@ -919,12 +919,12 @@
 ;; Some auxliary functions for sexp scanning.  These are used for sexp-based
 ;; movement.
 
-;; Scan a character set #[...] starting at position i
+;; Scan a character set #[...] starting at position pos
 ;; (which points to the '[' after '#').
 ;; Returns the position after the closing ']', or #f.
-(define (buffer-scan-charset buf i)
+(define (buffer-scan-charset buf pos)
   (define len (gap-buffer-content-length buf))
-  (let loop ([j (+ i 1)])
+  (let loop ([j (+ pos 1)])
     (cond [(>= j len) #f]
           [(eqv? (gap-buffer-ref buf j) #\]) (+ j 1)]
           [(eqv? (gap-buffer-ref buf j) #\\)
@@ -938,10 +938,10 @@
                    [else (inner (+ k 1))]))]
           [else (loop (+ j 1))])))
 
-;; Move the cursor forward over one s-expression.
-;; Returns the end index (one past the last character of the sexp),
-;; or #f if no sexp is found from the current position to the end.
-(define (buffer-forward-sexp buf)
+;; Compute point past the s-exp starting at POS, which must be a valid
+;; position in BUF.  If there is an s-exp, returns the position after
+;; the s-exp; otherwise returns #f.
+(define (buffer-scan-sexp-forward buf pos)
   (define len (gap-buffer-content-length buf))
 
   ;; Skip whitespace and comments forward from position i.
@@ -1048,15 +1048,14 @@
             ;; Regular token (symbol, number, etc.)
             [else (scan-token i)]))))
 
-  (let1 start (skip-ws-forward (gap-buffer-pos buf))
+  (let1 start (skip-ws-forward pos)
     (and (< start len)
          (scan-sexp-from start))))
 
-;; Find the start index of the sexp before the current cursor position.
-;; Returns the start index of the sexp before the cursor,
+;; Find the start index of the sexp before POS.  POS must be a valid
+;; position in BUF.  Returns the index of the start of the sexp,
 ;; or #f if no sexp is found.
-;; NB: We want to integrate this function with builtin `read` eventually.
-(define (buffer-backward-sexp buf)
+(define (buffer-scan-sexp-backward buf pos)
   ;; Skip whitespace (and trailing parts of line comments) backward.
   ;; Returns the position of the last char of the previous token,
   ;; or -1 if we reach the beginning.
@@ -1206,7 +1205,7 @@
                    [else s])))))]))]
      ))
 
-  (let1 end (skip-ws-backward (- (gap-buffer-pos buf) 1))
+  (let1 end (skip-ws-backward (- pos 1))
     (if (< end 0)
       #f
       (scan-sexp-backward-from end))))
@@ -1353,14 +1352,14 @@
 
 (define-edit-command (forward-sexp ctx buf key)
   "Move the cursor forward over one s-expression."
-  (if-let1 pos (buffer-forward-sexp buf)
+  (if-let1 pos (buffer-scan-sexp-forward buf (gap-buffer-pos buf))
     (begin (gap-buffer-move! buf pos)
            'moved)
     'unchanged))
 
 (define-edit-command (backward-sexp ctx buf key)
   "Move the cursor backward over one s-expression."
-  (if-let1 pos (buffer-backward-sexp buf)
+  (if-let1 pos (buffer-scan-sexp-backward buf (gap-buffer-pos buf))
     (begin (gap-buffer-move! buf pos)
            'moved)
     'unchanged))
@@ -1407,17 +1406,13 @@
    end of the next "
   (let ([sel (selected-range ctx buf)]
         [cur (gap-buffer-pos buf)])
-    ;; If selecttion exists, extend it from its end.
-    (when sel (gap-buffer-move! buf (cdr sel)))
-    (if-let1 end (buffer-forward-sexp buf)
+    (if-let1 end (buffer-scan-sexp-forward buf (if sel (cdr sel) cur))
       (begin
         (gap-buffer-move! buf end)
         (set-mark! ctx buf)
         (gap-buffer-move! buf cur)
         'moved)
-      (begin
-        (gap-buffer-move! buf cur) ; restore position
-        'unchanged))))
+      'unchanged)))
 
 (define-edit-command (kill-line ctx buf key)
   "If the cursor is at the end of line, delete the newline character and \
