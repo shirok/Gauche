@@ -2933,9 +2933,9 @@ slot @code{y} of new class, she may write something like this:
 
 @example
 (define-method change-class ((obj <old-class>) <new-class>)
-  (let ((old-val (slot-ref obj 'x)))
-    (next-method)               ;; calls default change-class
-    (slot-set! obj 'y old-val)  ;; here, obj's class is already <new-class>.
+  (let ((old-val (slot-ref-using-class <old-class> obj 'x)))
+    (next-method)                                       ;; calls default change-class
+    (slot-set-using-class! <new-class> obj 'y old-val)  ;; here, obj's class is already <new-class>.
     obj))
 @end example
 
