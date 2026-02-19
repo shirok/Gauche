@@ -1,3 +1,8 @@
+2026-02-19  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/line-edit.scm (tarnspose-sexps): Aded trasnpose-sexprs
+	  command.
+
 2026-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/line-edit.scm (mark-sexp): Add mark-sexp command.

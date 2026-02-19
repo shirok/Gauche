@@ -1537,6 +1537,29 @@
                [prev (gap-buffer-ref buf (gap-buffer-pos buf))])
            (gap-buffer-edit! buf `(c #f 2 ,(string cur prev))))]))
 
+(define-edit-command (tarnspose-sexps ctx buf key)
+  "Exchange the s-expression after the cursor with the s-expression before \
+   the cursor, and position the cursor after the replaced exprs. \
+   If either s-expression is missing or incomplete, do nothing."
+  ;;
+  ;;           If cursor is here, bbbbb and ccccc are swapped.
+  ;;           v
+  ;;    aaaaa bbbbb ccccc
+  ;;          ^
+  ;;;         If cursor is here, aaaaa and bbbbb are swapped.
+  ;;;
+  (or (and-let* ([pos (gap-buffer-pos buf)]
+                 [start1 (buffer-scan-sexp-backward buf pos)]
+                 [end1   (buffer-scan-sexp-forward buf start1)]
+                 [end2   (buffer-scan-sexp-forward buf end1)]
+                 [start2 (buffer-scan-sexp-backward buf end2)]
+                 [swapped (string-append
+                           (gap-buffer->string buf start2 end2)
+                           (gap-buffer->string buf end1 start2)
+                           (gap-buffer->string buf start1 end1))])
+        (gap-buffer-edit! buf `(c ,start1 ,(- end2 start1) ,swapped)))
+      'unchanged))
+
 (define-edit-command (yank ctx buf key)
   "Insert the last chunk in the kill ring at the cursor \
    position."
@@ -2071,7 +2094,7 @@
 ;;(define-key *default-keymap* (alt (ctrl #\q)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\r)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\s)) undefined-command)
-;;(define-key *default-keymap* (alt (ctrl #\t)) undefined-command)
+(define-key *default-keymap* (alt (ctrl #\t)) tarnspose-sexps)
 ;;(define-key *default-keymap* (alt (ctrl #\u)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\v)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\w)) undefined-command)
