@@ -1402,15 +1402,22 @@
 (define-edit-command (mark-sexp ctx buf key)
   "Set mark at the end of the current s-expression, and select \
    the region between the current cursor position and the mark. \
-   If the current sexp is unfinished, do nothing."
-  (let1 cur (gap-buffer-pos buf)
+   If the current sexp is unfinished, do nothing.
+   If there's alreay a selection, extend the selection to the \
+   end of the next "
+  (let ([sel (selected-range ctx buf)]
+        [cur (gap-buffer-pos buf)])
+    ;; If selecttion exists, extend it from its end.
+    (when sel (gap-buffer-move! buf (cdr sel)))
     (if-let1 end (buffer-forward-sexp buf)
       (begin
         (gap-buffer-move! buf end)
         (set-mark! ctx buf)
         (gap-buffer-move! buf cur)
         'moved)
-      'unchanged)))
+      (begin
+        (gap-buffer-move! buf cur) ; restore position
+        'unchanged))))
 
 (define-edit-command (kill-line ctx buf key)
   "If the cursor is at the end of line, delete the newline character and \
