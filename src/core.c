@@ -703,6 +703,11 @@ init_cond_features()
         { "gauche.sys.zlib", "rfc.zlib" },
 #endif
 
+        /* ffi */
+#if defined(USE_FFI)
+        { "gauche.sys.ffi", "gauche.ffi" },
+#endif
+
         { "regexp-non-greedy", "srfi.115" },
         { "regexp-look-around", "srfi.115" },
         { "regexp-backrefs", "srfi.115" },
