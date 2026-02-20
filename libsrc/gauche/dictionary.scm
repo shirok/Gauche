@@ -106,7 +106,7 @@
 
 (define-method dict-fold ((dict <dictionary>) proc seed)
   ;; This depends on the fact that a dictionary is also a collection.
-  (fold (^[kv seed] (proc (car kv) (cdr kv) seed)) dict seed))
+  (fold (^[kv seed] (proc (car kv) (cdr kv) seed)) seed dict))
 
 (define-method dict-fold-right ((dict <ordered-dictionary>) proc seed)
   (fold-right (^[kv seed] (proc (car kv) (cdr kv) seed)) dict seed))
