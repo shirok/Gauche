@@ -938,6 +938,15 @@
                    [else (inner (+ k 1))]))]
           [else (loop (+ j 1))])))
 
+;; Skip whitespace backward from POS.  Returns the position of the first
+;; non-whitespace char, or -1 if we reach the beginning of the buffer..
+;; (This doesn't consider line comments.)
+(define (buffer-skip-ws-backward buf pos)
+  (cond [(< pos 0) -1]
+        [(char-whitespace? (gap-buffer-ref buf pos))
+         (buffer-skip-ws-backward buf (- pos 1))]
+        [else pos]))
+
 ;; Compute point past the s-exp starting at POS, which must be a valid
 ;; position in BUF.  If there is an s-exp, returns the position after
 ;; the s-exp; otherwise returns #f.
@@ -1056,16 +1065,6 @@
 ;; position in BUF.  Returns the index of the start of the sexp,
 ;; or #f if no sexp is found.
 (define (buffer-scan-sexp-backward buf pos)
-  ;; Skip whitespace (and trailing parts of line comments) backward.
-  ;; Returns the position of the last char of the previous token,
-  ;; or -1 if we reach the beginning.
-  ;; NB: Detecting line comments going backward is tricky.
-  ;; A simple approach: we just skip whitespace. If the char we land on
-  ;; is inside a comment, the sexp scanner will handle it.
-  (define (skip-ws-backward i)
-    (cond [(< i 0) i]
-          [(char-whitespace? (gap-buffer-ref buf i)) (skip-ws-backward (- i 1))]
-          [else i]))
 
   ;; Adjust start position backward to account for prefix characters
   ;; such as ' ` , ,@ #
@@ -1086,12 +1085,13 @@
   ;; Returns the index of the matching opener, or #f.
   (define (scan-list-backward i)
     (let1 opener (alist-key *parens-alist* (gap-buffer-ref buf i) eqv?)
-      (let loop ([j (skip-ws-backward (- i 1))])
+      (let loop ([j (buffer-skip-ws-backward buf (- i 1))])
         (cond [(< j 0) #f]
               [(eqv? (gap-buffer-ref buf j) opener) (adjust-for-prefix j)]
-              [else (let1 start (scan-sexp-backward-from j)
-                      (and start
-                           (loop (skip-ws-backward (- start 1)))))]))))
+              [else
+               (let1 start (scan-sexp-backward-from j)
+                 (and start
+                      (loop (buffer-skip-ws-backward buf (- start 1)))))]))))
 
   ;; Scan backward over a string ending at position i
   ;; (which is on the closing delimiter).
@@ -1205,7 +1205,7 @@
                    [else s])))))]))]
      ))
 
-  (let1 end (skip-ws-backward (- pos 1))
+  (let1 end (buffer-skip-ws-backward buf (- pos 1))
     (if (< end 0)
       #f
       (scan-sexp-backward-from end))))
