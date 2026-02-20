@@ -41,6 +41,29 @@
 (test-basics
  (make-tree-map eq? (^[a b] (string<? (x->string a) (x->string b)))))
 
+(test-section "default dictionary methods")
+
+(define-class <lite-dict> (<dictionary>)
+  ((body :init-form (make-hash-table 'eq?))))
+
+(define-method call-with-iterator ((self <lite-dict>) proc :key :allow-other-keys)
+  (call-with-iterator (slot-ref self 'body) proc))
+
+(define-method size-of ((self <lite-dict>))
+  (size-of (slot-ref self 'body)))
+
+(define-dict-interface <lite-dict>
+  :get (^ (dict key . fallback)
+         (apply dict-get (slot-ref dict 'body) key fallback))
+  :put! (^ (dict key val)
+          (dict-put! (slot-ref dict 'body) key val))
+  :delete! (^ (dict key)
+             (dict-delete! (slot-ref dict 'body) key))
+  :comparator (^ (dict)
+                (dict-comparator (slot-ref dict 'body))))
+
+(test-basics (make <lite-dict>))
+
 (test-section "bimap")
 
 (test-basics (make-bimap (make-hash-table 'eq?) (make-hash-table 'eqv?)))
