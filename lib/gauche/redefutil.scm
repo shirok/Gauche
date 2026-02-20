@@ -92,11 +92,20 @@
              (loop (cddr args) (list* metaclass :metaclass r))]
             [else (loop (cddr args) (list* (cadr args) (car args) r))])))
 
-  (let* ([initargs (slot-ref sub 'initargs)]
-         [supers   (new-supers (class-direct-supers sub))]
-         ;; NB: this isn't really correct!
-         [metaclass (or (get-keyword :metaclass initargs #f)
-                        (%get-default-metaclass supers))]
+  (define (latest-class class)
+    (if-let1 redefined (slot-ref-using-class (current-class-of class)
+                                             class
+                                             'redefined)
+      (latest-class redefined)
+      class))
+
+  (let* ([sub-meta (current-class-of sub)]
+         [initargs (slot-ref-using-class sub-meta sub 'initargs)]
+         [old-supers (slot-ref-using-class sub-meta sub 'direct-supers)]
+         [supers   (new-supers old-supers)]
+         [metaclass (latest-class
+                     (or (get-keyword :metaclass initargs #f)
+                         (%get-default-metaclass supers)))]
          [new-sub  (apply make metaclass
                           (fix-initargs initargs supers metaclass))])
     (redefine-class! sub new-sub)
