@@ -1087,7 +1087,11 @@
     (let1 opener (alist-key *parens-alist* (gap-buffer-ref buf i) eqv?)
       (let loop ([j (buffer-skip-ws-backward buf (- i 1))])
         (cond [(< j 0) #f]
-              [(eqv? (gap-buffer-ref buf j) opener) (adjust-for-prefix j)]
+              [(eqv? (gap-buffer-ref buf j) opener)
+               (if (and (> j 0)
+                        (eqv? (gap-buffer-ref buf (- j 1)) #\\))
+                 (loop (- j 1))
+                 (adjust-for-prefix j))]
               [else
                (let1 start (scan-sexp-backward-from j)
                  (and start
@@ -1154,9 +1158,19 @@
       (let1 ch (gap-buffer-ref buf i)
         (cond
          ;; Closing paren
-         [(memv ch *close-parens*) (scan-list-backward i)]
+         [(memv ch *close-parens*)
+          (if (and (> i 0)
+                   (eqv? (gap-buffer-ref buf (- i 1)) #\\))
+            ;; This is escaped paren. Skip it.
+            (scan-sexp-backward-from (- i 1))
+            (scan-list-backward i))]
          ;; Opening paren - can't go backward past this
-         [(memv ch *open-parens*) #f]
+         [(memv ch *open-parens*)
+          (if (and (> i 0)
+                   (eqv? (gap-buffer-ref buf (- i 1)) #\\))
+            ;; This is escaped paren. Skip it.
+            (scan-sexp-backward-from (- i 1))
+            #f)]
          ;; End of string
          [(eqv? ch #\")
           (and-let1 start (scan-string-backward i #\")

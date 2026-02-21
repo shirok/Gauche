@@ -197,6 +197,10 @@
   (tb "#\\a" 3 0)
   (tb "#\\space" 7 0)
   (tb "bc #\\a" 6 3)
+  (tb "(abc #\\( def)" 9 5)
+  (tb "(abc #\\) def)" 9 5)
+  (tb "(abc #\\( def)" 13 0)
+  (tb "(abc #\\) def)" 13 0)
 
   ;; Vector
   (tb "#(a b)" 6 0)
