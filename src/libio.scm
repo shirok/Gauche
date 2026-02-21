@@ -886,7 +886,8 @@
             (dotimes [i (box-arity obj)]
               (walk (unbox-value obj i) 0))]
            [(is-a? obj <dictionary>)
-            (%dict-walk! obj (^[k v] (walk k 0) (walk v 0)))]
+            (%dict-walk! obj (^[k v] (walk k 0) (walk v 0))
+                         port ctrl)]
            [else ; generic objects.  we go walk pass via write-object
             (write-object obj port)])
           ;; If circular-only, we don't count non-circular objects.
@@ -901,15 +902,17 @@
 (define %dict-walk!
   (let ([walker #f]
         [transparent? #f])
-    (^[dict proc]
+    (^[dict proc port ctrl]
       (unless walker
         (set! walker
               (module-binding-ref 'gauche.libdict 'dict-for-each)))
       (unless transparent?
         (set! transparent?
               (module-binding-ref 'gauche.libdict 'dict-transparent?)))
-      (when (transparent? dict)
-        (walker dict proc)))))
+      (if (and (transparent? dict)
+               (~ ctrl'pretty))
+        (walker dict proc)
+        (write-object dict port)))))
 
 (select-module gauche.internal)
 
