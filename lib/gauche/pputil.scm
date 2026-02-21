@@ -37,7 +37,7 @@
 (select-module gauche.pputil)
 
 (autoload gauche.collection size-of)
-(autoload gauche.dictionary dict->alist dict-comparator)
+(autoload gauche.dictionary dict-transparent? dict->alist dict-comparator)
 (autoload gauche.array format-array/prefix format-array/content)
 
 ;; List printing modes:
@@ -158,6 +158,10 @@
                     (^p (combine-hash-value (eqv-hash (car p))
                                             (eq-hash (cdr p)))))))
 
+(define (transparent-dictionary? obj)
+  (and (is-a? obj <dictionary>)
+       (dict-transparent? obj)))
+
 ;; layout :: (Obj, Integer, Context) -> Layouter
 (define (layout obj level c)
   (cond [(has-label? obj c) (layout-ref obj c)]
@@ -165,7 +169,7 @@
               (or (pair? obj)
                   (vector? obj)
                   (uvector? obj)
-                  (is-a? obj <dictionary>)
+                  (transparent-dictionary? obj)
                   (is-a? obj (with-module gauche.internal <array-base>))))
          (layout-simple "#")]
         [else (layout-misc obj level c)]))
@@ -226,7 +230,7 @@
          (let1 tag (rxmatch-substring
                      (#/[csuf]\d+/ (x->string (class-name (class-of obj)))))
            (layout-list (sprefix obj (format "#~a(" tag) c) (mapu rec obj) c))]
-        [(is-a? obj <dictionary>)
+        [(transparent-dictionary? obj)
          (layout-dict obj (map+ rec (dict->alist obj)) c)]
         [(is-a? obj (with-module gauche.internal <array-base>))
          (layout-array obj level c)]

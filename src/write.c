@@ -815,7 +815,12 @@ static int pprintable_p(ScmObj obj)
     if (SCM_PAIRP(obj)) return TRUE;
     if (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) > 0) return TRUE;
     if (SCM_UVECTORP(obj) && SCM_UVECTOR_SIZE(obj) > 0) return TRUE;
-    if (SCM_ISA(obj, SCM_CLASS_DICTIONARY)) return TRUE;
+    if (SCM_ISA(obj, SCM_CLASS_DICTIONARY)) {
+      static ScmObj proc = SCM_UNDEFINED;
+      SCM_BIND_PROC(proc, "dict-transparent?",
+                    Scm_FindModule(SCM_SYMBOL(SCM_INTERN("gauche.libdict")), 0));
+      return SCM_BOOL_VALUE(Scm_ApplyRec1(proc, obj));
+    }
     if (SCM_ISA(obj, SCM_CLASS_ARRAY_BASE)) return TRUE;
     return FALSE;
 }
