@@ -923,6 +923,21 @@
            (cut pprint data :width 45 :port <>)))
   )
 
+;; user defined nontransparent dictionary
+(define-class <opaque-dict> (<dictionary>)
+  ((value :init-keyword :value)))
+
+(define-method write-object ((self <opaque-dict>) out)
+  (format out "#<opaque-dict ~a>" (slot-ref self 'value)))
+
+(define-method call-with-iterator ((self <opaque-dict>) proc :key :allow-other-keys)
+  (call-with-iterator (list (cons 'value (slot-ref self 'value))) proc))
+
+(test* "nontransparent dictionary"
+       "#<opaque-dict 42>\n"
+       (call-with-output-string
+         (cut pprint (make <opaque-dict> :value 42) :port <>)))
+
 ;;===============================================================
 ;; utf-8 with BOM
 ;;
