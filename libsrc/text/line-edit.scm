@@ -1235,6 +1235,18 @@
       #f
       (scan-sexp-backward-from end))))
 
+;; Scan backward from POS to find the beginning of the innermost
+;; list or string containing POS.
+;; Returns the position of the opening delimiter, or #f if not found.
+(define (buffer-find-up-list buf pos)
+  (define (find-first-element pos)
+    (if-let1 pos2 (buffer-scan-sexp-backward buf pos)
+      (find-first-element pos2)
+      (buffer-skip-ws-backward buf (- pos 1))))
+  (and (>= pos 1)
+       (let1 pos (find-first-element pos)
+         (and (>= pos 0) pos))))
+
 ;;;
 ;;; Commands
 ;;;
@@ -1393,6 +1405,15 @@
 (define-edit-command (backward-sexp ctx buf key)
   "Move the cursor backward over one s-expression."
   (if-let1 pos (buffer-scan-sexp-backward buf (gap-buffer-pos buf))
+    (begin (gap-buffer-move! buf pos)
+           'moved)
+    'unchanged))
+
+(define-edit-command (backward-up-list ctx buf key)
+  "Move the cursor to the beginning of the outer sexp containing the current
+   sexp.  If there's no outer sexp (i.e. the current sexp is at the top level),
+   do nothing."
+  (if-let1 pos (buffer-find-up-list buf (gap-buffer-pos buf))
     (begin (gap-buffer-move! buf pos)
            'moved)
     'unchanged))
@@ -2120,7 +2141,7 @@
 ;;(define-key *default-keymap* (alt (ctrl #\r)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\s)) undefined-command)
 (define-key *default-keymap* (alt (ctrl #\t)) tarnspose-sexps)
-;;(define-key *default-keymap* (alt (ctrl #\u)) undefined-command)
+(define-key *default-keymap* (alt (ctrl #\u)) backward-up-list)
 ;;(define-key *default-keymap* (alt (ctrl #\v)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\w)) undefined-command)
 (define-key *default-keymap* (alt (ctrl #\x)) commit-input)

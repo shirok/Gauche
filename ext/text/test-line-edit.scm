@@ -260,4 +260,106 @@
   (tb "(define (foo x) (+ x 1))" 24 0)
   )
 
+;; Test buffer-find-up-list
+(let ()
+  (define %buffer-find-up-list
+    (with-module text.line-edit buffer-find-up-list))
+  (define (make-buf s)
+    ((with-module text.gap-buffer string->gap-buffer) s))
+
+  (define (t s pos expect)
+    (test* #"buffer-find-up-list: ~s ~pos" expect
+           (%buffer-find-up-list (make-buf s) pos)))
+
+  ;; Basic list cases
+  (t "(abc)" 4 0)               ; inside simple list
+  (t "(abc)" 5 #f)              ; toplevel
+  (t "(  abc  )" 5 0)           ; skip-ws
+  (t "(abc def)" 6 0)           ; inside list
+  (t "(abc)" 1 0)               ; at beginning of list content
+  (t "(abc)" 0 #f)              ; toplevel
+
+  ;; Nested lists
+  (t "((abc))" 5 1)             ; inside inner list
+  (t "((abc))" 2 1)             ; at start of inner list
+  (t "(a (b c) d)" 5 3)         ; inside inner list
+  (t "(a (b c) d)" 9 0)         ; in outer list after inner
+
+  ;; Different bracket types
+  (t "[abc]" 3 0)               ; square brackets
+  (t "{abc}" 3 0)               ; curly braces
+  (t "(a [b {c}] d)" 9 3)       ; nested curly inside square
+  (t "(a [b {c}] d)" 10 0)      ; nested square inside paren
+
+  ;; Escaped characters - the key test cases from requirements
+  (t "(abc #\\( def)" 10 0)     ; escaped open paren should be skipped
+  (t "(abc #\\) def)" 10 0)     ; escaped close paren should be skipped
+  (t "(a\\\\(b)c)" 5 0)         ; escaped backslash before paren
+
+  ;; Strings
+  (t "\"hello\"" 4 0)           ; inside string
+  (t "(\"abc\")" 3 1)           ; inside string inside list
+  (t "\"abc (def ghi\"" 8 5)    ; paren inside string (local context)
+  (t "\"abc (def ghi\" jkl" 16 #f) ; outside string, should skip over it
+  (t "abc \"(def\" ghi" 5 4)    ; inside string at beginning
+
+  ;; Escaped quotes in strings
+  (t "\"abc\\\"def\"" 7 0)      ; inside string with escaped quote
+  (t "(\"a\\\"b\")" 5 1)        ; string with escaped quote in list
+
+  ;; Mixed strings and lists
+  (t "(\"abc\" def)" 8 0)       ; after string in list
+  (t "((\"a\") b)" 4 2)         ; after nested string+list
+  (t "((\"a\") b)" 5 1)         ; after nested string+list
+
+  ;; At boundaries
+  (t "(abc)" 0 #f)              ; at the opening paren itself
+  (t "(abc)" 5 #f)              ; after closing paren
+  (t "abc" 2 #f)                ; no surrounding list
+
+  ;; No surrounding context
+  (t "abc def" 4 #f)            ; just atoms
+  (t "" 0 #f)                   ; empty buffer
+
+  ;; Multiple levels of nesting
+  (t "(a (b (c)))" 8 6)         ; innermost
+  (t "(a (b (c)))" 9 3)         ; middle level
+  (t "(a (b (c)))" 10 0)        ; outermost
+
+  ;; Complex expressions
+  (t "(define (foo x) (+ x 1))" 20 16) ; inside inner list
+  (t "(define (foo x) (+ x 1))" 14 8)  ; inside parameter list
+  (t "(define (foo x) (+ x 1))" 23 0)  ; in outer list
+
+  ;; Unmatched delimiters (finds innermost valid one)
+  (t "((abc)" 5 1)              ; unmatched outer, but inner is valid context
+  (t "(abc" 3 0)                ; unmatched but finds opening
+
+  ;; Backslash at various positions
+  (t "(a\\\\b)" 4 0)            ; double backslash
+  (t "(a \\\\ b)" 5 0)          ; backslash with spaces
+
+  ;; Character literals
+  (t "(#\\( #\\))" 3 0)         ; character literal open paren
+  (t "(#\\( #\\))" 7 0)         ; character literal close paren
+  (t "(abc #\\space def)" 14 0) ; named character
+
+  ;; Edge cases with position 0
+  (t "(abc)" 0 #f)              ; exactly at opening delimiter
+  (t "((abc))" 0 #f)            ; at outermost opening
+
+  ;; Strings with parens (from requirements)
+  (t "(\"abc (def ghi\" jkl" 8 6)  ; inside string with paren
+  (t "(\"abc (def ghi\" jkl" 16 0) ; outside string
+
+  ;; Multiple strings
+  (t "(\"a\" \"b\" c)" 8 0)     ; between strings in list
+  (t "\"a\" \"b\"" 4 #f)        ; between strings, no list
+
+  ;; Nested different brackets
+  (t "([{x}])" 4 2)             ; innermost curly
+  (t "([{x}])" 5 1)             ; middle square
+  (t "([{x}])" 6 0)             ; outer paren from inside square
+  )
+
 (test-end)
