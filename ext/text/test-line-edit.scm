@@ -189,6 +189,9 @@
   (tb "\"hello\"" 7 0)
   (tb "world \"hello\"" 13 6)
   (tb "\"he\\\"llo\"" 9 0)
+  (tb "\"abc\\\"def\"" 7 1)
+  (tb "\"abc\\\"def\"" 5 1)
+  (tb "\"abc\\\"def\"" 10 0)
 
   ;; |symbol|
   (tb "|foo bar|" 9 0)

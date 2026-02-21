@@ -1097,25 +1097,27 @@
                  (and start
                       (loop (buffer-skip-ws-backward buf (- start 1)))))]))))
 
+  ;; Scan backward to see how many consecutive
+  ;; backslashes there are.  Returns the count.
+  (define (count-backslashes j)
+    (let loop ([k j] [cnt 0])
+      (if (and (>= k 0) (eqv? (gap-buffer-ref buf k) #\\))
+        (loop (- k 1) (+ cnt 1))
+        cnt)))
+
   ;; Scan backward over a string ending at position i
   ;; (which is on the closing delimiter).
   ;; Returns the index of the opening delimiter, or #f.
   ;; We need to handle backslash escapes properly.
   (define (scan-string-backward i delim)
     ;; Count consecutive backslashes immediately before position j
-    (define (count-backslashes j)
-      (let loop ([k j] [cnt 0])
-        (if (and (>= k 0) (eqv? (gap-buffer-ref buf k) #\\))
-          (loop (- k 1) (+ cnt 1))
-          cnt)))
     (let loop ([j (- i 1)])
       (cond [(< j 0) #f]
             [(eqv? (gap-buffer-ref buf j) delim)
              ;; Check if this delimiter is escaped
-             (let1 nbs (count-backslashes (- j 1))
-               (if (even? nbs)
-                 j  ; unescaped delimiter = the opening one
-                 (loop (- j 1))))]
+             (if (odd? (count-backslashes (- j 1)))
+               (loop (- j 1)) ; escaped delimiter, keep looking
+               j)]
             [else (loop (- j 1))])))
 
   ;; Scan backward over a token ending at position i.
@@ -1123,7 +1125,12 @@
   (define (scan-token-backward i)
     (let loop ([j i])
       (cond [(< j 0) 0]
-            [(sexp-delimiter? (gap-buffer-ref buf j)) (+ j 1)]
+            [(sexp-delimiter? (gap-buffer-ref buf j))
+             (if (and (> j 1)
+                      (odd? (count-backslashes (- j 1))))
+               ;; delimiter char is escaped, so continue.
+               (loop (- j 1))
+               (+ j 1))]
             ;; Check if char at j is preceded by a backslash (escaped char)
             [(and (> j 0) (eqv? (gap-buffer-ref buf (- j 1)) #\\))
              (loop (- j 2))]
@@ -1173,12 +1180,16 @@
             #f)]
          ;; End of string
          [(eqv? ch #\")
-          (and-let1 start (scan-string-backward i #\")
-            ;; Check if preceded by #  (i.e. #"...")
-            (if (and (> start 0)
-                     (eqv? (gap-buffer-ref buf (- start 1)) #\#))
-              (- start 1)
-              start))]
+          (if (and (> i 1)
+                   (odd? (count-backslashes (- i 1))))
+            ;; this is escaped quote, so skip it
+            (scan-sexp-backward-from (- i 1))
+            (and-let1 start (scan-string-backward i #\")
+              ;; Check if preceded by #  (i.e. #"...")
+              (if (and (> start 0)
+                       (eqv? (gap-buffer-ref buf (- start 1)) #\#))
+                (- start 1)
+                start)))]
          ;; End of |symbol|
          [(eqv? ch #\|) (scan-string-backward i #\|)]
          ;; End of #/.../
