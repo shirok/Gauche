@@ -1583,7 +1583,7 @@
                [prev (gap-buffer-ref buf (gap-buffer-pos buf))])
            (gap-buffer-edit! buf `(c #f 2 ,(string cur prev))))]))
 
-(define-edit-command (tarnspose-sexps ctx buf key)
+(define-edit-command (transpose-sexps ctx buf key)
   "Exchange the s-expression after the cursor with the s-expression before \
    the cursor, and position the cursor after the replaced exprs. \
    If either s-expression is missing or incomplete, do nothing."
@@ -2140,7 +2140,7 @@
 ;;(define-key *default-keymap* (alt (ctrl #\q)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\r)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\s)) undefined-command)
-(define-key *default-keymap* (alt (ctrl #\t)) tarnspose-sexps)
+(define-key *default-keymap* (alt (ctrl #\t)) transpose-sexps)
 (define-key *default-keymap* (alt (ctrl #\u)) backward-up-list)
 ;;(define-key *default-keymap* (alt (ctrl #\v)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\w)) undefined-command)
