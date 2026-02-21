@@ -1763,7 +1763,12 @@
     (define M-n    (lookup 'next-history))
     (define M-<    (lookup 'move-beginning-of-buffer))
     (define M->    (lookup 'move-end-of-buffer))
+    (define M-C-f  (lookup 'forward-sexp))
+    (define M-C-b  (lookup 'backward-sexp))
+    (define M-C-u  (lookup 'backward-up-list))
+    (define M-C-t  (lookup 'transpose-sexps))
     (define C-@    (lookup 'set-mark-command))
+    (define M-C-@  (lookup 'mark-sexp))
     (define C-w    (lookup 'kill-region))
     (define C-k    (lookup 'kill-line))
     (define M-d    (lookup 'kill-word))
@@ -1787,6 +1792,9 @@
   ~|C-y|       yank                         ~|M-y|       yank pop
   ~|C-_|       undo                         ~|M-C-x|     commit input
   ~|C-l|       refresh disiplay
+
+  ~|M-C-f|/~M-C-b   forward/backward sexpr   ~|M-C-u|     backward up list
+  ~|M-C-@|     mark sexpr                   ~|M-C-t|     transpose sexps
  To disable input editing: Type ,edit off")
     'redraw))
 
