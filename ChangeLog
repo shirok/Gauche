@@ -1,5 +1,9 @@
 2026-02-21  Shiro Kawai  <shiro@acm.org>
 
+	* Honor user-defined write-object on a subclass of <dictionary>
+	  while detecting circular/shared strctures.
+	  https://github.com/shirok/Gauche/pull/1223
+
 	* libsrc/text/line-edit.scm (backward-up-list): Added.
 	  (move-beginning-of-toplevel-sexp): Added.
 

@@ -885,9 +885,11 @@
            [(box? obj)
             (dotimes [i (box-arity obj)]
               (walk (unbox-value obj i) 0))]
-           [(is-a? obj <dictionary>)
-            (%dict-walk! obj (^[k v] (walk k 0) (walk v 0))
-                         port ctrl)]
+           [(and (~ ctrl'pretty)
+                 (is-a? obj <dictionary>)
+                 (%dict-transparent? obj))
+            ;; Only walk if dict is transparent ayd we're pretty printing.
+            (%dict-for-each obj (^[k v] (walk k 0) (walk v 0)))]
            [else ; generic objects.  we go walk pass via write-object
             (write-object obj port)])
           ;; If circular-only, we don't count non-circular objects.
@@ -899,20 +901,21 @@
 
 ;; Kludge - gauche.libdict is initialized after libio, so we can't use
 ;; with-module.  We hope we can fix this later.
-(define %dict-walk!
-  (let ([walker #f]
-        [transparent? #f])
-    (^[dict proc port ctrl]
-      (unless walker
-        (set! walker
+(define %dict-for-each
+  (let1 cached #f
+    (^[dict proc]
+      (unless cached
+        (set! cached
               (module-binding-ref 'gauche.libdict 'dict-for-each)))
-      (unless transparent?
-        (set! transparent?
+      (cached dict proc))))
+
+(define %dict-transparent?
+  (let1 cached #f
+    (^[dict]
+      (unless cached
+        (set! cached
               (module-binding-ref 'gauche.libdict 'dict-transparent?)))
-      (if (and (transparent? dict)
-               (~ ctrl'pretty))
-        (walker dict proc)
-        (write-object dict port)))))
+      (cached dict))))
 
 (select-module gauche.internal)
 

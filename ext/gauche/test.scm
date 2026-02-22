@@ -1,4 +1,5 @@
 (include "test-colseq.scm")
+(include "test-dictionary.scm")
 (include "test-hook.scm")
 (include "test-parameter.scm")
 (include "test-process.scm")
