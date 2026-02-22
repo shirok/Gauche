@@ -1418,6 +1418,20 @@
            'moved)
     'unchanged))
 
+(define-edit-command (move-beginning-of-toplevel-sexp ctx buf key)
+  "Move the cursor to the beginning of the current top-level form."
+  ;; This is provided in place of beginning-of-defun, since in a REPL
+  ;; context the top-level form may not be a definition, and we're not
+  ;; likely to have many toplevel definitions in one buffer.
+  (let1 pos (gap-buffer-pos buf)
+    (let loop ([pos (or (buffer-scan-sexp-backward buf pos) pos)])
+      (if-let1 up-pos (buffer-find-up-list buf pos)
+        (loop up-pos)
+        (if (eqv? pos (gap-buffer-pos buf))
+          'unchanged
+          (begin (gap-buffer-move! buf pos 'beginning)
+                 'moved))))))
+
 (define-edit-command (move-beginning-of-buffer ctx buf key)
   "Position the cursor at the beginning of the buffer."
   (if (not (gap-buffer-gap-at? buf 'beginning))
@@ -2129,7 +2143,7 @@
 (define-key *default-keymap* #\x7f delete-backward-char)
 
 (define-key *default-keymap* (alt (ctrl #\@)) mark-sexp)
-;;(define-key *default-keymap* (alt (ctrl #\a)) undefined-command)
+(define-key *default-keymap* (alt (ctrl #\a)) move-beginning-of-toplevel-sexp)
 (define-key *default-keymap* (alt (ctrl #\b)) backward-sexp)
 ;;(define-key *default-keymap* (alt (ctrl #\c)) undefined-command)
 ;;(define-key *default-keymap* (alt (ctrl #\d)) undefined-command)
