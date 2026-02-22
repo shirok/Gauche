@@ -7,6 +7,7 @@
 (use scheme.list)
 (use file.util)
 (use util.isomorph)
+(use util.match)
 
 (test-start "advanced read/write features")
 
@@ -937,6 +938,25 @@
        "#<opaque-dict 42>\n"
        (call-with-output-string
          (cut pprint (make <opaque-dict> :value 42) :port <>)))
+
+;; avoid instance updating of class objects
+(define-class <hoge-meta> (<class>) ())
+(define-class <hoge> () () :metaclass <hoge-meta>)
+(define <old-hoge-meta> <hoge-meta>)
+
+(define-class <hoge-meta> (<class>) ())
+
+(for-each (match-lambda
+            ((name writer)
+             (test* #"avoid instance updating (~name)"
+                    #t
+                    (begin
+                      (write-to-string <hoge> writer)
+                      (eq? <old-hoge-meta>
+                           (current-class-of <hoge>))))))
+          `(("display" ,display)
+            ("write" ,write)
+            ("pprint" ,pprint)))
 
 ;;===============================================================
 ;; utf-8 with BOM

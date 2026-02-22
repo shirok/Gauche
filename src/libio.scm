@@ -885,7 +885,7 @@
            [(box? obj)
             (dotimes [i (box-arity obj)]
               (walk (unbox-value obj i) 0))]
-           [(is-a? obj <dictionary>)
+           [(subclass? (current-class-of obj) <dictionary>)
             (%dict-walk! obj (^[k v] (walk k 0) (walk v 0)))]
            [else ; generic objects.  we go walk pass via write-object
             (write-object obj port)])
