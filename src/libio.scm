@@ -886,7 +886,9 @@
             (dotimes [i (box-arity obj)]
               (walk (unbox-value obj i) 0))]
            [(and (~ ctrl'pretty)
-                 (is-a? obj <dictionary>)
+                 ;; Avoid using is-a?, for it may trigger instance update
+                 ;; of obj.
+                 (subclass? (current-class-of obj) <dictionary>)
                  (%dict-transparent? obj))
             ;; Only walk if dict is transparent ayd we're pretty printing.
             (%dict-for-each obj (^[k v] (walk k 0) (walk v 0)))]
