@@ -167,10 +167,44 @@
   (hash-table-put! ht2 'circ (cdr circ))
   (hash-table-put! ht2 'ht1 ht1)
   (test* "circular structure involving hashtable"
-         "#0=(#1=#<hash-table eq[2] @> . #2=(#<hash-table eq[2] @>))"
+         "(#<hash-table eq[2] @> #<hash-table eq[2] @>)"
          (regexp-replace-all #/@(0x)?[0-9a-f]+/
                              (write-to-string circ write/ss)
                              "@")))
+
+(use gauche.dictionary)
+
+(define-class <user-dict> (<dictionary>)
+  ((value :init-keyword :value)))
+
+(define-method write-object ((self <user-dict>) out)
+  (format out "#<user-dict ~a>" (slot-ref self 'value)))
+
+(define-method call-with-iterator ((self <user-dict>) proc :key :allow-other-keys)
+  (call-with-iterator (list (cons 'value (slot-ref self 'value))) proc))
+
+(define-method dict-transparent? ((self <user-dict>))
+  #t)
+
+(let1 dict (make <user-dict> :value 42)
+  (test* "user defined dictionary"
+         "#<user-dict 42>"
+         (write-to-string dict))
+
+  (test* "user defined dictionary (pprint)"
+         "#<user-dict [1] ((value . 42))>\n"
+         (call-with-output-string (cut pprint dict :port <>))))
+
+(let* ((b (box #f))
+       (dict (make <user-dict> :value b)))
+  (set-box! b dict)
+  (test* "user defined dictionary (circular)"
+         "#0=#<box #<user-dict #0#>>"
+         (write-to-string b))
+
+  (test* "user defined dictionary (pprint) (circular)"
+         (write-to-string b)
+         (call-with-output-string (cut pprint b :port <> :newline #f))))
 
 ;; https://github.com/shirok/Gauche/issues/1194
 (test* "infinite lazy sequence"
