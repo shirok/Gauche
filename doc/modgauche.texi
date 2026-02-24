@@ -14973,12 +14973,19 @@ of @code{make}.  Initargs of @code{make} are effective only in the
 fist invocation, and ignored in the subsequent invocation.
 
 The call of initialization in @code{make} is thread-safe.
+Even if more than one thread calls @code{make} simultaneously,
+instance allocation and initialization is done exactly once,
+in one thread, while other threads wait for its completion
+and returns the singleton instance.
 @c JP
 インスタンスのスロットは最初の @code{make} の呼び出し時に
 初期化されます。@code{make}への初期引数は最初の呼び出しのときに
 だけ効果があり、それ以降の呼び出しでは無視されます。
 
 初期化ルーチンの呼び出しはスレッドセーフです。
+複数のスレッドが同時に@code{make}を呼び出しても、
+インスタンスのアロケーションと初期化は一度だけ、ひとつのスレッドで行われ、
+残りのスレッドはその完了を待って作られたシングルトンインスタンスを返します。
 @c COMMON
 @end deftp
 
@@ -20374,6 +20381,7 @@ to move to @code{run-pipeline} as soon as possible.
 
 @node Process object, Process ports, Running process pipeline, High-level process interface
 @subsection Process object
+@c NODE プロセスオブジェクト
 
 @deftp {Class} <process>
 @clindex process
@@ -20586,6 +20594,18 @@ between processes.
 もう一つのプロセスの入力へと送ることが必要になります。
 @code{control.plumbing}を使えばそれは簡単にできます
 (@ref{Plumbing ports}参照)。また、流れるデータをモニタするといったことも可能です。
+@c COMMON
+
+@c EN
+Another common pattern is that you want to log the output of the process
+while it is running concurrently.  You can use
+@code{log-from-input-port} in @code{gauche.logger}
+(@pxref{User-level logging}).
+@c JP
+起動したプロセスを並行して走らせながら
+その出力をロギングしたいということも良くあります。
+それには@code{gauche.logger}の@code{log-from-input-port}が使えます
+(@ref{User-level logging}参照）。
 @c COMMON
 @end deffn
 
@@ -20918,6 +20938,7 @@ exits, you can pass a circular list to the @var{signals}.)
 
 @node Process ports, Process connection, Process object, High-level process interface
 @subsection Process ports
+@c NODE プロセスポート
 
 @defun open-input-process-port command :key input error encoding conversion-buffer-size
 @c MOD gauche.process
@@ -21319,6 +21340,7 @@ for the details.)
 
 @node Process connection,  , Process ports, High-level process interface
 @subsection Process connection
+@c NODE プロセスコネクション
 
 @deftp {Class} <process-connection>
 @c EN
