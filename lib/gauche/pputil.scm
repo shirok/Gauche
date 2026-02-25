@@ -350,18 +350,18 @@
   (define (do-oneline r es strs first?)
     (match es
       [() (cons strs (-* room r))]
-      [(e . es) (match-let1 (s . w) (e size r memo)
-                  (cond [(not w) (if r
-                                   (do-fill size (cons e es) `(b ,@strs))
-                                   (do-linear size elts))] ;giveup
-                        [(>* w room)                            ;too big
-                         (do-fill size es (list* 'b s 'b strs))]
-                        [(and first? (>* r w))
-                         (do-oneline (-*  r w) es (list* s 's strs) #f)]
-                        [(>* w (-* r 1))
-                         (do-fill (-* size w) es (list* s 'b strs))]
-                        [else
-                         (do-oneline (-* r w 1) es (list* s 's strs) #f)]))]))
+      [(e . es.) (match-let1 (s . w) (e size r memo)
+                   (cond [(not w) (if r
+                                    (do-fill size es `(b ,@strs))
+                                    (do-linear size elts))] ;giveup
+                         [(>* w room)                            ;too big
+                          (do-fill size es. (list* 'b s 'b strs))]
+                         [(and first? (>* r w))
+                          (do-oneline (-*  r w) es. (list* s 's strs) #f)]
+                         [(>* w (-* r 1))
+                          (do-fill (-* size w) es. (list* s 'b strs))]
+                         [else
+                          (do-oneline (-* r w 1) es. (list* s 's strs) #f)]))]))
   (define (do-fill r es strs)
     (match es
       [() (cons strs #f)]
