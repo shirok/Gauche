@@ -6148,6 +6148,7 @@ SRFI-69との互換性のためだけに提供されています。
 @defunx hash-by-identity obj :optional ignore
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c DEPRECATED
 @c EN
 Provided for the compatibility with SRFI-69, and are deprecated.
 @c JP
@@ -6193,6 +6194,7 @@ and use @code{default-hash} and @code{eq-hash} instead.
 @defunx hash-table-hash-function ht
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c DEPRECATED
 @c EN
 Provided for the compatibility with SRFI-69, and are deprecated.
 @c JP
