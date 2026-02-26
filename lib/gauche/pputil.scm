@@ -351,9 +351,7 @@
     (match es
       [() (cons strs (-* room r))]
       [(e . es.) (match-let1 (s . w) (e size r memo)
-                   (cond [(not w) (if r
-                                    (do-fill size es `(b ,@strs))
-                                    (do-linear size elts))] ;giveup
+                   (cond [(not w) (do-fill size es `(b ,@strs))]
                          [(>* w room)                            ;too big
                           (do-fill size es. (list* 'b s 'b strs))]
                          [(and first? (>* r w))
@@ -365,12 +363,15 @@
   (define (do-fill r es strs)
     (match es
       [() (cons strs #f)]
-      [(e . es) (match-let1 (s . w) (e size r memo)
-                  (cond [(and (not r) (not w)) (do-linear room elts)]
-                        [(>* w (-* r 1))
-                         (do-fill (-* size w) es (list* s 'b strs))]
-                        [else
-                         (do-fill (-* r w 1) es (list* s 's strs))]))]))
+      [(e . es.) (match-let1 (s . w) (e size r memo)
+                   (cond [(not w) (if r
+                                    (match-let1 (s . w) (e size size memo)
+                                      (do-fill (-* size w) es. `(,s b ,@strs)))
+                                    (do-linear room elts))]
+                         [(>* w (-* r 1))
+                          (do-fill (-* size w) es. (list* s 'b strs))]
+                         [else
+                          (do-fill (-* r w 1) es. (list* s 's strs))]))]))
   (define (do-linear r es)
     (cons (fold (^[e strs] (match-let1 (s . w) (e size room memo)
                              (list* s 'b strs)))

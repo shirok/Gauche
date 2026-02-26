@@ -923,6 +923,36 @@
            (cut pprint data :width 45 :port <>)))
   )
 
+;; Fix filling nested list
+;; https://github.com/shirok/Gauche/issues/1130
+(let ()
+  (define (t n elt expect)
+    ($ test*/diff #"fill nested ~n x ~elt" expect
+       (call-with-output-string
+         (cut pprint (map (constantly elt) (iota n)) :port <> :newline #f))))
+  (t 10 '(a1234 . b1234)
+     "((a1234 . b1234) (a1234 . b1234) (a1234 . b1234) (a1234 . b1234)\
+    \n (a1234 . b1234) (a1234 . b1234) (a1234 . b1234) (a1234 . b1234)\
+    \n (a1234 . b1234) (a1234 . b1234))")
+  (t 8 '(a12345 . b12345)
+     "((a12345 . b12345) (a12345 . b12345) (a12345 . b12345) (a12345 . b12345)\
+    \n (a12345 . b12345) (a12345 . b12345) (a12345 . b12345) (a12345 . b12345))")
+  (t 9 '(a12345 . b12345)
+     "((a12345 . b12345) (a12345 . b12345) (a12345 . b12345) (a12345 . b12345)\
+    \n (a12345 . b12345) (a12345 . b12345) (a12345 . b12345) (a12345 . b12345)\
+    \n (a12345 . b12345))")
+  (t 10 '(a12345 . b12345)
+     "((a12345 . b12345) (a12345 . b12345) (a12345 . b12345) (a12345 . b12345)\
+    \n (a12345 . b12345) (a12345 . b12345) (a12345 . b12345) (a12345 . b12345)\
+    \n (a12345 . b12345) (a12345 . b12345))")
+  (t 10 '(a123456 . b123456)
+     "((a123456 . b123456) (a123456 . b123456) (a123456 . b123456)\
+    \n (a123456 . b123456) (a123456 . b123456) (a123456 . b123456)\
+    \n (a123456 . b123456) (a123456 . b123456) (a123456 . b123456)\
+    \n (a123456 . b123456))")
+  )
+
+
 ;; user defined nontransparent dictionary
 (define-class <opaque-dict> (<dictionary>)
   ((value :init-keyword :value)))
