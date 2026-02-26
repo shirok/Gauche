@@ -33471,6 +33471,17 @@ to the POSIX-time (number of seconds since Epoch).
 
 @defun sys-tm->alist tm
 @c DEPRECATED
+@c EN
+Converts @code{<sys-tm>} instance to a list of
+@code{(@var{slot-name} . @var{value}}.
+This is only kept for the backward compatibility.  You can access
+@code{<sys-tm>} object with @code{slot-ref} and @code{~}
+@c JP
+@code{<sys-tm>}のインスタンスを@code{(@var{slot-name} . @var{value}}の
+リストに変換します。
+これは互換性のためだけに提供されています。
+@code{<sys-tm>}の内容にアクセスするには@code{slot-ref}や@code{~}を使ってください。
+@c COMMON
 @end defun
 
 
