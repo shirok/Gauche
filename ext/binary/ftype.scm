@@ -189,7 +189,7 @@
   (typecase type
     [<native-pointer>
      ;; Selector is an element index
-     (assume-type selector <fixnum>)
+     (assume-type selector <c-fixnum>)
      (* selector (~ type'pointee-type'size))]
     [<native-array>
      (unless (every (every-pred fixnum? (complement negative?)) selector)
@@ -328,21 +328,21 @@
 ;; corresponding native type.
 ;;
 ;; Examples:
-;;   (native-type int)                   => <int>
-;;   (native-type int*)                  => (make-pointer-type <int>)
-;;   (native-type char**)               => (make-pointer-type (make-pointer-type <int8>))
-;;   (native-type (.array int (3)))     => (make-native-array-type <int> '(3))
-;;   (native-type (.array char (2 3)))  => (make-native-array-type <int8> '(2 3))
+;;   (native-type int)                   => <c-int>
+;;   (native-type int*)                  => (make-pointer-type <c-int>)
+;;   (native-type char**)               => (make-pointer-type (make-pointer-type <c-int8>))
+;;   (native-type (.array int (3)))     => (make-native-array-type <c-int> '(3))
+;;   (native-type (.array char (2 3)))  => (make-native-array-type <c-int8> '(2 3))
 ;;   (native-type (.struct foo (a::int b::double)))
-;;     => (make-native-struct-type 'foo `((a ,<int>) (b ,<double>)))
+;;     => (make-native-struct-type 'foo `((a ,<c-int>) (b ,<c-double>)))
 ;;   (native-type (.struct foo ((a::(.array char (8))))))
-;;     => (make-native-struct-type 'foo `((a ,(make-native-array-type <int8> '(8)))))
+;;     => (make-native-struct-type 'foo `((a ,(make-native-array-type <c-int8> '(8)))))
 ;;   (native-type (.union u1 (a::int b::float)))
-;;     => (make-native-union-type 'u1 `((a ,<int>) (b ,<float>)))
+;;     => (make-native-union-type 'u1 `((a ,<c-int>) (b ,<c-float>)))
 ;;   (native-type (.function (int int) double))
-;;     => (make-native-function-type <double> `(,<int> ,<int>))
+;;     => (make-native-function-type <c-double> `(,<c-int> ,<c-int>))
 ;;   (native-type (.function (int char* ...) void))
-;;     => (make-native-function-type <void> `(,<int> ,(make-pointer-type <int8>) ...))
+;;     => (make-native-function-type <void> `(,<c-int> ,(make-pointer-type <c-int8>) ...))
 ;;
 (define (native-type signature)
   (match signature
@@ -417,9 +417,9 @@
                             0))))
 
 (define (native-alloc size-or-type)
-  (assume-type size-or-type (</> <fixnum> <native-type>))
+  (assume-type size-or-type (</> <c-fixnum> <native-type>))
   (let ([realsize (typecase size-or-type
-                    [<fixnum> size-or-type]
+                    [<c-fixnum> size-or-type]
                     [<native-type> (~ size-or-type'size)])]
         [ptype (cond
                 [(aggregate-type? size-or-type) size-or-type]

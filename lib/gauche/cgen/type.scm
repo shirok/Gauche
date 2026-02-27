@@ -179,8 +179,13 @@
 ;; Stub types corresponding to native types.
 (let ()
   (define (%native native-type pred unbox box)
+    ;; TRANSIENT:
+    (define (name-sans-c name)
+      ($ string->symbol
+         $ regexp-replace #/^<c-/ (symbol->string name) "<"))
+
     (make <cgen-type>
-      :name (~ native-type'name)
+      :name (name-sans-c (~ native-type'name))
       :scheme-type native-type
       :c-type (~ native-type'c-type-name)
       :description (~ native-type'c-type-name)

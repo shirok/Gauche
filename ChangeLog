@@ -1,3 +1,11 @@
+2026-02-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm, ext/binary/ftype.scm, libgauche/cgen/type.scm:
+	  Start switching native type <int> to <c-int> etc.
+	  We'll keep old names for the compatibility during transition.
+	  We may revert this if this change interferes c-wrapper.
+	  https://github.com/shirok/Gauche/issues/1216
+
 2026-02-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/pputil.scm (do-layout-elements): Fix filling of nested
