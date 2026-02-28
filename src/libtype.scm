@@ -214,44 +214,44 @@
      (SCM_CLASS_STATIC_PTR Scm_TopClass)
      NULL))
 
- (define-cclass <native-pointer> :base :no-meta
-   "ScmNativePointer*" "Scm_NativePointerClass"
+ (define-cclass <c-pointer> :base :no-meta
+   "ScmCPointer*" "Scm_CPointerClass"
    (c "native_type_cpa")
    ((pointee-type :type <native-type> :c-name "pointee_type"))
-   (printer (Scm_Printf port "#<native-pointer %A>" (-> (& (-> (SCM_NATIVE_POINTER obj) common)) name)))
+   (printer (Scm_Printf port "#<c-pointer %A>" (-> (& (-> (SCM_C_POINTER obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <native-function> :base :no-meta
-   "ScmNativeFunction*" "Scm_NativeFunctionClass"
+ (define-cclass <c-function> :base :no-meta
+   "ScmCFunction*" "Scm_CFunctionClass"
    (c "native_type_cpa")
    ((return-type :type <native-type> :c-name "return_type")
     (arg-types :c-name "arg_types")
     (varargs :type <boolean>))
-   (printer (Scm_Printf port "#<native-function%A>" (-> (& (-> (SCM_NATIVE_FUNCTION obj) common)) name)))
+   (printer (Scm_Printf port "#<c-function%A>" (-> (& (-> (SCM_C_FUNCTION obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <native-array> :base :no-meta
-   "ScmNativeArray*" "Scm_NativeArrayClass"
+ (define-cclass <c-array> :base :no-meta
+   "ScmCArray*" "Scm_CArrayClass"
    (c "native_type_cpa")
    ((element-type :type <native-type> :c-name "element_type")
     (dimensions))
-   (printer (Scm_Printf port "#<native-array %A>" (-> (& (-> (SCM_NATIVE_ARRAY obj) common)) name)))
+   (printer (Scm_Printf port "#<c-array %A>" (-> (& (-> (SCM_C_ARRAY obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <native-struct> :base :no-meta
-   "ScmNativeStruct*" "Scm_NativeStructClass"
+ (define-cclass <c-struct> :base :no-meta
+   "ScmCStruct*" "Scm_CStructClass"
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<native-struct %A>" (-> (& (-> (SCM_NATIVE_STRUCT obj) common)) name)))
+   (printer (Scm_Printf port "#<c-struct %A>" (-> (& (-> (SCM_C_STRUCT obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <native-union> :base :no-meta
-   "ScmNativeUnion*" "Scm_NativeUnionClass"
+ (define-cclass <c-union> :base :no-meta
+   "ScmCUnion*" "Scm_CUnionClass"
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<native-union %A>" (-> (& (-> (SCM_NATIVE_UNION obj) common)) name)))
+   (printer (Scm_Printf port "#<c-union %A>" (-> (& (-> (SCM_C_UNION obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
  )
 
@@ -1202,10 +1202,10 @@
    (set! (-> nt alignment) alignment))
  )
 
-(define-cproc %make-pointer-type (pointer-type-name::<const-cstring>
-                                  pointee-type)
-  (let* ([z::ScmNativePointer*
-          (SCM_NEW_INSTANCE ScmNativePointer (& Scm_NativePointerClass))])
+(define-cproc %make-c-pointer-type (pointer-type-name::<const-cstring>
+                                    pointee-type)
+  (let* ([z::ScmCPointer*
+          (SCM_NEW_INSTANCE ScmCPointer (& Scm_CPointerClass))])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              pointer-type-name
@@ -1221,20 +1221,20 @@
     (set! (-> z pointee_type) (SCM_NATIVE_TYPE pointee-type))
     (return (SCM_OBJ z))))
 
-(define (make-pointer-type pointee-type)
+(define (make-c-pointer-type pointee-type)
   (assume-type pointee-type <native-type>)
   (let* ([bare-name (regexp-replace* (symbol->string (~ pointee-type'name))
                                      #/^</ ""
                                      #/>$/ "")]
          [pointer-name #"<~|bare-name|*>"])
-    (%make-pointer-type pointer-name pointee-type)))
+    (%make-c-pointer-type pointer-name pointee-type)))
 
-(define-cproc %make-native-function-type (type-name::<const-cstring>
-                                          return-type
-                                          argument-types
-                                          varargs?::<boolean>)
-  (let* ([z::ScmNativeFunction*
-          (SCM_NEW_INSTANCE ScmNativeFunction (& Scm_NativeFunctionClass))])
+(define-cproc %make-c-function-type (type-name::<const-cstring>
+                                     return-type
+                                     argument-types
+                                     varargs?::<boolean>)
+  (let* ([z::ScmCFunction*
+          (SCM_NEW_INSTANCE ScmCFunction (& Scm_CFunctionClass))])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1254,8 +1254,7 @@
 
 ;; Argument-types are list of native types, optionally end with
 ;; a symbol ... for varargs.
-(define (make-native-function-type return-type
-                                   argument-types)
+(define (make-c-function-type return-type argument-types)
   (assume-type return-type <native-type>)
   (receive (arg-types vararg?)
       (if (and (pair? argument-types) (eq? (last argument-types) '...))
@@ -1263,7 +1262,7 @@
         (values argument-types #f))
     (dolist [arg-type arg-types]
       (assume-type arg-type <native-type>))
-    (%make-native-function-type
+    (%make-c-function-type
      (format "~{ ~a~}~:[~; ...~] -> ~a"
              (map (cut ~ <>'name) arg-types) vararg?
              (~ return-type'name))
@@ -1272,13 +1271,13 @@
 ;; For array, we keep element-type and dimensions in dedicated fields.
 ;; Each <dim> is a nonnegative fixnum.  The first <dim> can be -1,
 ;; indicating it is not specified (C allows it).
-(define-cproc %make-native-array-type (type-name::<const-cstring>
-                                       element-type
-                                       size::<fixnum>
-                                       alignment::<fixnum>
-                                       dimensions)
-  (let* ([z::ScmNativeArray*
-          (SCM_NEW_INSTANCE ScmNativeArray (& Scm_NativeArrayClass))])
+(define-cproc %make-c-array-type (type-name::<const-cstring>
+                                  element-type
+                                  size::<fixnum>
+                                  alignment::<fixnum>
+                                  dimensions)
+  (let* ([z::ScmCArray*
+          (SCM_NEW_INSTANCE ScmCArray (& Scm_CArrayClass))])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1295,7 +1294,7 @@
     (set! (-> z dimensions) dimensions)
     (return (SCM_OBJ z))))
 
-(define (make-native-array-type element-type dimensions)
+(define (make-c-array-type element-type dimensions)
   (assume-type element-type <native-type>)
   (let loop ([dims dimensions])
     (cond [(null? dims)]
@@ -1317,19 +1316,19 @@
                     0                   ; unknown sized array
                     (fold * 1 dimensions))]
         [elt-size (~ element-type'size)])
-    (%make-native-array-type name element-type
+    (%make-c-array-type name element-type
                              (* elt-size num-elts)
                              (~ element-type'alignment)
                              dimensions)))
 
 ;; For struct/union, we keep tag and field-list in dedicated fields.
-(define-cproc %make-native-struct/union-type (klass::<class>
-                                              type-name::<const-cstring>
-                                              size::<fixnum>
-                                              alignment::<fixnum>
-                                              tag-name::<symbol>?
-                                              field-list)
-  (let* ([z::ScmNativeStruct* (SCM_NEW_INSTANCE ScmNativeStruct klass)])
+(define-cproc %make-c-struct/union-type (klass::<class>
+                                         type-name::<const-cstring>
+                                         size::<fixnum>
+                                         alignment::<fixnum>
+                                         tag-name::<symbol>?
+                                         field-list)
+  (let* ([z::ScmCStruct* (SCM_NEW_INSTANCE ScmCStruct klass)])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1348,14 +1347,14 @@
 (define (struct-size-roundup size alignment)
   (* alignment (quotient (+ size alignment -1) alignment)))
 
-(define (make-native-struct/union-type tag fields struct?)
+(define (make-c-struct/union-type tag fields struct?)
   (let loop ([fs fields] [offset 0] [alignment 1] [descs '()])
     (match fs
       [()
        (let* ([size (struct-size-roundup offset alignment)]
               [name (x->string tag)])
-         (%make-native-struct/union-type
-          (if struct? <native-struct> <native-union>)
+         (%make-c-struct/union-type
+          (if struct? <c-struct> <c-union>)
           name size alignment tag (reverse descs)))]
       [(((? symbol? fname) ftype) . rest)
        (assume-type ftype <native-type>)
@@ -1375,11 +1374,11 @@
        (error "Bad native struct fields; must be a proper list, but got:"
               fields)])))
 
-(define (make-native-struct-type tag fields)
-  (make-native-struct/union-type tag fields #t))
+(define (make-c-struct-type tag fields)
+  (make-c-struct/union-type tag fields #t))
 
-(define (make-native-union-type tag fields)
-  (make-native-struct/union-type tag fields #f))
+(define (make-c-union-type tag fields)
+  (make-c-struct/union-type tag fields #f))
 
 ;;;
 ;;; Make exported symbol visible from outside
@@ -1390,8 +1389,8 @@
         (find-module 'gauche)
         '(<type-constructor-meta>
           <descriptive-type>
-          <native-type> <native-pointer> <native-function>
-          <native-array> <native-struct> <native-union>
+          <native-type> <c-pointer> <c-function>
+          <c-array> <c-struct> <c-union>
           <^> </> <?> <Tuple> <List> <Vector> <Assortment>
           type? subtype? of-type?))
   (xfer (current-module)

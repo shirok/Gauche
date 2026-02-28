@@ -145,12 +145,12 @@
 (t-subtype (</> (<Assortment> #f) <char>) (<?> <char>) #t)
 (t-subtype (<?> <char>) (</> (<Assortment> #f) <char>) #t)
 
-(let* ([int*  ((with-module gauche.typeutil make-pointer-type) <int>)]
-       [int** ((with-module gauche.typeutil make-pointer-type) int*)])
+(let* ([int*  ((with-module gauche.typeutil make-c-pointer-type) <int>)]
+       [int** ((with-module gauche.typeutil make-c-pointer-type) int*)])
   (test* "int* native-pointer" #t
-        (is-a? int* <native-pointer>))
+        (is-a? int* <c-pointer>))
   (test* "int** native-pointer" #t
-         (is-a? int** <native-pointer>))
+         (is-a? int** <c-pointer>))
   (t-subtype int** int* #f)
   (test* "int* poointee" <int> (~ int*'pointee-type))
   (test* "int** poointee" int* (~ int**'pointee-type))

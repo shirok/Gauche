@@ -52,11 +52,11 @@
           ;; TRANSIENT: We want better (more concise, but distinct) names
           ;; for these.  At the moment, we just reexport them from
           ;; gauche.typeutil
-          make-pointer-type
-          make-native-function-type
-          make-native-array-type
-          make-native-struct-type
-          make-native-union-type
+          make-c-pointer-type
+          make-c-function-type
+          make-c-array-type
+          make-c-struct-type
+          make-c-union-type
 
           native-type
 
@@ -71,9 +71,9 @@
  )
 
 (define (aggregate-type? type)
-  (or (is-a? type <native-array>)
-      (is-a? type <native-struct>)
-      (is-a? type <native-union>)))
+  (or (is-a? type <c-array>)
+      (is-a? type <c-struct>)
+      (is-a? type <c-union>)))
 
 ;;;
 ;;; Native handles
@@ -104,7 +104,7 @@
 
 (define (uvector->native-handle uv type :optional (offset 0))
   (assume-type uv <uvector>)
-  (assume (or (is-a? type <native-pointer>)
+  (assume (or (is-a? type <c-pointer>)
               (aggregate-type? type))
     "Type must be native pointer or aggregate type, but got:" type)
   (%uvector->native-handle uv type offset))
@@ -176,8 +176,8 @@
     (errorf "Can't set a value of type ~s into ~s" type handle))
   (%pset! type handle offset val))
 
-(define (native-struct-field type selector)
-  (assume-type type (</> <native-struct> <native-union>))
+(define (c-struct-field type selector)
+  (assume-type type (</> <c-struct> <c-union>))
   (assume-type selector <symbol>)
   (if-let1 field (assq selector (~ type'fields))
     field
@@ -187,11 +187,11 @@
 (define (native-type-offset type selector)
   (assume-type type <native-type>)
   (typecase type
-    [<native-pointer>
+    [<c-pointer>
      ;; Selector is an element index
      (assume-type selector <c-fixnum>)
      (* selector (~ type'pointee-type'size))]
-    [<native-array>
+    [<c-array>
      (unless (every (every-pred fixnum? (complement negative?)) selector)
        (error "Invalid native array selector:" selector))
      (let* ([etype (~ type'element-type)]
@@ -221,8 +221,8 @@
                       (+ (* (car ss) step) i))]
                [else
                 (error "Native array selector is out of range:" selector)])))]
-    [(</> <native-struct> <native-union>)
-     (caddr (native-struct-field type selector))]
+    [(</> <c-struct> <c-union>)
+     (caddr (c-struct-field type selector))]
     [else
      (error "Unsupported native aggregate type:" type)]))
 
@@ -234,7 +234,7 @@
                [sels selector])
       (if (null? sels)
         (if (not (null? dims))
-          (make-native-array-type etype dims)
+          (make-c-array-type etype dims)
           etype)
         (loop (cdr dims) (cdr sels))))))
 
@@ -253,12 +253,12 @@
   (let* ([t (%handle-type handle type)]
          [offset (native-type-offset t selector)])
     (typecase t
-      [<native-pointer>
+      [<c-pointer>
        (%handle-ref (~ t'pointee-type) handle offset)]
-      [<native-array>
+      [<c-array>
        (%handle-ref (%array-dereference-type t selector) handle offset)]
-      [(</> <native-struct> <native-union>)
-       (let1 ftype (cadr (native-struct-field t selector))
+      [(</> <c-struct> <c-union>)
+       (let1 ftype (cadr (c-struct-field t selector))
          (%handle-ref ftype handle offset))]
       [else (error "Unsupported native aggregate type:" handle)])))
 
@@ -267,33 +267,33 @@
   (let* ([t (%handle-type handle type)]
          [offset (native-type-offset t selector)])
     (typecase t
-      [<native-pointer>
+      [<c-pointer>
        (%handle-set! (~ t'pointee-type) handle offset val)]
-      [<native-array>
+      [<c-array>
        (%handle-set! (%array-dereference-type t selector) handle offset val)]
-      [(</> <native-struct> <native-union>)
-       (let1 ftype (cadr (native-struct-field t selector))
+      [(</> <c-struct> <c-union>)
+       (let1 ftype (cadr (c-struct-field t selector))
          (%handle-set! ftype handle offset val))]
       [else (error "Unsupported native aggregate type:" t)])))
 
 ;; Compare native types
-(define-method object-equal? ((s <native-pointer>) (t <native-pointer>))
+(define-method object-equal? ((s <c-pointer>) (t <c-pointer>))
   (equal? (~ s'pointee-type) (~ t'pointee-type)))
 
-(define-method object-equal? ((s <native-function>) (t <native-function>))
+(define-method object-equal? ((s <c-function>) (t <c-function>))
   (and (equal? (~ s'return-type) (~ t'return-type))
        (equal? (~ s'arg-types) (~ t'arg-types))
        (equal? (~ s'varargs) (~ t'varargs))))
 
-(define-method object-equal? ((s <native-array>) (t <native-array>))
+(define-method object-equal? ((s <c-array>) (t <c-array>))
   (and (equal? (~ s'element-type) (~ t'element-type))
        (equal? (~ s'dimensions) (~ t'dimensions))))
 
-(define-method object-equal? ((s <native-struct>) (t <native-struct>))
+(define-method object-equal? ((s <c-struct>) (t <c-struct>))
   (and (equal? (~ s'tag) (~ t'tag))
        (equal? (~ s'fields) (~ t'fields))))
 
-(define-method object-equal? ((s <native-union>) (t <native-union>))
+(define-method object-equal? ((s <c-union>) (t <c-union>))
   (and (equal? (~ s'tag) (~ t'tag))
        (equal? (~ s'fields) (~ t'fields))))
 
@@ -312,7 +312,7 @@
   (let loop ([t base-type] [d depth])
     (if (= d 0)
       t
-      (loop (make-pointer-type t) (- d 1)))))
+      (loop (make-c-pointer-type t) (- d 1)))))
 
 ;; Parse a struct/union field spec.
 (define (%parse-field-specs specs)
@@ -329,20 +329,20 @@
 ;;
 ;; Examples:
 ;;   (native-type int)                   => <c-int>
-;;   (native-type int*)                  => (make-pointer-type <c-int>)
-;;   (native-type char**)               => (make-pointer-type (make-pointer-type <c-int8>))
-;;   (native-type (.array int (3)))     => (make-native-array-type <c-int> '(3))
-;;   (native-type (.array char (2 3)))  => (make-native-array-type <c-int8> '(2 3))
+;;   (native-type int*)                  => (make-c-pointer-type <c-int>)
+;;   (native-type char**)               => (make-c-pointer-type (make-c-pointer-type <c-int8>))
+;;   (native-type (.array int (3)))     => (make-c-array-type <c-int> '(3))
+;;   (native-type (.array char (2 3)))  => (make-c-array-type <c-int8> '(2 3))
 ;;   (native-type (.struct foo (a::int b::double)))
-;;     => (make-native-struct-type 'foo `((a ,<c-int>) (b ,<c-double>)))
+;;     => (make-c-struct-type 'foo `((a ,<c-int>) (b ,<c-double>)))
 ;;   (native-type (.struct foo ((a::(.array char (8))))))
-;;     => (make-native-struct-type 'foo `((a ,(make-native-array-type <c-int8> '(8)))))
+;;     => (make-c-struct-type 'foo `((a ,(make-c-array-type <c-int8> '(8)))))
 ;;   (native-type (.union u1 (a::int b::float)))
-;;     => (make-native-union-type 'u1 `((a ,<c-int>) (b ,<c-float>)))
+;;     => (make-c-union-type 'u1 `((a ,<c-int>) (b ,<c-float>)))
 ;;   (native-type (.function (int int) double))
-;;     => (make-native-function-type <c-double> `(,<c-int> ,<c-int>))
+;;     => (make-c-function-type <c-double> `(,<c-int> ,<c-int>))
 ;;   (native-type (.function (int char* ...) void))
-;;     => (make-native-function-type <void> `(,<c-int> ,(make-pointer-type <c-int8>) ...))
+;;     => (make-c-function-type <void> `(,<c-int> ,(make-c-pointer-type <c-int8>) ...))
 ;;
 (define (native-type signature)
   (match signature
@@ -353,25 +353,25 @@
 
     ;; (.array element-type (dim ...))
     [('.array etype (dims ...))
-     (make-native-array-type (native-type etype) dims)]
+     (make-c-array-type (native-type etype) dims)]
 
     ;; (.struct tag (field-specs ...))
     [('.struct (? symbol? tag) (field-specs ...))
-     (make-native-struct-type tag (%parse-field-specs field-specs))]
+     (make-c-struct-type tag (%parse-field-specs field-specs))]
     ;; (.struct (field-specs ...))  -- anonymous
     [('.struct ((? (^x (or (symbol? x) (pair? x))) field-specs) ...))
-     (make-native-struct-type #f (%parse-field-specs field-specs))]
+     (make-c-struct-type #f (%parse-field-specs field-specs))]
 
     ;; (.union tag (field-specs ...))
     [('.union (? symbol? tag) (field-specs ...))
-     (make-native-union-type tag (%parse-field-specs field-specs))]
+     (make-c-union-type tag (%parse-field-specs field-specs))]
     ;; (.union (field-specs ...))  -- anonymous
     [('.union ((? (^x (or (symbol? x) (pair? x))) field-specs) ...))
-     (make-native-union-type #f (%parse-field-specs field-specs))]
+     (make-c-union-type #f (%parse-field-specs field-specs))]
 
     ;; (.function (arg-types ...) return-type)
     [('.function (arg-types ...) ret-type)
-     (make-native-function-type
+     (make-c-function-type
       (native-type ret-type)
       (map (^[a] (if (eq? a '...) '... (native-type a)))
            arg-types))]
@@ -424,8 +424,8 @@
         [ptype (cond
                 [(aggregate-type? size-or-type) size-or-type]
                 [(is-a? size-or-type <native-type>)
-                 (make-pointer-type size-or-type)]
-                [else (make-pointer-type <void>)])])
+                 (make-c-pointer-type size-or-type)]
+                [else (make-c-pointer-type <void>)])])
     (%native-alloc realsize ptype)))
 
 (define-cproc native-free (handle::<native-handle>) ::<void>

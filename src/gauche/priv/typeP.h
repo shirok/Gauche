@@ -70,62 +70,62 @@ SCM_CLASS_DECL(Scm_NativeTypeClass);
 #define SCM_NATIVE_TYPE_P(obj)   (SCM_ISA(obj, SCM_CLASS_NATIVE_TYPE))
 
 /* <native-pointer> - a pointer to another native type */
-typedef struct ScmNativePointerRec {
+typedef struct ScmCPointerRec {
     ScmNativeType common;
     ScmNativeType *pointee_type;
-} ScmNativePointer;
+} ScmCPointer;
 
-SCM_CLASS_DECL(Scm_NativePointerClass);
-#define SCM_CLASS_NATIVE_POINTER (&Scm_NativePointerClass)
-#define SCM_NATIVE_POINTER(obj)  ((ScmNativePointer*)(obj))
-#define SCM_NATIVE_POINTER_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_POINTER))
+SCM_CLASS_DECL(Scm_CPointerClass);
+#define SCM_CLASS_C_POINTER (&Scm_CPointerClass)
+#define SCM_C_POINTER(obj)  ((ScmCPointer*)(obj))
+#define SCM_C_POINTER_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_POINTER))
 
 /* <native-function> - a function pointer type */
-typedef struct ScmNativeFunctionRec {
+typedef struct ScmCFunctionRec {
     ScmNativeType common;
     ScmNativeType *return_type;
     ScmObj arg_types;            /* list of ScmNativeType* */
     int varargs;                 /* boolean: does it accept varargs? */
-} ScmNativeFunction;
+} ScmCFunction;
 
-SCM_CLASS_DECL(Scm_NativeFunctionClass);
-#define SCM_CLASS_NATIVE_FUNCTION (&Scm_NativeFunctionClass)
-#define SCM_NATIVE_FUNCTION(obj) ((ScmNativeFunction*)(obj))
-#define SCM_NATIVE_FUNCTION_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_FUNCTION))
+SCM_CLASS_DECL(Scm_CFunctionClass);
+#define SCM_CLASS_C_FUNCTION (&Scm_CFunctionClass)
+#define SCM_C_FUNCTION(obj) ((ScmCFunction*)(obj))
+#define SCM_C_FUNCTION_P(obj) (SCM_ISA(obj, SCM_CLASS_C_FUNCTION))
 
 /* <native-array> - an array of a native type */
-typedef struct ScmNativeArrayRec {
+typedef struct ScmCArrayRec {
     ScmNativeType common;
     ScmNativeType *element_type;
     ScmObj dimensions;           /* list of fixnums */
-} ScmNativeArray;
+} ScmCArray;
 
-SCM_CLASS_DECL(Scm_NativeArrayClass);
-#define SCM_CLASS_NATIVE_ARRAY   (&Scm_NativeArrayClass)
-#define SCM_NATIVE_ARRAY(obj)    ((ScmNativeArray*)(obj))
-#define SCM_NATIVE_ARRAY_P(obj)  (SCM_ISA(obj, SCM_CLASS_NATIVE_ARRAY))
+SCM_CLASS_DECL(Scm_CArrayClass);
+#define SCM_CLASS_C_ARRAY   (&Scm_CArrayClass)
+#define SCM_C_ARRAY(obj)    ((ScmCArray*)(obj))
+#define SCM_C_ARRAY_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_ARRAY))
 
 /* <native-struct> - a C struct type */
-typedef struct ScmNativeStructRec {
+typedef struct ScmCStructRec {
     ScmNativeType common;
     ScmObj tag;                  /* symbol or #f */
     ScmObj fields;               /* list of (name type offset) */
-} ScmNativeStruct;
+} ScmCStruct;
 
-SCM_CLASS_DECL(Scm_NativeStructClass);
-#define SCM_CLASS_NATIVE_STRUCT  (&Scm_NativeStructClass)
-#define SCM_NATIVE_STRUCT(obj)   ((ScmNativeStruct*)(obj))
-#define SCM_NATIVE_STRUCT_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_STRUCT))
+SCM_CLASS_DECL(Scm_CStructClass);
+#define SCM_CLASS_C_STRUCT  (&Scm_CStructClass)
+#define SCM_C_STRUCT(obj)   ((ScmCStruct*)(obj))
+#define SCM_C_STRUCT_P(obj) (SCM_ISA(obj, SCM_CLASS_C_STRUCT))
 
 /* <native-union> - a C union type.
    The C-level structure is the same as native-struct;
    the difference (all field offsets are 0) is handled at the Scheme level. */
-typedef ScmNativeStruct ScmNativeUnion;
+typedef ScmCStruct ScmCUnion;
 
-SCM_CLASS_DECL(Scm_NativeUnionClass);
-#define SCM_CLASS_NATIVE_UNION   (&Scm_NativeUnionClass)
-#define SCM_NATIVE_UNION(obj)    ((ScmNativeUnion*)(obj))
-#define SCM_NATIVE_UNION_P(obj)  (SCM_ISA(obj, SCM_CLASS_NATIVE_UNION))
+SCM_CLASS_DECL(Scm_CUnionClass);
+#define SCM_CLASS_C_UNION   (&Scm_CUnionClass)
+#define SCM_C_UNION(obj)    ((ScmCUnion*)(obj))
+#define SCM_C_UNION_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_UNION))
 
 /*
  * Native handle
