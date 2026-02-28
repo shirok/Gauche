@@ -36025,10 +36025,11 @@ by syntax-rules macro.
 @c COMMON
 
 @c EN
-For a list pattern, you can also use a symbol @code{..1}, @code{..2},
-@dots{}, which specifies the minimum number of repetition.
+You can also use a symbol @code{..1}, @code{..2},
+@dots{}, in place of @code{...},
+which specifies the minimum number of repetition.
 @c JP
-リストのパターンに対しては、シンボル @code{..1}、@code{..2}、@dots{} が
+また、@code{...}のかわりにシンボル @code{..1}、@code{..2}、@dots{} が
 使えます。これは繰り返しの最小値を指定するものです。
 @c COMMON
 
