@@ -48,9 +48,23 @@
               ((x) (y))
               #(x y z))))
 
+(test* "quasipattern" '([1 x]
+                        [2 x]
+                        [3 x]
+                        [4 x])
+       (map (^[exp]
+              (match exp
+                [`(foo ,a)  (list 1 a)]
+                [`(bar ,a)  (list 2 a)]
+                [`#(foo ,a) (list 3 a)]
+                [`#(bar ,a) (list 4 a)]))
+            '((foo x)
+              (bar x)
+              #(foo x)
+              #(bar x))))
 
 (test* "repetition pattern" '((1 1 2 (3 4 5))
-                                        ;(2 1 2 (3 4 5))
+                              (2 1 2 (3 4 5))
                               (3 1 2 (3 4))
                               (4 1 2 (3 4))
                               (3 1 2 ())
@@ -63,7 +77,7 @@
                 [#(a b c ...) (list 4 a b c)]
                 ))
             '((1 2 3 4 5)
-                                        ;#(1 2 3 4 5)  ; doesn't work?
+              #(1 2 3 4 5)
               (1 2 3 4)
               #(1 2 3 4)
               (1 2)
@@ -240,6 +254,48 @@
        '(lambda (a b c) (map (lambda (d) (a d 3)) (list b c)))
        (unparse-obj (parse '(lambda (a b c)
                               (map (lambda (d) (a d 3)) (list b c))))))
+
+;;--------------------------------------------------------------------
+
+(use gauche.record)
+(define-record-type m0 #t #t
+  (x) (y) (z))
+
+(define-record-type (m1 m0) #t #t
+  (x) (w))
+
+(define-record-type (m2 m1) #t #t
+  (w) (y))
+
+(test* "inherited record and positional match"
+       '(1 2 3 4 5 6 7)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [($ m2 a b c d e f g)
+          (list a b c d e f g)]))
+
+(test* "inherited record and positional match (superclass)"
+       '(1 2 3)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [($ m0 a b c)
+          (list a b c)]))
+
+(test* "inherited record and positional match (superclass)"
+       '(1 2 3 4 5)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [($ m1 a b c d e)
+          (list a b c d e)]))
+
+(test* "inherited record and named match"
+       '(4 7 3 6)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [(@ m2 (x a) (y b) (z c) (w d))
+          (list a b c d)]))
+
+(test* "inherited record and named match (superclass)"
+       '(4 7 3)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [(@ m0 (x a) (y b) (z c))
+          (list a b c)]))
 
 ;;--------------------------------------------------------------
 

@@ -801,7 +801,7 @@
                                            ((,ind (- (vector-length ,e) 1))
                                             ,@(map (lambda (x) `(,x '()))
                                                    fresh))
-                                           (if (> ,minlen ,ind)
+                                           (if (> ,vlen ,ind)
                                              ,(ks sf)
                                              ,p1)))))))
                            sf))))))
