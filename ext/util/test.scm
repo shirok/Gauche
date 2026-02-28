@@ -48,6 +48,20 @@
               ((x) (y))
               #(x y z))))
 
+(test* "quasipattern" '([1 x]
+                        [2 x]
+                        [3 x]
+                        [4 x])
+       (map (^[exp]
+              (match exp
+                [`(foo ,a)  (list 1 a)]
+                [`(bar ,a)  (list 2 a)]
+                [`#(foo ,a) (list 3 a)]
+                [`#(bar ,a) (list 4 a)]))
+            '((foo x)
+              (bar x)
+              #(foo x)
+              #(bar x))))
 
 (test* "repetition pattern" '((1 1 2 (3 4 5))
                               (2 1 2 (3 4 5))
