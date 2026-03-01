@@ -1,3 +1,8 @@
+2026-02-28  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match-impl.scm: Fix ..k repetition for vectors
+	  by @gengar https://github.com/shirok/Gauche/pull/1228
+
 2026-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm, ext/binary/ftype.scm, libgauche/cgen/type.scm:
