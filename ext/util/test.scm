@@ -400,4 +400,28 @@
          (match '(1)
            [:a :a])))
 
+;;--------------------------------------------------------------
+
+(define-module util-match-with-prefix
+  (use gauche.test)
+  (use util.match :prefix --)
+  (use gauche.record)
+
+  (define-record-type m0 #t #t
+    (x) (y) (z))
+
+  (define-record-type (m1 m0) #t #t
+    (x) (w))
+
+  (test* "with prefix: record"
+       '(1 2 3 4 5)
+       (--match (make-m1 1 2 3 4 5)
+         [($ m1 a b c d e)
+          (list a b c d e)]))
+
+  (test* "with prefix: error no matching clause"
+       (test-error <error> #/no matching clause for/)
+       (--match 42
+         [() #f])))
+
 (test-end)

@@ -12,9 +12,7 @@
           match-let1
           match-define
           match:$-ref
-          |setter of match:$-ref|
-          match:every
-          match:error))
+          |setter of match:$-ref|))
 (select-module util.match)
 
 (include "match-impl.scm")

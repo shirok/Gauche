@@ -150,6 +150,8 @@
 
 (define match:error.   (%match-id 'match:error))
 (define match:length>=?. (%match-id 'match:length>=?))
+(define match:$-ref. (%match-id 'match:$-ref))
+(define every. (%match-id 'every))
 
 (define lambda.        ((with-module gauche.internal make-identifier) 'lambda
                         (find-module 'null) '()))
@@ -163,9 +165,6 @@
     (errorf "~a: no matching clause for ~a"
             (string-join (map x->string args) " ")
             val)))
-
-(define match:every every) ; alias gauche's every, in case the user of
-                           ; util.match isn't inheriting gauche.
 
 (define match:syntax-err
   (lambda (obj msg) (error msg obj)))
@@ -660,7 +659,7 @@
                       (if (= n rlen)
                         (ks sf)
                         (next (list-ref fields n)
-                              `(match:$-ref ,tag ,(- n 1) ,e)
+                              `(,match:$-ref. ,tag ,(- n 1) ,e)
                               sf kf (rloop (+ 1 n)))))))))
          ((and (pair? p) (eq? 'object (car p)))  ;; Gauche extension
           (let* ((tag (cadr p))
@@ -702,7 +701,7 @@
                                                         (null? (cddr ptst)))
                                                  (car ptst)
                                                  `(,lambda. (,eta) ,ptst))))
-                                     (assm `(match:every ,tst ,e)
+                                     (assm `(,every. ,tst ,e)
                                            (kf sf)
                                            (ks sf))))
                                   ((and (identifier? (car p))
@@ -862,7 +861,7 @@
    ((and (eq? s #t) (eq? f #f)) tst)
    ((and (eq? (car tst) 'pair?)
          (memq match:error-control '(unspecified fail))
-         (memq (car f) '(cond match:error))
+         (memq (car f) `(cond ,match:error.))
          (guarantees s (cadr tst)))
     s)
    (;; (if (and X ...) Y f) => (if (and tst X ...) Y f)
@@ -959,13 +958,13 @@
     (let loop ((code code))
       (cond
        ((not (pair? code)) #f)
-       ((member (car code) '(cond match:error)) #t)
+       ((member (car code) `(cond ,match:error.)) #t)
        ((or (equal? code a) (equal? code d)) #t)
        ((eq? (car code) 'if)
         (or (loop (cadr code))
             (and (loop (caddr code))
                  (loop (cadddr code)))))
-       ((equal? (car code) 'lambda) #f)
+       ((equal? (car code) lambda.) #f)
        ((and (eq? (car code) 'let)
              (identifier? (cadr code)))
         #f)
@@ -1131,7 +1130,7 @@
              (if (null? g162)
                (if (and (list? (cddr args)) (pair? (cddr args)))
                  ((lambda (name pat exp body)
-                    (if (match:every
+                    (if (every
                          (cadddr match:expanders)
                          pat)
                       (quasirename r
@@ -1154,7 +1153,7 @@
                  (g146))))
            (g146))
          (if (list? (car args))
-           (if (match:every
+           (if (every
                 (lambda (g167)
                   (if (and (pair? g167)
                            (g136 (car g167))
@@ -1399,7 +1398,7 @@
                        `(match-letrec ((,pat ,exp)) ,@body)))))
      (if (pair? args)
        (if (list? (car args))
-         (if (match:every
+         (if (every
               (lambda (g206)
                 (if (and (pair? g206)
                          (g200 (car g206))
