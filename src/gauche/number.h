@@ -246,6 +246,65 @@ SCM_EXTERN uint64_t Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor);
 #define Scm_MakeIntegerFromUI(x) Scm_MakeIntegerU(x)
 #define Scm_GetUInteger(x)       Scm_GetIntegerU(x)
 
+/* See if ScmObj x is an integer and can fit the given C type. */
+#define SCM_INTEGER_FITS_INT8_P(x) \
+    (SCM_INTP(x) && -128 <= SCM_INT_VALUE(x) && SCM_INT_VALUE(x) < 128)
+#define SCM_INTEGER_FITS_UINT8_P(x) \
+    (SCM_INTP(x) && 0 <= SCM_INT_VALUE(x) && SCM_INT_VALUE(x) < 256)
+#define SCM_INTEGER_FITS_INT16_P(x) \
+    (SCM_INTP(x) && -32768 <= SCM_INT_VALUE(x) && SCM_INT_VALUE(x) < 32768)
+#define SCM_INTEGER_FITS_UINT16_P(x) \
+    (SCM_INTP(x) && 0 <= SCM_INT_VALUE(x) && SCM_INT_VALUE(x) < 65536)
+#if SIZEOF_LONG == 4
+#define SCM_INTEGER_FITS_INT32_P(x) \
+    (SCM_INTP(x) || (SCM_BIGNUMP(x) && Scm__IntegerFitsInt32P(x)))
+#define SCM_INTEGER_FITS_UINT32_P(x) \
+    (SCM_INTP(x) || (SCM_BIGNUMP(x) && Scm__IntegerFitsUInt32P(x)))
+#define SCM_INTEGER_FITS_INT64_P(x) \
+    (SCM_INTEGREP(x) && Scm__IntegerFitsInt64P(x))
+#define SCM_INTEGER_FITS_UINT64_P(x) \
+    (SCM_INTEGERP(x) && Scm__IntegerFitsUInt64P(x))
+#else /* SIZEOF_LONG >= 8 */
+#define SCM_INTEGER_FITS_INT32_P(x) \
+    (SCM_INTP(x) && INT32_MIN <= SCM_INT_VALUE(x) && SCM_INT_VALUE(x) <= INT32_MAX)
+#define SCM_INTEGER_FITS_UINT32_P(x) \
+    (SCM_INTP(x) && 0 <= SCM_INT_VALUE(x) && SCM_INT_VALUE(x) <= UINT32_MAX)
+#define SCM_INTEGER_FITS_INT64_P(x) \
+    (SCM_INTP(x) || (SCM_BIGNUMP(x) && Scm__IntegerFitsInt64P(x)))
+#define SCM_INTEGER_FITS_UINT64_P(x) \
+    (SCM_INTP(x)? (SCM_INT_VALUE(x) >= 0) : (SCM_BIGNUMP(x) && Scm__IntegerFitsUInt64P(x)))
+#endif /* SIZEOF_LONG >= 8 */
+
+#define SCM_INTEGER_FITS_SHORT_P(x) \
+    (SCM_INTP(x) && SHRT_MIN <= SCM_INT_VALUE(x) && SCM_INT_VALUE(x) <= SHRT_MAX)
+#define SCM_INTEGER_FITS_USHORT_P(x) \
+    (SCM_INTP(x) && 0 <= SCM_INT_VALUE(x) && SCM_INT_VALUE(x) <= USHRT_MAX)
+#if SIZEOF_INT == 4
+#define SCM_INTEGER_FITS_INT_P(x)  SCM_INTEGER_FITS_INT32_P(x)
+#define SCM_INTEGER_FITS_UINT_P(x)  SCM_INTEGER_FITS_UINT32_P(x)
+#elif SIZEOF_INT == 8
+#define SCM_INTEGER_FITS_INT_P(x)  SCM_INTEGER_FITS_INT64_P(x)
+#define SCM_INTEGER_FITS_UINT_P(x)  SCM_INTEGER_FITS_UINT64_P(x)
+#else /* SIZEOF_INT > 8 */
+#error Unsupported int size
+#endif /* SIZEOF_INT > 8 */
+#if SIZEOF_LONG == 4
+#define SCM_INTEGER_FITS_LONG_P(x)  SCM_INTEGER_FITS_INT32_P(x)
+#define SCM_INTEGER_FITS_ULONG_P(x)  SCM_INTEGER_FITS_UINT32_P(x)
+#elif SIZEOF_LONG == 8
+#define SCM_INTEGER_FITS_LONG_P(x)  SCM_INTEGER_FITS_INT64_P(x)
+#define SCM_INTEGER_FITS_ULONG_P(x)  SCM_INTEGER_FITS_UINT64_P(x)
+#else /* SIZEOF_LONG > 8 */
+#error Unsupported long size
+#endif /* SIZEOF_INT > 8 */
+
+
+/* These functions shouldn't be called directly; use macros above. */
+SCM_EXTERN _Bool Scm__IntegerFitsInt32P(ScmObj);
+SCM_EXTERN _Bool Scm__IntegerFitsUInt32P(ScmObj);
+SCM_EXTERN _Bool Scm__IntegerFitsInt64P(ScmObj);
+SCM_EXTERN _Bool Scm__IntegerFitsUInt64P(ScmObj);
+
 /* System-dependent integral types */
 SCM_EXTERN int       Scm_IntegerFitsSizeP(ScmObj);
 SCM_EXTERN size_t    Scm_IntegerToSize(ScmObj);

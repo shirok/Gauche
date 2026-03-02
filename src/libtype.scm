@@ -944,96 +944,34 @@
 
  ;; NB: Range check is also in ext/uvector/uvector.scm.  May be integrated.
  (define-cfn native_s8P (obj) ::int :static
-   (return (and (SCM_INTP obj)
-                (>= (SCM_INT_VALUE obj) -128)
-                (<= (SCM_INT_VALUE obj) 127))))
+   (return (SCM_INTEGER_FITS_INT8_P obj)))
  (define-cfn native_u8P (obj) ::int :static
-   (return (and (SCM_INTP obj)
-                (>= (SCM_INT_VALUE obj) 0)
-                (<= (SCM_INT_VALUE obj) 255))))
+   (return (SCM_INTEGER_FITS_UINT8_P obj)))
  (define-cfn native_s16P (obj) ::int :static
-   (return (and (SCM_INTP obj)
-                (>= (SCM_INT_VALUE obj) -32768)
-                (<= (SCM_INT_VALUE obj) 32767))))
+   (return (SCM_INTEGER_FITS_INT16_P obj)))
  (define-cfn native_u16P (obj) ::int :static
-   (return (and (SCM_INTP obj)
-                (>= (SCM_INT_VALUE obj) 0)
-                (<= (SCM_INT_VALUE obj) 65535))))
+   (return (SCM_INTEGER_FITS_UINT16_P obj)))
  (define-cfn native_s32P (obj) ::int :static
-   (.if (== SIZEOF_LONG 4)
-        (return (or (SCM_INTP obj)
-                    (and (SCM_BIGNUMP obj)
-                         (>= (Scm_NumCmp obj '#x-8000_0000) 0)
-                         (<= (Scm_NumCmp obj '#x7fff_ffff) 0))))
-        (return (and (SCM_INTP obj)
-                     (>= (SCM_INT_VALUE obj) #x-8000_0000)
-                     (<= (SCM_INT_VALUE obj) #x7fff_ffff)))))
+   (return (SCM_INTEGER_FITS_INT32_P obj)))
  (define-cfn native_u32P (obj) ::int :static
-   (.if (== SIZEOF_LONG 4)
-        (return (or (and (SCM_INTP obj)
-                         (>= (SCM_INT_VALUE obj) 0))
-                    (and (SCM_BIGNUMP obj)
-                         (>= (Scm_Sign obj) 0)
-                         (<= (Scm_NumCmp obj '#xffff_ffff) 0))))
-        (return (and (SCM_INTP obj)
-                     (>= (SCM_INT_VALUE obj) 0)
-                     (<= (SCM_INT_VALUE obj) #xffff_ffff)))))
+   (return (SCM_INTEGER_FITS_UINT32_P obj)))
  (define-cfn native_s64P (obj) ::int :static
-   (return (or (SCM_INTP obj)
-               (and (SCM_BIGNUMP obj)
-                    (>= (Scm_NumCmp obj '#x-8000_0000_0000_0000) 0)
-                    (<= (Scm_NumCmp obj '#x7fff_ffff_ffff_ffff) 0)))))
+   (return (SCM_INTEGER_FITS_INT64_P obj)))
  (define-cfn native_u64P (obj) ::int :static
-   (return (or (and (SCM_INTP obj)
-                    (>= (SCM_INT_VALUE obj) 0))
-               (and (SCM_BIGNUMP obj)
-                    (>= (Scm_Sign obj) 0)
-                    (<= (Scm_NumCmp obj '#xffff_ffff_ffff_ffff) 0)))))
+   (return (SCM_INTEGER_FITS_UINT64_P obj)))
 
  (define-cfn native_shortP (obj) ::int :static
-   (return (and (SCM_INTP obj)
-                (>= (SCM_INT_VALUE obj) SHRT_MIN)
-                (<= (SCM_INT_VALUE obj) SHRT_MAX))))
+   (return (SCM_INTEGER_FITS_SHORT_P obj)))
  (define-cfn native_ushortP (obj) ::int :static
-   (return (and (SCM_INTP obj)
-                (>= (SCM_INT_VALUE obj) 0)
-                (<= (SCM_INT_VALUE obj) USHRT_MAX))))
+   (return (SCM_INTEGER_FITS_USHORT_P obj)))
  (define-cfn native_intP (obj) ::int :static
-   (.if (== SIZEOF_LONG 4)
-        (if (SCM_BIGNUMP obj)
-          (let* ([oor::int FALSE]
-                 [v::long (Scm_GetIntegerClamp obj SCM_CLAMP_BOTH (& oor))])
-            (return (and (not oor)
-                         (>= v INT_MIN)
-                         (<= v INT_MAX))))
-          (return (SCM_INTP obj)))
-        (if (SCM_INTP obj)
-          (let* ([v::long (SCM_INT_VALUE obj)])
-            (return (and (>= v INT_MIN)
-                         (<= v INT_MAX))))
-          (return FALSE))))
+   (return (SCM_INTEGER_FITS_INT_P obj)))
  (define-cfn native_uintP (obj) ::int :static
-   (.if (== SIZEOF_LONG 4)
-        (if (SCM_BIGNUMP obj)
-          (let* ([oor::int FALSE])
-            (cast (void) (Scm_GetIntegerUClamp obj SCM_CLAMP_BOTH (& oor)))
-            (return (not oor)))
-          (return (and (SCM_INTP obj) (>= (SCM_INT_VALUE obj) 0))))
-        (return (and (SCM_INTP obj)
-                     (>= (SCM_INT_VALUE obj) 0)
-                     (<= (SCM_INT_VALUE obj) UINT_MAX)))))
+   (return (SCM_INTEGER_FITS_UINT_P obj)))
  (define-cfn native_longP (obj) ::int :static
-   (if (SCM_BIGNUMP obj)
-     (let* ([oor::int FALSE])
-       (cast void (Scm_GetIntegerClamp obj SCM_CLAMP_BOTH (& oor)))
-       (return (not oor)))
-     (return (SCM_INTP obj))))
+   (return (SCM_INTEGER_FITS_LONG_P obj)))
  (define-cfn native_ulongP (obj) ::int :static
-   (if (SCM_BIGNUMP obj)
-     (let* ([oor::int FALSE])
-       (cast void (Scm_GetIntegerUClamp obj SCM_CLAMP_BOTH (& oor)))
-       (return (not oor)))
-     (return (and (SCM_INTP obj) (>= (SCM_INT_VALUE obj) 0)))))
+   (return (SCM_INTEGER_FITS_ULONG_P obj)))
 
  ;; we don't range-check flonums
  (define-cfn native_realP (obj) ::int :static

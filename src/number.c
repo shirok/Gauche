@@ -967,6 +967,124 @@ double Scm_Angle(ScmObj z)
 }
 
 /*=======================================================================
+ *  Range check
+ */
+
+/* Simple range check is done by macros (see gauche/number.h)
+   These functions are called when the predicate needs more compuation
+   to fit in a straightforward macro.
+   These functions shouldn't be called directly.  Always use
+   SCM_INTEGER_FITS_* macros.
+ */
+
+_Bool Scm__IntegerFitsInt32P(ScmObj val)
+{
+#if SIZEOF_LONG == 4
+    if (SCM_INTP(val)) return TRUE;
+    if (SCM_BIGNUMP(val)) {
+        /* If size > 1, it doesn't fit in 32 bits.
+           If size == 1, check the value against INT32 range. */
+        const ScmBignum *b = SCM_BIGNUM(val);
+        if (b->size > 1) return FALSE;
+        if (b->sign >= 0) {
+            return b->values[0] <= (u_long)INT32_MAX;
+        } else {
+            return b->values[0] <= (u_long)INT32_MAX + 1;
+        }
+    }
+#else  /* SIZEOF_LONG > 4 */
+    if (SCM_INTP(val)) {
+        long v = SCM_INT_VALUE(val);
+        return v >= INT32_MIN && v <= INT32_MAX;
+    }
+    if (SCM_BIGNUMP(val)) return FALSE;
+#endif  /* SIZEOF_LONG > 4 */
+    return FALSE;
+}
+
+_Bool Scm__IntegerFitsUInt32P(ScmObj val)
+{
+#if SIZEOF_LONG == 4
+    if (SCM_INTP(val)) return SCM_INT_VALUE(val) >= 0;
+    if (SCM_BIGNUMP(val)) {
+        const ScmBignum *b = SCM_BIGNUM(val);
+        if (b->sign < 0) return FALSE;
+        if (b->size > 1) return FALSE;
+        return TRUE;
+    }
+#else  /* SIZEOF_LONG > 4 */
+    if (SCM_INTP(val)) {
+        long v = SCM_INT_VALUE(val);
+        return v >= 0 && v <= (long)UINT32_MAX;
+    }
+    if (SCM_BIGNUMP(val)) return FALSE;
+#endif  /* SIZEOF_LONG > 4 */
+    return FALSE;
+}
+
+_Bool Scm__IntegerFitsInt64P(ScmObj val)
+{
+#if SIZEOF_LONG == 4
+    if (SCM_INTP(val)) return TRUE;
+    if (SCM_BIGNUMP(val)) {
+        const ScmBignum *b = SCM_BIGNUM(val);
+        switch (b->size) {
+        case 1: return TRUE; /* at most 32-bit magnitude */
+        case 2:
+            /* size == 2: magnitude is (values[1] << 32) | values[0].
+               INT64_MAX = 0x7FFFFFFF_FFFFFFFF
+               |INT64_MIN| = 0x80000000_00000000 */
+            if (b->sign >= 0) {
+                return b->values[1] <= (u_long)INT32_MAX;
+            } else {
+                return b->values[1] < (u_long)INT32_MAX + 1
+                    || (b->values[1] == (u_long)INT32_MAX + 1
+                        && b->values[0] == 0);
+            }
+        default: return FALSE;
+        }
+    }
+#else  /* SIZEOF_LONG > 4 */
+    if (SCM_INTP(val)) return TRUE; /* at most 62bits  */
+    if (SCM_BIGNUMP(val)) {
+        const ScmBignum *b = SCM_BIGNUM(val);
+        if (b->size > 1) return FALSE;
+        if (b->sign >= 0) {
+            return b->values[0] <= (u_long)LONG_MAX;
+        } else {
+            return b->values[0] <= (u_long)LONG_MAX + 1;
+        }
+    }
+#endif
+    return FALSE;
+}
+
+_Bool Scm__IntegerFitsUInt64P(ScmObj val)
+{
+#if SIZEOF_LONG == 4
+    if (SCM_INTP(val)) return SCM_INT_VALUE(val) >= 0;
+    if (SCM_BIGNUMP(val)) {
+        const ScmBignum *b = SCM_BIGNUM(val);
+        if (b->sign < 0) return FALSE;
+        if (b->size > 2) return FALSE;
+        /* size <= 2, sign >= 0: at most 64 bits, fits in uint64. */
+        return TRUE;
+    }
+#else  /* SIZEOF_LONG > 4 */
+    if (SCM_INTP(val)) return SCM_INT_VALUE(val) >= 0;
+    if (SCM_BIGNUMP(val)) {
+        const ScmBignum *b = SCM_BIGNUM(val);
+        if (b->sign < 0) return FALSE;
+        if (b->size > 1) return FALSE;
+        /* size == 1, sign >= 0: values[0] is u_long (64-bit),
+           always fits in uint64. */
+        return TRUE;
+    }
+#endif
+    return FALSE;
+}
+
+/*=======================================================================
  *  Coertion
  */
 
