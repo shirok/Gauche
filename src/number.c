@@ -977,7 +977,7 @@ double Scm_Angle(ScmObj z)
    SCM_INTEGER_FITS_* macros.
  */
 
-_Bool Scm__IntegerFitsInt32P(ScmObj val)
+int Scm__IntegerFitsInt32P(ScmObj val)
 {
 #if SIZEOF_LONG == 4
     if (SCM_INTP(val)) return TRUE;
@@ -1002,7 +1002,7 @@ _Bool Scm__IntegerFitsInt32P(ScmObj val)
     return FALSE;
 }
 
-_Bool Scm__IntegerFitsUInt32P(ScmObj val)
+int Scm__IntegerFitsUInt32P(ScmObj val)
 {
 #if SIZEOF_LONG == 4
     if (SCM_INTP(val)) return SCM_INT_VALUE(val) >= 0;
@@ -1022,7 +1022,7 @@ _Bool Scm__IntegerFitsUInt32P(ScmObj val)
     return FALSE;
 }
 
-_Bool Scm__IntegerFitsInt64P(ScmObj val)
+int Scm__IntegerFitsInt64P(ScmObj val)
 {
 #if SIZEOF_LONG == 4
     if (SCM_INTP(val)) return TRUE;
@@ -1059,7 +1059,7 @@ _Bool Scm__IntegerFitsInt64P(ScmObj val)
     return FALSE;
 }
 
-_Bool Scm__IntegerFitsUInt64P(ScmObj val)
+int Scm__IntegerFitsUInt64P(ScmObj val)
 {
 #if SIZEOF_LONG == 4
     if (SCM_INTP(val)) return SCM_INT_VALUE(val) >= 0;

@@ -300,10 +300,10 @@ SCM_EXTERN uint64_t Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor);
 
 
 /* These functions shouldn't be called directly; use macros above. */
-SCM_EXTERN _Bool Scm__IntegerFitsInt32P(ScmObj);
-SCM_EXTERN _Bool Scm__IntegerFitsUInt32P(ScmObj);
-SCM_EXTERN _Bool Scm__IntegerFitsInt64P(ScmObj);
-SCM_EXTERN _Bool Scm__IntegerFitsUInt64P(ScmObj);
+SCM_EXTERN int  Scm__IntegerFitsInt32P(ScmObj);
+SCM_EXTERN int  Scm__IntegerFitsUInt32P(ScmObj);
+SCM_EXTERN int  Scm__IntegerFitsInt64P(ScmObj);
+SCM_EXTERN int  Scm__IntegerFitsUInt64P(ScmObj);
 
 /* System-dependent integral types */
 SCM_EXTERN int       Scm_IntegerFitsSizeP(ScmObj);
