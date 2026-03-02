@@ -261,7 +261,7 @@ SCM_EXTERN uint64_t Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor);
 #define SCM_INTEGER_FITS_UINT32_P(x) \
     (SCM_INTP(x) || (SCM_BIGNUMP(x) && Scm__IntegerFitsUInt32P(x)))
 #define SCM_INTEGER_FITS_INT64_P(x) \
-    (SCM_INTEGREP(x) && Scm__IntegerFitsInt64P(x))
+    (SCM_INTEGERP(x) && Scm__IntegerFitsInt64P(x))
 #define SCM_INTEGER_FITS_UINT64_P(x) \
     (SCM_INTEGERP(x) && Scm__IntegerFitsUInt64P(x))
 #else /* SIZEOF_LONG >= 8 */
