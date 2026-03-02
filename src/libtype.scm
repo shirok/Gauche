@@ -942,7 +942,6 @@
  (define-cfn native_fixnumP (obj) ::int :static
    (return (SCM_INTP obj)))
 
- ;; NB: Range check is also in ext/uvector/uvector.scm.  May be integrated.
  (define-cfn native_s8P (obj) ::int :static
    (return (SCM_INTEGER_FITS_INT8_P obj)))
  (define-cfn native_u8P (obj) ::int :static

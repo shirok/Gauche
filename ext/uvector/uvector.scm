@@ -448,65 +448,14 @@
 ;; Element range check (SRFI-160)
 ;;
 
-(define-cfn u8-element? (v) ::_Bool :static :inline
-  (return (and (SCM_INTP v)
-               (<= 0 (SCM_INT_VALUE v))
-               (<  (SCM_INT_VALUE v) 256))))
-
-(define-cproc u8? (v) ::<boolean> u8-element?)
-
-(define-cfn s8-element? (v) ::_Bool :static :inline
-  (return (and (SCM_INTP v)
-               (<= -128 (SCM_INT_VALUE v))
-               (<  (SCM_INT_VALUE v) 128))))
-
-(define-cproc s8? (v) ::<boolean> s8-element?)
-
-(define-cfn u16-element? (v) ::_Bool :static :inline
-  (return (and (SCM_INTP v)
-               (<= 0 (SCM_INT_VALUE v))
-               (<  (SCM_INT_VALUE v) 65536))))
-
-(define-cproc u16? (v) ::<boolean> u16-element?)
-
-(define-cfn s16-element? (v) ::_Bool :static :inline
-  (return (and (SCM_INTP v)
-               (<= -32768 (SCM_INT_VALUE v))
-               (<  (SCM_INT_VALUE v) 32768))))
-
-(define-cproc s16? (v) ::<boolean> s16-element?)
-
-(define-cfn u32-element? (v) ::_Bool :static :inline
-  (let* ([oor::int])
-    (unless (SCM_INTEGERP v) (return FALSE))
-    (cast void (Scm_GetIntegerU32Clamp v SCM_CLAMP_NONE (& oor)))
-    (return (not oor))))
-
-(define-cproc u32? (v) ::<boolean> u32-element?)
-
-(define-cfn s32-element? (v) ::_Bool :static :inline
-  (let* ([oor::int])
-    (unless (SCM_INTEGERP v) (return FALSE))
-    (cast void (Scm_GetInteger32Clamp v SCM_CLAMP_NONE (& oor)))
-    (return (not oor))))
-
-(define-cproc s32? (v) ::<boolean> s32-element?)
-
-(define-cfn u64-element? (v) ::_Bool :static :inline
-  (let* ([oor::int])
-    (unless (SCM_INTEGERP v) (return FALSE))
-    (cast void (Scm_GetIntegerU64Clamp v SCM_CLAMP_NONE (& oor)))
-    (return (not oor))))
-
-(define-cproc u64? (v) ::<boolean> u64-element?)
-
-(define-cfn s64-element? (v) ::_Bool :static :inline
-  (let* ([oor::int])
-    (unless (SCM_INTEGERP v) (return FALSE))
-    (cast void (Scm_GetInteger64Clamp v SCM_CLAMP_NONE (& oor)))
-    (return (not oor))))
-
-(define-cproc s64? (v) ::<boolean> s64-element?)
+(define-cproc u8? (v) ::<boolean> SCM_INTEGER_FITS_UINT8_P)
+(define-cproc s8? (v) ::<boolean> SCM_INTEGER_FITS_INT8_P)
+(define-cproc u16? (v) ::<boolean> SCM_INTEGER_FITS_UINT16_P)
+(define-cproc s16? (v) ::<boolean> SCM_INTEGER_FITS_INT16_P)
+(define-cproc u32? (v) ::<boolean> SCM_INTEGER_FITS_UINT32_P)
+(define-cproc s32? (v) ::<boolean> SCM_INTEGER_FITS_INT32_P)
+(define-cproc u64? (v) ::<boolean> SCM_INTEGER_FITS_UINT64_P)
+(define-cproc s64? (v) ::<boolean> SCM_INTEGER_FITS_INT64_P)
 
 (define-cproc f16? (v) ::<boolean> :fast-flonum (return (SCM_REALP v)))
 (define-cproc f32? (v) ::<boolean> :fast-flonum (return (SCM_REALP v)))
@@ -519,14 +468,14 @@
 ;; generic version.
 (define-cproc uvector-class-valid-element? (klass::<class> v) ::<boolean>
   (case (Scm_UVectorType klass)
-    [(SCM_UVECTOR_U8)  (return (u8-element? v))]
-    [(SCM_UVECTOR_S8)  (return (s8-element? v))]
-    [(SCM_UVECTOR_U16) (return (u16-element? v))]
-    [(SCM_UVECTOR_S16) (return (s16-element? v))]
-    [(SCM_UVECTOR_U32) (return (u32-element? v))]
-    [(SCM_UVECTOR_S32) (return (s32-element? v))]
-    [(SCM_UVECTOR_U64) (return (u64-element? v))]
-    [(SCM_UVECTOR_S64) (return (s64-element? v))]
+    [(SCM_UVECTOR_U8)  (return (SCM_INTEGER_FITS_UINT8_P v))]
+    [(SCM_UVECTOR_S8)  (return (SCM_INTEGER_FITS_INT8_P v))]
+    [(SCM_UVECTOR_U16) (return (SCM_INTEGER_FITS_UINT16_P v))]
+    [(SCM_UVECTOR_S16) (return (SCM_INTEGER_FITS_INT16_P v))]
+    [(SCM_UVECTOR_U32) (return (SCM_INTEGER_FITS_UINT32_P v))]
+    [(SCM_UVECTOR_S32) (return (SCM_INTEGER_FITS_INT32_P v))]
+    [(SCM_UVECTOR_U64) (return (SCM_INTEGER_FITS_UINT64_P v))]
+    [(SCM_UVECTOR_S64) (return (SCM_INTEGER_FITS_INT64_P v))]
     [(SCM_UVECTOR_F16 SCM_UVECTOR_F32 SCM_UVECTOR_F64) (return (SCM_REALP v))]
     [(SCM_UVECTOR_C32 SCM_UVECTOR_C64 SCM_UVECTOR_C128) (return (SCM_NUMBERP v))]
     [else (return FALSE)]
