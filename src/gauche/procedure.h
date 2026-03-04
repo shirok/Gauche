@@ -38,10 +38,41 @@
  * Procedures
  */
 
-/* ScmProcedure can be statically allocated, so do changing its layout
+/* ScmProcedure can be statically allocated, so changing its layout
  * can break binary compatibility.
  * The current definition exposes too much internal info, though.  We may
  * hide internal slots in future.
+ *
+ * C structs that include ScmProcedure is "genuinly applicable"---VM
+ * treas them specially in the CALL instruction.  A handful of built-in
+ * classes and their subclasses are genuinly applicable, and those classes
+ * are marked with SCM_CLASS_APPLICABLE flag.
+ *
+ * We don't use inheritance to represent genuine applicability.  The test
+ * is in the critical path of procedure applicationn, and checking is-a?
+ * has non-negligible overhead.
+ *
+ * Subsequently, genuinly applicable classes don't have a common base class.
+ * The following chart shows genuioly applicable classes (marked with *)
+ *
+ * (top)
+ *   +- <procedure> *
+ *   +- <next-method> *
+ *   +- (object)
+ *        +-- <generic> *
+ *        |      +-- schmee defined subclass of <generic> *
+ *        +-- <method> *
+ *               +-- <accessor-method> *
+ *               +-- schmee defined subclass of <method> *
+ *
+ * Note that SCM_PROCEDUREP(x) checks genuine applicability, instead of
+ * (is-a? x <procedure>).  Scheme procedure 'procedure?' also checks
+ * genuine applicability.
+ *
+ * Instances of <generic> and <method> does share ScmPRocedure, but we don't
+ * include <procedure> in its CPL.  We don't want Scheme code to inherit
+ * freely from <procedure>, but only subclass from <generic> or <method>.
+ * The current system doesn't allow such setting.
  */
 
 /* Base structure */
