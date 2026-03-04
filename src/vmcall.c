@@ -222,7 +222,7 @@
     /* First, compute methods */
     nm = SCM_FALSE;
     if (proctype == SCM_PROC_GENERIC) {
-        if (!SCM_GENERICP(VAL0)) {
+        if (!SCM_XTYPEP(VAL0, SCM_CLASS_GENERIC)) {
             /* use scheme-defined MOP.  we modify the stack frame so
                that it is converted to an application of pure generic
                fn apply-generic. */

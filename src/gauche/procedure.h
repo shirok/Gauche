@@ -349,7 +349,7 @@ struct ScmGenericRec {
 
 SCM_CLASS_DECL(Scm_GenericClass);
 #define SCM_CLASS_GENERIC          (&Scm_GenericClass)
-#define SCM_GENERICP(obj)          SCM_XTYPEP(obj, SCM_CLASS_GENERIC)
+#define SCM_GENERICP(obj)          SCM_ISA(obj, SCM_CLASS_GENERIC)
 #define SCM_GENERIC(obj)           ((ScmGeneric*)obj)
 #define SCM_GENERIC_DATA(obj)      (SCM_GENERIC(obj)->data)
 
