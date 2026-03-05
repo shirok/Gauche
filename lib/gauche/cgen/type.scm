@@ -219,7 +219,6 @@
   (%native <intptr_t>   "Scm_IntegerFitsIntptrP" "Scm_IntegerToIntptr" "Scm_IntptrToInteger")
   (%native <uintptr_t>   "Scm_IntegerFitsUintptrP" "Scm_IntegerToUintptr" "Scm_UintptrToInteger")
 
-  (%native <closure> "SCM_CLOSUREP" "SCM_CLOSURE" "SCM_OBJ")
   (%native <void>    "" "" "SCM_VOID_RETURN_VALUE")
 
   (%native <const-cstring> "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")
@@ -321,6 +320,11 @@
    ;; NB: <sys-tm> is defined using define-cstruct in libsys.scm, and its
    ;; C type isn't visible from outside.
    ;;(%cclass <sys-tm> "ScmSysTm*")
+
+   ;; TRANSIENT: <closure> is a native type in 0.9.15 so we can't use
+   ;; %cclass yet.   After 0.9.16 release, change this.
+   (make-cgen-type '<closure> <closure> "ScmClosure*" "closure"
+                   "SCM_CLOSUREP" "SCM_CLOSURE" "SCM_OBJ")
 
    ;; Exception - those classes are in the core but defined in gauche.threads.
    (make-cgen-type '<mutex>

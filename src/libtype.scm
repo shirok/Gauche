@@ -998,8 +998,8 @@
    (return (SCM_IPORTP obj)))
  (define-cfn native_oportP (obj) ::int :static
    (return (SCM_OPORTP obj)))
- (define-cfn native_closureP (obj) ::int :static
-   (return (SCM_CLOSUREP obj)))
+ ;(define-cfn native_closureP (obj) ::int :static
+ ;  (return (SCM_CLOSUREP obj)))
 
  (initcode
   (define-native-type <c-fixnum>  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP
@@ -1062,8 +1062,6 @@
     SCM_OBJ SCM_PORT)
   (define-native-type <output-port> SCM_CLASS_PORT ScmPort* native_oportP
     SCM_OBJ SCM_PORT)
-  (define-native-type <closure> SCM_CLASS_PROCEDURE ScmClosure* native_closureP
-    SCM_OBJ SCM_CLOSURE)
 
   ;; <void> needs special care, as it doesn't have a real C type.
   (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"

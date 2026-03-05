@@ -1,3 +1,11 @@
+2026-03-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/proc.c (<closure>, <subr>): Give ScmClosure and
+	  ScmSubr dedicated classes.  Internally we use SCM_PROCEDURE_TYPE
+	  to dispatch for performance, instead of relying classes.  However,
+	  this irregularity led some hacks in stub type handling.
+	  See https://github.com/shirok/Gauche/issues/1231
+
 2026-02-28  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/util/match-impl.scm: Fix ..k repetition for vectors

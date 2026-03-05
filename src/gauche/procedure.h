@@ -57,6 +57,8 @@
  *
  * (top)
  *   +- <procedure> *
+ *        +-- <subr> *
+ *        +-- <closure> *
  *   +- <next-method> *
  *   +- (object)
  *        +-- <generic> *
@@ -73,6 +75,10 @@
  * include <procedure> in its CPL.  We don't want Scheme code to inherit
  * freely from <procedure>, but only subclass from <generic> or <method>.
  * The current system doesn't allow such setting.
+ *
+ * Instances of those applicable classes as 'type' field that contain
+ * ScmProcedureType.  It is always aligned to the instance's class, and
+ * the critical paths in VM dispatches on ScmProcedureType instead of classes.
  */
 
 /* Base structure */
@@ -260,7 +266,8 @@ struct ScmProcedureRec {
                                infrastructure is in place).
  */
 
-/* procedure type */
+/* Procedure type.  This is maintained to be in sync with instance's class.
+   See the comment above. */
 enum ScmProcedureType {
     SCM_PROC_SUBR,
     SCM_PROC_CLOSURE,
@@ -305,13 +312,17 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
       (inf), SCM_FALSE, (inl) }
 #endif /* GAUCHE_API_VERSION < 98 */
 
-/* Closure - Scheme defined procedure */
+/* Closure - Scheme defined procedure
+   NB: SCM_CLOSUREP does not dispatch by class, but look at the procedure type.
+*/
 struct ScmClosureRec {
     ScmProcedure common;
     ScmObj code;                /* compiled code */
     ScmEnvFrame *env;           /* environment */
 };
 
+SCM_CLASS_DECL(Scm_ClosureClass);
+#define SCM_CLASS_CLOSURE      (&Scm_ClosureClass)
 #define SCM_CLOSUREP(obj) \
     (SCM_PROCEDUREP(obj)&&(SCM_PROCEDURE_TYPE(obj)==SCM_PROC_CLOSURE))
 #define SCM_CLOSURE(obj)           ((ScmClosure*)(obj))
@@ -320,7 +331,9 @@ struct ScmClosureRec {
 
 SCM_EXTERN ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env);
 
-/* Subr - C defined procedure */
+/* Subr - C defined procedure
+   NB: SCM_CLOSUREP does not dispatch by class, but look at the procedure type.
+*/
 struct ScmSubrRec {
     ScmProcedure common;
     int flags;
@@ -328,6 +341,8 @@ struct ScmSubrRec {
     void *data;
 };
 
+SCM_CLASS_DECL(Scm_SubrClass);
+#define SCM_CLASS_SUBR         (&Scm_SubrClass)
 #define SCM_SUBRP(obj) \
     (SCM_PROCEDUREP(obj)&&(SCM_PROCEDURE_TYPE(obj)==SCM_PROC_SUBR))
 #define SCM_SUBR(obj)              ((ScmSubr*)(obj))
@@ -344,10 +359,10 @@ struct ScmSubrRec {
                                            define-cproc. */
 
 #define SCM__DEFINE_SUBR_INT(cvar, req, opt, cst, inf, flags, func, inliner, data) \
-    ScmSubr cvar = {                                                        \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_ProcedureClass),\
-             req, opt, SCM_PROC_SUBR, cst, 0, inf, inliner),                \
-        flags, (func), (data)                                               \
+    ScmSubr cvar = {                                                    \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_SubrClass), \
+             req, opt, SCM_PROC_SUBR, cst, 0, inf, inliner),            \
+        flags, (func), (data)                                           \
     }
 
 #define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data) \

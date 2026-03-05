@@ -195,7 +195,7 @@ enum {
     SCM_CLASS_BASE     = 2,
     SCM_CLASS_SCHEME   = 3,
 
-    /* A special flag that only be used for "natively applicable"
+    /* A special flag that only be used for "genuinly applicable"
        objects, which basically inherits ScmProcedure. */
     SCM_CLASS_APPLICABLE = 0x04,
 

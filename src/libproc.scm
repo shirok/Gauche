@@ -321,7 +321,9 @@
   (define method-applicable?
     (with-module gauche.object method-applicable-for-classes?))
   (let1 c (class-of proc)
-    (cond [(eq? c <procedure>)
+    (cond [(or (eq? c <subr>)
+               (eq? c <closure>)
+               (eq? c <procedure>)) ; This happens in files precompiled before 0.9.16
            (let1 nargs (length arg-types)
              (if-let1 infos (case-lambda-decompose proc)
                (any (^[info] (apply [^(reqargs optarg proc)

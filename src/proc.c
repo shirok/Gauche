@@ -46,6 +46,17 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ProcedureClass, proc_print);
 
+static ScmClass *procedure_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_ProcedureClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_ClosureClass, proc_print, NULL, NULL, NULL,
+                         procedure_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SubrClass, proc_print, NULL, NULL, NULL,
+                         procedure_cpl);
+
 static ScmObj print_tag_key = SCM_FALSE; /* set by Scm__InitProc() */
 
 static void proc_print(ScmObj obj, ScmPort *port,
@@ -122,7 +133,7 @@ ScmObj Scm_MakeClosureWithTags(ScmObj code, ScmEnvFrame *env, ScmObj tags)
     int req = SCM_COMPILED_CODE_REQUIRED_ARGS(code);
     int opt = SCM_COMPILED_CODE_OPTIONAL_ARGS(code);
 
-    SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
+    SCM_SET_CLASS(c, SCM_CLASS_CLOSURE);
     Scm__ProcedureInit(SCM_PROCEDURE(c), SCM_PROC_CLOSURE, req, opt, info);
     c->code = code;
     c->env = env;
@@ -147,7 +158,7 @@ ScmObj Scm_MakeSubrWithTags(ScmSubrProc *func,
                             ScmObj info, ScmObj tags)
 {
     ScmSubr *s = SCM_NEW(ScmSubr);
-    SCM_SET_CLASS(s, SCM_CLASS_PROCEDURE);
+    SCM_SET_CLASS(s, SCM_CLASS_SUBR);
     Scm__ProcedureInit(SCM_PROCEDURE(s), SCM_PROC_SUBR,
                        required, optional, info);
     s->func = func;
@@ -506,6 +517,14 @@ void Scm__InitProc(void)
     Scm_InitStaticClass(&Scm_ProcedureClass, "<procedure>",
                         Scm_GaucheModule(), proc_slots, 0);
     Scm_ProcedureClass.flags |= SCM_CLASS_APPLICABLE;
+
+    Scm_InitStaticClass(&Scm_ClosureClass, "<closure>",
+                        Scm_GaucheModule(), proc_slots, 0);
+    Scm_ClosureClass.flags |= SCM_CLASS_APPLICABLE;
+
+    Scm_InitStaticClass(&Scm_SubrClass, "<subr>",
+                        Scm_GaucheModule(), proc_slots, 0);
+    Scm_SubrClass.flags |= SCM_CLASS_APPLICABLE;
 
     print_tag_key = Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("print")), FALSE);
 }
