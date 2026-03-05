@@ -965,6 +965,14 @@ int Scm_SubtypeP(ScmClass *sub, ScmClass *type)
 
 int Scm_TypeP(ScmObj obj, ScmClass *type)
 {
+    /* TRANSIENT: Existing third-party custom port may not inherit
+       <input-port> or <output-port>; we need a special handling.
+       This will be dropped after some transition period. */
+    if (SCM_EQ(type, SCM_CLASS_INPUT_PORT)) {
+        return SCM_IPORTP(obj);
+    } else if (SCM_EQ(type, SCM_CLASS_OUTPUT_PORT)) {
+        return SCM_OPORTP(obj);
+    }
     return Scm_SubclassP(Scm_ClassOf(obj), type);
 }
 

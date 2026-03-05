@@ -328,6 +328,15 @@ enum ScmPortFlags {
 SCM_CLASS_DECL(Scm_PortClass);
 #define SCM_CLASS_PORT                (&Scm_PortClass)
 
+SCM_CLASS_DECL(Scm_InputPortClass);
+#define SCM_CLASS_INPUT_PORT          (&Scm_InputPortClass)
+
+SCM_CLASS_DECL(Scm_OutputPortClass);
+#define SCM_CLASS_OUTPUT_PORT         (&Scm_OutputPortClass)
+
+SCM_CLASS_DECL(Scm_IOPortClass);
+#define SCM_CLASS_IO_PORT             (&Scm_IOPortClass)
+
 SCM_CLASS_DECL(Scm_CodingAwarePortClass);
 #define SCM_CLASS_CODING_AWARE_PORT   (&Scm_CodingAwarePortClass)
 

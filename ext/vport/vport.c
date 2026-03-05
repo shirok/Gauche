@@ -49,23 +49,41 @@ static ScmObj key_name = SCM_FALSE;    /* :name */
 static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs);
 static void   vport_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
-static ScmClass *vport_cpa[] = {
+static ScmClass *input_vport_cpa[] = {
+    SCM_CLASS_STATIC_PTR(Scm_InputPortClass),
     SCM_CLASS_STATIC_PTR(Scm_PortClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 
+static ScmClass *output_vport_cpa[] = {
+    SCM_CLASS_STATIC_PTR(Scm_OutputPortClass),
+    SCM_CLASS_STATIC_PTR(Scm_PortClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+static ScmClass *io_vport_cpa[] = {
+    SCM_CLASS_STATIC_PTR(Scm_IOPortClass),
+    SCM_CLASS_STATIC_PTR(Scm_OutputPortClass),
+    SCM_CLASS_STATIC_PTR(Scm_InputPortClass),
+    SCM_CLASS_STATIC_PTR(Scm_PortClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+
 SCM_DEFINE_BASE_CLASS(Scm_VirtualInputPortClass, ScmPort,
                       vport_print, NULL, NULL,
-                      vport_allocate, vport_cpa);
+                      vport_allocate, input_vport_cpa);
 
 SCM_DEFINE_BASE_CLASS(Scm_VirtualOutputPortClass, ScmPort,
                       vport_print, NULL, NULL,
-                      vport_allocate, vport_cpa);
+                      vport_allocate, output_vport_cpa);
 
 SCM_DEFINE_BASE_CLASS(Scm_VirtualIOPortClass, ScmPort,
                       vport_print, NULL, NULL,
-                      vport_allocate, vport_cpa);
+                      vport_allocate, io_vport_cpa);
 
 /*
  * Scheme handlers.  They are visible from Scheme as instance slots.
@@ -574,11 +592,11 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs);
 
 SCM_DEFINE_BASE_CLASS(Scm_BufferedInputPortClass, ScmPort,
                       vport_print, NULL, NULL,
-                      bport_allocate, vport_cpa);
+                      bport_allocate, input_vport_cpa);
 
 SCM_DEFINE_BASE_CLASS(Scm_BufferedOutputPortClass, ScmPort,
                       vport_print, NULL, NULL,
-                      bport_allocate, vport_cpa);
+                      bport_allocate, output_vport_cpa);
 
 
 /*

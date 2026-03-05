@@ -82,6 +82,19 @@ static void file_closer(ScmPort *p);
 static int  file_buffered_port_p(ScmPort *p);       /* for Scm_PortFdDup */
 static void file_buffered_port_set_fd(ScmPort *p, int fd); /* ditto */
 
+/* Returns an appropripate basic port class according to the direciton */
+static ScmClass *port_class_from_direction(int direction)
+{
+    switch (direction) {
+    case SCM_PORT_INPUT: return SCM_CLASS_INPUT_PORT;
+    case SCM_PORT_OUTPUT:return SCM_CLASS_OUTPUT_PORT;
+    case (SCM_PORT_INPUT|SCM_PORT_OUTPUT): return SCM_CLASS_IO_PORT;
+    default: Scm_Error("Invalid port direction (neither input nor output)");
+        return SCM_CLASS_PORT;  /* dummy */
+    }
+}
+
+
 static ScmObj get_port_name(ScmPort *port)
 {
     return Scm_PortName(port);
@@ -156,14 +169,28 @@ SCM_DEFINE_BASE_CLASS(Scm_PortClass,
                       port_print, NULL, NULL, NULL, NULL);
 
 static ScmClass *port_cpl[] = {
-    SCM_CLASS_STATIC_PTR(Scm_PortClass),
-    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    SCM_CLASS_STATIC_PTR(Scm_OutputPortClass),  /* -> io  */
+    SCM_CLASS_STATIC_PTR(Scm_InputPortClass),   /* -> coding-aware */
+    SCM_CLASS_STATIC_PTR(Scm_PortClass),        /* -> input, output */
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),         /* -> port */
     NULL
 };
 
-SCM_DEFINE_BASE_CLASS(Scm_CodingAwarePortClass,
+SCM_DEFINE_BASE_CLASS(Scm_InputPortClass,
+                      ScmPort, /* instance type */
+                      port_print, NULL, NULL, NULL, port_cpl + 2);
+
+SCM_DEFINE_BASE_CLASS(Scm_OutputPortClass,
+                      ScmPort, /* instance type */
+                      port_print, NULL, NULL, NULL, port_cpl + 2);
+
+SCM_DEFINE_BASE_CLASS(Scm_IOPortClass,
                       ScmPort, /* instance type */
                       port_print, NULL, NULL, NULL, port_cpl);
+
+SCM_DEFINE_BASE_CLASS(Scm_CodingAwarePortClass,
+                      ScmPort, /* instance type */
+                      port_print, NULL, NULL, NULL, port_cpl + 1);
 
 /*================================================================
  * Common
@@ -1581,7 +1608,8 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     bufrec.seeker = file_seeker;
     bufrec.data = NULL;
     bufrec.idata = fd;
-    ScmObj p = Scm_MakeBufferedPort(SCM_CLASS_PORT, SCM_MAKE_STR_COPYING(path),
+    ScmObj p = Scm_MakeBufferedPort(port_class_from_direction(dir),
+                                    SCM_MAKE_STR_COPYING(path),
                                     dir, TRUE, &bufrec);
     return p;
 }
@@ -1615,8 +1643,8 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
         bufrec.seeker = file_seeker;
     }
 
-    ScmObj p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, ownerp,
-                                    &bufrec);
+    ScmObj p = Scm_MakeBufferedPort(port_class_from_direction(direction),
+                                    name, direction, ownerp, &bufrec);
     return p;
 }
 
@@ -1627,7 +1655,8 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
 ScmObj Scm_MakeInputStringPortFull(ScmString *str, ScmObj name,
                                    u_long flags)
 {
-    ScmPort *p = make_port(SCM_CLASS_PORT, name, SCM_PORT_INPUT, SCM_PORT_ISTR);
+    ScmPort *p = make_port(SCM_CLASS_INPUT_PORT, name, SCM_PORT_INPUT,
+                           SCM_PORT_ISTR);
     const ScmStringBody *sb = SCM_STRING_BODY(str);
     PORT_ISTR(p)->start = SCM_STRING_BODY_START(sb);
     PORT_ISTR(p)->current = SCM_STRING_BODY_START(sb);
@@ -1646,7 +1675,8 @@ ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
 
 ScmObj Scm_MakeOutputStringPortFull(ScmObj name, u_long flags)
 {
-    ScmPort *p = make_port(SCM_CLASS_PORT, name, SCM_PORT_OUTPUT, SCM_PORT_OSTR);
+    ScmPort *p = make_port(SCM_CLASS_OUTPUT_PORT, name, SCM_PORT_OUTPUT,
+                           SCM_PORT_OSTR);
     Scm_DStringInit(PORT_OSTR(p));
     if (flags&SCM_PORT_STRING_PRIVATE) PORT_PRELOCK(p, Scm_VM());
     return SCM_OBJ(p);
@@ -2172,6 +2202,12 @@ void Scm__InitPort(void)
 
     Scm_InitStaticClass(&Scm_PortClass, "<port>",
                         Scm_GaucheModule(), port_slots, 0);
+    Scm_InitStaticClass(&Scm_InputPortClass, "<input-port>",
+                        Scm_GaucheModule(), port_slots, 0);
+    Scm_InitStaticClass(&Scm_OutputPortClass, "<output-port>",
+                        Scm_GaucheModule(), port_slots, 0);
+    Scm_InitStaticClass(&Scm_IOPortClass, "<io-port>",
+                        Scm_GaucheModule(), port_slots, 0);
     Scm_InitStaticClass(&Scm_CodingAwarePortClass, "<coding-aware-port>",
                         Scm_GaucheModule(), port_slots, 0);
 
@@ -2353,8 +2389,9 @@ static ScmObj make_trapper_port(ScmObj name, int direction,
     bufrec.data = NULL;
     bufrec.idata = fd;
     bufrec.seeker = NULL;
-    ScmObj p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, TRUE,
-                                    &bufrec);
+
+    ScmObj p = Scm_MakeBufferedPort(port_class_from_direction(direction),
+                                    name, direction, TRUE, &bufrec);
     return p;
 }
 
