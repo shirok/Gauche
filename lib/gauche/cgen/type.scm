@@ -256,10 +256,14 @@
    )
 
 ;; C-class types
+;; TRANSIENT: <closure>, <input-port>, and <output-port> were native types
+;; rather than classes in 0.9.15.  We need this code run in both 0.9.15
+;; and 0.9.16, we avoid using (class-name class) but use (~ class'name),
+;; which works even 'class' is a native type.
 (let ()
   (define (%cclass class c-type :optional (pred #f) (unbox #f))
-    (make-cgen-type (class-name class) class c-type
-                    (x->string (class-name class)) pred unbox))
+    (make-cgen-type (~ class'name) class c-type
+                    (x->string (~ class'name)) pred unbox))
 
    (%cclass <pair> "ScmPair*")
    (%cclass <vector> "ScmVector*")
@@ -290,6 +294,7 @@
    (%cclass <input-port> "ScmPort*" "SCM_IPORTP" "SCM_PORT")
    (%cclass <output-port> "ScmPort*" "SCM_OPORTP" "SCM_PORT")
    (%cclass <procedure> "ScmProcedure*")
+   (%cclass <closure> "ScmClosure*")
    (%cclass <promise> "ScmPromise*")
    (%cclass <comparator> "ScmComparator*")
    (%cclass <hash-table> "ScmHashTable*")
@@ -320,11 +325,6 @@
    ;; NB: <sys-tm> is defined using define-cstruct in libsys.scm, and its
    ;; C type isn't visible from outside.
    ;;(%cclass <sys-tm> "ScmSysTm*")
-
-   ;; TRANSIENT: <closure> is a native type in 0.9.15 so we can't use
-   ;; %cclass yet.   After 0.9.16 release, change this.
-   (make-cgen-type '<closure> <closure> "ScmClosure*" "closure"
-                   "SCM_CLOSUREP" "SCM_CLOSURE" "SCM_OBJ")
 
    ;; Exception - those classes are in the core but defined in gauche.threads.
    (make-cgen-type '<mutex>
