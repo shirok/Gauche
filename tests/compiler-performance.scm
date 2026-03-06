@@ -3,7 +3,6 @@
 ;; Load as many non-precompiled library as possible.
 ;;
 
-(use binary.ftype)
 (use binary.pack)
 (use control.cseq)
 (use control.future)
@@ -25,6 +24,7 @@
 (use gauche.cgen.cbe)
 (use gauche.config)
 (use gauche.configure)
+(use gauche.ctype)
 (use gauche.lazy)
 (use gauche.logger)
 (use gauche.mop.bound-slot)

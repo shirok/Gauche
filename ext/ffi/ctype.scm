@@ -1,5 +1,5 @@
 ;;;
-;;; binary.ftype - foreign types and foreign objects
+;;; gauche.ctype - C types and native handles
 ;;;
 ;;;   Copyright (c) 2011-2025  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -33,12 +33,8 @@
 
 ;; This module provides the means to define and manipulate
 ;; compound binary types.
-;;
-;; NB: This module has never been documented, and will likely to be
-;; subsumed by FFI module.  Any code here is for experiment to explore
-;; effective interface.
 
-(define-module binary.ftype
+(define-module gauche.ctype
   (use util.match)
   (use gauche.cgen)
   (use gauche.record)
@@ -62,7 +58,7 @@
 
           native-alloc
           native-free))
-(select-module binary.ftype)
+(select-module gauche.ctype)
 
 (inline-stub
  (.include "gauche/priv/typeP.h")
@@ -258,8 +254,8 @@
       [<c-array>
        (%handle-ref (%array-dereference-type t selector) handle offset)]
       [(</> <c-struct> <c-union>)
-       (let1 ftype (cadr (c-struct-field t selector))
-         (%handle-ref ftype handle offset))]
+       (let1 ctype (cadr (c-struct-field t selector))
+         (%handle-ref ctype handle offset))]
       [else (error "Unsupported native aggregate type:" handle)])))
 
 (define (native-set! handle selector val :optional (type #f))
@@ -272,8 +268,8 @@
       [<c-array>
        (%handle-set! (%array-dereference-type t selector) handle offset val)]
       [(</> <c-struct> <c-union>)
-       (let1 ftype (cadr (c-struct-field t selector))
-         (%handle-set! ftype handle offset val))]
+       (let1 ctype (cadr (c-struct-field t selector))
+         (%handle-set! ctype handle offset val))]
       [else (error "Unsupported native aggregate type:" t)])))
 
 ;; Compare native types
@@ -396,10 +392,6 @@
 ;;;
 ;;;  Raw memory
 ;;;
-
-;; This should actually belong to FFI module.  For now, however,
-;; since this depends heavily on native compound types, we put it
-;; here for experimenting.
 
 (define-cproc %native-alloc (size::<fixnum> type::<native-type>)
   (let* ([p::void* (malloc size)]

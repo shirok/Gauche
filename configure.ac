@@ -957,6 +957,7 @@ AC_CONFIG_FILES([
           ext/dbm/Makefile
           ext/digest/Makefile
           ext/fcntl/Makefile
+          ext/ffi/Makefile
           ext/file/Makefile
           ext/gauche/Makefile
           ext/mt-random/Makefile

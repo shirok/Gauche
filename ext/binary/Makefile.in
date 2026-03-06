@@ -6,13 +6,13 @@ SCM_CATEGORY = binary
 
 include ../Makefile.ext
 
-LIBFILES = binary--io.$(SOEXT) binary--ftype.$(SOEXT)
-SCMFILES = io.sci ftype.sci
-OBJECTS = $(binary_io_OBJECTS) $(binary_ftype_OBJECTS)
+LIBFILES = binary--io.$(SOEXT)
+SCMFILES = io.sci
+OBJECTS = $(binary_io_OBJECTS)
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
-XCLEANFILES = binary--io.c binary--ftype.c *.sci
+XCLEANFILES = binary--io.c *.sci
 
 all : $(LIBFILES)
 
@@ -23,13 +23,5 @@ binary--io.$(SOEXT) : $(binary_io_OBJECTS)
 
 binary--io.c io.sci : io.scm
 	$(PRECOMP) -e -P -o binary--io $(srcdir)/io.scm
-
-binary_ftype_OBJECTS = binary--ftype.$(OBJEXT)
-
-binary--ftype.$(SOEXT) : $(binary_ftype_OBJECTS)
-	$(MODLINK) binary--ftype.$(SOEXT) $(binary_ftype_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
-
-binary--ftype.c ftype.sci : ftype.scm
-	$(PRECOMP) -e -P -o binary--ftype $(srcdir)/ftype.scm
 
 install : install-std

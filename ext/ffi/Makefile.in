@@ -1,0 +1,28 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = gauche
+
+LIBFILES = gauche--ctype.$(SOEXT)
+SCMFILES = ctype.sci
+
+OBJECTS = $(gauche_ctype_OBJECTS)
+
+CONFIG_GENERATED = Makefile
+PREGENERATED =
+XCLEANFILES = gauche--ctype.c ctype.sci
+
+all : $(LIBFILES)
+
+gauche_ctype_OBJECTS = gauche--ctype.$(OBJEXT)
+
+gauche--ctype.$(SOEXT) : $(gauche_ctype_OBJECTS)
+	$(MODLINK) gauche--ctype.$(SOEXT) $(gauche_ctype_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--ctype.c ctype.sci : ctype.scm
+	$(PRECOMP) -e -P -o gauche--ctype $(srcdir)/ctype.scm
+
+install : install-std

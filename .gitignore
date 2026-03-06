@@ -103,6 +103,7 @@ test.record
 /ext/digest/rfc--md5.c
 /ext/digest/rfc--sha.c
 /ext/fcntl/gauche--fcntl.c
+/ext/ffi/gauche--ctype.c
 /ext/file/file--util.c
 /ext/file/event-core.c
 /ext/gauche/gauche--atomic.c
