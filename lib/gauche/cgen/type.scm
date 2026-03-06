@@ -222,9 +222,10 @@
   (%native <uintptr_t>   "Scm_IntegerFitsUintptrP" "Scm_IntegerToUintptr" "Scm_UintptrToInteger")
 
   (%native <void>    "" "" "SCM_VOID_RETURN_VALUE")
-
-  (%native <const-cstring> "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")
   )
+
+(make-cgen-type '<const-cstring> <string> "const char*" "C string"
+                "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")
 
 ;; A few native types that has corresponding actual Scheme types.
 ;; NB: <real> should be a pass-through type, for coercing to double can lose

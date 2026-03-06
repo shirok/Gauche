@@ -933,7 +933,7 @@
                         SCM_BINDING_INLINABLE)
        ;; TRANSIENT: See above about this alias.
        ;; We avoid defining <char>, which is used as Scheme type.
-       ,@(if (eq? name-sans-c '<char>)
+       ,@(if (memq name-sans-c '(<char> <string>))
            '()
            `((Scm_MakeBinding (Scm_GaucheModule)
                               (SCM_SYMBOL ',name-sans-c) z
@@ -1030,6 +1030,9 @@
   ;; char as a one-byte integer, use <c-int8> or <c-uint8>.
   (define-native-type <c-char> SCM_CLASS_INTEGER char native_charP
     SCM_MAKE_CHAR SCM_CHAR_VALUE)
+  ;; A special case of NUL-terminated string.
+  (define-native-type <c-string> SCM_CLASS_STRING "const char*" native_cstrP
+    SCM_MAKE_STR_COPYING get_cstr)
 
   (define-native-type <c-size_t>  SCM_CLASS_INTEGER size_t Scm_IntegerFitsSizeP
     Scm_SizeToInteger Scm_IntegerToSize)
@@ -1048,9 +1051,6 @@
     Scm_MakeFlonum Scm_GetDouble)
   (define-native-type <c-double>  SCM_CLASS_REAL double native_realP
     Scm_MakeFlonum Scm_GetDouble)
-
-  (define-native-type <const-cstring> SCM_CLASS_STRING "const char*" native_cstrP
-    SCM_MAKE_STR_COPYING get_cstr)
 
   ;; <void> needs special care, as it doesn't have a real C type.
   (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"
