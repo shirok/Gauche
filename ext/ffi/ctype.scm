@@ -302,6 +302,16 @@
   (and-let1 m (#/^([^*]*)(\*+)$/ (symbol->string sym))
     `(,(string->symbol (m 1)) . ,(string-length (m 2)))))
 
+;; Normalize a list of symbols representing a C type, e.g. (char *),
+;; (char const*), (int **), (int* *).  Strip 'const' and concatenate
+;; the remaining parts into a single symbol.
+(define (%normalize-c-type-list syms)
+  ($ string->symbol $ apply string-append
+     (filter-map (^s (rxmatch-case (symbol->string s)
+                       [#/^const(\**)$/ (#f ptrs) ptrs]
+                       [else => values]))
+                 syms)))
+
 ;; Wrap a native type in N layers of pointer type.
 (define (%wrap-pointer-type base-type depth)
   (let loop ([t base-type] [d depth])
@@ -375,6 +385,12 @@
     [('const type)
      (native-type type)]
 
+    ;; C-style list type form, e.g. (char*), (char *), (char const*),
+    ;; (int **), (int* *).  Strip const and concatenate into a single
+    ;; symbol, then re-parse.
+    [((? symbol?) . (? (^r (every symbol? r))))
+     (native-type (%normalize-c-type-list signature))]
+
     ;; Simple symbol types
     [(? symbol?)
      (or
@@ -383,6 +399,10 @@
       ;; Pointer type (trailing *)
       (and-let* ([decomp (%pointer-type-decompose signature)])
         (%wrap-pointer-type (native-type (car decomp)) (cdr decomp)))
+      ;; c-string is a pseudo type name for <c-string> (NUL-terminated
+      ;; C string).  It's not registered in the builtin table because
+      ;; its C type name is "const char*".
+      (and (eq? signature 'c-string) <c-string>)
       ;; Error
       (error "Unknown native type:" signature))]
 

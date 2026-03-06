@@ -659,11 +659,33 @@
                 (make-c-pointer-type
                  (make-c-pointer-type <c-char>)))))
 
+;; Alternative forms
+(test* "native-type (char*)" #t
+       (equal? (native-type '(char*)) (make-c-pointer-type <c-char>)))
+(test* "native-type (char *)" #t
+       (equal? (native-type '(char *)) (make-c-pointer-type <c-char>)))
+(test* "native-type (const char*)" #t
+       (equal? (native-type '(const char*)) (make-c-pointer-type <c-char>)))
+(test* "native-type (char const*)" #t
+       (equal? (native-type '(char const*)) (make-c-pointer-type <c-char>)))
+(test* "native-type int **" #t
+       (equal? (native-type '(int **))
+               (make-c-pointer-type (make-c-pointer-type <c-int>))))
+(test* "native-type int* *" #t
+       (equal? (native-type '(int* *))
+               (make-c-pointer-type (make-c-pointer-type <c-int>))))
+
 ;; Pointer type is a <c-pointer>
 (test* "native-type int* is <c-pointer>" #t
        (is-a? (native-type 'int*) <c-pointer>))
 (test* "native-type int* pointee-type" #t
        (eq? (~ (native-type 'int*) 'pointee-type) <c-int>))
+
+;; Special treatment of c-string
+(test* "native-type c-string" #t
+       (eq? (native-type 'c-string) <c-string>))
+(test* "native-type c-string*" #t
+       (equal? (native-type 'c-string*) (make-c-pointer-type <c-string>)))
 
 ;; Array types
 (test* "native-type (.array int (3))" #t
