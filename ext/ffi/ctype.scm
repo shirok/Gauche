@@ -36,8 +36,7 @@
 
 (define-module gauche.ctype
   (use util.match)
-  (use gauche.cgen)
-  (use gauche.record)
+  (use gauche.cgen.type.parse)
   (use gauche.uvector)
   (extend gauche.typeutil)              ;access internal routines
   (export native-ref

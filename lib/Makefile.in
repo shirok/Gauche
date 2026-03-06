@@ -32,8 +32,8 @@ CONFIG_GENERATED = Makefile
 
 SUBDIRS  = gauche gauche/vm gauche/configure gauche/serializer \
 	   gauche/interactive gauche/mop \
-	   gauche/package gauche/cgen gauche/experimental gauche/test \
-	   gauche/regexp \
+	   gauche/package gauche/cgen gauche/cgen/type \
+	   gauche/experimental gauche/test gauche/regexp \
 	   lang lang/asm lang/c \
 	   srfi srfi/160 srfi-29 srfi/29 srfi/146 \
 	   srfi-159 srfi-159/internal srfi/159 srfi/160 srfi/172 srfi/194 \
@@ -96,8 +96,8 @@ SCMFILES = \
        gauche/mop/propagate.scm gauche/mop/singleton.scm \
        gauche/mop/typed-slot.scm \
        gauche/cgen.scm gauche/cgen/unit.scm gauche/cgen/literal.scm \
-       gauche/cgen/cise.scm gauche/cgen/type.scm gauche/cgen/stub.scm \
-       gauche/cgen/precomp.scm gauche/cgen/optimizer.scm \
+       gauche/cgen/cise.scm gauche/cgen/type.scm gauche/cgen/type/parse.scm \
+       gauche/cgen/stub.scm gauche/cgen/precomp.scm gauche/cgen/optimizer.scm \
        gauche/cgen/standalone.scm gauche/cgen/tmodule.scm \
        gauche/cgen/cbe.scm \
        gauche/package.scm gauche/package/build.scm gauche/package/fetch.scm \
