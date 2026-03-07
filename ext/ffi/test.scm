@@ -907,4 +907,122 @@
        (test-error <error> #/missing type for field/)
        (native-type '(.struct bad (invalid_no_separator))))
 
+;;;
+;;; native-type->signature: reverse of native-type
+;;;
+(test-section "native-type->signature")
+
+;; Primitive types
+(test* "signature int" 'int (native-type->signature <c-int>))
+(test* "signature uint" 'u_int (native-type->signature <c-uint>))
+(test* "signature short" 'short (native-type->signature <c-short>))
+(test* "signature u_short" 'u_short (native-type->signature <c-ushort>))
+(test* "signature long" 'long (native-type->signature <c-long>))
+(test* "signature u_long" 'u_long (native-type->signature <c-ulong>))
+(test* "signature float" 'float (native-type->signature <c-float>))
+(test* "signature double" 'double (native-type->signature <c-double>))
+(test* "signature void" 'void (native-type->signature <void>))
+(test* "signature char" 'char (native-type->signature <c-char>))
+(test* "signature int8_t" 'int8_t (native-type->signature <c-int8>))
+(test* "signature uint8_t" 'uint8_t (native-type->signature <c-uint8>))
+(test* "signature int16_t" 'int16_t (native-type->signature <c-int16>))
+(test* "signature uint16_t" 'uint16_t (native-type->signature <c-uint16>))
+(test* "signature int32_t" 'int32_t (native-type->signature <c-int32>))
+(test* "signature uint32_t" 'uint32_t (native-type->signature <c-uint32>))
+(test* "signature int64_t" 'int64_t (native-type->signature <c-int64>))
+(test* "signature uint64_t" 'uint64_t (native-type->signature <c-uint64>))
+(test* "signature size_t" 'size_t (native-type->signature <c-size_t>))
+(test* "signature ssize_t" 'ssize_t (native-type->signature <c-ssize_t>))
+(test* "signature ptrdiff_t" 'ptrdiff_t (native-type->signature <c-ptrdiff_t>))
+(test* "signature c-string" 'c-string (native-type->signature <c-string>))
+
+;; Pointer types
+(test* "signature int*" 'int*
+       (native-type->signature (make-c-pointer-type <c-int>)))
+(test* "signature char**" 'char**
+       (native-type->signature (make-c-pointer-type
+                               (make-c-pointer-type <c-char>))))
+(test* "signature void*" 'void*
+       (native-type->signature (make-c-pointer-type <void>)))
+(test* "signature c-string*" 'c-string*
+       (native-type->signature (make-c-pointer-type <c-string>)))
+(test* "signature double***" 'double***
+       (native-type->signature (make-c-pointer-type
+                                (make-c-pointer-type
+                                 (make-c-pointer-type <c-double>)))))
+
+;; Array types
+(test* "signature array int (3)" '(.array int (3))
+       (native-type->signature (make-c-array-type <c-int> '(3))))
+(test* "signature array 2d" '(.array uint8_t (4 4))
+       (native-type->signature (make-c-array-type <c-uint8> '(4 4))))
+(test* "signature array unsized" '(.array int (* 3))
+       (native-type->signature (make-c-array-type <c-int> '(* 3))))
+(test* "signature array of pointers" '(.array int* (4))
+       (native-type->signature (make-c-array-type
+                               (make-c-pointer-type <c-int>) '(4))))
+
+;; Struct types
+(test* "signature struct" '(.struct foo (a::int b::double))
+       (native-type->signature
+        (make-c-struct-type 'foo `((a ,<c-int>) (b ,<c-double>)))))
+(test* "signature struct (anonymous)" '(.struct (a::int b::double))
+       (native-type->signature
+        (make-c-struct-type #f `((a ,<c-int>) (b ,<c-double>)))))
+(test* "signature struct with array field"
+       '(.struct bar (x::int y:: (.array char (8))))
+       (native-type->signature
+        (make-c-struct-type 'bar
+          `((x ,<c-int>) (y ,(make-c-array-type <c-char> '(8)))))))
+(test* "signature struct with pointer field"
+       '(.struct node (val::int next::int*))
+       (native-type->signature
+        (make-c-struct-type 'node
+          `((val ,<c-int>) (next ,(make-c-pointer-type <c-int>))))))
+
+;; Union types
+(test* "signature union" '(.union u1 (x::int y::float))
+       (native-type->signature
+        (make-c-union-type 'u1 `((x ,<c-int>) (y ,<c-float>)))))
+(test* "signature union (anonymous)" '(.union (x::int y::float))
+       (native-type->signature
+        (make-c-union-type #f `((x ,<c-int>) (y ,<c-float>)))))
+
+;; Function types
+(test* "signature function" '(.function (int int) double)
+       (native-type->signature
+        (make-c-function-type <c-double> `(,<c-int> ,<c-int>))))
+(test* "signature function with pointer arg"
+       '(.function (int char*) void)
+       (native-type->signature
+        (make-c-function-type <void>
+          `(,<c-int> ,(make-c-pointer-type <c-char>)))))
+(test* "signature function varargs" '(.function (int ...) int)
+       (native-type->signature
+        (make-c-function-type <c-int> `(,<c-int> ...))))
+(test* "signature function no args" '(.function () void)
+       (native-type->signature
+        (make-c-function-type <void> '())))
+
+;; Round-trip
+(define (round-trip sig)
+  (equal? (native-type sig)
+          (native-type (native-type->signature (native-type sig)))))
+(test* "round-trip int" #t (round-trip 'int))
+(test* "round-trip char**" #t (round-trip 'char**))
+(test* "round-trip c-string*" #t (round-trip 'c-string*))
+(test* "round-trip array" #t (round-trip '(.array int (2 3))))
+(test* "round-trip struct" #t
+       (round-trip '(.struct s (a::int b::double c::uint8_t))))
+(test* "round-trip union" #t
+       (round-trip '(.union u (x::int y::float))))
+(test* "round-trip function" #t
+       (round-trip '(.function (int char*) void)))
+(test* "round-trip varargs function" #t
+       (round-trip '(.function (int ...) int)))
+(test* "round-trip nested struct" #t
+       (round-trip '(.struct outer
+                      (pos::(.struct point (x::int y::int))
+                       val::double))))
+
 (test-end)

@@ -54,6 +54,7 @@
           make-c-union-type
 
           native-type
+          native-type->signature
 
           native-alloc
           native-free))
@@ -407,6 +408,77 @@
       (error "Unknown native type:" signature))]
 
     [_ (error "Invalid native type signature:" signature)]))
+
+;; Reverse table: native-type instance -> C type name symbol
+(define %native-type->cname
+  (rlet1 ht (make-hash-table 'eq?)
+    (for-each (^[cname]
+                (and-let1 t (%builtin-native-type-lookup cname)
+                  (hash-table-put! ht t cname)))
+              '(short u_short int u_int long u_long
+                int8_t uint8_t int16_t uint16_t
+                int32_t uint32_t int64_t uint64_t
+                char size_t ssize_t ptrdiff_t
+                off_t intptr_t uintptr_t
+                float double void))
+    ;; c-string is registered with a string key, not a symbol
+    (hash-table-put! ht <c-string> 'c-string)))
+
+;; Reverse field specs: list of (name type offset) -> typed-var-list
+(define (%unparse-field-specs fields)
+  (append-map
+   (^[f]
+     (let ([name (car f)]
+           [sig (native-type->signature (cadr f))])
+       (if (symbol? sig)
+         (list (string->symbol
+                (string-append (symbol->string name) "::"
+                               (symbol->string sig))))
+         (list (string->symbol
+                (string-append (symbol->string name) "::"))
+               sig))))
+   fields))
+
+;; (native-type->signature native-type) => S-expression signature
+;;
+;; Reverse of native-type: given a <native-type> instance, produce the
+;; S-expression signature that native-type would accept.
+;; Pointer types use shortest representation (e.g. char**).
+(define (native-type->signature type)
+  (assume-type type <native-type>)
+  (cond
+    ;; Primitive types (including void and c-string)
+    [(hash-table-get %native-type->cname type #f)]
+    ;; Pointer: collect depth, build name*...*
+    [(is-a? type <c-pointer>)
+     (let loop ([t type] [depth 0])
+       (if (is-a? t <c-pointer>)
+         (loop (~ t'pointee-type) (+ depth 1))
+         (let1 base (native-type->signature t)
+           (string->symbol
+            (string-append (x->string base)
+                           (make-string depth #\*))))))]
+    ;; Array
+    [(is-a? type <c-array>)
+     `(.array ,(native-type->signature (~ type'element-type))
+              ,(~ type'dimensions))]
+    ;; Struct
+    [(is-a? type <c-struct>)
+     `(.struct ,@(cond-list [(~ type'tag)])
+               ,(%unparse-field-specs (~ type'fields)))]
+    ;; Union
+    [(is-a? type <c-union>)
+     `(.union ,@(cond-list [(~ type'tag)])
+              ,(%unparse-field-specs (~ type'fields)))]
+    ;; Function
+    [(is-a? type <c-function>)
+     (let ([args (map native-type->signature (~ type'arg-types))]
+           [ret (native-type->signature (~ type'return-type))])
+       `(.function ,(if (~ type'varargs)
+                      (append args '(...))
+                      args)
+                   ,ret))]
+    [else (error "Cannot produce signature for native type:" type)]))
 
 ;;;
 ;;;  Raw memory
