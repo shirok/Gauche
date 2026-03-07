@@ -1264,7 +1264,7 @@
                              NULL
                              NULL)
     ;; Fill in type-specific fields
-    (set! (-> z tag) (SCM_OBJ tag-name))
+    (set! (-> z tag) (?: tag-name (SCM_OBJ tag-name) SCM_FALSE))
     (set! (-> z fields) field-list)
     (return (SCM_OBJ z))))
 
@@ -1276,7 +1276,10 @@
     (match fs
       [()
        (let* ([size (struct-size-roundup offset alignment)]
-              [name (x->string tag)])
+              [tname (if struct? "struct" "union")]
+              [name (if tag
+                      #"~tname ~tag"
+                      #"~tname anonymous")]) ;TODO: Give better name
          (%make-c-struct/union-type
           (if struct? <c-struct> <c-union>)
           name size alignment tag (reverse descs)))]
