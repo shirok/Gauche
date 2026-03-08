@@ -1030,7 +1030,71 @@
                       'void (SCM_OBJ z) 0)
     (Scm_MakeBinding (Scm_GaucheModule) (SCM_SYMBOL '<void>) z
                      SCM_BINDING_INLINABLE))
-  ))
+  )
+
+ (define-cfn native_type_list_equalP (as::ScmObj bs::ScmObj) ::int
+   (for (()
+         (and (SCM_PAIRP as) (SCM_PAIRP bs))
+         (set! as (SCM_CDR as) bs (SCM_CDR bs)))
+     (let* ([a (SCM_CAR as)]
+            [b (SCM_CAR bs)])
+       (cond
+        [(SCM_NATIVE_TYPE_P a)
+         (unless (and (SCM_NATIVE_TYPE_P b)
+                      (Scm_NativeTypeEqualP (SCM_NATIVE_TYPE a)
+                                            (SCM_NATIVE_TYPE b)))
+           (return FALSE))]
+        [(SCM_PAIRP a)
+         (unless (and (SCM_PAIRP b)
+                      (native_type_list_equalP a b))
+           (return FALSE))]
+        [else
+         (unless (Scm_EqvP a b)
+           (return FALSE))])))
+   (unless (and (SCM_NULLP as) (SCM_NULLP bs))
+     (return FALSE))
+   (return TRUE))
+
+ (define-cfn Scm_NativeTypeEqualP (a::ScmNativeType* b::ScmNativeType*) ::int
+   (cond
+    [(SCM_EQ a b) (return TRUE)]
+    [(SCM_C_POINTER_P a)
+     (return (and (SCM_C_POINTER_P b)
+                  (Scm_NativeTypeEqualP (-> (SCM_C_POINTER a) pointee-type)
+                                        (-> (SCM_C_POINTER b) pointee-type))))]
+    [(SCM_C_FUNCTION_P a)
+     (return
+      (and (SCM_C_FUNCTION_P b)
+           (Scm_NativeTypeEqualP (-> (SCM_C_FUNCTION a) return-type)
+                                 (-> (SCM_C_FUNCTION b) return-type))
+           (native_type_list_equalP (-> (SCM_C_FUNCTION a) arg-types)
+                                    (-> (SCM_C_FUNCTION b) arg-types))
+           (== (-> (SCM_C_FUNCTION a) varargs)
+               (-> (SCM_C_FUNCTION b) varargs))))]
+     [(SCM_C_ARRAY_P a)
+      (return
+       (and (SCM_C_ARRAY_P b)
+            (Scm_NativeTypeEqualP (-> (SCM_C_ARRAY a) element-type)
+                                  (-> (SCM_C_ARRAY b) element-type))
+            (native_type_list_equalP (-> (SCM_C_ARRAY a) dimensions)
+                                     (-> (SCM_C_ARRAY b) dimensions))))]
+     [(or (SCM_C_STRUCT_P a) (SCM_C_UNION_P a))
+      (return
+       (and (SCM_EQ (Scm_ClassOf (SCM_OBJ a)) (Scm_ClassOf (SCM_OBJ b)))
+            (Scm_EqvP (-> (SCM_C_STRUCT a) tag)
+                      (-> (SCM_C_STRUCT b) tag))
+            (native_type_list_equalP (-> (SCM_C_ARRAY a) dimensions)
+                                     (-> (SCM_C_ARRAY b) dimensions))))]
+     [else (return FALSE)]))
+
+ ) ;inline-stub
+
+(define-cproc native-type=? (a::<native-type> b::<native-type>) ::<boolean>
+  (return (Scm_NativeTypeEqualP a b)))
+
+;; Compare native types
+(define-method object-equal? ((s <native-type>) (t <native-type>))
+  (native-type=? s t))
 
 ;;
 ;; Native handle

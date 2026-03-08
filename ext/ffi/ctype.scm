@@ -274,27 +274,6 @@
          (%handle-set! ctype handle offset val))]
       [else (error "Unsupported native aggregate type:" t)])))
 
-;; Compare native types
-(define-method object-equal? ((s <c-pointer>) (t <c-pointer>))
-  (equal? (~ s'pointee-type) (~ t'pointee-type)))
-
-(define-method object-equal? ((s <c-function>) (t <c-function>))
-  (and (equal? (~ s'return-type) (~ t'return-type))
-       (equal? (~ s'arg-types) (~ t'arg-types))
-       (equal? (~ s'varargs) (~ t'varargs))))
-
-(define-method object-equal? ((s <c-array>) (t <c-array>))
-  (and (equal? (~ s'element-type) (~ t'element-type))
-       (equal? (~ s'dimensions) (~ t'dimensions))))
-
-(define-method object-equal? ((s <c-struct>) (t <c-struct>))
-  (and (equal? (~ s'tag) (~ t'tag))
-       (equal? (~ s'fields) (~ t'fields))))
-
-(define-method object-equal? ((s <c-union>) (t <c-union>))
-  (and (equal? (~ s'tag) (~ t'tag))
-       (equal? (~ s'fields) (~ t'fields))))
-
 ;;;
 ;;;  Convert type signatures to native-type instance
 ;;;

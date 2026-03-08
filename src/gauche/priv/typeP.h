@@ -69,6 +69,8 @@ SCM_CLASS_DECL(Scm_NativeTypeClass);
 #define SCM_NATIVE_TYPE(obj)     ((ScmNativeType*)(obj))
 #define SCM_NATIVE_TYPE_P(obj)   (SCM_ISA(obj, SCM_CLASS_NATIVE_TYPE))
 
+SCM_EXTERN int Scm_NativeTypeEqualP(ScmNativeType *a, ScmNativeType *b);
+
 /* <native-pointer> - a pointer to another native type */
 typedef struct ScmCPointerRec {
     ScmNativeType common;
@@ -78,7 +80,7 @@ typedef struct ScmCPointerRec {
 SCM_CLASS_DECL(Scm_CPointerClass);
 #define SCM_CLASS_C_POINTER (&Scm_CPointerClass)
 #define SCM_C_POINTER(obj)  ((ScmCPointer*)(obj))
-#define SCM_C_POINTER_P(obj) (SCM_ISA(obj, SCM_CLASS_NATIVE_POINTER))
+#define SCM_C_POINTER_P(obj) (SCM_ISA(obj, SCM_CLASS_C_POINTER))
 
 /* <native-function> - a function pointer type */
 typedef struct ScmCFunctionRec {
