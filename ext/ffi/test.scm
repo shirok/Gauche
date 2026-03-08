@@ -642,10 +642,11 @@
        (equal? (native-type 'int*) (make-c-pointer-type <c-int>)))
 (test* "native-type double*" #t
        (equal? (native-type 'double*) (make-c-pointer-type <c-double>)))
-(test* "native-type void*" #t
-       (equal? (native-type 'void*) (make-c-pointer-type <void>)))
 (test* "native-type char*" #t
        (equal? (native-type 'char*) (make-c-pointer-type <c-char>)))
+(test* "native-type void*" #t
+       ;; test it with eq? to ensure the signleton
+       (eq? (native-type 'void*) (make-c-pointer-type <void>)))
 
 ;; Double pointer
 (test* "native-type int**" #t

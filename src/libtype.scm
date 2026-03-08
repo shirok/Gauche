@@ -1194,7 +1194,12 @@
 
 (define-cproc %make-c-pointer-type (pointer-type-name::<const-cstring>
                                     pointee-type)
-  (return (%make-c-pointer-type-fn pointer-type-name pointee-type)))
+  ;; Special treatment of void*; it's convenient to have it as a singleton.
+  ;; TODO: We can make single-level indiration all singletons by caching it,
+  ;; for thye appeare frequently.
+  (if (SCM_EQ pointee-type native_void_type)
+    (return native_void_pointer_type)
+    (return (%make-c-pointer-type-fn pointer-type-name pointee-type))))
 
 (define (make-c-pointer-type pointee-type)
   (assume-type pointee-type <native-type>)
