@@ -1771,8 +1771,10 @@
          ;; If at least either one is unbound, we just compare their names.
          (if (and g1 g2)
            (return (SCM_EQ g1 g2))
-           (return (SCM_EQ (Scm_UnwrapSyntax2 id1 FALSE)
-                           (Scm_UnwrapSyntax2 id2 FALSE)))))
+           (if (or g1 g2)
+             (return FALSE)
+             (return (SCM_EQ (Scm_UnwrapSyntax2 id1 FALSE)
+                             (Scm_UnwrapSyntax2 id2 FALSE))))))
        ;; At least one of id1 and id2 is lvar or macro.
        (return (SCM_EQ b1 b2)))))
 
