@@ -965,6 +965,10 @@
  (define-cfn native_voidP (_::ScmNativeType* obj) ::int :static
    (return (SCM_UNDEFINEDP obj)))
 
+ ;; Singleton of those types
+ (define-cvar native_void_type)
+ (define-cvar native_void_pointer_type)
+
  (initcode
   (define-native-type <c-fixnum>  SCM_CLASS_INTEGER ScmSmallInt SCM_INTP
     SCM_MAKE_INT SCM_INT_VALUE)
@@ -1026,8 +1030,9 @@
   ;; <void> needs special care, as it doesn't have a real C type.
   (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"
                               0 1 native_voidP NULL NULL)])
+    (set! native_void_type z)
     (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
-                      'void (SCM_OBJ z) 0)
+                      'void z 0)
     (Scm_MakeBinding (Scm_GaucheModule) (SCM_SYMBOL '<void>) z
                      SCM_BINDING_INLINABLE))
   )
@@ -1137,8 +1142,14 @@
 ;;
 
 (inline-stub
- (define-cfn native_handleP (_::ScmNativeType* obj) ::int :static
-   (return (SCM_NATIVE_HANDLE_P obj)))
+ (define-cfn native_handle_typeP (t::ScmNativeType* obj) ::int :static
+   (unless (SCM_NATIVE_HANDLE_P obj) (return FALSE))
+   (when (Scm_NativeTypeEqualP (-> (SCM_NATIVE_HANDLE obj) type)
+                               (SCM_NATIVE_TYPE native_void_pointer_type))
+     ;; void* pointer can be used in any pointer context; it's caller's
+     ;; responsibility.
+     (return TRUE))                     ;
+   (return (Scm_NativeTypeEqualP (-> (SCM_NATIVE_HANDLE obj) type) t)))
 
  ;; Helper function to initialize common fields of composite native types
  (define-cfn init-native-type-common
@@ -1160,26 +1171,30 @@
    (set! (-> nt c-set) c-set)
    (set! (-> nt size) size)
    (set! (-> nt alignment) alignment))
+
+ (define-cfn %make-c-pointer-type-fn (pointer-type-name::(const char *)
+                                      pointee-type)
+   (let* ([z::ScmCPointer*
+           (SCM_NEW_INSTANCE ScmCPointer (& Scm_CPointerClass))])
+     ;; Fill in common fields
+     (init-native-type-common (& (-> z common))
+                              pointer-type-name
+                              (SCM_OBJ SCM_CLASS_TOP)
+                              "ScmNativeHandle*"
+                              (sizeof (.type void*))
+                              (SCM_ALIGNOF (.type void*))
+                              native_handle_typeP
+                              NULL
+                              NULL)
+     ;; Fill in type-specific fields
+     (SCM_ASSERT (SCM_NATIVE_TYPE_P pointee-type))
+     (set! (-> z pointee_type) (SCM_NATIVE_TYPE pointee-type))
+     (return (SCM_OBJ z))))
  )
 
 (define-cproc %make-c-pointer-type (pointer-type-name::<const-cstring>
                                     pointee-type)
-  (let* ([z::ScmCPointer*
-          (SCM_NEW_INSTANCE ScmCPointer (& Scm_CPointerClass))])
-    ;; Fill in common fields
-    (init-native-type-common (& (-> z common))
-                             pointer-type-name
-                             (SCM_OBJ SCM_CLASS_TOP)
-                             "ScmNativeHandle*"
-                             (sizeof (.type void*))
-                             (SCM_ALIGNOF (.type void*))
-                             native_handleP
-                             NULL
-                             NULL)
-    ;; Fill in type-specific fields
-    (SCM_ASSERT (SCM_NATIVE_TYPE_P pointee-type))
-    (set! (-> z pointee_type) (SCM_NATIVE_TYPE pointee-type))
-    (return (SCM_OBJ z))))
+  (return (%make-c-pointer-type-fn pointer-type-name pointee-type)))
 
 (define (make-c-pointer-type pointee-type)
   (assume-type pointee-type <native-type>)
@@ -1202,7 +1217,7 @@
                              "ScmNativeHandle*"
                              (sizeof (.type void*))
                              (SCM_ALIGNOF (.type void*))
-                             native_handleP
+                             native_handle_typeP
                              NULL
                              NULL)
     ;; Fill in type-specific fields
@@ -1211,6 +1226,11 @@
     (set! (-> z arg_types) argument-types)
     (set! (-> z varargs) (?: varargs? 1 0))
     (return (SCM_OBJ z))))
+
+(inline-stub
+ (initcode
+  (set! native_void_pointer_type
+        (%make-c-pointer-type-fn "void*" native_void_type))))
 
 ;; Argument-types are list of native types, optionally end with
 ;; a symbol ... for varargs.
@@ -1245,7 +1265,7 @@
                              "ScmNativeHandle*"
                              size
                              alignment
-                             native_handleP
+                             native_handle_typeP
                              NULL
                              NULL)
     ;; Fill in type-specific fields
@@ -1296,7 +1316,7 @@
                              "ScmNativeHandle*"
                              size
                              alignment
-                             native_handleP
+                             native_handle_typeP
                              NULL
                              NULL)
     ;; Fill in type-specific fields
