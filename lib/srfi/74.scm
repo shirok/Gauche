@@ -31,13 +31,13 @@
           blob->sint-list sint-list->blob))
 (select-module srfi.74)
 
-(define-constant native (native-endian))
+(define-constant %native (native-endian))
 
 (define-syntax endianness
   (syntax-rules (big little native)
     [(_ big)    'big-endian]
     [(_ little) 'little-endian]
-    [(_ native) native]
+    [(_ native) %native]
     [(_ x)      (syntax-error "Unknown endianness:" x)]))
 
 (define blob? u8vector?)
@@ -52,34 +52,34 @@
 (define (blob-s8-set! blob k v) (put-s8! blob k v))
 
 (define (blob-u16-ref endi blob k)      (get-u16 blob k endi))
-(define (blob-u16-native-ref blob k)    (get-u16 blob k native))
+(define (blob-u16-native-ref blob k)    (get-u16 blob k %native))
 (define (blob-u16-set! endi blob k v)   (put-u16! blob k v endi))
-(define (blob-u16-native-set! blob k v) (put-u16! blob k v native))
+(define (blob-u16-native-set! blob k v) (put-u16! blob k v %native))
 
 (define (blob-s16-ref endi blob k)      (get-s16 blob k endi))
-(define (blob-s16-native-ref blob k)    (get-s16 blob k native))
+(define (blob-s16-native-ref blob k)    (get-s16 blob k %native))
 (define (blob-s16-set! endi blob k v)   (put-s16! blob k v endi))
-(define (blob-s16-native-set! blob k v) (put-s16! blob k v native))
+(define (blob-s16-native-set! blob k v) (put-s16! blob k v %native))
 
 (define (blob-u32-ref endi blob k)      (get-u32 blob k endi))
-(define (blob-u32-native-ref blob k)    (get-u32 blob k native))
+(define (blob-u32-native-ref blob k)    (get-u32 blob k %native))
 (define (blob-u32-set! endi blob k v)   (put-u32! blob k v endi))
-(define (blob-u32-native-set! blob k v) (put-u32! blob k v native))
+(define (blob-u32-native-set! blob k v) (put-u32! blob k v %native))
 
 (define (blob-s32-ref endi blob k)      (get-s32 blob k endi))
-(define (blob-s32-native-ref blob k)    (get-s32 blob k native))
+(define (blob-s32-native-ref blob k)    (get-s32 blob k %native))
 (define (blob-s32-set! endi blob k v)   (put-s32! blob k v endi))
-(define (blob-s32-native-set! blob k v) (put-s32! blob k v native))
+(define (blob-s32-native-set! blob k v) (put-s32! blob k v %native))
 
 (define (blob-u64-ref endi blob k)      (get-u64 blob k endi))
-(define (blob-u64-native-ref blob k)    (get-u64 blob k native))
+(define (blob-u64-native-ref blob k)    (get-u64 blob k %native))
 (define (blob-u64-set! endi blob k v)   (put-u64! blob k v endi))
-(define (blob-u64-native-set! blob k v) (put-u64! blob k v native))
+(define (blob-u64-native-set! blob k v) (put-u64! blob k v %native))
 
 (define (blob-s64-ref endi blob k)      (get-s64 blob k endi))
-(define (blob-s64-native-ref blob k)    (get-s64 blob k native))
+(define (blob-s64-native-ref blob k)    (get-s64 blob k %native))
 (define (blob-s64-set! endi blob k v)   (put-s64! blob k v endi))
-(define (blob-s64-native-set! blob k v) (put-s64! blob k v native))
+(define (blob-s64-native-set! blob k v) (put-s64! blob k v %native))
 
 (define (blob-uint-ref size endi blob k)
   (assume-type blob <u8vector>)
