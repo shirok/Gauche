@@ -55,9 +55,9 @@ typedef struct ScmTypeConstructorRec {
 typedef struct ScmNativeTypeRec {
     SCM_INSTANCE_HEADER;
     ScmObj   name;
-    int      (*c_of_type)(ScmObj);
-    ScmObj   (*c_ref)(void*);
-    void     (*c_set)(void*, ScmObj);
+    int      (*c_of_type)(struct ScmNativeTypeRec*, ScmObj);
+    ScmObj   (*c_ref)(struct ScmNativeTypeRec*, void*);
+    void     (*c_set)(struct ScmNativeTypeRec*, void*, ScmObj);
     ScmObj   super;
     const char *c_type_name;
     size_t   size;

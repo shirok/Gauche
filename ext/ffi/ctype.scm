@@ -133,14 +133,14 @@
                      handle::<native-handle>
                      offset::<fixnum>)
   (let* ([p::void* (+ (-> handle ptr) offset)]
-         [c-ref::(.function (p::void*)::ScmObj *)
+         [c-ref::(.function (t::ScmNativeType* p::void*)::ScmObj *)
                  (-> element-type c-ref)])
     (when (== c-ref NULL)
       (Scm_Error "Cannot dereference type %S" element-type))
     (unless (and (<= (-> handle region-min) p)
                  (<  p (-> handle region-max)))
       (Scm_Error "Offset out of range: %ld" offset))
-    (return (c-ref p))))
+    (return (c-ref element-type p))))
 
 ;; Unified set: set handle's ptr + offset = val
 (define-cproc %pset! (element-type::<native-type>
@@ -149,16 +149,18 @@
                       val)
   ::<void>
   (let* ([p::void* (+ (-> handle ptr) offset)]
-         [c-of-type::(.function (v::ScmObj)::int *) (-> element-type c-of-type)]
-         [c-set::(.function (p::void* v::ScmObj)::void *) (-> element-type c-set)])
-    (unless (c-of-type val)
+         [c-of-type::(.function (t::ScmNativeType* v::ScmObj)::int *)
+                     (-> element-type c-of-type)]
+         [c-set::(.function (t::ScmNativeType*  p::void* v::ScmObj)::void *)
+                 (-> element-type c-set)])
+    (unless (c-of-type element-type val)
       (Scm_Error "Invalid object to set to %S: %S" handle val))
     (when (== c-set NULL)
       (Scm_Error "Cannot set value of type %S" element-type))
     (unless (and (<= (-> handle region-min) p)
                  (<  p (-> handle region-max)))
       (Scm_Error "Offset out of range: %ld" offset))
-    (c-set p val)))
+    (c-set element-type p val)))
 
 (define (%handle-ref type handle offset)
   (if (aggregate-type? type)

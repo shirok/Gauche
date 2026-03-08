@@ -299,7 +299,9 @@
                                   type obj)))]
          [(SCM_NATIVE_TYPE_P type)
           (return (SCM_MAKE_BOOL
-                   (funcall (-> (SCM_NATIVE_TYPE type) c-of-type) obj)))]
+                   (funcall (-> (SCM_NATIVE_TYPE type) c-of-type)
+                            (SCM_NATIVE_TYPE type)
+                            obj)))]
          [(SCM_CLASSP type)
           (return (Scm_VMIsA obj (SCM_CLASS type)))]
          [else
@@ -855,14 +857,15 @@
 ;; the knowledge how it is represented in C.
 
 (inline-stub
- (define-cfn make_native_type (name::(const char*)
-                               super
-                               c-type-name::(const char*)
-                               size::size_t
-                               alignment::size_t
-                               c-of-type::(.function (obj)::int *)
-                               c-ref::(.function (ptr::void*)::ScmObj *)
-                               c-set::(.function (ptr::void* obj)::void *))
+ (define-cfn make_native_type
+   (name::(const char*)
+          super
+          c-type-name::(const char*)
+          size::size_t
+          alignment::size_t
+          c-of-type::(.function (type::ScmNativeType* obj) ::int *)
+          c-ref::(.function (type::ScmNativeType* ptr::void*)::ScmObj *)
+          c-set::(.function (type::ScmNativeType* ptr::void* obj)::void *))
    :static
    (let* ([z::ScmNativeType*
            (SCM_NEW_INSTANCE ScmNativeType (& Scm_NativeTypeClass))])
@@ -907,15 +910,15 @@
 
     (cgen-decl
      (cise-render-to-string
-      `(define-cfn ,c-ref-name (ptr::void*) :static
+      `(define-cfn ,c-ref-name (_::ScmNativeType* ptr::void*) :static
          (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
            (return (,box (* pp)))))
       'toplevel))
     (cgen-decl
      (cise-render-to-string
-      `(define-cfn ,c-set-name (ptr::void* obj) ::void :static
+      `(define-cfn ,c-set-name (t::ScmNativeType* ptr::void* obj) ::void :static
          (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
-           (unless (,pred obj)
+           (unless (,pred t obj)
              (SCM_TYPE_ERROR obj ,(x->string name)))
            (set! (* pp) (,unbox obj))))
       'toplevel))
@@ -939,59 +942,72 @@
                               (SCM_SYMBOL ',name-sans-c) z
                               SCM_BINDING_INLINABLE))))])
 
- (define-cfn native_fixnumP (obj) ::int :static
+ (define-cfn native_fixnumP (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTP obj)))
 
- (define-cfn native_s8P (obj) ::int :static
+ (define-cfn native_s8P (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_INT8_P obj)))
- (define-cfn native_u8P (obj) ::int :static
+ (define-cfn native_u8P (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_UINT8_P obj)))
- (define-cfn native_s16P (obj) ::int :static
+ (define-cfn native_s16P (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_INT16_P obj)))
- (define-cfn native_u16P (obj) ::int :static
+ (define-cfn native_u16P (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_UINT16_P obj)))
- (define-cfn native_s32P (obj) ::int :static
+ (define-cfn native_s32P (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_INT32_P obj)))
- (define-cfn native_u32P (obj) ::int :static
+ (define-cfn native_u32P (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_UINT32_P obj)))
- (define-cfn native_s64P (obj) ::int :static
+ (define-cfn native_s64P (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_INT64_P obj)))
- (define-cfn native_u64P (obj) ::int :static
+ (define-cfn native_u64P (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_UINT64_P obj)))
 
- (define-cfn native_shortP (obj) ::int :static
+ (define-cfn native_shortP (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_SHORT_P obj)))
- (define-cfn native_ushortP (obj) ::int :static
+ (define-cfn native_ushortP (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_USHORT_P obj)))
- (define-cfn native_intP (obj) ::int :static
+ (define-cfn native_intP (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_INT_P obj)))
- (define-cfn native_uintP (obj) ::int :static
+ (define-cfn native_uintP (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_UINT_P obj)))
- (define-cfn native_longP (obj) ::int :static
+ (define-cfn native_longP (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_LONG_P obj)))
- (define-cfn native_ulongP (obj) ::int :static
+ (define-cfn native_ulongP (_::ScmNativeType* obj) ::int :static
    (return (SCM_INTEGER_FITS_ULONG_P obj)))
 
  ;; we don't range-check flonums
- (define-cfn native_realP (obj) ::int :static
+ (define-cfn native_realP (_::ScmNativeType* obj) ::int :static
    (return (SCM_REALP obj)))
 
  ;; In C, char used to be used for both 'character' and 'one byte integer'.
  ;; Four our purpose, we map native char type to our char (in 1 byte range).
  ;; Foreign functions that uses char as one byte integer, we can use <int8>
  ;; or <uint8>.
- (define-cfn native_charP (obj) ::int :static
+ (define-cfn native_charP (_::ScmNativeType* obj) ::int :static
    (return (and (SCM_CHARP obj)
                 (<= (SCM_CHAR_VALUE obj) 255))))
 
- (define-cfn native_cstrP (obj) ::int :static
+ (define-cfn native_cstrP (_::ScmNativeType* obj) ::int :static
    (return (SCM_STRINGP obj)))
  (define-cfn get_cstr (obj) ::(const char*) :static
    (SCM_ASSERT (SCM_STRINGP obj))
    (return (Scm_GetStringConst (SCM_STRING obj))))
 
+ (define-cfn native_sizetP (_::ScmNativeType* obj) ::int :static
+   (return (Scm_IntegerFitsSizeP obj)))
+ (define-cfn native_ssizetP (_::ScmNativeType* obj) ::int :static
+   (return (Scm_IntegerFitsSsizeP obj)))
+ (define-cfn native_ptrdifftP (_::ScmNativeType* obj) ::int :static
+   (return (Scm_IntegerFitsPtrdiffP obj)))
+ (define-cfn native_offtP (_::ScmNativeType* obj) ::int :static
+   (return (Scm_IntegerFitsOffsetP obj)))
+ (define-cfn native_intptrtP (_::ScmNativeType* obj) ::int :static
+   (return (Scm_IntegerFitsIntptrP obj)))
+ (define-cfn native_uintptrtP (_::ScmNativeType* obj) ::int :static
+   (return (Scm_IntegerFitsUintptrP obj)))
+
  ;; subrs returning <void> actually return #<undef>
- (define-cfn native_voidP (obj) ::int :static
+ (define-cfn native_voidP (_::ScmNativeType* obj) ::int :static
    (return (SCM_UNDEFINEDP obj)))
 
  (initcode
@@ -1034,17 +1050,17 @@
   (define-native-type <c-string> SCM_CLASS_STRING "const char*" native_cstrP
     SCM_MAKE_STR_COPYING get_cstr)
 
-  (define-native-type <c-size_t>  SCM_CLASS_INTEGER size_t Scm_IntegerFitsSizeP
+  (define-native-type <c-size_t>  SCM_CLASS_INTEGER size_t native_sizetP
     Scm_SizeToInteger Scm_IntegerToSize)
-  (define-native-type <c-ssize_t> SCM_CLASS_INTEGER ssize_t Scm_IntegerFitsSsizeP
+  (define-native-type <c-ssize_t> SCM_CLASS_INTEGER ssize_t native_ssizetP
     Scm_SsizeToInteger Scm_IntegerToSsize)
-  (define-native-type <c-ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t Scm_IntegerFitsPtrdiffP
+  (define-native-type <c-ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t native_ptrdifftP
     Scm_PtrdiffToInteger Scm_IntegerToPtrdiff)
-  (define-native-type <c-off_t> SCM_CLASS_INTEGER off_t Scm_IntegerFitsOffsetP
+  (define-native-type <c-off_t> SCM_CLASS_INTEGER off_t native_offtP
     Scm_OffsetToInteger Scm_IntegerToOffset)
-  (define-native-type <c-intptr_t> SCM_CLASS_INTEGER intptr_t Scm_IntegerFitsIntptrP
+  (define-native-type <c-intptr_t> SCM_CLASS_INTEGER intptr_t native_intptrtP
     Scm_IntptrToInteger Scm_IntegerToIntptr)
-  (define-native-type <c-uintptr_t> SCM_CLASS_INTEGER uintptr_t Scm_IntegerFitsUintptrP
+  (define-native-type <c-uintptr_t> SCM_CLASS_INTEGER uintptr_t native_uintptrtP
     Scm_UintptrToInteger Scm_IntegerToUintptr)
 
   (define-native-type <c-float>   SCM_CLASS_REAL float native_realP
@@ -1102,19 +1118,20 @@
 ;;
 
 (inline-stub
- (define-cfn native_handleP (obj) ::int :static
+ (define-cfn native_handleP (_::ScmNativeType* obj) ::int :static
    (return (SCM_NATIVE_HANDLE_P obj)))
 
  ;; Helper function to initialize common fields of composite native types
- (define-cfn init-native-type-common (nt::ScmNativeType*
-                                      name::(const char*)
-                                      super::ScmObj
-                                      c-type-name::(const char*)
-                                      size::size_t
-                                      alignment::size_t
-                                      c-of-type::(.function (obj)::int *)
-                                      c-ref::(.function (ptr::void*)::ScmObj *)
-                                      c-set::(.function (ptr::void* obj)::void *))
+ (define-cfn init-native-type-common
+   (nt::ScmNativeType*
+    name::(const char*)
+    super::ScmObj
+    c-type-name::(const char*)
+    size::size_t
+    alignment::size_t
+    c-of-type::(.function (type::ScmNativeType* obj)::int *)
+    c-ref::(.function (type::ScmNativeType* ptr::void*)::ScmObj *)
+    c-set::(.function (type::ScmNativeType* ptr::void* obj)::void *))
    ::void :static
    (set! (-> nt name) (SCM_INTERN name))
    (set! (-> nt super) super)
