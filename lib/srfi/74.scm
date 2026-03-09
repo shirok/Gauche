@@ -8,7 +8,8 @@
   (use gauche.uvector)
   (use gauche.generator)
   (use binary.io)
-  (export endianness blob? make-blob blob-length
+  (export endianness big little native
+          blob? make-blob blob-length
           blob-u8-ref blob-u8-set!
           blob-s8-ref blob-s8-set!
           blob-u16-ref blob-u16-set!
@@ -32,6 +33,11 @@
 (select-module srfi.74)
 
 (define-constant %native (native-endian))
+
+;; Create bindings to export
+(define big)
+(define little)
+(define native)
 
 (define-syntax endianness
   (syntax-rules (big little native)
