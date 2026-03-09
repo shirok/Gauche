@@ -285,7 +285,14 @@
       (flush))))
 
 ;; Normal test.
-(define (test msg expect thunk . args)
+;; KLUDGE: #<module gauche> binds 'test' just so that they can be
+;; compared as a macro keyword (cf. rxmach-case).  If we define 'test' here,
+;; it would shadow the original binding.
+;; For the convenience, we just set! to the original binding---this is very
+;; special, as we know 'test' is not bound to a meaningful value in
+;; #<module gauche>, and no other code in Gauche system would bind it.
+;; We don't recommend this kludge to be used elsewhere.
+(define (%test msg expect thunk . args)
   (apply prim-test msg expect
          (lambda ()
            (guard (e [else
@@ -297,6 +304,7 @@
                             (condition-message e e))])
              (thunk)))
          args))
+(set! test %test)
 
 ;; A convenient macro version
 ;; We use er-macro-transformer, so test* should be used after the macro

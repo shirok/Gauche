@@ -1,5 +1,13 @@
 2026-03-08  Shiro Kawai  <shiro@acm.org>
 
+	* src/libmacro.scm (test): Bind 'test' in #<module gauche>,
+	  so that rxmatch-case/rxmatch-cond can hygienically recognize
+	  it as an auxiliary keyword.
+	* lib/gauche/test.scm (test): A hack to keep binding of 'test'
+	  identical to the one from #<module gauche>, so that importing
+	  gauche.test won't interfere with rxmatch-case/rxmatch.cond.
+	  See the comment in the code.
+
 	* src/comple.scm (%free-identifier=?): Make comparison of bound and
 	  unbound identifiers #f, as it should be.  This may break legacy
 	  code, though, so we make env var GAUCHE_COMPARE_IDENTIFIERS_LOOSELY

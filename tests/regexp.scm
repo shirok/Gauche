@@ -739,26 +739,21 @@
          (format #f "time is ~a" time)
          "unknown time"))
 
-;; gauche.test binds test, so testing regmatch-cond and regmatch-case requires
-;; an environment where test is unbound.
-(define-module test-parse-dates
-  (export-all)
+(define (test-parse-date str)
+  (rxmatch-cond
+    (test (not (string? str)) #f)
+    ((rxmatch #/^(\d\d?)\/(\d\d?)\/(\d\d\d\d)$/ str)
+     (#f mm dd yyyy)
+     (map string->number (list yyyy mm dd)))
+    ((rxmatch #/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ str)
+     (#f yyyy mm dd)
+     (map string->number (list yyyy mm dd)))
+    ((rxmatch #/^\d+\/\d+\/\d+$/ str)
+     (#f)
+     (error "ambiguous:" str))
+    (else (error "bogus:" str))))
 
-  (define (test-parse-date str)
-    (rxmatch-cond
-      (test (not (string? str)) #f)
-      ((rxmatch #/^(\d\d?)\/(\d\d?)\/(\d\d\d\d)$/ str)
-       (#f mm dd yyyy)
-       (map string->number (list yyyy mm dd)))
-      ((rxmatch #/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ str)
-       (#f yyyy mm dd)
-       (map string->number (list yyyy mm dd)))
-      ((rxmatch #/^\d+\/\d+\/\d+$/ str)
-       (#f)
-       (error "ambiguous:" str))
-      (else (error "bogus:" str))))
-
-  (define (test-parse-date2 str)
+(define (test-parse-date2 str)
   (rxmatch-case str
     (test (^s (not (string? s))) #f)
     (#/^(\d\d?)\/(\d\d?)\/(\d\d\d\d)$/ (#f mm dd yyyy)
@@ -768,13 +763,11 @@
     (#/^\d+\/\d+\/\d+$/  (#f) (error "ambiguous:" str))
     (else (error "bogus:" str))))
 
-  (define (test-parse-date3 str)
-    (rxmatch-case str
-      (#/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ (#f yyyy mm dd)
-       (map string->number (list yyyy mm dd)))
-      (else => (cut format "bogus: ~a" <>)))))
-
-(import test-parse-dates)
+(define (test-parse-date3 str)
+  (rxmatch-case str
+    (#/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ (#f yyyy mm dd)
+        (map string->number (list yyyy mm dd)))
+    (else => (cut format "bogus: ~a" <>))))
 
 (test* "rxmatch-cond" '(2001 2 3)
        (test-parse-date "2001/2/3"))

@@ -1624,6 +1624,11 @@
              ,else))]
        [_ (error "malformed rxmatch-if:" f)]))))
 
+;; We bind 'test' in gauche module, so that rxmatch-cond and rxmatch-case
+;; can compare binding as macro keywords.  See also gauche.test
+;; for the kludge.
+(define test (undefined))
+
 ;; rxmatch-cond (expr bind form ...) ... [(else form ...)]
 (define-syntax rxmatch-cond
   (er-macro-transformer
