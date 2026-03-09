@@ -69,6 +69,29 @@
 
 (test-section "ER compare literals")
 
+(define-module er-compare-rename
+  (export compare-rename)
+  (define lib-bound 'dummy)
+  (define both-bound 'dummy)
+  (define-syntax compare-rename
+    (er-macro-transformer
+     (lambda (form rename id=?)
+       (let1 sym (cadr form)
+         (id=? sym (rename sym)))))))
+
+(define-module er-compare-rename-user
+  (import er-compare-rename)
+  (use gauche.test)
+  (define bound 'dummy)
+  (define both-bound 'dummy)
+
+  (test* "compare unbound" #t (compare-rename unbound))
+  (test* "compare bound/unbound" #f (compare-rename bound))
+  (let1 local-bound 'dummy
+    (test* "compare local-bound/unbound" #f (compare-rename local-bound)))
+  (test* "compare unbound/bound" #f (compare-rename lib-bound))
+  (test* "compare bound/bound" #f (compare-rename both-bound)))
+
 ;; from Clinger "Hygienic Macros Through Explicit Renaming"
 (define-syntax er-cond
   (er-macro-transformer
