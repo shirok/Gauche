@@ -2084,7 +2084,8 @@ be either a symbol or a wrapped identifier.
 @c EN
 When both arguments @var{id1} and @var{id2} are wrapped identifiers,
 returns @code{#t} if either (1) @var{id1} and @var{id2} both refer to
-the same binding, or (2) @var{id1} and @var{id2} are both unbound.
+the same binding, or (2) @var{id1} and @var{id2} are both unbound
+and has the same name.
 Otherwise, @code{#f} is returned.
 
 If at least one of @var{id1} or @var{id2} is not a wrapped identifier,
@@ -2099,7 +2100,7 @@ the compare procedure passed to the er-macro transformer is suffice.
 @var{id1}と@var{id2}がともに包まれた識別子で、次のいずれかの場合にのみ@code{#t}を
 返します：
 (1)@var{id1}と@var{id2}が同じ束縛を表しているか、
-(2)@var{id1}と@var{id2}がどちらも束縛されていない。
+(2)@var{id1}と@var{id2}が同じ名前でどちらも束縛されていない。
 
 @var{id1}と@var{id2}の少なくとも一方が包まれた識別子でなければ、この手続きは
 @code{#f}を返します。「裸の」シンボルはレキシカル情報を欠いているため、この手続きでは
@@ -2108,6 +2109,24 @@ er-macro変換器に渡されるrename手続きを通す必要があります。
 
 er-macroを使っている場合、compare手続きで識別子の比較ができるので、
 この手続きを直接使う必要はあまりないでしょう。
+@c COMMON
+
+@c EN
+NB: Some legacy code may not export auxiliary macro keywords (e.g. @code{else}
+and @code{=>} for @code{cond}), and relies on the comparison between an unbound
+identifier and a bound identifier by their names.  We've been slack about it
+in 0.9.16 and eariler, but make it strict in 0.9.16.  If an existing macro
+relying on the old behavior fails, you can set the environment variable
+@code{GAUCHE_COMPARE_IDENTIFIERS_LOOSELY} to get the old behavior.
+@c JP
+註: レガシーなコードには、マクロの補助キーワード (@code{cond}における
+@code{else}や@code{=>}など)をエスクポートせず、束縛された識別子と
+非束縛の識別子を字面で比較できることをあてにしているものがあります。
+Gaucheは0.9.15までゆるやかでそういう比較を許していましたが、
+0.9.16からは厳密に上記比較ルールが適用されます。
+もし0.9.16で既存のマクロが動かなくなった場合、環境変数
+@code{GAUCHE_COMPARE_IDENTIFIERS_LOOSELY}を定義することで
+以前の振る舞いに戻すことができます。
 @c COMMON
 @end defun
 

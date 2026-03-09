@@ -1751,6 +1751,12 @@
 
 (select-module gauche)
 (inline-stub
+ (define-cvar compare-identifiers-loosely::_Bool FALSE)
+
+ (initcode
+  (set! compare-identifiers-loosely
+        (!= (Scm_GetEnv "GAUCHE_COMPARE_IDENTIFIERS_LOOSELY") NULL)))
+
  (define-cfn %free-identifier=? (id1 id2) ::int :static
    ;; Eliminate trivial cases first
    (unless (and (SCM_IDENTIFIERP id1) (SCM_IDENTIFIERP id2)) (return FALSE))
@@ -1768,10 +1774,15 @@
          ;; If both has bound in toplevel, they must refer to the
          ;; same binding, hence (eq? g1 g2).  The name may differ,
          ;; because of renaming on export/import.
-         ;; If at least either one is unbound, we just compare their names.
+         ;; If both are unbound, we compare their names.
+         ;; If one is bound and another is unbound, we regard them differerent
+         ;; by default.  However, some old macros need them to be equal,
+         ;; especially when checking auxiliary macro keywords.
+         ;; Setting env var GAUCHE_COMPARE_IDENTIFIERS_LOOSELY allows that
+         ;; behavior.
          (if (and g1 g2)
            (return (SCM_EQ g1 g2))
-           (if (or g1 g2)
+           (if (and (not compare-identifiers-loosely) (or g1 g2))
              (return FALSE)
              (return (SCM_EQ (Scm_UnwrapSyntax2 id1 FALSE)
                              (Scm_UnwrapSyntax2 id2 FALSE))))))
