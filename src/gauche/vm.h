@@ -527,13 +527,10 @@ struct ScmVMRec {
 #endif
 
     /* Escape handling */
-    ScmObj floatingEscapePoints; /* List of escapePoints that point to
-                                    in-stack continuation frames.  We only need
-                                    it so that we can adjust pointers to cont
-                                    frames when they are moved to the heap.
-                                    The list is cleared once cont frames
-                                    are moved to the heap.
-                                 */
+    ScmEscapePoint *escapePoint; /* chain of escape points (a kind of one-shot
+                                    continuation).  used by system's default
+                                    exception handler to escape from the error
+                                    handlers. */
     int escapeReason;            /* temporary storage to pass data across
                                     longjmp(). */
     void *escapeData[2];         /* ditto. */

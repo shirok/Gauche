@@ -303,7 +303,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 
     v->dynamicHandlers = SCM_NIL;
 
-    v->floatingEscapePoints = SCM_NIL;
+    v->escapePoint = NULL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
@@ -414,7 +414,7 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
     v->denv = master->denv;
     v->dynamicHandlers = master->dynamicHandlers;
 
-    v->floatingEscapePoints = master->floatingEscapePoints;
+    v->escapePoint = master->escapePoint;
     v->escapeReason = master->escapeReason;
     v->escapeData[0] = master->escapeData[0];
     v->escapeData[1] = master->escapeData[1];
@@ -1262,18 +1262,12 @@ static void save_cont(ScmVM *vm)
             cstk->cont = FORWARDED_CONT(cstk->cont);
         }
     }
-    {
-        ScmObj eps;
-        SCM_FOR_EACH(eps, vm->floatingEscapePoints) {
-            ScmObj ep = SCM_CAR(eps);
-            SCM_ASSERT(SCM_ESCAPE_POINT_P(ep));
-            ScmEscapePoint *e = SCM_ESCAPE_POINT(ep);
-            if (FORWARDED_CONT_P(e->cont)) {
-                e->cont = FORWARDED_CONT(e->cont);
-            }
+    for (ScmEscapePoint *ep = vm->escapePoint; ep; ep = ep->prev) {
+        if (FORWARDED_CONT_P(ep->cont)) {
+            ep->cont = FORWARDED_CONT(ep->cont);
         }
-        vm->floatingEscapePoints = SCM_NIL;
     }
+    vm->stackBase = vm->stack;
 }
 
 static void save_stack(ScmVM *vm)
@@ -1922,6 +1916,7 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
 {
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
     SCM_SET_CLASS(ep, SCM_CLASS_ESCAPE_POINT);
+    ep->prev = vm->escapePoint;
     ep->ehandler = errorHandler;
     ep->cont = vm->cont;
     ep->denv = vm->denv;
@@ -2718,9 +2713,13 @@ static ScmObj dynwind_after_cc(ScmVM *vm, ScmObj result SCM_UNUSED,
  *  - There are messy lonjmp/setjmp stuff involved to keep C stack sane.
  */
 
-static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
+static ScmObj handle_escape(ScmObj e)
 {
     ScmVM *vm = theVM;
+    ScmEscapePoint *ep = vm->escapePoint;
+    if (ep == NULL) {
+        return Scm_VMDefaultExceptionHandler(e);
+    }
 
     ScmObj vmhandlers = get_dynamic_handlers(vm);
     ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
@@ -2758,6 +2757,9 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
         vm->denv = denv;
     }
 
+    /* Pop the EP and run the error handler. */
+    vm->escapePoint = ep->prev;
+
     vm->errorHandlerContinuable = FALSE;
 
     result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
@@ -2780,14 +2782,19 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
     if (vm->errorHandlerContinuable) {
         vm->errorHandlerContinuable = FALSE;
 
+        /* recover escape point */
+        vm->escapePoint = ep;
+
         /* call dynamic handlers to reenter dynamic-winds */
         call_dynamic_handlers(vm, vmhandlers,
                               get_dynamic_handlers(vm));
 
         /* reraise and return */
         Scm_VMPushExceptionHandler(ep->xhandler);
+        vm->escapePoint = ep->prev;
         result = Scm_VMThrowException(vm, e, 0);
         Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
+        vm->escapePoint = ep;
         return result;
     }
 
@@ -2816,15 +2823,10 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
 
 static ScmObj handle_escape_subr(ScmObj *argv,
                                  int argc,
-                                 void *data)
+                                 void *data SCM_UNUSED)
 {
     SCM_ASSERT(argc == 1);
-    return handle_escape(argv[0] /*exc*/, (ScmEscapePoint*)data);
-}
-
-ScmObj make_escape_handler(ScmEscapePoint *ep)
-{
-    return Scm_MakeSubr(handle_escape_subr, (void*)ep, 1, 0, SCM_FALSE);
+    return handle_escape(argv[0] /*exc*/);
 }
 
 /*
@@ -2942,20 +2944,26 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
 /*
  * with-error-handler
  */
+static ScmObj install_ehandler(ScmObj *args SCM_UNUSED,
+                               int nargs SCM_UNUSED,
+                               void *data)
+{
+    ScmEscapePoint *ep = (ScmEscapePoint*)data;
+    ScmVM *vm = theVM;
+    vm->escapePoint = ep;
+    SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
+    return SCM_UNDEFINED;
+}
+
 static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
                                int nargs SCM_UNUSED,
                                void *data)
 {
-    /* restore floatingEscapePoints when necessary */
-    ScmObj eps = SCM_OBJ(data);
-    if (SCM_PAIRP(eps)) {
-        ScmVM *vm = theVM;
-        ScmContFrame *c = SCM_ESCAPE_POINT(SCM_CAR(eps))->cont;
-        if (IN_STACK_P((ScmObj*)c)) {
-            /* Those cont frames are not saved yet, so keep them
-               in the chain. */
-            theVM->floatingEscapePoints = eps;
-        }
+    ScmEscapePoint *ep = (ScmEscapePoint *)data;
+    ScmVM *vm = theVM;
+    vm->escapePoint = ep->prev;
+    if (ep->errorReporting) {
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
     }
     return SCM_UNDEFINED;
 }
@@ -2966,13 +2974,12 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore,
                                 SCM_FALSE, SCM_FALSE);
 
-    ScmObj ehandler = make_escape_handler(ep);
+    vm->escapePoint = ep;
+    ScmObj ehandler = Scm_MakeSubr(handle_escape_subr, NULL, 1, 0, SCM_FALSE);
     Scm_VMPushExceptionHandler(ehandler);
-    SCM_VM_RUNTIME_FLAG_CLEAR(theVM, SCM_ERROR_BEING_REPORTED);
-    ScmObj prev_fep = vm->floatingEscapePoints;
-    vm->floatingEscapePoints = Scm_Cons(SCM_OBJ(ep), prev_fep);
-    ScmObj after  = Scm_MakeSubr(discard_ehandler, prev_fep, 0, 0, SCM_FALSE);
-    return Scm_VMDynamicWind(SCM_FALSE, thunk, after);
+    ScmObj before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
+    ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
+    return Scm_VMDynamicWind(before, thunk, after);
 }
 
 ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
@@ -3568,6 +3575,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     save_cont(vm);
 
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, SCM_FALSE, SCM_FALSE);
+    ep->prev = NULL;
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply1(proc, contproc);
@@ -3612,6 +3620,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
        Hoping these tricks won't be necessary once we ovehauled partcont
        handling. */
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, SCM_FALSE, SCM_FALSE);
+    ep->prev = NULL;
     ep->cont = (cp? vm->cont : NULL);
     ep->denv = c? c->denv : (cp? cp->denv : SCM_NIL);
     ep->dynamicHandlers = SCM_NIL; /* don't use for partial continuation */
@@ -4175,6 +4184,7 @@ void Scm_VMDump(ScmVM *vm_to_dump)
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;
     ScmCStack *cstk = vm->cstack;
+    ScmEscapePoint *ep = vm->escapePoint;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %p  ", vm->pc);
@@ -4227,6 +4237,17 @@ void Scm_VMDump(ScmVM *vm_to_dump)
         Scm_Printf(out, "  %p: prev=%p, cont=%p\n",
                    cstk, cstk->prev, cstk->cont);
         cstk = cstk->prev;
+    }
+    Scm_Printf(out, "Escape points:\n");
+    while (ep) {
+        if (ep->ehandler) {
+            Scm_Printf(out, "  %p: cont=%p, handler=%#20.1S\n",
+                       ep, ep->cont, ep->ehandler);
+        } else {
+            Scm_Printf(out, "  %p: cont=%p, handler=#NULL\n",
+                       ep, ep->cont);
+        }
+        ep = ep->prev;
     }
     Scm_Printf(out, "dyn_handlers: %S\n", get_dynamic_handlers(vm));
 
