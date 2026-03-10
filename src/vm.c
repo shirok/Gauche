@@ -3191,8 +3191,10 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     SCM_ASSERT(pd->dummy == SCM_VM_INSN(SCM_VM_RET));
     ScmObj targetHandlers = pd->dynamicHandlers;
 
-    /* Discard continuation up to abortTo frame. */
+    /* Discard continuation, and reinstate abortTo frame and its
+       dynamic environment. */
     CONT = abortTo;
+    DENV = abortTo->denv;
 
     ScmObj currentHandlers = get_dynamic_handlers(vm);
     if (targetHandlers != currentHandlers && SCM_PAIRP(currentHandlers)) {

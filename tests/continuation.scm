@@ -505,6 +505,23 @@
                  (^[] (car 1))))
           tag list)))
 
+;; https://github.com/shirok/Gauche/issues/1227
+(let ([tag1 (make-continuation-prompt-tag 'tag)])
+  (test* "abort-current-continuation (wrong number of arguments)"
+         (test-error <error> #/wrong number of arguments/)
+         (let ([r '()])
+           (call-with-continuation-prompt
+            (^[]
+              (dynamic-wind
+                (^[] (push! r 'before))
+                (^[]
+                  (guard (e [else (push! r 'guard)])
+                    (push! r 'body)
+                    (abort-current-continuation tag1 'one 'two)))
+                (^[] (push! r 'after))))
+            tag1
+            (^[x] (push! r x))))))
+
 ;;-----------------------------------------------------------------------
 ;; Parameterizations
 ;;
