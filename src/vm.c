@@ -208,7 +208,6 @@ static ScmEnvFrame *get_env(ScmVM *vm);
 static ScmObj get_inheriting_denv(ScmVM *vm);
 
 static void   call_error_reporter(ScmObj e);
-static ScmObj call_abort_handler(ScmObj, ScmObj);
 
 /*#define COUNT_INSN_FREQUENCY*/
 #ifdef COUNT_INSN_FREQUENCY
@@ -2751,8 +2750,8 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
        we need to call exception handler on the same denv when
        handle_escape entered.  So we save and restore it.
     */
+    ScmObj denv = vm->denv;
     if (ep->rewindBefore) {
-        ScmObj denv = vm->denv;
         call_dynamic_handlers(vm, ep->dynamicHandlers,
                               get_dynamic_handlers(vm));
         vm->denv = denv;
@@ -2773,6 +2772,7 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
     if (!ep->rewindBefore) {
         call_dynamic_handlers(vm, ep->dynamicHandlers,
                               get_dynamic_handlers(vm));
+        vm->denv = denv;
     }
 
     /* If exception is reraised, the exception handler can return
@@ -2783,6 +2783,7 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
         /* call dynamic handlers to reenter dynamic-winds */
         call_dynamic_handlers(vm, vmhandlers,
                               get_dynamic_handlers(vm));
+        vm->denv = denv;
 
         /* reraise and return */
         Scm_VMPushExceptionHandler(ep->xhandler);
@@ -3129,8 +3130,11 @@ static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
 
 static ScmObj vm_abort_cc(ScmObj val0, void *data[]);
 
-static ScmObj call_abort_handler(ScmObj abortHandler, ScmObj args)
+static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
 {
+    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
+    ScmObj abortHandler = pd->abortHandler;
+
     if (SCM_FALSEP(abortHandler)) {
         if (!(Scm_Length(args) == 1
               && SCM_PROCEDUREP(SCM_CAR(args))
@@ -3145,13 +3149,6 @@ static ScmObj call_abort_handler(ScmObj abortHandler, ScmObj args)
         */
         return Scm_VMApply(abortHandler, args);
     }
-}
-
-static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
-{
-    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
-    ScmObj abortHandler = pd->abortHandler;
-    return call_abort_handler(abortHandler, args);
 }
 
 static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])
