@@ -949,14 +949,6 @@
                               (SCM_SYMBOL ',name-sans-c) z
                               SCM_BINDING_INLINABLE))))])
 
- ;; In C, char used to be used for both 'character' and 'one byte integer'.
- ;; Four our purpose, we map native char type to our char (in 1 byte range).
- ;; Foreign functions that uses char as one byte integer, we can use <int8>
- ;; or <uint8>.
- (define-cfn native_charP (obj) ::int :static
-   (return (and (SCM_CHARP obj)
-                (<= (SCM_CHAR_VALUE obj) 255))))
-
  (define-cfn get_cstr (obj) ::(const char*) :static
    (SCM_ASSERT (SCM_STRINGP obj))
    (return (Scm_GetStringConst (SCM_STRING obj))))
@@ -1003,7 +995,7 @@
 
   ;; We map C char to our character in 8-bit range.  If you want to use
   ;; char as a one-byte integer, use <c-int8> or <c-uint8>.
-  (define-native-type <c-char> SCM_CLASS_INTEGER char native_charP
+  (define-native-type <c-char> SCM_CLASS_INTEGER char SCM_CHAR_FITS_LATIN1_P
     SCM_MAKE_CHAR SCM_CHAR_VALUE)
   ;; A special case of NUL-terminated string.
   (define-native-type <c-string> SCM_CLASS_STRING "const char*" SCM_STRINGP

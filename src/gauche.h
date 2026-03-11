@@ -399,6 +399,11 @@ typedef struct ScmFlonumRec {
 #define SCM_CHAR_UPCASE(ch)     Scm_CharUpcase(ch)
 #define SCM_CHAR_DOWNCASE(ch)   Scm_CharDowncase(ch)
 
+/* This is mainly to check if an ScmChar fits in C's char.
+   Note that non-ASCII Latin-1 becomes 2 bytes in strings. */
+#define SCM_CHAR_FITS_LATIN1_P(obj)  \
+    (SCM_CHARP(obj) && SCM_CHAR_VALUE(obj) <= 255)
+
 SCM_EXTERN int Scm_DigitToInt(ScmChar ch, int radix, int extended);
 SCM_EXTERN ScmChar Scm_IntToDigit(int n, int radix, int basechar1, int basechar2);
 SCM_EXTERN int Scm_CharToUcs(ScmChar ch);
