@@ -3537,6 +3537,8 @@ static void init_class(ScmClass *klass,
     klass->directSlots = slots;
 
     /* compute other slots inherited from supers */
+    slots = Scm_CopyList(slots);
+    t = SCM_PAIRP(slots) ? Scm_LastPair(slots) : SCM_NIL;
     for (ScmClass **super = klass->cpa; *super; super++) {
         ScmObj sp;
         SCM_FOR_EACH(sp, (*super)->directSlots) {
@@ -3545,8 +3547,10 @@ static void init_class(ScmClass *klass,
             snam = SCM_CAR(slot);
             p = Scm_Assq(snam, slots);
             if (SCM_FALSEP(p)) {
-                slots = Scm_Cons(Scm_CopyList(slot), slots);
-                a = Scm_GetKeyword(key_slot_accessor, SCM_CDR(slot), SCM_FALSE);
+                ScmObj s1 = Scm_CopyList(slot);
+                SCM_APPEND1(slots, t, s1);
+                a = Scm_GetKeyword(key_slot_accessor,
+                                   SCM_CDR(slot), SCM_FALSE);
                 SCM_ASSERT(SCM_HOBJP(a));
                 SCM_ASSERT(SCM_SLOT_ACCESSOR_P(a));
                 acc = Scm_Acons(snam, a, acc);

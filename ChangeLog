@@ -1,3 +1,8 @@
+2026-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (init_class): Fix the order of inherited slots
+	  of builtin classes https://github.com/shirok/Gauche/issues/1236
+
 2026-03-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (test): Bind 'test' in #<module gauche>,
