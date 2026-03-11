@@ -205,7 +205,10 @@
     (super)
     (c-type-name :type <const-cstring>)
     (size :type <size_t>)
-    (alignment :type <size_t>))
+    (alignment :type <size_t>)
+    (c-typecheck-name :type <const-cstring>)
+    (c-boxer-name :type <const-cstring>)
+    (c-unboxer-name :type <const-cstring>))
    (printer (Scm_Printf port "#<native-type %A>" (-> (SCM_NATIVE_TYPE obj) name))))
 
  ;; CPA for native type subclasses
@@ -865,7 +868,10 @@
           alignment::size_t
           c-of-type::(.function (type::ScmNativeType* obj) ::int *)
           c-ref::(.function (type::ScmNativeType* ptr::void*)::ScmObj *)
-          c-set::(.function (type::ScmNativeType* ptr::void* obj)::void *))
+          c-set::(.function (type::ScmNativeType* ptr::void* obj)::void *)
+          c-typecheck-name::(const char *)
+          c-boxer-name::(const char*)
+          c-unboxer-name::(const char*))
    :static
    (let* ([z::ScmNativeType*
            (SCM_NEW_INSTANCE ScmNativeType (& Scm_NativeTypeClass))])
@@ -877,6 +883,9 @@
      (set! (-> z c-set) c-set)
      (set! (-> z size) size)
      (set! (-> z alignment) alignment)
+     (set! (-> z c-typecheck-name) c-typecheck-name)
+     (set! (-> z c-boxer-name) c-boxer-name)
+     (set! (-> z c-unboxer-name) c-unboxer-name)
      (return (SCM_OBJ z))))
 
  ;; Primitive native type name -> native type instance
@@ -935,7 +944,10 @@
                                  (SCM_ALIGNOF (.type ,ctype))
                                  ,c-of-type-name
                                  ,c-ref-name
-                                 ,c-set-name)])
+                                 ,c-set-name
+                                 ,(x->string pred)
+                                 ,(x->string box)
+                                 ,(x->string unbox))])
        (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
                          ',ctype (SCM_OBJ z) 0)
        (Scm_MakeBinding (Scm_GaucheModule)
@@ -1021,7 +1033,8 @@
 
   ;; <void> needs special care, as it doesn't have a real C type.
   (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"
-                              0 1 native_voidP NULL NULL)])
+                              0 1 native_voidP NULL NULL
+                              "" "" "")]) ;should be irrerevant
     (set! native_void_type z)
     (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
                       'void z 0)
@@ -1162,7 +1175,10 @@
    (set! (-> nt c-ref) c-ref)
    (set! (-> nt c-set) c-set)
    (set! (-> nt size) size)
-   (set! (-> nt alignment) alignment))
+   (set! (-> nt alignment) alignment)
+   (set! (-> nt c-typecheck-name) "SCM_NATIVE_HANDLE_P")
+   (set! (-> nt c-boxer-name) "SCM_OBJ")
+   (set! (-> nt c-unboxer-name) "SCM_NATIVE_HANDLE"))
 
  (define-cfn %make-c-pointer-type-fn (pointer-type-name::(const char *)
                                       pointee-type)
