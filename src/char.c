@@ -46,7 +46,7 @@ static ScmObj predef_sets_complement[SCM_CHAR_SET_NUM_PREDEFINED_SETS];
    [:punct:] charset.  However, POSIX's definition of [:punct:] differs
    from it---it includes Unicode's punctuatons and symbols.
    We switch it to align to POSIX, but allows to use old definition
-   with the environment variable GAUCHE_CHARSET_UNICODE_PUNCT.
+   with the environment variable GAUCHE_CHARSET_UNICODE_PUNCTUATION.
  */
 static _Bool unicode_punct_compatible_mode = FALSE;
 
