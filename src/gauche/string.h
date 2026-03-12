@@ -235,7 +235,6 @@ SCM_EXTERN const char* Scm_GetStringContent(ScmString *str,
                                             u_long *pflags);
 
 #define SCM_STRING_CONST_CSTRING(obj) Scm_GetStringConst(SCM_STRING(obj))
-#define SCM_STRING_CONST_CSTRING_SAFE(obj) Scm_GetStringConstSafe(SCM_STRING(obj))
 
 /*
  * Conversions

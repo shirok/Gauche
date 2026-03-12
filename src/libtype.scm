@@ -961,10 +961,6 @@
                               (SCM_SYMBOL ',name-sans-c) z
                               SCM_BINDING_INLINABLE))))])
 
- (define-cfn get_cstr (obj) ::(const char*) :static
-   (SCM_ASSERT (SCM_STRINGP obj))
-   (return (Scm_GetStringConst (SCM_STRING obj))))
-
  ;; subrs returning <void> actually return #<undef>
  (define-cfn native_voidP (_::ScmNativeType* obj) ::int :static
    (return (SCM_UNDEFINEDP obj)))
@@ -974,67 +970,67 @@
  (define-cvar native_void_pointer_type)
 
  (initcode
-  (define-native-type <c-fixnum>  SCM_CLASS_INTEGER ScmSmallInt SCM_INTP
-    SCM_MAKE_INT SCM_INT_VALUE)
-  (define-native-type <c-short>   SCM_CLASS_INTEGER short SCM_INTEGER_FITS_SHORT_P
-    SCM_MAKE_INT SCM_INT_VALUE)
-  (define-native-type <c-ushort>  SCM_CLASS_INTEGER u_short SCM_INTEGER_FITS_USHORT_P
-    SCM_MAKE_INT SCM_INT_VALUE)
-  (define-native-type <c-int>     SCM_CLASS_INTEGER int SCM_INTEGER_FITS_INT_P
-    Scm_MakeInteger Scm_GetInteger)
-  (define-native-type <c-uint>    SCM_CLASS_INTEGER u_int SCM_INTEGER_FITS_UINT_P
-    Scm_MakeIntegerU Scm_GetIntegerU)
-  (define-native-type <c-long>    SCM_CLASS_INTEGER long SCM_INTEGER_FITS_LONG_P
-    Scm_MakeInteger Scm_GetInteger)
-  (define-native-type <c-ulong>   SCM_CLASS_INTEGER u_long SCM_INTEGER_FITS_ULONG_P
-    Scm_MakeIntegerU Scm_GetIntegerU)
-  (define-native-type <c-int8>    SCM_CLASS_INTEGER int8_t SCM_INTEGER_FITS_INT8_P
-    SCM_MAKE_INT SCM_INT_VALUE)
-  (define-native-type <c-uint8>   SCM_CLASS_INTEGER uint8_t SCM_INTEGER_FITS_UINT8_P
-    SCM_MAKE_INT SCM_INT_VALUE)
-  (define-native-type <c-int16>   SCM_CLASS_INTEGER int16_t SCM_INTEGER_FITS_INT16_P
-    SCM_MAKE_INT SCM_INT_VALUE)
-  (define-native-type <c-uint16>  SCM_CLASS_INTEGER uint16_t SCM_INTEGER_FITS_UINT16_P
-    SCM_MAKE_INT SCM_INT_VALUE)
-  (define-native-type <c-int32>   SCM_CLASS_INTEGER int32_t SCM_INTEGER_FITS_INT32_P
-    Scm_MakeInteger Scm_GetInteger)
-  (define-native-type <c-uint32>  SCM_CLASS_INTEGER uint32_t SCM_INTEGER_FITS_UINT32_P
-    Scm_MakeIntegerU Scm_GetIntegerU)
-  (define-native-type <c-int64>   SCM_CLASS_INTEGER int64_t SCM_INTEGER_FITS_INT64_P
-    Scm_MakeInteger64 Scm_GetInteger64)
-  (define-native-type <c-uint64>  SCM_CLASS_INTEGER uint64_t SCM_INTEGER_FITS_UINT64_P
-    Scm_MakeIntegerU64 Scm_GetIntegerU64)
+  (define-native-type <c-fixnum>  SCM_CLASS_INTEGER ScmSmallInt
+    SCM_INTP SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <c-short>   SCM_CLASS_INTEGER short
+    SCM_INTEGER_FITS_SHORT_P SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <c-ushort>  SCM_CLASS_INTEGER u_short
+    SCM_INTEGER_FITS_USHORT_P SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <c-int>     SCM_CLASS_INTEGER int
+    SCM_INTEGER_FITS_INT_P Scm_MakeInteger Scm_GetInteger)
+  (define-native-type <c-uint>    SCM_CLASS_INTEGER u_int
+    SCM_INTEGER_FITS_UINT_P Scm_MakeIntegerU Scm_GetIntegerU)
+  (define-native-type <c-long>    SCM_CLASS_INTEGER long
+    SCM_INTEGER_FITS_LONG_P Scm_MakeInteger Scm_GetInteger)
+  (define-native-type <c-ulong>   SCM_CLASS_INTEGER u_long
+    SCM_INTEGER_FITS_ULONG_P Scm_MakeIntegerU Scm_GetIntegerU)
+  (define-native-type <c-int8>    SCM_CLASS_INTEGER int8_t
+    SCM_INTEGER_FITS_INT8_P SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <c-uint8>   SCM_CLASS_INTEGER uint8_t
+    SCM_INTEGER_FITS_UINT8_P SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <c-int16>   SCM_CLASS_INTEGER int16_t
+    SCM_INTEGER_FITS_INT16_P SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <c-uint16>  SCM_CLASS_INTEGER uint16_t
+    SCM_INTEGER_FITS_UINT16_P SCM_MAKE_INT SCM_INT_VALUE)
+  (define-native-type <c-int32>   SCM_CLASS_INTEGER int32_t
+    SCM_INTEGER_FITS_INT32_P Scm_MakeInteger Scm_GetInteger)
+  (define-native-type <c-uint32>  SCM_CLASS_INTEGER uint32_t
+    SCM_INTEGER_FITS_UINT32_P Scm_MakeIntegerU Scm_GetIntegerU)
+  (define-native-type <c-int64>   SCM_CLASS_INTEGER int64_t
+    SCM_INTEGER_FITS_INT64_P Scm_MakeInteger64 Scm_GetInteger64)
+  (define-native-type <c-uint64>  SCM_CLASS_INTEGER uint64_t
+    SCM_INTEGER_FITS_UINT64_P Scm_MakeIntegerU64 Scm_GetIntegerU64)
 
   ;; We map C char to our character in 8-bit range.  If you want to use
   ;; char as a one-byte integer, use <c-int8> or <c-uint8>.
-  (define-native-type <c-char> SCM_CLASS_INTEGER char SCM_CHAR_FITS_LATIN1_P
-    SCM_MAKE_CHAR SCM_CHAR_VALUE)
+  (define-native-type <c-char> SCM_CLASS_INTEGER char
+    SCM_CHAR_FITS_LATIN1_P SCM_MAKE_CHAR SCM_CHAR_VALUE)
   ;; A special case of NUL-terminated string.
-  (define-native-type <c-string> SCM_CLASS_STRING "const char*" SCM_STRINGP
-    SCM_MAKE_STR_COPYING get_cstr)
+  (define-native-type <c-string> SCM_CLASS_STRING "const char*"
+    SCM_STRINGP SCM_MAKE_STR_COPYING SCM_STRING_CONST_CSTRING)
 
-  (define-native-type <c-size_t>  SCM_CLASS_INTEGER size_t Scm_IntegerFitsSizeP
-    Scm_SizeToInteger Scm_IntegerToSize)
-  (define-native-type <c-ssize_t> SCM_CLASS_INTEGER ssize_t Scm_IntegerFitsSsizeP
-    Scm_SsizeToInteger Scm_IntegerToSsize)
-  (define-native-type <c-ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t Scm_IntegerFitsPtrdiffP
-    Scm_PtrdiffToInteger Scm_IntegerToPtrdiff)
-  (define-native-type <c-off_t> SCM_CLASS_INTEGER off_t Scm_IntegerFitsOffsetP
-    Scm_OffsetToInteger Scm_IntegerToOffset)
-  (define-native-type <c-intptr_t> SCM_CLASS_INTEGER intptr_t Scm_IntegerFitsIntptrP
-    Scm_IntptrToInteger Scm_IntegerToIntptr)
-  (define-native-type <c-uintptr_t> SCM_CLASS_INTEGER uintptr_t Scm_IntegerFitsUintptrP
-    Scm_UintptrToInteger Scm_IntegerToUintptr)
+  (define-native-type <c-size_t>  SCM_CLASS_INTEGER size_t
+    Scm_IntegerFitsSizeP Scm_SizeToInteger Scm_IntegerToSize)
+  (define-native-type <c-ssize_t> SCM_CLASS_INTEGER ssize_t
+    Scm_IntegerFitsSsizeP Scm_SsizeToInteger Scm_IntegerToSsize)
+  (define-native-type <c-ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t
+    Scm_IntegerFitsPtrdiffP Scm_PtrdiffToInteger Scm_IntegerToPtrdiff)
+  (define-native-type <c-off_t> SCM_CLASS_INTEGER off_t
+    Scm_IntegerFitsOffsetP Scm_OffsetToInteger Scm_IntegerToOffset)
+  (define-native-type <c-intptr_t> SCM_CLASS_INTEGER intptr_t
+    Scm_IntegerFitsIntptrP Scm_IntptrToInteger Scm_IntegerToIntptr)
+  (define-native-type <c-uintptr_t> SCM_CLASS_INTEGER uintptr_t
+    Scm_IntegerFitsUintptrP Scm_UintptrToInteger Scm_IntegerToUintptr)
 
-  (define-native-type <c-float>   SCM_CLASS_REAL float SCM_REALP
-    Scm_MakeFlonum Scm_GetDouble)
-  (define-native-type <c-double>  SCM_CLASS_REAL double SCM_REALP
-    Scm_MakeFlonum Scm_GetDouble)
+  (define-native-type <c-float>   SCM_CLASS_REAL float
+    SCM_REALP Scm_MakeFlonum Scm_GetDouble)
+  (define-native-type <c-double>  SCM_CLASS_REAL double
+    SCM_REALP Scm_MakeFlonum Scm_GetDouble)
 
   ;; <void> needs special care, as it doesn't have a real C type.
   (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"
                               0 1 native_voidP NULL NULL
-                              "" "" "")]) ;should be irrerevant
+                              "" "" "SCM_VOID_RETURN_VALUE")])
     (set! native_void_type z)
     (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
                       'void z 0)

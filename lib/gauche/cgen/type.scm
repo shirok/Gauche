@@ -179,9 +179,14 @@
     :boxer       (or box "SCM_OBJ_SAFE")))
 
 ;; Stub types corresponding to native types.
+;; TRANSIENT:
+;;  From 0.9.16, native types are named with 'c-' prefix (e.g. <c-int>),
+;;  and they know C predicate/boxer/unboxer names.  The code below needs
+;;  to work with 0.9.15, however, so it converts the class name, and
+;;  need to take names of C predicates etc. as arguments; should be rewritten
+;;  after 0.9.16 release.
 (let ()
   (define (%native native-type pred unbox box)
-    ;; TRANSIENT:
     (define (name-sans-c name)
       ($ string->symbol
          $ regexp-replace #/^<c-/ (symbol->string name) "<"))
