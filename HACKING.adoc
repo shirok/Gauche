@@ -167,7 +167,7 @@ the details.
 == CONTRIBUTING
 
 Contributions are welcome.  Preferred way is through GitHub pull requests.
-We'd line one PR to solve one issue (or tightly related issues).
+We'd like one PR to solve one issue (or tightly related issues).
 If you fixed two unrelated issues, submit two separate PRs.
 
 We want to keep Gauche in BSD-style license, so make sure your contribution
