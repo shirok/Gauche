@@ -52,7 +52,7 @@
  *
  * About phantom binding.
  *
- *   A binding may be inserted either by definition or export special
+ *   A binding may be inserted either by definition or 'export' special
  *   forms.  We don't know which comes first.  If we've seen only an
  *   'export' form but not an actual definition, the GLOC of the binding
  *   has value SCM_UNBOUND, and indicates it is a phantom binding.
