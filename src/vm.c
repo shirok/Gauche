@@ -4141,12 +4141,26 @@ ScmObj Scm_VMGetBindInfo(ScmCompiledCode *base, SCM_PCTYPE pc)
     return SCM_FALSE;
 }
 
+/*
+ * Aux fns for VMDump
+ */
+
+static void print_stack_offset(ScmVM *vm, ScmObj *p, int padding, _Bool nl,
+                               ScmPort *out)
+{
+    if (IN_STACK_P(p)) {
+        Scm_Printf(out, "%*s[SP+%04d]", padding, "", p - vm->stackBase);
+    }
+    if (nl) Scm_Putc('\n', out);
+}
 
 /* returns next env */
 static ScmEnvFrame *dump_env(ScmVM *vm, ScmEnvFrame *env, ScmPort *out)
 {
     if (env && (IN_STACK_P((ScmObj*)env) || GC_base(env))) {
-        Scm_Printf(out, "   %p %55.1S\n", env, env->info);
+        Scm_Printf(out, "   %p", env);
+        print_stack_offset(vm, (ScmObj*)env, 2, FALSE, out);
+        Scm_Printf(out, "  %55.1S\n", env->info);
         Scm_Printf(out, "       up=%p size=%d\n", env->up, env->size);
         Scm_Printf(out, "       [");
         for (int i=0; i<env->size; i++) {
@@ -4215,6 +4229,7 @@ void Scm_VMDump(ScmVM *vm_to_dump)
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;
     ScmCStack *cstk = vm->cstack;
+    ScmObj dyn_handlers = get_dynamic_handlers(vm);
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %p  ", vm->pc);
@@ -4222,7 +4237,9 @@ void Scm_VMDump(ScmVM *vm_to_dump)
     print_insn_paren(SCM_OBJ(*vm->pc), out);
     Scm_Printf(out, "   sp: %p  [%p-%p-%p]\n", vm->sp,
                vm->stack, vm->stackBase, vm->stackEnd);
-    Scm_Printf(out, " argp: %p\n", vm->argp);
+    Scm_Printf(out, " argp: %p", vm->argp);
+    print_stack_offset(vm, vm->argp, 2, TRUE, out);
+
     if (vm->val0) {
         Scm_Printf(out, " val0: %#65.1S\n", vm->val0);
     } else {
@@ -4240,11 +4257,11 @@ void Scm_VMDump(ScmVM *vm_to_dump)
         if (BOUNDARY_FRAME_P(cont)) {
             ScmPromptTag *t = SCM_PC_TO_PROMPT_TAG(cont->pc);
             SCM_ASSERT(t->insn == SCM_VM_INSN(SCM_VM_RET));
-            Scm_Printf(out, "::%S\n", t);
-        } else {
-            Scm_Printf(out, "\n");
+            Scm_Printf(out, "::%S", t);
         }
-        Scm_Printf(out, "              env = %p\n", cont->env);
+        print_stack_offset(vm, (ScmObj*)cont, 2, TRUE, out);
+        Scm_Printf(out, "              env = %p", cont->env);
+        print_stack_offset(vm, (ScmObj*)cont->env, 2, TRUE, out);
         Scm_Printf(out, "             size = %d\n", cont->size);
         Scm_Printf(out, "             base = %p", cont->base);
         if (cont->base && SCM_COMPILED_CODE_P(cont->base)) {
@@ -4268,7 +4285,13 @@ void Scm_VMDump(ScmVM *vm_to_dump)
                    cstk, cstk->prev, cstk->cont);
         cstk = cstk->prev;
     }
-    Scm_Printf(out, "dyn_handlers: %S\n", get_dynamic_handlers(vm));
+    Scm_Printf(out, "dyn_handlers:\n");
+    {
+        ScmObj dh;
+        SCM_FOR_EACH(dh, dyn_handlers) {
+            Scm_Printf(out, "  %p: %S\n", SCM_CAR(dh), SCM_CAR(dh));
+        }
+    }
 
     Scm_Printf(out, "reset-chain-length: %d\n", (int)Scm_Length(vm->resetChain));
     if (vm->base) {
