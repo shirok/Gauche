@@ -4168,7 +4168,10 @@ void Scm_VMDump(ScmVM *vm_to_dump)
 {
     /* We first take a snapshot of the given VM, so that the act of
        dumping won't interfere with the state of the target.
-     */
+
+       NB: save_cont is required to preserve vm->cont->prev.
+    */
+    save_cont(vm_to_dump);
     ScmVM *vm = Scm_VMTakeSnapshot(vm_to_dump);
     ScmPort *out = SCM_CURERR;
     ScmEnvFrame *env = vm->env;
