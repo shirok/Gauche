@@ -125,6 +125,21 @@ static ScmEnvFrame ccEnvMark = {
         }                                       \
     } while (0)
 
+/* IN_STACK_P(ptr) returns true if ptr points into the active stack area.
+   IN_FULL_STACK_P(ptr) returns true if ptr points into any part of the stack.
+ */
+
+#if GAUCHE_SPLIT_STACK
+#define IN_STACK_P(ptr)                                 \
+    ((ptr) >= vm->stackBase && (ptr) < vm->stackEnd)
+#define IN_FULL_STACK_P(ptr)                            \
+    ((ptr) >= vm->stack && (ptr) < vm->stackEnd)
+#else  /*!GAUCHE_SPLIT_STACK*/
+#define IN_STACK_P(ptr)                                         \
+    ((unsigned long)((ptr) - vm->stack) < SCM_VM_STACK_SIZE)
+#define IN_FULL_STACK_P(ptr) IN_STACK_P(ptr)
+#endif /*!GAUCHE_SPLIT_STACK*/
+
 /* Unique uninterned symbol to indicate continuation procedure. */
 static ScmObj continuation_symbol = SCM_UNBOUND;
 
@@ -354,32 +369,37 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
  *   copied VM to run independently from the original.
  */
 
-ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
+static ScmEnvFrame *snapshot_relocate_env(ScmVM *vm, ScmEnvFrame *env,
+                                          ptrdiff_t delta);
+static ScmContFrame *snapshot_relocate_cont(ScmVM *vm, ScmContFrame *cont,
+                                            ptrdiff_t delta);
+
+ScmVM *Scm_VMTakeSnapshot(ScmVM *vm)
 {
     ScmVM *v = SCM_NEW(ScmVM);
 
     SCM_SET_CLASS(v, SCM_CLASS_VM);
-    v->state = master->state;
+    v->state = vm->state;
     (void)SCM_INTERNAL_MUTEX_INIT(v->vmlock);
     (void)SCM_INTERNAL_COND_INIT(v->cond);
-    v->canceller = master->canceller;
-    v->inspector = master->inspector;
-    v->name = master->name;
-    v->specific = master->specific;
-    v->thunk = master->thunk;
-    v->result = master->result;
-    v->resultException = master->resultException;
-    v->module = master->module;
-    v->cstack = master->cstack;
+    v->canceller = vm->canceller;
+    v->inspector = vm->inspector;
+    v->name = vm->name;
+    v->specific = vm->specific;
+    v->thunk = vm->thunk;
+    v->result = vm->result;
+    v->resultException = vm->resultException;
+    v->module = vm->module;
+    v->cstack = vm->cstack;
 
-    v->threadLocals = Scm__MakeVMThreadLocalTable(master);
+    v->threadLocals = Scm__MakeVMThreadLocalTable(vm);
 
-    v->compilerFlags = master->compilerFlags;
-    v->runtimeFlags = master->runtimeFlags;
-    v->attentionRequest = master->attentionRequest;
-    v->signalPending = master->signalPending;
-    v->finalizerPending = master->finalizerPending;
-    v->stopRequest = master->stopRequest;
+    v->compilerFlags = vm->compilerFlags;
+    v->runtimeFlags = vm->runtimeFlags;
+    v->attentionRequest = vm->attentionRequest;
+    v->signalPending = vm->signalPending;
+    v->finalizerPending = vm->finalizerPending;
+    v->stopRequest = vm->stopRequest;
 
 #ifdef USE_CUSTOM_STACK_MARKER
     v->stack = (ScmObj*)GC_generic_malloc((SCM_VM_STACK_SIZE+1)*sizeof(ScmObj),
@@ -391,69 +411,105 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
     v->sp = v->stack;
     v->stackBase = v->stack;
     v->stackEnd = v->stack + SCM_VM_STACK_SIZE;
-    memcpy(v->stack, master->stack, SCM_VM_STACK_SIZE*sizeof(ScmObj));
+    memcpy(v->stack, vm->stack, SCM_VM_STACK_SIZE*sizeof(ScmObj));
 
 #if GAUCHE_FFX
     v->fpstack = SCM_NEW_ATOMIC_ARRAY(ScmFlonum, SCM_VM_STACK_SIZE);
     v->fpstackEnd = v->fpstack + SCM_VM_STACK_SIZE;
     v->fpsp = v->fpstack;
-    memcpy(v->fpstack, master->fpstack, SCM_VM_STACK_SIZE*sizeof(ScmFlonum));
+    memcpy(v->fpstack, vm->fpstack, SCM_VM_STACK_SIZE*sizeof(ScmFlonum));
 #endif /* GAUCHE_FFX */
 
-    v->env = master->env;
-    v->argp = master->argp;
-    v->cont = master->cont;
-    v->pc = master->pc;
-    v->base = master->base;
-    v->val0 = master->val0;
-    for (int i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = master->vals[i];
-    v->numVals = master->numVals;
-    v->trampoline = master->trampoline;
-    v->joinCount = master->joinCount;
-    v->denv = master->denv;
-    v->dynamicHandlers = master->dynamicHandlers;
+    /* Relocate env/cont chains: frames copied from the original stack still
+       hold pointers into vm->stack; redirect them into v->stack. */
+    ptrdiff_t stack_delta = v->stack - vm->stack; /* in ScmObj units */
+    v->env  = snapshot_relocate_env(vm, vm->env, stack_delta);
+    v->cont = snapshot_relocate_cont(vm, vm->cont, stack_delta);
+    v->argp = vm->argp;
+    if (IN_STACK_P(vm->argp)) v->argp += stack_delta;
 
-    v->floatingEscapePoints = master->floatingEscapePoints;
-    v->escapeReason = master->escapeReason;
-    v->escapeData[0] = master->escapeData[0];
-    v->escapeData[1] = master->escapeData[1];
-    v->errorHandlerContinuable = master->errorHandlerContinuable;
-    v->customErrorReporter = master->customErrorReporter;
+    v->pc = vm->pc;
+    v->base = vm->base;
+    v->val0 = vm->val0;
+    for (int i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = vm->vals[i];
+    v->numVals = vm->numVals;
+    v->trampoline = vm->trampoline;
+    v->joinCount = vm->joinCount;
+    v->denv = vm->denv;
+    v->dynamicHandlers = vm->dynamicHandlers;
+
+    v->floatingEscapePoints = vm->floatingEscapePoints;
+    v->escapeReason = vm->escapeReason;
+    v->escapeData[0] = vm->escapeData[0];
+    v->escapeData[1] = vm->escapeData[1];
+    v->errorHandlerContinuable = vm->errorHandlerContinuable;
+    v->customErrorReporter = vm->customErrorReporter;
 #if GAUCHE_SPLIT_STACK
-    v->lastErrorCont = master->lastErrorCont;
+    v->lastErrorCont = snapshot_relocate_cont(vm, vm->lastErrorCont, stack_delta);
 #endif /*GAUCHE_SPLIT_STACK*/
 
-    v->evalSituation = master->evalSituation;
+    v->evalSituation = vm->evalSituation;
 
     sigemptyset(&v->sigMask);
     Scm_SignalQueueInit(&v->sigq); /* TODO: Copy signal queue content */
 
     /* stats */
-    v->stat.sovCount = master->stat.sovCount;
-    v->stat.sovTime = master->stat.sovTime;
-    v->stat.loadStat = master->stat.loadStat;
-    v->profilerRunning = master->profilerRunning;
-    v->prof = master->prof;     /* TODO: Should we copy this? */
+    v->stat.sovCount = vm->stat.sovCount;
+    v->stat.sovTime = vm->stat.sovTime;
+    v->stat.loadStat = vm->stat.loadStat;
+    v->profilerRunning = vm->profilerRunning;
+    v->prof = vm->prof;     /* TODO: Should we copy this? */
 
-    v->thread = master->thread;
+    v->thread = vm->thread;
 
 #if defined(GAUCHE_USE_WTHREADS)
-    v->winCleanup = master->winCleanup;
+    v->winCleanup = vm->winCleanup;
 #endif /*defined(GAUCHE_USE_WTHREADS)*/
 
-    v->vmid = master->vmid;
-    v->callTrace = (master->callTrace
-                    ? Scm__CopyCallTraceQueue(master->callTrace)
+    v->vmid = vm->vmid;
+    v->callTrace = (vm->callTrace
+                    ? Scm__CopyCallTraceQueue(vm->callTrace)
                     : NULL);
     v->codeCache = NULL;        /* We might need to copy this as well
                                    if we want to debug JIT code cache */
 
-    v->currentPrompt = master->currentPrompt;
-    v->resetChain = master->resetChain;
+    v->currentPrompt = vm->currentPrompt;
+    v->resetChain = vm->resetChain;
     /* NB: We don't register the finalizer vm_finalize to the snapshot,
        for we do not want the associated system resources to be cleaned
        up when the snapshot is GCed. */
     return v;
+}
+
+/* Helpers for Scm_VMTakeSnapshot.
+ *
+ * VM stack may contain env/cont frames that points to other env/cont
+ * frames in the stack.  After we copy the stack content, we need to
+ * adjust pointers of those in-stack frames so that they don't point
+ * to the original stack area.
+ * Both functions are idempotent: a frame whose link has already been fixed
+ * (i.e. now points into the new stack, which is not IN_STACK_P) is left
+ * unchanged, so reaching the same frame from multiple paths is safe.
+ *
+ * delta is (v->stack - vm->stack) in ScmObj units.
+ */
+static ScmEnvFrame *snapshot_relocate_env(ScmVM *vm, ScmEnvFrame *env,
+                                          ptrdiff_t delta)
+{
+    if (!env || !IN_STACK_P((ScmObj*)env)) return env;
+    ScmEnvFrame *new_env = (ScmEnvFrame*)((ScmObj*)env + delta);
+    new_env->up = snapshot_relocate_env(vm, new_env->up, delta);
+    return new_env;
+}
+
+static ScmContFrame *snapshot_relocate_cont(ScmVM *vm, ScmContFrame *cont,
+                                            ptrdiff_t delta)
+{
+    if (!cont || !IN_STACK_P((ScmObj*)cont)) return cont;
+    ScmContFrame *new_cont = (ScmContFrame*)((ScmObj*)cont + delta);
+    new_cont->env  = snapshot_relocate_env(vm, new_cont->env, delta);
+    new_cont->prev = snapshot_relocate_cont(vm, new_cont->prev, delta);
+    return new_cont;
 }
 
 /* Attach the thread to the current thread.
@@ -669,21 +725,6 @@ static void vm_unregister(ScmVM *vm)
 #define CONT  (vm->cont)
 #define ARGP  (vm->argp)
 #define BASE  (vm->base)
-
-/* IN_STACK_P(ptr) returns true if ptr points into the active stack area.
-   IN_FULL_STACK_P(ptr) returns true if ptr points into any part of the stack.
- */
-
-#if GAUCHE_SPLIT_STACK
-#define IN_STACK_P(ptr)                                 \
-    ((ptr) >= vm->stackBase && (ptr) < vm->stackEnd)
-#define IN_FULL_STACK_P(ptr)                            \
-    ((ptr) >= vm->stack && (ptr) < vm->stackEnd)
-#else  /*!GAUCHE_SPLIT_STACK*/
-#define IN_STACK_P(ptr)                                         \
-    ((unsigned long)((ptr) - vm->stack) < SCM_VM_STACK_SIZE)
-#define IN_FULL_STACK_P(ptr) IN_STACK_P(ptr)
-#endif /*!GAUCHE_SPLIT_STACK*/
 
 /* Check if stack has room at least SIZE words.  If not, active frames
    are moved to the heap to make room. */
