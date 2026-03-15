@@ -1119,9 +1119,10 @@ int Scm_ProvidedP(ScmObj feature)
 static void autoload_print(ScmObj obj, ScmPort *out,
                            ScmWriteContext *ctx SCM_UNUSED)
 {
-    Scm_Printf(out, "#<autoload %A::%A (%A)>",
+    Scm_Printf(out, "#<autoload %A::%A (%A)%s>",
                SCM_AUTOLOAD(obj)->module->name,
-               SCM_AUTOLOAD(obj)->name, SCM_AUTOLOAD(obj)->path);
+               SCM_AUTOLOAD(obj)->name, SCM_AUTOLOAD(obj)->path,
+               SCM_AUTOLOAD(obj)->loaded? " loaded" : "");
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_AutoloadClass, autoload_print);
@@ -1139,6 +1140,7 @@ ScmObj Scm_MakeAutoload(ScmModule *where,
     adata->import_from = import_from;
     adata->loaded = FALSE;
     adata->value = SCM_UNBOUND;
+    adata->orig_gloc = NULL;
     (void)SCM_INTERNAL_MUTEX_INIT(adata->mutex);
     (void)SCM_INTERNAL_COND_INIT(adata->cv);
     adata->locker = NULL;
@@ -1188,14 +1190,26 @@ void Scm_DefineAutoload(ScmModule *where,
     }
 }
 
-
-ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags SCM_UNUSED)
+/* If the given autolaod is not loaded, try to load it, then returns the
+   resolved value.  Optionally, if pgloc is not NULL, set the resolved
+   binding (gloc) to *pgloc.
+ */
+ScmObj Scm_ResolveAutoload(ScmAutoload *adata,
+                           int flags SCM_UNUSED, /* for future extension */
+                           ScmGloc **pgloc)
 {
     int circular = FALSE;
     ScmVM *vm = Scm_VM();
 
-    /* shortcut in case if somebody else already did the job. */
-    if (adata->loaded) return adata->value;
+    /* shortcut in case if somebody else already did the job.
+       if pgloc isn't NULL, we set the resolved gloc there.
+    */
+    if (adata->loaded) {
+        if (adata->orig_gloc && pgloc) {
+            *pgloc = adata->orig_gloc;
+        }
+        return adata->value;
+    }
 
     /* check to see if this autoload is recursive.  if so, we just return
        SCM_UNBOUND and let the caller handle the issue (NB: it isn't
@@ -1263,15 +1277,14 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags SCM_UNUSED)
                           adata->import_from, adata->path);
             }
             ScmGloc *f = Scm_FindBinding(SCM_MODULE(m), adata->name, 0);
-            ScmGloc *g = Scm_FindBinding(adata->module, adata->name, 0);
             SCM_ASSERT(f != NULL);
-            SCM_ASSERT(g != NULL);
             adata->value = Scm_GlocGetValue(f);
+            adata->orig_gloc = f;
             if (SCM_UNBOUNDP(adata->value) || SCM_AUTOLOADP(adata->value)) {
                 Scm_Error("Autoloaded symbol %S is not defined in the module %S",
                           adata->name, adata->import_from);
             }
-            Scm_GlocSetValue(g, adata->value);
+            if (pgloc) *pgloc = f;
         } else {
             /* Normal import.  The binding must have been inserted to
                adata->module */

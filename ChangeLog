@@ -1,3 +1,14 @@
+2026-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_ResolveAutoload): Make it optionally return
+	  resolved binding (gloc).  This is an incompatible change.
+	* src/gauche/load.c (ScmAutoload): Keep resolved binding.
+	* src/vminsn.scm (GREF, GSET): Replace cached GLOC if it is
+	  autoloaded one.
+	  This is to prevent module autoloads from leaving superfluous
+	  binding in the loading module even after the autoload is
+	  resolved.  See https://github.com/shirok/Gauche/issues/1237
+
 2026-03-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (init_class): Fix the order of inherited slots

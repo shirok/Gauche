@@ -144,6 +144,9 @@ struct ScmAutoloadRec {
                                    goes into "loaded" status, no field
                                    should be changed. */
     ScmObj value;               /* The resolved value */
+    ScmGloc *orig_gloc;         /* If it is module autoload, this points to
+                                   a gloc in the autoloaded module after
+                                   resolution.  NULL otherwise. */
     ScmInternalMutex mutex;     /* mutex to resolve this autoload */
     ScmInternalCond cv;         /* ... and condition variable. */
     ScmVM *locker;              /* The thread that is resolving the autoload.*/
@@ -159,7 +162,8 @@ SCM_EXTERN ScmObj Scm_MakeAutoload(ScmModule *where,
                                    ScmSymbol *import_from);
 SCM_EXTERN void   Scm_DefineAutoload(ScmModule *where, ScmObj file_or_module,
                                      ScmObj list);
-SCM_EXTERN ScmObj Scm_ResolveAutoload(ScmAutoload *autoload, int flags);
+SCM_EXTERN ScmObj Scm_ResolveAutoload(ScmAutoload *autoload, int flags,
+                                      ScmGloc **pgloc);
 
 /* Obsoleted stuff */
 #if GAUCHE_API_VERSION < 98

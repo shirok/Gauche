@@ -901,7 +901,10 @@
           [else
            (set! v (Scm_GlocGetValue (SCM_GLOC v)))
            (when (SCM_AUTOLOADP v)
-             (set! v (Scm_ResolveAutoload (SCM_AUTOLOAD v) 0)))])
+             (let* ([new-gloc::ScmGloc* NULL])
+               (set! v (Scm_ResolveAutoload (SCM_AUTOLOAD v) 0 (& new-gloc)))
+               (when new-gloc
+                 (set! (* PC) (SCM_WORD new-gloc)))))])
     INCR-PC
     ($result v)))
 

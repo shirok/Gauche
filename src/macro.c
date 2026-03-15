@@ -211,7 +211,7 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 
 static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
 {
-    ScmObj mac = Scm_ResolveAutoload(adata, 0);
+    ScmObj mac = Scm_ResolveAutoload(adata, 0, NULL);
     if (SCM_UNBOUNDP(mac)) {
         Scm_Error("tried to autoload macro %S, but it caused circular autoload.", adata->name);
     }

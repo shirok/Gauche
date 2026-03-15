@@ -210,14 +210,13 @@ ScmObj Scm_IdentifierGlobalRef(ScmIdentifier *id,
                              Scm_MakeUnboundVariableError(id->name),
                              0);
     }
-    if (pgloc != NULL) *pgloc = gloc;
-
     ScmObj v = Scm_GlocGetValue(gloc);
     if (SCM_AUTOLOADP(v)) {
-        return Scm_ResolveAutoload(SCM_AUTOLOAD(v), 0);
-    } else {
-        return v;
+        /* This may alter gloc, too */
+        v = Scm_ResolveAutoload(SCM_AUTOLOAD(v), 0, &gloc);
     }
+    if (pgloc) *pgloc = gloc;
+    return v;
 }
 
 void Scm_IdentifierGlobalSet(ScmIdentifier *id,
@@ -243,8 +242,13 @@ void Scm_IdentifierGlobalSet(ScmIdentifier *id,
         }
         Scm_Error("Symbol not defined: %S", z->name);
     }
+    ScmObj old = SCM_GLOC_GET(gloc); /* can be #<unbound> */
+    if (SCM_AUTOLOADP(old)) {
+        /* This may alter gloc */
+        (void)Scm_ResolveAutoload(SCM_AUTOLOAD(old), 0, &gloc);
+    }
     SCM_GLOC_SET(gloc, val);
-    if (pgloc != NULL) *pgloc = gloc;
+    if (pgloc) *pgloc = gloc;
 }
 
 /* returns true if SYM has the same binding with ID in ENV. */

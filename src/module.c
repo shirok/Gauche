@@ -437,7 +437,7 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
     ScmObj val = SCM_GLOC_GET(g);
     if (SCM_AUTOLOADP(val)) {
         /* NB: Scm_ResolveAutoload may return SCM_UNBOUND */
-        val = Scm_ResolveAutoload(SCM_AUTOLOAD(val), 0);
+        val = Scm_ResolveAutoload(SCM_AUTOLOAD(val), 0, NULL);
     }
     return val;
 }

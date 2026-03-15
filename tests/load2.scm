@@ -123,6 +123,19 @@
 
 (sys-system "rm -rf test.o")
 
+;; autoload binding --------------------------------
+
+(test-section "autoload and bindings")
+
+(add-load-path "test-lib" :relative)
+(use auto.loader)
+
+(test* "setting autoloaded symbol" '(ho huh huh)
+       (let1 a (auto-loader2-ref)
+         (auto-loader2-set! 'huh)
+         (list a
+               (auto-loader2-ref)
+               (module-binding-ref (find-module 'auto.loadee) 'auto-loadee2))))
 
 ;; relative load path -------------------------------
 
