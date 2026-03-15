@@ -1,3 +1,12 @@
+2026-03-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (toplevel-closures): Exclude autoloaded
+	  closures from checking the module binding.
+	  For https://github.com/shirok/Gauche/issues/1157
+	  Now that we leave #<autoload> in the value of GLOC insterted
+	  in autoloader module by the previous commit, we can exclude
+	  them from considering binding check.
+
 2026-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_ResolveAutoload): Make it optionally return

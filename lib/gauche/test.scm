@@ -434,7 +434,14 @@
 (define (toplevel-closures module)
   (filter closure?
           (map (lambda (sym)
-                 (module-binding-ref module sym #f))
+                 ;; We use low-level procedures (find-binding and
+                 ;; gloc-ref) instead of module-binding-ref, for the
+                 ;; low-level way exposes spurious bindings inserted
+                 ;; by autoload, which is hidden by module-binding-ref.
+                 ;; User code shouldn't use this technique.
+                 (with-module gauche.internal
+                   (and-let1 b (find-binding module sym #t)
+                     (gloc-ref b #f))))
                (hash-table-keys (module-table module)))))
 
 ;; Combs closure's instruction list to extract references for the global

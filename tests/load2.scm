@@ -131,11 +131,17 @@
 (use auto.loader)
 
 (test* "setting autoloaded symbol" '(ho huh huh)
-       (let1 a (auto-loader2-ref)
+       (let1 a (auto-loader2-ref) ; trigger autoload
          (auto-loader2-set! 'huh)
          (list a
                (auto-loader2-ref)
                (module-binding-ref (find-module 'auto.loadee) 'auto-loadee2))))
+
+;; This tests spurious binding issue
+;; https://github.com/shirok/Gauche/issues/1157
+;; This also triggers autoload, and we want test the set! issue before it,
+;; so this test must come after "setting autoloaded symbol" test.
+(test-module 'auto.loader)
 
 ;; relative load path -------------------------------
 
