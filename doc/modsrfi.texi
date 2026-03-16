@@ -111,6 +111,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Destructuring lists::         srfi.239
 * Syntactic monads::            srfi.247
 * Property testing::            srfi.252
+* Type checking::               srfi.253
 * Uninterned symbols (SRFI)::   srfi.258
 * Tagged procedures with type safety::  srfi.259
 @end menu
@@ -18804,7 +18805,7 @@ arguments.
 
 
 @c ----------------------------------------------------------------------
-@node Property testing, Uninterned symbols (SRFI), Syntactic monads, Library modules - SRFIs
+@node Property testing, Type checking, Syntactic monads, Library modules - SRFIs
 @section @code{srfi.252} - Property testing
 @c NODE プロパティテスト, @code{srfi.252} - プロパティテスト
 
@@ -19446,7 +19447,103 @@ any number of arguments and returns a value generated with
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Uninterned symbols (SRFI), Tagged procedures with type safety, Property testing, Library modules - SRFIs
+@node Type checking, Uninterned symbols (SRFI), Property testing, Library modules - SRFIs
+@section @code{srfi.253} - Type checking
+
+@deftp {Module} srfi.253
+@mdindex srfi.253
+@c EN
+This SRFI defines forms to check the types of variables and arguments.
+@c COMMON
+
+@defun check-arg type expr :optional caller
+[SRFI-253]
+@c MOD srfi.253
+@c EN
+Checks that @var{expr} conforms to @var{type}. The @var{type} argument
+may be a type, which will be checked with @code{assume-type}, or as a
+predicate procedure that will be invoked.
+@c COMMON
+@end defun
+
+@c EN
+The rest of the module consists of helper functions for common Scheme
+forms that call @code{check-arg}.
+@c COMMON
+
+@defun values-checked (types ...) values ...
+[SRFI-253]
+@c MOD srfi.253
+@c EN
+Like @code{(values ...)}, but checks the type of each of value.
+@c COMMON
+@end defun
+
+@defun check-case value (predicate body ...) ... :optional (else else-body ...)
+[SRFI-253]
+@c MOD srfi.253
+@c EN
+Evaluates the first @var{body} that satisfies the corresponding @var{predicate}.
+@c COMMON
+@end defun
+
+@defun lambda-checked ((arg predicate) ...) body ...
+[SRFI-253]
+@c MOD srfi.253
+@c EN
+Like @code{lambda}, but arguments may be specified as @code{(arg
+type-predicate)}, in which case they will be type-checked using
+@code{check-case}.
+@c COMMON
+@end defun
+
+@defun case-lambda-checked ((arg predicate) ...) body ...
+[SRFI-253]
+@c MOD srfi.253
+@c EN
+Like @code{case-lambda}, but arguments may be specified as @code{(arg
+type-predicate)}, in which case they will be type-checked using
+@code{check-case}.
+@c COMMON
+@end defun
+
+@defun define-checked (name (arg predicate) ...) body ...
+[SRFI-253]
+@c MOD srfi.253
+@c EN
+Like @code{define} for procedures, but arguments may be specified as
+@code{(arg type-predicate)}, in which case they will be type-checked
+using @code{check-case}.
+@c COMMON
+@end defun
+
+@defun define-checked name predicate value
+[SRFI-253]
+@c MOD srfi.253
+@c EN
+Like @code{define} for variables, but the assigned value will be
+checked to conform to @var{predicate}.
+@c COMMON
+@end defun
+
+@defun define-record-type-checked type-name (constructor arg-name ...) predicate field ...
+[SRFI-253]
+@c MOD srfi.253
+@c EN
+Defines a record type with checked constructor and field
+accessors/modifiers. Fields are either of the form @code{(field-name
+predicate accessor-name)} or @code{(field-name predicate accessor-name
+modifier-name)}. These ensure that accessor and modifier return
+checked data and check new data respectively.
+@code{define-record-type-checked} also guarantees that initial values
+passed to constructor are satisfying the predicates provided in field
+specification.
+@c COMMON
+@end defun
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Uninterned symbols (SRFI), Tagged procedures with type safety, Type checking, Library modules - SRFIs
 @section @code{srfi.258} - Uninterned symbols (SRFI)
 @c NODE インターンされないシンボル(SRFI), @code{srfi.258} - インターンされないシンボル(SRFI)
 

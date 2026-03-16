@@ -3443,6 +3443,19 @@
 ;; SRFI-252 depends on mt-random, and will be tested in ext/srfi.
 
 ;;-----------------------------------------------------------------------
+;; Type checking
+
+(test-section "SRFI-253")
+
+(define-module srfi-253-tests
+  (use gauche.test)
+  (use srfi.253)
+  (test-module 'srfi.253)
+  (use srfi.64)
+  (test-include-r7 "include/srfi-253-test")
+  )
+
+;;-----------------------------------------------------------------------
 ;; Uninterned symbols
 
 (test-section "SRFI-258")
