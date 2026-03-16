@@ -33,11 +33,14 @@
 ;;;
 
 (define-module srfi.253
+  (use gauche.record)
   (export check-arg
           values-checked check-case
           lambda-checked define-checked
           case-lambda-checked
           define-record-type-checked))
+
+(select-module srfi.253)
 
 (define-syntax check-arg
   (syntax-rules ()
@@ -45,9 +48,9 @@
      (check-arg ty expr 'check-arg))
     ((_ ty expr caller)
      (cond ((type? ty)
-            (assume-type expr ty))
+            (assume-type expr ty "type mismatch" '(ty expr) caller))
            ((applicable? ty <top>)
-            (assume (ty expr) "type mismatch" ty expr caller))
+            (assume (ty expr) "type mismatch" '(ty expr) caller))
            (else
             (error
              "First argument to check-arg must be type or applicable \
