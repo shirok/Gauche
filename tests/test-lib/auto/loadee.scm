@@ -1,5 +1,5 @@
 ;; This is to check test-module issue descried in
-;; https://github.com/shirok/Gauche/issues/1175
+;; https://github.com/shirok/Gauche/issues/1157
 ;; https://github.com/shirok/Gauche/issues/1237
 
 (define-module auto.loadee
