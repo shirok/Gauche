@@ -317,7 +317,6 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 
     v->dynamicHandlers = SCM_NIL;
 
-    v->floatingEscapePoints = SCM_NIL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
@@ -438,7 +437,6 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *vm)
     v->denv = vm->denv;
     v->dynamicHandlers = vm->dynamicHandlers;
 
-    v->floatingEscapePoints = vm->floatingEscapePoints;
     v->escapeReason = vm->escapeReason;
     v->escapeData[0] = vm->escapeData[0];
     v->escapeData[1] = vm->escapeData[1];
@@ -1301,18 +1299,6 @@ static void save_cont(ScmVM *vm)
         if (FORWARDED_CONT_P(cstk->cont)) {
             cstk->cont = FORWARDED_CONT(cstk->cont);
         }
-    }
-    {
-        ScmObj eps;
-        SCM_FOR_EACH(eps, vm->floatingEscapePoints) {
-            ScmObj ep = SCM_CAR(eps);
-            SCM_ASSERT(SCM_ESCAPE_POINT_P(ep));
-            ScmEscapePoint *e = SCM_ESCAPE_POINT(ep);
-            if (FORWARDED_CONT_P(e->cont)) {
-                e->cont = FORWARDED_CONT(e->cont);
-            }
-        }
-        vm->floatingEscapePoints = SCM_NIL;
     }
 }
 
@@ -2541,7 +2527,9 @@ static void call_after_thunk(ScmVM *vm, ScmObj handler_entry)
     SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
     ScmDynamicHandler *dh = SCM_DYNAMIC_HANDLER(handler_entry);
     vm->denv = dh->denv;
-    Scm_ApplyRec(dh->after, dh->args);
+    if (!SCM_FALSEP(dh->after)) {
+        Scm_ApplyRec(dh->after, dh->args);
+    }
 }
 
 static ScmObj vm_call_before_thunk(ScmVM *vm, ScmObj handler_entry)
@@ -2561,7 +2549,11 @@ static ScmObj vm_call_after_thunk(ScmVM *vm, ScmObj handler_entry)
     SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
     ScmDynamicHandler *dh = SCM_DYNAMIC_HANDLER(handler_entry);
     vm->denv = dh->denv;
-    return Scm_VMApply(dh->after, dh->args);
+    if (!SCM_FALSEP(dh->after)) {
+        return Scm_VMApply(dh->after, dh->args);
+    } else {
+        return SCM_UNDEFINED;
+    }
 }
 /* End of handler-chain internal API */
 
@@ -2644,20 +2636,37 @@ static ScmObj dynwind_body_cc(ScmVM *vm, ScmObj result, ScmObj *data)
        actually gets slightly slower.  More branches may have a negative
        effect.  So we keep it simple here.
      */
-    int nvals = vm->numVals;
-    if (nvals > 1) {
-        ScmObj *vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
-        memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
-        ScmObj *d = Scm_pc_PushCC(vm, dynwind_after_cc, 3);
-        d[0] = result;
-        d[1] = SCM_OBJ((intptr_t)nvals);
-        d[2] = SCM_OBJ(vals);
+    if (SCM_FALSEP(after)) {
+        /* we can skip application of 'after' */
+        ScmObj d[3];
+        int nvals = vm->numVals;
+        if (nvals > 1) {
+            ScmObj *vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
+            memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
+            d[0] = result;
+            d[1] = SCM_OBJ((intptr_t)nvals);
+            d[2] = SCM_OBJ(vals);
+        } else {
+            d[0] = result;
+            d[1] = SCM_OBJ((intptr_t)nvals);
+        }
+        return dynwind_after_cc(vm, SCM_UNDEFINED, d);
     } else {
-        ScmObj *d = Scm_pc_PushCC(vm, dynwind_after_cc, 2);
-        d[0] = result;
-        d[1] = SCM_OBJ((intptr_t)nvals);
+        int nvals = vm->numVals;
+        if (nvals > 1) {
+            ScmObj *vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
+            memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
+            ScmObj *d = Scm_pc_PushCC(vm, dynwind_after_cc, 3);
+            d[0] = result;
+            d[1] = SCM_OBJ((intptr_t)nvals);
+            d[2] = SCM_OBJ(vals);
+        } else {
+            ScmObj *d = Scm_pc_PushCC(vm, dynwind_after_cc, 2);
+            d[0] = result;
+            d[1] = SCM_OBJ((intptr_t)nvals);
+        }
+        return Scm_VMApply0(after);
     }
-    return Scm_VMApply0(after);
 }
 
 static ScmObj dynwind_after_cc(ScmVM *vm, ScmObj result SCM_UNUSED,
@@ -2984,37 +2993,17 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
 /*
  * with-error-handler
  */
-static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
-                               int nargs SCM_UNUSED,
-                               void *data)
-{
-    /* restore floatingEscapePoints when necessary */
-    ScmObj eps = SCM_OBJ(data);
-    if (SCM_PAIRP(eps)) {
-        ScmVM *vm = theVM;
-        ScmContFrame *c = SCM_ESCAPE_POINT(SCM_CAR(eps))->cont;
-        if (IN_STACK_P((ScmObj*)c)) {
-            /* Those cont frames are not saved yet, so keep them
-               in the chain. */
-            theVM->floatingEscapePoints = eps;
-        }
-    }
-    return SCM_UNDEFINED;
-}
-
 static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
                                  ScmObj thunk, int rewindBefore)
 {
+    save_cont(vm);
     ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore,
                                 SCM_FALSE, SCM_FALSE);
 
     ScmObj ehandler = make_escape_handler(ep);
     Scm_VMPushExceptionHandler(ehandler);
     SCM_VM_RUNTIME_FLAG_CLEAR(theVM, SCM_ERROR_BEING_REPORTED);
-    ScmObj prev_fep = vm->floatingEscapePoints;
-    vm->floatingEscapePoints = Scm_Cons(SCM_OBJ(ep), prev_fep);
-    ScmObj after  = Scm_MakeSubr(discard_ehandler, prev_fep, 0, 0, SCM_FALSE);
-    return Scm_VMDynamicWind(SCM_FALSE, thunk, after);
+    return Scm_VMDynamicWind(SCM_FALSE, thunk, SCM_FALSE);
 }
 
 ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
