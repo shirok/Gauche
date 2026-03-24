@@ -1858,7 +1858,8 @@
   (define (expand form use-env)
     (define use-module (cenv-module use-env))
     (define use-frames (cenv-frames use-env))
-    (let1 dict '()
+    (let ([rename-dict '()]
+          [inject-dict '()])
       (define %rename
         ;; NB: We attach macro input in a procedure tag value (not the SRFI-229
         ;; tag, but using the native alist tag.)  Quasirename retrieves this
@@ -1867,14 +1868,14 @@
         ;; the procedure.
         (%procedure-copy
          (lambda (sym)
-           (receive [id dict_] (er-rename sym dict def-module def-frames)
-             (set! dict dict_)
+           (receive [id dict] (er-rename sym rename-dict def-module def-frames)
+             (set! rename-dict dict)
              id))
          `((macro-input . ,(unwrap-syntax form)))))
       (define (%compare a b) (er-compare a b use-module use-frames))
       (define (%inject sym)
-        (receive [id dict_] (er-rename sym dict use-module use-frames)
-          (set! dict dict_)
+        (receive [id dict] (er-rename sym inject-dict use-module use-frames)
+          (set! inject-dict dict)
           id))
       (if has-inject?
         (xformer form %rename %compare %inject)
