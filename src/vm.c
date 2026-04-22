@@ -114,6 +114,17 @@ static ScmEnvFrame ccEnvMark = {
 
 #define C_CONTINUATION_P(cont)  ((cont)->env == &ccEnvMark)
 
+/* If you have ScmContFrame *cont and you'll do something that can trigger
+   saving frames, you have to call this first to ensure that your
+   cont frame keeps pointing a valid frame. */
+#define ENSURE_SAVE_CONT(cont)                  \
+    do {                                        \
+        save_cont(vm);                          \
+        if (FORWARDED_CONT_P(cont)) {           \
+            cont = FORWARDED_CONT(cont);        \
+        }                                       \
+    } while (0)
+
 /* IN_STACK_P(ptr) returns true if ptr points into the active stack area.
    IN_FULL_STACK_P(ptr) returns true if ptr points into any part of the stack.
  */
@@ -3417,6 +3428,8 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     DENV = abortTo->denv;
 
     if (ep && CONT) {
+        ENSURE_SAVE_CONT(abortTo);
+
         /* call continuation procedure to abort */
         ScmEscapePoint *ep2 = copy_ep(ep);
         ep2->cont = abortTo;
