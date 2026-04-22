@@ -497,7 +497,7 @@
             (lambda ()
               (abort-current-continuation tag1 'foo))))))
 
-'(let ([tag (make-continuation-prompt-tag 'tag)])
+(let ([tag (make-continuation-prompt-tag 'tag)])
   (test* "abort-current-continuation crosses cstack boundary"
          '(a)
          (call-with-continuation-prompt
@@ -521,6 +521,40 @@
                 (^[] (push! r 'after))))
             tag1
             (^[x] (push! r x))))))
+
+(let ([tag (make-continuation-prompt-tag)])
+  (test* "call-with-composable-continuation 1"
+         6930 ; = 11 * 3 * 7 * 5 * 3 * 2
+         (* 2
+            (call-with-continuation-prompt
+             (lambda ()
+               (* 3
+                  (call-with-composable-continuation
+                   (lambda (k)
+                     (* 5
+                        (call-with-continuation-prompt
+                         (lambda ()
+                           (* 7 (k 11)))
+                         tag)))
+                   tag)))
+             tag))))
+
+(let ([tag (make-continuation-prompt-tag)])
+  (test* "call-with-non-composable-continuation 1"
+         990 ; = 11 * 3 * 5 * 3 * 2
+         (* 2
+            (call-with-continuation-prompt
+             (lambda ()
+               (* 3
+                  (call-with-non-composable-continuation
+                   (lambda (k)
+                     (* 5
+                        (call-with-continuation-prompt
+                         (lambda ()
+                           (* 7 (k 11)))
+                         tag)))
+                   tag)))
+             tag))))
 
 ;;-----------------------------------------------------------------------
 ;; Parameterizations

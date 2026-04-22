@@ -347,6 +347,37 @@
                 next
                 (lambda () (display "[D02]"))))))))
 
+(gauche-only
+ (test* "reset/shift + guard 2"
+        "catch error!!"
+        (let ((k1 #f))
+          (reset
+           (guard (e [else "catch error!!"])
+             (shift k (set! k1 k))
+             (error "err")))
+          (k1 100))))
+
+(gauche-only
+ (test* "reset/shift + eval 1"
+        42
+        (reset (eval '(shift k (k 42)) (current-module)))))
+
+(gauche-only
+ (test* "reset/shift + eval 2"
+        42
+        (reset (eval '(+ (shift k (k 42))) (current-module)))))
+
+(gauche-only
+ (test* "reset/shift + eval 3"
+        42
+        (reset (+ (eval '(shift k (k 42)) (current-module))))))
+
+(gauche-only
+ (test* "reset/shift + eval 4"
+        '(42 43 44)
+        (receive vals (reset (eval '(shift k (k 42 43 44)) (current-module)))
+          vals)))
+
 ;; native : [d01][d02][d03][d04]
 ;; meta   : [d01][d02][d04][d01][d03][d04]
 ;; srfi226: [d01][d02][d04][d01][d03][d04]

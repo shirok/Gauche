@@ -73,8 +73,8 @@ struct ScmPromptTagRec {
    multiple of ScmWord. */
 typedef struct ScmPromptDataRec {
     ScmWord dummy;              /* RET insn */
-    ScmObj abortHandler;        /* abort handler */
-    ScmObj dynamicHandlers;     /* dynamic-wind handler chain */
+    ScmObj abortHandler;        /* abort handler              (not used now)*/
+    ScmObj dynamicHandlers;     /* dynamic-wind handler chain (not used now)*/
 } ScmPromptData;
 
 #define PROMPT_DATA_SIZE       sizeof(ScmPromptData)/sizeof(ScmWord)
@@ -144,8 +144,9 @@ typedef struct ScmEscapePointRec {
                                    for they can be executed on anywhere
                                    w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
-    ScmObj resetChain;          /* for reset/shift */
-    ScmObj partHandlers;        /* for reset/shift */
+    ScmObj partialChain;        /* for partial continuation */
+    ScmObj partialPrompt;       /* for partial continuation */
+    ScmObj partialHandlers;     /* for partial continuation */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control
@@ -161,9 +162,10 @@ typedef struct ScmEscapePointRec {
                                 */
 
     /* The following fields are used for new implementation of partial cont. */
-    ScmObj promptTag;
-    ScmObj abortHandler;
-    struct ScmEscapePointRec *bottom;
+    ScmObj promptTag;           /* (not used now) */
+    ScmObj abortHandler;        /* abort handler */
+    ScmObj abortArgs;           /* abort handler's arguments */
+    struct ScmEscapePointRec *bottom; /* (not used now) */
 } ScmEscapePoint;
 
 SCM_CLASS_DECL(Scm_EscapePointClass);

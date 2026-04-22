@@ -16605,7 +16605,7 @@ Here's a list of SRFI-226 APIs and how Gauche supports them.
 @table @code
 @item call-with-non-comosable-continuation
 @itemx call-with-composable-continuation
-Not implemented yet.
+Implemented experimentally.
 @item call-with-current-continuation
 @itemx call/cc
 @xref{Continuations}.

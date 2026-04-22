@@ -8,10 +8,16 @@
 (define-syntax reset
   (syntax-rules ()
     [(reset expr ...)
-     (%reset (^[] expr ...))]))
+     (call-with-continuation-prompt (^[] expr ...))]))
 
 (define (call/pc proc)
-  (%call/pc (^k (proc (^ args (reset (apply k args)))))))
+  (%call/pc
+   (^k
+    (abort-current-continuation
+     (default-continuation-prompt-tag)
+     (^[] (proc (^ args
+                   (call-with-continuation-prompt
+                    (^[] (apply k args))))))))))
 
 (define-syntax shift
   (syntax-rules ()
