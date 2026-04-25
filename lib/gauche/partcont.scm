@@ -1,5 +1,6 @@
 (define-module gauche.partcont
-  (export reset shift call/pc))
+  (export reset shift call/pc
+          reset-at shift-at))
 (select-module gauche.partcont)
 
 (define %reset (with-module gauche.internal %reset))
@@ -10,16 +11,28 @@
     [(reset expr ...)
      (call-with-continuation-prompt (^[] expr ...))]))
 
-(define (call/pc proc)
+(define-syntax reset-at
+  (syntax-rules ()
+    [(reset-at prompt-tag expr ...)
+     (call-with-continuation-prompt (^[] expr ...) prompt-tag)]))
+
+(define (call/pc proc :optional (prompt-tag #f))
   (%call/pc
    (^k
     (abort-current-continuation
-     (default-continuation-prompt-tag)
+     (or prompt-tag (default-continuation-prompt-tag))
      (^[] (proc (^ args
                    (call-with-continuation-prompt
-                    (^[] (apply k args))))))))))
+                    (^[] (apply k args))
+                    prompt-tag))))))
+   prompt-tag))
 
 (define-syntax shift
   (syntax-rules ()
     [(shift var expr ...)
      (call/pc (^[var] expr ...))]))
+
+(define-syntax shift-at
+  (syntax-rules ()
+    [(shift-at prompt-tag var expr ...)
+     (call/pc (^[var] expr ...) prompt-tag)]))

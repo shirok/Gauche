@@ -615,6 +615,31 @@
 (test "calling pc multi" '(1 3 2 2 4)
       (^[] (cons 1 (reset (cons 2 (shift k (cons 3 (k (k (cons 4 '()))))))))))
 
+(test* "reset-at / shift-at 1"
+       "[r01][r02][r03][r04][s01][s02][r05]"
+       (with-output-to-string
+         (lambda ()
+           (define tag1 (make-continuation-prompt-tag 'tag1))
+           (define tag2 (make-continuation-prompt-tag 'tag2))
+           (define k1 #f)
+           (define k2 #f)
+           (reset-at tag1
+            (display "[r01]")
+            (reset-at tag2
+             (display "[r02]")
+             (shift-at tag2 k
+              (set! k1 k))
+             (display "[s01]")
+             (shift-at tag1 k
+              (set! k2 k))
+             (display "[s02]"))
+            (display "[r03]"))
+           (reset-at tag1
+            (display "[r04]")
+            (k1)
+            (display "[r05]"))
+           (k2))))
+
 ;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
 (let ()
   (define (eta x) (list (x)))                    ; unit

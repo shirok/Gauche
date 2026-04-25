@@ -1942,7 +1942,7 @@ static ScmContFrame *copy_ccont_frames(ScmContFrame *c,
         return cc;
     }
 
-    /* copy ccont frames to c_last */
+    /* copy ccont frames until c_last */
     ScmContFrame *cc_old = cc;
     while (1) {
         c = c->prev;
@@ -1957,6 +1957,30 @@ static ScmContFrame *copy_ccont_frames(ScmContFrame *c,
         cc_old = cc2;
     }
     return cc;
+}
+
+/* Merge ccont frames */
+static ScmContFrame *merge_ccont_frames(ScmContFrame *c,
+                                        ScmContFrame *c_add)
+{
+    if (c_add == NULL) { return c; }
+    ScmContFrame *c_add_2 = c_add;
+    while (1) {
+        if (c_add_2->prev == NULL) {
+            /* merge ccont frames */
+            c_add_2->prev = c;
+            /* set boundary marker to exit user_eval_inner */
+            c_add_2->marker |= SCM_CONT_BOUNDARY_MARKER;
+            break;
+        }
+        if (BOUNDARY_FRAME_P(c_add_2)) {
+            /* remove boundary marker to prevent unwanted exiting of
+               user_eval_inner */
+            c_add_2->marker &= ~SCM_CONT_BOUNDARY_MARKER;
+        }
+        c_add_2 = c_add_2->prev;
+    }
+    return c_add;
 }
 
 /* This is a trick to keep the backward compatibility. */
@@ -3367,7 +3391,7 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     ScmVM *vm = theVM;
 
     if (!(SCM_PROMPT_TAG_P(promptTag) || SCM_FALSEP(promptTag))) {
-        SCM_TYPE_ERROR(promptTag, "prompt tag or #f");
+        SCM_TYPE_ERROR(promptTag, "prompt tag");
     }
 
     /* find prompt frame and it's next frame */
@@ -3682,7 +3706,19 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
      * now, install the target continuation
      */
     vm->pc = PC_TO_RETURN;
-    vm->cont = ep->cont;
+    if (ep->cstack) {
+        /* for full continuation */
+        vm->cont = ep->cont;
+    } else {
+        /* for partial continuation, we merge current continuation and
+           partial continuation.
+           NB: save_cont() and copy_ccont_frames() is required, or
+               complicated problem occurs.
+        */
+        save_cont(vm);
+        vm->cont = merge_ccont_frames(vm->cont,
+                                      copy_ccont_frames(ep->cont, NULL));
+    }
     vm->denv = ep->denv;
 
     /* set partial continuation information */
@@ -4490,7 +4526,7 @@ void Scm_VMDump(ScmVM *vm_to_dump)
     if (SCM_FALSEP(vm->partialPrompt)) {
         Scm_Printf(out, "partialPrompt: #f\n");
     } else {
-        Scm_Printf(out, "partialPrompt: %p\n", vm->partialPrompt);
+        Scm_Printf(out, "partialPrompt: %S\n", vm->partialPrompt);
     }
 
     if (vm->base) {
