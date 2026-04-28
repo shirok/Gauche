@@ -572,11 +572,7 @@ struct ScmVMRec {
     /* for partial continuation */
     ScmObj partialChain;        /* list of partial continuation information,
                                    where partial continuation information is
-                                   (delimited  promptTag  escapePoint)
-                                   the delimited flag is set when call/pc
-                                   appears in call-with-continuation-prompt
-                                   and the end marker of partial continuation
-                                   is set.
+                                   (promptTag . escapePoint) .
                                 */
     ScmObj partialPrompt;       /* prompt to detect the end of partial
                                    continuation. SCM_FALSE is used to mean

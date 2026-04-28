@@ -522,6 +522,28 @@
             tag1
             (^[x] (push! r x))))))
 
+(let ([tag1 (make-continuation-prompt-tag 'tag1)]
+      [tag2 (make-continuation-prompt-tag 'tag2)])
+  (test* "abort-current-continuation (two tags)"
+         "[p01][p02][a01][p05]"
+         (with-output-to-string
+           (lambda ()
+             (call-with-continuation-prompt
+              (lambda ()
+                (display "[p01]")
+                (call-with-continuation-prompt
+                 (lambda ()
+                   (display "[p02]")
+                   (abort-current-continuation
+                    tag2
+                    (lambda ()
+                      (display "[a01]")))
+                   (display "[p03]"))
+                 tag1)
+                 (display "[p04]"))
+              tag2)
+              (display "[p05]")))))
+
 (let ([tag (make-continuation-prompt-tag)])
   (test* "call-with-composable-continuation 1"
          6930 ; = 11 * 3 * 7 * 5 * 3 * 2
