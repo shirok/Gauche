@@ -540,9 +540,9 @@
                       (display "[a01]")))
                    (display "[p03]"))
                  tag1)
-                 (display "[p04]"))
+                (display "[p04]"))
               tag2)
-              (display "[p05]")))))
+             (display "[p05]")))))
 
 (let ([tag (make-continuation-prompt-tag)])
   (test* "call-with-composable-continuation 1"

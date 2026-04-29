@@ -64,7 +64,9 @@
                   (SCM_APPEND1 head tail (SCM_CAR cp)))
                 (return (Scm_VMApply proc head))])))
 
-(define-cproc call-with-current-continuation (proc) Scm_VMCallCC)
+(define-cproc call-with-current-continuation (proc
+                                              :optional (prompt-tag #f))
+  Scm_VMCallWithNonComposableContinuation)
 (define-cproc values (:rest args) :constant (inliner VALUES) Scm_Values)
 (define-cproc dynamic-wind (pre body post) Scm_VMDynamicWind)
 
@@ -78,9 +80,9 @@
 
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
-(define-cproc %call/pc (proc :optional (prompt-tag #f)) Scm_VMCallPC)
-(define-cproc %reset (thunk)
-  (return (Scm_VMCallWithContinuationPrompt thunk SCM_FALSE SCM_FALSE)))
+(define-cproc %call/pc (proc :optional (prompt-tag #f))
+  Scm_VMCallWithComposableContinuation)
+(define-cproc %reset (thunk) Scm_VMReset)
 
 (select-module gauche.internal)
 (define-cproc %call-with-continuation-prompt (thunk

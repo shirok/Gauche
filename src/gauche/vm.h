@@ -572,7 +572,7 @@ struct ScmVMRec {
     /* for partial continuation */
     ScmObj partialChain;        /* list of partial continuation information,
                                    where partial continuation information is
-                                   (promptTag . escapePoint) .
+                                   (promptTag . escapePoint).
                                 */
     ScmObj partialPrompt;       /* prompt to detect the end of partial
                                    continuation. SCM_FALSE is used to mean

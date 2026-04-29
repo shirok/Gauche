@@ -3812,15 +3812,25 @@ static ScmObj throw_continuation(ScmObj *argframe,
     return throw_cont_body(hdlist, ep, args);
 }
 
-ScmObj Scm_VMCallCC(ScmObj proc)
+ScmObj Scm_VMCallWithNonComposableContinuation(ScmObj proc, ScmObj promptTag)
 {
     ScmVM *vm = theVM;
 
-    ScmObj promptTag = Scm_DefaultPromptTag();
+    if (SCM_FALSEP(promptTag)) {
+        promptTag = Scm_DefaultPromptTag();
+    } else if (!SCM_PROMPT_TAG_P(promptTag)) {
+        SCM_TYPE_ERROR(promptTag, "prompt tag or #f");
+    }
+
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, promptTag, SCM_FALSE);
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply1(proc, contproc);
+}
+
+ScmObj Scm_VMCallCC(ScmObj proc)
+{
+    return Scm_VMCallWithNonComposableContinuation(proc, SCM_FALSE);
 }
 
 int Scm_ContinuationP(ScmObj proc)
@@ -3832,7 +3842,7 @@ int Scm_ContinuationP(ScmObj proc)
    in shift/reset controls (Gasbichler&Sperber, "Final Shift for Call/cc",
    ICFP02.)   Note that we treat the boundary frame as the bottom of
    partial continuation. */
-ScmObj Scm_VMCallPC(ScmObj proc, ScmObj promptTag)
+ScmObj Scm_VMCallWithComposableContinuation(ScmObj proc, ScmObj promptTag)
 {
     ScmVM *vm = theVM;
 
@@ -3909,6 +3919,16 @@ ScmObj Scm_VMCallPC(ScmObj proc, ScmObj promptTag)
                                    continuation_symbol);
 
     return Scm_VMApply1(proc, contproc);
+}
+
+ScmObj Scm_VMCallPC(ScmObj proc)
+{
+    return Scm_VMCallWithComposableContinuation(proc, SCM_FALSE);
+}
+
+ScmObj Scm_VMReset(ScmObj proc)
+{
+    return Scm_VMCallWithContinuationPrompt(proc, SCM_FALSE, SCM_FALSE);
 }
 
 /*==============================================================
