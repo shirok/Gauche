@@ -132,6 +132,13 @@ SCM_CLASS_DECL(Scm_DynamicHandlerClass);
  *  EscapePoint (EP) structure is a saved continuation.  It grabs
  *  a head of continuation chain with some auxiliary data.
  */
+
+enum {
+    CONT_TYPE_FULL = 0,
+    CONT_TYPE_COMPOSABLE = 1,
+    CONT_TYPE_NON_COMPOSABLE = 2
+};
+
 typedef struct ScmEscapePointRec {
     SCM_HEADER;
     ScmObj ehandler;            /* handler closure */
@@ -159,6 +166,14 @@ typedef struct ScmEscapePointRec {
                                    rewound.   SRFI-18 model and legacy
                                    with-error-handler uses the latter model,
                                    but SRFI-34's guard needs the former model.
+                                */
+    int contType;               /* continuation type
+                                     CONT_TYPE_FULL
+                                       - full continuation (legacy)
+                                     CONT_TYPE_COMPOSABLE
+                                       - composable partial continuation
+                                     CONT_TYPE_NON_COMPOSABLE
+                                       - non-composable partial continuation
                                 */
 
     /* The following fields are used for new implementation of partial cont. */

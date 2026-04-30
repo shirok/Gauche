@@ -66,7 +66,7 @@
 
 (define-cproc call-with-current-continuation (proc
                                               :optional (prompt-tag #f))
-  Scm_VMCallWithNonComposableContinuation)
+  Scm_VMCallCCWithTag)
 (define-cproc values (:rest args) :constant (inliner VALUES) Scm_Values)
 (define-cproc dynamic-wind (pre body post) Scm_VMDynamicWind)
 
@@ -125,10 +125,9 @@
                  (^[] (apply k args))
                  prompt-tag))))
    prompt-tag))
-(define (call-with-non-composable-continuation proc :optional (prompt-tag #f))
-  ((with-module gauche.internal %call/pc)
-   proc
-   prompt-tag))
+(define-cproc call-with-non-composable-continuation (proc
+                                                     :optional (prompt-tag #f))
+  Scm_VMCallWithNonComposableContinuation)
 
 ;; Continuation marks
 (select-module gauche)

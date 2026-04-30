@@ -2053,6 +2053,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_EscapePointClass,
 static ScmEscapePoint *new_ep(ScmVM *vm,
                               ScmObj errorHandler,
                               int rewindBefore,
+                              int contType,
                               ScmObj promptTag,
                               ScmObj abortHandler)
 {
@@ -2073,33 +2074,12 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
+    ep->contType = contType;
     ep->promptTag = promptTag;
     ep->abortHandler = abortHandler;
     ep->abortArgs = SCM_NIL;
     ep->bottom = NULL;
     return ep;
-}
-
-static ScmEscapePoint *copy_ep(ScmEscapePoint *ep)
-{
-    ScmEscapePoint *ep2 = SCM_NEW(ScmEscapePoint);
-    SCM_SET_CLASS(ep2, SCM_CLASS_ESCAPE_POINT);
-    ep2->ehandler = ep->ehandler;
-    ep2->cont = ep->cont;
-    ep2->denv = ep->denv;
-    ep2->dynamicHandlers = ep->dynamicHandlers;
-    ep2->cstack = ep->cstack;
-    ep2->xhandler = ep->xhandler;
-    ep2->partialChain = ep->partialChain;
-    ep2->partialPrompt = ep->partialPrompt;
-    ep2->partialHandlers = ep->partialHandlers;
-    ep2->errorReporting = ep->errorReporting;
-    ep2->rewindBefore = ep->rewindBefore;
-    ep2->promptTag = ep->promptTag;
-    ep2->abortHandler = ep->abortHandler;
-    ep2->abortArgs = ep->abortArgs;
-    ep2->bottom = ep->bottom;
-    return ep2;
 }
 
 /*-------------------------------------------------------------
@@ -2208,14 +2188,26 @@ static ScmObj user_eval_inner(ScmObj program,
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep->cstack == vm->cstack) {
-                ScmObj handlers =
-                    throw_cont_calculate_handlers(ep->dynamicHandlers,
-                                                  get_dynamic_handlers(vm));
+                /* calculate dynamic handlers to call */
+                ScmObj hdlist;
+                ScmObj currentHandlers = get_dynamic_handlers(vm);
+                if (ep->contType == CONT_TYPE_FULL) {
+                    /* for full continuation */
+                    hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
+                                                           currentHandlers);
+                } else {
+                    /* for partial continuation */
+                    hdlist =
+                        throw_cont_calculate_handlers(Scm_Append2(ep->partialHandlers,
+                                                                  currentHandlers),
+                                                      currentHandlers);
+                }
                 /* force popping continuation when restarted */
                 vm->pc = PC_TO_RETURN;
-                vm->val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
+                vm->val0 = throw_cont_body(hdlist, ep, vm->escapeData[1]);
                 goto restart;
             } else {
+                /* rewind cstack */
                 SCM_ASSERT(vm->cstack && vm->cstack->prev);
                 vm->cont = cstack.cont;
                 POP_CONT();
@@ -2229,7 +2221,9 @@ static ScmObj user_eval_inner(ScmObj program,
                 vm->denv = ep->denv;
                 vm->pc = PC_TO_RETURN;
                 /* set partial continuation information */
-                if (ep->cstack) { vm->partialChain = ep->partialChain; }
+                if (ep->contType != CONT_TYPE_COMPOSABLE) {
+                    vm->partialChain = ep->partialChain;
+                }
                 vm->partialPrompt = ep->partialPrompt;
                 goto restart;
             } else if (vm->cstack->prev == NULL) {
@@ -2369,7 +2363,7 @@ ScmObj Scm_ApplyRecWithTag(ScmObj proc, ScmObj args,
     }
 
     if (!SCM_PROMPT_TAG_P(promptTag)) {
-        SCM_TYPE_ERROR(promptTag, "prompt tag or #f");
+        SCM_TYPE_ERROR(promptTag, "prompt tag");
     }
 
     for (int i=0; i<nargs; i++) {
@@ -3026,7 +3020,9 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
     }
     /* set partial continuation information */
-    if (ep->cstack) { vm->partialChain = ep->partialChain; }
+    if (ep->contType != CONT_TYPE_COMPOSABLE) {
+        vm->partialChain = ep->partialChain;
+    }
     vm->partialPrompt = ep->partialPrompt;
 
     SCM_ASSERT(vm->cstack);
@@ -3168,7 +3164,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
                                  ScmObj thunk, int rewindBefore)
 {
     ScmObj promptTag = Scm_DefaultPromptTag();
-    ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore,
+    ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore, CONT_TYPE_FULL,
                                 promptTag, SCM_FALSE);
 
     ScmObj ehandler = make_escape_handler(ep);
@@ -3318,7 +3314,7 @@ static ScmObj cp_thunk_wrapper(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED,
     ScmObj abortHandler = SCM_OBJ(data[2]);
 
     /* save escape point to partial continuation information */
-    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE,
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, CONT_TYPE_FULL,
                                 promptTag, abortHandler);
     SCM_ASSERT(SCM_PAIRP(vm->partialChain));
     ScmObj partialInfo = SCM_CAR(vm->partialChain);
@@ -3441,11 +3437,10 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     DENV = abortTo->denv;
 
     /* call continuation procedure to abort */
-    ScmEscapePoint *ep2 = copy_ep(ep);
-    ep2->cont = abortTo;
-    ep2->abortHandler = abortHandler;
-    ep2->abortArgs = abortArgs;
-    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep2, 0, 1,
+    ep->cont = abortTo;
+    ep->abortHandler = abortHandler;
+    ep->abortArgs = abortArgs;
+    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply(contproc, SCM_NIL);
 }
@@ -3682,12 +3677,12 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
      * now, install the target continuation
      */
     vm->pc = PC_TO_RETURN;
-    if (ep->cstack) {
+    if (ep->contType == CONT_TYPE_FULL) {
         /* for full continuation */
         vm->cont = ep->cont;
     } else {
-        /* for partial continuation, we merge current continuation and
-           partial continuation.
+        /* for partial continuation */
+        /* we merge current continuation and partial continuation.
            NB: save_cont() and copy_ccont_frames() are necessary to avoid
                problems of continuation sharing.
            NB: remove_boundary_markers() is necessary to avoid unwanted
@@ -3696,16 +3691,34 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
         save_cont(vm);
         ScmContFrame *epcont_copy = copy_ccont_frames(ep->cont, NULL);
         ScmContFrame *epcont_no_boundary = remove_boundary_markers(epcont_copy);
-        vm->cont = merge_ccont_frames(vm->cont, epcont_no_boundary);
+        if (ep->contType == CONT_TYPE_COMPOSABLE) {
+            /* for composable partial continuation */
+            vm->cont = merge_ccont_frames(vm->cont, epcont_no_boundary);
+        } else {
+            /* for non-composable partial continuation */
+            /* we drop continuation from current to nearlest prompt
+               before merge. */
+            ScmContFrame *cprompt = find_prompt_frame(vm, ep->promptTag, NULL);
+            if (cprompt == NULL) {
+                Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                                   "prompt-tag", ep->promptTag,
+                                   SCM_RAISE_CONDITION_MESSAGE,
+                                   "Prompt tag (%S) not found",
+                                   ep->promptTag);
+            }
+            vm->cont = merge_ccont_frames(cprompt->prev, epcont_no_boundary);
+        }
     }
     vm->denv = ep->denv;
 
     /* set partial continuation information */
-    if (ep->cstack) { vm->partialChain = ep->partialChain; }
+    if (ep->contType != CONT_TYPE_COMPOSABLE) {
+        vm->partialChain = ep->partialChain;
+    }
     vm->partialPrompt = ep->partialPrompt;
 
-    /* push continuation to abort handler */
-    if (ep->cstack && !SCM_FALSEP(ep->abortHandler)) {
+    /* if abort handler exists, push abort handler to continuation */
+    if (!SCM_FALSEP(ep->abortHandler)) {
         void *data[2];
         data[0] = (void*)ep->abortHandler;
         data[1] = (void*)ep->abortArgs;
@@ -3762,10 +3775,31 @@ static ScmObj throw_continuation(ScmObj *argframe,
     ScmObj args = argframe[0];
     ScmVM *vm = theVM;
 
+    /* for non-composable partial continuation */
+    /* we must rewind cstack from current to prompt to avoid memory leak.
+       so we move ep->cstack before rewinding cstack. */
+    if (ep->contType == CONT_TYPE_NON_COMPOSABLE) {
+        ScmContFrame *cprompt = find_prompt_frame(vm, ep->promptTag, NULL);
+        if (cprompt == NULL) {
+            Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                               "prompt-tag", ep->promptTag,
+                               SCM_RAISE_CONDITION_MESSAGE,
+                               "Prompt tag (%S) not found",
+                               ep->promptTag);
+        }
+        ScmCStack *cs;
+        for (cs = vm->cstack; cs; cs = cs->prev) {
+            if (cs->cont == cprompt) {
+                ep->cstack = cs;
+                break;
+            }
+        }
+    }
+
     /* First, check to see if we need to rewind C stack.
-       NB: If we are invoking a partial continuation (ep->cstack == NULL),
+       NB: If we are invoking a composable partial continuation,
        we execute it on the current cstack. */
-    if (ep->cstack && vm->cstack != ep->cstack) {
+    if (ep->contType != CONT_TYPE_COMPOSABLE && vm->cstack != ep->cstack) {
         ScmCStack *cs;
         for (cs = vm->cstack; cs; cs = cs->prev) {
             if (ep->cstack == cs) break;
@@ -3796,9 +3830,10 @@ static ScmObj throw_continuation(ScmObj *argframe,
         save_cont(vm);
     }
 
+    /* calculate dynamic handlers to call */
     ScmObj hdlist;
     ScmObj currentHandlers = get_dynamic_handlers(vm);
-    if (ep->cstack) {
+    if (ep->contType == CONT_TYPE_FULL) {
         /* for full continuation */
         hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
                                                currentHandlers);
@@ -3812,7 +3847,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
     return throw_cont_body(hdlist, ep, args);
 }
 
-ScmObj Scm_VMCallWithNonComposableContinuation(ScmObj proc, ScmObj promptTag)
+ScmObj Scm_VMCallCCWithTag(ScmObj proc, ScmObj promptTag)
 {
     ScmVM *vm = theVM;
 
@@ -3822,7 +3857,8 @@ ScmObj Scm_VMCallWithNonComposableContinuation(ScmObj proc, ScmObj promptTag)
         SCM_TYPE_ERROR(promptTag, "prompt tag or #f");
     }
 
-    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, promptTag, SCM_FALSE);
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, CONT_TYPE_FULL,
+                                promptTag, SCM_FALSE);
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply1(proc, contproc);
@@ -3830,7 +3866,7 @@ ScmObj Scm_VMCallWithNonComposableContinuation(ScmObj proc, ScmObj promptTag)
 
 ScmObj Scm_VMCallCC(ScmObj proc)
 {
-    return Scm_VMCallWithNonComposableContinuation(proc, SCM_FALSE);
+    return Scm_VMCallCCWithTag(proc, SCM_FALSE);
 }
 
 int Scm_ContinuationP(ScmObj proc)
@@ -3842,7 +3878,7 @@ int Scm_ContinuationP(ScmObj proc)
    in shift/reset controls (Gasbichler&Sperber, "Final Shift for Call/cc",
    ICFP02.)   Note that we treat the boundary frame as the bottom of
    partial continuation. */
-ScmObj Scm_VMCallWithComposableContinuation(ScmObj proc, ScmObj promptTag)
+ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
 {
     ScmVM *vm = theVM;
 
@@ -3863,8 +3899,11 @@ ScmObj Scm_VMCallWithComposableContinuation(ScmObj proc, ScmObj promptTag)
                            promptTag);
     }
     if (cnext == NULL) {
-        Scm_Error("reset missing.");
+        Scm_Error("couldn't set the end marker of partial continuation.");
     }
+
+    /* set the end marker of partial continuation */
+    cnext->marker |= SCM_CONT_DELIMITED_MARKER;
 
     /* find partial continuation information */
     ScmObj partialInfo = SCM_NIL, p1;
@@ -3875,13 +3914,11 @@ ScmObj Scm_VMCallWithComposableContinuation(ScmObj proc, ScmObj promptTag)
         }
     }
 
-    /* set the end marker of partial continuation */
-    cnext->marker |= SCM_CONT_DELIMITED_MARKER;
-
     /* We need some special setup of EscapePoint for partial continaution.
        Hoping these tricks won't be necessary once we ovehauled partcont
        handling. */
-    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, promptTag, SCM_FALSE);
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, contType,
+                                promptTag, SCM_FALSE);
     /* Set delimited ccont frames instead of full ccont frames (vm->cont).
        This is important to avoid memory leak of partial continuation.
        See:
@@ -3890,8 +3927,6 @@ ScmObj Scm_VMCallWithComposableContinuation(ScmObj proc, ScmObj promptTag)
     ep->cont = copy_ccont_frames(vm->cont, cprompt);
     ep->denv = cprompt->denv;
     ep->dynamicHandlers = SCM_NIL; /* don't use for partial continuation */
-    ep->cstack = NULL; /* so that the partial continuation can be run
-                          on any cstack state. */
     ep->partialChain = SCM_NIL;    /* don't use for partial continuation */
 
     /* get escape point saved on prompt */
@@ -3923,7 +3958,17 @@ ScmObj Scm_VMCallWithComposableContinuation(ScmObj proc, ScmObj promptTag)
 
 ScmObj Scm_VMCallPC(ScmObj proc)
 {
-    return Scm_VMCallWithComposableContinuation(proc, SCM_FALSE);
+    return vm_call_pc_with_tag_and_type(proc, SCM_FALSE, CONT_TYPE_COMPOSABLE);
+}
+
+ScmObj Scm_VMCallWithComposableContinuation(ScmObj proc, ScmObj promptTag)
+{
+    return vm_call_pc_with_tag_and_type(proc, promptTag, CONT_TYPE_COMPOSABLE);
+}
+
+ScmObj Scm_VMCallWithNonComposableContinuation(ScmObj proc, ScmObj promptTag)
+{
+    return vm_call_pc_with_tag_and_type(proc, promptTag, CONT_TYPE_NON_COMPOSABLE);
 }
 
 ScmObj Scm_VMReset(ScmObj proc)
