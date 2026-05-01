@@ -25,6 +25,7 @@
 * Propagating slot access::     gauche.mop.propagate
 * Singleton::                   gauche.mop.singleton
 * Slot with validator::         gauche.mop.validator
+* Native type utilities::       gauche.native-type
 * Networking::                  gauche.net
 * Package metainformation::     gauche.package
 * Parameters (legacy)::         gauche.parameter
@@ -15017,7 +15018,7 @@ class the property of singleton.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Slot with validator, Networking, Singleton, Library modules - Gauche extensions
+@node Slot with validator, Native type utilities, Singleton, Library modules - Gauche extensions
 @section @code{gauche.mop.validator} - Slot with validator
 @c NODE Validator付きスロット, @code{gauche.mop.validator} - Validator付きスロット
 
@@ -15143,7 +15144,249 @@ only a couple of dozen lines of code.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Networking, Package metainformation, Slot with validator, Library modules - Gauche extensions
+@node Native type utilities, Networking, Slot with validator, Library modules - Gauche extensions
+@section @code{gauche.native-type} - Native type utilities
+@c NODE ネイティブタイプユーティリティ, @code{gauche.native-type} - ネイティブタイプユーティリティ
+
+@deftp {Module} gauche.native-type
+@mdindex gauche.native-type
+This module provides a type infrastructure to communicate with the
+``native'', or ``close to the metal'' system.  Examples include
+foreign function interface (FFI) and structured binary data access.
+
+Basic native types are built-in (@pxref{Native types}).  This module
+adds constructors for derived or aggregate types (such as arrays
+and structs), endian-specified types, conversions between
+native type objects and compact signatures, and so on.
+
+This module also provides @emph{native handles}, via which
+you access native data from Scheme world (@pxref{Native handles}).
+@end deftp
+
+@menu
+* Derived and aggregate native types::
+* Representation-specific types::
+* Native type signature::
+* Native handles::
+@end menu
+
+@node Derived and aggregate native types, Representation-specific types, Native type utilities, Native type utilities
+@subsection Derived and aggregate native types
+
+@deftp {Class} <c-pointer>
+@clindex c-pointer
+@c MOD gauche.native-type
+@end deftp
+
+@deftp {Class} <c-array>
+@clindex c-array
+@c MOD gauche.native-type
+@end deftp
+
+@deftp {Class} <c-function>
+@clindex c-function
+@c MOD gauche.native-type
+@end deftp
+
+@deftp {Class} <c-struct>
+@deftpx {Class} <c-union>
+@clindex c-struct
+@clindex c-union
+@c MOD gauche.native-type
+@end deftp
+
+@defun make-c-pointer-type pointee-type
+@c MOD gauche.native-type
+@end defun
+
+@defun make-c-function-type return-type argument-type-list
+@c MOD gauche.native-type
+@end defun
+
+@defun make-c-array-type element-type dimensions
+@c MOD gauche.native-type
+@end defun
+
+@defun make-c-struct-type tag fields
+@defunx make-c-union-type tag fields
+@c MOD gauche.native-type
+@end defun
+
+
+@node Representation-specific types, Native type signature, Derived and aggregate native types, Native type utilities
+@subsection Representation-specific types
+
+@deftp {Native type} <int16-be>
+@deftpx {Native type} <int16-le>
+@deftpx {Native type} <int32-be>
+@deftpx {Native type} <int32-le>
+@deftpx {Native type} <int64-be>
+@deftpx {Native type} <int64-le>
+@deftpx {Native type} <uint16-be>
+@deftpx {Native type} <uint16-le>
+@deftpx {Native type} <uint32-be>
+@deftpx {Native type} <uint32-le>
+@deftpx {Native type} <uint64-be>
+@deftpx {Native type} <uint64-le>
+@deftpx {Native type} <float-be>
+@deftpx {Native type} <float-le>
+@deftpx {Native type} <double-be>
+@deftpx {Native type} <double-le>
+@clindex int16-be
+@clindex int16-le
+@clindex int32-be
+@clindex int32-le
+@clindex int64-be
+@clindex int64-le
+@clindex uint16-be
+@clindex uint16-le
+@clindex uint32-be
+@clindex uint32-le
+@clindex uint64-be
+@clindex uint64-le
+@clindex float-be
+@clindex float-le
+@clindex double-be
+@clindex double-le
+@c MOD gauche.native-type
+@end deftp
+
+
+@node Native type signature, Native handles, Representation-specific types, Native type utilities
+@subsection Native type signature
+
+@defun native-type signature-or-type
+@c MOD gauche.native-type
+@end defun
+
+@defun native-type->signature native-type
+@c MOD gauche.native-type
+@end defun
+
+@node Native handles,  , Native type signature, Native type utilities
+@subsection Native handles
+
+A native handle is a handle through which you can access native data.
+Native handles may be returned from a foreign function call, or you can
+create one from a binary buffer.  C pointers, arrays, structs, and unions
+to be passed to and from foreign functions are reprensed by native handles.
+
+@subsubheading Native handle class and predicates
+
+@deftp {Class} <native-handle>
+@clindex native-handle
+@c MOD gauche.native-type
+
+
+@defivar {<native-handle>} type
+@end defivar
+
+@end deftp
+
+@defun c-pointer-handle? obj
+@c MOD gauche.native-type
+@end defun
+
+@defun c-function-handle? obj
+@c MOD gauche.native-type
+@end defun
+
+@defun c-array-handle? obj
+@c MOD gauche.native-type
+@end defun
+
+@defun c-struct-handle? obj
+@defunx c-union-handle? obj
+@c MOD gauche.native-type
+@end defun
+
+@defun c-aggregate-handle? obj
+@c MOD gauche.native-type
+@end defun
+
+@defun c-pointer-like-handle? obj
+@c MOD gauche.native-type
+@end defun
+
+
+@subsubheading Accessing through native handles
+
+@defun native* handle
+@c MOD gauche.native-type
+@end defun
+
+@defun (setter native*) handle val
+@c MOD gauche.native-type
+@end defun
+
+@defun native-aref handle index
+@c MOD gauche.native-type
+@end defun
+
+@defun (setter native-aref) handle index val
+@c MOD gauche.native-type
+@end defun
+
+@defun native. handle slot
+@c MOD gauche.native-type
+@end defun
+
+@defun (setter native.) handle slot :optional type
+@c MOD gauche.native-type
+@end defun
+
+@defun native-> handle slot
+@c MOD gauche.native-type
+@end defun
+
+@defun (setter native->) handle slot :optional type
+@c MOD gauche.native-type
+@end defun
+
+@subsubheading Pointer handle operations
+
+@defun cast-handle type handle :optional offset
+@c MOD gauche.native-type
+@end defun
+
+@defun c-pointer-compare handle-a handle-b
+@c MOD gauche.native-type
+@end defun
+
+@defun c-pointer=? handle-a handle-b
+@defunx c-pointer<? handle-a handle-b
+@defunx c-pointer<=? handle-a handle-b
+@defunx c-pointer>? handle-a handle-b
+@defunx c-pointer>=? handle-a handle-b
+@c MOD gauche.native-type
+@end defun
+
+@subsubheading Aggregate handle operations
+
+@defun c-memwise-compare handle-a handle-b
+@c MOD gauche.native-type
+@end defun
+
+@subsubheading Creating a native handle
+
+@defun null-pointer-handle
+@c MOD gauche.native-type
+@end defun
+
+@defun null-pointer-handle? obj
+@c MOD gauche.native-type
+@end defun
+
+@defun uvector->hative-handle uv type :optional offset
+@c MOD gauche.native-type
+@end defun
+
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Networking, Package metainformation, Native type utilities, Library modules - Gauche extensions
 @section @code{gauche.net} - Networking
 @c NODE ネットワーキング, @code{gauche.net} - ネットワーキング
 
