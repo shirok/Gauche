@@ -40,6 +40,7 @@
   (use gauche.sequence)
   (use binary.io)
   (use util.match)
+  (import gauche.typeutil) ; <c-pointer> etc. We don't want to depend gauche.native-type.
   (export <obj-fragment> make-obj-fragment obj-fragment?
           <obj-template> make-obj-template obj-template?
           <obj-template-labels> make-obj-template-labels obj-template-labels?

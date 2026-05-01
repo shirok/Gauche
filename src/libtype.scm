@@ -1463,13 +1463,17 @@
 ;;; Make exported symbol visible from outside
 ;;;
 
+;; We export those only to be used by selected library modules to
+;; workaround dependency issues. User programs should use gauche.native-type
+;; for these identifiers.
+(export <native-handle> <c-pointer> <c-array> <c-struct> <c-union> <c-function>)
+
 (let ((xfer (with-module gauche.internal %transfer-bindings)))
   (xfer (current-module)
         (find-module 'gauche)
         '(<type-constructor-meta>
           <descriptive-type>
-          <native-type> <native-handle> <c-pointer> <c-function>
-          <c-array> <c-struct> <c-union>
+          <native-type>
           <^> </> <?> <Tuple> <List> <Vector> <Assortment>
           type? subtype? of-type?))
   (xfer (current-module)
@@ -1479,6 +1483,9 @@
           wrap-with-proxy-type
           proxy-type-ref
           proxy-type-id
+          ;; these are used by native-supp.scm, so make them visible from
+          ;; gauche.internal
+          <c-pointer> <c-array> <c-struct> <c-union> <c-function>
           ;; followings are called from procedure-type (libproc)
           reconstruct-procedure-type
           compute-procedure-type
