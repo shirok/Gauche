@@ -381,19 +381,23 @@
 
 ;;
 (define-cproc %uvector->native-handle (uv::<uvector>
-                                       type::<native-type>
+                                       handle-type::<native-type>
                                        offset::<fixnum>)
   (let* ([p::void* (SCM_UVECTOR_ELEMENTS uv)]
          [vecsize::ScmSmallInt (Scm_UVectorSizeInBytes uv)]
-         [datasize::ScmSmallInt (-> type size)]
+         [data-type::ScmNativeType* (?: (SCM_C_POINTER_P handle-type)
+                                        (-> (SCM_C_POINTER handle-type)
+                                            pointee_type)
+                                        handle-type)]
+         [datasize::ScmSmallInt (-> data-type size)]
          [max::void* (+ p (Scm_UVectorSizeInBytes uv))])
     (unless (and (<= 0 offset) (<= (+ offset datasize) vecsize))
       (Scm_Error "Offset %ld out of range, or type size %ld too big."
                  offset datasize))
     (return
      (Scm__MakeNativeHandle (+ p offset)
-                            type
-                            (-> type name) ; temporary
+                            handle-type
+                            (-> handle-type name) ; temporary
                             p
                             max
                             (SCM_OBJ uv)

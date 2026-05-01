@@ -63,6 +63,28 @@
   (test* "native type equal? function vs struct" #f
          (equal? fn1 s1)))
 
+;; uvector->native-handle & basic check
+(let* ([int8* (make-c-pointer-type <int8>)]
+       [int8** (make-c-pointer-type int8*)]
+       [s (native-type '(.struct (a::int8_t b::int8_t)))]
+       [s* (make-c-pointer-type s)])
+  (test* "uvector->native-handle int8*" #t
+         (is-a? (uvector->native-handle '#u8(0) int8*) <native-handle>))
+  (test* "uvector->native-handle s" #t
+         (is-a? (uvector->native-handle '#u8(0 0) s) <native-handle>))
+  (test* "uvector->native-handle s*" #t
+         (is-a? (uvector->native-handle '#u8(0 0) s*) <native-handle>))
+  (test* "uvector->native-handle int8** (error)"
+         (test-error <error> #/type size \d too big/)
+         (is-a? (uvector->native-handle '#u8(0) int8**) <native-handle>))
+  (test* "uvector->native-handle s (error)"
+         (test-error <error> #/type size 2 too big/)
+         (is-a? (uvector->native-handle '#u8(0) s) <native-handle>))
+  (test* "uvector->native-handle s* (error)"
+         (test-error <error> #/type size 2 too big/)
+         (is-a? (uvector->native-handle '#u8(0) s*) <native-handle>))
+  )
+
 (define *fobject-storage*
   '#u8(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
        #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
