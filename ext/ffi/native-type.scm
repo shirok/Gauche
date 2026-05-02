@@ -39,7 +39,30 @@
   (use gauche.cgen.type.parse)
   (use gauche.uvector)
   (extend gauche.typeutil)              ;access internal routines
-  (export native*
+  (export make-c-pointer-type
+          make-c-function-type
+          make-c-array-type
+          make-c-struct-type
+          make-c-union-type
+
+          c-pointer-type-pointee
+          c-array-type-dimensions
+          c-function-type-return-type
+          c-function-type-argument-types
+          c-function-type-variadic?
+          c-struct/union-type-tag
+          c-struct/union-type-fields
+
+          c-pointer-type?
+          c-array-type?
+          c-function-type?
+          c-struct-type?
+          c-union-type?
+          c-struct/union-type?
+          c-aggregate-type?
+          c-pointer-like-type?
+
+          native*
           native-aref
           native.
           native->
@@ -47,15 +70,6 @@
           uvector->native-handle
           null-pointer-handle
           null-pointer-handle?
-
-          make-c-pointer-type
-          make-c-function-type
-          make-c-array-type
-          make-c-struct-type
-          make-c-union-type
-
-          c-aggregate-type?
-          c-pointer-like-type?
 
           c-pointer-handle?
           c-function-handle?
@@ -96,6 +110,20 @@
  (declare-stub-type <native-handle> ScmNativeHandle*)
  )
 
+;;;
+;;; Additonal native type predicates/accessors
+;;;
+
+(define-inline (c-pointer-type? type) (is-a? type <c-pointer>))
+(define-inline (c-array-type? type) (is-a? type <c-array>))
+(define-inline (c-function-type? type) (is-a? type <c-function>))
+(define-inline (c-struct-type? type) (is-a? type <c-struct>))
+(define-inline (c-union-type? type) (is-a? type <c-union>))
+
+(define-inline (c-struct/union-type? type)
+  (or (is-a? type <c-struct>)
+      (is-a? type <c-union>)))
+
 ;; C types that has some structure
 (define (c-aggregate-type? type)
   (or (is-a? type <c-array>)
@@ -108,9 +136,33 @@
       (is-a? type <c-array>)
       (is-a? type <c-function>)))
 
-;; Map type signature name -> native-type instance
-(define (%builtin-native-type-lookup name)
-  (hash-table-get (%builtin-native-type-table) name #f))
+(define-inline (c-pointer-type-pointee type)
+  (assume-type type <c-pointer>)
+  (~ type'pointee-type))
+
+(define-inline (c-array-type-dimensions type)
+  (assume-type type <c-array>)
+  (~ type'dimensions))
+
+(define-inline (c-function-type-return-type type)
+  (assume-type type <c-function>)
+  (~ type'return-type))
+
+(define-inline (c-function-type-argument-types type)
+  (assume-type type <c-function>)
+  (~ type'argument-types))
+
+(define-inline (c-function-type-variadic? type)
+  (assume-type type <c-function>)
+  (~ type'variadic?))
+
+(define-inline (c-struct/union-type-tag type)
+  (assume-type type (</> <c-struct> <c-union>))
+  (~ type'tag))
+
+(define-inline (c-struct/union-type-fields type)
+  (assume-type type (</> <c-struct> <c-union>))
+  (~ type'fields))
 
 ;;;
 ;;; Endian-specified types
@@ -355,8 +407,8 @@
       )
     )))
 
-(define *extended-native-type-table*
-  (rlet1 tab (make-hash-table 'eq?)
+(define %extended-native-type-table
+  (let1 tab (make-hash-table 'eq?)
     (define (tname tsym)
       (string->symbol
        (regexp-replace-all* (symbol->string tsym)
@@ -368,10 +420,8 @@
       (! <int16-le> <int16-be> <uint16-le> <uint16-be>
          <int32-le> <int32-be> <uint32-le> <uint32-be>
          <int64-le> <int64-be> <uint64-le> <uint64-be>
-         <float-le> <float-be> <double-le> <double-be>))))
-
-(define (%extended-native-type-lookup sym)
-  (hash-table-get *extended-native-type-table* sym #f))
+         <float-le> <float-be> <double-le> <double-be>))
+    (^[] tab)))
 
 ;;;
 ;;; Native handles
@@ -899,8 +949,8 @@
     [(? symbol?)
      (or
       ;; Primitive types
-      (%builtin-native-type-lookup signature)
-      (%extended-native-type-lookup signature)
+      (hash-table-get (%builtin-native-type-table) signature #f)
+      (hash-table-get (%extended-native-type-table) signature #f)
       ;; Pointer type (trailing *)
       (and-let* ([decomp (%pointer-type-decompose signature)])
         (%wrap-pointer-type (native-type (car decomp)) (cdr decomp)))
@@ -924,7 +974,7 @@
     ;; c-string is registered with a string key, not a symbol
     (hash-table-put! tab <c-string> 'c-string)
     (hash-table-for-each
-     *extended-native-type-table*
+     (%extended-native-type-table)
      (^[k v]
        (hash-table-put! tab v k)))
     (^[type] (hash-table-get tab type #f))))
@@ -977,9 +1027,9 @@
               ,(%unparse-field-specs (~ type'fields)))]
     ;; Function
     [(is-a? type <c-function>)
-     (let ([args (map native-type->signature (~ type'arg-types))]
+     (let ([args (map native-type->signature (~ type'argument-types))]
            [ret (native-type->signature (~ type'return-type))])
-       `(.function ,(if (~ type'varargs)
+       `(.function ,(if (~ type'variadic?)
                       (append args '(...))
                       args)
                    ,ret))]

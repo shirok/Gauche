@@ -128,8 +128,8 @@ SCM_CLASS_DECL(Scm_CPointerClass);
 typedef struct ScmCFunctionRec {
     ScmNativeType common;
     ScmNativeType *return_type;
-    ScmObj arg_types;            /* list of ScmNativeType* */
-    int varargs;                 /* boolean: does it accept varargs? */
+    ScmObj argument_types;       /* list of ScmNativeType* */
+    int variadic;                /* boolean: does it accept varargs? */
 } ScmCFunction;
 
 SCM_CLASS_DECL(Scm_CFunctionClass);

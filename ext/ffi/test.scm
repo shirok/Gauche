@@ -1186,7 +1186,7 @@
 (test* "native-type int* is <c-pointer>" #t
        (is-a? (native-type 'int*) <c-pointer>))
 (test* "native-type int* pointee-type" #t
-       (eq? (~ (native-type 'int*) 'pointee-type) <int>))
+       (eq? (c-pointer-type-pointee (native-type 'int*)) <int>))
 
 ;; Special treatment of c-string
 (test* "native-type c-string" #t
@@ -1217,9 +1217,9 @@
   (test* "native-type array element-type" #t
          (eq? (~ a'element-type) <int>))
   (test* "native-type array dimensions" '(5)
-         (~ a'dimensions))
+         (c-array-type-dimensions a))
   (test* "native-type array is <c-array>" #t
-         (is-a? a <c-array>)))
+         (c-array-type? a)))
 
 ;; Array with unsized first dimension
 (test* "native-type (.array int (* 3))" #t
@@ -1238,9 +1238,9 @@
 ;; Struct type properties
 (let1 s (native-type '(.struct pt (x::int y::int)))
   (test* "native-type struct is <c-struct>" #t
-         (is-a? s <c-struct>))
+         (c-struct-type? s))
   (test* "native-type struct tag" 'pt
-         (~ s'tag)))
+         (c-struct/union-type-tag s)))
 
 ;; Struct with nested array field
 (test* "native-type struct with array field" #t
@@ -1254,9 +1254,9 @@
 ;; Struct with pointer field
 (test* "native-type struct with pointer field" #t
        (let1 s (native-type '(.struct node (val::int next::int*)))
-         (and (is-a? s <c-struct>)
-              (eq? (~ s'tag) 'node)
-              (equal? (cadr (assq 'next (~ s'fields)))
+         (and (c-struct-type? s)
+              (eq? (c-struct/union-type-tag s) 'node)
+              (equal? (cadr (assq 'next (c-struct/union-type-fields s)))
                       (make-c-pointer-type <int>)))))
 
 ;; Struct equivalence: two identical signatures produce equal types
@@ -1280,9 +1280,9 @@
 ;; Union type properties
 (let1 u (native-type '(.union val (i::int f::float)))
   (test* "native-type union is <c-union>" #t
-         (is-a? u <c-union>))
+         (c-union-type? u))
   (test* "native-type union tag" 'val
-         (~ u'tag)))
+         (c-struct/union-type-tag u)))
 
 ;; All union field offsets should be 0
 (let1 u (native-type '(.union uu (a::int b::double c::int8_t)))
@@ -1311,11 +1311,11 @@
 ;; Function type properties
 (let1 f (native-type '(.function (int double) float))
   (test* "native-type function is <c-function>" #t
-         (is-a? f <c-function>))
+         (c-function-type? f))
   (test* "native-type function return-type" #t
-         (eq? (~ f'return-type) <float>))
+         (eq? (c-function-type-return-type f) <float>))
   (test* "native-type function arg-types" #t
-         (equal? (~ f'arg-types) `(,<int> ,<double>))))
+         (equal? (c-function-type-argument-types f) `(,<int> ,<double>))))
 
 ;; No-arg function
 (test* "native-type (.function () int)" #t
@@ -1334,17 +1334,18 @@
        (let1 outer (native-type '(.struct outer
                                    (pos::(.struct point (x::int y::int))
                                     val::double)))
-         (and (is-a? outer <c-struct>)
-              (is-a? (cadr (assq 'pos (~ outer'fields))) <c-struct>)
-              (eq? (~ (cadr (assq 'pos (~ outer'fields))) 'tag) 'point))))
+         (and (c-struct-type? outer)
+              (c-struct-type? (cadr (assq 'pos (~ outer'fields))))
+              (eq? (c-struct/union-type-tag (cadr (assq 'pos (~ outer'fields))))
+                   'point))))
 
 ;; Struct containing array
 (test* "native-type struct with 2d array" #t
        (let1 s (native-type '(.struct matrix (data::(.array double (3 3))
                                               name::int)))
-         (and (is-a? s <c-struct>)
-              (is-a? (cadr (assq 'data (~ s'fields))) <c-array>)
-              (equal? (~ (cadr (assq 'data (~ s'fields))) 'dimensions)
+         (and (c-struct-type? s)
+              (c-array-type? (cadr (assq 'data (~ s'fields))))
+              (equal? (c-array-type-dimensions (cadr (assq 'data (~ s'fields))))
                       '(3 3)))))
 
 ;; Integration with existing make-* constructors

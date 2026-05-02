@@ -234,8 +234,8 @@
    "ScmCFunction*" "Scm_CFunctionClass"
    (c "native_type_cpa")
    ((return-type :type <native-type> :c-name "return_type")
-    (arg-types :c-name "arg_types")
-    (varargs :type <boolean>))
+    (argument-types :c-name "argument_types")
+    (variadic? :c-name "variadic" :type <boolean>))
    (printer (Scm_Printf port "#<c-function%A>" (-> (& (-> (SCM_C_FUNCTION obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
@@ -1124,10 +1124,10 @@
       (and (SCM_C_FUNCTION_P b)
            (Scm_NativeTypeEqualP (-> (SCM_C_FUNCTION a) return-type)
                                  (-> (SCM_C_FUNCTION b) return-type))
-           (native_type_list_equalP (-> (SCM_C_FUNCTION a) arg-types)
-                                    (-> (SCM_C_FUNCTION b) arg-types))
-           (== (-> (SCM_C_FUNCTION a) varargs)
-               (-> (SCM_C_FUNCTION b) varargs))))]
+           (native_type_list_equalP (-> (SCM_C_FUNCTION a) argument-types)
+                                    (-> (SCM_C_FUNCTION b) argument-types))
+           (== (-> (SCM_C_FUNCTION a) variadic)
+               (-> (SCM_C_FUNCTION b) variadic))))]
      [(SCM_C_ARRAY_P a)
       (return
        (and (SCM_C_ARRAY_P b)
@@ -1279,7 +1279,7 @@
 (define-cproc %make-c-function-type (type-name::<const-cstring>
                                      return-type
                                      argument-types
-                                     varargs?::<boolean>)
+                                     variadic?::<boolean>)
   (let* ([z::ScmCFunction*
           (SCM_NEW_INSTANCE ScmCFunction (& Scm_CFunctionClass))])
     ;; Fill in common fields
@@ -1295,8 +1295,8 @@
     ;; Fill in type-specific fields
     (SCM_ASSERT (SCM_NATIVE_TYPE_P return-type))
     (set! (-> z return_type) (SCM_NATIVE_TYPE return-type))
-    (set! (-> z arg_types) argument-types)
-    (set! (-> z varargs) (?: varargs? 1 0))
+    (set! (-> z argument_types) argument-types)
+    (set! (-> z variadic) (?: variadic? TRUE FALSE))
     (return (SCM_OBJ z))))
 
 (inline-stub
@@ -1311,7 +1311,7 @@
 ;; a symbol ... for varargs.
 (define (make-c-function-type return-type argument-types)
   (assume-type return-type <native-type>)
-  (receive (arg-types vararg?)
+  (receive (arg-types variadic?)
       (if (and (pair? argument-types) (eq? (last argument-types) '...))
         (values (drop-right argument-types 1) #t)
         (values argument-types #f))
@@ -1319,9 +1319,9 @@
       (assume-type arg-type <native-type>))
     (%make-c-function-type
      (format "~{ ~a~}~:[~; ...~] -> ~a"
-             (map (cut ~ <>'name) arg-types) vararg?
+             (map (cut ~ <>'name) arg-types) variadic?
              (~ return-type'name))
-     return-type arg-types vararg?)))
+     return-type arg-types variadic?)))
 
 ;; For array, we keep element-type and dimensions in dedicated fields.
 ;; Each <dim> is a nonnegative fixnum.  The first <dim> can be -1,

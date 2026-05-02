@@ -15151,7 +15151,7 @@ only a couple of dozen lines of code.
 @deftp {Module} gauche.native-type
 @mdindex gauche.native-type
 This module provides a type infrastructure to communicate with the
-``native'', or ``close to the metal'' system.  Examples include
+``native'', or ``close to the metal'' layer.  Examples include
 foreign function interface (FFI) and structured binary data access.
 
 Basic native types are built-in (@pxref{Native types}).  This module
@@ -15173,20 +15173,152 @@ you access native data from Scheme world (@pxref{Native handles}).
 @node Derived and aggregate native types, Representation-specific types, Native type utilities, Native type utilities
 @subsection Derived and aggregate native types
 
+We have subclasses of @code{<native-type>}, which are classes
+of individual derived or aggregate native types.
+For example, ``pointer to int'' native type is an instance of
+@code{<c-pointer>} class.  Note that @code{<c-pointer>} itself
+is not an instance of @code{<native-type>}.
+
+@subsubheading C pointers
+
 @deftp {Class} <c-pointer>
 @clindex c-pointer
-@c MOD gauche.native-type
+A class of native types representing pointers.  Can be created
+with @code{make-c-pointer-type}.
+
+Note: At the moment, we don't keep track of quoalifiers
+such as @code{const} or @code{volatile}, but their support may
+be added in future.
+
+A native handle with a C pointer type can be ``dereferenced''
+with @code{native*} (@pxref{Native handles}).
 @end deftp
+
+@defun make-c-pointer-type pointee-type
+@c MOD gauche.native-type
+The argument must be an native type instance.
+Returns an native type represents a pointer to the @var{pointee-type}.
+
+@example
+(make-c-pointer-type <int>)
+  @result{} #<c-pointer <int*>>
+
+(make-c-pointer-type (make-c-pointer-type <int>))
+  @result{} #<c-pointer <int**>>
+@end example
+@end defun
+
+@defun c-pointer-type-pointee c-pointer-type
+@c MOD gauche.native-type
+Returns the pointee type of the given c-pointer type.
+
+@example
+(c-pointer-type-pointee (make-c-pointer-type <int>))
+  @result{} #<native-type <int>>
+@end example
+@end defun
+
+@subsubheading C arrays
 
 @deftp {Class} <c-array>
 @clindex c-array
 @c MOD gauche.native-type
+A class of native types representing C-style arrays.  Can be created
+with @code{make-c-array-type}.
+
+Arrays can have more than one dimensions.  Elements
+with consectuve last indexes are laid adjacent on memory.
+The length of the first dimension can be left unspecified
+(we use @code{*} as a placeholder), just like C array
+such as @code{int a[][10][3]}.
+
+An element, or a subarray, of an array represented by a
+native handle with a C array type
+can be accessed with @code{native-aref} (@pxref{Native handles}).
 @end deftp
+
+@defun make-c-array-type element-type element-type dimensions
+@c MOD gauche.native-type
+Creates a C array type, whose elements are of type @var{element-type},
+which must be a native type.
+
+The @var{dimensions} argument must be a list of non-negative
+exact integers, except that the first element may be a symbol @code{*}.
+They specify the lengths of each dimension of the array.  Each index
+of dimensions starts with 0.  @code{*} in the first dimension indicates
+the length is unspecified.
+@end defun
+
+@defun c-array-type-dimensions c-array-type
+@c MOD gauche.native-type
+Returns a list of lengths of dimensions of @var{c-array-type}.
+@end defun
+
+@subsubheading C functions
 
 @deftp {Class} <c-function>
 @clindex c-function
 @c MOD gauche.native-type
+A class of native types representing C function types.  Can be created
+with @code{make-c-function-type}.
+
+Instances of @code{<c-function>} describe the signature of a C function:
+its return type, argument types, and whether it accepts variable arguments.
+
+A native handle with a @code{<c-function>} type can be cast to and from
+a pointer-to-function type with @code{cast-handle}
+(@pxref{Native handles}).
 @end deftp
+
+@defun make-c-function-type return-type argument-type-list
+@c MOD gauche.native-type
+Returns a native type representing a C function that returns
+@var{return-type} and takes arguments of the types listed in
+@var{argument-type-list}.  Both @var{return-type} and each element
+of @var{argument-type-list} must be native type instances, with
+an exception below.
+
+The last element of @var{argument-type-list} can be the symbol @code{...},
+and then the resulting type represents a variadic function (like C's @code{...}
+in @code{int printf(const char*, @dots{})}).  The @code{...} marker is
+not a native type and is not included in the result of
+@code{c-function-type-argument-types}.
+
+@example
+(make-c-function-type <int> `(,<int> ,<double>))
+  @result{} #<c-function  int double -> int>
+
+(make-c-function-type <int> `(,<int> ...))
+  @result{} #<c-function  int ... -> int>
+
+(c-function-type-argument-types (make-c-function-type <int> `(,<int> ...)))
+  @result{} (#<native-type <int>>)
+
+(c-function-type-variadic? (make-c-function-type <int> `(,<int> ...)))
+  @result{} #t
+@end example
+@end defun
+
+@defun c-function-type-return-type c-function-type
+@c MOD gauche.native-type
+Returns the return type of @var{c-function-type} as a native type instance.
+@end defun
+
+@defun c-function-type-argument-types c-function-type
+@c MOD gauche.native-type
+Returns the list of argument types of @var{c-function-type}.  Each element
+is a native type instance.  The variadic marker @code{...} is not included;
+use @code{c-function-type-variadic?} to check for variadic functions.
+@end defun
+
+@defun c-function-type-variadic? c-function-type
+@c MOD gauche.native-type
+Returns @code{#t} if @var{c-function-type} represents a variadic function
+(i.e., it was created with @code{...} as the last element of the
+argument-type list), @code{#f} otherwise.
+@end defun
+
+@subsubheading C structs and unions
 
 @deftp {Class} <c-struct>
 @deftpx {Class} <c-union>
@@ -15195,23 +15327,46 @@ you access native data from Scheme world (@pxref{Native handles}).
 @c MOD gauche.native-type
 @end deftp
 
-@defun make-c-pointer-type pointee-type
+@defun c-struct/union-type-tag c-struct/union-type
 @c MOD gauche.native-type
 @end defun
 
-@defun make-c-function-type return-type argument-type-list
+@defun c-struct/union-type-fields c-struct/union-type
 @c MOD gauche.native-type
 @end defun
 
-@defun make-c-array-type element-type dimensions
+@subsubsection Predicates
+
+@defun c-pointer-type? obj
+@defunx c-array-type? obj
+@defunx c-function-type? obj
+@defunx c-struct-type? obj
+@defunx c-union-type? obj
 @c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is an instance of @code{<c-pointer>},
+@code{<c-array>}, @code{c-function>}, @code{c-struct}, or @code{<c-union>},
+and @code{#f} otherwise, respectively.
 @end defun
 
-@defun make-c-struct-type tag fields
-@defunx make-c-union-type tag fields
+@defun c-pointer-like-type? obj
 @c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is either a C pointer type,
+a C array type, or a C function type.  Handles of those types
+can be ``casted'' to a pointer type, following the C semantics.
+See @code{cast-handle} for the details (@pxref{Native handles}).
 @end defun
 
+@defun c-aggregate-type? obj
+@c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is either a C array type,
+a C struct type, or a C union type.
+@end defun
+
+@defun c-struct/union-type? obj
+@c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is either
+a C struct type, or a C union type.
+@end defun
 
 @node Representation-specific types, Native type signature, Derived and aggregate native types, Native type utilities
 @subsection Representation-specific types
