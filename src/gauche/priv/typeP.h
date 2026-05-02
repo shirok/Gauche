@@ -63,9 +63,11 @@ typedef struct ScmNativeTypeRec {
     const char *c_typecheck_name;
     const char *c_boxer_name;
     const char *c_unboxer_name;
-    size_t   size;
+    size_t   size;              /* if unbounded, minimum size. */
     size_t   alignment;
-    int      unsigned_p;
+    _Bool    unsigned_p;        /* only relevant for integral times */
+    _Bool    bounded_p;         /* #f if unbounded array or aggregates
+                                   having unbounded array. */
 } ScmNativeType;
 
 SCM_CLASS_DECL(Scm_NativeTypeClass);

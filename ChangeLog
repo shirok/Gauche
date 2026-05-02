@@ -1,3 +1,10 @@
+2026-05-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/typeP.h (ScmNativeType),
+	  src/libtype.scm (<native-type>): Added bounded? flag to handle
+	  arrays of unspecified length and aggregates that includes such
+	  types.
+
 2026-04-30  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/native-type.scm (<int16-be> etc.): Added endian-specific

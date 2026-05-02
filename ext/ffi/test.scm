@@ -1415,6 +1415,76 @@
        (test-error <error> #/missing type for field/)
        (native-type '(.struct bad (invalid_no_separator))))
 
+;; bounded? flag
+
+;; Primitive types are always bounded
+(test* "native-type bounded? int" #t (~ <int>'bounded?))
+(test* "native-type bounded? int8" #t (~ <int8>'bounded?))
+(test* "native-type bounded? double" #t (~ <double>'bounded?))
+
+;; Arrays with all numeric dimensions are bounded
+(let1 a (make-c-array-type <int8> '(5))
+  (test* "native-type bounded? array(5)" #t (~ a'bounded?))
+  (test* "native-type bounded? array(5) size" 5 (~ a'size)))
+
+(let1 a (make-c-array-type <int8> '(3 4))
+  (test* "native-type bounded? array(3 4)" #t (~ a'bounded?))
+  (test* "native-type bounded? array(3 4) size" 12 (~ a'size)))
+
+;; Array with * as first dimension is unbounded; size is 0 (minimum)
+(let1 a (make-c-array-type <int8> '(*))
+  (test* "native-type bounded? array(*)" #f (~ a'bounded?))
+  (test* "native-type bounded? array(*) size" 0 (~ a'size)))
+
+(let1 a (make-c-array-type <int8> '(* 4))
+  (test* "native-type bounded? array(* 4)" #f (~ a'bounded?))
+  (test* "native-type bounded? array(* 4) size" 0 (~ a'size)))
+
+;; Struct with all bounded fields is bounded
+(let1 s (make-c-struct-type 'bs `((a ,<int8>) (b ,<int8>)))
+  (test* "native-type bounded? struct bounded" #t (~ s'bounded?)))
+
+;; Struct with unbounded array at the end is unbounded;
+;; minimum size covers only the bounded prefix
+(let* ([tail (make-c-array-type <int8> '(*))]
+       [s (make-c-struct-type 'ubs `((a ,<int8>) (b ,tail)))])
+  (test* "native-type bounded? struct with unbounded tail" #f (~ s'bounded?))
+  (test* "native-type bounded? struct with unbounded tail size" 1 (~ s'size)))
+
+;; Struct with multi-element bounded prefix before unbounded array
+(let* ([tail (make-c-array-type <int8> '(*))]
+       [s (make-c-struct-type 'ubs2 `((n ,<int8>) (pad ,<int8>) (data ,tail)))])
+  (test* "native-type bounded? struct unbounded size is prefix only" #f (~ s'bounded?))
+  (test* "native-type bounded? struct unbounded prefix size" 2 (~ s'size)))
+
+;; Struct cannot have unbounded field except at the end
+(test* "native-type unbounded struct field not at end" (test-error)
+       (let1 mid (make-c-array-type <int8> '(*))
+         (make-c-struct-type 'bad `((a ,mid) (b ,<int8>)))))
+
+;; Union with all bounded fields is bounded
+(let1 u (make-c-union-type 'bu `((a ,<int8>) (b ,<int8>)))
+  (test* "native-type bounded? union bounded" #t (~ u'bounded?)))
+
+;; Union with any unbounded field is unbounded;
+;; minimum size comes from the largest bounded field
+(let* ([arr (make-c-array-type <int8> '(*))]
+       [u (make-c-union-type 'ubu `((a ,<int8>) (b ,arr)))])
+  (test* "native-type bounded? union with unbounded field" #f (~ u'bounded?))
+  (test* "native-type bounded? union with unbounded field size" 1 (~ u'size)))
+
+;; Union where all fields are unbounded has size 0
+(let* ([arr (make-c-array-type <int8> '(*))]
+       [u (make-c-union-type 'ubu2 `((a ,arr) (b ,arr)))])
+  (test* "native-type bounded? union all unbounded" #f (~ u'bounded?))
+  (test* "native-type bounded? union all unbounded size" 0 (~ u'size)))
+
+;; Struct whose last field is an unbounded struct is itself unbounded
+(let* ([inner-arr (make-c-array-type <int8> '(*))]
+       [inner (make-c-struct-type 'inner `((x ,<int8>) (buf ,inner-arr)))]
+       [outer (make-c-struct-type 'outer `((n ,<int8>) (rest ,inner)))])
+  (test* "native-type bounded? nested unbounded struct" #f (~ outer'bounded?)))
+
 ;;;
 ;;; native-type->signature: reverse of native-type
 ;;;

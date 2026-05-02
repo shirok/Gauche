@@ -207,6 +207,7 @@
     (size :type <size_t>)
     (alignment :type <size_t>)
     (unsigned? :type <boolean> :c-name "unsigned_p")
+    (bounded? :type <boolean> :c-name "bounded_p")
     (c-typecheck-name :type <const-cstring>)
     (c-boxer-name :type <const-cstring>)
     (c-unboxer-name :type <const-cstring>))
@@ -888,7 +889,8 @@
     c-typecheck-name::(const char *)
     c-boxer-name::(const char*)
     c-unboxer-name::(const char*)
-    unsigned-p::int)
+    unsigned-p::int
+    bounded-p::int)
    :static
    (let* ([z::ScmNativeType*
            (SCM_NEW_INSTANCE ScmNativeType (& Scm_NativeTypeClass))])
@@ -904,6 +906,7 @@
      (set! (-> z c-boxer-name) c-boxer-name)
      (set! (-> z c-unboxer-name) c-unboxer-name)
      (set! (-> z unsigned-p) unsigned-p)
+     (set! (-> z bounded-p) bounded-p)
      (return (SCM_OBJ z))))
 
  ;; Internal API for gauche.native-type to create a 'variant' of
@@ -993,7 +996,8 @@
                                  ,(x->string pred)
                                  ,(x->string box)
                                  ,(x->string unbox)
-                                 ,unsignedp)])
+                                 ,unsignedp
+                                 TRUE)])
        (set! ,priv-sym z)
        (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
                          ',ctype (SCM_OBJ z) 0)
@@ -1081,7 +1085,7 @@
   ;; <void> needs special care, as it doesn't have a real C type.
   (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"
                               0 1 native_voidP NULL NULL
-                              "" "SCM_VOID_RETURN_VALUE" "" FALSE)])
+                              "" "SCM_VOID_RETURN_VALUE" "" FALSE TRUE)])
     (set! Scm_NativeVoidType_ z)
     (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
                       'void z 0)
@@ -1223,6 +1227,7 @@
     c-type-name::(const char*)
     size::size_t
     alignment::size_t
+    bounded-p::int
     c-of-type::(.function (type::ScmNativeType* obj)::int *)
     c-ref::(.function (type::ScmNativeType* ptr::void*)::ScmObj *)
     c-set::(.function (type::ScmNativeType* ptr::void* obj)::void *))
@@ -1237,7 +1242,9 @@
    (set! (-> nt alignment) alignment)
    (set! (-> nt c-typecheck-name) "SCM_NATIVE_HANDLE_P")
    (set! (-> nt c-boxer-name) "SCM_OBJ")
-   (set! (-> nt c-unboxer-name) "SCM_NATIVE_HANDLE"))
+   (set! (-> nt c-unboxer-name) "SCM_NATIVE_HANDLE")
+   (set! (-> nt unsigned-p) FALSE)      ;irrelevant
+   (set! (-> nt bounded-p) bounded-p))
 
  (define-cfn %make-c-pointer-type-fn (pointer-type-name::(const char *)
                                       pointee-type)
@@ -1250,6 +1257,7 @@
                               "ScmNativeHandle*"
                               (sizeof (.type void*))
                               (SCM_ALIGNOF (.type void*))
+                              TRUE
                               native_handle_typeP
                               NULL
                               NULL)
@@ -1289,6 +1297,7 @@
                              "ScmNativeHandle*"
                              (sizeof (.type void*))
                              (SCM_ALIGNOF (.type void*))
+                             TRUE
                              native_handle_typeP
                              NULL
                              NULL)
@@ -1324,7 +1333,7 @@
      return-type arg-types variadic?)))
 
 ;; For array, we keep element-type and dimensions in dedicated fields.
-;; Each <dim> is a nonnegative fixnum.  The first <dim> can be -1,
+;; Each <dim> is a nonnegative fixnum.  The first <dim> can be '*,
 ;; indicating it is not specified (C allows it).
 (define-cproc %make-c-array-type (type-name::<const-cstring>
                                   element-type
@@ -1334,12 +1343,16 @@
   (let* ([z::ScmCArray*
           (SCM_NEW_INSTANCE ScmCArray (& Scm_CArrayClass))])
     ;; Fill in common fields
+    ;; If the first element of dimensions is no a fixnum
+    ;; (then it must be '* --- checked by the caller), the array
+    ;; is "unbounded".
     (init-native-type-common (& (-> z common))
                              type-name
                              (SCM_OBJ SCM_CLASS_TOP)
                              "ScmNativeHandle*"
                              size
                              alignment
+                             (?: (SCM_INTP (SCM_CAR dimensions)) TRUE FALSE) ;bounded?
                              native_handle_typeP
                              NULL
                              NULL)
@@ -1381,6 +1394,7 @@
                                          type-name::<const-cstring>
                                          size::<fixnum>
                                          alignment::<fixnum>
+                                         bounded-p::<int>
                                          tag-name::<symbol>?
                                          field-list)
   (let* ([z::ScmCStruct* (SCM_NEW_INSTANCE ScmCStruct klass)])
@@ -1391,6 +1405,7 @@
                              "ScmNativeHandle*"
                              size
                              alignment
+                             bounded-p
                              native_handle_typeP
                              NULL
                              NULL)
@@ -1403,7 +1418,7 @@
   (* alignment (quotient (+ size alignment -1) alignment)))
 
 (define (make-c-struct/union-type tag fields struct?)
-  (let loop ([fs fields] [offset 0] [alignment 1] [descs '()])
+  (let loop ([fs fields] [offset 0] [alignment 1] [descs '()] [bounded #t])
     (match fs
       [()
        (let* ([size (struct-size-roundup offset alignment)]
@@ -1413,9 +1428,11 @@
                       #"~tname anonymous")]) ;TODO: Give better name
          (%make-c-struct/union-type
           (if struct? <c-struct> <c-union>)
-          name size alignment tag (reverse descs)))]
+          name size alignment (if bounded 1 0) tag (reverse descs)))]
       [(((? symbol? fname) ftype) . rest)
        (assume-type ftype <native-type>)
+       (when (and (not bounded) struct?)
+         (error "Struct type can have unbounded field only at the end:" fs))
        (let* ([falign (~ ftype'alignment)]
               [foffset (if struct?
                          (struct-size-roundup offset falign)
@@ -1427,7 +1444,8 @@
          (loop rest
                next
                new-align
-               (cons (list fname ftype foffset) descs)))]
+               (cons (list fname ftype foffset) descs)
+               (and bounded (~ ftype'bounded?))))]
       [_
        (error "Bad native struct fields; must be a proper list, but got:"
               fields)])))
