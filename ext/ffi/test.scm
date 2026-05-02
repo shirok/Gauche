@@ -507,13 +507,11 @@
 (let* ([data (u8vector-copy *fobject-storage*)]
        [u16x2 (make-c-array-type <uint16> '(2))]
        [s3 (make-c-struct-type 's3
-                                    `((arr ,u16x2)
-                                      (b ,<uint8>)))])
+                               `((arr ,u16x2)
+                                 (b ,<uint8>)))])
   (define (bc pos type) (uvector->native-handle data type pos))
-  (define native-type-offset*
-    (with-module gauche.native-type native-type-offset))
   (define (offsets type fields)
-    (map (cut native-type-offset* type <>) fields))
+    (map (cut c-struct/union-type-field-offset type <>) fields))
 
   (test* "native struct array member size&alignment" '(6 2)
          (list (~ s3'size) (~ s3'alignment)))
@@ -1256,7 +1254,7 @@
        (let1 s (native-type '(.struct node (val::int next::int*)))
          (and (c-struct-type? s)
               (eq? (c-struct/union-type-tag s) 'node)
-              (equal? (cadr (assq 'next (c-struct/union-type-fields s)))
+              (equal? (c-struct/union-type-field-type s 'next)
                       (make-c-pointer-type <int>)))))
 
 ;; Struct equivalence: two identical signatures produce equal types
@@ -1334,19 +1332,19 @@
        (let1 outer (native-type '(.struct outer
                                    (pos::(.struct point (x::int y::int))
                                     val::double)))
-         (and (c-struct-type? outer)
-              (c-struct-type? (cadr (assq 'pos (~ outer'fields))))
-              (eq? (c-struct/union-type-tag (cadr (assq 'pos (~ outer'fields))))
-                   'point))))
+         (and-let* ([ (c-struct-type? outer) ]
+                    [t (c-struct/union-type-field-type outer 'pos)]
+                    [ (c-struct-type? t) ])
+           (eq? (c-struct/union-type-tag t) 'point))))
 
 ;; Struct containing array
 (test* "native-type struct with 2d array" #t
        (let1 s (native-type '(.struct matrix (data::(.array double (3 3))
                                               name::int)))
-         (and (c-struct-type? s)
-              (c-array-type? (cadr (assq 'data (~ s'fields))))
-              (equal? (c-array-type-dimensions (cadr (assq 'data (~ s'fields))))
-                      '(3 3)))))
+         (and-let* ([ (c-struct-type? s) ]
+                    [t (c-struct/union-type-field-type s 'data)]
+                    [ (c-array-type? t) ])
+           (equal? (c-array-type-dimensions t) '(3 3)))))
 
 ;; Integration with existing make-* constructors
 ;; Verify that types produced by native-type work correctly with

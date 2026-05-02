@@ -51,7 +51,9 @@
           c-function-type-argument-types
           c-function-type-variadic?
           c-struct/union-type-tag
-          c-struct/union-type-fields
+          c-struct/union-type-field-names
+          c-struct/union-type-field-type
+          c-struct/union-type-field-offset
 
           c-pointer-type?
           c-array-type?
@@ -160,9 +162,21 @@
   (assume-type type (</> <c-struct> <c-union>))
   (~ type'tag))
 
-(define-inline (c-struct/union-type-fields type)
+(define-inline (c-struct/union-type-field-names type)
   (assume-type type (</> <c-struct> <c-union>))
-  (~ type'fields))
+  (map car (~ type'fields)))
+
+(define-inline (c-struct/union-type-field-type type field-name)
+  (assume-type type (</> <c-struct> <c-union>))
+  (if-let1 e (assq field-name (~ type'fields))
+    (cadr e)
+    (errorf "~s does not have a field named ~a" type field-name)))
+
+(define-inline (c-struct/union-type-field-offset type field-name)
+  (assume-type type (</> <c-struct> <c-union>))
+  (if-let1 e (assq field-name (~ type'fields))
+    (caddr e)
+    (errorf "~s does not have a field named ~a" type field-name)))
 
 ;;;
 ;;; Endian-specified types
