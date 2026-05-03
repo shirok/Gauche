@@ -15184,7 +15184,9 @@ is not an instance of @code{<native-type>}.
 @deftp {Class} <c-pointer>
 @clindex c-pointer
 A class of native types representing pointers.  Can be created
-with @code{make-c-pointer-type}.
+with @code{make-c-pointer-type}, or from a signature
+with @code{native-type} (e.g. @code{(native-type 'int*)},
+@pxref{Native type signature}).
 
 Note: At the moment, we don't keep track of quoalifiers
 such as @code{const} or @code{volatile}, but their support may
@@ -15224,7 +15226,9 @@ Returns the pointee type of the given c-pointer type.
 @clindex c-array
 @c MOD gauche.native-type
 A class of native types representing C-style arrays.  Can be created
-with @code{make-c-array-type}.
+with @code{make-c-array-type}, or from a signature
+with @code{native-type} (e.g. @code{(native-type '(.array int (10)))},
+@pxref{Native type signature}).
 
 Arrays can have more than one dimensions.  Elements
 with consectuve last indexes are laid adjacent on memory.
@@ -15260,7 +15264,10 @@ Returns a list of lengths of dimensions of @var{c-array-type}.
 @clindex c-function
 @c MOD gauche.native-type
 A class of native types representing C function types.  Can be created
-with @code{make-c-function-type}.
+with @code{make-c-function-type}, or from a signature
+with @code{native-type} (e.g.
+@code{(native-type '(.function (int int) ::int))},
+@pxref{Native type signature}).
 
 Instances of @code{<c-function>} describe the signature of a C function:
 its return type, argument types, and whether it accepts variable arguments.
@@ -15325,14 +15332,45 @@ argument-type list), @code{#f} otherwise.
 @clindex c-struct
 @clindex c-union
 @c MOD gauche.native-type
+A class of native types representing C struct and union types, respectively.
+Can be created with @code{make-c-struct-type} and
+@code{make-c-union-type}, or from a signature with
+@code{native-type} (e.g.
+@code{(native-type '(.struct t (a::int b::char)))},
+@pxref{Native type signature}).
 @end deftp
+
+@defun make-c-struct-type tag fields
+@defunx make-c-union-type tag fields
+@c MOD gauche.native-type
+Returns a native type representing a C struct type or a C union type.
+@var{tag} can be a symbol representing the struct/union tag, or @code{#f}
+for untagged struct/union.
+
+@var{fields} is a list of @code{(@var{symbol} @var{type})}, where
+@var{symbol} names the field's name, and @var{type} for its type.
+@var{type} must be an instance of a native type.
+
+When a struct/union type is constructed, its total size and each field's
+offset are computed (in unions, all the offsets are 0).
+@end defun
 
 @defun c-struct/union-type-tag c-struct/union-type
 @c MOD gauche.native-type
+Returns the tag (symbol) of @var{c-struct/union-type}.
+If the type is untagged, @code{#f} is returned.
 @end defun
 
-@defun c-struct/union-type-fields c-struct/union-type
+@defun c-struct/union-type-field-names c-struct/union-type
 @c MOD gauche.native-type
+Returns a list of field names (symbols) of @var{c-struct/union-type}.
+@end defun
+
+@defun c-struct/union-type-field-type c-struct/union-type field-name
+@defunx c-struct/union-type-field-offset c-struct/union-type field-name
+@c MOD gauche.native-type
+Returns the type and the byte offset of @var{field-name} (symbol)
+of @var{c-struct/union-type}.
 @end defun
 
 @subsubsection Predicates
@@ -15371,6 +15409,13 @@ a C struct type, or a C union type.
 @node Representation-specific types, Native type signature, Derived and aggregate native types, Native type utilities
 @subsection Representation-specific types
 
+Primitive native types such as @code{<int16>} read/write memory
+with the system's native endianness.  For FFI it is fine.  However,
+if you read/write binary data for exchanging between systems,
+you need to explicitly specify the endianness.
+
+We have native types for that purpose.
+
 @deftp {Native type} <int16-be>
 @deftpx {Native type} <int16-le>
 @deftpx {Native type} <int32-be>
@@ -15404,6 +15449,14 @@ a C struct type, or a C union type.
 @clindex double-be
 @clindex double-le
 @c MOD gauche.native-type
+These native types accesses binary data as the specified numeric type,
+@emph{and} the specified endianncess (@code{-be} for big-endian,
+@code{-le} for little endian).
+
+The endianness is only considered when reading from or writing to memory
+through native handles (with @code{native*} etc, @pxref{Native handles}).
+In other words, these types only makes sense when they are used
+within derived or aggregate types.
 @end deftp
 
 

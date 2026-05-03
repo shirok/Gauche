@@ -772,12 +772,20 @@ symbols, and may use that information for static analysis.
 @c EN
 Native types are a set of predefined descriptive types that bridge
 Scheme types and C types.  They can be used to access binary blobs
-passed from a foreign functions, for example.  They'll also be used
-for FFI.
+passed from a foreign functions, for example.
 @c JP
 ネイティブタイプは、Schemeの型とCの型の橋渡しをするためにあらかじめ定義されている型です。
 外部の関数から渡されたバイナリデータの中身にアクセスする時などに使えます。
-将来的にはFFIにも使う予定です。
+@c COMMON
+
+@c EN
+The core library only defines basic numeric types, which are used internally.
+The complehensive support of native types is provided by
+@code{gauche.native-type}.  @xref{Native type utilities}, for the details.
+@c JP
+コアライブラリでは、内部的にも使われるごく基本的な数値型のみが定義されています。
+ネイティブタイプの完全なサポートは@code{gauche.native-type}モジュールで
+提供されます。詳しくは@ref{Native type utilities}を参照してください。
 @c COMMON
 
 @c EN
@@ -894,6 +902,14 @@ Native type  Scheme       C            Notes
 <void>       -            void        (Used only as a return type.
                                         Scheme function returns #<undef>)
 @end example
+
+@c EN
+@xref{Native type utilities}, for more complex types such as arrays
+and structs.
+@c JP
+配列や構造体など、より複雑なネイティブタイプについては
+@ref{Native type utilities}を参照してください。
+@c COMMON
 @end deftp
 
 
