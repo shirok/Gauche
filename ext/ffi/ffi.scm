@@ -86,6 +86,26 @@
 ;;
 ;;   (define-c-function mylib-init `(,<c-int> ,(make-c-array-type <c-string>)) <c-int>)
 ;;
+;;
+;;  You can also define a C function that can be called back from C
+;;  program to evaluate Scheme expressions.
+;;
+;;    (define-c-callback <name> <arglist>  <rettype>
+;;      <body> ...)
+;;
+;;  <arglist> is an expression that should yield the following form:
+;;
+;;     ((<var> <type>) ...)
+;;
+;;  where <var> is an identifier and, <type> is a value such that
+;;  (native-type <type>) yields a native type.
+;;
+;;  <rettype> is also evaluated, and should yield a value such that
+;;  (native-type <rettype>) yields a native type.
+;;
+;;  This binds a native handle with a function type to the <nane>.  The
+;;  handle can be passed to a foreign function excpeting a function pointer.
+;;
 
 ;;;
 ;;; <foreign-c-function> - parsed representation of a define-c-function form
@@ -100,10 +120,19 @@
   ((scheme-name  :init-keyword :scheme-name)  ; symbol
    (c-name       :init-keyword :c-name)       ; string, C-safe function name
    (arg-types    :init-keyword :arg-types)    ; list of types (fixed args)
-   (return-type  :init-keyword :return-type)  ; type
+   (return-type  :init-keyword :return-type)  ; native-type
    (variadic?    :init-keyword :variadic?     ; #t when arg-types ends with '...
                  :init-value #f)
    (tag-info     :init-keyword :tag-info)     ; info to be tagged
+   ))
+
+(define-class <foreign-c-callback> ()
+  ((scheme-name  :init-keyword :scheme-name)
+   (c-name       :init-keyword :c-name)
+   (arg-vars     :init-keyword :arg-vars)     ; (symbol ...)
+   (arg-types    :init-keyword :arg-types)    ; (<antive-type> ...)
+   (return-type  :init-keyword :return-type)  ; native-type
+   (body         :init-keyword :body)
    ))
 
 ;; Resolve a typespec to a <native-type> instance or <top> at runtime.
@@ -173,18 +202,20 @@
         ;; Variable dlo-var is bound to the result of dlo-expr
         ;; in the expaneded with-*-ffi macros.
         (define dlo-var (gensym "dlo-"))
-        (define cfns '())
+        (define cdefs '())
         (define subsystem
           (get-keyword :subsystem (unwrap-syntax options)
                        (default-ffi-subsystem)))
+        (define ids (list (r'define-c-function)
+                          (r'define-c-callback)))
         (define forms
           (filter-map
            (^[form]
              (if (and (pair? form)
-                      (c (r (car form)) (r 'define-c-function))
+                      (member (r (car form)) ids c)
                       (pair? (cdr form)))
                (begin
-                 (push! cfns (unwrap-syntax form))
+                 (push! cdefs (unwrap-syntax form))
                  #f)
                form))
            body))
@@ -213,24 +244,47 @@
                                    :argtypes ,(map %signature-type atypes)
                                    :rettype ,(%signature-type rtype)))))))]))
 
+        (define (make-ccb-expr ccb-form)
+          (match ccb-form
+            [(_ name arg-list-expr rettype-expr . body)
+             (define body-name (gensym "c-callback-"))
+             (quasirename r
+               `(let* ([arg&types ,arg-list-expr]
+                       [args (map car arg&types)]
+                       [atypes (map ($ %resolve-typespec $ cadr $) arg&types)]
+                       [rtype (%resolev-typespec ,rettype-expr)])
+                  (make <foreign-c-callback>
+                    :scheme-name ',name
+                    :c-name ,(cgen-safe-name-friendly (x->string name))
+                    :arg-vars args
+                    :arg-types atypes
+                    :return-type rtype
+                    :body (lambda ,args ,@body))))]))
+
+        (define (make-cdef-expr form)
+          (ecase (car form) ; forms are already unwrapped
+            [(define-c-function) (make-cfn-expr form)]
+            [(define-c-callback) (make-ccb-expr form)]))
+
         ;; cfn-specs is ((name . cfn-expr) ...), where name is a symbol
         ;; name of cfn, and cfn-expr is (make <foreivn-c-function> ...)
         ;; constructed above.  The subsystem macro should rearrange
         ;; cfn-specs so that cfn-expr is evaluated in proper context.
-        (let* ([ordered-cfns  (reverse cfns)]
-               [cfn-specs     (map (^[cfn]
-                                     (cons (cadr cfn) ; name
-                                           (make-cfn-expr cfn))) ;expr
-                                   ordered-cfns)])
-          ;; NB: with-stubgen-ffi should expand into definitions, so that
-          ;; defined C functions (and other definitions) are visible
-          ;; from the following expressions.  Be careful not to wrap
-          ;; the expansion with let etc.
-          (ecase subsystem
-            [(:native)
-             (quasirename r
-               `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cfn-specs ,forms))]
-            [(:stubgen)
-             (quasirename r
-               `(with-stubgen-ffi ,dlo-var ,dlo-expr ,options ,cfn-specs ,forms))]
-            ))]))))
+        (define cdef-specs
+          (map (^[cdef]
+                 (cons (cadr cdef) ; name
+                       (make-cdef-expr cdef))) ;expr
+               (reverse cdefs)))
+
+        ;; NB: with-stubgen-ffi should expand into definitions, so that
+        ;; defined C functions (and other definitions) are visible
+        ;; from the following expressions.  Be careful not to wrap
+        ;; the expansion with let etc.
+        (ecase subsystem
+          [(:native)
+           (quasirename r
+             `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs ,forms))]
+          [(:stubgen)
+           (quasirename r
+             `(with-stubgen-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs ,forms))]
+          )]))))

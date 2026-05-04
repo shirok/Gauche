@@ -88,6 +88,8 @@
 ;;    1c. Parsing varaible declaration of let*
 ;;    1d. Parsing struct/union declaration
 ;;
+;;  3. gauche.native-type
+;;    1a. Parsing struct/union signature
 
 ;; API
 ;;   Take a list, an interpret its head element(s) as typed var.

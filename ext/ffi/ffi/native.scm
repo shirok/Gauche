@@ -46,10 +46,10 @@
 ;;; Main macro
 ;;;
 
-;; (with-native-ffi dlo-expr options cfn-list-expr cfn-names forms)
+;; (with-native-ffi dlo-expr options cdef-list-expr cdef-names forms)
 ;;
-;; cfn-list-expr is a form that evaluates to a list of <foreign-c-function>
-;; instances.  cfn-names is a literal list of the corresponding Scheme names
+;; cdef-list-expr is a form that evaluates to a list of <foreign-c-function>
+;; instances.  cdef-names is a literal list of the corresponding Scheme names
 ;; (known at expansion time).
 ;;
 ;; The provisional (define name #f) bindings have already been emitted by
@@ -59,12 +59,12 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ dlo-var dlo-expr options cfn-specs forms)
+       [(_ dlo-var dlo-expr options cdef-specs forms)
         (quasirename r
           `(begin
              ,@(map (^[spec] (quasirename r
                                `(define ,(car spec))))
-                    cfn-specs)
+                    cdef-specs)
              ,@forms
              (define _dummy
                (let ([,dlo-var ,dlo-expr])
@@ -72,7 +72,7 @@
                           (quasirename r
                             `(set! ,(car spec)
                                    (make-native-ffi-proc ,dlo-var ,(cdr spec)))))
-                        cfn-specs)))
+                        cdef-specs)))
              ))]))))
 
 ;;;

@@ -49,10 +49,10 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ dlo-var dlo-expr options cfn-specs forms)
-        (let1 cfn-list-expr
+       [(_ dlo-var dlo-expr options cdef-specs forms)
+        (let1 cdef-list-expr
             (quasirename r
-              `(list ,@(map cdr cfn-specs)))
+              `(list ,@(map cdr cdef-specs)))
           (quasirename r
             `(begin
                ,@forms
@@ -61,7 +61,7 @@
                (define ,dlo-var ,dlo-expr)
                (define _dummy
                  (compile-and-link-ffi-stub ,dlo-var
-                                            ,cfn-list-expr
+                                            ,cdef-list-expr
                                             (current-module)))
                )))]))))
 
