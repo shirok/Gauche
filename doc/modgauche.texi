@@ -15463,12 +15463,188 @@ within derived or aggregate types.
 @node Native type signature, Native handles, Representation-specific types, Native type utilities
 @subsection Native type signature
 
+A @dfn{native type signature} is a compact S-expression description of
+a native type.  It lets you specify pointer, array, struct, union, and
+function types without explicitly calling the corresponding constructors
+such as @code{make-c-pointer-type}.
+
+The procedure @code{native-type} can parse a signature
+and returns the native type instance it denotes; @code{native-type->signature}
+performs the inverse conversion.  Signatures are also recognized in
+some other places where a native type is expected---for example, in
+struct/union field type declarations within @code{.struct} and
+@code{.union} signature forms (so compound types can be written
+without first naming each piece).
+
+The signature format has been used in Gauche-C interface for long time
+(stubs and CiSE), though hasn't been documented well.  Because of its
+origin to transfer C type declarations to S-expression, it may feel
+C-centric.
+
+@subsubheading Primitive types
+
+A bare symbol whose name matches a built-in C type name denotes the
+corresponding primitive native type.  Recognized names follow the
+C spelling, e.g.@: @code{int}, @code{u_int}, @code{short}, @code{u_short},
+@code{long}, @code{u_long}, @code{char}, @code{int8_t}, @code{uint8_t},
+@code{int16_t}, @code{uint16_t}, @code{int32_t}, @code{uint32_t},
+@code{int64_t}, @code{uint64_t}, @code{size_t}, @code{ssize_t},
+@code{ptrdiff_t}, @code{off_t}, @code{intptr_t}, @code{uintptr_t},
+@code{float}, @code{double}, and @code{void}.  See @ref{Native types}
+for the corresponding type instances and what Scheme values they accept.
+
+C's @code{char} denotes the native type @code{<c-char>}, for
+@code{<char>} is used for Gauche's character type.  @code{<c-char>}
+is mapped to a Scheme character with unicode range U+0000 to U+00FF.
+If the C routine uses @code{char} as a byte-sized numeric value,
+use @code{int8_t} or @code{uint8_t} (depending on signedness) instead.
+
+The pseudo-name @code{c-string} denotes the @code{<c-string>} type
+(NUL-terminated C string).  This special name is provided because
+C type @code{const char *} may simply mean a pointer to byte-sized
+numeric data, thus ambiguous.
+
+pThe endian-specified types listed in @ref{Representation-specific types}
+are also accepted, by their underscore-separated names: @code{int16_le},
+@code{int16_be}, @code{uint16_le}, @code{uint16_be}, and likewise for
+the 32-bit and 64-bit integer types and for @code{float} and @code{double}.
+
+@subsubheading Pointer types
+
+A symbol whose name ends with one or more asterisks denotes a pointer
+type; each trailing asterisk wraps the rest of the type in one
+additional layer of @code{<c-pointer>}.  Thus @code{int*} is equivalent
+to @code{(make-c-pointer-type <int>)}, @code{char**} is a pointer to a
+pointer to @code{<c-char>}, and so on.
+
+C-style multi-token forms are also accepted as a list of symbols.
+The list is normalized by stripping any @code{const} tokens and
+concatenating the rest into a single symbol.  Therefore
+@code{(char *)}, @code{(char const*)}, @code{(const char*)},
+@code{(int * *)}, and @code{(int** *)} are all valid.  The form
+@code{(const @var{type})} is also accepted, with @code{const}
+currently ignored.
+
+(We do not yet track @code{const} or @code{volatile} qualifiers on the
+resulting native type; they are silently dropped.  Support may be added
+in the future.)
+
+@subsubheading Array types
+
+@example
+(.array @var{element-type} (@var{dim} @dots{}))
+@end example
+
+Denotes a C-style array.  @var{element-type} is itself a native type
+signature.  Each @var{dim} is a non-negative exact integer, except
+that the leftmost @var{dim} may be the symbol @code{*} to indicate an
+unspecified leading dimension (as in C's @code{int a[][3][4]}).
+Multiple dimensions describe a multi-dimensional array, with elements
+that share leading indices laid out adjacently in memory (the last
+index varies fastest).
+
+@subsubheading Struct and union types
+
+@example
+(.struct @var{tag} (@var{field-spec} @dots{}))
+(.struct (@var{field-spec} @dots{}))
+(.union  @var{tag} (@var{field-spec} @dots{}))
+(.union  (@var{field-spec} @dots{}))
+@end example
+
+Denote a C struct or union type.  @var{tag}, when given, is a symbol
+that names the struct/union tag; the second form of each pair (with no
+tag) denotes an anonymous struct/union.
+
+Each @var{field-spec} has the form
+@code{@var{name}::@var{type}}, using the typed-variable notation
+common across Gauche.  @var{name} is a symbol naming the field, and
+@var{type} is itself a native type signature, so fields may be of
+compound type as well.  For the convenience, the delimiter @code{::}
+may be concatenated to @code{name} and/or @code{type}--
+for example, @code{a::int} and @code{a :: int} are equivalent.
+
+@subsubheading Function types
+
+@example
+(.function (@var{arg-type} @dots{}) @var{return-type})
+@end example
+
+Denotes a C function type.  Each @var{arg-type} and @var{return-type}
+is itself a native type signature.  If the last @var{arg-type} is the
+literal symbol @code{...}, the resulting type is variadic
+(corresponding to C's trailing @code{...}); the @code{...} marker is
+not itself a type, and is not included in the argument-type list
+returned by @code{c-function-type-argument-types}.  Use
+@code{c-function-type-variadic?} to test for variadicity.
+
+@subsubheading Pass-through
+
+If the argument is already an instance of @code{<native-type>},
+@code{native-type} returns it unchanged.  This makes it convenient for
+higher-level routines to accept either a signature or a previously
+constructed type instance.
+
+Notably, you can emulate C's @code{typedef} by assigning native type
+to a variable, and inserting it in another type signature:
+
+@example
+(define foo (.struct foo (a::int b::int)))
+
+(native-type `(.array ,foo (10))) @result{} #<c-array struct foo(10)>
+@end example
+
+@subsubheading Examples
+
+@example
+(native-type 'int)
+  @result{} #<native-type <int>>
+
+(native-type 'int*)
+  @result{} #<c-pointer <int*>>
+
+(native-type 'char**)
+  @result{} #<c-pointer <c-char**>>
+
+(native-type '(char const *))
+  @result{} #<c-pointer <c-char*>>
+
+(native-type 'c-string)
+  @result{} #<native-type <c-string>>
+
+(native-type '(.array int (3 4)))
+  @result{} #<c-array <int>(3 4)>
+
+(native-type '(.array int (* 3)))
+  @result{} #<c-array <int>(* 3)>
+
+(native-type '(.struct point (x::double y::double)))
+  @result{} #<c-struct struct point>
+
+(native-type '(.union v (i::int f::float)))
+  @result{} #<c-union union v>
+
+(native-type '(.function (int int) double))
+  @result{} #<c-function <int> <int> -> <double>>
+
+(native-type '(.function (char* ...) int))
+  @result{} #<c-function <c-char*> ... -> <int>>
+@end example
+
 @defun native-type signature-or-type
 @c MOD gauche.native-type
+The argument must be an S-expression type signature or
+a native type instance.  If it is a type signature, a native
+type instance denoted by the type signature is returned.
+If the argument is already a native type instance, it is returned
+as is.
+
+See above for the specification of a native type signature.
 @end defun
 
 @defun native-type->signature native-type
 @c MOD gauche.native-type
+Returns a native type signature that denotes the given native type.
 @end defun
 
 @node Native handles,  , Native type signature, Native type utilities
