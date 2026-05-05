@@ -1287,6 +1287,25 @@
        (equal? (native-type '(.struct s1 (a::int b::double)))
                (native-type '(.struct s1 (a::int b::double)))))
 
+;; Inserted native-type instance as a field type
+(let1 foo (native-type '(.struct (a::int b::int)))
+  (test* "native-type (.struct bar (x:: ,foo))" #t
+         (equal? (native-type `(.struct bar (x:: ,foo)))
+                 (make-c-struct-type 'bar `((x ,foo)))))
+  (test* "native-type (.struct (x:: ,foo)) -- anonymous" #t
+         (equal? (c-struct/union-type-field-type
+                  (native-type `(.struct (x:: ,foo))) 'x)
+                 foo))
+  (test* "native-type mixed concrete and inserted field types" #t
+         (let1 s (native-type `(.struct s (a::int b:: ,foo c::double)))
+           (and (eq? (c-struct/union-type-field-type s 'a) <int>)
+                (eq? (c-struct/union-type-field-type s 'b) foo)
+                (eq? (c-struct/union-type-field-type s 'c) <double>))))
+  (test* "native-type field type wrapped in pointer syntax" #t
+         (equal? (c-struct/union-type-field-type
+                  (native-type `(.struct (p::(,foo *)))) 'p)
+                 (make-c-pointer-type foo))))
+
 ;; Struct inequivalence: different tags
 (test* "native-type struct different tags" #f
        (equal? (native-type '(.struct s1 (a::int)))
@@ -1299,6 +1318,17 @@
 (test* "native-type (.union u1 (a :: int  b :: float))" #t
        (equal? (native-type '(.union u1 (a :: int b :: float)))
                (make-c-union-type 'u1 `((a ,<int>) (b ,<float>)))))
+
+;; Inserted native-type instance as a union field type
+(let1 foo (native-type '(.struct (a::int b::int)))
+  (test* "native-type (.union u (x:: ,foo y::int))" #t
+         (let1 u (native-type `(.union u (x:: ,foo y::int)))
+           (and (eq? (c-struct/union-type-field-type u 'x) foo)
+                (eq? (c-struct/union-type-field-type u 'y) <int>))))
+  (test* "native-type (.union (x:: ,foo y::int)) -- anonymous" #t
+         (let1 u (native-type `(.union (x:: ,foo y::int)))
+           (and (c-union-type? u)
+                (eq? (c-struct/union-type-field-type u 'x) foo)))))
 
 ;; Union type properties
 (let1 u (native-type '(.union val (i::int f::float)))

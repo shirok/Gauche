@@ -932,14 +932,14 @@
     [('.struct (? symbol? tag) (field-specs ...))
      (make-c-struct-type tag (%parse-field-specs field-specs))]
     ;; (.struct (field-specs ...))  -- anonymous
-    [('.struct ((? (^x (or (symbol? x) (pair? x))) field-specs) ...))
+    [('.struct (field-specs ...))
      (make-c-struct-type #f (%parse-field-specs field-specs))]
 
     ;; (.union tag (field-specs ...))
     [('.union (? symbol? tag) (field-specs ...))
      (make-c-union-type tag (%parse-field-specs field-specs))]
     ;; (.union (field-specs ...))  -- anonymous
-    [('.union ((? (^x (or (symbol? x) (pair? x))) field-specs) ...))
+    [('.union (field-specs ...))
      (make-c-union-type #f (%parse-field-specs field-specs))]
 
     ;; (.function (arg-types ...) return-type)
