@@ -1186,6 +1186,31 @@
 (test* "native-type int* pointee-type" #t
        (eq? (c-pointer-type-pointee (native-type 'int*)) <int>))
 
+;; Inserted native-type instance in pointer syntax
+(let1 foo (native-type '(.struct (a::int b::int)))
+  (test* "native-type (,foo *)" #t
+         (equal? (native-type `(,foo *)) (make-c-pointer-type foo)))
+  (test* "native-type (const ,foo *)" #t
+         (equal? (native-type `(const ,foo *)) (make-c-pointer-type foo)))
+  (test* "native-type (,foo **)" #t
+         (equal? (native-type `(,foo **))
+                 (make-c-pointer-type (make-c-pointer-type foo))))
+  (test* "native-type (,foo * *)" #t
+         (equal? (native-type `(,foo * *))
+                 (make-c-pointer-type (make-c-pointer-type foo))))
+  (test* "native-type (,foo const*)" #t
+         (equal? (native-type `(,foo const*)) (make-c-pointer-type foo)))
+  (test* "native-type (,foo)" #t
+         (eq? (native-type `(,foo)) foo))
+  (test* "native-type (,<int> *)" #t
+         (equal? (native-type `(,<int> *)) (make-c-pointer-type <int>)))
+  (test* "native-type rejects non-modifier symbol with instance"
+         (test-error)
+         (native-type `(,foo int)))
+  (test* "native-type rejects two instances"
+         (test-error)
+         (native-type `(,foo ,foo *))))
+
 ;; Special treatment of c-string
 (test* "native-type c-string" #t
        (eq? (native-type 'c-string) <c-string>))

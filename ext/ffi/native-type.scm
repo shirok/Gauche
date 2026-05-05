@@ -953,6 +953,22 @@
     [('const type)
      (native-type type)]
 
+    ;; List with an inserted <native-type> instance, e.g. (,foo *),
+    ;; (const ,foo *), (,foo **).  The remaining elements must be
+    ;; modifier symbols (const, *, **, etc.).
+    [(? (^l (and (list? l)
+                 (any (cut is-a? <> <native-type>) l)
+                 (every (^x (or (symbol? x) (is-a? x <native-type>))) l))))
+     (let ([instances (filter (cut is-a? <> <native-type>) signature)]
+           [modifiers (filter symbol? signature)])
+       (unless (null? (cdr instances))
+         (error "Native type signature can only contain one type instance:"
+                signature))
+       (let1 normalized (symbol->string (%normalize-c-type-list modifiers))
+         (unless (#/^\**$/ normalized)
+           (error "Invalid native type signature:" signature))
+         (%wrap-pointer-type (car instances) (string-length normalized))))]
+
     ;; C-style list type form, e.g. (char*), (char *), (char const*),
     ;; (int **), (int* *).  Strip const and concatenate into a single
     ;; symbol, then re-parse.
