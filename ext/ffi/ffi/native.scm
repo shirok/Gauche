@@ -54,7 +54,7 @@
 ;;
 ;; The provisional (define name #f) bindings have already been emitted by
 ;; with-ffi at begin level.  Body forms are also at begin level.  This macro
-;; only handles evaluating the cfn list and set!ing each name.
+;; only handles evaluating the cdef list and set!ing each name.
 (define-syntax with-native-ffi
   (er-macro-transformer
    (^[f r c]
@@ -120,7 +120,7 @@
 ;; Build a Scheme procedure that calls the C function described by cfn via
 ;; call-amd64.  Called at load time from the set! forms emitted by
 ;; with-native-ffi.
-(define (make-native-ffi-proc dlo cfn)
+(define-method make-native-ffi-proc (dlo (cfn <foreign-c-function>))
   (let* ([native-call (cond-expand
                        [x86_64
                         (use lang.asm.x86_64)
@@ -178,3 +178,7 @@
                      arg-canons arg-coerce args)
                 ret-canon)))))
       (%procedure-copy raw-proc tag-info))))
+
+(define-method make-native-ffi-proc (dlo (ccb <foreign-c-callback>))
+  (warn "define-c-callback is not supported in this subsystem (yet): ~s"
+        (~ ccb'scheme-name)))

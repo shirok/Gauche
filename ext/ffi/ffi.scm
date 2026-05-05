@@ -40,6 +40,7 @@
           ffi-subsystem-available?
           define-c-function
           <foreign-c-function>
+          <foreign-c-callback>
           foreign-function-info)
   )
 (select-module gauche.ffi)
@@ -252,14 +253,14 @@
                `(let* ([arg&types ,arg-list-expr]
                        [args (map car arg&types)]
                        [atypes (map ($ %resolve-typespec $ cadr $) arg&types)]
-                       [rtype (%resolev-typespec ,rettype-expr)])
+                       [rtype (%resolve-typespec ,rettype-expr)])
                   (make <foreign-c-callback>
                     :scheme-name ',name
                     :c-name ,(cgen-safe-name-friendly (x->string name))
                     :arg-vars args
                     :arg-types atypes
                     :return-type rtype
-                    :body (lambda ,args ,@body))))]))
+                    :body `(lambda ,args . ,',body))))]))
 
         (define (make-cdef-expr form)
           (ecase (car form) ; forms are already unwrapped

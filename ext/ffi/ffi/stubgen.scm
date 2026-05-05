@@ -65,22 +65,25 @@
                                             (current-module)))
                )))]))))
 
-(define (compile-and-link-ffi-stub dlobj cfn-instances mod)
-  (let ([unit (generate-ffi-c-code-unit cfn-instances)]
+(define (compile-and-link-ffi-stub dlobj cdef-instances mod)
+  (let ([unit (generate-ffi-c-code-unit cdef-instances)]
         ;; Collect return types for pointer-returning functions, in order.
         ;; These are passed as extra args to ffisetup so it can populate
         ;; the per-function static type variables used in boxing.
         [pointer-ret-types
-         (filter-map (^[cfn] (and (pointer-type? (~ cfn'return-type))
-                                  (~ cfn'return-type)))
-                     cfn-instances)]
+         (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
+                                   (pointer-type? (~ cdef'return-type))
+                                   (~ cdef'return-type)))
+                     cdef-instances)]
         ;; Collect (fixed-arg-types . ret-type) pairs for variadic functions,
         ;; in order.  ffisetup uses these to populate the sub-stub type
         ;; variables that %generate-float-substub needs at call time.
         [variadic-type-infos
-         (filter-map (^[cfn] (and (~ cfn'variadic?)
-                                  (cons (~ cfn'arg-types) (~ cfn'return-type))))
-                     cfn-instances)])
+         (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
+                                   (~ cdef'variadic?)
+                                   (cons (~ cdef'arg-types)
+                                         (~ cdef'return-type))))
+                     cdef-instances)])
     (cgen-dynamic-load unit (sys-tmpdir))
     ((module-binding-ref mod 'ffisetup) dlobj pointer-ret-types variadic-type-infos
      mod)))
@@ -552,8 +555,10 @@
 ;;; Generate C code from a list of <foreign-c-function> instances.
 ;;;
 
-(define (generate-ffi-c-code-unit cfn-instances)
+(define (generate-ffi-c-code-unit cdef-instances)
   (define unit-name (symbol->string (gensym "ffi")))
+  (define cfn-instances
+    (filter (cut is-a? <> <foreign-c-function>) cdef-instances))
   (define unit
     (make <cgen-unit>
       :name unit-name
