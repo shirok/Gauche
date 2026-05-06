@@ -70,26 +70,27 @@
               ;; expr of 'shift' is executed on the outside of 'reset'
               (shift k (display (p))))))))
 
-;; native : [r01][r02][r02][r03]
-;; meta   : [r01][r02][r02][r03]
-;; srfi226: [r01][r02][r02][r03]
-;; racket : [r01][r02][r02][r03]
+;; native : [r01][r02]
+;; meta   : [r01][r02]
+;; srfi226: [r01][r02]
+;; racket : [r01][r02]
 (test* "reset/shift + call/cc 1"
-       "[r01][r02][r02][r03]"
+       "[r01][r02]"
        (with-output-to-string
          (lambda ()
            (define k1 #f)
            (define done #f)
-           (call/cc
-            (lambda (k0)
-              (reset
-               (display "[r01]")
-               (shift k (set! k1 k))
-               (display "[r02]")
-               (unless done
-                 (set! done #t)
-                 (k0))
-               (display "[r03]"))))
+           (reset
+            (call/cc
+             (lambda (k0)
+               (reset
+                (display "[r01]")
+                (shift k (set! k1 k))
+                (display "[r02]")
+                (unless done
+                  (set! done #t)
+                  (k0))
+                (display "[r03]")))))
            (k1))))
 
 ;; native : [r01][s01][s02][s02]
@@ -127,7 +128,7 @@
             (display "[s01]")
             (call/cc (lambda (k) (set! k2 k)))
             ;; empty after call/cc
-                                        ;(display "[s02]")
+            ;(display "[s02]")
             )
            (k1)
            (reset (reset (k2))))))
@@ -155,12 +156,13 @@
            (k1)
            (reset (reset (k2))))))
 
-;; native : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
+;; native : [r01][s01][s02][d01][d02][s02]12345[d03]
 ;; meta   : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
 ;; srfi226: [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
 ;; racket : [r01][s01][s02][d01][d02][s02]12345[d03]
 (test* "reset/shift + call/cc 2-D (from Kahua nqueen broken)"
-       "[r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]"
+       ;"[r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]"
+       "[r01][s01][s02][d01][d02][s02]12345[d03]"
        (with-output-to-string
          (lambda ()
            (define k1 #f)
@@ -176,7 +178,7 @@
            (dynamic-wind
              (lambda () (display "[d01]"))
              (lambda () (display "[d02]")
-                     (display (reset (reset (k2)))))
+                        (display (reset (reset (k2)))))
              (lambda () (display "[d03]"))))))
 
 ;; native : [r01][s01][s01]
@@ -198,37 +200,41 @@
            (k2)
            (reset (k1)))))
 
-;; native : error
+;; native : ""
 ;; meta   : ""
-;; srfi226: -
-;; racket : -
+;; srfi226: ""
+;; racket : ""
 (gauche-only
  (test* "reset/shift + call/cc error 1"
-        (test-error)
+        ;(test-error)
+        ""
         (with-output-to-string
           (lambda ()
             (define k1 #f)
             (define k2 #f)
-            (define (f1) (call/cc (lambda (k) (set! k1 k)))
+            (define (f1)
+              (call/cc (lambda (k) (set! k1 k)))
               (shift k (set! k2 k))
               (display "[f01]"))
             (define (f2) (display "[f02]"))
             (reset (f1) (f2))
             (reset (k1))))))
 
-;; native : error
+;; native : ""
 ;; meta   : ""
-;; srfi226: -
-;; racket : -
+;; srfi226: ""
+;; racket : ""
 (gauche-only
  (test* "reset/shift + call/cc error 2"
-        (test-error)
+        ;(test-error)
+        ""
         (with-output-to-string
           (lambda ()
             (define k1 #f)
             (define k2 #f)
             (define k3 #f)
-            (define (f1) (call/cc (lambda (k) (set! k1 k)))
+            (define (f1)
+              (call/cc (lambda (k) (set! k1 k)))
               (shift k (set! k2 k))
               (display "[f01]"))
             (define (f2) (display "[f02]"))
@@ -346,6 +352,37 @@
                 (lambda () (display "[D01]"))
                 next
                 (lambda () (display "[D02]"))))))))
+
+(gauche-only
+ (test* "reset/shift + guard 2"
+        "catch error!!"
+        (let ((k1 #f))
+          (reset
+           (guard (e [else "catch error!!"])
+             (shift k (set! k1 k))
+             (error "err")))
+          (k1 100))))
+
+(gauche-only
+ (test* "reset/shift + eval 1"
+        42
+        (reset (eval '(shift k (k 42)) (current-module)))))
+
+(gauche-only
+ (test* "reset/shift + eval 2"
+        42
+        (reset (eval '(+ (shift k (k 42))) (current-module)))))
+
+(gauche-only
+ (test* "reset/shift + eval 3"
+        42
+        (reset (+ (eval '(shift k (k 42)) (current-module))))))
+
+(gauche-only
+ (test* "reset/shift + eval 4"
+        '(42 43 44)
+        (receive vals (reset (eval '(shift k (k 42 43 44)) (current-module)))
+          vals)))
 
 ;; native : [d01][d02][d03][d04]
 ;; meta   : [d01][d02][d04][d01][d03][d04]

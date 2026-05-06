@@ -73,8 +73,8 @@ struct ScmPromptTagRec {
    multiple of ScmWord. */
 typedef struct ScmPromptDataRec {
     ScmWord dummy;              /* RET insn */
-    ScmObj abortHandler;        /* abort handler */
-    ScmObj dynamicHandlers;     /* dynamic-wind handler chain */
+    ScmObj abortHandler;        /* abort handler              (not used now)*/
+    ScmObj dynamicHandlers;     /* dynamic-wind handler chain (not used now)*/
 } ScmPromptData;
 
 #define PROMPT_DATA_SIZE       sizeof(ScmPromptData)/sizeof(ScmWord)
@@ -132,6 +132,13 @@ SCM_CLASS_DECL(Scm_DynamicHandlerClass);
  *  EscapePoint (EP) structure is a saved continuation.  It grabs
  *  a head of continuation chain with some auxiliary data.
  */
+
+enum {
+    CONT_TYPE_FULL = 0,
+    CONT_TYPE_COMPOSABLE = 1,
+    CONT_TYPE_NON_COMPOSABLE = 2
+};
+
 typedef struct ScmEscapePointRec {
     SCM_HEADER;
     ScmObj ehandler;            /* handler closure */
@@ -144,8 +151,8 @@ typedef struct ScmEscapePointRec {
                                    for they can be executed on anywhere
                                    w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
-    ScmObj resetChain;          /* for reset/shift */
-    ScmObj partHandlers;        /* for reset/shift */
+    ScmObj partialChain;        /* for partial continuation */
+    ScmObj partialHandlers;     /* for partial continuation */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control
@@ -159,11 +166,20 @@ typedef struct ScmEscapePointRec {
                                    with-error-handler uses the latter model,
                                    but SRFI-34's guard needs the former model.
                                 */
+    int contType;               /* continuation type
+                                     CONT_TYPE_FULL
+                                       - full continuation (legacy)
+                                     CONT_TYPE_COMPOSABLE
+                                       - composable partial continuation
+                                     CONT_TYPE_NON_COMPOSABLE
+                                       - non-composable partial continuation
+                                */
 
     /* The following fields are used for new implementation of partial cont. */
-    ScmObj promptTag;
-    ScmObj abortHandler;
-    struct ScmEscapePointRec *bottom;
+    ScmObj promptTag;           /* (not used now) */
+    ScmObj abortHandler;        /* abort handler */
+    ScmObj abortArgs;           /* abort handler's arguments */
+    struct ScmEscapePointRec *bottom; /* (not used now) */
 } ScmEscapePoint;
 
 SCM_CLASS_DECL(Scm_EscapePointClass);

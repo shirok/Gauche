@@ -497,7 +497,7 @@
             (lambda ()
               (abort-current-continuation tag1 'foo))))))
 
-'(let ([tag (make-continuation-prompt-tag 'tag)])
+(let ([tag (make-continuation-prompt-tag 'tag)])
   (test* "abort-current-continuation crosses cstack boundary"
          '(a)
          (call-with-continuation-prompt
@@ -521,6 +521,62 @@
                 (^[] (push! r 'after))))
             tag1
             (^[x] (push! r x))))))
+
+(let ([tag1 (make-continuation-prompt-tag 'tag1)]
+      [tag2 (make-continuation-prompt-tag 'tag2)])
+  (test* "abort-current-continuation (two tags)"
+         "[p01][p02][a01][p05]"
+         (with-output-to-string
+           (lambda ()
+             (call-with-continuation-prompt
+              (lambda ()
+                (display "[p01]")
+                (call-with-continuation-prompt
+                 (lambda ()
+                   (display "[p02]")
+                   (abort-current-continuation
+                    tag2
+                    (lambda ()
+                      (display "[a01]")))
+                   (display "[p03]"))
+                 tag1)
+                (display "[p04]"))
+              tag2)
+             (display "[p05]")))))
+
+(let ([tag (make-continuation-prompt-tag)])
+  (test* "call-with-composable-continuation 1"
+         6930 ; = 11 * 3 * 7 * 5 * 3 * 2
+         (* 2
+            (call-with-continuation-prompt
+             (lambda ()
+               (* 3
+                  (call-with-composable-continuation
+                   (lambda (k)
+                     (* 5
+                        (call-with-continuation-prompt
+                         (lambda ()
+                           (* 7 (k 11)))
+                         tag)))
+                   tag)))
+             tag))))
+
+(let ([tag (make-continuation-prompt-tag)])
+  (test* "call-with-non-composable-continuation 1"
+         990 ; = 11 * 3 * 5 * 3 * 2
+         (* 2
+            (call-with-continuation-prompt
+             (lambda ()
+               (* 3
+                  (call-with-non-composable-continuation
+                   (lambda (k)
+                     (* 5
+                        (call-with-continuation-prompt
+                         (lambda ()
+                           (* 7 (k 11)))
+                         tag)))
+                   tag)))
+             tag))))
 
 ;;-----------------------------------------------------------------------
 ;; Parameterizations
@@ -580,6 +636,47 @@
       (^[] (+ 1 (reset (+ 2 (shift k (+ 3 (k 5) (k 1))))))))
 (test "calling pc multi" '(1 3 2 2 4)
       (^[] (cons 1 (reset (cons 2 (shift k (cons 3 (k (k (cons 4 '()))))))))))
+
+(test* "reset-at / shift-at 1"
+       "[r01][r02][r03][r04][s01][s02][r05]"
+       (with-output-to-string
+         (lambda ()
+           (define tag1 (make-continuation-prompt-tag 'tag1))
+           (define tag2 (make-continuation-prompt-tag 'tag2))
+           (define k1 #f)
+           (define k2 #f)
+           (reset-at tag1
+            (display "[r01]")
+            (reset-at tag2
+             (display "[r02]")
+             (shift-at tag2 k
+              (set! k1 k))
+             (display "[s01]")
+             (shift-at tag1 k
+              (set! k2 k))
+             (display "[s02]"))
+            (display "[r03]"))
+           (reset-at tag1
+            (display "[r04]")
+            (k1)
+            (display "[r05]"))
+           (k2))))
+
+(test* "reset / shift 1"
+       '(1 2 3)
+       (reset
+        (for-each
+         (lambda (x) (shift k (cons x (k 'next))))
+         '(1 2 3))
+        '()))
+
+(test* "prompt / control 1"
+       '(3 2 1)
+       (prompt
+        (for-each
+         (lambda (x) (control k (cons x (k 'next))))
+         '(1 2 3))
+        '()))
 
 ;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
 (let ()

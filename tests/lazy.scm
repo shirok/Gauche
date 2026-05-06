@@ -294,6 +294,11 @@
   (test* "interference with partcont" '(z 0 a 1 b 2 c 3 d 4 e 5)
          (cons 'z (make-seq)))
   )
+;; revert from gauche.partcont
+(define call-with-current-continuation
+  (with-module scheme call-with-current-continuation))
+(define call/cc (with-module scheme call/cc))
+(define guard   (with-module gauche guard))
 
 ;; lcons
 (let ()
