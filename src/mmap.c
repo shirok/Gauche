@@ -46,26 +46,33 @@
 #include <sys/mman.h>
 #endif
 
+/* Unmap the region pointed to by M and clear m->ptr.
+   No-op if m->ptr is already NULL.
+   Note: It is unsafe to call Scm_SysMunmap directly if there're
+   Scheme objects that has reference to the memory region. */
+void Scm_SysMunmap(ScmMemoryRegion *m)
+{
+    if (m == NULL || m->ptr == NULL) return;
+#if !defined(GAUCHE_WINDOWS)
+    int r;
+    SCM_SYSCALL(r, munmap(m->ptr, m->size));
+    if (r < 0) Scm_Warn("munmap failed");
+    m->ptr = NULL;
+#else  /*GAUCHE_WINDOWS*/
+    if (!UnmapViewOfFile(m->ptr)) {
+        Scm_SysError("UnmapViewOfFile failed");
+    }
+    m->ptr = NULL;
+    if (!CloseHandle(m->fileMapping)) {
+        Scm_SysError("CloseHandle failed");
+    }
+    m->fileMapping = INVALID_HANDLE_VALUE;
+#endif /*GAUCHE_WINDOWS*/
+}
+
 static void mem_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
-    ScmMemoryRegion *m = SCM_MEMORY_REGION(obj);
-    if (m->ptr != NULL) {
-#if !defined(GAUCHE_WINDOWS)
-        int r;
-        SCM_SYSCALL(r, munmap(m->ptr, m->size));
-        if (r < 0) Scm_Warn("munmap failed");
-        m->ptr = NULL;
-#else  /*GAUCHE_WINDOWS*/
-        if (!UnmapViewOfFile(m->ptr)) {
-            Scm_SysError("UnmapViewOfFile failed");
-        }
-        m->ptr = NULL;
-        if (!CloseHandle(m->fileMapping)) {
-            Scm_SysError("CloseHandle failed");
-        }
-        m->fileMapping = INVALID_HANDLE_VALUE;
-#endif /*GAUCHE_WINDOWS*/
-    }
+    Scm_SysMunmap(SCM_MEMORY_REGION(obj));
 }
 
 static ScmObj make_memory_region(void *ptr, size_t size, int prot, int flags

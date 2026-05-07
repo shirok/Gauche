@@ -55,4 +55,5 @@ SCM_EXTERN ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
 SCM_EXTERN void   Scm_SysMmapWX(size_t len,
                                 ScmMemoryRegion **writable,
                                 ScmMemoryRegion **executable);
+SCM_EXTERN void   Scm_SysMunmap(ScmMemoryRegion *region);
 #endif /*GAUCHE_PRIV_MMAPP_H*/
