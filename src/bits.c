@@ -48,20 +48,20 @@ ScmBits *Scm_MakeBits(int numbits)
     return bits;
 }
 
-void Scm_BitsCopyX(ScmBits *target, int tstart,
-                   ScmBits *src, int sstart, int send)
+void Scm_BitsCopyX(ScmBits *target, ScmSmallInt tstart,
+                   ScmBits *src, ScmSmallInt sstart, ScmSmallInt send)
 {
     if (tstart%SCM_WORD_BITS == 0
         && sstart%SCM_WORD_BITS == 0
         && send%SCM_WORD_BITS == 0) {
         /* easy path */
-        int tw = tstart/SCM_WORD_BITS;
-        int sw = sstart/SCM_WORD_BITS;
-        int ew = send/SCM_WORD_BITS;
+        ScmSmallInt tw = tstart/SCM_WORD_BITS;
+        ScmSmallInt sw = sstart/SCM_WORD_BITS;
+        ScmSmallInt ew = send/SCM_WORD_BITS;
         while (sw < ew) target[tw++] = src[sw++];
     } else {
         /* TODO: make this more efficient. */
-        int t, s;
+        ScmSmallInt t, s;
         for (t=tstart, s=sstart; s < send; t++, s++) {
             if (SCM_BITS_TEST(src, s)) SCM_BITS_SET(target, t);
             else                       SCM_BITS_RESET(target, t);
@@ -69,12 +69,12 @@ void Scm_BitsCopyX(ScmBits *target, int tstart,
     }
 }
 
-void Scm_BitsFill(ScmBits *bits, int start, int end, int b)
+void Scm_BitsFill(ScmBits *bits, ScmSmallInt start, ScmSmallInt end, int b)
 {
-    int sw = start / SCM_WORD_BITS;
-    int ew = end   / SCM_WORD_BITS;
-    int sb = start % SCM_WORD_BITS;
-    int eb = end   % SCM_WORD_BITS;
+    ScmSmallInt sw = start / SCM_WORD_BITS;
+    ScmSmallInt ew = end   / SCM_WORD_BITS;
+    ScmSmallInt sb = start % SCM_WORD_BITS;
+    ScmSmallInt eb = end   % SCM_WORD_BITS;
 
     if (sw == ew) {
         u_long mask = ((1UL<<eb) - 1) & ~((1UL<<sb) - 1);
@@ -94,15 +94,15 @@ void Scm_BitsFill(ScmBits *bits, int start, int end, int b)
 
 void Scm_BitsOperate(ScmBits *r, ScmBitOp op,
                      const ScmBits *a, const ScmBits *b,
-                     int s, int e)
+                     ScmSmallInt s, ScmSmallInt e)
 {
-    int sw = s/SCM_WORD_BITS;
-    int sb = s%SCM_WORD_BITS;
-    int ew = e/SCM_WORD_BITS;
-    int eb = e%SCM_WORD_BITS;
+    ScmSmallInt sw = s/SCM_WORD_BITS;
+    ScmSmallInt sb = s%SCM_WORD_BITS;
+    ScmSmallInt ew = e/SCM_WORD_BITS;
+    ScmSmallInt eb = e%SCM_WORD_BITS;
 
     /* NB: Not very optimized for speed.  Rewrite when we hit a bottleneck. */
-    for (int w = sw; w < ew + (eb?1:0); w++) {
+    for (ScmSmallInt w = sw; w < ew + (eb?1:0); w++) {
         u_long z = 0;
         switch (op) {
         case SCM_BIT_AND:  z = a[w] & b[w];    break;
@@ -132,12 +132,13 @@ void Scm_BitsOperate(ScmBits *r, ScmBitOp op,
  * Comparison
  */
 
-int Scm_BitsEqual(const ScmBits *a, const ScmBits *b, int s, int e)
+int Scm_BitsEqual(const ScmBits *a, const ScmBits *b,
+                  ScmSmallInt s, ScmSmallInt e)
 {
-    int sw = s/SCM_WORD_BITS;
-    int sb = s%SCM_WORD_BITS;
-    int ew = e/SCM_WORD_BITS;
-    int eb = e%SCM_WORD_BITS;
+    ScmSmallInt sw = s/SCM_WORD_BITS;
+    ScmSmallInt sb = s%SCM_WORD_BITS;
+    ScmSmallInt ew = e/SCM_WORD_BITS;
+    ScmSmallInt eb = e%SCM_WORD_BITS;
 
     if (sb) {
         if (((a[sw]^b[sw])&~((1UL<<sb)-1)) != 0) return FALSE;
@@ -153,12 +154,13 @@ int Scm_BitsEqual(const ScmBits *a, const ScmBits *b, int s, int e)
 }
 
 /* Returns iff all '1' bits in B is also '1' in A. */
-int Scm_BitsIncludes(const ScmBits *a, const ScmBits *b, int s, int e)
+int Scm_BitsIncludes(const ScmBits *a, const ScmBits *b,
+                     ScmSmallInt s, ScmSmallInt e)
 {
-    int sw = s/SCM_WORD_BITS;
-    int sb = s%SCM_WORD_BITS;
-    int ew = e/SCM_WORD_BITS;
-    int eb = e%SCM_WORD_BITS;
+    ScmSmallInt sw = s/SCM_WORD_BITS;
+    ScmSmallInt sb = s%SCM_WORD_BITS;
+    ScmSmallInt ew = e/SCM_WORD_BITS;
+    ScmSmallInt eb = e%SCM_WORD_BITS;
 
     if (sb) {
         if (((a[sw]^(a[sw]|b[sw]))&~((1UL<<sb)-1)) != 0) return FALSE;
@@ -177,12 +179,12 @@ int Scm_BitsIncludes(const ScmBits *a, const ScmBits *b, int s, int e)
  * Bit checking
  */
 
-int Scm_BitsAny(const ScmBits *bits, int start, int end)
+int Scm_BitsAny(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end)
 {
-    int sw = start  / SCM_WORD_BITS;
-    int ew = (end-1)/ SCM_WORD_BITS;
-    int sb = start  % SCM_WORD_BITS;
-    int eb = end    % SCM_WORD_BITS;
+    ScmSmallInt sw = start  / SCM_WORD_BITS;
+    ScmSmallInt ew = (end-1)/ SCM_WORD_BITS;
+    ScmSmallInt sb = start  % SCM_WORD_BITS;
+    ScmSmallInt eb = end    % SCM_WORD_BITS;
 
     if (start == end) return FALSE;
     if (sw == ew) return !!(bits[sw] & SCM_BITS_MASK(sb, eb));
@@ -193,12 +195,12 @@ int Scm_BitsAny(const ScmBits *bits, int start, int end)
     return FALSE;
 }
 
-int Scm_BitsEvery(const ScmBits *bits, int start, int end)
+int Scm_BitsEvery(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end)
 {
-    int sw = start  / SCM_WORD_BITS;
-    int ew = (end-1)/ SCM_WORD_BITS;
-    int sb = start  % SCM_WORD_BITS;
-    int eb = end    % SCM_WORD_BITS;
+    ScmSmallInt sw = start  / SCM_WORD_BITS;
+    ScmSmallInt ew = (end-1)/ SCM_WORD_BITS;
+    ScmSmallInt sb = start  % SCM_WORD_BITS;
+    ScmSmallInt eb = end    % SCM_WORD_BITS;
 
     if (start == end) return TRUE;
     if (sw == ew) return !(~bits[sw] & SCM_BITS_MASK(sb, eb));
@@ -217,12 +219,12 @@ int Scm_BitsEvery(const ScmBits *bits, int start, int end)
 
 /* count number of '1's from the start-th bit (inclusive) and end-th
    bit (exclusive) */
-int Scm_BitsCount1(const ScmBits *bits, int start, int end)
+int Scm_BitsCount1(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end)
 {
-    int sw = start  / SCM_WORD_BITS;
-    int ew = (end-1)/ SCM_WORD_BITS;
-    int sb = start  % SCM_WORD_BITS;
-    int eb = end    % SCM_WORD_BITS;
+    ScmSmallInt sw = start  / SCM_WORD_BITS;
+    ScmSmallInt ew = (end-1)/ SCM_WORD_BITS;
+    ScmSmallInt sb = start  % SCM_WORD_BITS;
+    ScmSmallInt eb = end    % SCM_WORD_BITS;
 
     if (start == end) return 0;
     if (sw == ew) return count_bits(bits[sw] & SCM_BITS_MASK(sb, eb));
@@ -232,12 +234,12 @@ int Scm_BitsCount1(const ScmBits *bits, int start, int end)
     return num + (count_bits((bits[ew]) & SCM_BITS_MASK(0, eb)));
 }
 
-int Scm_BitsCount0(const ScmBits *bits, int start, int end)
+int Scm_BitsCount0(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end)
 {
-    int sw = start  / SCM_WORD_BITS;
-    int ew = (end-1)/ SCM_WORD_BITS;
-    int sb = start  % SCM_WORD_BITS;
-    int eb = end    % SCM_WORD_BITS;
+    ScmSmallInt sw = start  / SCM_WORD_BITS;
+    ScmSmallInt ew = (end-1)/ SCM_WORD_BITS;
+    ScmSmallInt sb = start  % SCM_WORD_BITS;
+    ScmSmallInt eb = end    % SCM_WORD_BITS;
 
     if (start == end) return 0;
     if (sw == ew) return count_bits(~bits[sw] & SCM_BITS_MASK(sb, eb));
@@ -256,12 +258,12 @@ int Scm_BitsCount0(const ScmBits *bits, int start, int end)
 
 /* Returns the lowest bit number between start (inclusive) and end (exclusive),
    or -1 if all the bits there is zero. */
-int Scm_BitsLowest1(const ScmBits *bits, int start, int end)
+int Scm_BitsLowest1(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end)
 {
-    int sw = start/SCM_WORD_BITS;
-    int sb = start%SCM_WORD_BITS;
-    int ew = (end-1)/SCM_WORD_BITS;
-    int eb = end%SCM_WORD_BITS;
+    ScmSmallInt sw = start/SCM_WORD_BITS;
+    ScmSmallInt sb = start%SCM_WORD_BITS;
+    ScmSmallInt ew = (end-1)/SCM_WORD_BITS;
+    ScmSmallInt eb = end%SCM_WORD_BITS;
 
     if (start == end) return -1;
     if (ew == sw) {
@@ -280,12 +282,12 @@ int Scm_BitsLowest1(const ScmBits *bits, int start, int end)
     }
 }
 
-int Scm_BitsLowest0(const ScmBits *bits, int start, int end)
+int Scm_BitsLowest0(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end)
 {
-    int sw = start/SCM_WORD_BITS;
-    int sb = start%SCM_WORD_BITS;
-    int ew = (end-1)/SCM_WORD_BITS;
-    int eb = end%SCM_WORD_BITS;
+    ScmSmallInt sw = start/SCM_WORD_BITS;
+    ScmSmallInt sb = start%SCM_WORD_BITS;
+    ScmSmallInt ew = (end-1)/SCM_WORD_BITS;
+    ScmSmallInt eb = end%SCM_WORD_BITS;
 
     if (start == end) return -1;
     if (ew == sw) {
@@ -306,12 +308,12 @@ int Scm_BitsLowest0(const ScmBits *bits, int start, int end)
 
 /* Returns the highest bit number between start (inclusive) and end (exclusive),
    or -1 if all the bits there is zero. */
-int Scm_BitsHighest1(const ScmBits *bits, int start, int end)
+int Scm_BitsHighest1(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end)
 {
-    int sw = start/SCM_WORD_BITS;
-    int sb = start%SCM_WORD_BITS;
-    int ew = (end-1)/SCM_WORD_BITS;
-    int eb = end%SCM_WORD_BITS;
+    ScmSmallInt sw = start/SCM_WORD_BITS;
+    ScmSmallInt sb = start%SCM_WORD_BITS;
+    ScmSmallInt ew = (end-1)/SCM_WORD_BITS;
+    ScmSmallInt eb = end%SCM_WORD_BITS;
 
     if (start == end) return -1;
     if (ew == sw) {
@@ -330,12 +332,12 @@ int Scm_BitsHighest1(const ScmBits *bits, int start, int end)
     }
 }
 
-int Scm_BitsHighest0(const ScmBits *bits, int start, int end)
+int Scm_BitsHighest0(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end)
 {
-    int sw = start/SCM_WORD_BITS;
-    int sb = start%SCM_WORD_BITS;
-    int ew = (end-1)/SCM_WORD_BITS;
-    int eb = end%SCM_WORD_BITS;
+    ScmSmallInt sw = start/SCM_WORD_BITS;
+    ScmSmallInt sb = start%SCM_WORD_BITS;
+    ScmSmallInt ew = (end-1)/SCM_WORD_BITS;
+    ScmSmallInt eb = end%SCM_WORD_BITS;
 
     if (start == end) return -1;
     if (ew == sw) {

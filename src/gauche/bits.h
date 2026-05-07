@@ -79,10 +79,15 @@ SCM_EXTERN ScmBits *Scm_MakeBits(int numbits);
 
 /* works on the range of bits, from start (inclusive) to end (exclusive) */
 
-SCM_EXTERN void   Scm_BitsFill(ScmBits *bits, int start, int end, int b);
+SCM_EXTERN void   Scm_BitsFill(ScmBits *bits,
+                               ScmSmallInt start,
+                               ScmSmallInt end, int b);
 
-SCM_EXTERN void   Scm_BitsCopyX(ScmBits *target, int tstart,
-                                ScmBits *src, int sstart, int send);
+SCM_EXTERN void   Scm_BitsCopyX(ScmBits *target,
+                                ScmSmallInt tstart,
+                                ScmBits *src,
+                                ScmSmallInt sstart,
+                                ScmSmallInt send);
 
 typedef enum {
     SCM_BIT_AND,                /* r = a & b */
@@ -105,22 +110,25 @@ typedef enum {
 
 SCM_EXTERN void   Scm_BitsOperate(ScmBits *r, ScmBitOp op,
                                   const ScmBits *a, const ScmBits *b,
-                                  int start, int end);
+                                  ScmSmallInt start,
+                                  ScmSmallInt end);
 
 SCM_EXTERN int    Scm_BitsEqual(const ScmBits *a, const ScmBits *b,
-                                int start, int end);
+                                ScmSmallInt start,
+                                ScmSmallInt end);
 SCM_EXTERN int    Scm_BitsIncludes(const ScmBits *a, const ScmBits *b,
-                                   int start, int end);
+                                   ScmSmallInt start,
+                                   ScmSmallInt end);
 
-SCM_EXTERN int    Scm_BitsCount0(const ScmBits *bits, int start, int end);
-SCM_EXTERN int    Scm_BitsCount1(const ScmBits *bits, int start, int end);
+SCM_EXTERN int    Scm_BitsCount0(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end);
+SCM_EXTERN int    Scm_BitsCount1(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end);
 
-SCM_EXTERN int    Scm_BitsLowest1(const ScmBits *bits, int start, int end);
-SCM_EXTERN int    Scm_BitsLowest0(const ScmBits *bits, int start, int end);
-SCM_EXTERN int    Scm_BitsHighest1(const ScmBits *bits, int start, int end);
-SCM_EXTERN int    Scm_BitsHighest0(const ScmBits *bits, int start, int end);
+SCM_EXTERN int    Scm_BitsLowest1(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end);
+SCM_EXTERN int    Scm_BitsLowest0(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end);
+SCM_EXTERN int    Scm_BitsHighest1(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end);
+SCM_EXTERN int    Scm_BitsHighest0(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end);
 
-SCM_EXTERN int    Scm_BitsAny(const ScmBits *bits, int start, int end);
-SCM_EXTERN int    Scm_BitsEvery(const ScmBits *bits, int start, int end);
+SCM_EXTERN int    Scm_BitsAny(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end);
+SCM_EXTERN int    Scm_BitsEvery(const ScmBits *bits, ScmSmallInt start, ScmSmallInt end);
 
 #endif /*GAUCHE_BITS_H*/

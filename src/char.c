@@ -870,10 +870,10 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
     if (to < from) return SCM_OBJ(cs);
     if (from < SCM_CHAR_SET_SMALL_CHARS) {
         if (to < SCM_CHAR_SET_SMALL_CHARS) {
-            Scm_BitsFill(cs->small, (int)from, (int)to+1, TRUE);
+            Scm_BitsFill(cs->small, (int)from, (ScmSmallInt)to+1, TRUE);
             return SCM_OBJ(cs);
         }
-        Scm_BitsFill(cs->small, (int)from, SCM_CHAR_SET_SMALL_CHARS, TRUE);
+        Scm_BitsFill(cs->small, (ScmSmallInt)from, SCM_CHAR_SET_SMALL_CHARS, TRUE);
         from = SCM_CHAR_SET_SMALL_CHARS;
     }
 

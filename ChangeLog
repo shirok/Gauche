@@ -1,11 +1,17 @@
 2026-05-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/bits.h, src/bits.c: Ensure bit indices are in
+	  ScmSmallInt.  This is a public C API Change. It's better to do it
+	  now.
+
 	* src/vector.c (Scm_BitvectorToUVectorShared, Scm_UVectorToBitvectorShared):
 	  Added to provide "aliasing" bitvectors and uvectors.
 	  ScmBitvector now has 'owner' field to be inherited from the
 	  original uvector's owner field.  It is only to keep reference
 	  so that the original data chunk won't be GCed.
 	  To keep binary compatibility, owner field is added to the last.
+	* src/libvec.scm (bitvector->uvector/shared, uvector->bitvector/shared):
+	  Added.
 
 2026-05-02  Shiro Kawai  <shiro@acm.org>
 

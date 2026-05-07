@@ -883,7 +883,7 @@ ScmObj Scm_MakeViewUVector(ScmMemoryRegion *mem, ScmClass *klass,
 static void bitvector_write_int(ScmBitvector *v, int prefix, ScmPort *port)
 {
     if (prefix) Scm_Putz("#*", -1, port);
-    for (int i=0; i<SCM_BITVECTOR_SIZE(v); i++) {
+    for (ScmSmallInt i=0; i<SCM_BITVECTOR_SIZE(v); i++) {
         if (SCM_BITS_TEST(v->bits, i)) SCM_PUTC('1', port);
         else SCM_PUTC('0', port);
     }
@@ -993,8 +993,7 @@ ScmObj Scm_StringToBitvector(ScmString *s, int prefix)
     }
 
     ScmBitvector *v = SCM_BITVECTOR(Scm_MakeBitvector(len, SCM_FALSE));
-    int i = 0;
-    for (; i < len; p++, i++) {
+    for (ScmSmallInt i = 0; i < len; p++, i++) {
         if (*p == '0')      SCM_BITS_RESET(v->bits, i);
         else if (*p == '1') SCM_BITS_SET(v->bits, i);
         else return SCM_FALSE;
