@@ -3748,6 +3748,10 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
 
     /* find partial continuation information of nearest prompt */
     ScmObj partialInfo = find_partial_information(vm, promptTag);
+    /* workaround for toplevel call/cc error */
+    if (contType == CONT_TYPE_NON_COMPOSABLE && !SCM_PAIRP(partialInfo)) {
+        return Scm_VMCallCCWithTag(proc, promptTag);
+    }
     if (!SCM_PAIRP(partialInfo)) {
         Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                            "prompt-tag", promptTag,

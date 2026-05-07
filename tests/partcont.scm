@@ -70,27 +70,26 @@
               ;; expr of 'shift' is executed on the outside of 'reset'
               (shift k (display (p))))))))
 
-;; native : [r01][r02]
-;; meta   : [r01][r02]
-;; srfi226: [r01][r02]
-;; racket : [r01][r02]
+;; native : [r01][r02][r02][r03]
+;; meta   : [r01][r02][r02][r03]
+;; srfi226: [r01][r02][r02][r03]
+;; racket : [r01][r02][r02][r03]
 (test* "reset/shift + call/cc 1"
-       "[r01][r02]"
+       "[r01][r02][r02][r03]"
        (with-output-to-string
          (lambda ()
            (define k1 #f)
            (define done #f)
-           (reset
-            (call/cc
-             (lambda (k0)
-               (reset
-                (display "[r01]")
-                (shift k (set! k1 k))
-                (display "[r02]")
-                (unless done
-                  (set! done #t)
-                  (k0))
-                (display "[r03]")))))
+           (call/cc
+            (lambda (k0)
+              (reset
+               (display "[r01]")
+               (shift k (set! k1 k))
+               (display "[r02]")
+               (unless done
+                 (set! done #t)
+                 (k0))
+               (display "[r03]"))))
            (k1))))
 
 ;; native : [r01][s01][s02][s02]

@@ -77,12 +77,12 @@
     [(control-at prompt-tag var expr ...)
      (call/control (^[var] expr ...) prompt-tag)]))
 
-;; call/cc
+;; call/cc (= non-composable partial continuation)
 
 (define call-with-current-continuation call-with-non-composable-continuation)
 (define call/cc call-with-non-composable-continuation)
 
-;; guard
+;; guard (from R7RS)
 
 (define-syntax guard
   (syntax-rules ()
@@ -141,4 +141,3 @@
      (if test
        (begin result1 result2 ...)
        (guard-aux reraise clause1 clause2 ...)))))
-
