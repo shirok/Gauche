@@ -106,6 +106,100 @@
  (define-cproc %%get-entry-address (name::<string>)
    (return (Scm__InternalGetEntryAddress name)))
 
+ ;; FFI callback codepad (Phase 1a/1b).  These are bootstrap-only
+ ;; primitives — user code reaches them through the gauche.internal
+ ;; wrappers below or through gauche.ffi.native (Phase 6).
+
+ (define-cclass <ffi-callback-pad>
+   "ScmFFICallbackPad*" "Scm_FFICallbackPadClass"
+   ()
+   ()
+   (printer (let* ((p::ScmFFICallbackPad* (SCM_FFI_CALLBACK_PAD obj)))
+              (if (-> p destroyed)
+                (Scm_Printf port "#<ffi-callback-pad destroyed>")
+                (Scm_Printf port "#<ffi-callback-pad %p+%lu>"
+                            (-> p xpad ptr)
+                            (cast (unsigned long) (-> p entry_off)))))))
+
+ (define-cclass <ffi-callback-context>
+   "ScmFFICallbackContext*" "Scm_FFICallbackContextClass"
+   ()
+   ()
+   (printer (let* ((c::ScmFFICallbackContext* (SCM_FFI_CALLBACK_CONTEXT obj)))
+              (if (-> c destroyed)
+                (Scm_Printf port "#<ffi-callback-context destroyed>")
+                (Scm_Printf port "#<ffi-callback-context %p (%d entries)>"
+                            (-> c xpad ptr)
+                            (-> c n_entries))))))
+
+ (define-cproc %%install-ffi-callback-one (code::<u8vector>
+                                           entry::<fixnum>
+                                           win-prolog-end::<fixnum>
+                                           win-frame-size::<fixnum>)
+   (return (Scm__InstallFFICallbackOne code entry
+                                       win-prolog-end win-frame-size)))
+
+ ;; Returns a <native-handle> tagged with TYPE whose pointer is the
+ ;; pad's executable entry address.  Wrapping the address in a handle
+ ;; (rather than returning a raw integer) keeps the trampoline's
+ ;; address from leaking to Scheme code as a plain integer, and gives
+ ;; the same shape the trampoline-build path in native.scm consumes.
+ (define-cproc %%ffi-callback-pad-entry (pad type::<native-type>)
+   (unless (SCM_FFI_CALLBACK_PAD_P pad)
+     (Scm_Error "<ffi-callback-pad> required, but got: %S" pad))
+   (return (Scm_MakeNativeHandleSimple
+            (Scm__FFICallbackPadEntry (SCM_FFI_CALLBACK_PAD pad))
+            (SCM_OBJ type))))
+
+ (define-cproc %%destroy-ffi-callback-pad! (pad) ::<void>
+   (unless (SCM_FFI_CALLBACK_PAD_P pad)
+     (Scm_Error "<ffi-callback-pad> required, but got: %S" pad))
+   (Scm__DestroyFFICallbackPad (SCM_FFI_CALLBACK_PAD pad)))
+
+ ;; specs is a list of (code entry win-prolog-end win-frame-size).
+ (define-cproc %%install-ffi-callback-context (specs::<list>)
+   (let* ([n::int (cast int (Scm_Length specs))])
+     (when (<= n 0)
+       (Scm_Error "FFI callback context spec list must be non-empty"))
+     (let* ([buf::ScmFFICallbackSpec* (SCM_NEW_ARRAY ScmFFICallbackSpec n)]
+            [i::int 0])
+       (for-each
+        (lambda (entry)
+          (unless (and (SCM_PAIRP entry)
+                       (== (Scm_Length entry) 4))
+            (Scm_Error "FFI callback spec must be a 4-element list, got: %S"
+                       entry))
+          (let* ([code (SCM_CAR entry)]
+                 [rest (SCM_CDR entry)])
+            (unless (SCM_U8VECTORP code)
+              (Scm_Error "FFI callback spec: code must be u8vector: %S" code))
+            (set! (ref (aref buf i) code) (SCM_U8VECTOR code))
+            (set! (ref (aref buf i) entry)
+                  (cast ScmSmallInt (Scm_GetInteger (SCM_CAR rest))))
+            (set! rest (SCM_CDR rest))
+            (set! (ref (aref buf i) win_prolog_end)
+                  (cast ScmSmallInt (Scm_GetInteger (SCM_CAR rest))))
+            (set! rest (SCM_CDR rest))
+            (set! (ref (aref buf i) win_frame_size)
+                  (cast ScmSmallInt (Scm_GetInteger (SCM_CAR rest)))))
+          (post++ i))
+        specs)
+       (return (Scm__InstallFFICallbackContext buf n)))))
+
+ (define-cproc %%ffi-callback-context-entry (ctx i::<fixnum>
+                                             type::<native-type>)
+   (unless (SCM_FFI_CALLBACK_CONTEXT_P ctx)
+     (Scm_Error "<ffi-callback-context> required, but got: %S" ctx))
+   (return (Scm_MakeNativeHandleSimple
+            (Scm__FFICallbackContextEntry (SCM_FFI_CALLBACK_CONTEXT ctx)
+                                          (cast int i))
+            (SCM_OBJ type))))
+
+ (define-cproc %%destroy-ffi-callback-context! (ctx) ::<void>
+   (unless (SCM_FFI_CALLBACK_CONTEXT_P ctx)
+     (Scm_Error "<ffi-callback-context> required, but got: %S" ctx))
+   (Scm__DestroyFFICallbackContext (SCM_FFI_CALLBACK_CONTEXT ctx)))
+
  ;; For JIT
  (define-cproc %%jit-compile-procedure (proc compiler)
    (unless (SCM_CLOSUREP proc)
@@ -155,6 +249,22 @@
                   (hash-table-put! tab name (module-binding-ref mod name)))))
     (^[n] (or (hash-table-get tab n #f)
               (error "Unknown procedure:" n)))))
+
+;; Hold references to the bootstrap-only callback primitives so they
+;; remain reachable after the gauche.bootstrap module is dismantled.
+;; (Phase 1a / 1b — see PLAN.md.)
+(define %%install-ffi-callback-one
+  (module-binding-ref 'gauche.bootstrap '%%install-ffi-callback-one))
+(define %%ffi-callback-pad-entry
+  (module-binding-ref 'gauche.bootstrap '%%ffi-callback-pad-entry))
+(define %%destroy-ffi-callback-pad!
+  (module-binding-ref 'gauche.bootstrap '%%destroy-ffi-callback-pad!))
+(define %%install-ffi-callback-context
+  (module-binding-ref 'gauche.bootstrap '%%install-ffi-callback-context))
+(define %%ffi-callback-context-entry
+  (module-binding-ref 'gauche.bootstrap '%%ffi-callback-context-entry))
+(define %%destroy-ffi-callback-context!
+  (module-binding-ref 'gauche.bootstrap '%%destroy-ffi-callback-context!))
 
 ;; Stub for FFI
 (include "native-supp.scm")

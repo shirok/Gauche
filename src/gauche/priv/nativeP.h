@@ -53,4 +53,81 @@ SCM_EXTERN ScmObj Scm__VMCallNative(ScmVM *vm,
 
 SCM_EXTERN ScmObj Scm__AllocateCodePage(ScmU8Vector *code);
 
+/*
+ * FFI callback codepad
+ *
+ * An executable region that holds the trampoline machine code
+ * for FFI callbacks.
+ *
+ * We keep the writable view (wpad) and the executable view (xpad)
+ * separately, mirroring ScmCodeCache.  On platforms that allow a
+ * single W|X mapping (the current case) Scm_SysMmapWX returns the
+ * same ScmMemoryRegion for both, but on platforms with W^X (e.g.
+ * Pax MPROTECT) they will differ; addresses written into wpad are
+ * translated to xpad-relative addresses for execution and external
+ * exposure.
+ */
+
+typedef struct ScmFFICallbackPadRec ScmFFICallbackPad;
+
+struct ScmFFICallbackPadRec {
+    SCM_HEADER;
+    ScmMemoryRegion *wpad;      /* writable view; NULL after destroy */
+    ScmMemoryRegion *xpad;      /* executable view; may equal wpad */
+    size_t code_size;           /* bytes copied into wpad */
+    size_t entry_off;           /* entry offset in bytes from xpad->ptr */
+    int    destroyed;           /* set by Scm__DestroyFFICallbackPad */
+#if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
+    void  *pdata;               /* RUNTIME_FUNCTION* registered with the OS;
+                                   NULL until Phase 7 */
+#endif
+};
+
+SCM_CLASS_DECL(Scm_FFICallbackPadClass);
+#define SCM_CLASS_FFI_CALLBACK_PAD     (&Scm_FFICallbackPadClass)
+#define SCM_FFI_CALLBACK_PAD(obj)      ((ScmFFICallbackPad*)obj)
+#define SCM_FFI_CALLBACK_PAD_P(obj)    SCM_XTYPEP(obj, SCM_CLASS_FFI_CALLBACK_PAD)
+
+SCM_EXTERN ScmObj Scm__InstallFFICallbackOne(ScmU8Vector *code,
+                                             ScmSmallInt  entry,
+                                             ScmSmallInt  win_prolog_end,
+                                             ScmSmallInt  win_frame_size);
+SCM_EXTERN void  *Scm__FFICallbackPadEntry(ScmFFICallbackPad *pad);
+SCM_EXTERN void   Scm__DestroyFFICallbackPad(ScmFFICallbackPad *pad);
+
+
+typedef struct ScmFFICallbackContextRec ScmFFICallbackContext;
+
+/* One entry of a batched install request. */
+typedef struct {
+    ScmU8Vector *code;
+    ScmSmallInt  entry;
+    ScmSmallInt  win_prolog_end;   /* 0 on non-Windows */
+    ScmSmallInt  win_frame_size;   /* 0 on non-Windows */
+} ScmFFICallbackSpec;
+
+struct ScmFFICallbackContextRec {
+    SCM_HEADER;
+    ScmMemoryRegion *wpad;       /* writable view; NULL after destroy */
+    ScmMemoryRegion *xpad;       /* executable view; may equal wpad */
+    int     n_entries;
+    size_t *entry_offs;          /* n_entries elements, byte offsets in xpad */
+    int     destroyed;
+#if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
+    void  *pdata_table;          /* RUNTIME_FUNCTION array; NULL until Phase 7 */
+#endif
+};
+
+SCM_CLASS_DECL(Scm_FFICallbackContextClass);
+#define SCM_CLASS_FFI_CALLBACK_CONTEXT   (&Scm_FFICallbackContextClass)
+#define SCM_FFI_CALLBACK_CONTEXT(obj)    ((ScmFFICallbackContext*)obj)
+#define SCM_FFI_CALLBACK_CONTEXT_P(obj)  \
+    SCM_XTYPEP(obj, SCM_CLASS_FFI_CALLBACK_CONTEXT)
+
+SCM_EXTERN ScmObj Scm__InstallFFICallbackContext(const ScmFFICallbackSpec *specs,
+                                                 int nspecs);
+SCM_EXTERN void  *Scm__FFICallbackContextEntry(ScmFFICallbackContext *ctx,
+                                               int i);
+SCM_EXTERN void   Scm__DestroyFFICallbackContext(ScmFFICallbackContext *ctx);
+
 #endif /*GAUCHE_PRIV_NATIVEP_H*/

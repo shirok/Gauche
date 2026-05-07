@@ -38,6 +38,13 @@ gauche--ffi--ffiaux.c ffi/ffiaux.sci : ffi/ffiaux.scm
 
 install : install-std
 
+# Temporary: Run the low-level native-FFI internals tests in isolation.
+check-native : all
+	@rm -f test-native.log
+	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) $(GOSH) -I"$(srcdir)" -I. \
+	    "$(srcdir)/test-native.scm" > test-native.log
+	@cat test-native.log
+
 #
 # Files for testing
 #

@@ -307,6 +307,163 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
 }
 
 /*======================================================================
+ * FFI callback support
+ *
+ * For each group of foreign callbacks defined in a with-ffi block,
+ * we mmap a fresh W/X region that holds the trampoline machine code.
+ */
+
+static size_t round_up_to_page(size_t n)
+{
+    long page = sys_getpagesize();
+    return (n + (size_t)page - 1) / (size_t)page * (size_t)page;
+}
+
+/*--------------------------------------------------------------------
+ * Single-callback install
+ */
+
+ScmObj Scm__InstallFFICallbackOne(ScmU8Vector *code,
+                                  ScmSmallInt  entry,
+                                  ScmSmallInt  win_prolog_end SCM_UNUSED,
+                                  ScmSmallInt  win_frame_size SCM_UNUSED)
+{
+    SCM_ASSERT(SCM_U8VECTORP(code));
+    ScmSmallInt csize = SCM_UVECTOR_SIZE(code);
+    if (csize <= 0) Scm_Error("FFI callback code is empty");
+    if (entry < 0 || entry >= csize) {
+        Scm_Error("FFI callback entry out of range: %ld (code size %ld)",
+                  (long)entry, (long)csize);
+    }
+
+    size_t alloc_size = round_up_to_page((size_t)csize);
+    ScmMemoryRegion *wpad = NULL, *xpad = NULL;
+    Scm_SysMmapWX(alloc_size, &wpad, &xpad);
+
+    memcpy(wpad->ptr, SCM_UVECTOR_ELEMENTS(code), (size_t)csize);
+
+    /* Later, we will set up CpPdata + RtlAddFunctionTable here. */
+
+    ScmFFICallbackPad *pad = SCM_NEW(ScmFFICallbackPad);
+    SCM_SET_CLASS(pad, SCM_CLASS_FFI_CALLBACK_PAD);
+    pad->wpad      = wpad;
+    pad->xpad      = xpad;
+    pad->code_size = (size_t)csize;
+    pad->entry_off = (size_t)entry;
+    pad->destroyed = 0;
+#if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
+    pad->pdata = NULL;
+#endif
+    return SCM_OBJ(pad);
+}
+
+void *Scm__FFICallbackPadEntry(ScmFFICallbackPad *pad)
+{
+    if (pad->destroyed || pad->xpad == NULL || pad->xpad->ptr == NULL) {
+        Scm_Error("FFI callback pad has been destroyed");
+    }
+    return (char*)pad->xpad->ptr + pad->entry_off;
+}
+
+void Scm__DestroyFFICallbackPad(ScmFFICallbackPad *pad)
+{
+    if (pad->destroyed) return;
+    pad->destroyed = 1;
+    /* RtlDeleteFunctionTable(pad->pdata) on Windows. */
+    Scm_SysMunmap(pad->wpad);
+    Scm_SysMunmap(pad->xpad);
+    pad->wpad = NULL;
+    pad->xpad = NULL;
+}
+
+/*--------------------------------------------------------------------
+ * Batched per-with-ffi context install
+ */
+
+ScmObj Scm__InstallFFICallbackContext(const ScmFFICallbackSpec *specs,
+                                      int nspecs)
+{
+    if (nspecs < 0) Scm_Error("nspecs must be non-negative: %d", nspecs);
+    if (nspecs == 0) Scm_Error("FFI callback context with no entries");
+
+    /* Lay out all callbacks back-to-back.  Each callback's code is
+       8-byte aligned so that any data section embedded in the
+       trampoline (label tables, helper addresses, etc.) keeps its
+       natural alignment.  Later, the PDATA blocks will be appended
+       after the last callback, also 4-byte aligned. */
+    size_t *offsets = SCM_NEW_ARRAY(size_t, nspecs);
+    size_t  total = 0;
+    for (int i = 0; i < nspecs; i++) {
+        ScmU8Vector *code = specs[i].code;
+        SCM_ASSERT(SCM_U8VECTORP(code));
+        ScmSmallInt csize = SCM_UVECTOR_SIZE(code);
+        ScmSmallInt e     = specs[i].entry;
+        if (csize <= 0) Scm_Error("FFI callback %d: empty code", i);
+        if (e < 0 || e >= csize) {
+            Scm_Error("FFI callback %d: entry out of range: %ld (code size %ld)",
+                      i, (long)e, (long)csize);
+        }
+        total = (total + 7) & ~(size_t)7;
+        offsets[i] = total;
+        total += (size_t)csize;
+    }
+
+    size_t alloc_size = round_up_to_page(total);
+    ScmMemoryRegion *wpad = NULL, *xpad = NULL;
+    Scm_SysMmapWX(alloc_size, &wpad, &xpad);
+
+    /* Copy each code blob into its slot via the writable view. */
+    for (int i = 0; i < nspecs; i++) {
+        ScmU8Vector *code = specs[i].code;
+        ScmSmallInt csize = SCM_UVECTOR_SIZE(code);
+        memcpy((char*)wpad->ptr + offsets[i],
+               SCM_UVECTOR_ELEMENTS(code),
+               (size_t)csize);
+    }
+
+    /* Translate offsets[i] -> absolute entry offset in xpad. */
+    size_t *entry_offs = SCM_NEW_ARRAY(size_t, nspecs);
+    for (int i = 0; i < nspecs; i++) {
+        entry_offs[i] = offsets[i] + (size_t)specs[i].entry;
+    }
+
+    ScmFFICallbackContext *ctx = SCM_NEW(ScmFFICallbackContext);
+    SCM_SET_CLASS(ctx, SCM_CLASS_FFI_CALLBACK_CONTEXT);
+    ctx->wpad       = wpad;
+    ctx->xpad       = xpad;
+    ctx->n_entries  = nspecs;
+    ctx->entry_offs = entry_offs;
+    ctx->destroyed  = 0;
+#if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
+    ctx->pdata_table = NULL;
+#endif
+    return SCM_OBJ(ctx);
+}
+
+void *Scm__FFICallbackContextEntry(ScmFFICallbackContext *ctx, int i)
+{
+    if (ctx->destroyed || ctx->xpad == NULL || ctx->xpad->ptr == NULL) {
+        Scm_Error("FFI callback context has been destroyed");
+    }
+    if (i < 0 || i >= ctx->n_entries) {
+        Scm_Error("FFI callback context: index out of range: %d (have %d)",
+                  i, ctx->n_entries);
+    }
+    return (char*)ctx->xpad->ptr + ctx->entry_offs[i];
+}
+
+void Scm__DestroyFFICallbackContext(ScmFFICallbackContext *ctx)
+{
+    if (ctx->destroyed) return;
+    ctx->destroyed = 1;
+    /* RtlDeleteFunctionTable(ctx->pdata_table). */
+    Scm_SysMunmap(ctx->wpad);
+    Scm_SysMunmap(ctx->xpad);
+    ctx->wpad = NULL;
+    ctx->xpad = NULL;
+}
+
+/*======================================================================
  * JIT support
  */
 
