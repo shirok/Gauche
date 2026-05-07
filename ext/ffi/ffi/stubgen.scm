@@ -83,10 +83,33 @@
                                    (~ cdef'variadic?)
                                    (cons (~ cdef'arg-types)
                                          (~ cdef'return-type))))
-                     cdef-instances)])
+                     cdef-instances)]
+        ;; Collect per-callback info, one entry per <foreign-c-callback> in
+        ;; declaration order.  Each entry is:
+        ;;   (function-type ret-pointee-or-#f arg-pointee-or-#f ...)
+        ;; where:
+        ;;   function-type    : <c-function> instance, used to bind <name>
+        ;;                      as a native handle
+        ;;   ret-pointee-or-#f: the c-pointer return type (or #f if not
+        ;;                      pointer); needed for boxing the return
+        ;;                      result handle
+        ;;   arg-pointee-or-#f: per-arg, the c-pointer type for boxing args
+        ;;                      that arrive as raw C pointers (or #f for
+        ;;                      non-pointer args; the slot is consumed in
+        ;;                      ffisetup either way to keep parallel order)
+        [callback-infos
+         (filter-map
+          (^[cdef]
+            (and (is-a? cdef <foreign-c-callback>)
+                 (let ([atypes (~ cdef'arg-types)]
+                       [rtype  (~ cdef'return-type)])
+                   `(,(make-c-function-type rtype atypes)
+                     ,(and (pointer-type? rtype) rtype)
+                     ,@(map (^t (and (pointer-type? t) t)) atypes)))))
+          cdef-instances)])
     (cgen-dynamic-load unit (sys-tmpdir))
-    ((module-binding-ref mod 'ffisetup) dlobj pointer-ret-types variadic-type-infos
-     mod)))
+    ((module-binding-ref mod 'ffisetup) dlobj pointer-ret-types
+     variadic-type-infos callback-infos mod)))
 
 ;; Maximum number of variadic arguments supported by the switch-case kludge.
 ;; There is no portable way to convert a list of arguments to va_list, so
@@ -270,6 +293,35 @@
 ;; Name of the static ScmInternalMutex variable to lock substub table.
 (define (ffi-substub-mutex-varname cfn)
   (format "ffi_substub_mutex_~a" (~ cfn'c-name)))
+
+;;
+;; Callback static-variable name helpers.
+;;
+;; Each <foreign-c-callback> emits its own C function plus a small set of
+;; per-callback static variables, populated in ffisetup before any call.
+;;
+
+;; Cache for the resolved Scheme procedure (lazy via SCM_BIND_PROC).
+(define (ccb-proc-varname ccb)
+  (format "cb_~a_proc" (~ ccb'c-name)))
+
+;; Module to look the Scheme procedure up in (the with-ffi caller's module).
+(define (ccb-mod-varname ccb)
+  (format "cb_~a_mod" (~ ccb'c-name)))
+
+;; Pointee <native-type> for the i-th argument, only used when arg-types[i]
+;; is a <c-pointer>.  Lets us wrap incoming raw C pointers in native handles
+;; when boxing.
+(define (ccb-argtype-varname ccb i)
+  (format "cb_~a_argtype_~a" (~ ccb'c-name) i))
+
+;; Pointee <native-type> for the return, only used when return-type is a
+;; <c-pointer>.  Required to box a Scheme-returned handle back into a C
+;; pointer with the right type tag.  (Currently the unbox path uses
+;; Scm_NativeHandlePtr directly and does not need this, but we still
+;; declare it for symmetry with the function side.)
+(define (ccb-rettype-varname ccb)
+  (format "cb_~a_rettype" (~ ccb'c-name)))
 
 ;; Convert a <native-type> to a C type string.
 (define (%type->c-type type)
@@ -518,6 +570,146 @@
      #"    }")
     (cgen-body "}")))
 
+;;
+;; Callback emitters
+;;
+
+;; Emit the static-variable declarations for one <foreign-c-callback>:
+;;   - cached Scheme procedure (lazy via SCM_BIND_PROC)
+;;   - target module (filled in ffisetup; SCM_BIND_PROC needs it)
+;;   - per-pointer-arg type object (used to box raw C pointers as
+;;     <native-handle> when invoking the Scheme procedure)
+;;   - return-type object (declared for symmetry; not currently used by the
+;;     unbox path but reserved for future use, e.g. converting a Scheme
+;;     return value to a typed handle).
+(define (emit-callback-decls ccb)
+  (cgen-decl (format "static ScmObj ~a = SCM_UNDEFINED;"
+                     (ccb-proc-varname ccb))
+             (format "static ScmModule *~a = NULL;"
+                     (ccb-mod-varname ccb)))
+  (for-each-with-index
+   (^[i atype]
+     (when (pointer-type? atype)
+       (cgen-decl (format "static ScmObj ~a = SCM_FALSE;"
+                          (ccb-argtype-varname ccb i)))))
+   (~ ccb'arg-types))
+  (when (pointer-type? (~ ccb'return-type))
+    (cgen-decl (format "static ScmObj ~a = SCM_FALSE;"
+                       (ccb-rettype-varname ccb)))))
+
+;; Emit the C function for one <foreign-c-callback>.
+;;
+;; The function is named (~ ccb'c-name) — the same C-safe name the user
+;; gave on the Scheme side.  Its address is exposed to Scheme as a
+;; <native-handle> of <c-function> type, bound to (~ ccb'scheme-name) in
+;; the target module by ffisetup.
+(define (emit-callback-fn ccb)
+  (let* ([c-name      (~ ccb'c-name)]
+         [body-name   (~ ccb'body-name)]
+         [arg-vars    (~ ccb'arg-vars)]
+         [arg-types   (~ ccb'arg-types)]
+         [ret-type    (~ ccb'return-type)]
+         [void-ret?   (eq? ret-type <void>)]
+         [ret-c       (%type->c-type ret-type)]
+         [arg-c-types (map %type->c-type arg-types)]
+         [arg-c-names (map (^v (cgen-safe-name-friendly (x->string v)))
+                           arg-vars)]
+         [proc-var    (ccb-proc-varname ccb)]
+         [mod-var     (ccb-mod-varname ccb)]
+         [body-name-cstr (cgen-safe-string (symbol->string body-name))])
+    ;; Signature
+    (cgen-body
+     (if (null? arg-vars)
+       (format "static ~a ~a(void)" ret-c c-name)
+       (format "static ~a ~a(~a)"
+               ret-c c-name
+               (join/comma
+                (map (^[ct cn] (format "~a ~a" ct cn))
+                     arg-c-types arg-c-names)))))
+    (cgen-body "{")
+    ;; Box each arg into a Scheme object.
+    (for-each-with-index
+     (^[i atype aname]
+       (let1 box-expr
+           (if (pointer-type? atype)
+             (%type->box-expr atype aname (ccb-argtype-varname ccb i))
+             (%type->box-expr atype aname))
+         (cgen-body (format "    ScmObj _scm_arg_~a = ~a;" i box-expr))))
+     arg-types arg-c-names)
+    ;; Resolve the Scheme procedure (idempotent, MT-safe).
+    (cgen-body (format "    SCM_BIND_PROC(~a, ~a, ~a);"
+                       proc-var body-name-cstr mod-var))
+    ;; Apply, capturing exceptions in the packet.
+    (cgen-body "    ScmEvalPacket _pkt;")
+    (let1 args-list-expr
+        (if (null? arg-vars)
+          "SCM_NIL"
+          (format "Scm_List(~a, NULL)"
+                  (join/comma
+                   (map (^i (format "_scm_arg_~a" i))
+                        (iota (length arg-vars))))))
+      (cgen-body (format "    int _nres = Scm_Apply(~a, ~a, &_pkt);"
+                         proc-var args-list-expr)))
+    ;; Propagate Scheme-side exceptions.  If the C caller wasn't entered
+    ;; via Gauche, this may not have a handler — that's the user's
+    ;; responsibility.
+    (cgen-body "    if (_nres < 0) Scm_Raise(_pkt.exception, 0);")
+    ;; Return.
+    (if void-ret?
+      (cgen-body "    (void)_nres;"
+                 "    return;")
+      (let1 unbox (%type->unbox-expr ret-type "_pkt.results[0]")
+        (cgen-body (format "    return ~a;" unbox))))
+    (cgen-body "}")))
+
+;; Setup-code fragment (string) for one callback.  Inserted into the
+;; ffisetup body, which has these locals:
+;;   target_mod_  : ScmModule*  -- where to Scm_Define the binding
+;;   cb_infos_    : ScmObj      -- list of per-callback info, consumed in
+;;                                 declaration order; CDR'd here
+(define (setup-code-for-ccb ccb)
+  (let* ([scm-name   (~ ccb'scheme-name)]
+         [c-name     (~ ccb'c-name)]
+         [arg-types  (~ ccb'arg-types)]
+         [ret-type   (~ ccb'return-type)]
+         [mod-var    (ccb-mod-varname ccb)]
+         [info-var   #"cb_info_~|c-name|_"]
+         [arg-pts-var #"cb_argpts_~|c-name|_"])
+    (with-output-to-string
+      (^[]
+        (format #t "    {\n")
+        (format #t "      ~a = target_mod_;\n" mod-var)
+        ;; Pull next entry from cb_infos_ list.
+        (format #t "      ScmObj ~a = SCM_CAR(cb_infos_); cb_infos_ = SCM_CDR(cb_infos_);\n"
+                info-var)
+        (format #t "      ScmObj fn_type_ = SCM_CAR(~a);\n" info-var)
+        (format #t "      ScmObj ~a_rest = SCM_CDR(~a);\n"
+                info-var info-var)
+        ;; Return pointee type (always present, may be #f).
+        (when (pointer-type? ret-type)
+          (format #t "      ~a = SCM_CAR(~a_rest);\n"
+                  (ccb-rettype-varname ccb) info-var))
+        (format #t "      ScmObj ~a = SCM_CDR(~a_rest);\n"
+                arg-pts-var info-var)
+        ;; Per-arg pointee types.  We always advance the list, even for
+        ;; non-pointer args, so that ordering stays parallel.
+        (for-each-with-index
+         (^[i atype]
+           (when (pointer-type? atype)
+             (format #t "      ~a = SCM_CAR(~a);\n"
+                     (ccb-argtype-varname ccb i) arg-pts-var))
+           (format #t "      ~a = SCM_CDR(~a);\n"
+                   arg-pts-var arg-pts-var))
+         arg-types)
+        ;; Bind <name> in the target module to a native handle wrapping
+        ;; the C callback's address.  The handle's type is the
+        ;; <c-function> instance built Scheme-side.
+        (format #t "      Scm_Define(target_mod_, SCM_SYMBOL(SCM_INTERN(~a)),\n"
+                (cgen-safe-string (symbol->string scm-name)))
+        (format #t "                 Scm_MakeNativeHandleSimple((void*)~a, fn_type_));\n"
+                c-name)
+        (display "    }\n")))))
+
 ;; Return a string with the setup code for one FFI function.
 ;; This is emitted inside ffisetup which takes a ScmDLObj*.
 ;; Also emits the Scm_Define + Scm_MakeSubrWithTags call that creates the
@@ -559,6 +751,8 @@
   (define unit-name (symbol->string (gensym "ffi")))
   (define cfn-instances
     (filter (cut is-a? <> <foreign-c-function>) cdef-instances))
+  (define ccb-instances
+    (filter (cut is-a? <> <foreign-c-callback>) cdef-instances))
   (define unit
     (make <cgen-unit>
       :name unit-name
@@ -596,27 +790,34 @@
       (cgen-init
        #"   SCM_INTERNAL_MUTEX_INIT(~(ffi-substub-mutex-varname cfn));"))
 
+    ;; Per-callback statics.
+    (for-each emit-callback-decls ccb-instances)
+
     (cgen-body "")
     (for-each emit-subr-body cfn-instances)
+    (for-each emit-callback-fn ccb-instances)
 
     ;; FFI setup function (body section) — called by compile-and-link-ffi-stub.
     ;;   argv[0] = DLObj
     ;;   argv[1] = list of return-type ScmObjs for pointer-returning functions
     ;;   argv[2] = list of (fixed-arg-types . ret-type) for variadic functions
-    ;;   argv[3] = target module (where to Scm_Define each function)
+    ;;   argv[3] = list of callback infos (one per callback)
+    ;;   argv[4] = target module (where to Scm_Define each function)
     (cgen-body ""
                "static ScmObj ffisetup(ScmObj *argv, int argc, void *data)"
                "{"
-               "    SCM_ASSERT(argc == 4);"
+               "    SCM_ASSERT(argc == 5);"
                "    ScmObj dlobj = argv[0];"
                "    SCM_ASSERT(SCM_FALSEP(dlobj) || SCM_DLOBJP(dlobj));"
                "    ScmDLObj *dlo = SCM_FALSEP(dlobj)? NULL : SCM_DLOBJ(dlobj);"
                "    ScmObj fptr;"
-               "    ScmModule *target_mod_ = SCM_MODULE(argv[3]);")
+               "    ScmModule *target_mod_ = SCM_MODULE(argv[4]);")
     (when (pair? pointer-return-cfns)
       (cgen-body "    ScmObj types = argv[1];"))
     (when (pair? variadic-cfns)
       (cgen-body "    ScmObj var_infos_ = argv[2];"))
+    (when (pair? ccb-instances)
+      (cgen-body "    ScmObj cb_infos_ = argv[3];"))
     (dolist [cfn cfn-instances]
       (cgen-body (setup-code-for-fn cfn)))
     ;; Populate per-function return-type variables from the types list.
@@ -631,12 +832,15 @@
        #"         SCM_CAR(var_infos_); var_infos_ = SCM_CDR(var_infos_);"
        #"      ~(ffi-substub-argtypes-varname cfn) = SCM_CAR(vi_);"
        #"      ~(ffi-substub-rettype-varname cfn) = SCM_CDR(vi_); }"))
+    ;; Populate per-callback statics and bind <name> in the target module.
+    (dolist [ccb ccb-instances]
+      (cgen-body (setup-code-for-ccb ccb)))
     (cgen-body "    return SCM_UNDEFINED;"
                "}")
 
     (cgen-init "    Scm_Define(SCM_CURRENT_MODULE(),"
                "               SCM_SYMBOL(SCM_INTERN(\"ffisetup\")),"
-               "               Scm_MakeSubr(ffisetup, NULL, 4, 0, SCM_FALSE));")
+               "               Scm_MakeSubr(ffisetup, NULL, 5, 0, SCM_FALSE));")
     )
   ;; Return unit
   unit)

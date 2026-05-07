@@ -1702,6 +1702,7 @@
   (use gauche.test)
   (use gauche.ffi)
   (use gauche.native-type)
+  (use gauche.uvector)
 
   (define foo (native-type
                '(.struct foo (c::char i::int s::short
@@ -1907,9 +1908,65 @@
                     #t))
          )]))
 
+  ;; define-c-callback (currently only supported in :stubgen)
+  (define-syntax do-test-cb
+    (syntax-rules ::: ()
+      [(_ opts)
+       (let-syntax ([t (syntax-rules ()
+                         [(_ expect expr)
+                          (test* #"cb ~'opts ~'expr" expect expr)])])
+         (test* #"with-ffi cb ~'opts" 'ok
+                (begin
+                  (eval
+                   `(with-ffi
+                     (dynamic-load "./f" :init-function #f)
+                     opts
+                     (define-c-function Fcb2-i '(void* int int) 'int)
+                     (define-c-function Fcb2-d '(void* double double) 'double)
+                     (define-c-function Fcb-v-count '(void* int) 'int)
+                     (define-c-function Fcb-pi-i '(void* int* int) 'int)
+
+                     (define-c-callback cb-add ((x 'int) (y 'int)) 'int
+                       (+ x y))
+                     (define-c-callback cb-mul-d ((x 'double) (y 'double)) 'double
+                       (* x y))
+                     (define-c-callback cb-noop () 'void
+                       (set! cb-noop-counter (+ cb-noop-counter 1)))
+                     (define-c-callback cb-pderef ((p 'int*) (i 'int)) 'int
+                       (native-aref p i))
+                     (define-c-callback cb-bad ((x 'int) (y 'int)) 'int
+                       (error "callback-failure")))
+                   (current-module))
+                  'ok))
+
+         (t 7  (Fcb2-i cb-add 3 4))
+         (t 12.5 (Fcb2-d cb-mul-d 2.5 5.0))
+         (t 5  (begin (set! cb-noop-counter 0)
+                      (Fcb-v-count cb-noop 5)))
+         (t 5  cb-noop-counter)
+
+         ;; pointer arg test: pass int array, callback dereferences with
+         ;; native-aref
+         (let* ([uv (u32vector 10 20 30 40 50)]
+                [p (uvector->native-handle uv (native-type 'int*))])
+           (t 30 (Fcb-pi-i cb-pderef p 2))
+           (t 50 (Fcb-pi-i cb-pderef p 4)))
+
+         ;; <name> is bound to a c-function native handle
+         (t #t (c-function-handle? cb-add))
+
+         ;; exception propagates from callback through C and back
+         (test* #"cb ~'opts exception propagation" 'caught
+                (guard (e [else 'caught])
+                  (Fcb2-i cb-bad 1 2)))
+         )]))
+
+  (define cb-noop-counter 0)
+
   (parameterize ([default-ffi-subsystem :stubgen])
     (do-test-f ())
-    (do-test-g ()))
+    (do-test-g ())
+    (do-test-cb ()))
   (when (ffi-subsystem-available? :native)
     (do-test-f (:subsystem :native))
     (do-test-g (:subsystem :native)))

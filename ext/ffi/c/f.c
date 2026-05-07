@@ -193,6 +193,28 @@ int Fpnull_i(void *p)
     return p == NULL ? 1 : 0;
 }
 
+int Fcb2_i(int (*cb)(int, int), int x, int y)
+{
+    return cb(x, y);
+}
+
+double Fcb2_d(double (*cb)(double, double), double x, double y)
+{
+    return cb(x, y);
+}
+
+int Fcb_v_count(void (*cb)(void), int times)
+{
+    int i;
+    for (i = 0; i < times; i++) cb();
+    return i;
+}
+
+int Fcb_pi_i(int (*cb)(int *, int), int *p, int n)
+{
+    return cb(p, n);
+}
+
 /* Mixed varargs: cnt pairs of (int n, double x); returns sum of n*x */
 double Fidfvar(int cnt, ...)
 {

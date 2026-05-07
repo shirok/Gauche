@@ -91,21 +91,20 @@
 ;;  You can also define a C function that can be called back from C
 ;;  program to evaluate Scheme expressions.
 ;;
-;;    (define-c-callback <name> <arglist>  <rettype>
+;;    (define-c-callback <name> ((<var> <type>) ...) <rettype>
 ;;      <body> ...)
 ;;
-;;  <arglist> is an expression that should yield the following form:
-;;
-;;     ((<var> <type>) ...)
-;;
-;;  where <var> is an identifier and, <type> is a value such that
-;;  (native-type <type>) yields a native type.
+;;  <arglist> must be a literal list of (<var> <type>) pairs.  <var> is
+;;  an identifier visible in <body>; <type> is an expression evaluated
+;;  at runtime that should yield a value such that (native-type <type>)
+;;  yields a native type.
 ;;
 ;;  <rettype> is also evaluated, and should yield a value such that
 ;;  (native-type <rettype>) yields a native type.
 ;;
-;;  This binds a native handle with a function type to the <nane>.  The
-;;  handle can be passed to a foreign function excpeting a function pointer.
+;;  This binds a native handle with a function type to <name>.  The
+;;  handle can be passed to a foreign function expecting a function
+;;  pointer.
 ;;
 
 ;;;
@@ -130,10 +129,10 @@
 (define-class <foreign-c-callback> ()
   ((scheme-name  :init-keyword :scheme-name)
    (c-name       :init-keyword :c-name)
+   (body-name    :init-keyword :body-name)    ; symbol naming the Scheme proc
    (arg-vars     :init-keyword :arg-vars)     ; (symbol ...)
-   (arg-types    :init-keyword :arg-types)    ; (<antive-type> ...)
+   (arg-types    :init-keyword :arg-types)    ; (<native-type> ...)
    (return-type  :init-keyword :return-type)  ; native-type
-   (body         :init-keyword :body)
    ))
 
 ;; Resolve a typespec to a <native-type> instance or <top> at runtime.
@@ -203,13 +202,19 @@
         ;; Variable dlo-var is bound to the result of dlo-expr
         ;; in the expaneded with-*-ffi macros.
         (define dlo-var (gensym "dlo-"))
+        ;; Chain define-c-function and define-c-callback
         (define cdefs '())
+        ;; Chain scheme procedure definitions for c-callback body
+        ;; procedure.
+        ;;   (define <body-name> (lambda <vars> <body> ...))
+        (define ccb-defines '())
         (define subsystem
           (get-keyword :subsystem (unwrap-syntax options)
                        (default-ffi-subsystem)))
         (define ids (list (r'define-c-function)
                           (r'define-c-callback)))
-        (define forms
+        ;; Forms other than C FFIs or callbacks
+        (define extra-forms
           (filter-map
            (^[form]
              (if (and (pair? form)
@@ -244,23 +249,37 @@
                                    :subsystem ,',subsystem
                                    :argtypes ,(map %signature-type atypes)
                                    :rettype ,(%signature-type rtype)))))))]))
-
+        ;; For each define-c-callback form, build a runtime
+        ;; (make <foreign-c-callback> ...) expression.
+        ;; We also generate a definition of Scheme-side procedure
+        ;; with the generated body-name.
         (define (make-ccb-expr ccb-form)
           (match ccb-form
-            [(_ name arg-list-expr rettype-expr . body)
-             (define body-name (gensym "c-callback-"))
-             (quasirename r
-               `(let* ([arg&types ,arg-list-expr]
-                       [args (map car arg&types)]
-                       [atypes (map ($ %resolve-typespec $ cadr $) arg&types)]
-                       [rtype (%resolve-typespec ,rettype-expr)])
-                  (make <foreign-c-callback>
-                    :scheme-name ',name
-                    :c-name ,(cgen-safe-name-friendly (x->string name))
-                    :arg-vars args
-                    :arg-types atypes
-                    :return-type rtype
-                    :body `(lambda ,args . ,',body))))]))
+            [(_ name ((vars type-exprs) ...) rettype-expr . body)
+             ;; Use an interned symbol so the symbol the C stub interns via
+             ;; SCM_INTERN matches the binding made by `define' below.
+             (let ([body-name
+                    (string->symbol
+                     (symbol->string (gensym "%c-callback-body-")))])
+               (unless (every symbol? vars)
+                 (error "define-c-callback: arglist vars must be identifiers:"
+                        vars))
+               (push! ccb-defines
+                      (quasirename r
+                        `(define ,body-name (lambda ,vars ,@body))))
+               (quasirename r
+                 `(let ([atypes (list ,@(map (^t (quasirename r
+                                                   `(%resolve-typespec ,t)))
+                                             type-exprs))]
+                        [rtype (%resolve-typespec ,rettype-expr)])
+                    (make <foreign-c-callback>
+                      :scheme-name ',name
+                      :c-name ,(cgen-safe-name-friendly (x->string name))
+                      :body-name ',body-name
+                      :arg-vars ',vars
+                      :arg-types atypes
+                      :return-type rtype))))]
+            [_ (error "Malformed define-c-callback form:" ccb-form)]))
 
         (define (make-cdef-expr form)
           (ecase (car form) ; forms are already unwrapped
@@ -277,6 +296,12 @@
                        (make-cdef-expr cdef))) ;expr
                (reverse cdefs)))
 
+        ;; Body forms with synthesized callback body definitions prepended.
+        ;; The body lambdas need to be visible by the time the FFI binding
+        ;; for <name> is invoked, but they don't need to precede the C stub
+        ;; load (the stub looks them up lazily via SCM_BIND_PROC).
+        (define final-forms (reverse ccb-defines extra-forms))
+
         ;; NB: with-stubgen-ffi should expand into definitions, so that
         ;; defined C functions (and other definitions) are visible
         ;; from the following expressions.  Be careful not to wrap
@@ -284,8 +309,10 @@
         (ecase subsystem
           [(:native)
            (quasirename r
-             `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs ,forms))]
+             `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
+                               ,final-forms))]
           [(:stubgen)
            (quasirename r
-             `(with-stubgen-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs ,forms))]
+             `(with-stubgen-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
+                                ,final-forms))]
           )]))))
