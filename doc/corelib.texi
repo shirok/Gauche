@@ -15158,7 +15158,7 @@ A bitvector literal is @code{#*} followed by zero or more binary digits
 @end example
 
 @c EN
-A bitvector literal is delimited by one of delimiter character or an EOF.
+A bitvector literal is delimited by one of delimiter characters or an EOF.
 @c JP
 ビットベクタリテラルはデリミタ文字かEOFで区切られます。
 @c COMMON
@@ -15459,6 +15459,100 @@ to look at.
 (bitvector-every-value? #*11111 #f) @result{} #f
 (bitvector-every-value? #*00000 0)  @result{} #t
 @end example
+@end defun
+
+@c EN
+The following procedures expose bitvector's internal data.  They are
+useful to do tricks such as dumping bitvectors in binary format.  However,
+keep in mind that the binary representation of bitvectors may differ
+among architectures, or even between Gauche versions.
+@c JP
+以下の手続きはビットベクタの内部データへのアクセスを可能にします。
+これは、例えばビットベクタをバイナリ形式で保存したい、といった場合に便利です。
+しかし、ビットベクタの内部表現はアーキテクチャごと、あるいはGaucheの
+バージョン間でも異なる可能性があることに留意してください。
+@c COMMON
+
+@defun bitvector-word-bits
+@c EN
+Returns the number of bits in a ``word'' or ``chunk'', with which
+a bitvector keeps its internal data.  When you convert between
+a bitvector and a uniform vector, the size and boundaries of
+the uniform vector must be aligned with the word size.
+@c JP
+ビットベクタが内部的に扱う「ワード」あるいは「チャンク」の大きさを
+ビット数で返します。ビットベクタとユニフォームベクタを相互変換する
+場合、ユニフォームベクタの大きさや境界はワード境界に揃っていなければなりません。
+@c COMMON
+@end defun
+
+@defun bitvector->uvector/shared bv :optional class
+@c EN
+@var{class} must be a uniform vector class.  If omitted, @code{<u8vector>}
+is assumed.
+
+Returns a uniform vector of @var{class}, which shares the internal storage
+with a bitvector @var{bv}.
+The size of the returned uvector, counted in bits, is always
+a multiple of @code{(bitvector-word-bits)}.
+
+If @var{bv}'s size isn't
+a multiple of @code{(bitvector-word-bits)}, the remaining bits are padded
+with an unspecified value.
+Because of this padding, converting a bitvector by
+@code{bitvector->uvector/shared} and then converting it back by
+@code{uvector->bitvector/shared} may not result in a bitvector @code{equal?}
+to the original one.
+
+Since the storage is shared, changes to one are visible in the other.
+
+The order of bits depends on the underlying architecture, or even on
+Gauche's version, so you should not assume its portability.
+@c JP
+@var{class}はユニフォームベクタのクラスでなければなりません。
+省略された場合は@code{<u8vector>}が仮定されます。
+
+ビットベクタ@var{bv}と内部領域を共有する、@var{class}のユニフォームベクタを
+返します。返されたユニフォームベクタのサイズは、ビット数で数えると、
+常に@code{(bitvector-word-bits)}の倍数になります。
+
+@var{bv}のサイズが@code{(bitvector-word-bits)}の倍数でない場合、
+余ったビットは未規定の値でパディングされます。このパディングのため、
+ビットベクタを@code{bitvector->uvector/shared}で変換し、それを
+@code{uvector->bitvector/shared}で戻したとしても、結果のビットベクタが
+元のビットベクタと@code{equal?}になるとは限りません。
+
+記憶領域は共有されているため、一方への変更は他方にも反映されます。
+
+ビットの順序は基盤となるアーキテクチャや、場合によってはGaucheの
+バージョンに依存します。可搬性は仮定しないでください。
+@c COMMON
+@end defun
+
+@defun uvector->bitvector/shared uv :optional start end
+@c EN
+Returns a bitvector which shares the internal storage of a uvector
+@var{uv}, in the region specified by @var{start} and @var{end} element
+indexes.  If they are omitted, the entire uniform vector is covered.
+@var{start} and @var{end} must be aligned with the word boundary
+@code{(bitvector-word-bits)}.
+
+The order of bits depends on the underlying architecture, or even on
+Gauche's version, so you should not assume its portability.
+
+Since the storage is shared, changes to one are visible in the other.
+@c JP
+ユニフォームベクタ@var{uv}の内部記憶を共有するビットベクタを返します。
+共有される領域は、要素インデックスである@var{start}と@var{end}で指定します。
+これらを省略した場合は、ユニフォームベクタ全体が対象となります。
+@var{start}と@var{end}はワード境界@code{(bitvector-word-bits)}に
+揃っていなければなりません。
+
+ビットの順序は基盤となるアーキテクチャや、場合によってはGaucheの
+バージョンに依存します。可搬性は仮定しないでください。
+
+記憶領域は共有されているため、一方への変更は他方にも反映されます。
+@c COMMON
 @end defun
 
 

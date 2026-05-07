@@ -275,7 +275,7 @@ DEF_UVCLASS(C128, c128)
 /*
  * Some generic APIs
  */
-ScmUVectorType Scm_UVectorType(ScmClass *klass)
+ScmUVectorType Scm_UVectorType(const ScmClass *klass)
 {
     if (SCM_EQ(klass, SCM_CLASS_S8VECTOR))   return SCM_UVECTOR_S8;
     if (SCM_EQ(klass, SCM_CLASS_U8VECTOR))   return SCM_UVECTOR_U8;
@@ -316,7 +316,7 @@ const char *Scm_UVectorTypeName(int type) /* for error msgs etc. */
 }
 
 /* Returns the size of element of the uvector of given class */
-int Scm_UVectorElementSize(ScmClass *klass)
+int Scm_UVectorElementSize(const ScmClass *klass)
 {
     static const int sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8,
                                  2, sizeof(float), sizeof(double), -1,
@@ -336,7 +336,7 @@ int Scm_UVectorSizeInBytes(ScmUVector *uv)
 }
 
 /* Generic constructor */
-ScmObj Scm_MakeUVectorFull(ScmClass *klass, ScmSmallInt size, void *init,
+ScmObj Scm_MakeUVectorFull(const ScmClass *klass, ScmSmallInt size, void *init,
                            int immutable, void *owner)
 {
     int eltsize = Scm_UVectorElementSize(klass);
@@ -354,7 +354,7 @@ ScmObj Scm_MakeUVectorFull(ScmClass *klass, ScmSmallInt size, void *init,
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_MakeUVector(ScmClass *klass, ScmSmallInt size, void *init)
+ScmObj Scm_MakeUVector(const ScmClass *klass, ScmSmallInt size, void *init)
 {
     return Scm_MakeUVectorFull(klass, size, init, FALSE, NULL);
 }
@@ -948,6 +948,7 @@ ScmObj Scm_MakeBitvector(ScmSmallInt size, ScmObj init)
     ScmBitvector *v = SCM_NEW(ScmBitvector);
     SCM_SET_CLASS(v, SCM_CLASS_BITVECTOR);
     v->size_flags = (size << 1);
+    v->owner = NULL;
     v->bits = Scm_MakeBits(size);
 
     int fill = Scm_Bit2Int(init);
@@ -1035,6 +1036,50 @@ ScmObj Scm_BitvectorCopyX(ScmBitvector *dest, ScmSmallInt dstart,
     return SCM_OBJ(dest);
 }
 
+/* Raw bitvectors*/
+ScmObj Scm_BitvectorToUVectorShared(const ScmBitvector *bv,
+                                    const ScmClass *uvclass)
+{
+    int esize = Scm_UVectorElementSize(uvclass);
+    if (esize < 0) Scm_Error("Uvector class is expected, but got: %S", uvclass);
+
+    size_t bits = SCM_BITVECTOR_SIZE(bv);
+    size_t nbytes = SCM_BITS_NUM_WORDS(bits) * SIZEOF_LONG;
+    size_t nelts = (nbytes + esize - 1)/esize;
+
+    ScmObj z = Scm_MakeUVectorFull(uvclass, nelts,
+                                   (void*)SCM_BITVECTOR_BITS(bv),
+                                   SCM_BITVECTOR_IMMUTABLE_P(bv),
+                                   bv->owner);
+    return z;
+}
+
+ScmObj Scm_UVectorToBitvectorShared(const ScmUVector *uv,
+                                    ScmSmallInt start,
+                                    ScmSmallInt end)
+{
+    int esize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(uv)));
+    ScmSmallInt uvsize = SCM_UVECTOR_SIZE(uv);
+    SCM_CHECK_START_END(start, end, uvsize);
+
+    /* The shared region must align to ScmBits word boundary on both ends,
+       so that the resulting bits[] is a valid ScmBits array. */
+    if (((size_t)start * esize) % sizeof(ScmBits) != 0
+        || ((size_t)end * esize) % sizeof(ScmBits) != 0) {
+        Scm_Error("uvector range [%ld, %ld) of element size %d does not "
+                  "align to %lu-byte boundary required for bitvector sharing",
+                  start, end, esize, sizeof(ScmBits));
+    }
+
+    ScmSmallInt nbits = (ScmSmallInt)(end - start) * esize * CHAR_BIT;
+
+    ScmBitvector *v = SCM_NEW(ScmBitvector);
+    SCM_SET_CLASS(v, SCM_CLASS_BITVECTOR);
+    v->size_flags = (nbits << 1) | (SCM_UVECTOR_IMMUTABLE_P(uv) ? 1 : 0);
+    v->owner = uv->owner;
+    v->bits = (ScmBits*)((char*)SCM_UVECTOR_ELEMENTS(uv) + start * esize);
+    return SCM_OBJ(v);
+}
 
 /*=====================================================================
  * Utility

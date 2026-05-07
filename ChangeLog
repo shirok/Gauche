@@ -1,3 +1,12 @@
+2026-05-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/vector.c (Scm_BitvectorToUVectorShared, Scm_UVectorToBitvectorShared):
+	  Added to provide "aliasing" bitvectors and uvectors.
+	  ScmBitvector now has 'owner' field to be inherited from the
+	  original uvector's owner field.  It is only to keep reference
+	  so that the original data chunk won't be GCed.
+	  To keep binary compatibility, owner field is added to the last.
+
 2026-05-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/typeP.h (ScmNativeType),

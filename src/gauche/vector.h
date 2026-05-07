@@ -160,13 +160,13 @@ typedef enum {
 #define SCM_UVECTOR_SUBTYPE_P(obj, type) \
     (SCM_UVECTORP(obj)&&Scm_UVectorType(SCM_CLASS_OF(obj))==(type))
 
-SCM_EXTERN ScmUVectorType Scm_UVectorType(ScmClass *klass);
+SCM_EXTERN ScmUVectorType Scm_UVectorType(const ScmClass *klass);
 SCM_EXTERN const char *Scm_UVectorTypeName(int type);
-SCM_EXTERN int    Scm_UVectorElementSize(ScmClass *klass);
+SCM_EXTERN int    Scm_UVectorElementSize(const ScmClass *klass);
 SCM_EXTERN int    Scm_UVectorSizeInBytes(ScmUVector *v);
-SCM_EXTERN ScmObj Scm_MakeUVector(ScmClass *klass,
+SCM_EXTERN ScmObj Scm_MakeUVector(const ScmClass *klass,
                                   ScmSmallInt size, void *init);
-SCM_EXTERN ScmObj Scm_MakeUVectorFull(ScmClass *klass,
+SCM_EXTERN ScmObj Scm_MakeUVectorFull(const ScmClass *klass,
                                       ScmSmallInt size, void *init,
                                       int immutablep, void *owner);
 SCM_EXTERN ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp);
@@ -403,6 +403,7 @@ typedef struct ScmBitvectorRec {
     SCM_HEADER;
     ScmWord size_flags;         /* (len<<1)|immutable */
     ScmBits *bits;
+    void *owner;                /* for shared (bit|u)vector */
 } ScmBitvector;
 
 SCM_CLASS_DECL(Scm_BitvectorClass);
@@ -436,5 +437,11 @@ SCM_EXTERN ScmObj Scm_BitvectorCopyX(ScmBitvector *dest, ScmSmallInt dstart,
 
 SCM_EXTERN ScmObj Scm_StringToBitvector(ScmString *s, int prefix);
 SCM_EXTERN ScmObj Scm_BitvectorToString(ScmBitvector *v, int prefix);
+
+SCM_EXTERN ScmObj Scm_BitvectorToUVectorShared(const ScmBitvector *bv,
+                                               const ScmClass *uvclass);
+SCM_EXTERN ScmObj Scm_UVectorToBitvectorShared(const ScmUVector *uv,
+                                               ScmSmallInt start,
+                                               ScmSmallInt end);
 
 #endif /*GAUCHE_VECTOR_H*/

@@ -152,4 +152,90 @@
 (test* "bitvector-every-value? #f 5" #f
        (bitvector-every-value? #*00000001000000000000000000000000000000000000000000000000000000000000000000000000000000 0))
 
+;; bitvector<->uvector aliasing.
+
+(test* "bitvector->uvector/shared default class is <u8vector>" #t
+       (u8vector? (bitvector->uvector/shared (make-bitvector 64 #f))))
+
+(test* "bitvector->uvector/shared all-0 -> all-0 bytes"
+       (make-u8vector 8 0)
+       (bitvector->uvector/shared (make-bitvector 64 #f)))
+
+(test* "bitvector->uvector/shared all-1 -> all-#xff bytes"
+       (make-u8vector 8 #xff)
+       (bitvector->uvector/shared (make-bitvector 64 #t)))
+
+(test* "bitvector->uvector/shared explicit <u32vector>" #t
+       (u32vector? (bitvector->uvector/shared (make-bitvector 64 #f)
+                                              <u32vector>)))
+
+(test* "bitvector->uvector/shared u32 size matches byte count"
+       2  ; 64 bits = 8 bytes = 2 u32 elements
+       (uvector-length (bitvector->uvector/shared (make-bitvector 64 #f)
+                                                  <u32vector>)))
+
+(test* "bitvector->uvector/shared mutation propagates uv->bv"
+       0
+       (let* ([bv (make-bitvector 64 #t)]
+              [uv (bitvector->uvector/shared bv)])
+         (do ([i 0 (+ i 1)]) [(= i 8)] (u8vector-set! uv i 0))
+         (bitvector-ref/int bv 0)))
+
+(test* "bitvector->uvector/shared mutation propagates bv->uv"
+       (make-u8vector 8 0)
+       (let* ([bv (make-bitvector 64 #t)]
+              [uv (bitvector->uvector/shared bv)])
+         (do ([i 0 (+ i 1)]) [(= i 64)] (bitvector-set! bv i 0))
+         uv))
+
+(test* "bitvector->uvector/shared propagates immutability" #t
+       (uvector-immutable?
+        (bitvector->uvector/shared
+         #*1010101010101010101010101010101010101010101010101010101010101010)))
+
+(test* "bitvector->uvector/shared word-size roundup" (bitvector-word-bits)
+       (* 8 (uvector-length (bitvector->uvector/shared #*0))))
+
+(test* "uvector->bitvector/shared full range size" 64
+       (bitvector-length (uvector->bitvector/shared (make-u8vector 8 0))))
+
+(test* "uvector->bitvector/shared all-0" #t
+       (bitvector-every-value?
+        (uvector->bitvector/shared (make-u8vector 8 0)) 0))
+
+(test* "uvector->bitvector/shared all-1" #t
+       (bitvector-every-value?
+        (uvector->bitvector/shared (make-u8vector 8 #xff)) 1))
+
+(test* "uvector->bitvector/shared explicit start/end size" 64
+       (bitvector-length
+        (uvector->bitvector/shared (make-u8vector 16 0) 8 16)))
+
+(test* "uvector->bitvector/shared mutation propagates uv->bv" #t
+       (let* ([uv (make-u8vector 8 0)]
+              [bv (uvector->bitvector/shared uv)])
+         (do ([i 0 (+ i 1)]) [(= i 8)] (u8vector-set! uv i #xff))
+         (bitvector-every-value? bv 1)))
+
+(test* "uvector->bitvector/shared mutation propagates bv->uv"
+       (make-u8vector 8 0)
+       (let* ([uv (make-u8vector 8 #xff)]
+              [bv (uvector->bitvector/shared uv)])
+         (do ([i 0 (+ i 1)]) [(= i 64)] (bitvector-set! bv i 0))
+         uv))
+
+(test* "uvector->bitvector/shared round-trip via u8vector" #t
+       (let* ([bv (make-bitvector 64 #t)]
+              [uv (bitvector->uvector/shared bv)])
+         (equal? bv (uvector->bitvector/shared uv))))
+
+(test* "uvector->bitvector/shared misaligned start errors"
+       (test-error <error> #/does not align/)
+       ;; start*1 = 1 byte is never a multiple of sizeof(long) (>= 4).
+       (uvector->bitvector/shared (make-u8vector 16 0) 1 8))
+
+(test* "uvector->bitvector/shared misaligned end errors"
+       (test-error <error> #/does not align/)
+       (uvector->bitvector/shared (make-u8vector 16 0) 0 9))
+
 (test-end)

@@ -744,6 +744,19 @@
                                          (end::<fixnum> -1)) ;SRFI-178
   Scm_BitvectorCopyX)
 
+(define-cproc bitvector-word-bits () ::<fixnum>
+  (return (* CHAR_BIT (sizeof ScmBits))))
+
+(define-cproc bitvector->uvector/shared (bv::<bitvector>
+                                         :optional (klass::<class>? #f))
+  (let* ([k::ScmClass* (?: klass klass SCM_CLASS_U8VECTOR)])
+    (return (Scm_BitvectorToUVectorShared bv k))))
+
+(define-cproc uvector->bitvector/shared (uv::<uvector>
+                                         :optional (start::<fixnum> 0)
+                                                   (end::<fixnum> -1))
+  (return (Scm_UVectorToBitvectorShared uv start end)))
+
 ;;;
 ;;; Flat vector API (interact with underlying C array)
 ;;;
