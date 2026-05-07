@@ -118,13 +118,9 @@
        (call-with-continuation-prompt continuation-thunk prompt-tag #f)))))
 (define-cproc abort-current-continuation (prompt-tag :rest objs)
   Scm_VMAbortCurrentContinuation)
-(define (call-with-composable-continuation proc :optional (prompt-tag #f))
-  ((with-module gauche.internal %call/pc)
-   (^k (proc (^ args
-                (call-with-continuation-prompt
-                 (^[] (apply k args))
-                 prompt-tag))))
-   prompt-tag))
+(define-cproc call-with-composable-continuation (proc
+                                                 :optional (prompt-tag #f))
+  Scm_VMCallWithComposableContinuation)
 (define-cproc call-with-non-composable-continuation (proc
                                                      :optional (prompt-tag #f))
   Scm_VMCallWithNonComposableContinuation)
