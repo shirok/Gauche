@@ -116,8 +116,18 @@
       (with-iterator (seq end? next :start start)
         (dotimes [i size (get)] (add! (next)))))))
 
-(define-method subseq ((seq <vector>) . args)
-  (apply vector-copy seq args))
+;; NB: vector-copy allows start/end to fall outside of range
+;; (the rest is filled with 'fill' argument).  But subseq doesn't
+;; allow that for the consistency.
+(define-method subseq ((seq <vector>))
+  (vector-copy seq))
+(define-method subseq ((seq <vector>) start)
+  (assume (ineq 0 <= start <= (vector-length seq)))
+  (vector-copy seq start))
+(define-method subseq ((seq <vector>) start end)
+  (assume (ineq 0 <= start <= end <= (vector-length seq)))
+  (vector-copy seq start end))
+
 (define-method subseq ((seq <bitvector>) . args)
   (apply bitvector-copy seq args))
 

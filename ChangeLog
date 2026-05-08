@@ -1,3 +1,9 @@
+2026-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm (subsec <vector>): Check start/end
+	  boundary.  Underlying vector-copy allows out-of-bound start/end,
+	  but subseq is better not to allow it to catch mistakes.
+
 2026-05-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/bits.h, src/bits.c: Ensure bit indices are in
