@@ -689,13 +689,21 @@
                        (scale 1) (index #f) (base #f) ;sib
                        (displacement #f)
                        (immediate    #f))
-    (cond-list
-     [(or rex.w rex.r rex.x rex.b) (pack-rex rex.w rex.r rex.x rex.b)]
-     [#t  @ (if (list? opcode) opcode `(,opcode))]
-     [(or mode reg r/m) (pack-modrm mode reg r/m)]
-     [(or index base) (pack-sib scale index base)]
-     [displacement @]
-     [immediate @])))
+    ;; REX must come immediately before the opcode, after any
+    ;; mandatory legacy prefix (0x66/0xF2/0xF3).  Peel those prefix
+    ;; bytes off the front of the opcode list and emit them ahead of
+    ;; REX.
+    (let* ([opcs   (if (list? opcode) opcode `(,opcode))]
+           [legacy (take-while (^b (memv b '(#x66 #xf2 #xf3))) opcs)]
+           [body   (drop opcs (length legacy))])
+      (cond-list
+       [#t  @ legacy]
+       [(or rex.w rex.r rex.x rex.b) (pack-rex rex.w rex.r rex.x rex.b)]
+       [#t  @ body]
+       [(or mode reg r/m) (pack-modrm mode reg r/m)]
+       [(or index base) (pack-sib scale index base)]
+       [displacement @]
+       [immediate @]))))
 
 ;; REX prefix
 ;;    w - operand width.  #t - 64bit
@@ -811,7 +819,12 @@
       :mode ,(if (number? base) (if (imm8? disp) 1 2) 0)
       ,@(case base
           [(%rip) `(:r/m 5 :displacement ,(int32 disp))]
-          [(4 12) `(:r/m base :index base :base base
+          ;; %rsp (regnum 4) and %r12 (regnum 12) require a SIB byte
+          ;; even with no index — their r/m=4 encoding signals "SIB
+          ;; follows".  Encode SIB as scale=1 / index=4 (no index)
+          ;; / base=4 (low 3 bits of the regnum); REX.B above
+          ;; distinguishes %rsp from %r12.
+          [(4 12) `(:r/m 4 :scale 1 :index 4 :base 4
                          :displacement ,(int8/32 disp))]
           [else `(:r/m ,base :displacement ,(int8/32 disp))])
       ,@s)))
