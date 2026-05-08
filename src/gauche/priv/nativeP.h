@@ -79,7 +79,7 @@ struct ScmFFICallbackPadRec {
     int    destroyed;           /* set by Scm__DestroyFFICallbackPad */
 #if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
     void  *pdata;               /* RUNTIME_FUNCTION* registered with the OS;
-                                   NULL until Phase 7 */
+                                   NULL until Windows unwind support lands */
 #endif
 };
 
@@ -94,7 +94,7 @@ SCM_EXTERN ScmObj Scm__InstallFFICallbackOne(ScmU8Vector *code,
                                              ScmSmallInt  win_frame_size);
 SCM_EXTERN void  *Scm__FFICallbackPadEntry(ScmFFICallbackPad *pad);
 SCM_EXTERN void   Scm__DestroyFFICallbackPad(ScmFFICallbackPad *pad);
-
+SCM_EXTERN ScmObj Scm__FFINativeCallCallback(ScmObj fn, ScmObj args);
 
 typedef struct ScmFFICallbackContextRec ScmFFICallbackContext;
 
@@ -114,7 +114,8 @@ struct ScmFFICallbackContextRec {
     size_t *entry_offs;          /* n_entries elements, byte offsets in xpad */
     int     destroyed;
 #if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
-    void  *pdata_table;          /* RUNTIME_FUNCTION array; NULL until Phase 7 */
+    void  *pdata_table;          /* RUNTIME_FUNCTION array; NULL until
+                                    Windows unwind support lands */
 #endif
 };
 

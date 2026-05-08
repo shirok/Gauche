@@ -106,9 +106,9 @@
  (define-cproc %%get-entry-address (name::<string>)
    (return (Scm__InternalGetEntryAddress name)))
 
- ;; FFI callback codepad (Phase 1a/1b).  These are bootstrap-only
- ;; primitives — user code reaches them through the gauche.internal
- ;; wrappers below or through gauche.ffi.native (Phase 6).
+ ;; FFI callback codepad primitives — bootstrap-only.  User code
+ ;; reaches them through the gauche.internal wrappers below or through
+ ;; gauche.ffi.native.
 
  (define-cclass <ffi-callback-pad>
    "ScmFFICallbackPad*" "Scm_FFICallbackPadClass"
@@ -200,6 +200,14 @@
      (Scm_Error "<ffi-callback-context> required, but got: %S" ctx))
    (Scm__DestroyFFICallbackContext (SCM_FFI_CALLBACK_CONTEXT ctx)))
 
+ ;; Called from assembly callback trampoline (native-supp.scm)
+ (define-cfn Scm__FFINativeCallCallback (fn args)
+   (let* ([pkt::ScmEvalPacket]
+          [r::int (Scm_Apply fn args (& pkt))])
+     (when (< r 0)
+       (Scm_Raise (ref pkt exception) SCM_RAISE_NON_CONTINUABLE))
+     (return (aref (ref pkt results) 0))))
+
  ;; For JIT
  (define-cproc %%jit-compile-procedure (proc compiler)
    (unless (SCM_CLOSUREP proc)
@@ -252,7 +260,6 @@
 
 ;; Hold references to the bootstrap-only callback primitives so they
 ;; remain reachable after the gauche.bootstrap module is dismantled.
-;; (Phase 1a / 1b — see PLAN.md.)
 (define %%install-ffi-callback-one
   (module-binding-ref 'gauche.bootstrap '%%install-ffi-callback-one))
 (define %%ffi-callback-pad-entry
