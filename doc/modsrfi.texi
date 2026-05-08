@@ -16608,7 +16608,9 @@ Here's a list of SRFI-226 APIs and how Gauche supports them.
 Implemented experimentally.
 @item call-with-current-continuation
 @itemx call/cc
-@xref{Continuations}.
+@xref{Continuations}.  However, current implementation
+of @code{call/cc} and @code{guard} haven't integrated to SRFI-226 model yet.
+(i.e. these aren't partial continuation versions.)
 @item call-in-continuation
 @itemx call-in
 Not implemented yet.
@@ -16624,14 +16626,11 @@ Not implemented yet.
 
 @item Shift and reset
 @table @code
-@item shift-at
-@itemx reset-at
-Not implemented yet.
 @item shift
 @itemx reset
-@xref{Partial continuations}.  However, current implementation
-of @code{shift}/@code{reset} hasn't integrated to SRFI-226 model
-yet.
+@itemx shift-at
+@itemx reset-at
+@xref{Partial continuations}.
 @end table
 
 @item Inspection
