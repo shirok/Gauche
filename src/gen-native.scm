@@ -896,6 +896,53 @@
                  (is-a? type <c-function>))                       8]
             [else (error "unknown FFI box kind for asm path:" type)]))
    `(define-enum SCM_STRING_COPYING)
+   ;; Common address table patches.
+   ;; gea is %%get-entry-address.  We can't directly refer to it as
+   ;; it won't be globally visible after initialization.
+   `(define (%asm-call-patches gea)
+      `((:Scm_MakeFlonum             ,<intptr_t>
+         ,(gea "_Scm_MakeFlonum"))
+        (:Scm_MakeString             ,<intptr_t>
+         ,(gea "_Scm_MakeString"))
+        (:Scm_MakeNativeHandleSimple ,<intptr_t>
+         ,(gea "_Scm_MakeNativeHandleSimple"))
+        (:Scm_IntptrToInteger        ,<intptr_t>
+         ,(gea "_Scm_IntptrToInteger"))
+        (:Scm_UintptrToInteger       ,<intptr_t>
+         ,(gea "_Scm_UintptrToInteger"))
+        (:SCM_STRING_COPYING         ,<int32>
+         ,SCM_STRING_COPYING)
+        (:SCM_UNDEFINED              ,<top>
+         ,(undefined))))
+   `(define (%asm-callback-patches gea)
+      `((:Scm__FFINativeCallCallback ,<intptr_t>
+         ,(gea "_Scm__FFINativeCallCallback"))
+        (:Scm_Cons                   ,<intptr_t>
+         ,(gea "_Scm_Cons"))
+        (:Scm_MakeFlonum             ,<intptr_t>
+         ,(gea "_Scm_MakeFlonum"))
+        (:Scm_MakeString             ,<intptr_t>
+         ,(gea "_Scm_MakeString"))
+        (:Scm_MakeNativeHandleSimple ,<intptr_t>
+         ,(gea "_Scm_MakeNativeHandleSimple"))
+        (:Scm_IntptrToInteger        ,<intptr_t>
+         ,(gea "_Scm_IntptrToInteger"))
+        (:Scm_UintptrToInteger       ,<intptr_t>
+         ,(gea "_Scm_UintptrToInteger"))
+        (:Scm_GetIntegerClamp        ,<intptr_t>
+         ,(gea "_Scm_GetIntegerClamp"))
+        (:Scm_GetIntegerUClamp       ,<intptr_t>
+         ,(gea "_Scm_GetIntegerUClamp"))
+        (:Scm_GetDouble              ,<intptr_t>
+         ,(gea "_Scm_GetDouble"))
+        (:Scm_GetStringConst         ,<intptr_t>
+         ,(gea "_Scm_GetStringConst"))
+        (:Scm_NativeHandlePtr        ,<intptr_t>
+         ,(gea "_Scm_NativeHandlePtr"))
+        (:SCM_STRING_COPYING         ,<int32>
+         ,SCM_STRING_COPYING)
+        (:SCM_NIL                    ,<top>
+         ,'())))
    )
 
   ;; (call-amd64 <native-handle> args rettype)
@@ -932,20 +979,7 @@
                 [gea     (% '%%get-entry-address)])
             (set! prelinked-tmpl
                   (prelink (amd64-call-reg-tmpl)
-                           `((:Scm_MakeFlonum             ,<intptr_t>
-                              ,(gea "_Scm_MakeFlonum"))
-                             (:Scm_MakeString             ,<intptr_t>
-                              ,(gea "_Scm_MakeString"))
-                             (:Scm_MakeNativeHandleSimple ,<intptr_t>
-                              ,(gea "_Scm_MakeNativeHandleSimple"))
-                             (:Scm_IntptrToInteger        ,<intptr_t>
-                              ,(gea "_Scm_IntptrToInteger"))
-                             (:Scm_UintptrToInteger       ,<intptr_t>
-                              ,(gea "_Scm_UintptrToInteger"))
-                             (:SCM_STRING_COPYING         ,<int32>
-                              ,SCM_STRING_COPYING)
-                             (:SCM_UNDEFINED              ,<top>
-                              ,(undefined)))))))
+                           (%asm-call-patches gea)))))
         (^[ptr args num-iargs num-fargs rettype]
           (when (not link-tmpl) (init!))
           (let* ([effective-nargs (if (zero? num-fargs)
@@ -1011,20 +1045,7 @@
                 [gea     (% '%%get-entry-address)])
             (set! prelinked-tmpl
                   (prelink (amd64-call-spill-tmpl)
-                           `((:Scm_MakeFlonum             ,<intptr_t>
-                              ,(gea "_Scm_MakeFlonum"))
-                             (:Scm_MakeString             ,<intptr_t>
-                              ,(gea "_Scm_MakeString"))
-                             (:Scm_MakeNativeHandleSimple ,<intptr_t>
-                              ,(gea "_Scm_MakeNativeHandleSimple"))
-                             (:Scm_IntptrToInteger        ,<intptr_t>
-                              ,(gea "_Scm_IntptrToInteger"))
-                             (:Scm_UintptrToInteger       ,<intptr_t>
-                              ,(gea "_Scm_UintptrToInteger"))
-                             (:SCM_STRING_COPYING         ,<int32>
-                              ,SCM_STRING_COPYING)
-                             (:SCM_UNDEFINED              ,<top>
-                              ,(undefined)))))))
+                           (%asm-call-patches gea)))))
         (^[ptr args num-iargs num-fargs num-spills rettype]
           (when (not link-tmpl) (init!))
           (let* ([effective-nargs (if (zero? num-fargs)
@@ -1155,34 +1176,7 @@
                               native-ptr-fill-enabled?) #t])
               (set! prelinked-tmpl
                     (prelink (amd64-callback-tmpl)
-                             `((:Scm__FFINativeCallCallback ,<intptr_t>
-                                ,(gea "_Scm__FFINativeCallCallback"))
-                               (:Scm_Cons                   ,<intptr_t>
-                                ,(gea "_Scm_Cons"))
-                               (:Scm_MakeFlonum             ,<intptr_t>
-                                ,(gea "_Scm_MakeFlonum"))
-                               (:Scm_MakeString             ,<intptr_t>
-                                ,(gea "_Scm_MakeString"))
-                               (:Scm_MakeNativeHandleSimple ,<intptr_t>
-                                ,(gea "_Scm_MakeNativeHandleSimple"))
-                               (:Scm_IntptrToInteger        ,<intptr_t>
-                                ,(gea "_Scm_IntptrToInteger"))
-                               (:Scm_UintptrToInteger       ,<intptr_t>
-                                ,(gea "_Scm_UintptrToInteger"))
-                               (:Scm_GetIntegerClamp        ,<intptr_t>
-                                ,(gea "_Scm_GetIntegerClamp"))
-                               (:Scm_GetIntegerUClamp       ,<intptr_t>
-                                ,(gea "_Scm_GetIntegerUClamp"))
-                               (:Scm_GetDouble              ,<intptr_t>
-                                ,(gea "_Scm_GetDouble"))
-                               (:Scm_GetStringConst         ,<intptr_t>
-                                ,(gea "_Scm_GetStringConst"))
-                               (:Scm_NativeHandlePtr        ,<intptr_t>
-                                ,(gea "_Scm_NativeHandlePtr"))
-                               (:SCM_STRING_COPYING         ,<int32>
-                                ,SCM_STRING_COPYING)
-                               (:SCM_NIL                    ,<top>
-                                ,'())))))))
+                             (%asm-callback-patches gea))))))
         (define MAX-ARGS 8)
         (^[proc arg-canons rettype]
           (when (not link-tmpl) (init!))
@@ -1276,20 +1270,7 @@
                 [gea     (% '%%get-entry-address)])
             (set! prelinked-tmpl
                   (prelink (winx64-call-reg-tmpl)
-                           `((:Scm_MakeFlonum             ,<intptr_t>
-                              ,(gea "_Scm_MakeFlonum"))
-                             (:Scm_MakeString             ,<intptr_t>
-                              ,(gea "_Scm_MakeString"))
-                             (:Scm_MakeNativeHandleSimple ,<intptr_t>
-                              ,(gea "_Scm_MakeNativeHandleSimple"))
-                             (:Scm_IntptrToInteger        ,<intptr_t>
-                              ,(gea "_Scm_IntptrToInteger"))
-                             (:Scm_UintptrToInteger       ,<intptr_t>
-                              ,(gea "_Scm_UintptrToInteger"))
-                             (:SCM_STRING_COPYING         ,<int32>
-                              ,SCM_STRING_COPYING)
-                             (:SCM_UNDEFINED              ,<top>
-                              ,(undefined)))))))
+                           (%asm-call-patches gea)))))
         (^[ptr args num-args num-fargs rettype]
           (when (not link-tmpl) (init!))
           (let* (;; for effective-nargs calculation, we need to consider
@@ -1353,20 +1334,7 @@
                 [gea     (% '%%get-entry-address)])
             (set! prelinked-tmpl
                   (prelink (winx64-call-spill-tmpl)
-                           `((:Scm_MakeFlonum             ,<intptr_t>
-                              ,(gea "_Scm_MakeFlonum"))
-                             (:Scm_MakeString             ,<intptr_t>
-                              ,(gea "_Scm_MakeString"))
-                             (:Scm_MakeNativeHandleSimple ,<intptr_t>
-                              ,(gea "_Scm_MakeNativeHandleSimple"))
-                             (:Scm_IntptrToInteger        ,<intptr_t>
-                              ,(gea "_Scm_IntptrToInteger"))
-                             (:Scm_UintptrToInteger       ,<intptr_t>
-                              ,(gea "_Scm_UintptrToInteger"))
-                             (:SCM_STRING_COPYING         ,<int32>
-                              ,SCM_STRING_COPYING)
-                             (:SCM_UNDEFINED              ,<top>
-                              ,(undefined)))))))
+                           (%asm-call-patches gea)))))
         (^[ptr args num-args num-fargs num-spills rettype]
           (when (not link-tmpl) (init!))
           (let loop ([args args] [count 0] [scount 0] [named '()] [spill-params '()])
@@ -1469,34 +1437,7 @@
                               native-ptr-fill-enabled?) #t])
               (set! prelinked-tmpl
                     (prelink (winx64-callback-tmpl)
-                             `((:Scm__FFINativeCallCallback ,<intptr_t>
-                                ,(gea "_Scm__FFINativeCallCallback"))
-                               (:Scm_Cons                   ,<intptr_t>
-                                ,(gea "_Scm_Cons"))
-                               (:Scm_MakeFlonum             ,<intptr_t>
-                                ,(gea "_Scm_MakeFlonum"))
-                               (:Scm_MakeString             ,<intptr_t>
-                                ,(gea "_Scm_MakeString"))
-                               (:Scm_MakeNativeHandleSimple ,<intptr_t>
-                                ,(gea "_Scm_MakeNativeHandleSimple"))
-                               (:Scm_IntptrToInteger        ,<intptr_t>
-                                ,(gea "_Scm_IntptrToInteger"))
-                               (:Scm_UintptrToInteger       ,<intptr_t>
-                                ,(gea "_Scm_UintptrToInteger"))
-                               (:Scm_GetIntegerClamp        ,<intptr_t>
-                                ,(gea "_Scm_GetIntegerClamp"))
-                               (:Scm_GetIntegerUClamp       ,<intptr_t>
-                                ,(gea "_Scm_GetIntegerUClamp"))
-                               (:Scm_GetDouble              ,<intptr_t>
-                                ,(gea "_Scm_GetDouble"))
-                               (:Scm_GetStringConst         ,<intptr_t>
-                                ,(gea "_Scm_GetStringConst"))
-                               (:Scm_NativeHandlePtr        ,<intptr_t>
-                                ,(gea "_Scm_NativeHandlePtr"))
-                               (:SCM_STRING_COPYING         ,<int32>
-                                ,SCM_STRING_COPYING)
-                               (:SCM_NIL                    ,<top>
-                                ,'())))))))
+                             (%asm-callback-patches gea))))))
         (define MAX-ARGS 4)
         (^[proc arg-canons rettype]
           (when (not link-tmpl) (init!))
