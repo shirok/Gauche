@@ -161,25 +161,23 @@ typedef struct {
 /* Allocation granularity (round to 8 bytes so the next codepad item aligns) */
 #define CODEPAD_PDATA_SIZE  ((sizeof(CpPdata) + 7) & ~(size_t)7)
 
-static void setup_codepad_pdata(ScmCodeCache *cc,
-                                void *codepad,
-                                size_t code_end,   /* EndAddress: past last instruction */
-                                size_t pdata_off,  /* where to write CpPdata block */
-                                ScmSmallInt entry,
-                                ScmSmallInt prolog_end,
-                                ScmSmallInt frame_size)
+/* Fill a single CpPdata block from RVAs (offsets relative to xpad base)
+   plus the prolog and frame metadata.  The single-ALLOC simplification
+   (treat push %rbx + sub $N as one ALLOC of N+8) is documented in
+   memory/project_winx64_unwind.md; correctness relies on exceptions
+   never firing during the prolog itself. */
+static void fill_cpdata(CpPdata *pd,
+                        uint32_t begin_rva,
+                        uint32_t end_rva,
+                        uint32_t unwind_rva,
+                        uint8_t  prolog_sz,
+                        ScmSmallInt frame_size)
 {
-    CpPdata *pd = (CpPdata *)((char*)codepad + pdata_off);
-    size_t cp_xoff = (size_t)((char*)codepad - (char*)cc->wpad->ptr);
-    uint8_t prolog_sz = (uint8_t)(prolog_end - entry);
-
-    SCM_ASSERT(prolog_end > entry && (prolog_end - entry) <= 255);
     SCM_ASSERT(frame_size > 0 && (frame_size % 8) == 0);
 
-    pd->BeginAddress = (uint32_t)(cp_xoff + entry);
-    pd->EndAddress   = (uint32_t)(cp_xoff + code_end);
-    pd->UnwindData   = (uint32_t)(cp_xoff + pdata_off
-                                  + offsetof(CpPdata, VersionFlags));
+    pd->BeginAddress  = begin_rva;
+    pd->EndAddress    = end_rva;
+    pd->UnwindData    = unwind_rva;
     pd->VersionFlags  = 1;           /* Version=1, Flags=0 */
     pd->SizeOfProlog  = prolog_sz;
     pd->FrameInfo     = 0;
@@ -198,6 +196,26 @@ static void setup_codepad_pdata(ScmCodeCache *cc,
         pd->Code0Op      = (uint8_t)(CP_UWOP_ALLOC_LARGE); /* OpInfo=0 */
         pd->Code1        = (uint16_t)(frame_size / 8);
     }
+}
+
+static void setup_codepad_pdata(ScmCodeCache *cc,
+                                void *codepad,
+                                size_t code_end,   /* EndAddress: past last instruction */
+                                size_t pdata_off,  /* where to write CpPdata block */
+                                ScmSmallInt entry,
+                                ScmSmallInt prolog_end,
+                                ScmSmallInt frame_size)
+{
+    SCM_ASSERT(prolog_end > entry && (prolog_end - entry) <= 255);
+
+    size_t cp_xoff = (size_t)((char*)codepad - (char*)cc->wpad->ptr);
+    fill_cpdata((CpPdata *)((char*)codepad + pdata_off),
+                (uint32_t)(cp_xoff + entry),
+                (uint32_t)(cp_xoff + code_end),
+                (uint32_t)(cp_xoff + pdata_off
+                           + offsetof(CpPdata, VersionFlags)),
+                (uint8_t)(prolog_end - entry),
+                frame_size);
 }
 #endif /* GAUCHE_WINDOWS */
 
@@ -336,13 +354,18 @@ ScmObj Scm__InstallFFICallbackOne(ScmU8Vector *code,
                   (long)entry, (long)csize);
     }
 
-    size_t alloc_size = round_up_to_page((size_t)csize);
+    size_t alloc_size = (size_t)csize;
+#if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
+    /* Append a single CpPdata block, 4-byte aligned. */
+    int need_pdata = (win_prolog_end > 0 && win_frame_size > 0);
+    size_t pdata_off = ((size_t)csize + 3) & ~(size_t)3;
+    if (need_pdata) alloc_size = pdata_off + CODEPAD_PDATA_SIZE;
+#endif
+    alloc_size = round_up_to_page(alloc_size);
     ScmMemoryRegion *wpad = NULL, *xpad = NULL;
     Scm_SysMmapWX(alloc_size, &wpad, &xpad);
 
     memcpy(wpad->ptr, SCM_UVECTOR_ELEMENTS(code), (size_t)csize);
-
-    /* Later, we will set up CpPdata + RtlAddFunctionTable here. */
 
     ScmFFICallbackPad *pad = SCM_NEW(ScmFFICallbackPad);
     SCM_SET_CLASS(pad, SCM_CLASS_FFI_CALLBACK_PAD);
@@ -353,6 +376,23 @@ ScmObj Scm__InstallFFICallbackOne(ScmU8Vector *code,
     pad->destroyed = 0;
 #if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
     pad->pdata = NULL;
+    if (need_pdata) {
+        if (win_prolog_end <= entry || (win_prolog_end - entry) > 255) {
+            Scm_Error("FFI callback: invalid prolog range "
+                      "(entry=%ld, prolog-end=%ld)",
+                      (long)entry, (long)win_prolog_end);
+        }
+        CpPdata *pd = (CpPdata *)((char*)wpad->ptr + pdata_off);
+        fill_cpdata(pd,
+                    (uint32_t)entry,
+                    (uint32_t)csize,
+                    (uint32_t)(pdata_off + offsetof(CpPdata, VersionFlags)),
+                    (uint8_t)(win_prolog_end - entry),
+                    win_frame_size);
+        pad->pdata = (char*)xpad->ptr + pdata_off;
+        RtlAddFunctionTable((PRUNTIME_FUNCTION)pad->pdata, 1,
+                            (DWORD64)xpad->ptr);
+    }
 #endif
     return SCM_OBJ(pad);
 }
@@ -369,7 +409,12 @@ void Scm__DestroyFFICallbackPad(ScmFFICallbackPad *pad)
 {
     if (pad->destroyed) return;
     pad->destroyed = 1;
-    /* RtlDeleteFunctionTable(pad->pdata) on Windows. */
+#if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
+    if (pad->pdata) {
+        RtlDeleteFunctionTable((PRUNTIME_FUNCTION)pad->pdata);
+        pad->pdata = NULL;
+    }
+#endif
     Scm_SysMunmap(pad->wpad);
     Scm_SysMunmap(pad->xpad);
     pad->wpad = NULL;
@@ -408,7 +453,23 @@ ScmObj Scm__InstallFFICallbackContext(const ScmFFICallbackSpec *specs,
         total += (size_t)csize;
     }
 
-    size_t alloc_size = round_up_to_page(total);
+    size_t alloc_size = total;
+#if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
+    /* Append CpPdata blocks (one per callback that supplies prolog/frame
+       info), 4-byte aligned right after the last callback's code. */
+    int any_pdata = 0;
+    for (int i = 0; i < nspecs; i++) {
+        if (specs[i].win_prolog_end > 0 && specs[i].win_frame_size > 0) {
+            any_pdata = 1;
+            break;
+        }
+    }
+    size_t pdata_block_off = (total + 3) & ~(size_t)3;
+    if (any_pdata) {
+        alloc_size = pdata_block_off + (size_t)nspecs * CODEPAD_PDATA_SIZE;
+    }
+#endif
+    alloc_size = round_up_to_page(alloc_size);
     ScmMemoryRegion *wpad = NULL, *xpad = NULL;
     Scm_SysMmapWX(alloc_size, &wpad, &xpad);
 
@@ -436,6 +497,40 @@ ScmObj Scm__InstallFFICallbackContext(const ScmFFICallbackSpec *specs,
     ctx->destroyed  = 0;
 #if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
     ctx->pdata_table = NULL;
+    if (any_pdata) {
+        /* Fill one CpPdata block per callback, then register the whole
+           table with the OS in a single call. */
+        for (int i = 0; i < nspecs; i++) {
+            ScmSmallInt csize = SCM_UVECTOR_SIZE(specs[i].code);
+            ScmSmallInt e     = specs[i].entry;
+            ScmSmallInt pe    = specs[i].win_prolog_end;
+            ScmSmallInt fs    = specs[i].win_frame_size;
+            size_t this_pd_off = pdata_block_off
+                                 + (size_t)i * CODEPAD_PDATA_SIZE;
+            CpPdata *pd = (CpPdata *)((char*)wpad->ptr + this_pd_off);
+            if (pe <= 0 || fs <= 0) {
+                Scm_Error("FFI callback %d: missing PDATA "
+                          "(prolog-end=%ld, frame-size=%ld); "
+                          "all callbacks in a context must supply unwind info "
+                          "on Windows", i, (long)pe, (long)fs);
+            }
+            if (pe <= e || (pe - e) > 255) {
+                Scm_Error("FFI callback %d: invalid prolog range "
+                          "(entry=%ld, prolog-end=%ld)",
+                          i, (long)e, (long)pe);
+            }
+            fill_cpdata(pd,
+                        (uint32_t)(offsets[i] + e),
+                        (uint32_t)(offsets[i] + csize),
+                        (uint32_t)(this_pd_off
+                                   + offsetof(CpPdata, VersionFlags)),
+                        (uint8_t)(pe - e),
+                        fs);
+        }
+        ctx->pdata_table = (char*)xpad->ptr + pdata_block_off;
+        RtlAddFunctionTable((PRUNTIME_FUNCTION)ctx->pdata_table, nspecs,
+                            (DWORD64)xpad->ptr);
+    }
 #endif
     return SCM_OBJ(ctx);
 }
@@ -456,7 +551,12 @@ void Scm__DestroyFFICallbackContext(ScmFFICallbackContext *ctx)
 {
     if (ctx->destroyed) return;
     ctx->destroyed = 1;
-    /* RtlDeleteFunctionTable(ctx->pdata_table). */
+#if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
+    if (ctx->pdata_table) {
+        RtlDeleteFunctionTable((PRUNTIME_FUNCTION)ctx->pdata_table);
+        ctx->pdata_table = NULL;
+    }
+#endif
     Scm_SysMunmap(ctx->wpad);
     Scm_SysMunmap(ctx->xpad);
     ctx->wpad = NULL;

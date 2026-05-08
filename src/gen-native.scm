@@ -628,6 +628,215 @@
                     (.dataq :argtype7)
     end:))
 
+;;; Windows x64 ABI callback trampoline
+;;;
+;;; Arg passing is positional: arg slot i lives in either %rcx/%rdx/%r8/%r9
+;;; (int-like) or %xmm0..%xmm3 (fp), so int_save and fp_save are indexed by
+;;; the *original* argument position — no need for a separate argsrcs
+;;; table.  Only 4 register-resident args; spilled args not yet handled.
+;;;
+;;; Stack frame (entry rsp%16==8; we push %rbx then sub $128,%rsp):
+;;;   %rsp+0..31     shadow space     — 32 bytes for outgoing helper calls
+;;;   %rsp+32..63    int_save[0..3]   — saved %rcx,%rdx,%r8,%r9
+;;;   %rsp+64..95    fp_save[0..3]    — saved %xmm0..%xmm3
+;;;   %rsp+96..127   boxed[0..3]      — boxed ScmObj per arg
+;;;
+;;; Total RSP delta from caller's frame = 8 (push %rbx) + 128 = 136.
+;;; The single-ALLOC unwind code in setup_codepad_pdata describes that
+;;; whole 136-byte adjustment; %rbx's saved value is not advertised, by
+;;; design — see memory/project_winx64_unwind.md.
+
+(define-asm-fragment winx64-callback x86_64
+  '(entry:
+             (push %rbx)                ; rsp%16: 8 -> 0
+             (subq (imm32 128) %rsp)    ; 128 % 16 == 0
+    prolog-end:
+             ;; Save 4 int arg regs into int_save[0..3] at rsp+32.
+             (movq %rcx (32 %rsp))
+             (movq %rdx (40 %rsp))
+             (movq %r8  (48 %rsp))
+             (movq %r9  (56 %rsp))
+             ;; Save 4 xmm arg regs into fp_save[0..3] at rsp+64.
+             (movsd %xmm0 (64 %rsp))
+             (movsd %xmm1 (72 %rsp))
+             (movsd %xmm2 (80 %rsp))
+             (movsd %xmm3 (88 %rsp))
+             ;; rbx = arg index, iterate while rbx < nargs.
+             (xorq %rbx %rbx)
+    box-loop:
+             (movzbq (nargs:) %rax)
+             (cmpq %rax %rbx)
+             (jgel build-args:)
+             ;; %al <- argkinds[rbx]
+             (leaq (argkinds:) %r10)
+             (movzbq (%r10 %rbx 1) %rax)
+             ;; Float kinds first; they read from fp_save.
+             (cmpb 4 %al)
+             (jel box-double:)
+             (cmpb 5 %al)
+             (jel box-float:)
+             ;; Int-like: load int_save[rbx] into %rcx (Win64 1st arg).
+             (movq (32 %rsp %rbx 8) %rcx)
+             (cmpb 1 %al)
+             (jel box-fixnum:)
+             (cmpb 2 %al)
+             (jel box-intptr:)
+             (cmpb 3 %al)
+             (jel box-uintptr:)
+             (cmpb 7 %al)
+             (jel box-cstring:)
+             (cmpb 8 %al)
+             (jel box-pointer:)
+             ;; Fall through: kind 0 (<top>) — value already in %rcx.
+             (movq %rcx %rax)
+             (jmpl store-boxed:)
+
+    box-fixnum:
+             (movq %rcx %rax)
+             (shl 2 %rax)
+             (incq %rax)
+             (jmpl store-boxed:)
+
+    box-intptr:
+             (call (fn-int:))
+             (jmpl store-boxed:)
+
+    box-uintptr:
+             (call (fn-uint:))
+             (jmpl store-boxed:)
+
+    box-cstring:
+             (movq -1 %rdx)
+             (movq -1 %r8)
+             (movq (imm32 :SCM_STRING_COPYING) %r9)
+             (call (fn-string:))
+             (jmpl store-boxed:)
+
+    box-pointer:
+             (leaq (argtypes:) %r11)
+             (movq (%r11 %rbx 8) %rdx)  ; %rdx = type ScmObj (2nd arg)
+             (call (fn-handle:))
+             (jmpl store-boxed:)
+
+    box-double:
+             (movsd (64 %rsp %rbx 8) %xmm0)
+             (call (fn-flonum:))
+             (jmpl store-boxed:)
+
+    box-float:
+             (movsd (64 %rsp %rbx 8) %xmm0)
+             (cvtss2sd %xmm0 %xmm0)
+             (call (fn-flonum:))
+             ;; fall through
+
+    store-boxed:
+             (movq %rax (96 %rsp %rbx 8))
+             (incq %rbx)
+             (jmpl box-loop:)
+
+    build-args:
+             ;; acc = '() ; for i from nargs-1 downto 0:
+             ;; acc = (cons boxed[i] acc)
+             (movq (SCM_NIL:) %rax)
+             (movzbq (nargs:) %rbx)
+    build-loop:
+             (cmpq 0 %rbx)
+             (jel apply-it:)
+             (decq %rbx)
+             (movq %rax %rdx)              ; cdr (2nd arg)
+             (movq (96 %rsp %rbx 8) %rcx)  ; car (1st arg)
+             (call (fn-cons:))
+             (jmpl build-loop:)
+
+    apply-it:
+             (movq (proc:) %rcx)        ; ScmObj proc (1st arg)
+             (movq %rax %rdx)           ; args list   (2nd arg)
+             (call (fn-callback:))      ; %rax = Scm__FFINativeCallCallback(...)
+
+             ;; Return-side dispatch: unbox %rax into a C value.
+             (movb (imm8 :retkind) %bl)
+             (decb %bl)
+             (jsl epilog:)              ; retkind=0 (<top>): %rax already ScmObj
+             (jz ret-fixnum:)           ; retkind=1
+             (decb %bl)
+             (jz ret-intptr:)           ; retkind=2
+             (decb %bl)
+             (jz ret-uintptr:)          ; retkind=3
+             (decb %bl)
+             (jz ret-double:)           ; retkind=4
+             (decb %bl)
+             (jz ret-float:)            ; retkind=5
+             (decb %bl)
+             (jz ret-void:)             ; retkind=6
+             (decb %bl)
+             (jz ret-cstring:)          ; retkind=7
+             ;; fallthrough: retkind=8 (pointer)
+    ret-pointer:
+             (movq %rax %rcx)
+             (call (fn-handle-ptr:))
+             (jmp epilog:)
+    ret-fixnum:
+             (sar 2 %rax)
+             (jmp epilog:)
+    ret-intptr:
+             (movq %rax %rcx)
+             (movq 3 %rdx)              ; SCM_CLAMP_BOTH
+             (xorq %r8 %r8)             ; oor = NULL
+             (call (fn-get-int:))
+             (jmp epilog:)
+    ret-uintptr:
+             (movq %rax %rcx)
+             (movq 3 %rdx)
+             (xorq %r8 %r8)
+             (call (fn-get-uint:))
+             (jmp epilog:)
+    ret-double:
+             (movq %rax %rcx)
+             (call (fn-get-double:))    ; result in %xmm0
+             (jmp epilog:)
+    ret-float:
+             (movq %rax %rcx)
+             (call (fn-get-double:))
+             (cvtsd2ss %xmm0 %xmm0)
+             (jmp epilog:)
+    ret-void:
+             (jmp epilog:)
+    ret-cstring:
+             (movq %rax %rcx)
+             (call (fn-get-cstring:))
+             ;; fallthrough
+    epilog:
+             (addq (imm32 128) %rsp)
+             (pop %rbx)
+             (ret)
+             (.endsection text)
+
+             (.section data)
+    proc:           (.dataq :proc)
+    fn-callback:    (.dataq :Scm__FFINativeCallCallback)
+    fn-cons:        (.dataq :Scm_Cons)
+    fn-flonum:      (.dataq :Scm_MakeFlonum)
+    fn-string:      (.dataq :Scm_MakeString)
+    fn-handle:      (.dataq :Scm_MakeNativeHandleSimple)
+    fn-int:         (.dataq :Scm_IntptrToInteger)
+    fn-uint:        (.dataq :Scm_UintptrToInteger)
+    fn-get-int:     (.dataq :Scm_GetIntegerClamp)
+    fn-get-uint:    (.dataq :Scm_GetIntegerUClamp)
+    fn-get-double:  (.dataq :Scm_GetDouble)
+    fn-get-cstring: (.dataq :Scm_GetStringConst)
+    fn-handle-ptr:  (.dataq :Scm_NativeHandlePtr)
+    SCM_NIL:        (.dataq :SCM_NIL)
+    nargs:          (.datab :nargs)
+    argkinds:       (.datab :argkind0)
+                    (.datab :argkind1)
+                    (.datab :argkind2)
+                    (.datab :argkind3)
+    argtypes:       (.dataq :argtype0)
+                    (.dataq :argtype1)
+                    (.dataq :argtype2)
+                    (.dataq :argtype3)
+    end:))
+
 
 ;;;
 ;;; Code generators
@@ -1229,6 +1438,109 @@
                                      ,(* (- num-spills scount 1) 8))
                                    spill-params)))]
                     [else (error "bad arg entry:" (car args))])))))))
+
+  (display ";; Callback trampoline (Windows x64)\n" port)
+  (dump-asm-fragment winx64-callback port)
+
+  ;; assemble-callback-winx64
+  ;;
+  ;;   (assemble-callback-winx64 proc arg-canons rettype)
+  ;;     →  values code-bytes entry-offset win-prolog-end win-frame-size
+  ;;
+  ;; Mirror of assemble-callback-amd64 but for Windows x64.  win-prolog-end
+  ;; and win-frame-size are populated; the C side
+  ;; (Scm__InstallFFICallbackContext) uses them to write the per-callback
+  ;; CpPdata block and feed RtlAddFunctionTable.  Win64 has positional
+  ;; arg slots, so argsrcs is implicit (= argument index) and is not
+  ;; written to the data section.
+  ;;
+  ;; The trampoline currently supports up to 4 register-resident args;
+  ;; spilled args are not yet handled.
+  (Ps
+   `(define assemble-callback-winx64
+      (let ([% (%%make-bootstrap-function-table '(%%get-entry-address))]
+            [link-tmpl #f] [lbl-off #f] [prelinked-tmpl #f])
+        (define (init!)
+          (set! link-tmpl (module-binding-ref 'lang.asm.linker 'link-templates))
+          (set! lbl-off   (module-binding-ref 'lang.asm.linker 'linked-label-offset))
+          (let ([prelink (module-binding-ref 'lang.asm.linker 'prelink-template)]
+                [gea     (% '%%get-entry-address)])
+            (parameterize ([(with-module gauche.typeutil
+                              native-ptr-fill-enabled?) #t])
+              (set! prelinked-tmpl
+                    (prelink (winx64-callback-tmpl)
+                             `((:Scm__FFINativeCallCallback ,<intptr_t>
+                                ,(gea "_Scm__FFINativeCallCallback"))
+                               (:Scm_Cons                   ,<intptr_t>
+                                ,(gea "_Scm_Cons"))
+                               (:Scm_MakeFlonum             ,<intptr_t>
+                                ,(gea "_Scm_MakeFlonum"))
+                               (:Scm_MakeString             ,<intptr_t>
+                                ,(gea "_Scm_MakeString"))
+                               (:Scm_MakeNativeHandleSimple ,<intptr_t>
+                                ,(gea "_Scm_MakeNativeHandleSimple"))
+                               (:Scm_IntptrToInteger        ,<intptr_t>
+                                ,(gea "_Scm_IntptrToInteger"))
+                               (:Scm_UintptrToInteger       ,<intptr_t>
+                                ,(gea "_Scm_UintptrToInteger"))
+                               (:Scm_GetIntegerClamp        ,<intptr_t>
+                                ,(gea "_Scm_GetIntegerClamp"))
+                               (:Scm_GetIntegerUClamp       ,<intptr_t>
+                                ,(gea "_Scm_GetIntegerUClamp"))
+                               (:Scm_GetDouble              ,<intptr_t>
+                                ,(gea "_Scm_GetDouble"))
+                               (:Scm_GetStringConst         ,<intptr_t>
+                                ,(gea "_Scm_GetStringConst"))
+                               (:Scm_NativeHandlePtr        ,<intptr_t>
+                                ,(gea "_Scm_NativeHandlePtr"))
+                               (:SCM_STRING_COPYING         ,<int32>
+                                ,SCM_STRING_COPYING)
+                               (:SCM_NIL                    ,<top>
+                                ,'())))))))
+        (define MAX-ARGS 4)
+        (^[proc arg-canons rettype]
+          (when (not link-tmpl) (init!))
+          (let* ([nargs (length arg-canons)])
+            (when (> nargs MAX-ARGS)
+              (errorf "FFI native callback: more than ~a register-resident \
+                       args is not supported yet (got ~a)"
+                      MAX-ARGS nargs))
+            (let* ([kinds (map %asm-boxkind arg-canons)]
+                   [_ (when (memv 6 kinds)
+                        (error "FFI native callback: <void> can't \
+                                 appear as an argument type"))]
+                   [types (map %asm-argtype arg-canons)]
+                   [pad   (^[lst filler]
+                            (append lst
+                                    (make-list (- MAX-ARGS (length lst))
+                                               filler)))]
+                   [k4    (pad kinds 0)]
+                   [t4    (pad types #f)]
+                   [arg-params
+                    (append
+                     (map (^[i k] `(,(make-keyword
+                                      (format "argkind~a" i))
+                                    ,<int8> ,k))
+                          (iota MAX-ARGS) k4)
+                     (map (^[i t] `(,(make-keyword
+                                      (format "argtype~a" i))
+                                    ,<top> ,t))
+                          (iota MAX-ARGS) t4))])
+              (parameterize ([(with-module gauche.typeutil
+                                native-ptr-fill-enabled?) #t])
+                (receive [bytes lbs]
+                    (link-tmpl (list prelinked-tmpl)
+                               `((:proc    ,<top>  ,proc)
+                                 (:nargs   ,<int8> ,nargs)
+                                 (:retkind ,<int8> ,(%asm-boxkind rettype))
+                                 ,@arg-params))
+                  (let* ([entry-off  (lbl-off lbs 'entry:)]
+                         [prolog-end (lbl-off lbs 'prolog-end:)])
+                    (values bytes
+                            entry-off
+                            prolog-end
+                            ;; win-frame-size = push %rbx (8) + sub $128
+                            (+ 8 128)))))))))))
   )
 
 ;;;

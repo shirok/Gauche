@@ -208,6 +208,10 @@
         ;; procedure.
         ;;   (define <body-name> (lambda <vars> <body> ...))
         (define ccb-defines '())
+        ;; (name body-name) per callback, in declaration order.  Threaded
+        ;; through to with-native-ffi so it can pair each callback with
+        ;; its body procedure when batching them into one codepad.
+        (define ccb-info '())
         (define subsystem
           (get-keyword :subsystem (unwrap-syntax options)
                        (default-ffi-subsystem)))
@@ -267,6 +271,7 @@
                (push! ccb-defines
                       (quasirename r
                         `(define ,body-name (lambda ,vars ,@body))))
+               (push! ccb-info (list name body-name))
                (quasirename r
                  `(let ([atypes (list ,@(map (^t (quasirename r
                                                    `(%resolve-typespec ,t)))
@@ -310,6 +315,7 @@
           [(:native)
            (quasirename r
              `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
+                               ,(reverse ccb-info)
                                ,final-forms))]
           [(:stubgen)
            (quasirename r

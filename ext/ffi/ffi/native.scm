@@ -46,34 +46,59 @@
 ;;; Main macro
 ;;;
 
-;; (with-native-ffi dlo-expr options cdef-list-expr cdef-names forms)
+;; (with-native-ffi dlo-var dlo-expr options cdef-specs ccb-info forms)
 ;;
-;; cdef-list-expr is a form that evaluates to a list of <foreign-c-function>
-;; instances.  cdef-names is a literal list of the corresponding Scheme names
-;; (known at expansion time).
+;; cdef-specs is ((name . expr) ...) where expr evaluates to a
+;; <foreign-c-function> or <foreign-c-callback>.  ccb-info is a literal
+;; list ((ccb-name body-name-id) ...), one entry per callback in
+;; declaration order; body-name-id is the identifier of the lambda
+;; defined by with-ffi for that callback's body.
 ;;
-;; The provisional (define name #f) bindings have already been emitted by
-;; with-ffi at begin level.  Body forms are also at begin level.  This macro
-;; only handles evaluating the cdef list and set!ing each name.
+;; The provisional (define name) bindings and the body lambdas are
+;; emitted as begin-level forms.  All callbacks are batched into a
+;; single ScmFFICallbackContext which is anchored in a hidden
+;; module-level binding so the foreign side's invisible references
+;; cannot dangle.
 (define-syntax with-native-ffi
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ dlo-var dlo-expr options cdef-specs forms)
-        (quasirename r
-          `(begin
-             ,@(map (^[spec] (quasirename r
-                               `(define ,(car spec))))
-                    cdef-specs)
-             ,@forms
-             (define _dummy
-               (let ([,dlo-var ,dlo-expr])
-                 ,@(map (^[spec]
-                          (quasirename r
-                            `(set! ,(car spec)
-                                   (make-native-ffi-proc ,dlo-var ,(cdr spec)))))
-                        cdef-specs)))
-             ))]))))
+       [(_ dlo-var dlo-expr options cdef-specs ccb-info forms)
+        (let* ([ccb-name-set (map car ccb-info)]
+               [cfn-specs (filter (^s (not (memq (car s) ccb-name-set)))
+                                  cdef-specs)]
+               [ccb-specs (filter (^s (memq (car s) ccb-name-set))
+                                  cdef-specs)]
+               [ctx-var   (gensym "%ffi-native-ctx-")]
+               [instances-var (gensym "%ccbs-")])
+          (define (emit-cfn-set! spec)
+            (quasirename r
+              `(set! ,(car spec)
+                     (make-native-ffi-proc ,dlo-var ,(cdr spec)))))
+          (define (emit-ccb-block)
+            (if (null? ccb-specs)
+              #f
+              (quasirename r
+                `(let* ([,instances-var (list ,@(map cdr ccb-specs))]
+                        [bodies         (list ,@(map (^[name]
+                                                       (cadr (assq name ccb-info)))
+                                                     (map car ccb-specs)))]
+                        [ctx (install-callback-context! ,instances-var bodies)])
+                   ,@(map (^[i s]
+                            (quasirename r
+                              `(set! ,(car s)
+                                     (callback-context-handle
+                                      ctx ,i (list-ref ,instances-var ,i)))))
+                          (iota (length ccb-specs)) ccb-specs)
+                   ctx))))
+          (quasirename r
+            `(begin
+               ,@(map (^[s] (quasirename r `(define ,(car s)))) cdef-specs)
+               ,@forms
+               (define ,ctx-var
+                 (let ([,dlo-var ,dlo-expr])
+                   ,@(map emit-cfn-set! cfn-specs)
+                   ,(emit-ccb-block))))))]))))
 
 ;;;
 ;;; Type canonicalization
@@ -179,6 +204,55 @@
                 ret-canon)))))
       (%procedure-copy raw-proc tag-info))))
 
-(define-method make-native-ffi-proc (dlo (ccb <foreign-c-callback>))
-  (warn "define-c-callback is not supported in this subsystem (yet): ~s"
-        (~ ccb'scheme-name)))
+;; Callbacks no longer flow through make-native-ffi-proc; with-native-ffi
+;; batches them into a single ScmFFICallbackContext.  See the helpers
+;; below.
+
+;;;
+;;; Callback context construction
+;;;
+;;; with-native-ffi emits code that calls install-callback-context! once
+;;; per with-ffi block to install all of that block's callbacks in a
+;;; single mmapped region, then calls callback-context-handle per
+;;; callback to wrap each entry as a <native-handle>.
+;;;
+;;; The context returned by install-callback-context! is held by a
+;;; hidden module-level binding; this is what keeps the mapped pages
+;;; alive for the program lifetime, even though foreign code may have
+;;; recorded the trampoline addresses where the GC cannot see them.
+
+(define %%install-ffi-callback-context
+  (with-module gauche.internal %%install-ffi-callback-context))
+(define %%ffi-callback-context-entry
+  (with-module gauche.internal %%ffi-callback-context-entry))
+
+;; Platform-dispatched entry into the trampoline assembler.  Takes the
+;; body procedure plus canonical arg/ret types and returns four values:
+;;   (values code-bytes entry-offset win-prolog-end win-frame-size)
+(define assemble-callback
+  (cond-expand
+   [x86_64
+    (cond-expand
+     [gauche.os.windows
+      (with-module gauche.internal assemble-callback-winx64)]
+     [else
+      (with-module gauche.internal assemble-callback-amd64)])]
+   [else
+    (^ _ (error "Native FFI callbacks not supported on this platform"))]))
+
+(define (install-callback-context! ccb-instances body-procs)
+  (let1 specs
+      (map (^[ccb body]
+             (let* ([arg-canons (map native-type->call-canon
+                                     (~ ccb'arg-types))]
+                    [ret-canon  (native-type->call-canon
+                                 (~ ccb'return-type))])
+               (receive (code entry win-pe win-fs)
+                   (assemble-callback body arg-canons ret-canon)
+                 (list code entry win-pe win-fs))))
+           ccb-instances body-procs)
+    (%%install-ffi-callback-context specs)))
+
+(define (callback-context-handle ctx i ccb)
+  (%%ffi-callback-context-entry
+   ctx i (make-c-function-type (~ ccb'return-type) (~ ccb'arg-types))))

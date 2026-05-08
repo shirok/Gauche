@@ -1969,7 +1969,8 @@
     (do-test-cb ()))
   (when (ffi-subsystem-available? :native)
     (do-test-f (:subsystem :native))
-    (do-test-g (:subsystem :native)))
+    (do-test-g (:subsystem :native))
+    (do-test-cb (:subsystem :native)))
   )
 
 ;;----------------------------------------------------------
