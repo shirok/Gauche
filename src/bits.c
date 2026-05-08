@@ -40,7 +40,7 @@
  * Construct, copy, fill
  */
 
-ScmBits *Scm_MakeBits(int numbits)
+ScmBits *Scm_MakeBits(ScmSmallInt numbits)
 {
     size_t nw = SCM_BITS_NUM_WORDS(numbits);
     ScmBits *bits = SCM_NEW_ATOMIC_ARRAY(ScmBits, nw);

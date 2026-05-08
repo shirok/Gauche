@@ -52,7 +52,7 @@
 typedef u_long ScmBits;
 
 /* Allocates and returns a bitmap that can hold NUMBITS.  Zero-cleared. */
-SCM_EXTERN ScmBits *Scm_MakeBits(int numbits);
+SCM_EXTERN ScmBits *Scm_MakeBits(ScmSmallInt numbits);
 
 #define SCM_BITS_NUM_WORDS(size) \
     (((size)+SCM_WORD_BITS-1)/SCM_WORD_BITS)

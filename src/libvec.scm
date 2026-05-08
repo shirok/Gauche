@@ -179,7 +179,7 @@
 
 (define-cproc make-weak-vector (size::<fixnum>) Scm_MakeWeakVector)
 
-(define-cproc weak-vector-length (wv::<weak-vector>) ::<int>
+(define-cproc weak-vector-length (wv::<weak-vector>) ::<fixnum>
   (return (-> wv size)))
 
 (define-cproc weak-vector-ref
@@ -668,7 +668,7 @@
 ;;;
 
 (define-cproc bitvector? (obj) ::<boolean> SCM_BITVECTORP) ;SRFI-178
-(define-cproc bitvector-length (v::<bitvector>) ::<int>    ;SRFI-178
+(define-cproc bitvector-length (v::<bitvector>) ::<fixnum> ;SRFI-178
   SCM_BITVECTOR_SIZE)
 
 (define-cproc bitvector-any-value? (v::<bitvector> bit
