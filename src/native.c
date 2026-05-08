@@ -135,37 +135,75 @@ static inline void *get_entry_address(ScmCodeCache *cc, void *wpad_ptr)
 #define CP_UWOP_ALLOC_SMALL  2
 
 /*
- * CpPdata layout (20 bytes):
- *   bytes  0-11  RUNTIME_FUNCTION  (BeginAddress, EndAddress, UnwindData)
- *   bytes 12-19  UNWIND_INFO header + two UNWIND_CODE slots
+ * UNWIND_INFO with a single ALLOC unwind code, sized to fit two
+ * UNWIND_CODE slots (UNWIND_INFO requires an even slot count).
  *
- * The first 12 bytes are layout-compatible with Windows RUNTIME_FUNCTION.
+ *   bytes 0-3  UNWIND_INFO header
+ *   bytes 4-5  UnwindCode[0]
+ *   bytes 6-7  UnwindCode[1] (extra slot for ALLOC_LARGE; padding for SMALL)
+ *
+ * 8 bytes, 4-byte aligned.  The single-ALLOC simplification is
+ * documented in memory/project_winx64_unwind.md.
  */
 typedef struct {
-    /* RUNTIME_FUNCTION (3 x DWORD) */
-    uint32_t BeginAddress;
-    uint32_t EndAddress;
-    uint32_t UnwindData;        /* RVA of VersionFlags field below */
-    /* UNWIND_INFO */
     uint8_t  VersionFlags;      /* Version:3=1, Flags:5=0 */
     uint8_t  SizeOfProlog;
     uint8_t  CountOfCodes;
     uint8_t  FrameInfo;         /* FrameRegister=0, FrameOffset=0 */
-    /* UnwindCode[0] */
     uint8_t  Code0Offset;
     uint8_t  Code0Op;           /* UnwindOp:4, OpInfo:4 */
-    /* UnwindCode[1] — extra data for ALLOC_LARGE, or padding to even count */
     uint16_t Code1;
+} UnwindBlock;
+
+/*
+ * CpPdata layout (20 bytes): RUNTIME_FUNCTION followed by its
+ * UNWIND_INFO, co-located.  Used by the FFI-call codepad
+ * (Scm__VMCallNative) and the single-callback pad
+ * (Scm__InstallFFICallbackOne) — both register exactly one entry
+ * with RtlAddFunctionTable.  For multi-entry tables (the callback
+ * context path), the OS expects a stride-12 RUNTIME_FUNCTION array,
+ * which is incompatible with this co-located layout, so that path
+ * lays the RT_FUNC and UNWIND_INFO arrays out separately.
+ */
+typedef struct {
+    uint32_t BeginAddress;
+    uint32_t EndAddress;
+    uint32_t UnwindData;        /* RVA of the embedded UnwindBlock */
+    UnwindBlock unwind;
 } CpPdata;
 
 /* Allocation granularity (round to 8 bytes so the next codepad item aligns) */
 #define CODEPAD_PDATA_SIZE  ((sizeof(CpPdata) + 7) & ~(size_t)7)
 
-/* Fill a single CpPdata block from RVAs (offsets relative to xpad base)
-   plus the prolog and frame metadata.  The single-ALLOC simplification
-   (treat push %rbx + sub $N as one ALLOC of N+8) is documented in
-   memory/project_winx64_unwind.md; correctness relies on exceptions
-   never firing during the prolog itself. */
+/* Fill an UNWIND_INFO block describing a prolog of size prolog_sz that
+   adjusts RSP by frame_size bytes (single ALLOC; see CpPdata comment). */
+static void fill_unwind_block(UnwindBlock *ub,
+                              uint8_t prolog_sz,
+                              ScmSmallInt frame_size)
+{
+    SCM_ASSERT(frame_size > 0 && (frame_size % 8) == 0);
+
+    ub->VersionFlags = 1;            /* Version=1, Flags=0 */
+    ub->SizeOfProlog = prolog_sz;
+    ub->FrameInfo    = 0;
+    ub->Code0Offset  = prolog_sz;
+
+    if (frame_size <= 128) {
+        /* UWOP_ALLOC_SMALL: 1 node, OpInfo = (size/8 - 1) */
+        ub->CountOfCodes = 1;
+        ub->Code0Op = (uint8_t)(CP_UWOP_ALLOC_SMALL
+                                | (uint8_t)(((frame_size / 8) - 1) << 4));
+        ub->Code1   = 0;
+    } else {
+        /* UWOP_ALLOC_LARGE OpInfo=0: 2 nodes, Code1 = size/8 */
+        ub->CountOfCodes = 2;
+        ub->Code0Op = (uint8_t)(CP_UWOP_ALLOC_LARGE);
+        ub->Code1   = (uint16_t)(frame_size / 8);
+    }
+}
+
+/* Fill a co-located CpPdata block (RUNTIME_FUNCTION + UNWIND_INFO).
+   Used by the single-entry paths. */
 static void fill_cpdata(CpPdata *pd,
                         uint32_t begin_rva,
                         uint32_t end_rva,
@@ -173,29 +211,10 @@ static void fill_cpdata(CpPdata *pd,
                         uint8_t  prolog_sz,
                         ScmSmallInt frame_size)
 {
-    SCM_ASSERT(frame_size > 0 && (frame_size % 8) == 0);
-
-    pd->BeginAddress  = begin_rva;
-    pd->EndAddress    = end_rva;
-    pd->UnwindData    = unwind_rva;
-    pd->VersionFlags  = 1;           /* Version=1, Flags=0 */
-    pd->SizeOfProlog  = prolog_sz;
-    pd->FrameInfo     = 0;
-
-    if (frame_size <= 128) {
-        /* UWOP_ALLOC_SMALL: 1 node, OpInfo = (size/8 - 1) */
-        pd->CountOfCodes = 1;
-        pd->Code0Offset  = prolog_sz;
-        pd->Code0Op      = (uint8_t)(CP_UWOP_ALLOC_SMALL
-                                      | (uint8_t)(((frame_size / 8) - 1) << 4));
-        pd->Code1        = 0;
-    } else {
-        /* UWOP_ALLOC_LARGE OpInfo=0: 2 nodes, Code1 = size/8 */
-        pd->CountOfCodes = 2;
-        pd->Code0Offset  = prolog_sz;
-        pd->Code0Op      = (uint8_t)(CP_UWOP_ALLOC_LARGE); /* OpInfo=0 */
-        pd->Code1        = (uint16_t)(frame_size / 8);
-    }
+    pd->BeginAddress = begin_rva;
+    pd->EndAddress   = end_rva;
+    pd->UnwindData   = unwind_rva;
+    fill_unwind_block(&pd->unwind, prolog_sz, frame_size);
 }
 
 static void setup_codepad_pdata(ScmCodeCache *cc,
@@ -213,7 +232,7 @@ static void setup_codepad_pdata(ScmCodeCache *cc,
                 (uint32_t)(cp_xoff + entry),
                 (uint32_t)(cp_xoff + code_end),
                 (uint32_t)(cp_xoff + pdata_off
-                           + offsetof(CpPdata, VersionFlags)),
+                           + offsetof(CpPdata, unwind)),
                 (uint8_t)(prolog_end - entry),
                 frame_size);
 }
@@ -386,7 +405,7 @@ ScmObj Scm__InstallFFICallbackOne(ScmU8Vector *code,
         fill_cpdata(pd,
                     (uint32_t)entry,
                     (uint32_t)csize,
-                    (uint32_t)(pdata_off + offsetof(CpPdata, VersionFlags)),
+                    (uint32_t)(pdata_off + offsetof(CpPdata, unwind)),
                     (uint8_t)(win_prolog_end - entry),
                     win_frame_size);
         pad->pdata = (char*)xpad->ptr + pdata_off;
@@ -455,8 +474,12 @@ ScmObj Scm__InstallFFICallbackContext(const ScmFFICallbackSpec *specs,
 
     size_t alloc_size = total;
 #if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
-    /* Append CpPdata blocks (one per callback that supplies prolog/frame
-       info), 4-byte aligned right after the last callback's code. */
+    /* RtlAddFunctionTable consumes a contiguous stride-12 array of
+       RUNTIME_FUNCTIONs, so for multi-entry tables we cannot use the
+       CpPdata co-located layout from Scm__VMCallNative (where each
+       RT_FUNC is followed by its own UNWIND_INFO).  Lay out two
+       parallel arrays instead — RT_FUNCs first, then UNWIND_INFOs —
+       and have UnwindData RVAs cross-reference into the second array. */
     int any_pdata = 0;
     for (int i = 0; i < nspecs; i++) {
         if (specs[i].win_prolog_end > 0 && specs[i].win_frame_size > 0) {
@@ -464,9 +487,11 @@ ScmObj Scm__InstallFFICallbackContext(const ScmFFICallbackSpec *specs,
             break;
         }
     }
-    size_t pdata_block_off = (total + 3) & ~(size_t)3;
+    /* RUNTIME_FUNCTION = 3 DWORDs = 12 bytes.  UnwindBlock is 8 bytes. */
+    size_t rt_off = (total + 3) & ~(size_t)3;
+    size_t ui_off = rt_off + (size_t)nspecs * 12;
     if (any_pdata) {
-        alloc_size = pdata_block_off + (size_t)nspecs * CODEPAD_PDATA_SIZE;
+        alloc_size = ui_off + (size_t)nspecs * sizeof(UnwindBlock);
     }
 #endif
     alloc_size = round_up_to_page(alloc_size);
@@ -498,16 +523,13 @@ ScmObj Scm__InstallFFICallbackContext(const ScmFFICallbackSpec *specs,
 #if defined(GAUCHE_WINDOWS) && defined(__MINGW64__)
     ctx->pdata_table = NULL;
     if (any_pdata) {
-        /* Fill one CpPdata block per callback, then register the whole
-           table with the OS in a single call. */
+        /* Fill the parallel RT_FUNC and UNWIND_INFO arrays, then register
+           the RT_FUNC array with the OS in one RtlAddFunctionTable call. */
         for (int i = 0; i < nspecs; i++) {
             ScmSmallInt csize = SCM_UVECTOR_SIZE(specs[i].code);
             ScmSmallInt e     = specs[i].entry;
             ScmSmallInt pe    = specs[i].win_prolog_end;
             ScmSmallInt fs    = specs[i].win_frame_size;
-            size_t this_pd_off = pdata_block_off
-                                 + (size_t)i * CODEPAD_PDATA_SIZE;
-            CpPdata *pd = (CpPdata *)((char*)wpad->ptr + this_pd_off);
             if (pe <= 0 || fs <= 0) {
                 Scm_Error("FFI callback %d: missing PDATA "
                           "(prolog-end=%ld, frame-size=%ld); "
@@ -519,15 +541,22 @@ ScmObj Scm__InstallFFICallbackContext(const ScmFFICallbackSpec *specs,
                           "(entry=%ld, prolog-end=%ld)",
                           i, (long)e, (long)pe);
             }
-            fill_cpdata(pd,
-                        (uint32_t)(offsets[i] + e),
-                        (uint32_t)(offsets[i] + csize),
-                        (uint32_t)(this_pd_off
-                                   + offsetof(CpPdata, VersionFlags)),
-                        (uint8_t)(pe - e),
-                        fs);
+
+            size_t this_rt_off = rt_off + (size_t)i * 12;
+            size_t this_ui_off = ui_off + (size_t)i * sizeof(UnwindBlock);
+
+            /* RUNTIME_FUNCTION (3 DWORDs); written as a uint32 triple to
+               avoid relying on winnt.h's struct definition leaking into
+               the layout. */
+            uint32_t *rt = (uint32_t *)((char*)wpad->ptr + this_rt_off);
+            rt[0] = (uint32_t)(offsets[i] + e);     /* BeginAddress */
+            rt[1] = (uint32_t)(offsets[i] + csize); /* EndAddress */
+            rt[2] = (uint32_t)this_ui_off;          /* UnwindData (RVA) */
+
+            UnwindBlock *ub = (UnwindBlock *)((char*)wpad->ptr + this_ui_off);
+            fill_unwind_block(ub, (uint8_t)(pe - e), fs);
         }
-        ctx->pdata_table = (char*)xpad->ptr + pdata_block_off;
+        ctx->pdata_table = (char*)xpad->ptr + rt_off;
         RtlAddFunctionTable((PRUNTIME_FUNCTION)ctx->pdata_table, nspecs,
                             (DWORD64)xpad->ptr);
     }
