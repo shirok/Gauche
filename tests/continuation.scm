@@ -662,7 +662,7 @@
             (display "[r05]"))
            (k2))))
 
-(test* "reset / shift 1"
+(test* "reset / shift (for-each)"
        '(1 2 3)
        (reset
         (for-each
@@ -670,13 +670,29 @@
          '(1 2 3))
         '()))
 
-(test* "prompt / control 1"
+(test* "prompt / control (for-each)"
        '(3 2 1)
        (prompt
-        (for-each
-         (lambda (x) (control k (cons x (k 'next))))
-         '(1 2 3))
-        '()))
+        (prompt
+         (prompt
+          (for-each
+           (lambda (x) (control k (cons x (k 'next))))
+           '(1 2 3))
+          '()))))
+
+;; from SRFI-226 document
+(test* "reset / shift 1" 4  (+ 1 (reset 3)))
+(test* "reset / shift 2" 5  (+ 1 (reset (* 2 (shift k 4)))))
+(test* "reset / shift 3" 9  (+ 1 (reset (* 2 (shift k (k 4))))))
+(test* "reset / shift 4" 17 (+ 1 (reset (* 2 (shift k (k (k 4)))))))
+(test* "reset / shift 5" 25 (+ 1 (reset (* 2 (shift k1 (* 3 (shift k2 (k1 (k2 4)))))))))
+
+;; from SRFI-226 document
+(test* "prompt / control 1" 7  (prompt (+ 2 (control k (k 5)))))
+(test* "prompt / control 2" 5  (prompt (+ 2 (control k 5))))
+(test* "prompt / control 3" 12 (prompt (+ 5 (prompt (+ 2 (control k1 (+ 1 (control k2 (k2 6)))))))))
+(test* "prompt / control 4" 8  (prompt (+ 5 (prompt (+ 2 (control k1 (+ 1 (control k2 (k1 6)))))))))
+(test* "prompt / control 5" 18 (prompt (+ 12 (prompt (+ 5 (prompt (+ 2 (control k1 (control k2 (control k3 (k3 6)))))))))))
 
 ;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
 (let ()

@@ -199,14 +199,13 @@
            (k2)
            (reset (k1)))))
 
-;; native : ""
+;; native : error
 ;; meta   : ""
 ;; srfi226: ""
 ;; racket : ""
 (gauche-only
  (test* "reset/shift + call/cc error 1"
-        ;(test-error)
-        ""
+        (test-error)
         (with-output-to-string
           (lambda ()
             (define k1 #f)
@@ -219,14 +218,13 @@
             (reset (f1) (f2))
             (reset (k1))))))
 
-;; native : ""
+;; native : error
 ;; meta   : ""
 ;; srfi226: ""
 ;; racket : ""
 (gauche-only
  (test* "reset/shift + call/cc error 2"
-        ;(test-error)
-        ""
+        (test-error)
         (with-output-to-string
           (lambda ()
             (define k1 #f)

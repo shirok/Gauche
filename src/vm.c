@@ -2016,6 +2016,28 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     return ep;
 }
 
+static ScmEscapePoint *copy_ep(ScmEscapePoint *ep)
+{
+    ScmEscapePoint *ep2 = SCM_NEW(ScmEscapePoint);
+    SCM_SET_CLASS(ep2, SCM_CLASS_ESCAPE_POINT);
+    ep2->ehandler = ep->ehandler;
+    ep2->cont = ep->cont;
+    ep2->denv = ep->denv;
+    ep2->dynamicHandlers = ep->dynamicHandlers;
+    ep2->cstack = ep->cstack;
+    ep2->xhandler = ep->xhandler;
+    ep2->partialChain = ep->partialChain;
+    ep2->partialHandlers = ep->partialHandlers;
+    ep2->errorReporting = ep->errorReporting;
+    ep2->rewindBefore = ep->rewindBefore;
+    ep2->contType = ep->contType;
+    ep2->promptTag = ep->promptTag;
+    ep2->abortHandler = ep->abortHandler;
+    ep2->abortArgs = ep->abortArgs;
+    ep2->bottom = ep->bottom;
+    return ep2;
+}
+
 /*-------------------------------------------------------------
  * User level eval and apply.
  *   When the C routine wants the Scheme code to return to it,
@@ -3255,7 +3277,9 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     }
 
     /* get abort continuation */
-    ScmContFrame *abortTo = ep->cont;
+    /* (outer prompt continuation is ep->cont->prev->prev) */
+    SCM_ASSERT(ep && ep->cont && ep->cont->prev);
+    ScmContFrame *abortTo = ep->cont->prev->prev;
 
     /* Discard continuation, and reinstate abortTo frame and its
        dynamic environment. */
@@ -3263,9 +3287,13 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     DENV = abortTo->denv;
 
     /* call continuation procedure to abort */
-    ep->abortHandler = abortHandler;
-    ep->abortArgs = abortArgs;
-    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
+    ScmEscapePoint *ep2 = copy_ep(ep);
+    ep2->cont = abortTo;
+    /* (cdr means outer prompt) */
+    ep2->partialChain = SCM_CDR(ep->partialChain);
+    ep2->abortHandler = abortHandler;
+    ep2->abortArgs = abortArgs;
+    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep2, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply(contproc, SCM_NIL);
 }
@@ -3509,33 +3537,38 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
     } else {
         /* for partial continuation */
 
-        /* find partial continuation information of nearest prompt */
-        ScmObj partialInfo = find_partial_information(vm, ep->promptTag);
-        if (!SCM_PAIRP(partialInfo)) {
-            Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
-                               "prompt-tag", ep->promptTag,
-                               SCM_RAISE_CONDITION_MESSAGE,
-                               "Prompt tag (%S) not found (E1)",
-                               ep->promptTag);
-        }
-
-        /* get escape point on prompt */
-        ScmEscapePoint *ep2 = (ScmEscapePoint *)SCM_CDR(partialInfo);
-
         /* for non-composable partial continuation */
         /* we drop continuation from current to prompt before merge. */
         if (ep->contType == CONT_TYPE_NON_COMPOSABLE) {
+            /* find partial continuation information of nearest prompt */
+            ScmObj partialInfo = find_partial_information(vm, ep->promptTag);
+            if (!SCM_PAIRP(partialInfo)) {
+                Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                                   "prompt-tag", ep->promptTag,
+                                   SCM_RAISE_CONDITION_MESSAGE,
+                                   "Prompt tag (%S) not found (E1)",
+                                   ep->promptTag);
+            }
+
+            /* get escape point on prompt */
+            ScmEscapePoint *ep2 = (ScmEscapePoint *)SCM_CDR(partialInfo);
+
             /* get prompt continuation */
-            ScmContFrame *cprompt = ep2->cont;
+            /* (outer prompt continuation is ep2->cont->prev->prev) */
+            SCM_ASSERT(ep2 && ep2->cont && ep2->cont->prev);
+            ScmContFrame *cprompt = ep2->cont->prev->prev;
+
             /* drop continuation from current to prompt */
             vm->cont = cprompt;
+
             /* set partial continuation information */
-            vm->partialChain = ep2->partialChain;
+            /* (cdr means outer prompt) */
+            vm->partialChain = SCM_CDR(ep2->partialChain);
         }
 
         /* push partial end continuation */
         void *data[1];
-        data[0] = (void*)ep2->partialChain;
+        data[0] = (void*)vm->partialChain;
         Scm_VMPushCC(vm_partial_end_cc, data, 1);
 
         /* we merge current continuation and partial continuation.
@@ -3653,10 +3686,15 @@ static ScmObj throw_continuation(ScmObj *argframe,
                                "Prompt tag (%S) not found (E2)",
                                ep->promptTag);
         }
+
         /* get escape point on prompt */
         ScmEscapePoint *ep2 = (ScmEscapePoint *)SCM_CDR(partialInfo);
+
         /* get prompt continuation */
-        ScmContFrame *cprompt = ep2->cont;
+        /* (outer prompt continuation is ep2->cont->prev->prev) */
+        SCM_ASSERT(ep2 && ep2->cont && ep2->cont->prev);
+        ScmContFrame *cprompt = ep2->cont->prev->prev;
+
         /* move ep->cstack to prompt location */
         ScmCStack *cs;
         for (cs = vm->cstack; cs; cs = cs->prev) {
