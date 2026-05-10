@@ -201,8 +201,8 @@
 
 ;; native : error
 ;; meta   : ""
-;; srfi226: ""
-;; racket : ""
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc error 1"
         (test-error)
@@ -220,8 +220,8 @@
 
 ;; native : error
 ;; meta   : ""
-;; srfi226: ""
-;; racket : ""
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc error 2"
         (test-error)
@@ -273,15 +273,15 @@
              (shift k (display (p)) (cont k))
              (display (p)))))))
      ;; native : 010
-     ;; meta   :
-     ;; srfi226:
+     ;; meta   : -
+     ;; srfi226: -
      ;; racket : -
      (test* "reset/shift + call/cc + parameterize" "010"
             (with-output-to-string
               (lambda () (set! c (foo)))))
      ;; native : 1
-     ;; meta   :
-     ;; srfi226:
+     ;; meta   : -
+     ;; srfi226: -
      ;; racket : -
      (test* "reset/shift + call/cc + parameterize" "1"
             (with-output-to-string c)))))
@@ -350,31 +350,55 @@
                 next
                 (lambda () (display "[D02]"))))))))
 
-(gauche-only
- (test* "reset/shift + guard 2"
-        "catch error!!"
-        (let ((k1 #f))
-          (reset
-           (guard (e [else "catch error!!"])
-             (shift k (set! k1 k))
-             (error "err")))
-          (k1 100))))
+;; native : error
+;; meta   : error
+;; srfi226: error
+;; racket : error
+;; ( https://github.com/shirok/Gauche/pull/848 )
+(test* "reset/shift + guard 2"
+       "catch error!!"
+       (let ((k1 #f))
+         (reset
+          (guard (e [else "catch error!!"])
+            (shift k (set! k1 k))
+            (error "err")))
+         (k1 100)))
 
+;; native : 42
+;; meta   : 42
+;; srfi226: -
+;; racket : -
+;; ( https://github.com/shirok/Gauche/pull/848 )
 (gauche-only
  (test* "reset/shift + eval 1"
         42
         (reset (eval '(shift k (k 42)) (current-module)))))
 
+;; native : 42
+;; meta   : 42
+;; srfi226: -
+;; racket : -
+;; ( https://github.com/shirok/Gauche/pull/848 )
 (gauche-only
  (test* "reset/shift + eval 2"
         42
         (reset (eval '(+ (shift k (k 42))) (current-module)))))
 
+;; native : 42
+;; meta   : 42
+;; srfi226: -
+;; racket : -
+;; ( https://github.com/shirok/Gauche/pull/848 )
 (gauche-only
  (test* "reset/shift + eval 3"
         42
         (reset (+ (eval '(shift k (k 42)) (current-module))))))
 
+;; native : (42 43 44)
+;; meta   : (42 43 44)
+;; srfi226: -
+;; racket : -
+;; ( https://github.com/shirok/Gauche/pull/848 )
 (gauche-only
  (test* "reset/shift + eval 4"
         '(42 43 44)

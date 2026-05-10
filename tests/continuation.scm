@@ -544,6 +544,7 @@
               tag2)
              (display "[p05]")))))
 
+;; from SRFI-226 document
 (let ([tag (make-continuation-prompt-tag)])
   (test* "call-with-composable-continuation 1"
          6930 ; = 11 * 3 * 7 * 5 * 3 * 2
@@ -561,6 +562,7 @@
                    tag)))
              tag))))
 
+;; from SRFI-226 document
 (let ([tag (make-continuation-prompt-tag)])
   (test* "call-with-non-composable-continuation 1"
          990 ; = 11 * 3 * 5 * 3 * 2
@@ -662,6 +664,7 @@
             (display "[r05]"))
            (k2))))
 
+;; Cf. https://reinyannyan.hatenadiary.org/entry/20090623/p1
 (test* "reset / shift (for-each)"
        '(1 2 3)
        (reset
@@ -669,16 +672,13 @@
          (lambda (x) (shift k (cons x (k 'next))))
          '(1 2 3))
         '()))
-
 (test* "prompt / control (for-each)"
        '(3 2 1)
        (prompt
-        (prompt
-         (prompt
-          (for-each
-           (lambda (x) (control k (cons x (k 'next))))
-           '(1 2 3))
-          '()))))
+        (for-each
+         (lambda (x) (control k (cons x (k 'next))))
+         '(1 2 3))
+        '()))
 
 ;; from SRFI-226 document
 (test* "reset / shift 1" 4  (+ 1 (reset 3)))

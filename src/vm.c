@@ -3226,14 +3226,23 @@ static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
     return NULL;
 }
 
-/* find partial continuation informatin of nearest prompt */
-static ScmObj find_partial_information(ScmVM *vm, ScmObj promptTag)
+/* find partial continuation informatin of nearest prompt.
+   outerMost returns if the found information is on the outer most.
+   if you don't need outerMost, set it to NULL. */
+static ScmObj find_partial_information(ScmVM *vm, ScmObj promptTag,
+                                       int *outerMost)
 {
     ScmObj p1;
     SCM_FOR_EACH(p1, vm->partialChain) {
         if (SCM_CAR(SCM_CAR(p1)) == promptTag) {
+            if (outerMost) {
+                *outerMost = !SCM_PAIRP(SCM_CDR(p1));
+            }
             return SCM_CAR(p1);
         }
+    }
+    if (outerMost) {
+        *outerMost = 0;
     }
     return SCM_NIL;
 }
@@ -3250,7 +3259,8 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     }
 
     /* find partial continuation information of nearest prompt */
-    ScmObj partialInfo = find_partial_information(vm, promptTag);
+    int outerMost;
+    ScmObj partialInfo = find_partial_information(vm, promptTag, &outerMost);
     if (!SCM_PAIRP(partialInfo)) {
         Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                            "prompt-tag", promptTag,
@@ -3277,9 +3287,15 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     }
 
     /* get abort continuation */
-    /* (outer prompt continuation is ep->cont->prev->prev) */
-    SCM_ASSERT(ep && ep->cont && ep->cont->prev);
-    ScmContFrame *abortTo = ep->cont->prev->prev;
+    ScmContFrame *abortTo;
+    if (outerMost) {
+        /* (workaround for abort to toplevel error) */
+        abortTo = ep->cont;
+    } else {
+        /* (outer prompt continuation is ep->cont->prev->prev) */
+        SCM_ASSERT(ep && ep->cont && ep->cont->prev);
+        abortTo = ep->cont->prev->prev;
+    }
 
     /* Discard continuation, and reinstate abortTo frame and its
        dynamic environment. */
@@ -3289,8 +3305,13 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     /* call continuation procedure to abort */
     ScmEscapePoint *ep2 = copy_ep(ep);
     ep2->cont = abortTo;
-    /* (cdr means outer prompt) */
-    ep2->partialChain = SCM_CDR(ep->partialChain);
+    if (outerMost) {
+        /* (workaround for abort to toplevel error) */
+        ep2->partialChain = ep->partialChain;
+    } else {
+        /* (cdr means outer prompt) */
+        ep2->partialChain = SCM_CDR(ep->partialChain);
+    }
     ep2->abortHandler = abortHandler;
     ep2->abortArgs = abortArgs;
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep2, 0, 1,
@@ -3541,7 +3562,8 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
         /* we drop continuation from current to prompt before merge. */
         if (ep->contType == CONT_TYPE_NON_COMPOSABLE) {
             /* find partial continuation information of nearest prompt */
-            ScmObj partialInfo = find_partial_information(vm, ep->promptTag);
+            ScmObj partialInfo = find_partial_information(vm, ep->promptTag,
+                                                          NULL);
             if (!SCM_PAIRP(partialInfo)) {
                 Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                                    "prompt-tag", ep->promptTag,
@@ -3678,7 +3700,8 @@ static ScmObj throw_continuation(ScmObj *argframe,
     */
     if (ep->contType == CONT_TYPE_NON_COMPOSABLE) {
         /* find partial continuation information of nearest prompt */
-        ScmObj partialInfo = find_partial_information(vm, ep->promptTag);
+        ScmObj partialInfo = find_partial_information(vm, ep->promptTag,
+                                                      NULL);
         if (!SCM_PAIRP(partialInfo)) {
             Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                                "prompt-tag", ep->promptTag,
@@ -3785,8 +3808,8 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
     }
 
     /* find partial continuation information of nearest prompt */
-    ScmObj partialInfo = find_partial_information(vm, promptTag);
-    /* workaround for toplevel call/cc error */
+    ScmObj partialInfo = find_partial_information(vm, promptTag, NULL);
+    /* (workaround for toplevel call/cc error) */
     if (contType == CONT_TYPE_NON_COMPOSABLE && !SCM_PAIRP(partialInfo)) {
         return Scm_VMCallCCWithTag(proc, promptTag);
     }
