@@ -13,12 +13,11 @@
 ;; module-binding-ref; pull it in so the lookup succeeds.
 (use lang.asm.x86_64)
 
-(test-start "ffi native internals")
+(test-start "FFI native internals")
 
-(unless (ffi-subsystem-available? :native)
+(if (not (ffi-subsystem-available? :native))
   (format #t "skipping: native FFI subsystem not available on this platform~%")
-  (test-end :exit-on-failure 0)
-  (exit 0))
+  (begin
 
 ;;----------------------------------------------------------
 (test-section "Single-callback install")
@@ -302,4 +301,6 @@
          (run-callback (^[] (error "boom"))
                        '() '() <top>)))
 
-(test-end :exit-on-failure #t)
+)) ;; if (ffi-subsystem-available? :native)
+
+(test-end)
