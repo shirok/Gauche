@@ -443,8 +443,17 @@
        (let ([getter (slot-definition-option slot :slot-ref #f)]
              [setter (slot-definition-option slot :slot-set! #f)]
              [bound? (slot-definition-option slot :slot-bound? #f)])
-         (unless (procedure? getter)
+         (unless getter
            (error "virtual slot requires at least :slot-ref:" slot))
+         (unless (applicable? getter <top>)
+           (errorf "value of :slot-ref option for a virtual slot `~s' \
+                    must be a procedure taking one argument: ~s"
+                   (car slot) getter))
+         (unless (or (not setter)
+                     (applicable? setter <top> <top>))
+           (errorf "value of :slot-set! option for a virtual slot `~a' \
+                    must be a procedure taking two arguments or #f: ~s"
+                   (car slot) setter))
          (list getter setter bound?))]
       [(:builtin)
        (or (slot-definition-option slot :slot-accessor #f)
