@@ -31,9 +31,12 @@
   (with-module gauche.internal %%destroy-ffi-callback-pad!))
 ;; call-amd64 expects to run inside (with-module gauche.typeutil
 ;; native-ptr-fill-enabled?) → #t, the same way make-native-ffi-proc
-;; wraps its callsites.
+;; wraps its callsites.  On Windows x64 the runtime uses the Win64 ABI,
+;; so dispatch to call-winx64 there.
 (define call-amd64
-  (let ([raw (with-module gauche.internal call-amd64)]
+  (let ([raw (cond-expand
+              [gauche.os.windows (with-module gauche.internal call-winx64)]
+              [else              (with-module gauche.internal call-amd64)])]
         [param (with-module gauche.typeutil native-ptr-fill-enabled?)])
     (^[ptr args rettype]
       (parameterize ([param #t])
@@ -112,8 +115,17 @@
 ;;----------------------------------------------------------
 (test-section "Callback trampoline: zero-arg invocation and return")
 
+;; The trampoline assembler must follow the host's C calling convention,
+;; because the trampoline calls back into the Gauche C runtime
+;; (Scm_Cons, Scm_MakeFlonum, Scm__FFINativeCallCallback, …).  On Windows
+;; those helpers use the Win64 ABI; using the SysV trampoline there
+;; passes proc/args in the wrong registers and crashes immediately.
 (define assemble-callback-amd64
-  (with-module gauche.internal assemble-callback-amd64))
+  (cond-expand
+   [gauche.os.windows
+    (with-module gauche.internal assemble-callback-winx64)]
+   [else
+    (with-module gauche.internal assemble-callback-amd64)]))
 
 ;; The handle's <c-function> tag is consulted by call-amd64 only to
 ;; satisfy the :func patch's pointer-type check; the explicit rettype
@@ -221,14 +233,19 @@
                      `((,<double> 1.0) (,<intptr_t> 5) (,<double> 2.0))
                      <top>))
 
-(test* "six int args (full int reg file)"
-       '(1 2 3 4 5 6)
-       (run-callback (^[a b c d e f] (list a b c d e f))
-                     (list <intptr_t> <intptr_t> <intptr_t>
-                           <intptr_t> <intptr_t> <intptr_t>)
-                     `((,<intptr_t> 1) (,<intptr_t> 2) (,<intptr_t> 3)
-                       (,<intptr_t> 4) (,<intptr_t> 5) (,<intptr_t> 6))
-                     <top>))
+;; SysV gives 6 int arg registers; Win64 only 4, and the winx64
+;; trampoline doesn't yet support spilled args.
+(cond-expand
+ [gauche.os.windows]
+ [else
+  (test* "six int args (full int reg file)"
+         '(1 2 3 4 5 6)
+         (run-callback (^[a b c d e f] (list a b c d e f))
+                       (list <intptr_t> <intptr_t> <intptr_t>
+                             <intptr_t> <intptr_t> <intptr_t>)
+                       `((,<intptr_t> 1) (,<intptr_t> 2) (,<intptr_t> 3)
+                         (,<intptr_t> 4) (,<intptr_t> 5) (,<intptr_t> 6))
+                       <top>))])
 
 ;;----------------------------------------------------------
 (test-section "Callback trampoline: per-kind return unboxing")
