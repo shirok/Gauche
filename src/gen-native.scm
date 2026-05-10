@@ -555,14 +555,10 @@
              (jmp epilog:)
     ret-intptr:
              (movq %rax %rdi)
-             (movq 3 %rsi)              ; SCM_CLAMP_BOTH
-             (xorq %rdx %rdx)           ; oor = NULL
              (call (fn-get-int:))
              (jmp epilog:)
     ret-uintptr:
              (movq %rax %rdi)
-             (movq 3 %rsi)              ; SCM_CLAMP_BOTH
-             (xorq %rdx %rdx)
              (call (fn-get-uint:))
              (jmp epilog:)
     ret-double:
@@ -595,8 +591,8 @@
     fn-handle:      (.dataq :Scm_MakeNativeHandleSimple)
     fn-int:         (.dataq :Scm_IntptrToInteger)
     fn-uint:        (.dataq :Scm_UintptrToInteger)
-    fn-get-int:     (.dataq :Scm_GetIntegerClamp)
-    fn-get-uint:    (.dataq :Scm_GetIntegerUClamp)
+    fn-get-int:     (.dataq :Scm_IntegerToIntptr)
+    fn-get-uint:    (.dataq :Scm_IntegerToUintptr)
     fn-get-double:  (.dataq :Scm_GetDouble)
     fn-get-cstring: (.dataq :Scm_GetStringConst)
     fn-handle-ptr:  (.dataq :Scm_NativeHandlePtr)
@@ -780,14 +776,10 @@
              (jmp epilog:)
     ret-intptr:
              (movq %rax %rcx)
-             (movq 3 %rdx)              ; SCM_CLAMP_BOTH
-             (xorq %r8 %r8)             ; oor = NULL
              (call (fn-get-int:))
              (jmp epilog:)
     ret-uintptr:
              (movq %rax %rcx)
-             (movq 3 %rdx)
-             (xorq %r8 %r8)
              (call (fn-get-uint:))
              (jmp epilog:)
     ret-double:
@@ -820,8 +812,8 @@
     fn-handle:      (.dataq :Scm_MakeNativeHandleSimple)
     fn-int:         (.dataq :Scm_IntptrToInteger)
     fn-uint:        (.dataq :Scm_UintptrToInteger)
-    fn-get-int:     (.dataq :Scm_GetIntegerClamp)
-    fn-get-uint:    (.dataq :Scm_GetIntegerUClamp)
+    fn-get-int:     (.dataq :Scm_IntegerToIntptr)
+    fn-get-uint:    (.dataq :Scm_IntegerToUintptr)
     fn-get-double:  (.dataq :Scm_GetDouble)
     fn-get-cstring: (.dataq :Scm_GetStringConst)
     fn-handle-ptr:  (.dataq :Scm_NativeHandlePtr)
@@ -929,10 +921,10 @@
          ,(gea "_Scm_IntptrToInteger"))
         (:Scm_UintptrToInteger       ,<intptr_t>
          ,(gea "_Scm_UintptrToInteger"))
-        (:Scm_GetIntegerClamp        ,<intptr_t>
-         ,(gea "_Scm_GetIntegerClamp"))
-        (:Scm_GetIntegerUClamp       ,<intptr_t>
-         ,(gea "_Scm_GetIntegerUClamp"))
+        (:Scm_IntegerToIntptr        ,<intptr_t>
+         ,(gea "_Scm_IntegerToIntptr"))
+        (:Scm_IntegerToUintptr       ,<intptr_t>
+         ,(gea "_Scm_IntegerToUintptr"))
         (:Scm_GetDouble              ,<intptr_t>
          ,(gea "_Scm_GetDouble"))
         (:Scm_GetStringConst         ,<intptr_t>

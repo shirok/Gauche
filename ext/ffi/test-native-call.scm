@@ -267,11 +267,11 @@
        -7
        (run-callback (^[] -7) '() '() <fixnum>))
 
-(test* "<intptr_t> return goes through Scm_GetIntegerClamp"
+(test* "<intptr_t> return goes through Scm_IntegerToIntptr"
        #x100000000
        (run-callback (^[] #x100000000) '() '() <intptr_t>))
 
-(test* "<uintptr_t> return goes through Scm_GetIntegerUClamp"
+(test* "<uintptr_t> return goes through Scm_IntegerToUintptr"
        #x80000001
        (run-callback (^[] #x80000001) '() '() <uintptr_t>))
 
