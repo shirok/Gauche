@@ -37,6 +37,8 @@
 (define-module gauche.native-type
   (use util.match)
   (use gauche.cgen.type.parse)
+  (use gauche.sequence)
+  (use gauche.threads)
   (use gauche.uvector)
   (extend gauche.typeutil)              ;access internal routines
   (export make-c-pointer-type
@@ -64,6 +66,7 @@
           c-aggregate-type?
           c-pointer-like-type?
 
+          native-handle-type
           native*
           native-aref
           native.
@@ -102,6 +105,15 @@
           <uint64-le> <uint64-be>
           <float-le> <float-be>
           <double-le> <double-be>
+
+          <native-wrapper-meta>
+          <native-wrapper-mixin>
+          <wrapped-c-pointer>
+          <wrapped-c-array>
+          <wrapped-c-struct>
+          <wrapped-c-union>
+          make-native-wrapper-class
+          wrap-native-handle
           ))
 (select-module gauche.native-type)
 
@@ -441,9 +453,8 @@
 ;;; Native handles
 ;;;
 
-;; Native handles can be created with several ways.
+(define-inline (native-handle-type handle) (~ handle'type))
 
-;;
 (define-cproc %uvector->native-handle (uv::<uvector>
                                        handle-type::<native-type>
                                        offset::<fixnum>)
@@ -518,31 +529,31 @@
 
 (define (c-pointer-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (~ obj'type) <c-pointer>)))
+       (is-a? (native-handle-type obj) <c-pointer>)))
 
 (define (c-array-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (~ obj'type) <c-array>)))
+       (is-a? (native-handle-type obj) <c-array>)))
 
 (define (c-function-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (~ obj'type) <c-function>)))
+       (is-a? (native-handle-type obj) <c-function>)))
 
 (define (c-struct-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (~ obj'type) <c-struct>)))
+       (is-a? (native-handle-type obj) <c-struct>)))
 
 (define (c-union-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (~ obj'type) <c-union>)))
+       (is-a? (native-handle-type obj) <c-union>)))
 
 (define (c-pointer-like-handle? obj)
   (and (is-a? obj <native-handle>)
-       (c-pointer-like-type? (~ obj'type))))
+       (c-pointer-like-type? (native-handle-type obj))))
 
 (define (c-aggregate-handle? obj)
   (and (is-a? obj <native-handle>)
-       (c-aggregate-type? (~ obj'type))))
+       (c-aggregate-type? (native-handle-type obj))))
 
 ;;
 ;; Casting
@@ -1064,3 +1075,114 @@
                       args)
                    ,ret))]
     [else (error "Cannot produce signature for native type:" type)]))
+
+;;;
+;;; Native Wrapper
+;;;
+
+;; Native wrappers allow to access native aggregate objects as if they're
+;; Gauche's objects.  For example, a native handle of (.struct (a::int b::int))
+;; can beecome an instance with slot 'a and 'b.
+;;
+;; C-struct and c-union behave like <object>, whose fields can be accessed
+;; like slots.  C-array behaves like a sequence.
+;;
+;; Note that there's no definite mappings between native types and Gauche
+;; object system.  For example. the size of unbounded array in C type
+;; can't be automatically determined.  What we provide is mainly for
+;; the convenience to cover typical patterns, but you may need to use
+;; underlying handles occasionally.
+;;
+;; One caveat is the difference of an aggregate object itself and a pointer
+;; to an aggregate object.  In the native type system, these two are
+;; distinguished.  Wrapped handle doesn't distinguish them.  At Gauche level,
+;; they're mostly interchangeable, except when mutation is involved.
+
+(define-class <native-wrapper-meta> (<class>)
+  ((native-type :init-keyword :native-type)
+   ;; Global table to keep class vs type correspondence
+   (type->class :allocation :class
+                :init-form (atom (make-hash-table 'eq?)))))
+
+(define-class <native-wrapper-mixin> ()
+  ((%handle :init-keyword :%handle))
+  :metaclass <native-wrapper-meta>)
+
+(define-class <wrapped-c-pointer> (<native-wrapper-mixin>)
+  ())
+
+(define-class <wrapped-c-array> (<sequence> <native-wrapper-mixin>)
+  ())
+
+(define-class <wrapped-c-struct> (<native-wrapper-mixin>)
+  ())
+
+(define-class <wrapped-c-union> (<native-wrapper-mixin>)
+  ())
+
+;; API
+;;  Creates a class that wraps a native type TYPE.
+;;  We keep 1-to-1 correspondence between the class and the type.
+;; TODO: We may be able to do a better job to synthesize the default name.
+(define (make-native-wrapper-class type :optional (name (gensym)))
+  (or (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
+              (^t (hash-table-get t type #f)))
+      (let1 c (%make-native-wrapper-class type name)
+        (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
+                (^t (or (hash-table-get t type #f)
+                        (begin (hash-table-put! t type c)
+                               c)))))))
+
+(define (%make-native-wrapper-class type name)
+  (typecase type
+    [<c-struct>
+     (make <native-wrapper-meta>
+       :name name :supers (list <wrapped-c-struct>)
+       :native-type type
+       :slots (map (cut %build-slot type <>) (~ type'fields)))]
+    [<c-union>
+     (make <native-wrapper-meta>
+       :name name :supers (list <wrapped-c-union>)
+       :native-type type
+       :slots (map (cut %build-slot type <>) (~ type'fields)))]
+    ))
+
+(define (%build-slot type slot)
+  (let ([slot-name (car slot)]
+        [slot-type (cadr slot)])
+    `(,slot-name :init-keyword ,(make-keyword slot-name)
+                 :allocation :virtual
+                 :slot-ref ,(^o (%wrap (native. (~ o'%handle) slot-name)))
+                 :slot-set! ,(^[o v] (set! (native. (~ o'%handle) slot-name)
+                                           (%unwrap v)))
+                 :type ,slot-type)))
+
+(define (%wrap value)
+  (if (is-a? value <native-handle>)
+    (cond [(null-pointer-handle? value) #f]
+          [(and-let* ([ (c-pointer-handle? value) ]
+                      [pt (c-pointer-type-pointee (native-handle-type value))]
+                      [ (c-aggregate-type? pt) ])
+             (wrap-native-handle (native* value)))]
+          [else (wrap-native-handle value)])
+    value))
+
+(define (%unwrap value)
+  (if (is-a? value <native-wrapper-mixin>)
+    (~ value'%handle)
+    value))
+
+(define-method make ((class <native-wrapper-meta>) . initargs)
+  (let* ([storage (make-u8vector (~ class'native-type'size))]
+         [handle (uvector->native-handle storage (~ class'native-type))]
+         [instance (%wrap-native-handle class handle)])
+    (initialize instance initargs)
+    instance))
+
+(define (wrap-native-handle handle)
+  (let* ([type (~ handle'type)])
+    (%wrap-native-handle (make-native-wrapper-class type) handle)))
+
+(define (%wrap-native-handle class handle)
+  (rlet1 instance (allocate-instance class '())
+    (set! (~ instance'%handle) handle)))
