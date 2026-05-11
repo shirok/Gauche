@@ -15660,47 +15660,72 @@ to be passed to and from foreign functions are reprensed by native handles.
 @deftp {Class} <native-handle>
 @clindex native-handle
 @c MOD gauche.native-type
-
-
-@defivar {<native-handle>} type
-@end defivar
-
+The class of native handle.  A native handle is either a typed
+reference of, or a typed pointer to a native object.
+Its type can be retrieved with @code{native-handle-type}.
+The pointed or referenced object is retrieved with
+type-specific accessors below.
 @end deftp
+
+@defun native-handle-type handle
+@c MOD gauche.native-type
+Returns the native type of the handle.
+@end defun
 
 @defun c-pointer-handle? obj
 @c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is a native handle of c-pointer type,
+@code{#f} otherwise.
 @end defun
 
 @defun c-function-handle? obj
 @c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is a native handle of c-function type,
+@code{#f} otherwise.
 @end defun
 
 @defun c-array-handle? obj
 @c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is a native handle of c-array type,
+@code{#f} otherwise.
 @end defun
 
 @defun c-struct-handle? obj
 @defunx c-union-handle? obj
 @c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is a native handle of c-struct
+and c-union type, respectively,
+@code{#f} otherwise.
 @end defun
 
 @defun c-aggregate-handle? obj
 @c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is a native handle of c-array,
+c-struct, or c-union type,
+@code{#f} otherwise.
 @end defun
 
 @defun c-pointer-like-handle? obj
 @c MOD gauche.native-type
+Returns @code{#t} if @var{obj} is a native handle of c-array,
+c-pointer, or c-function type.
 @end defun
-
 
 @subsubheading Accessing through native handles
 
 @defun native* handle
 @c MOD gauche.native-type
+Pointer dereference.  @var{handle} must be a c-pointer handle.
+Returns the pointed value @emph{boxed} as a Scheme object.
+if the pointed value is an object of c-pointer or c-aggregate types,
+a native handle representing that object is returned.
 @end defun
 
 @defun (setter native*) handle val
 @c MOD gauche.native-type
+You can use a generic setter to modify the value in the pointed location.
+@var{val} must be a value acceptable as the pointee type of
+the pointer.
 @end defun
 
 @defun native-aref handle index
@@ -15761,7 +15786,7 @@ to be passed to and from foreign functions are reprensed by native handles.
 @c MOD gauche.native-type
 @end defun
 
-@defun uvector->hative-handle uv type :optional offset
+@defun uvector->native-handle uv type :optional offset
 @c MOD gauche.native-type
 @end defun
 
