@@ -660,6 +660,7 @@ SCM_EXTERN ScmObj Scm_VMReset(ScmObj proc);
 SCM_EXTERN void   Scm_VMPushDynamicHandlers(ScmObj, ScmObj, ScmObj);
 SCM_EXTERN ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
 SCM_EXTERN int    Scm_ContinuationP(ScmObj proc);
+SCM_EXTERN int    Scm_NonComposableContinuationP(ScmObj proc);
 
 SCM_EXTERN ScmObj Scm_VMCallWithContinuationPrompt(ScmObj, ScmObj, ScmObj);
 SCM_EXTERN ScmObj Scm_VMAbortCurrentContinuation(ScmObj, ScmObj);

@@ -174,6 +174,9 @@ typedef struct ScmEscapePointRec {
                                      CONT_TYPE_NON_COMPOSABLE
                                        - non-composable partial continuation
                                 */
+    int contTypeReq;            /* requested continuation type
+                                   (used for 'non-composable-continuation?')
+                                */
 
     /* The following fields are used for new implementation of partial cont. */
     ScmObj promptTag;           /* (not used now) */

@@ -1250,7 +1250,7 @@ static void save_cont_1(ScmVM *vm, ScmContFrame *c)
     /* First pass */
     do {
         /* copy ccont frame c */
-        ScmContFrame *csave = copy_ccont_1(vm, c, 1);
+        ScmContFrame *csave = copy_ccont_1(vm, c, TRUE);
 
         /* make the orig frame forwarded */
         if (prev) prev->prev = csave;
@@ -1875,7 +1875,7 @@ static ScmContFrame *copy_ccont_frames(ScmContFrame *c,
     if (c == NULL) { return NULL; }
 
     /* copy ccont frame c */
-    ScmContFrame *cc = copy_ccont_1(vm, c, 0);
+    ScmContFrame *cc = copy_ccont_1(vm, c, FALSE);
     if (c == c_last) {
         /* cut on c_last */
         cc->prev = NULL;
@@ -1887,7 +1887,7 @@ static ScmContFrame *copy_ccont_frames(ScmContFrame *c,
     while (1) {
         c = c->prev;
         if (c == NULL) { break; }
-        ScmContFrame *cc2 = copy_ccont_1(vm, c, 0);
+        ScmContFrame *cc2 = copy_ccont_1(vm, c, FALSE);
         cc_old->prev = cc2;
         if (c == c_last) {
             /* cut on c_last */
@@ -2009,6 +2009,7 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
     ep->contType = contType;
+    ep->contTypeReq = contType;
     ep->promptTag = promptTag;
     ep->abortHandler = abortHandler;
     ep->abortArgs = SCM_NIL;
@@ -2031,6 +2032,7 @@ static ScmEscapePoint *copy_ep(ScmEscapePoint *ep)
     ep2->errorReporting = ep->errorReporting;
     ep2->rewindBefore = ep->rewindBefore;
     ep2->contType = ep->contType;
+    ep2->contTypeReq = ep->contTypeReq;
     ep2->promptTag = ep->promptTag;
     ep2->abortHandler = ep->abortHandler;
     ep2->abortArgs = ep->abortArgs;
@@ -3766,7 +3768,8 @@ static ScmObj throw_continuation(ScmObj *argframe,
     return throw_cont_body(hdlist, ep, args);
 }
 
-ScmObj Scm_VMCallCCWithTag(ScmObj proc, ScmObj promptTag)
+ScmObj vm_call_cc_with_tag_and_type(ScmObj proc, ScmObj promptTag,
+                                    int contTypeReq)
 {
     ScmVM *vm = theVM;
 
@@ -3778,6 +3781,10 @@ ScmObj Scm_VMCallCCWithTag(ScmObj proc, ScmObj promptTag)
 
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, CONT_TYPE_FULL,
                                 promptTag, SCM_FALSE);
+
+    /* (ep->contTypeReq is used for 'non-composable-continuation?') */
+    ep->contTypeReq = contTypeReq;
+
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply1(proc, contproc);
@@ -3785,12 +3792,28 @@ ScmObj Scm_VMCallCCWithTag(ScmObj proc, ScmObj promptTag)
 
 ScmObj Scm_VMCallCC(ScmObj proc)
 {
-    return Scm_VMCallCCWithTag(proc, SCM_FALSE);
+    return vm_call_cc_with_tag_and_type(proc, SCM_FALSE, CONT_TYPE_FULL);
+}
+
+ScmObj Scm_VMCallCCWithTag(ScmObj proc, ScmObj promptTag)
+{
+    return vm_call_cc_with_tag_and_type(proc, promptTag, CONT_TYPE_FULL);
 }
 
 int Scm_ContinuationP(ScmObj proc)
 {
     return (SCM_SUBRP(proc) && SCM_PROCEDURE_INFO(proc) == continuation_symbol);
+}
+
+int Scm_NonComposableContinuationP(ScmObj proc)
+{
+    if (SCM_SUBRP(proc) && SCM_PROCEDURE_INFO(proc) == continuation_symbol) {
+        ScmEscapePoint *ep = (ScmEscapePoint*)((ScmSubr*)proc)->data;
+
+        /* (ep->contTypeReq is used instead of ep->contType) */
+        return (ep->contTypeReq != CONT_TYPE_COMPOSABLE);
+    }
+    return FALSE;
 }
 
 /* call with partial continuation.  this corresponds to the 'shift' operator
@@ -3809,10 +3832,11 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
 
     /* find partial continuation information of nearest prompt */
     ScmObj partialInfo = find_partial_information(vm, promptTag, NULL);
-    /* (workaround for toplevel call/cc error) */
-    if (contType == CONT_TYPE_NON_COMPOSABLE && !SCM_PAIRP(partialInfo)) {
-        return Scm_VMCallCCWithTag(proc, promptTag);
+    /* (workaround for toplevel call/cc (and call/pc) error) */
+    if (!SCM_PAIRP(partialInfo)) {
+        return vm_call_cc_with_tag_and_type(proc, promptTag, contType);
     }
+#if 0
     if (!SCM_PAIRP(partialInfo)) {
         Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                            "prompt-tag", promptTag,
@@ -3820,6 +3844,7 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
                            "Prompt tag (%S) not found (E3)",
                            promptTag);
     }
+#endif
 
     /* get escape point on prompt */
     ScmEscapePoint *ep2 = (ScmEscapePoint *)SCM_CDR(partialInfo);

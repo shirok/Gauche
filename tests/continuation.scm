@@ -777,6 +777,22 @@
   (include "partcont.scm"))
 
 ;;
+;; Inspection
+;;
+
+(test-section "inspection")
+
+;; from SRFI-226 document
+(test* "continuation? 1" #t (continuation? (call/cc values)))
+(test* "continuation? 2" #t (continuation? (call-with-composable-continuation values)))
+(test* "continuation? 3" #f (continuation? values))
+
+;; from SRFI-226 document
+(test* "non-composable-continuation? 1" #t (non-composable-continuation? (call/cc values)))
+(test* "non-composable-continuation? 2" #f (non-composable-continuation? (call-with-composable-continuation values)))
+(test* "non-composable-continuation? 3" #f (non-composable-continuation? values))
+
+;;
 ;; Continuation marks
 ;;
 
