@@ -716,6 +716,179 @@
 
 
 ;;;----------------------------------------------------------
+(test-section "native&")
+
+;; native& on c-struct: extract pointer to a field
+(let* ([s (make-c-struct-type 's `((a ,<int8>)
+                                   (b ,<uint32>)
+                                   (c ,<uint16>)
+                                   (d ,<uint8>)))]
+       [data (make-u8vector (~ s'size))]
+       [h (uvector->native-handle data s)])
+  (set! (native. h 'a) -1)
+  (set! (native. h 'b) #x11223344)
+  (set! (native. h 'c) #xabcd)
+  (set! (native. h 'd) #xfe)
+
+  (test* "native& on struct returns c-pointer handle" #t
+         (c-pointer-handle? (native& h 'a)))
+  (test* "native& on struct field 'a pointee type" #t
+         (equal? (~ (native-handle-type (native& h 'a)) 'pointee-type)
+                 <int8>))
+  (test* "native& on struct field 'b pointee type" #t
+         (equal? (~ (native-handle-type (native& h 'b)) 'pointee-type)
+                 <uint32>))
+  (test* "native& on struct field 'c pointee type" #t
+         (equal? (~ (native-handle-type (native& h 'c)) 'pointee-type)
+                 <uint16>))
+
+  (test* "native& on struct: deref reads field value"
+         '(-1 #x11223344 #xabcd #xfe)
+         (list (native* (native& h 'a))
+               (native* (native& h 'b))
+               (native* (native& h 'c))
+               (native* (native& h 'd))))
+
+  (test* "native& on struct: write through pointer modifies field"
+         '(127 #x55667788 #x1234 #x80)
+         (begin
+           (set! (native* (native& h 'a)) 127)
+           (set! (native* (native& h 'b)) #x55667788)
+           (set! (native* (native& h 'c)) #x1234)
+           (set! (native* (native& h 'd)) #x80)
+           (list (native. h 'a)
+                 (native. h 'b)
+                 (native. h 'c)
+                 (native. h 'd))))
+
+  (test* "native& on struct: error on non-symbol selector"
+         (test-error <error>)
+         (native& h 0))
+  (test* "native& on struct: error on unknown field"
+         (test-error <error>)
+         (native& h 'zzz)))
+
+;; native& on c-union: extract pointer to a field
+(let* ([u (make-c-union-type 'u `((a ,<int8>)
+                                  (b ,<uint32>)
+                                  (c ,<uint16>)))]
+       [data (make-u8vector (~ u'size))]
+       [h (uvector->native-handle data u)])
+  (test* "native& on union returns c-pointer handle" #t
+         (c-pointer-handle? (native& h 'a)))
+  (test* "native& on union field 'a pointee type" #t
+         (equal? (~ (native-handle-type (native& h 'a)) 'pointee-type)
+                 <int8>))
+  (test* "native& on union field 'b pointee type" #t
+         (equal? (~ (native-handle-type (native& h 'b)) 'pointee-type)
+                 <uint32>))
+
+  ;; All union pointers should point to the same storage
+  (test* "native& on union: write via 'b then read via 'a and 'c"
+         (case (native-endian)
+           [(big-endian) (list #x11 #x1122)]
+           [else         (list #x44 #x3344)])
+         (begin
+           (set! (native* (native& h 'b)) #x11223344)
+           (list (native* (native& h 'a))
+                 (native* (native& h 'c)))))
+
+  (test* "native& on union: error on non-symbol selector"
+         (test-error <error>)
+         (native& h 1)))
+
+;; native& on 1-D c-array: extract pointer to an element
+(let* ([a (make-c-array-type <uint16> '(4))]
+       [data (make-u8vector (~ a'size))]
+       [h (uvector->native-handle data a)])
+  (set! (native-aref h '(0)) #x1111)
+  (set! (native-aref h '(1)) #x2222)
+  (set! (native-aref h '(2)) #x3333)
+  (set! (native-aref h '(3)) #x4444)
+
+  (test* "native& on array returns c-pointer handle" #t
+         (c-pointer-handle? (native& h 0)))
+  (test* "native& on array pointee type" #t
+         (equal? (~ (native-handle-type (native& h 0)) 'pointee-type)
+                 <uint16>))
+
+  (test* "native& on array: deref reads element value"
+         '(#x1111 #x2222 #x3333 #x4444)
+         (list (native* (native& h 0))
+               (native* (native& h 1))
+               (native* (native& h 2))
+               (native* (native& h 3))))
+
+  (test* "native& on array: list selector"
+         '(#x1111 #x2222 #x3333 #x4444)
+         (list (native* (native& h '(0)))
+               (native* (native& h '(1)))
+               (native* (native& h '(2)))
+               (native* (native& h '(3)))))
+
+  (test* "native& on array: write through pointer modifies element"
+         '(#xaaaa #xbbbb #xcccc #xdddd)
+         (begin
+           (set! (native* (native& h 0)) #xaaaa)
+           (set! (native* (native& h 1)) #xbbbb)
+           (set! (native* (native& h 2)) #xcccc)
+           (set! (native* (native& h 3)) #xdddd)
+           (list (native-aref h '(0))
+                 (native-aref h '(1))
+                 (native-aref h '(2))
+                 (native-aref h '(3)))))
+
+  ;; The pointer can be offset using native-aref
+  (test* "native& on array: native-aref on returned pointer"
+         '(#xaaaa #xcccc)
+         (let1 p (native& h 0)
+           (list (native-aref p 0)
+                 (native-aref p 2))))
+
+  (test* "native& on array: error on symbol selector"
+         (test-error <error>)
+         (native& h 'foo)))
+
+;; native& on multi-dimensional c-array
+(let* ([a (make-c-array-type <int32> '(2 3))]
+       [data (make-u8vector (~ a'size))]
+       [h (uvector->native-handle data a)])
+  (set! (native-aref h '(0 0))  10)
+  (set! (native-aref h '(0 1))  11)
+  (set! (native-aref h '(0 2))  12)
+  (set! (native-aref h '(1 0))  20)
+  (set! (native-aref h '(1 1))  21)
+  (set! (native-aref h '(1 2))  22)
+
+  (test* "native& on 2D array: pointee type is element type" #t
+         (equal? (~ (native-handle-type (native& h '(1 2))) 'pointee-type)
+                 <int32>))
+
+  (test* "native& on 2D array: deref each element"
+         '(10 11 12 20 21 22)
+         (list (native* (native& h '(0 0)))
+               (native* (native& h '(0 1)))
+               (native* (native& h '(0 2)))
+               (native* (native& h '(1 0)))
+               (native* (native& h '(1 1)))
+               (native* (native& h '(1 2)))))
+
+  (test* "native& on 2D array: write through pointer"
+         99
+         (begin
+           (set! (native* (native& h '(1 1))) 99)
+           (native-aref h '(1 1)))))
+
+;; native& errors on inappropriate handle types
+(let* ([int* (make-c-pointer-type <int>)]
+       [data (make-u8vector (~ int*'size))]
+       [ph (uvector->native-handle data int*)])
+  (test* "native& on c-pointer handle is an error"
+         (test-error <error> #/native&/)
+         (native& ph 0)))
+
+
+;;;----------------------------------------------------------
 (test-section "null pointers")
 
 (test* "null pointer dereference" (test-error <error> #/NULL pointer/)
