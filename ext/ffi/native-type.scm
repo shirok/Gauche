@@ -71,6 +71,7 @@
           native-aref
           native.
           native->
+          native&
 
           uvector->native-handle
           null-pointer-handle
@@ -870,6 +871,31 @@
       (case-lambda
         [(handle slot type val) (%native->-set! handle slot type val)]
         [(handle slot val) (%native->-set! handle slot #f val)]))
+
+;; Take an address of struct/union member or array element
+(define (native& handle selector)
+  (assume-type handle <native-handle>)
+  (let1 type (~ handle'type)
+    (typecase type
+      [(</> <c-struct> <c-union>)
+       (assume-type selector <symbol>
+         "native& on c-struct or c-union requires a symbol selector, but got;"
+         selector)
+       (let ([off (native-type-offset type selector)]
+             [etype (c-struct/union-type-field-type type selector)])
+         (make-internal-handle handle off (make-c-pointer-type etype)))]
+      [<c-array>
+       (assume-type selector (</> <fixnum> (<List> <fixnum>))
+         "native& on c-struct or c-union requires a symbol selector, but got;"
+         selector)
+       (let ([off (native-type-offset type (if (list? selector)
+                                             selector
+                                             (list selector)))])
+         (make-internal-handle handle off
+                               (make-c-pointer-type (~ type'element-type))))]
+      [else
+       (error "native& requires c-array, c-struct or c-union handle, but got:"
+              handle)])))
 
 ;;;
 ;;;  Convert type signatures to native-type instance

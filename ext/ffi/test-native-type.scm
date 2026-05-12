@@ -575,13 +575,13 @@
 ;; c-union tests
 (let ([data (u8vector-copy *fobject-storage*)]
       [u1 (make-c-union-type 'u1
-                                  `((a ,<int8>)
-                                    (b ,<uint32>)
-                                    (c ,<uint16>)))]
+                             `((a ,<int8>)
+                               (b ,<uint32>)
+                               (c ,<uint16>)))]
       [u2 (make-c-union-type 'u2
-                                  `((x ,<uint8>)
-                                    (y ,<uint64>)
-                                    (z ,<int16>)))]
+                             `((x ,<uint8>)
+                               (y ,<uint64>)
+                               (z ,<int16>)))]
       [u0 (make-c-union-type 'u0 '())])
   (define (bc pos type) (uvector->native-handle data type pos))
   (define (tsa type expect)
@@ -693,6 +693,27 @@
            (set! (native. h 'a) d)
            (native* (native. h 'a))))
   )
+
+;; Nested struct
+(let* ([inner (make-c-struct-type #f `((a ,<c-char>) (b ,<int>)))]
+       [inner* (make-c-pointer-type inner)]
+       [outer (make-c-struct-type #f `((c ,inner) (d ,inner*)))]
+       [data (make-u8vector (~ outer'size))]
+       [h (uvector->native-handle data outer)]
+       [h2 (uvector->native-handle data inner*)])
+  (test* "exteract inner struct" #t
+         (c-struct-handle? (native. h 'c)))
+  (test* "exteract inner struct pointer" #t
+         (null-pointer-handle? (native. h 'd)))
+  (test* "exteract inner struct pointer set" '(#\@ 999)
+         (begin
+           (set! (native. h 'd) (native& h 'c))
+           (set! (native. (native. h 'c) 'a) #\@)
+           (set! (native. (native. h 'c) 'b) 999)
+           (list (native-> (native. h 'd) 'a)
+                 (native-> (native. h 'd) 'b))))
+  )
+
 
 ;;;----------------------------------------------------------
 (test-section "null pointers")
