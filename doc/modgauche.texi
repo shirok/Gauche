@@ -15778,21 +15778,57 @@ the pointer.
 
 @subsubheading Creating a native handle
 
-@defun null-pointer-handle
+@defun uvector->native-handle uv type :optional offset
 @c MOD gauche.native-type
+This creates a native handle of native type @var{type}, using a uniform
+vector @var{uv} as the backing storage.  This is useful to prepare
+binary data in Scheme world.  @var{type} must be a pointer or
+an aggregate native type.
+
+If @var{offset} is given, it specifies a byte offset from
+the beginning of @var{uv} for the resulting handle to point to.
+Using @var{offset}, you can extract a native handle
+in the middle of larger binary data.  If it is omitted, 0 is assumed.
+
+The size of @var{uv} in bytes minus @var{offset} must be greater than
+or equal to the size of @var{type}, or an error is thrown.
+
+The returned native handle can be passed to a foreign function.
+Note that, however, if the foreign function retains the pointer,
+it may not be visible from Gauche's GC.  You have to make sure to
+retain reference to @var{uv} or the resulting native handle
+in the Scheme world as far as the pointer is retained in the
+foreign world.
+
+You can use any type of uniform vector as @var{uv}, but other than
+@code{u8vector} and @code{s8vector}, the machine's native endianness
+is exposed as the binary data.
+
+@example
+(define ip (uvector->native-handle '#u8(#xff #xff #xff #xff)
+                                   (native-type 'int32_t*)))
+
+ip @result{} #<native-handle <int32*>@@0x7d6fbf442ff0>
+
+(native* ip) @result{} -1
+@end example
+@end defun
+
+@defun null-pointer-handle :optional type
+@c MOD gauche.native-type
+Returns a c-pointer handle representing NULL pointer.
+The optional argument @var{type} must be a c-pointer type and
+specifies the type of the resulting handle.  When omitted,
+@code{<void*>} native type is assumed.
+(For FFI calls, you can pass @code{<void*>} pointer to wherever
+a pointer is expected.)
 @end defun
 
 @defun null-pointer-handle? obj
 @c MOD gauche.native-type
+Returns @code{#t} if @code{obj} is a native handle representing
+NULL pointer (of any c-pointer type), @code{#f} otherwise.
 @end defun
-
-@defun uvector->native-handle uv type :optional offset
-@c MOD gauche.native-type
-@end defun
-
-
-
-
 
 @c ----------------------------------------------------------------------
 @node Networking, Package metainformation, Native type utilities, Library modules - Gauche extensions
