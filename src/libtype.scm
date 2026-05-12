@@ -1246,8 +1246,20 @@
    (set! (-> nt unsigned-p) FALSE)      ;irrelevant
    (set! (-> nt bounded-p) bounded-p))
 
+ (define-cfn c-pointer-ref (type::ScmNativeType* ptr::void*)
+   :static
+   (return (Scm_MakeNativeHandleSimple (* (cast char** ptr)) (SCM_OBJ type))))
+
+ (define-cfn c-pointer-set (_::ScmNativeType* ptr::void* obj)
+   ::void :static
+   (unless (and (SCM_NATIVE_HANDLE_P obj)
+                (SCM_C_POINTER_P (-> (SCM_NATIVE_HANDLE obj) type)))
+     (Scm_Error "c-pointer handle required, bot got: %S" obj))
+   (set! (* (cast void** ptr)) (-> (SCM_NATIVE_HANDLE obj) ptr)))
+
  (define-cfn %make-c-pointer-type-fn (pointer-type-name::(const char *)
                                       pointee-type)
+   :static
    (let* ([z::ScmCPointer*
            (SCM_NEW_INSTANCE ScmCPointer (& Scm_CPointerClass))])
      ;; Fill in common fields
@@ -1259,8 +1271,8 @@
                               (SCM_ALIGNOF (.type void*))
                               TRUE
                               native_handle_typeP
-                              NULL
-                              NULL)
+                              c-pointer-ref
+                              c-pointer-set)
      ;; Fill in type-specific fields
      (SCM_ASSERT (SCM_NATIVE_TYPE_P pointee-type))
      (set! (-> z pointee_type) (SCM_NATIVE_TYPE pointee-type))

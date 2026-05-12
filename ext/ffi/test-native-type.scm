@@ -212,6 +212,26 @@
            (native-aref (bc 0 char*) 32)))
   )
 
+(let* ([int*  (make-c-pointer-type <int>)]
+       [int** (make-c-pointer-type int*)]
+       [data (make-u8vector (+ (~ int*'size)
+                               (~ <int>'size)))]
+       [h1 (uvector->native-handle data int**)]
+       [h2 (uvector->native-handle data int* (~ int*'size))])
+  (test* "null pointer on stoage" #t
+         (begin
+           (set! (native* h1) (null-pointer-handle))
+           (null-pointer-handle? (native* h1))))
+  (test* "setting pointer on storage" #f
+         (begin
+           (set! (native* h1) h2)
+           (null-pointer-handle? h1)))
+  (test* "dereferencing pointer on storage" 123
+         (begin
+           (set! (native* h2) 123)
+           (native* (native* h1))))
+  )
+
 ;;;---------------------------------------------------
 (test-section "arrays")
 
@@ -654,6 +674,24 @@
            (set! (native-> data-p 'b) -5678)
            (list (native. data-s 'a)
                  (native. data-s 'b))))
+  )
+
+;; Pointer in struct
+(let* ([double* (make-c-pointer-type <double>)]
+       [double** (make-c-pointer-type double*)]
+       [s (make-c-struct-type #f `((a ,double*)))]
+       [h (uvector->native-handle (make-u8vector (~ s'size)) s)]
+       [d (uvector->native-handle (make-u8vector (~ <double>'size))
+                                  (make-c-pointer-type <double>))])
+  (test* "c-pointer in a struct" #t
+         (begin
+           (set! (native. h 'a) (null-pointer-handle))
+           (null-pointer-handle? (native. h 'a))))
+  (test* "c-pointer in a struct dereference" 3.14
+         (begin
+           (set! (native* d) 3.14)
+           (set! (native. h 'a) d)
+           (native* (native. h 'a))))
   )
 
 ;;;----------------------------------------------------------
