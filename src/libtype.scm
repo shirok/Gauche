@@ -1419,8 +1419,8 @@
                              alignment
                              bounded-p
                              native_handle_typeP
-                             NULL
-                             NULL)
+                             c-pointer-ref
+                             c-pointer-set)
     ;; Fill in type-specific fields
     (set! (-> z tag) (?: tag-name (SCM_OBJ tag-name) SCM_FALSE))
     (set! (-> z fields) field-list)

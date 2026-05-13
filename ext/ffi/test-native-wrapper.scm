@@ -67,6 +67,27 @@
            (~ iut 'b)))
   )
 
+;; Nested structures
+(let ()
+  (define s1 (native-type '(.struct (a::int b::char))))
+  (define s2 (native-type `(.struct (c::int s::,s1 t::(,s1 *)))))
+  (define h (uvector->native-handle (make-u8vector (~ s2'size))
+                                    s2))
+  (define w)
 
+  (set! (native. h 't) (native& h 's))
 
+  (test* "nested struct to class" #t
+         (begin
+           (set! w (wrap-native-handle h))
+           (is-a? w <wrapped-c-struct>)))
+
+  (test* "inner struct, embedded" '(0 #\null)
+         (and (is-a? (~ w's) <wrapped-c-struct>)
+              (list (~ w's'a) (~ w's'b))))
+
+  (test* "inner struct, pointed" '(0 #\null)
+         (and (is-a? (~ w't) <wrapped-c-struct>)
+              (list (~ w't'a) (~ w't'b))))
+  )
 (test-end)

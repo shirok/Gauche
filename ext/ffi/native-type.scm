@@ -566,17 +566,19 @@
 ;; Offset is a bypte offset in relative to the original pointer---only to
 ;; be used by those who know what they're doing.
 
-(define-cproc cast-handle (type::<native-type>
-                           handle::<native-handle>
-                           :optional (offset::<fixnum> 0))
-  (unless (or (SCM_C_POINTER_P type)
-              (SCM_C_ARRAY_P type)
-              (SCM_C_FUNCTION_P type))
-    (Scm_Error "You can only cast to pointer-like type, but got: %S" type))
-  (unless (or (SCM_C_POINTER_P (-> handle type))
-              (SCM_C_ARRAY_P (-> handle type))
-              (SCM_C_FUNCTION_P (-> handle type)))
-    (Scm_Error "You can only cast pointer-like handle, but got: %S" handle))
+(define (cast-handle type handle :optional (offset 0))
+  (assume-type type <native-type>)
+  (assume-type handle <native-handle>)
+  (assume-type offset <fixnum>)
+  (unless (c-pointer-like-type? type)
+    (error "You can only cast to pointer-like type, but got:" handle))
+  (unless (c-pointer-like-handle? handle)
+    (error "You can only cast pointer-like handle, but got:" handle))
+  (%cast-handle type handle offset))
+
+(define-cproc %cast-handle (type::<native-type>
+                            handle::<native-handle>
+                            offset::<fixnum>)
   (return (Scm__MakeNativeHandle (+ (-> handle ptr) offset)
                                  type
                                  (-> handle name)
@@ -784,7 +786,15 @@
   (let1 t (%handle-type handle type)
     (assume-type t <c-pointer>
       "Attempt to dereferencing non-pointer type:" (cons handle t))
-    (%handle-ref (~ t'pointee-type) handle 0)))
+    (let1 pt (~ t'pointee-type)
+      ;; NB: We 'shortcut' pointer-to-aggregate handles; both
+      ;; pointer-to-aggregaete and reference-to-aggregate handles have
+      ;; ptr point to the aggregate, and only the type differs.
+      ;; So, dereferencing pointer-to-aggregaete handle returns
+      ;; the same ptr handle with reference-to-aggregate type.
+      (if (c-aggregate-type? pt)
+        (%cast-handle pt handle 0)
+        (%pref (~ t'pointee-type) handle 0)))))
 
 (define (%native*-set! handle type val)
   (assume-type handle <native-handle>)

@@ -705,13 +705,15 @@
          (c-struct-handle? (native. h 'c)))
   (test* "exteract inner struct pointer" #t
          (null-pointer-handle? (native. h 'd)))
-  (test* "exteract inner struct pointer set" '(#\@ 999)
+  (test* "extract inner struct pointer set" '(#\@ 999)
          (begin
            (set! (native. h 'd) (native& h 'c))
            (set! (native. (native. h 'c) 'a) #\@)
            (set! (native. (native. h 'c) 'b) 999)
            (list (native-> (native. h 'd) 'a)
                  (native-> (native. h 'd) 'b))))
+  (test* "dereferencing pointer to a struct" #t
+         (c-struct-handle? (native* (native. h 'd))))
   )
 
 
