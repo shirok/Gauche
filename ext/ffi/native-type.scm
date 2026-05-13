@@ -493,7 +493,9 @@
                                     :optional (type::<native-type>? NULL))
   (let* ([p::void* (+ (-> base ptr) offset)]
          [t::ScmNativeType* (?: type type (-> base type))])
-    (unless (and (<= (-> base region-min) p)
+    (unless (and (!= (-> base region-min) NULL)
+                 (!= (-> base region-max) NULL)
+                 (<= (-> base region-min) p)
                  (<   p (-> base region-max)))
       (Scm_Error "Offset out of range: %S" offset))
     (return
@@ -575,8 +577,14 @@
               (SCM_C_ARRAY_P (-> handle type))
               (SCM_C_FUNCTION_P (-> handle type)))
     (Scm_Error "You can only cast pointer-like handle, but got: %S" handle))
-  (return (Scm_MakeNativeHandleSimple (+ (-> handle ptr) offset)
-                                      (SCM_OBJ type))))
+  (return (Scm__MakeNativeHandle (+ (-> handle ptr) offset)
+                                 type
+                                 (-> handle name)
+                                 (-> handle region-min)
+                                 (-> handle region-max)
+                                 (-> handle owner)
+                                 (-> handle attrs)
+                                 (-> handle flags))))
 
 ;;
 ;; Comparison
@@ -773,10 +781,10 @@
 ;; Pointer dereference
 (define (native* handle :optional (type #f))
   (assume-type handle <native-handle>)
-  (let* ([t (%handle-type handle type)]
-         [offset (native-type-offset t 0)])
-    (assume-type t <c-pointer>)
-    (%handle-ref (~ t'pointee-type) handle offset)))
+  (let1 t (%handle-type handle type)
+    (assume-type t <c-pointer>
+      "Attempt to dereferencing non-pointer type:" (cons handle t))
+    (%handle-ref (~ t'pointee-type) handle 0)))
 
 (define (%native*-set! handle type val)
   (assume-type handle <native-handle>)
