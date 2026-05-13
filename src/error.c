@@ -926,9 +926,18 @@ void Scm_SysError(const char *msg, ...)
 void Scm_TypeError(const char *what, const char *expected, ScmObj got)
 {
     ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
-    Scm_Printf(SCM_PORT(ostr),
-               "%s is supposed to be of type %s, but got %S",
-               what, expected, got);
+    if (got != NULL) {
+        Scm_Printf(SCM_PORT(ostr),
+                   "%s is supposed to be of type %s, but got %S",
+                   what, expected, got);
+    } else {
+        /* This shouldn't happen, but if it happens, passing it to
+           Scm_Printf triggers another type error ad infinitum,
+           so this is a safeguard. */
+        Scm_Printf(SCM_PORT(ostr),
+                   "%s is supposed to be of type %s, but got #@nil",
+                   what, expected);
+    }
     ScmObj msg = Scm_GetOutputString(SCM_PORT(ostr), TRUE);
     ScmObj e = Scm_MakeAssertionViolation(msg, SCM_LIST1(got));
     Scm_VMThrowException(Scm_VM(), SCM_OBJ(e), SCM_RAISE_NON_CONTINUABLE);
