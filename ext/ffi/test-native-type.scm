@@ -694,10 +694,10 @@
            (native* (native. h 'a))))
   )
 
-;; Nested struct
-(let* ([inner (make-c-struct-type #f `((a ,<c-char>) (b ,<int>)))]
+;; Nested struct, member address
+(let* ([inner (make-c-struct-type 'inner `((a ,<c-char>) (b ,<int>)))]
        [inner* (make-c-pointer-type inner)]
-       [outer (make-c-struct-type #f `((c ,inner) (d ,inner*)))]
+       [outer (make-c-struct-type 'outer `((c ,inner) (d ,inner*)))]
        [data (make-u8vector (~ outer'size))]
        [h (uvector->native-handle data outer)]
        [h2 (uvector->native-handle data inner*)])
@@ -715,6 +715,68 @@
   (test* "dereferencing pointer to a struct" #t
          (c-struct-handle? (native* (native. h 'd))))
   )
+
+;; Array of structs, element address
+(let* ([point (make-c-struct-type 'point `((x ,<int>) (y ,<int>)))]
+       [points (make-c-array-type point '(4))]
+       [data (make-u8vector (~ points'size))]
+       [arr (uvector->native-handle data points)])
+  ;; Initialize: native-aref on an array of structs returns a struct handle.
+  (dotimes [i 4]
+    (let1 elt (native-aref arr (list i))
+      (set! (native. elt 'x) (* i 10))
+      (set! (native. elt 'y) (* i 100))))
+
+  (test* "native& on array of structs returns c-pointer to element struct" #t
+         (let1 p (native& arr 2)
+           (and (c-pointer-handle? p)
+                (equal? (~ (native-handle-type p) 'pointee-type) point))))
+
+  (test* "native& on array of structs: deref then native. reads fields"
+         '(20 200)
+         (let1 s (native* (native& arr 2))
+           (list (native. s 'x) (native. s 'y))))
+
+  (test* "native& on array of structs: deref then native. writes back"
+         '(-1 -2)
+         (let1 s (native* (native& arr 1))
+           (set! (native. s 'x) -1)
+           (set! (native. s 'y) -2)
+           (list (native. (native-aref arr '(1)) 'x)
+                 (native. (native-aref arr '(1)) 'y)))))
+
+;; Struct with an array field, member reference
+(let* ([buf (make-c-array-type <uint16> '(4))]
+       [frame (make-c-struct-type 'frame `((tag ,<int>) (data ,buf)))]
+       [data (make-u8vector (~ frame'size))]
+       [h (uvector->native-handle data frame)])
+  (set! (native. h 'tag) 42)
+  (let1 a (native. h 'data)
+    (set! (native-aref a '(0)) #x1111)
+    (set! (native-aref a '(1)) #x2222)
+    (set! (native-aref a '(2)) #x3333)
+    (set! (native-aref a '(3)) #x4444))
+
+  (test* "native& on struct array field returns c-pointer to array" #t
+         (let1 p (native& h 'data)
+           (and (c-pointer-handle? p)
+                (equal? (~ (native-handle-type p) 'pointee-type) buf))))
+
+  (test* "native& on struct array field: deref then native-aref reads"
+         '(#x1111 #x2222 #x3333 #x4444)
+         (let1 a (native* (native& h 'data))
+           (list (native-aref a '(0))
+                 (native-aref a '(1))
+                 (native-aref a '(2))
+                 (native-aref a '(3)))))
+
+  (test* "native& on struct array field: deref then native-aref writes back"
+         '(#xaaaa #xbbbb)
+         (let1 a (native* (native& h 'data))
+           (set! (native-aref a '(0)) #xaaaa)
+           (set! (native-aref a '(3)) #xbbbb)
+           (list (native-aref (native. h 'data) '(0))
+                 (native-aref (native. h 'data) '(3))))))
 
 
 ;;;----------------------------------------------------------
