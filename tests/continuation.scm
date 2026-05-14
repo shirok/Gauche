@@ -664,6 +664,31 @@
             (display "[r05]"))
            (k2))))
 
+(test* "prompt-at / control-at 1"
+       "[p01][p02][p03][p04][c01][c02][p05]"
+       (with-output-to-string
+         (lambda ()
+           (define tag1 (make-continuation-prompt-tag 'tag1))
+           (define tag2 (make-continuation-prompt-tag 'tag2))
+           (define k1 #f)
+           (define k2 #f)
+           (prompt-at tag1
+            (display "[p01]")
+            (prompt-at tag2
+             (display "[p02]")
+             (control-at tag2 k
+              (set! k1 k))
+             (display "[c01]")
+             (control-at tag1 k
+              (set! k2 k))
+             (display "[c02]"))
+            (display "[p03]"))
+           (prompt-at tag1
+            (display "[p04]")
+            (k1)
+            (display "[p05]"))
+           (k2))))
+
 ;; Cf. https://reinyannyan.hatenadiary.org/entry/20090623/p1
 (test* "reset / shift (for-each)"
        '(1 2 3)

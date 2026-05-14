@@ -1194,7 +1194,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm, ScmEnvFrame *env_begin)
     return head;
 }
 
-static ScmContFrame *copy_ccont_1(ScmVM *vm, ScmContFrame *c,
+static ScmContFrame *copy_cont_1(ScmVM *vm, ScmContFrame *c,
                                   int promptDataCopy)
 {
     int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
@@ -1249,8 +1249,8 @@ static void save_cont_1(ScmVM *vm, ScmContFrame *c)
 
     /* First pass */
     do {
-        /* copy ccont frame c */
-        ScmContFrame *csave = copy_ccont_1(vm, c, TRUE);
+        /* copy cont frame c */
+        ScmContFrame *csave = copy_cont_1(vm, c, TRUE);
 
         /* make the orig frame forwarded */
         if (prev) prev->prev = csave;
@@ -1588,6 +1588,56 @@ ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback)
     return find_dynamic_env(theVM, key, fallback);
 }
 
+/* Copy cont frames from c to c_last */
+static ScmContFrame *copy_cont_frames(ScmContFrame *c,
+                                      ScmContFrame *c_last)
+{
+    ScmVM *vm = theVM;
+
+    if (c == NULL) { return NULL; }
+
+    /* copy cont frame c */
+    ScmContFrame *cc = copy_cont_1(vm, c, FALSE);
+    if (c == c_last) {
+        /* cut on c_last */
+        cc->prev = NULL;
+        return cc;
+    }
+
+    /* copy cont frames until c_last */
+    ScmContFrame *cc_old = cc;
+    while (1) {
+        c = c->prev;
+        if (c == NULL) { break; }
+        ScmContFrame *cc2 = copy_cont_1(vm, c, FALSE);
+        cc_old->prev = cc2;
+        if (c == c_last) {
+            /* cut on c_last */
+            cc2->prev = NULL;
+            break;
+        }
+        cc_old = cc2;
+    }
+    return cc;
+}
+
+/* Merge cont frames */
+static ScmContFrame *merge_cont_frames(ScmContFrame *c,
+                                       ScmContFrame *c_add)
+{
+    if (c_add == NULL) { return c; }
+    ScmContFrame *c_add_2 = c_add;
+    while (1) {
+        if (c_add_2->prev == NULL) {
+            /* merge cont frames */
+            c_add_2->prev = c;
+            break;
+        }
+        c_add_2 = c_add_2->prev;
+    }
+    return c_add;
+}
+
 
 /*==================================================================
  * Function application from C
@@ -1864,56 +1914,6 @@ static ScmObj *new_ccont(ScmVM *vm, ScmPContinuationProc *after,
     CONT = cc;
     ARGP = SP = s + datasize + CONT_FRAME_SIZE;
     return s;
-}
-
-/* Copy ccont frames from c to c_last */
-static ScmContFrame *copy_ccont_frames(ScmContFrame *c,
-                                       ScmContFrame *c_last)
-{
-    ScmVM *vm = theVM;
-
-    if (c == NULL) { return NULL; }
-
-    /* copy ccont frame c */
-    ScmContFrame *cc = copy_ccont_1(vm, c, FALSE);
-    if (c == c_last) {
-        /* cut on c_last */
-        cc->prev = NULL;
-        return cc;
-    }
-
-    /* copy ccont frames until c_last */
-    ScmContFrame *cc_old = cc;
-    while (1) {
-        c = c->prev;
-        if (c == NULL) { break; }
-        ScmContFrame *cc2 = copy_ccont_1(vm, c, FALSE);
-        cc_old->prev = cc2;
-        if (c == c_last) {
-            /* cut on c_last */
-            cc2->prev = NULL;
-            break;
-        }
-        cc_old = cc2;
-    }
-    return cc;
-}
-
-/* Merge ccont frames */
-static ScmContFrame *merge_ccont_frames(ScmContFrame *c,
-                                        ScmContFrame *c_add)
-{
-    if (c_add == NULL) { return c; }
-    ScmContFrame *c_add_2 = c_add;
-    while (1) {
-        if (c_add_2->prev == NULL) {
-            /* merge ccont frames */
-            c_add_2->prev = c;
-            break;
-        }
-        c_add_2 = c_add_2->prev;
-    }
-    return c_add;
 }
 
 /* This is a trick to keep the backward compatibility. */
@@ -3294,7 +3294,7 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
         /* (workaround for abort to toplevel error) */
         abortTo = ep->cont;
     } else {
-        /* (outer prompt continuation is ep->cont->prev->prev) */
+        /* (outer of prompt continuation is ep->cont->prev->prev) */
         SCM_ASSERT(ep && ep->cont && ep->cont->prev);
         abortTo = ep->cont->prev->prev;
     }
@@ -3311,7 +3311,7 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
         /* (workaround for abort to toplevel error) */
         ep2->partialChain = ep->partialChain;
     } else {
-        /* (cdr means outer prompt) */
+        /* (cdr means outer of prompt) */
         ep2->partialChain = SCM_CDR(ep->partialChain);
     }
     ep2->abortHandler = abortHandler;
@@ -3596,12 +3596,12 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
         Scm_VMPushCC(vm_partial_end_cc, data, 1);
 
         /* we merge current continuation and partial continuation.
-           NB: save_cont() and copy_ccont_frames() are necessary to avoid
+           NB: save_cont() and copy_cont_frames() are necessary to avoid
                problems of continuation sharing.
         */
         save_cont(vm);
-        ScmContFrame *epcont_copy = copy_ccont_frames(ep->cont, NULL);
-        vm->cont = merge_ccont_frames(vm->cont, epcont_copy);
+        ScmContFrame *epcont_copy = copy_cont_frames(ep->cont, NULL);
+        vm->cont = merge_cont_frames(vm->cont, epcont_copy);
     }
     vm->denv = ep->denv;
 
@@ -3700,6 +3700,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
     /* we must rewind cstack from current to prompt to avoid memory leak.
        so we move ep->cstack before rewinding cstack.
     */
+    ScmCStack *epcstack = ep->cstack;
     if (ep->contType == CONT_TYPE_NON_COMPOSABLE) {
         /* find partial continuation information of nearest prompt */
         ScmObj partialInfo = find_partial_information(vm, ep->promptTag,
@@ -3715,28 +3716,17 @@ static ScmObj throw_continuation(ScmObj *argframe,
         /* get escape point on prompt */
         ScmEscapePoint *ep2 = (ScmEscapePoint *)SCM_CDR(partialInfo);
 
-        /* get prompt continuation */
-        /* (outer prompt continuation is ep2->cont->prev->prev) */
-        SCM_ASSERT(ep2 && ep2->cont && ep2->cont->prev);
-        ScmContFrame *cprompt = ep2->cont->prev->prev;
-
         /* move ep->cstack to prompt location */
-        ScmCStack *cs;
-        for (cs = vm->cstack; cs; cs = cs->prev) {
-            if (cs->cont == cprompt) {
-                ep->cstack = cs;
-                break;
-            }
-        }
+        epcstack = ep2->cstack;
     }
 
     /* First, check to see if we need to rewind C stack.
        NB: If we are invoking a composable partial continuation,
        we execute it on the current cstack. */
-    if (ep->contType != CONT_TYPE_COMPOSABLE && vm->cstack != ep->cstack) {
+    if (ep->contType != CONT_TYPE_COMPOSABLE && vm->cstack != epcstack) {
         ScmCStack *cs;
         for (cs = vm->cstack; cs; cs = cs->prev) {
-            if (ep->cstack == cs) break;
+            if (epcstack == cs) break;
         }
 
         /* If the continuation captured below the current C stack, we rewind
@@ -3857,12 +3847,12 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
        handling. */
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, contType,
                                 promptTag, SCM_FALSE);
-    /* Set delimited ccont frames instead of full ccont frames (vm->cont).
+    /* Set delimited cont frames instead of full cont frames (vm->cont).
        This is important to avoid memory leak of partial continuation.
        See:
        https://okmij.org/ftp/continuations/against-callcc.html#memory-leak
     */
-    ep->cont = copy_ccont_frames(vm->cont, cprompt);
+    ep->cont = copy_cont_frames(vm->cont, cprompt);
     ep->denv = cprompt ? cprompt->denv : SCM_NIL;
     ep->dynamicHandlers = SCM_NIL; /* don't use for partial continuation */
     ep->partialChain = SCM_NIL;    /* don't use for partial continuation */
