@@ -3578,7 +3578,7 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
             ScmEscapePoint *ep2 = (ScmEscapePoint *)SCM_CDR(partialInfo);
 
             /* get prompt continuation */
-            /* (outer prompt continuation is ep2->cont->prev->prev) */
+            /* (outer of prompt continuation is ep2->cont->prev->prev) */
             SCM_ASSERT(ep2 && ep2->cont && ep2->cont->prev);
             ScmContFrame *cprompt = ep2->cont->prev->prev;
 
@@ -3586,7 +3586,7 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
             vm->cont = cprompt;
 
             /* set partial continuation information */
-            /* (cdr means outer prompt) */
+            /* (cdr means outer of prompt) */
             vm->partialChain = SCM_CDR(ep2->partialChain);
         }
 
