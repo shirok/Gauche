@@ -132,7 +132,8 @@
                 (SCM_PROCEDURE_INFO proc))]
     [else (Scm_Error "You can't attach a setter to %S." (SCM_OBJ proc))])
   (let* ([p (Scm__CopyProcedure proc SCM_FALSE)])
-    ;; NB: We override p->locked, for p is a copy.
+    ;; NB: We temporariy disable p->locked, so that Scm_SetterSet can work.
+    ;; Scm_SetterSet locks p->setter.
     (set! (SCM_PROCEDURE_SETTER_LOCKED p) FALSE)
     (return (Scm_SetterSet (SCM_PROCEDURE p) set TRUE))))
 
