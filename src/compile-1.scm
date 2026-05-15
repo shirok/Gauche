@@ -693,12 +693,18 @@
 
 (define (pass1/define-inline form name expr cenv)
   (let1 iform (pass1 expr (cenv-add-name cenv (variable-name name)))
-    (receive (closures closed) (pass1/check-inlinable-lambda iform)
+    (receive (inlined closures closed)
+        (pass1/check-inlinable-lambda iform)
       (cond
-       [(and (null? closures) (null? closed)) ; too complex to inline
+       [(and (not inlined)
+             (null? closures)
+             (null? closed))
+        ;; The expr is too complex to be inlined.  We just mark the binding
+        ;; inlinable.
         (pass1/make-inlinable-binding form name iform cenv)]
        [(null? closed)               ; no closed env
-        (ifor-each (cut pass1/mark-closure-inlinable! <> name cenv) closures)
+        (for-each pass1/attach-closure-inliner! closures)
+        (when inlined (pass1/mark-closure-inlinable! inlined name cenv))
         (pass1/make-inlinable-binding form name iform cenv)]
        [else ; inlinable lambda has closed env.
         ;; See the comment in subst-lvars above on the transformation.
@@ -712,8 +718,10 @@
              (^[closure]
                ($lambda-body-set! closure
                                   (subst-lvars ($lambda-body closure) subs))
-               (pass1/mark-closure-inlinable! closure name cenv))
+               (pass1/attach-closure-inliner! closure))
              closures)
+            (when inlined
+              (pass1/mark-closure-inlinable! inlined name cenv))
             ($seq `(,@defs
                      ,(pass1/make-inlinable-binding form name iform cenv)))))]
        ))))
@@ -723,30 +731,33 @@
 ;; node.
 ;; The closure(s) may close local environment, if the form is something like
 ;; ($let ... ($lambda ...)).
-;; Returns two values:
-;;    A list of closures:   ($lambda-node ...)
-;;    Alist of closed variables: ((var . init) ...)
+;; Returns three values:
+;;  - The main lambda or clambda node to be inlined.
+;;  - List of lambda nodes, to which inliner information should
+;;    be attached.  E.g. Each branch of clambda node, or the setter
+;;    argument of getetr-with-setter.
+;;  - Alist of closed variables: ((var . init) ...)
 
 ;; Typical case is ($let ... ($lambda ...)).  In such case this
 ;; procedure effectively strips $let nodes.
 ;; If IFORM has more complicated structure, we just return (values #f #f)
 ;; to give up inlining.
 (define (pass1/check-inlinable-lambda iform)
-  (cond [(has-tag? iform $LAMBDA) (values `(,iform) '())]
+  (cond [(has-tag? iform $LAMBDA) (values iform `(,iform) '())]
         [(has-tag? iform $CLAMBDA)
          ;; NB: At pass1, $clambda-closures are all $LAMBDA node.
          ;; (Beware that we might have $LREF or $GREF in the later passes.)
-         (values ($clambda-closures iform) '())]
+         (values iform ($clambda-closures iform) '())]
         [(has-tag? iform $LET)
-         (receive (closures closed)
+         (receive (inlined closures closed)
              (pass1/check-inlinable-lambda ($let-body iform))
-           (if (and (null? closures) (null? closed))
-             (values '() '()) ; giveup
+           (if (and (not inlined) (null? closures) (null? closed))
+             (values #f '() '()) ; giveup
              (let loop ([lvars (reverse ($let-lvars iform))]
                         [inits (reverse ($let-inits iform))]
                         [closed closed])
                (if (null? lvars)
-                 (values closures closed)
+                 (values inlined closures closed)
                  (loop (cdr lvars) (cdr inits)
                        (acons (car lvars) (car inits) closed))))))]
         ;; Special treatment of
@@ -756,13 +767,14 @@
               (free-identifier=? ($gref-id ($call-proc iform))
                                  getter-with-setter.)
               (= (length ($call-args iform)) 2))
-         (receive (closures1 closed1)
+         (receive (inlined closures1 closed1)
              (pass1/check-inlinable-lambda (car ($call-args iform)))
-           (receive (closures2 closed2)
+           (receive (_ closures2 closed2)
                (pass1/check-inlinable-lambda (cadr ($call-args iform)))
-             (values (append closures1 closures2)
+             (values inlined
+                     (append closures1 closures2)
                      (append closed1 closed2))))]
-        [else (values '() '())]))
+        [else (values #f '() '())]))
 
 (define (pass1/define-inline-classify-env name lv&inits cenv)
   (define gvars '())
@@ -783,8 +795,13 @@
 (define (pass1/define-inline-gen-closed-env gvars cenv)
   (imap (^[gv] ($define #f '(inlinable) (car gv) (cdr gv))) gvars))
 
-;; set up $LAMBDA node (closure) to be inlinable.  If NAME is given,
-;; this also inserts the binding to the current compiling environment
+;; Attach necessary info to inline a $LAMBDA node (closure) to the
+;; node.
+(define (pass1/attach-closure-inliner! closure)
+  ($lambda-inliner-set! closure (pack-iform closure)))
+
+;; set up $LAMBDA node (closure) to be inlinable.
+;; also inserts the binding to the current compiling environment
 ;; so that inlining is effective for the rest of the compilation.
 (define (pass1/mark-closure-inlinable! closure name cenv)
   (let* ([module  (cenv-module cenv)]
@@ -793,14 +810,13 @@
          ;; Its body doesn't matter, but we need to make sure every dummy-proc
          ;; is a different instance.  If we make it a constant procedure,
          ;; Gauche's compiler optimizes it to refer to the singleton instance.
-         [dummy-proc (^ _ name)]
-         [packed (pack-iform closure)])
-    ($lambda-inliner-set! closure packed)
-    (when name
-      ;; record inliner function for compiler.  this is used only when
-      ;; the procedure needs to be inlined in the same compiler unit.
-      (%insert-binding module (unwrap-syntax name) dummy-proc
-                       '(inlinable dummy))
+         [dummy-proc (^ _ name)])
+    ;; record inliner function for compiler.  this is used only when
+    ;; the procedure needs to be inlined in the same compiler unit.
+    (%insert-binding module (unwrap-syntax name) dummy-proc
+                     '(inlinable dummy))
+    (and-let* ([ (has-tag? closure $LAMBDA) ]
+               [packed ($lambda-inliner closure)])
       (set! (%procedure-inliner dummy-proc) packed))))
 
 (define (pass1/make-inlinable-binding form name iform cenv)
