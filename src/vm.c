@@ -1594,9 +1594,8 @@ static ScmContFrame *copy_cont_frames(ScmContFrame *c,
 {
     ScmVM *vm = theVM;
 
-    if (c == NULL) { return NULL; }
-
     /* copy cont frame c */
+    if (c == NULL) { return NULL; }
     ScmContFrame *cc = copy_cont_1(vm, c, FALSE);
     if (c == c_last) {
         /* cut on c_last */
@@ -2005,6 +2004,7 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     ep->xhandler = Scm_VMCurrentExceptionHandler();
     ep->partialChain = vm->partialChain;
     ep->partialHandlers = SCM_NIL;
+    ep->partialCont = NULL;
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
@@ -2013,6 +2013,7 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     ep->promptTag = promptTag;
     ep->abortHandler = abortHandler;
     ep->abortArgs = SCM_NIL;
+    ep->noCompHandler = SCM_FALSE;
     ep->bottom = NULL;
     return ep;
 }
@@ -2029,6 +2030,7 @@ static ScmEscapePoint *copy_ep(ScmEscapePoint *ep)
     ep2->xhandler = ep->xhandler;
     ep2->partialChain = ep->partialChain;
     ep2->partialHandlers = ep->partialHandlers;
+    ep2->partialCont = ep->partialCont;
     ep2->errorReporting = ep->errorReporting;
     ep2->rewindBefore = ep->rewindBefore;
     ep2->contType = ep->contType;
@@ -2036,6 +2038,7 @@ static ScmEscapePoint *copy_ep(ScmEscapePoint *ep)
     ep2->promptTag = ep->promptTag;
     ep2->abortHandler = ep->abortHandler;
     ep2->abortArgs = ep->abortArgs;
+    ep2->noCompHandler = ep->noCompHandler;
     ep2->bottom = ep->bottom;
     return ep2;
 }
@@ -3244,7 +3247,7 @@ static ScmObj find_partial_information(ScmVM *vm, ScmObj promptTag,
         }
     }
     if (outerMost) {
-        *outerMost = 0;
+        *outerMost = FALSE;
     }
     return SCM_NIL;
 }
@@ -3518,6 +3521,7 @@ void Scm_VMFlushDynamicHandlers()
 static ScmObj throw_cont_cc(ScmObj result, void **data);
 static ScmObj vm_abort_to_cc(ScmObj result, void **data);
 static ScmObj vm_partial_end_cc(ScmObj result, void **data);
+static ScmObj vm_no_comp_cc(ScmObj result, void **data);
 
 static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*/
                               ScmEscapePoint *ep, /* target continuation */
@@ -3560,36 +3564,6 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
     } else {
         /* for partial continuation */
 
-        /* for non-composable partial continuation */
-        /* we drop continuation from current to prompt before merge. */
-        if (ep->contType == CONT_TYPE_NON_COMPOSABLE) {
-            /* find partial continuation information of nearest prompt */
-            ScmObj partialInfo = find_partial_information(vm, ep->promptTag,
-                                                          NULL);
-            if (!SCM_PAIRP(partialInfo)) {
-                Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
-                                   "prompt-tag", ep->promptTag,
-                                   SCM_RAISE_CONDITION_MESSAGE,
-                                   "Prompt tag (%S) not found (E1)",
-                                   ep->promptTag);
-            }
-
-            /* get escape point on prompt */
-            ScmEscapePoint *ep2 = (ScmEscapePoint *)SCM_CDR(partialInfo);
-
-            /* get prompt continuation */
-            /* (outer of prompt continuation is ep2->cont->prev->prev) */
-            SCM_ASSERT(ep2 && ep2->cont && ep2->cont->prev);
-            ScmContFrame *cprompt = ep2->cont->prev->prev;
-
-            /* drop continuation from current to prompt */
-            vm->cont = cprompt;
-
-            /* set partial continuation information */
-            /* (cdr means outer of prompt) */
-            vm->partialChain = SCM_CDR(ep2->partialChain);
-        }
-
         /* push partial end continuation */
         void *data[1];
         data[0] = (void*)vm->partialChain;
@@ -3600,7 +3574,7 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
                problems of continuation sharing.
         */
         save_cont(vm);
-        ScmContFrame *epcont_copy = copy_cont_frames(ep->cont, NULL);
+        ScmContFrame *epcont_copy = copy_cont_frames(ep->partialCont, NULL);
         vm->cont = merge_cont_frames(vm->cont, epcont_copy);
     }
     vm->denv = ep->denv;
@@ -3616,6 +3590,13 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
         data[0] = (void*)ep->abortHandler;
         data[1] = (void*)ep->abortArgs;
         Scm_VMPushCC(vm_abort_to_cc, data, 2);
+    }
+
+    /* for non-composable partial continuation */
+    if (ep->contType == CONT_TYPE_FULL && !SCM_FALSEP(ep->noCompHandler)) {
+        void *data[1];
+        data[0] = (void*)ep->noCompHandler;
+        Scm_VMPushCC(vm_no_comp_cc, data, 1);
     }
 
     int nargs = Scm_Length(args);
@@ -3673,6 +3654,15 @@ static ScmObj vm_partial_end_cc(ScmObj result, void **data)
     return result;
 }
 
+static ScmObj vm_no_comp_cc(ScmObj result SCM_UNUSED, void **data)
+{
+    ScmVM *vm = theVM;
+    ScmObj noCompHandler = SCM_OBJ(data[0]);
+    ScmObj args = Scm_VMGetResult(vm);
+
+    return Scm_VMApply(noCompHandler, args);
+}
+
 /* Body of the continuation SUBR */
 static ScmObj throw_continuation(ScmObj *argframe,
                                  int nargs SCM_UNUSED, void *data)
@@ -3680,6 +3670,38 @@ static ScmObj throw_continuation(ScmObj *argframe,
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmObj args = argframe[0];
     ScmVM *vm = theVM;
+
+    /* for non-composable partial continuation */
+    /* we drop continuation from current to prompt. */
+    if (ep->contType == CONT_TYPE_NON_COMPOSABLE) {
+        /* find partial continuation information of nearest prompt */
+        ScmObj partialInfo = find_partial_information(vm, ep->promptTag,
+                                                      NULL);
+        if (!SCM_PAIRP(partialInfo)) {
+            Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                               "prompt-tag", ep->promptTag,
+                               SCM_RAISE_CONDITION_MESSAGE,
+                               "Prompt tag (%S) not found (E1)",
+                               ep->promptTag);
+        }
+
+        /* get escape point on prompt */
+        ScmEscapePoint *ep2 = (ScmEscapePoint *)SCM_CDR(partialInfo);
+
+        /* remake contproc */
+        ScmEscapePoint *ep3 = copy_ep(ep);
+        ep3->contType = CONT_TYPE_COMPOSABLE;
+        ScmObj contproc = Scm_MakeSubr(throw_continuation, ep3, 0, 1,
+                                       continuation_symbol);
+
+        /* jump to prompt */
+        ScmEscapePoint *ep4 = copy_ep(ep2);
+        ep4->abortHandler = SCM_FALSE;
+        ep4->noCompHandler = contproc;
+        ScmObj contproc2 = Scm_MakeSubr(throw_continuation, ep4, 0, 1,
+                                        continuation_symbol);
+        return Scm_VMApply(contproc2, args);
+    }
 
     /* calculate dynamic handlers to call */
     ScmObj hdlist = SCM_NIL;
@@ -3696,37 +3718,13 @@ static ScmObj throw_continuation(ScmObj *argframe,
                                           currentHandlers);
     }
 
-    /* for non-composable partial continuation */
-    /* we must rewind cstack from current to prompt to avoid memory leak.
-       so we move ep->cstack before rewinding cstack.
-    */
-    ScmCStack *epcstack = ep->cstack;
-    if (ep->contType == CONT_TYPE_NON_COMPOSABLE) {
-        /* find partial continuation information of nearest prompt */
-        ScmObj partialInfo = find_partial_information(vm, ep->promptTag,
-                                                      NULL);
-        if (!SCM_PAIRP(partialInfo)) {
-            Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
-                               "prompt-tag", ep->promptTag,
-                               SCM_RAISE_CONDITION_MESSAGE,
-                               "Prompt tag (%S) not found (E2)",
-                               ep->promptTag);
-        }
-
-        /* get escape point on prompt */
-        ScmEscapePoint *ep2 = (ScmEscapePoint *)SCM_CDR(partialInfo);
-
-        /* move ep->cstack to prompt location */
-        epcstack = ep2->cstack;
-    }
-
     /* First, check to see if we need to rewind C stack.
        NB: If we are invoking a composable partial continuation,
        we execute it on the current cstack. */
-    if (ep->contType != CONT_TYPE_COMPOSABLE && vm->cstack != epcstack) {
+    if (ep->contType != CONT_TYPE_COMPOSABLE && vm->cstack != ep->cstack) {
         ScmCStack *cs;
         for (cs = vm->cstack; cs; cs = cs->prev) {
-            if (epcstack == cs) break;
+            if (ep->cstack == cs) break;
         }
 
         /* If the continuation captured below the current C stack, we rewind
@@ -3831,7 +3829,7 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
         Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                            "prompt-tag", promptTag,
                            SCM_RAISE_CONDITION_MESSAGE,
-                           "Prompt tag (%S) not found (E3)",
+                           "Prompt tag (%S) not found (E2)",
                            promptTag);
     }
 #endif
@@ -3847,12 +3845,13 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
        handling. */
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, contType,
                                 promptTag, SCM_FALSE);
-    /* Set delimited cont frames instead of full cont frames (vm->cont).
+    /* Save partial cont frames instead of full cont frames (vm->cont).
        This is important to avoid memory leak of partial continuation.
        See:
        https://okmij.org/ftp/continuations/against-callcc.html#memory-leak
     */
-    ep->cont = copy_cont_frames(vm->cont, cprompt);
+    ep->partialCont = copy_cont_frames(vm->cont, cprompt);
+    ep->cont = NULL;               /* don't use for partial continuation */
     ep->denv = cprompt ? cprompt->denv : SCM_NIL;
     ep->dynamicHandlers = SCM_NIL; /* don't use for partial continuation */
     ep->partialChain = SCM_NIL;    /* don't use for partial continuation */

@@ -719,6 +719,91 @@
 (test* "prompt / control 4" 8  (prompt (+ 5 (prompt (+ 2 (control k1 (+ 1 (control k2 (k1 6)))))))))
 (test* "prompt / control 5" 18 (prompt (+ 12 (prompt (+ 5 (prompt (+ 2 (control k1 (control k2 (control k3 (k3 6)))))))))))
 
+;; Cf. https://gengar.hatenadiary.org/entry/20140406/1396795808
+(let ()
+  (define call/comp call-with-composable-continuation)
+  (define call/cc call-with-non-composable-continuation)
+  (define-syntax let/cc
+    (syntax-rules ()
+      ((_ c body ...)
+       (call/cc (lambda (c) body ...)))))
+  (define d display)
+  (define (d$ x) (lambda () (d x)))
+  (define (%dw x thunk) (dynamic-wind (d$ `(,x before)) thunk (d$ `(,x after))))
+  (define-syntax dw (syntax-rules () ((_ x body ...) (%dw x (lambda () body ...)))))
+  (define abort/cc abort-current-continuation)
+  (define (abort . args)
+    (abort/cc (default-continuation-prompt-tag)
+              (lambda () (apply values args))))
+  (define t1 (make-continuation-prompt-tag 't1))
+  (define t2 (make-continuation-prompt-tag 't2))
+
+  (test* "call/comp 1" '(a b c b) (cons 'a (reset (cons 'b (call/comp (lambda (k) (cons 'c (k '()))))))))
+  (test* "call/cc 1"   '(a b)     (cons 'a (reset (cons 'b (call/cc (lambda (k) (cons 'c (k '()))))))))
+  ;; Racket result is '(a b c b) instead of '(a b)
+  ;(test* "call/cc 2"   '(a b)     (cons 'a (reset (cons 'b (call/cc (lambda (k) (cons 'c (reset (k '())))))))))
+  (test* "call/cc 2"   '(a b c b) (cons 'a (reset (cons 'b (call/cc (lambda (k) (cons 'c (reset (k '())))))))))
+  (test* "call/cc 3"   '(c b)
+         (let ((k #f))
+           (cons 'a (reset (cons 'b (call/cc (lambda (k1) (set! k k1) '())))))
+           (cons 'c (reset (cons 'd (k '()))))))
+  (test* "dw"
+         "(0 before)body(0 after)"
+         (with-output-to-string
+           (lambda ()
+             (dw 0 (d 'body)))))
+  (test* "dw + let/cc"
+         "(0 before)(0 after)42"
+         (with-output-to-string
+           (lambda ()
+             (d (let/cc return (dw 0 (return 42)))))))
+  (test* "dw + abort"
+         "(0 before)foo(0 after)"
+         (with-output-to-string
+           (lambda ()
+             (reset (dw 0 (abort (d 'foo)))))))
+  (test* "dw + abort/cc"
+         "(0 before)(0 after)foo"
+         (with-output-to-string
+           (lambda ()
+             (reset (dw 0 (abort/cc (default-continuation-prompt-tag)
+                                    (lambda () (d 'foo))))))))
+  (test* "dw + call/comp"
+         "(0 before)a(0 after)(1 before)b(1 after)"
+         (with-output-to-string
+           (lambda ()
+             (let ((k #f))
+               (dw 0 (reset (d (call/comp (lambda (k1) (set! k k1) 'a)))))
+               (dw 1 (k 'b))))))
+  (test* "dw + call/cc"
+         "(0 before)a(0 after)(1 before)(1 after)b"
+         (with-output-to-string
+           (lambda ()
+             (let ((k #f))
+               (dw 0 (reset (d (call/cc (lambda (k1) (set! k k1) 'a)))))
+               (reset (dw 1 (k 'b)))))))
+  (test* "reset-at + call/comp 1"
+         '(a b a b)
+         (reset-at t1 (cons 'a (reset-at t2 (cons 'b (call/comp (lambda (k) (k '()))
+                                                                t1))))))
+  (test* "reset-at + call/comp 2"
+         '(a b b)
+         (reset-at t1 (cons 'a (reset-at t2 (cons 'b (call/comp (lambda (k) (k '()))
+                                                                t2))))))
+  (test* "reset-at + call/cc 1"
+         '(a b)
+         (let ((k #f))
+           (reset-at t1 (cons 'a (reset-at t2 (cons 'b (call/cc (lambda (k1) (set! k k1) '())
+                                                                t1)))))
+           (reset-at t1 (cons 'c (reset-at t2 (cons 'd (k '())))))))
+  (test* "reset-at + call/cc 2"
+         '(c b)
+         (let ((k #f))
+           (reset-at t1 (cons 'a (reset-at t2 (cons 'b (call/cc (lambda (k1) (set! k k1) '())
+                                                                t2)))))
+           (reset-at t1 (cons 'c (reset-at t2 (cons 'd (k '())))))))
+  )
+
 ;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
 (let ()
   (define (eta x) (list (x)))                    ; unit

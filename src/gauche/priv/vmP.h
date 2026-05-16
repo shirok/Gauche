@@ -153,6 +153,7 @@ typedef struct ScmEscapePointRec {
     ScmObj xhandler;            /* saved exception handler */
     ScmObj partialChain;        /* for partial continuation */
     ScmObj partialHandlers;     /* for partial continuation */
+    ScmContFrame *partialCont;  /* for partial continuation */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control
@@ -182,6 +183,7 @@ typedef struct ScmEscapePointRec {
     ScmObj promptTag;           /* (not used now) */
     ScmObj abortHandler;        /* abort handler */
     ScmObj abortArgs;           /* abort handler's arguments */
+    ScmObj noCompHandler;       /* for non-composable partial continuation */
     struct ScmEscapePointRec *bottom; /* (not used now) */
 } ScmEscapePoint;
 
