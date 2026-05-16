@@ -15,6 +15,7 @@
 * Connection framework::        gauche.connection
 * Dictionary framework::        gauche.dictionary
 * Low-level file operations::   gauche.fcntl
+* Foreign function interface::  gauche.ffi
 * Generators::                  gauche.generator
 * Hooks::                       gauche.hook
 * Interactive session::         gauche.interactive
@@ -9934,7 +9935,7 @@ after @code{dict-delete!} is guaranteed to return @code{#f}.
 
 
 @c ----------------------------------------------------------------------
-@node Low-level file operations, Generators, Dictionary framework, Library modules - Gauche extensions
+@node Low-level file operations, Foreign function interface, Dictionary framework, Library modules - Gauche extensions
 @section @code{gauche.fcntl} - Low-level file operations
 @c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
@@ -10485,9 +10486,59 @@ suidビットとsgidビットを無視します。
 @c COMMON
 @end defvr
 
+@c ----------------------------------------------------------------------
+@node Foreign function interface, Generators, Low-level file operations, Library modules - Gauche extensions
+@section @code{gauche.FFI} - Foreign function interface
+@c NODE FFI, @code{gauche.ffi} - FFI
+
+@deftp {Module} gauche.ffi
+@mdindex gauche.ffi
+This module provides the means to call compiled functions in other
+langauges via C ABI.  It allows user programs to use external libraries
+without writing a custom extension.
+
+Although it is convenient, you need to keep in mind that
+the external libraries does not necessarily aligns Gauche's runtime
+conventions, therefore you cannot rely on Gauche's guardrails.
+You can easily pass arguments of incorrect types, interpret
+the result incorrectly, or access objects outside of its lifetime.
+Small mistakes can eaisly cause access violation or memory corruption.
+
+We adopt pluggable subsystems; you can choose the underlying FFI layer
+depending on the architecture and your particular needs.
+For the time being, @code{stubgen} subsystem is available on
+all the architecture, and @code{native} subsystem on x86_64 with
+with Unix-like systems and MinGW/Windows.  Native subsytem will
+be enhanced to Aarch64 soon.
+
+The code that uses FFI looks like the following:
+
+@example
+(use gauche.ffi)
+(use gauche.native-type)
+
+(with-ffi (dynamic-load "/path/to/library") ()
+  ;; Define C functions and callbacks
+  (define-c-function foo '(int c-string) 'int)
+  ...
+  )
+
+;; Call the defined C function
+(foo 4 "bar")
+@end example
+
+Foreign functions are defined within the form `with-ffi`.
+Inside the form, you can define C functions and C callbacks.
+The defined C functions are visible from the rest of the code,
+and you can call it as a Scheme function.
+@end deftp
+
+
+
+
 
 @c ----------------------------------------------------------------------
-@node Generators, Hooks, Low-level file operations, Library modules - Gauche extensions
+@node Generators, Hooks, Foreign function interface, Library modules - Gauche extensions
 @section @code{gauche.generator} - Generators
 @c NODE ジェネレータ, @code{gauche.generator} - ジェネレータ
 
