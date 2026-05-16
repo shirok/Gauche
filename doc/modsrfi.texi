@@ -16613,7 +16613,8 @@ of @code{call/cc} and @code{guard} haven't integrated to SRFI-226 model yet.
 (i.e. these aren't partial continuation versions.)
 @item call-in-continuation
 @itemx call-in
-Not implemented yet.
+@itemx return-to
+Implemented experimentally.
 @item call-with-continuation-barrier
 Not implemented yet.
 @item continuation-prompt-available?

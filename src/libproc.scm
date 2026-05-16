@@ -126,6 +126,16 @@
 (define-cproc call-with-non-composable-continuation (proc
                                                      :optional (prompt-tag #f))
   Scm_VMCallWithNonComposableContinuation)
+(define-cproc call-in-continuation (cont proc :rest objs)
+  Scm_VMCallInContinuation)
+(define (call-in cont proc :rest args)
+  (unless (non-composable-continuation? cont)
+    (errorf "cont must be a non-composable continuation, but got: ~S" cont))
+  (apply call-in-continuation cont proc args))
+(define (return-to cont :rest args)
+  (unless (non-composable-continuation? cont)
+    (errorf "cont must be a non-composable continuation, but got: ~S" cont))
+  (apply call-in-continuation cont values args))
 
 ;; Continuation marks
 (select-module gauche)

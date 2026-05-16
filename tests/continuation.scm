@@ -580,6 +580,49 @@
                    tag)))
              tag))))
 
+(test* "call-in-continuation 1"
+       "[r01][r02][i01][r02]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (call-with-continuation-prompt
+            (lambda ()
+              (display "[r01]")
+              (call-with-composable-continuation
+               (lambda (k) (set! k1 k)))
+              (display "[r02]")))
+           (call-in-continuation k1 (lambda () (display"[i01]"))))))
+
+(test* "call-in 1"
+       "[r01][r02][i01][r02]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (call-with-continuation-prompt
+            (lambda ()
+              (display "[r01]")
+              (call-with-non-composable-continuation
+               (lambda (k) (set! k1 k)))
+              (display "[r02]")))
+           (call-with-continuation-prompt
+            (lambda ()
+              (call-in k1 (lambda () (display"[i01]"))))))))
+
+(test* "return-to 1"
+       "[r01][r02][r02]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (call-with-continuation-prompt
+            (lambda ()
+              (display "[r01]")
+              (call-with-non-composable-continuation
+               (lambda (k) (set! k1 k)))
+              (display "[r02]")))
+           (call-with-continuation-prompt
+            (lambda ()
+              (return-to k1))))))
+
 ;;-----------------------------------------------------------------------
 ;; Parameterizations
 ;;

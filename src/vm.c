@@ -3519,8 +3519,8 @@ void Scm_VMFlushDynamicHandlers()
 
 
 static ScmObj throw_cont_cc(ScmObj result, void **data);
-static ScmObj vm_abort_to_cc(ScmObj result, void **data);
 static ScmObj vm_partial_end_cc(ScmObj result, void **data);
+static ScmObj vm_abort_to_cc(ScmObj result, void **data);
 static ScmObj vm_no_comp_cc(ScmObj result, void **data);
 
 static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*/
@@ -3585,7 +3585,7 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
     }
 
     /* if abort handler exists, push abort handler continuation */
-    if (ep->contType == CONT_TYPE_FULL && !SCM_FALSEP(ep->abortHandler)) {
+    if (!SCM_FALSEP(ep->abortHandler)) {
         void *data[2];
         data[0] = (void*)ep->abortHandler;
         data[1] = (void*)ep->abortArgs;
@@ -3633,14 +3633,6 @@ static ScmObj throw_cont_cc(ScmObj result SCM_UNUSED, void **data)
     return throw_cont_body(hdlist, ep, args);
 }
 
-static ScmObj vm_abort_to_cc(ScmObj result SCM_UNUSED, void **data)
-{
-    ScmObj abortHandler = SCM_OBJ(data[0]);
-    ScmObj abortArgs = SCM_OBJ(data[1]);
-
-    return Scm_VMApply(abortHandler, abortArgs);
-}
-
 static ScmObj vm_partial_end_cc(ScmObj result, void **data)
 {
     ScmVM *vm = theVM;
@@ -3652,6 +3644,14 @@ static ScmObj vm_partial_end_cc(ScmObj result, void **data)
     vm->partialChain = partialChain;
 
     return result;
+}
+
+static ScmObj vm_abort_to_cc(ScmObj result SCM_UNUSED, void **data)
+{
+    ScmObj abortHandler = SCM_OBJ(data[0]);
+    ScmObj abortArgs = SCM_OBJ(data[1]);
+
+    return Scm_VMApply(abortHandler, abortArgs);
 }
 
 static ScmObj vm_no_comp_cc(ScmObj result SCM_UNUSED, void **data)
@@ -3770,7 +3770,7 @@ ScmObj vm_call_cc_with_tag_and_type(ScmObj proc, ScmObj promptTag,
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, CONT_TYPE_FULL,
                                 promptTag, SCM_FALSE);
 
-    /* (ep->contTypeReq is used for 'non-composable-continuation?') */
+    /* ep->contTypeReq is used for 'non-composable-continuation?' */
     ep->contTypeReq = contTypeReq;
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
@@ -3795,10 +3795,11 @@ int Scm_ContinuationP(ScmObj proc)
 
 int Scm_NonComposableContinuationP(ScmObj proc)
 {
-    if (SCM_SUBRP(proc) && SCM_PROCEDURE_INFO(proc) == continuation_symbol) {
+    if (Scm_ContinuationP(proc)) {
+        /* get escape point from continuation */
         ScmEscapePoint *ep = (ScmEscapePoint*)((ScmSubr*)proc)->data;
 
-        /* (ep->contTypeReq is used instead of ep->contType) */
+        /* check ep->contTypeReq instead of ep->contType */
         return (ep->contTypeReq != CONT_TYPE_COMPOSABLE);
     }
     return FALSE;
@@ -3888,6 +3889,24 @@ ScmObj Scm_VMCallWithComposableContinuation(ScmObj proc, ScmObj promptTag)
 ScmObj Scm_VMCallWithNonComposableContinuation(ScmObj proc, ScmObj promptTag)
 {
     return vm_call_pc_with_tag_and_type(proc, promptTag, CONT_TYPE_NON_COMPOSABLE);
+}
+
+ScmObj Scm_VMCallInContinuation(ScmObj cont, ScmObj proc, ScmObj args)
+{
+    if (!Scm_ContinuationP(cont)) {
+        Scm_Error("cont must be a continuation, but got: %S", cont);
+    }
+
+    /* get escape point from continuation */
+    ScmEscapePoint *ep = (ScmEscapePoint*)((ScmSubr*)cont)->data;
+
+    /* jump to escape point */
+    ScmEscapePoint *ep2 = copy_ep(ep);
+    ep2->abortHandler = proc;
+    ep2->abortArgs = args;
+    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep2, 0, 1,
+                                   continuation_symbol);
+    return Scm_VMApply(contproc, SCM_NIL);
 }
 
 ScmObj Scm_VMReset(ScmObj proc)
