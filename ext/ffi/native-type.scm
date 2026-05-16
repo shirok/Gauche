@@ -1152,6 +1152,11 @@
   ((%handle :init-keyword :%handle))
   :metaclass <native-wrapper-meta>)
 
+(define-inline %wh
+  (getter-with-setter
+   (^[wrapper] (slot-ref wrapper '%handle))
+   (^[wrapper handle] (slot-set! wrapper '%handle handle))))
+
 (define-class <wrapped-c-pointer> (<native-wrapper-mixin>)
   ())
 
@@ -1178,7 +1183,7 @@
                                c)))))))
 
 (define (%make-native-wrapper-class type name)
-  (typecase type
+  (etypecase type
     [<c-struct>
      (make <native-wrapper-meta>
        :name name :supers (list <wrapped-c-struct>)
@@ -1189,6 +1194,10 @@
        :name name :supers (list <wrapped-c-union>)
        :native-type type
        :slots (map (cut %build-slot type <>) (~ type'fields)))]
+    [<c-array>
+     (make <native-wrapper-meta>
+       :name name :supers (list <wrapped-c-array>)
+       :native-type type)]
     ))
 
 (define (%build-slot type slot)
@@ -1196,8 +1205,8 @@
         [slot-type (cadr slot)])
     `(,slot-name :init-keyword ,(make-keyword slot-name)
                  :allocation :virtual
-                 :slot-ref ,(^o (%wrap (native. (~ o'%handle) slot-name)))
-                 :slot-set! ,(^[o v] (set! (native. (~ o'%handle) slot-name)
+                 :slot-ref ,(^o (%wrap (native. (%wh o) slot-name)))
+                 :slot-set! ,(^[o v] (set! (native. (%wh o) slot-name)
                                            (%unwrap v)))
                  :type ,slot-type)))
 
@@ -1213,7 +1222,7 @@
 
 (define (%unwrap value)
   (if (is-a? value <native-wrapper-mixin>)
-    (~ value'%handle)
+    (%wh value)
     value))
 
 (define-method make ((class <native-wrapper-meta>) . initargs)
@@ -1229,4 +1238,36 @@
 
 (define (%wrap-native-handle class handle)
   (rlet1 instance (allocate-instance class '())
-    (set! (~ instance'%handle) handle)))
+    (set! (%wh instance) handle)))
+
+;; wrapped-c-array implements sequence protocol.
+;; As a sequence, we only consider the first dimension.
+;; However, ref generic function accepts multi-dimensional index
+(define-method size-of ((wrapped <wrapped-c-array>))
+  (let* ([h (%wh wrapped)]
+         [dims (c-array-type-dimensions (native-handle-type h))])
+    (if (integer? (car dims))
+      (car dims)
+      0)))
+
+(define-method call-with-iterator ((coll <wrapped-c-array>) proc
+                                   :allow-other-keys)
+  (let ([i 0] [len (size-of coll)])
+    (proc (^[] (>= i len)) (^[] (begin0 (ref coll i) (inc! i))))))
+
+(define-method ref ((coll <wrapped-c-array>) (index <integer>))
+  (%wrap (native-aref (%wh coll) (list index))))
+
+(define-method (setter ref) ((coll <wrapped-c-array>) (index <integer>) val)
+  (set! (native-aref (%wh coll) (list index)) (%unwrap val)))
+
+(define-method ref ((coll <wrapped-c-array>) (indices <list>))
+  (%wrap (native-aref (%wh coll) indices)))
+
+(define-method (setter ref) ((coll <wrapped-c-array>) (indices <list>) val)
+  (set! (native-aref (%wh coll) indices) (%unwrap val)))
+
+(define-method referencer ((coll <wrapped-c-array>))
+  (^[index] (ref coll index)))
+(define-method modifier ((coll <wrapped-c-array>))
+  (^[index val] (set! (ref coll index) val)))

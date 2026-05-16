@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (use gauche.native-type)
+(use gauche.sequence)
 
 (test-start "native wrapper")
 
@@ -90,4 +91,26 @@
          (and (is-a? (~ w't) <wrapped-c-struct>)
               (list (~ w't'a) (~ w't'b))))
   )
+
+;; arrays
+(let ()
+  (define a1 (native-type '(.array int (10))))
+  (define h (uvector->native-handle (make-u8vector (~ a1'size)) a1))
+  (define w)
+
+  (dotimes [i 10]
+    (set! (native-aref h (list i)) (* i i)))
+  (test* "wrapped array" #t
+         (begin
+           (set! w (wrap-native-handle h))
+           (is-a? w <wrapped-c-array>)))
+  (test* "wrapped array size-of" 10  (size-of w))
+  (test* "wrapped array sequence iterator" '(0 1 4 9 16 25 36 49 64 81)
+         (coerce-to <list> w))
+  (test* "wrapped array sequence set! and ref" '(0 1 2 3 4 5 6 7 8 9)
+         (begin
+           (dotimes [i 10] (set! (~ w i) i))
+           (map (cut ~ w <>) (iota 10))))
+  )
+
 (test-end)
