@@ -15760,26 +15760,63 @@ the pointer.
 
 @defun native-aref handle index
 @c MOD gauche.native-type
+Array reference.  @var{handle} must be a c-array handle or c-pointer
+handle (Allowing c-pointer here reflects the C semantics).
+
+@var{index} must be a nonnegative integer or a list of nonnagative
+integers.  If the element type is a primitive type,
+the value is returned as a Scheme value.  If the element type is
+a pointer type or an aggregate type, the value is wrapped as a
+native handle.
+
+C's multidimensional array is effectively nested one-dimensional
+arrays. If you give indexes less than the rank of the array,
+a handle to the subarray is returned.
+
+If the handle points to an unbounded c-array or a c-pointer,
+no boundary check is done with @var{index}.  It is caller's
+responsibility to ensure @var{index} falls in a valid range.
 @end defun
 
 @defun (setter native-aref) handle index val
 @c MOD gauche.native-type
+@var{handle} must be a c-array or c-pointer handle, and
+@var{index} must be a nonnegative integer or a list of nonnagative
+integers.
+
+Sets @var{val} to the array at the position specified by @var{index}.
+
+If the handle points to an unbounded c-array or a c-pointer,
+no boundary check is done with @var{index}.  It is caller's
+responsibility to ensure @var{index} falls in a valid range.
 @end defun
 
 @defun native. handle slot
 @c MOD gauche.native-type
+Struct/union field reference.  @var{handle} must be a native handle
+of c-struct or c-union type, and @var{slot} must be a symbol
+naming its slot.  An error is thrown if the struct/union doesn't
+have the named slot.
 @end defun
 
-@defun (setter native.) handle slot :optional type
+@defun (setter native.) handle slot val
 @c MOD gauche.native-type
+Sets @var{val} to the field @var{slot} of c-struct or c-union @var{handle}.
 @end defun
 
 @defun native-> handle slot
 @c MOD gauche.native-type
+Indirect struct/union field reference.  @var{handle} must be
+a native handle of c-pointer to a c-struct or c-union.
+@code{(native-> handle slot)} is the same as
+@code{(native. (native* handle) slot)}, just like
+@code{s->a} and @code{(*s).a} are the same in C.
 @end defun
 
 @defun (setter native->) handle slot :optional type
 @c MOD gauche.native-type
+Sets @var{val} to the field @var{slot} of c-struct or c-union
+pointed by a c-pointer handle @code{handle}.
 @end defun
 
 @defun native& handle selector
