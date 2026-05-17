@@ -104,7 +104,7 @@
 ;;; Type canonicalization
 ;;;
 
-;; Convert a <native-type> instance to the call-amd64 canonical type:
+;; Convert a <native-type> instance to the call-sysvx64 canonical type:
 ;;   <void>      - void (return only)
 ;;   <double>    - double (xmm register, 64-bit float)
 ;;   <float>     - float  (xmm register, 32-bit float)
@@ -143,7 +143,7 @@
 ;;;
 
 ;; Build a Scheme procedure that calls the C function described by cfn via
-;; call-amd64.  Called at load time from the set! forms emitted by
+;; call-sysvx64.  Called at load time from the set! forms emitted by
 ;; with-native-ffi.
 (define-method make-native-ffi-proc (dlo (cfn <foreign-c-function>))
   (let* ([native-call (cond-expand
@@ -153,7 +153,7 @@
                          [gauche.os.windows
                           (with-module gauche.internal call-winx64)]
                          [else
-                          (with-module gauche.internal call-amd64)])]
+                          (with-module gauche.internal call-sysvx64)])]
                        [else
                         (error "Native FFI is not supported on this platform")])]
          [ptr        (dlobj-get-entry-address dlo #"_~(~ cfn'c-name)")]
@@ -236,7 +236,7 @@
      [gauche.os.windows
       (with-module gauche.internal assemble-callback-winx64)]
      [else
-      (with-module gauche.internal assemble-callback-amd64)])]
+      (with-module gauche.internal assemble-callback-sysvx64)])]
    [else
     (^ _ (error "Native FFI callbacks not supported on this platform"))]))
 

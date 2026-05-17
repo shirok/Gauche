@@ -9,7 +9,7 @@
 (use gauche.uvector)
 (use gauche.native-type)
 (use gauche.ffi)
-;; call-amd64 lazily resolves bindings in lang.asm.linker via
+;; call-sysvx64 lazily resolves bindings in lang.asm.linker via
 ;; module-binding-ref; pull it in so the lookup succeeds.
 (use lang.asm.x86_64)
 
@@ -29,14 +29,14 @@
   (with-module gauche.internal %%ffi-callback-pad-entry))
 (define %destroy-one!
   (with-module gauche.internal %%destroy-ffi-callback-pad!))
-;; call-amd64 expects to run inside (with-module gauche.typeutil
+;; call-sysvx64 expects to run inside (with-module gauche.typeutil
 ;; native-ptr-fill-enabled?) → #t, the same way make-native-ffi-proc
 ;; wraps its callsites.  On Windows x64 the runtime uses the Win64 ABI,
 ;; so dispatch to call-winx64 there.
-(define call-amd64
+(define call-sysvx64
   (let ([raw (cond-expand
               [gauche.os.windows (with-module gauche.internal call-winx64)]
-              [else              (with-module gauche.internal call-amd64)])]
+              [else              (with-module gauche.internal call-sysvx64)])]
         [param (with-module gauche.typeutil native-ptr-fill-enabled?)])
     (^[ptr args rettype]
       (parameterize ([param #t])
@@ -56,7 +56,7 @@
        42
        (let* ([pad (%install-one stub-return-42 0 0 0)]
               [hdl (%pad-entry pad fn-type-int-of-void)]
-              [val (call-amd64 hdl '() <intptr_t>)])
+              [val (call-sysvx64 hdl '() <intptr_t>)])
          (%destroy-one! pad)
          val))
 
@@ -98,7 +98,7 @@
                            (list (stub-return-imm32 2) 0 0 0)
                            (list (stub-return-imm32 3) 0 0 0))]
               [ctx (%install-context specs)]
-              [results (map (^i (call-amd64 (%context-entry ctx i
+              [results (map (^i (call-sysvx64 (%context-entry ctx i
                                                             fn-type-int-of-void)
                                             '() <intptr_t>))
                             '(0 1 2))])
@@ -120,26 +120,26 @@
 ;; (Scm_Cons, Scm_MakeFlonum, Scm__FFINativeCallCallback, …).  On Windows
 ;; those helpers use the Win64 ABI; using the SysV trampoline there
 ;; passes proc/args in the wrong registers and crashes immediately.
-(define assemble-callback-amd64
+(define assemble-callback-sysvx64
   (cond-expand
    [gauche.os.windows
     (with-module gauche.internal assemble-callback-winx64)]
    [else
-    (with-module gauche.internal assemble-callback-amd64)]))
+    (with-module gauche.internal assemble-callback-sysvx64)]))
 
-;; The handle's <c-function> tag is consulted by call-amd64 only to
+;; The handle's <c-function> tag is consulted by call-sysvx64 only to
 ;; satisfy the :func patch's pointer-type check; the explicit rettype
 ;; argument is what drives return-value handling.  We therefore reuse
 ;; fn-type-int-of-void — what matters is just that the trampoline's
 ;; address is wrapped in *some* <c-function>-tagged native handle.
 
-;; Build, install, call, destroy.  Returns the value call-amd64 saw.
+;; Build, install, call, destroy.  Returns the value call-sysvx64 saw.
 (define (run-callback body arg-canons args rettype)
   (receive (code entry win-pe win-fs)
-      (assemble-callback-amd64 body arg-canons rettype)
+      (assemble-callback-sysvx64 body arg-canons rettype)
     (let* ([pad (%install-one code entry win-pe win-fs)]
            [hdl (%pad-entry pad fn-type-int-of-void)])
-      (begin0 (call-amd64 hdl args rettype)
+      (begin0 (call-sysvx64 hdl args rettype)
         (%destroy-one! pad)))))
 
 (test* "trampoline invokes its body procedure (no args)"
@@ -252,7 +252,7 @@
 
 ;; For each retkind, build a callback whose body produces a Scheme value
 ;; of the matching type; declare that retkind on the trampoline; let the
-;; C-side caller (call-amd64) re-box the C value back to Scheme using
+;; C-side caller (call-sysvx64) re-box the C value back to Scheme using
 ;; the same rettype.  Round-trip == correct unbox.
 
 (test* "<top> return passes ScmObj through unchanged"

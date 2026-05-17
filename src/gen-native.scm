@@ -27,7 +27,7 @@
 ;;; For SYSV AMD64 calling convention: Section 3.2 of
 ;;; http://refspecs.linux-foundation.org/elf/x86_64-abi-0.95.pdf
 
-(define-asm-fragment amd64-call-reg x86_64
+(define-asm-fragment sysvx64-call-reg x86_64
   '(entry6f7:   ((movs_ :farg7-variant) (farg7:) %xmm7)
     entry6f6:   ((movs_ :farg6-variant) (farg6:) %xmm6)
     entry6f5:   ((movs_ :farg5-variant) (farg5:) %xmm5)
@@ -125,7 +125,7 @@
     farg7:      (.dataq :farg7)
     end:))
 
-(define-asm-fragment amd64-call-spill x86_64
+(define-asm-fragment sysvx64-call-spill x86_64
   '(entry6f7:   ((movs_ :farg7-variant) (farg7:) %xmm7)
     entry6f6:   ((movs_ :farg6-variant) (farg6:) %xmm6)
     entry6f5:   ((movs_ :farg5-variant) (farg5:) %xmm5)
@@ -246,7 +246,7 @@
              (addq -32 %rsp)           ; shadow space (shared with helper calls)
              (call (func:))
              ;; %rax or %xmm0 may have the return value at this point.
-             ;; retkind encoding matches amd64-call-reg.
+             ;; retkind encoding matches sysvx64-call-reg.
              (movb (imm8 :retkind) %bl)
              (decb %bl)
              (jsl epilog:)             ; retkind=0: return %rax as-is
@@ -408,7 +408,7 @@
 ;;; Boxing kinds — see %asm-boxkind for the canonical mapping.  Kind 6
 ;;; (<void>) only makes sense on the return side and is rejected here.
 
-(define-asm-fragment amd64-callback x86_64
+(define-asm-fragment sysvx64-callback x86_64
   '(entry:
              (push %rbx)                ; rsp%16: 8 -> 0
              (subq (imm32 176) %rsp)    ; 176 % 16 == 0
@@ -528,7 +528,7 @@
              (call (fn-callback:))      ; %rax = Scm__FFINativeCallCallback(...)
 
              ;; Return-side dispatch: unbox %rax into a C value.  retkind
-             ;; encoding mirrors %asm-boxkind / amd64-call-reg.
+             ;; encoding mirrors %asm-boxkind / sysvx64-call-reg.
              (movb (imm8 :retkind) %bl)
              (decb %bl)
              (jsl epilog:)              ; retkind=0 (<top>): %rax already ScmObj
@@ -834,18 +834,18 @@
 ;;; Code generators
 ;;;
 
-(define (gen-stub-amd64 port)
+(define (gen-stub-sysvx64 port)
   (define (Ps . exprs)
     (for-each (cut pprint <> :port port) exprs))
 
   (display ";; Register-only calling\n" port)
-  (dump-asm-fragment amd64-call-reg port)
+  (dump-asm-fragment sysvx64-call-reg port)
 
   (display ";; Spill-to-stack case\n" port)
-  (dump-asm-fragment amd64-call-spill port)
+  (dump-asm-fragment sysvx64-call-spill port)
 
   (display ";; Callback trampoline\n" port)
-  (dump-asm-fragment amd64-callback port)
+  (dump-asm-fragment sysvx64-callback port)
 
   (Ps
    `(define (%iarg-type? t)
@@ -937,30 +937,30 @@
          ,'())))
    )
 
-  ;; (call-amd64 <native-handle> args rettype)
+  ;; (call-sysvx64 <native-handle> args rettype)
   ;;  args : ((type value) ...)
   ;; NB: In the final form, we won't expose this function to the user; it's
   ;; too error-prone.  You can wreck havoc just by passing a wrong type.
   ;; Instead, we'll require the user to parse the C function declaration
   ;; and we automatically extract the type info.
   (Ps
-   `(define call-amd64
+   `(define call-sysvx64
       (^[ptr args rettype]
         (let* ([num-iargs (count (^p (%iarg-type? (car p))) args)]
                [num-fargs (count (^p (%farg-type? (car p))) args)]
                [num-spills (+ (max 0 (- num-iargs 6))
                               (max 0 (- num-fargs 8)))])
           (if (zero? num-spills)
-            (call-amd64-regs  ptr args num-iargs num-fargs rettype)
-            (call-amd64-spill ptr args
+            (call-sysvx64-regs  ptr args num-iargs num-fargs rettype)
+            (call-sysvx64-spill ptr args
                               (min num-iargs 6)
                               (min num-fargs 8)
                               num-spills rettype))))))
 
-  ;; call-amd64-regs: helper addresses prelinked at init! time; per-call
+  ;; call-sysvx64-regs: helper addresses prelinked at init! time; per-call
   ;; params supply :func, argument values, :retkind, and :rettype.
   (Ps
-   `(define call-amd64-regs
+   `(define call-sysvx64-regs
       (let ([% (%%make-bootstrap-function-table '(%%call-native
                                                   %%get-entry-address))]
             [link-tmpl #f] [lbl-off #f] [prelinked-tmpl #f])
@@ -970,7 +970,7 @@
           (let ([prelink (module-binding-ref 'lang.asm.linker 'prelink-template)]
                 [gea     (% '%%get-entry-address)])
             (set! prelinked-tmpl
-                  (prelink (amd64-call-reg-tmpl)
+                  (prelink (sysvx64-call-reg-tmpl)
                            (%asm-call-patches gea)))))
         (^[ptr args num-iargs num-fargs rettype]
           (when (not link-tmpl) (init!))
@@ -1020,13 +1020,13 @@
                                   (lbl-off lbs entry-label)
                                   0 0)))))))
 
-  ;; call-amd64-spill: named patches handled by link-templates; only raw
+  ;; call-sysvx64-spill: named patches handled by link-templates; only raw
   ;; spill-slot offsets remain in the %%call-native patcher list.
   ;; The four C helper addresses and SCM_STRING_COPYING are baked into a
   ;; prelinked template once at init! time.  Per-call params supply :func,
   ;; argument values, :retkind, and :rettype.
   (Ps
-   `(define call-amd64-spill
+   `(define call-sysvx64-spill
       (let ([% (%%make-bootstrap-function-table '(%%call-native
                                                   %%get-entry-address))]
             [link-tmpl #f] [lbl-off #f] [prelinked-tmpl #f])
@@ -1036,7 +1036,7 @@
           (let ([prelink (module-binding-ref 'lang.asm.linker 'prelink-template)]
                 [gea     (% '%%get-entry-address)])
             (set! prelinked-tmpl
-                  (prelink (amd64-call-spill-tmpl)
+                  (prelink (sysvx64-call-spill-tmpl)
                            (%asm-call-patches gea)))))
         (^[ptr args num-iargs num-fargs num-spills rettype]
           (when (not link-tmpl) (init!))
@@ -1136,9 +1136,9 @@
         type
         #f)))
 
-  ;; assemble-callback-amd64
+  ;; assemble-callback-sysvx64
   ;;
-  ;;   (assemble-callback-amd64 proc arg-canons rettype)
+  ;;   (assemble-callback-sysvx64 proc arg-canons rettype)
   ;;     →  values code-bytes entry-offset win-prolog-end win-frame-size
   ;;
   ;; arg-canons is a list of canonical native types (per
@@ -1154,7 +1154,7 @@
   ;; The trampoline currently supports up to 6 integer + 8 float
   ;; register-resident args; spilled args are not yet handled.
   (Ps
-   `(define assemble-callback-amd64
+   `(define assemble-callback-sysvx64
       (let ([% (%%make-bootstrap-function-table '(%%get-entry-address))]
             [link-tmpl #f] [lbl-off #f] [prelinked-tmpl #f])
         (define (init!)
@@ -1167,7 +1167,7 @@
             (parameterize ([(with-module gauche.typeutil
                               native-ptr-fill-enabled?) #t])
               (set! prelinked-tmpl
-                    (prelink (amd64-callback-tmpl)
+                    (prelink (sysvx64-callback-tmpl)
                              (%asm-callback-patches gea))))))
         (define MAX-ARGS 8)
         (^[proc arg-canons rettype]
@@ -1407,7 +1407,7 @@
   ;;   (assemble-callback-winx64 proc arg-canons rettype)
   ;;     →  values code-bytes entry-offset win-prolog-end win-frame-size
   ;;
-  ;; Mirror of assemble-callback-amd64 but for Windows x64.  win-prolog-end
+  ;; Mirror of assemble-callback-sysvx64 but for Windows x64.  win-prolog-end
   ;; and win-frame-size are populated; the C side
   ;; (Scm__InstallFFICallbackContext) uses them to write the per-callback
   ;; CpPdata block and feed RtlAddFunctionTable.  Win64 has positional
@@ -1484,7 +1484,7 @@
     [(dir) (call-with-temporary-file
             (^[port tmpname]
               (emit-header port)
-              (gen-stub-amd64 port)
+              (gen-stub-sysvx64 port)
               (gen-stub-winx64 port)
               (close-output-port port)
               (sys-rename tmpname #"~|dir|/native-supp.scm"))
