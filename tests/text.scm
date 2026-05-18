@@ -35,7 +35,7 @@
        (call-with-input-string "   abc,  \" de,f \"  , \"gh\ni\", \"jkl\""
          (make-csv-reader #\,)))
 
-(test* "csv-reader (do not arrow extra spaces w/o trimming"
+(test* "csv-reader (do not allow extra spaces w/o trimming)"
        (test-error <error> #/quote char in a field/)
        (parameterize ([csv-trim-unquoted-charset #f])
          (call-with-input-string "abc  ,  \"def\"  , \"ghi\"  "

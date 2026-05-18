@@ -29448,7 +29448,7 @@ resets the attributes.
 @c EN
 Provides a function to parse/generate CSV (comma separated value) tables,
 including the format defined in RFC4180.  You can customize the
-separator and quoter character to deal with variations of CSV formats.
+separator and quote character to deal with variations of CSV formats.
 
 CSV table is consisted by a series of @var{records}, separated by
 a newline.  Each record contains number of @var{fields}, separated
@@ -29471,7 +29471,7 @@ CSV の表は、改行で区切られた @var{record} の連続で構成され�
 @c COMMON
 
 @c EN
-By default, whitespaces around an nunquoted field value is ignored.
+By default, whitespaces around an unquoted field value is ignored.
 You can customize this behavior with @code{csv-trim-unquoted-charset}
 parameter or @var{trim-charset} optional argument of
 @code{make-csv-reader}.
@@ -29539,11 +29539,11 @@ The default value is @code{#\"}.
 
 @c EN
 The optional @var{trim-charset} argument must be a charset or @code{#f}.
-If it is a charset, those characters surrounding @emph{unquoted} field value
+If it is a charset, those characters surrounding @emph{unquoted} field values
 are trimmed.  The default value is the value of the parameter
 @code{csv-trim-unquoted-charset}, whose initial value is @code{#[\s]},
 causing whitespaces around
-unquoted field value are trimmed.  If it is @code{#f}, no trimming is done.
+unquoted field values are trimmed.  If it is @code{#f}, no trimming is done.
 Whitespaces within quotes are never be trimmed.  Note that if this argument
 is a charset, its characters can appear between separater character and quoted
 field---they're just ignored.  If this argument is @code{#f}, however,
@@ -29567,8 +29567,8 @@ extra characters between separator and quoted field triggers an error.
 Note: The default behavior of trimming whitespaces is for the backward
 compatibility.  RFC 4180 states whitespaces in unquoted fields
 should not be ignored.  It doesn't allow whitespaces between a separator
-character and a quoted field.  Set @code{csv-trim-unquoted-charset} to
-@code{#f} or pass @code{#f} to @var{trim-charset} argument makes the
+character and a quoted field.  Setting @code{csv-trim-unquoted-charset} to
+@code{#f} or passing @code{#f} to @var{trim-charset} argument makes the
 maximum comformance to RFC4180.
 @c JP
 註: 空白文字をデフォルトで取り除く振る舞いは後方互換性のためです。
