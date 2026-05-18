@@ -112,4 +112,31 @@
            (map (cut ~ w <>) (iota 10))))
   )
 
+(let ()
+  (define a1 (native-type '(.array int8_t (10 5))))
+  (define h (uvector->native-handle #f a1))
+  (define w)
+
+  (dotimes [i 10]
+    (dotimes [j 5]
+      (set! (native-aref h (list i j)) (* i j))))
+  (test* "wrapped array 2d" #t
+         (begin
+           (set! w (wrap-native-handle h))
+           (is-a? w <wrapped-c-array>)))
+  (test* "wrapped array 2d size-of" 10
+         (size-of w)) ; sequence size, so it's 10
+  (test* "wrapped array 2d subarray type" #t
+         (is-a? (~ w 0) <wrapped-c-array>))
+  (test* "wrapped array 2d subarray" '(0 2 4 6 8)
+         (coerce-to <list> (~ w 2)))
+  (test* "wrapped array 2d ref element" 36
+         (ref w '(9 4)))
+  (test* "wrapped array 2d ~ element" 36
+         (~ w 9 4))
+  (test* "wrapped array 2d set element" '(0 9 18 27 -1)
+         (begin (set! (~ w 9 4) -1)
+                (coerce-to <list> (~ w 9))))
+  )
+
 (test-end)
