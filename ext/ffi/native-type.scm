@@ -481,11 +481,12 @@
                             0))))
 
 (define (uvector->native-handle uv type :optional (offset 0))
-  (assume-type uv <uvector>)
+  (assume-type uv (<?> <uvector>))
   (assume (or (is-a? type <c-pointer>)
               (c-aggregate-type? type))
     "Type must be native pointer or aggregate type, but got:" type)
-  (%uvector->native-handle uv type offset))
+  (%uvector->native-handle (or uv (make-u8vector (~ type'size)))
+                           type offset))
 
 ;; The handle pointing into a region originally pointed
 (define-cproc make-internal-handle (base::<native-handle>

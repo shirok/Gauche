@@ -15933,6 +15933,9 @@ vector @var{uv} as the backing storage.  This is useful to prepare
 binary data in Scheme world.  @var{type} must be a pointer or
 an aggregate native type.
 
+@var{uv} can also be @code{#f}, in which case a u8vector of size
+to contain object of @var{type} is allocated and used.
+
 If @var{offset} is given, it specifies a byte offset from
 the beginning of @var{uv} for the resulting handle to point to.
 Using @var{offset}, you can extract a native handle

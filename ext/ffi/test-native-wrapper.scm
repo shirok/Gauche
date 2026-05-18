@@ -72,8 +72,7 @@
 (let ()
   (define s1 (native-type '(.struct (a::int b::char))))
   (define s2 (native-type `(.struct (c::int s::,s1 t::(,s1 *)))))
-  (define h (uvector->native-handle (make-u8vector (~ s2'size))
-                                    s2))
+  (define h (uvector->native-handle #f s2))
   (define w)
 
   (set! (native. h 't) (native& h 's))
@@ -95,7 +94,7 @@
 ;; arrays
 (let ()
   (define a1 (native-type '(.array int (10))))
-  (define h (uvector->native-handle (make-u8vector (~ a1'size)) a1))
+  (define h (uvector->native-handle #f a1))
   (define w)
 
   (dotimes [i 10]
