@@ -1,3 +1,8 @@
+2026-05-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/csv.scm (make-csv-reader): Make trimming unquoted fields
+	  customizable.  https://github.com/shirok/Gauche/issues/1271
+
 2026-05-08  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/sequence.scm (subsec <vector>): Check start/end

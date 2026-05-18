@@ -39,6 +39,7 @@
   (use gauche.sequence)
   (export make-csv-reader
           make-csv-writer
+          csv-trim-unquoted-charset
           make-csv-header-parser
           make-csv-record-parser
           csv-rows->tuples)
@@ -50,38 +51,57 @@
 ;;;
 
 ;; API
-(define (make-csv-reader separator :optional (quote-char #\"))
-  (^[:optional (port (current-input-port))]
-    (csv-reader separator quote-char port)))
+(define csv-trim-unquoted-charset (make-parameter #[\s]))
 
-(define (csv-reader sep quo port)
+
+;; API
+(define (make-csv-reader separator
+                         :optional (quote-char #\")
+                                   (trim-charset (csv-trim-unquoted-charset)))
+  (^[:optional (port (current-input-port))]
+    (csv-reader separator quote-char port trim-charset)))
+
+(define (csv-reader sep quo port trim-charset)
   (define (eor? ch) (or (eqv? ch #\newline) (eof-object? ch)))
+
+  (define (err msg)
+    (if (and-let* ([name (port-name port)]
+                   [line (port-current-line port)])
+          (errorf "~a (~s:~a)" msg name line))
+      (error msg)))
 
   (define (start fields)
     (let1 ch (read-char port)
       (cond [(eor? ch) (reverse! (cons "" fields))]
             [(eqv? ch sep) (start (cons "" fields))]
             [(eqv? ch quo) (quoted fields)]
-            [(char-whitespace? ch) (start fields)]
             [else (unquoted (list ch) fields)])))
 
   (define (unquoted chs fields)
     (let loop ([ch (read-char port)] [last chs] [chs chs])
-      (cond [(eor? ch) (reverse! (cons (finish last) fields))]
-            [(eqv? ch sep) (start (cons (finish last) fields))]
-            [(char-whitespace? ch) (loop (read-char port) last (cons ch chs))]
+      (cond [(eor? ch) (reverse! (cons (finish last trim-charset) fields))]
+            [(eqv? ch sep) (start (cons (finish last trim-charset) fields))]
+            [(eqv? ch quo)
+             (if (and trim-charset
+                      (every trim-charset chs))
+               (quoted fields)
+               (err "quote char in a field"))]
             [else (let1 chs (cons ch chs)
                     (loop (read-char port) chs chs))])))
 
-  (define (finish rchrs) (list->string (reverse! rchrs)))
+  (define (finish rchrs trimmer)
+    (let1 r (list->string (reverse! rchrs))
+      (if trimmer
+        (string-trim-both r trimmer)
+        r)))
 
   (define (quoted fields)
     (let loop ([ch (read-char port)] [chs '()])
-      (cond [(eof-object? ch) (error "unterminated quoted field")]
+      (cond [(eof-object? ch) (err "unterminated quoted field")]
             [(eqv? ch quo)
              (if (eqv? (peek-char port) quo)
                (begin (read-char port) (loop (read-char port) (cons quo chs)))
-               (quoted-tail (cons (finish chs) fields)))]
+               (quoted-tail (cons (finish chs #f) fields)))]
             [else (loop (read-char port) (cons ch chs))])))
 
   (define (quoted-tail fields)

@@ -14,6 +14,15 @@
        (call-with-input-string "abc  ,  def  ,, ghi  "
          (make-csv-reader #\,)))
 
+(test* "csv-reader (trim, parameter)" '("abc" "def" "" "ghi")
+       (parameterize ([csv-trim-unquoted-charset #[_]])
+         (call-with-input-string "abc__,__def__,,_ghi__"
+           (make-csv-reader #\,))))
+
+(test* "csv-reader (do not trim)" '("abc  " "  def  " "" " ghi  ")
+       (call-with-input-string "abc  ,  def  ,, ghi  "
+         (make-csv-reader #\, #\" #f)))
+
 (test* "csv-reader" '("abc" "def" "" ", ghi")
        (call-with-input-string "abc  :  def  :: , ghi  "
          (make-csv-reader #\:)))
@@ -25,6 +34,12 @@
 (test* "csv-reader" '("abc" " de,f " "gh\ni" "jkl")
        (call-with-input-string "   abc,  \" de,f \"  , \"gh\ni\", \"jkl\""
          (make-csv-reader #\,)))
+
+(test* "csv-reader (do not arrow extra spaces w/o trimming"
+       (test-error <error> #/quote char in a field/)
+       (parameterize ([csv-trim-unquoted-charset #f])
+         (call-with-input-string "abc  ,  \"def\"  , \"ghi\"  "
+           (make-csv-reader #\,))))
 
 (test* "csv-reader" '("ab\nc" "de \n\n \nf " "" "" "gh\"\n\"i")
        (call-with-input-string "   \"ab\nc\" ,  \"de \n\n \nf \"  ,  , \"\" , \"gh\"\"\n\"\"i\""
