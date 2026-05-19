@@ -137,6 +137,12 @@
   (test* "wrapped array 2d set element" '(0 9 18 27 -1)
          (begin (set! (~ w 9 4) -1)
                 (coerce-to <list> (~ w 9))))
+  (test* "wrapped array subarray set" '(-1 -2 -3 -4 -5)
+         (begin
+           (set! (~ w 3)
+                 (uvector->native-handle '#s8(-1 -2 -3 -4 -5)
+                                         (native-type '(.array int8_t (5)))))
+           (coerce-to <list> (~ w 3))))
   )
 
 (test-end)

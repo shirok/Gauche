@@ -694,6 +694,27 @@
            (native* (native. h 'a))))
   )
 
+;; Nested struct
+(let* ([inner (make-c-struct-type 'inner `((a ,<c-char>) (b ,<int8>)))]
+       [outer (make-c-struct-type 'outer `((c ,inner)))]
+       [data (make-u8vector (~ outer'size))]
+       [data2 (make-u8vector (~ inner'size))]
+       [h (uvector->native-handle data outer)]
+       [h2 (uvector->native-handle data2 inner)])
+  (set! (native. (native. h 'c) 'a) #\a)
+  (set! (native. (native. h 'c) 'b) 99)
+  (set! (native. h2 'a) #\b)
+  (set! (native. h2 'b) 101)
+  (test* "nested struct, setting substructure (before)" '(#\a 99)
+         (let1 r (native. h 'c)
+           (list (native. r 'a) (native. r 'b))))
+  (test* "nested struct, setting substructure (after)" '(#\b 101)
+         (begin
+           (set! (native. h 'c) h2)
+           (let1 r (native. h 'c)
+             (list (native. r 'a) (native. r 'b)))))
+  )
+
 ;; Nested struct, member address
 (let* ([inner (make-c-struct-type 'inner `((a ,<c-char>) (b ,<int>)))]
        [inner* (make-c-pointer-type inner)]

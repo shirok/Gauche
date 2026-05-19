@@ -697,17 +697,49 @@
       (Scm_Error "Offset out of range: %ld" offset))
     (c-set element-type p val)))
 
+;; Verbatim memcpy of `size` bytes from src.ptr into handle.ptr + offset,
+;; with bounds validation against handle's region.
+(define-cproc %pcopy! (handle::<native-handle>
+                       offset::<fixnum>
+                       src::<native-handle>
+                       size::<fixnum>)
+  ::<void>
+  (when (== (-> handle ptr)  NULL)
+    (Scm_Error "Attempt to copy into NULL pointer: %S" handle))
+  (when (== (-> src ptr) NULL)
+    (Scm_Error "Attempt to copy from NULL pointer: %S" src))
+  (when (< size 0)
+    (Scm_Error "Negative size: %ld" size))
+  (let* ([dst::void* (+ (-> handle ptr) offset)])
+    (when (and (!= (-> handle region-max) NULL)
+               (!= (-> handle region-min) NULL)
+               (not (and (<= (-> handle region-min) dst)
+                         (<= (+ dst size) (-> handle region-max)))))
+      (Scm_Error "Offset %ld + size %ld out of range for %S"
+                 offset size handle))
+    (memcpy dst (-> src ptr) size)))
+
 (define (%handle-ref type handle offset)
   (if (c-aggregate-type? type)
     (make-internal-handle handle offset type)
     (%pref type handle offset)))
 
 (define (%handle-set! type handle offset val)
-  (when (c-aggregate-type? type)
-    ;; For now, we reject it.  Technically we can copy aggregate type
-    ;; content into the target aggregate.
-    (errorf "Can't set a value of type ~s into ~s" type handle))
-  (%pset! type handle offset val))
+  (cond
+   [(c-aggregate-type? type)
+    ;; Verbatim copy of the aggregate value.  val must be a native handle
+    ;; whose type matches the destination type.
+    (unless (is-a? val <native-handle>)
+      (errorf "A native handle of type ~s is required to set into ~s, \
+               but got: ~s"
+              type handle val))
+    (unless (equal? type (native-handle-type val))
+      (errorf "Type mismatch: can't set a value of type ~s into a field \
+               of type ~s"
+              (native-handle-type val) type))
+    (%pcopy! handle offset val (~ type'size))]
+   [else
+    (%pset! type handle offset val)]))
 
 (define (c-struct-field type selector)
   (assume-type type (</> <c-struct> <c-union>))
