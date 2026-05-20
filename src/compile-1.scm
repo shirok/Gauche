@@ -815,9 +815,24 @@
     ;; the procedure needs to be inlined in the same compiler unit.
     (%insert-binding module (unwrap-syntax name) dummy-proc
                      '(inlinable dummy))
-    (and-let* ([ (has-tag? closure $LAMBDA) ]
-               [packed ($lambda-inliner closure)])
-      (set! (%procedure-inliner dummy-proc) packed))))
+    (cond [(has-tag? closure $LAMBDA)
+           (and-let1 packed ($lambda-inliner closure)
+             (set! (%procedure-inliner dummy-proc) packed))]
+          [(has-tag? closure $CLAMBDA)
+           ;; Unlike $LAMBDA, we don't have an actual case-lambda procedure
+           ;; here (the binding to the runtime procedure happens later, at
+           ;; load time of the precompiled code).  We build a procedural
+           ;; inliner directly from the $CLAMBDA IForm, using the packed
+           ;; inliners already attached to each child $LAMBDA by
+           ;; pass1/attach-closure-inliner!.
+           (set! (%procedure-inliner dummy-proc)
+                 (^[src arg-iforms]
+                   (or (and-let* ([sel (select-clambda-body closure arg-iforms)]
+                                  [packed ($lambda-inliner sel)])
+                         (expand-inlined-procedure src
+                                                   (unpack-iform packed)
+                                                   arg-iforms))
+                       (undefined))))])))
 
 (define (pass1/make-inlinable-binding form name iform cenv)
   ;; See the comment in pass1/define about renaming the toplevel identifier.
@@ -1679,7 +1694,7 @@
         [() #f]
         [((nreq . nopt) . argcounts)
          (if (or (and (= nopt 0) (= nreq nargs))
-                 (and (> nopt 0) (>= nreq nargs)))
+                 (and (> nopt 0) (<= nreq nargs)))
            (car closures)
            (loop (cdr closures) argcounts))]))))
 
