@@ -15555,7 +15555,7 @@ The pseudo-name @code{c-string} denotes the @code{<c-string>} type
 C type @code{const char *} may simply mean a pointer to byte-sized
 numeric data, thus ambiguous.
 
-pThe endian-specified types listed in @ref{Representation-specific types}
+The endian-specified types listed in @ref{Representation-specific types}
 are also accepted, by their underscore-separated names: @code{int16_le},
 @code{int16_be}, @code{uint16_le}, @code{uint16_be}, and likewise for
 the 32-bit and 64-bit integer types and for @code{float} and @code{double}.
@@ -15904,10 +15904,28 @@ returned.
 
 @defun cast-handle type handle :optional offset
 @c MOD gauche.native-type
+Returns a new native handle that points to the same memory region
+of @var{handle}, but with @var{type}.
+Optionally, you can specify a byte offset with @var{offset}
+from the @var{handle}.
+
+You can cast a pointer to another pointer, an aggregate
+(struct, union, array) to another aggregate,
+an array to a pointer or a pointer to an array.
+
+If @var{handle} knows the valid memory range it references,
+it checks if @var{type} falls within the region.  However,
+if the handle is obtained from an external C function call,
+the valid memory region isn't often explicit, and it's up to
+you to treat it safely.
 @end defun
 
 @defun c-pointer-compare handle-a handle-b
 @c MOD gauche.native-type
+Both @var{handle-a} and @var{handle-b} must be pointer-like
+handles.  It compares the value of those pointer values,
+and returns either -1 (if @var{handle-a} is smaller),
+0 (if both are the same), or 1 (if @var{handle-a} is greater).
 @end defun
 
 @defun c-pointer=? handle-a handle-b
@@ -15916,6 +15934,8 @@ returned.
 @defunx c-pointer>? handle-a handle-b
 @defunx c-pointer>=? handle-a handle-b
 @c MOD gauche.native-type
+Both @var{handle-a} and @var{handle-b} must be pointer-like
+handles.  It compares the value of those pointer values,
 @end defun
 
 @subsubheading Aggregate handle operations
