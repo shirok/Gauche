@@ -1288,6 +1288,7 @@
     (initialize instance initargs)
     instance))
 
+;; API
 (define (wrap-native-handle handle)
   (let* ([type (~ handle'type)])
     (%wrap-native-handle (make-native-wrapper-class type) handle)))

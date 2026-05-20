@@ -181,6 +181,11 @@
      ))
 
 ;;------------------------------------------------------------------
+(test-section "file.elf")
+(use file.elf)
+(test-module 'file.elf)
+
+;;------------------------------------------------------------------
 (test-section "file.filter")
 (use file.filter)
 (test-module 'file.filter)
