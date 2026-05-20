@@ -3593,7 +3593,7 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
     }
 
     /* for non-composable partial continuation */
-    if (ep->contType == CONT_TYPE_FULL && !SCM_FALSEP(ep->noCompHandler)) {
+    if (!SCM_FALSEP(ep->noCompHandler)) {
         void *data[1];
         data[0] = (void*)ep->noCompHandler;
         Scm_VMPushCC(vm_no_comp_cc, data, 1);
@@ -3706,16 +3706,27 @@ static ScmObj throw_continuation(ScmObj *argframe,
     /* calculate dynamic handlers to call */
     ScmObj hdlist = SCM_NIL;
     ScmObj currentHandlers = get_dynamic_handlers(vm);
-    if (ep->contType == CONT_TYPE_FULL) {
+    if (ep->contType == CONT_TYPE_FULL && SCM_FALSEP(ep->noCompHandler)) {
         /* for full continuation */
         hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
                                                currentHandlers);
-    } else {
-        /* for partial continuation */
+    } else if (ep->contType == CONT_TYPE_COMPOSABLE) {
+        /* for composable partial continuation */
+        /* this avoids redundant calls of dynamic handlers. */
         hdlist =
             throw_cont_calculate_handlers(Scm_Append2(ep->partialHandlers,
                                                       currentHandlers),
                                           currentHandlers);
+    } else {
+        /* for non-composable partial continuation */
+        /* get escape point from continuation */
+        ScmEscapePoint *ep2 = (ScmEscapePoint*)((ScmSubr*)ep->noCompHandler)->data;
+        /* this avoids redundant calls of dynamic handlers. */
+        hdlist =
+            throw_cont_calculate_handlers(Scm_Append2(ep2->partialHandlers,
+                                                      ep->dynamicHandlers),
+                                          currentHandlers);
+        ep2->partialHandlers = SCM_NIL;
     }
 
     /* First, check to see if we need to rewind C stack.

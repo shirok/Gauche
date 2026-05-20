@@ -329,13 +329,12 @@
                 (reset (error "[E02]"))
                 (display "[E03]")))))))
 
-;; native : [W01][D01][D02][W01][D01][D01][D02][D01][E01][D02][D02] ; this is bug
+;; native : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
 ;; meta   : [W01][D01][D02][W01][D01][D02][D01][E01][D02][D01][D02]
 ;; srfi226: [W01][D01][D02][W01][D01][D02][D01][E01][D02][D01][D02]
 ;; racket : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
 (test* "reset/shift + guard 1"
-       ;"[W01][D01][D02][W01][D01][D01][E01][D02][D02]"
-       "[W01][D01][D02][W01][D01][D01][D02][D01][E01][D02][D02]" ; this is bug
+       "[W01][D01][D02][W01][D01][D01][E01][D02][D02]"
        (with-output-to-string
          (lambda ()
            (define queue '())
