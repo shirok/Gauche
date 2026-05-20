@@ -563,31 +563,54 @@
 ;; Casting
 ;;
 
-;; We can 'cast' pointer-like handle to different pointer-like type.
-;; Offset is a bypte offset in relative to the original pointer---only to
+;; We can 'cast' a pointer-like handle to a different pointer-like type,
+;; or aggregate handle to a different aggregate type.
+;; Arrays are both pointer-like and aggregate, so arrays can be cast
+;; either to a pointer-like type or to an aggregate type.
+;; Offset is a byte offset in relative to the original pointer---only to
 ;; be used by those who know what they're doing.
+;;
+;; If the destination type is not a c-pointer, and the source handle has
+;; a known memory region, the region must cover the destination type's
+;; size (starting at ptr+offset).
 
 (define (cast-handle type handle :optional (offset 0))
   (assume-type type <native-type>)
   (assume-type handle <native-handle>)
   (assume-type offset <fixnum>)
-  (unless (c-pointer-like-type? type)
-    (error "You can only cast to pointer-like type, but got:" handle))
-  (unless (c-pointer-like-handle? handle)
-    (error "You can only cast pointer-like handle, but got:" handle))
+  (let1 htype (native-handle-type handle)
+    (unless (or (and (c-pointer-like-type? htype)
+                     (c-pointer-like-type? type))
+                (and (c-aggregate-type? htype)
+                     (c-aggregate-type? type)))
+      (errorf "cast must be between pointer-like types or between aggregate \
+               types, but got source of type ~s and destination of type ~s"
+              htype type)))
   (%cast-handle type handle offset))
 
 (define-cproc %cast-handle (type::<native-type>
                             handle::<native-handle>
                             offset::<fixnum>)
-  (return (Scm__MakeNativeHandle (+ (-> handle ptr) offset)
-                                 type
-                                 (-> handle name)
-                                 (-> handle region-min)
-                                 (-> handle region-max)
-                                 (-> handle owner)
-                                 (-> handle attrs)
-                                 (-> handle flags))))
+  (let* ([p::void* (+ (-> handle ptr) offset)])
+    ;; If destination type is not a c-pointer, ensure the source handle's
+    ;; known memory region (if any) covers the destination type's size.
+    (when (and (not (SCM_C_POINTER_P type))
+               (!= (-> handle region-min) NULL)
+               (!= (-> handle region-max) NULL))
+      (let* ([dsize::ScmSmallInt (-> type size)])
+        (unless (and (<= (-> handle region-min) p)
+                     (<= (+ p dsize) (-> handle region-max)))
+          (Scm_Error "cast destination type %S (size %ld) at offset %ld \
+                      does not fit within source handle's memory region: %S"
+                     (SCM_OBJ type) dsize offset (SCM_OBJ handle)))))
+    (return (Scm__MakeNativeHandle p
+                                   type
+                                   (-> handle name)
+                                   (-> handle region-min)
+                                   (-> handle region-max)
+                                   (-> handle owner)
+                                   (-> handle attrs)
+                                   (-> handle flags)))))
 
 ;;
 ;; Comparison

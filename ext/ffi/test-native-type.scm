@@ -1263,7 +1263,31 @@
            #x42
            (begin
              (set! (native-> psh 'a) #x42)
-             (native* (cast-handle uint8* ph))))))
+             (native* (cast-handle uint8* ph)))))
+
+  ;; Aggregate-to-aggregate casts
+  (let* ([s2     (make-c-struct-type 's2 `((x ,<int8>) (y ,<int8>)
+                                           (z ,<int8>) (w ,<int8>)))]
+         [u1     (make-c-union-type 'u1 `((i ,<int32>) (b ,<int8>)))]
+         [ah     (uvector->native-handle data int8a)]
+         [sh     (uvector->native-handle data s1)])
+    (test* "cast-handle array to struct (aggregate->aggregate)" #t
+           (c-struct-handle? (cast-handle s2 ah)))
+    (test* "cast-handle struct to union (aggregate->aggregate)" #t
+           (c-union-handle? (cast-handle u1 sh)))
+    (test* "cast-handle struct to array (aggregate->aggregate)" #t
+           (c-array-handle? (cast-handle int8a sh))))
+
+  ;; Region size check: dest type larger than region must error.
+  (let* ([tiny   (make-u8vector 2 0)]
+         [int8a8 (make-c-array-type <int8> '(8))]
+         [tah    (uvector->native-handle tiny (make-c-array-type <int8> '(2)))])
+    (test* "cast-handle errors when region too small for dest aggregate"
+           (test-error <error> #/does not fit/)
+           (cast-handle int8a8 tah))
+    ;; Casting to a c-pointer skips the region check.
+    (test* "cast-handle to c-pointer skips region check" #t
+           (c-pointer-handle? (cast-handle int8* tah)))))
 
 ;;;----------------------------------------------------------
 (test-section "pointer comparison")
