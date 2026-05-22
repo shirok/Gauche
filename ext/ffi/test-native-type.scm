@@ -1290,6 +1290,110 @@
            (c-pointer-handle? (cast-handle int8* tah)))))
 
 ;;;----------------------------------------------------------
+(test-section "copy-handle-memory!")
+
+;; Basic copy between handles of the same type.  Without size, the entire
+;; struct is copied.
+(let* ([s1      (make-c-struct-type 's1 `((a ,<int32>) (b ,<int32>)))]
+       [src-buf (make-u8vector (~ s1'size) 0)]
+       [src-h   (uvector->native-handle src-buf s1)]
+       [dst-buf (make-u8vector (~ s1'size) 0)]
+       [dst-h   (uvector->native-handle dst-buf s1)])
+  (set! (native. src-h 'a) #x12345678)
+  (set! (native. src-h 'b) #x55aa55aa)
+  (copy-handle-memory! dst-h src-h)
+  (test* "copy-handle-memory! whole struct: field a"
+         #x12345678 (native. dst-h 'a))
+  (test* "copy-handle-memory! whole struct: field b"
+         #x55aa55aa (native. dst-h 'b))
+  (test* "copy-handle-memory! produces memwise-equal result" 0
+         (c-memwise-compare dst-h src-h)))
+
+;; Nested struct: copy only the inner struct out of an outer struct.
+;; Without an explicit size, the size is derived from the
+;; inner struct's type.
+(let* ([inner   (make-c-struct-type 'inner `((x ,<uint32>) (y ,<uint32>)))]
+       [outer   (make-c-struct-type 'outer `((a ,<uint32>) (mid ,inner)
+                                             (b ,<uint32>)))]
+       [outer-buf (make-u8vector (~ outer'size) 0)]
+       [outer-h   (uvector->native-handle outer-buf outer)])
+  (set! (native. outer-h 'a) #x11111111)
+  (let1 mid-h (native. outer-h 'mid)
+    (set! (native. mid-h 'x) #xaabbccdd)
+    (set! (native. mid-h 'y) #x77665544))
+  (set! (native. outer-h 'b) #x22222222)
+
+  (let* ([trailing 4]
+         [dst-buf (make-u8vector (+ (~ inner'size) trailing) #xff)]
+         [dst-h   (uvector->native-handle dst-buf inner)]
+         [src-h   (native. outer-h 'mid)])
+    (copy-handle-memory! dst-h src-h)
+    (test* "copy-handle-memory! inner struct (no size): field x"
+           #xaabbccdd (native. dst-h 'x))
+    (test* "copy-handle-memory! inner struct (no size): field y"
+           #x77665544 (native. dst-h 'y))
+    (test* "copy-handle-memory! inner struct (no size): no overrun"
+           (make-u8vector trailing #xff)
+           (uvector-alias <u8vector> dst-buf (~ inner'size))))
+
+  ;; Same copy with explicit size matching inner struct size: works.
+  (let* ([dst-buf (make-u8vector (~ inner'size) 0)]
+         [dst-h   (uvector->native-handle dst-buf inner)]
+         [src-h   (native. outer-h 'mid)])
+    (copy-handle-memory! dst-h src-h (~ inner'size))
+    (test* "copy-handle-memory! inner struct (size = inner.size): field x"
+           #xaabbccdd (native. dst-h 'x))
+    (test* "copy-handle-memory! inner struct (size = inner.size): field y"
+           #x77665544 (native. dst-h 'y)))
+
+  ;; Size larger than inner struct must error.
+  (let* ([dst-buf (make-u8vector (+ (~ inner'size) 1) 0)]
+         [dst-h   (uvector->native-handle dst-buf inner)]
+         [src-h   (native. outer-h 'mid)])
+    (test* "copy-handle-memory! errors when size > inner struct size"
+           (test-error <error> #/out of range/)
+           (copy-handle-memory! dst-h src-h (+ (~ inner'size) 1)))))
+
+;; offset parameter: copy starting partway into the source.  With no size,
+;; the derived size is src.type.size - offset.
+(let* ([s1      (make-c-struct-type 's1 `((a ,<int32>) (b ,<int32>)))]
+       [b-off   (c-struct/union-type-field-offset s1 'b)]
+       [i32*    (make-c-pointer-type <int32>)]
+       [src-buf (make-u8vector (~ s1'size) 0)]
+       [src-h   (uvector->native-handle src-buf s1)]
+       [dst-buf (make-u8vector (~ <int32>'size) 0)]
+       [dst-h   (uvector->native-handle dst-buf i32*)])
+  (set! (native. src-h 'a) #x12345678)
+  (set! (native. src-h 'b) #x5a5a5a5a)
+  (copy-handle-memory! dst-h src-h #f b-off)
+  (test* "copy-handle-memory! with offset (no size): copies tail of source"
+         #x5a5a5a5a (native* dst-h)))
+
+;; Argument validation.
+(let* ([s1   (make-c-struct-type 's1 `((a ,<int32>)))]
+       [buf  (make-u8vector (~ s1'size) 0)]
+       [h    (uvector->native-handle buf s1)])
+  (test* "copy-handle-memory! errors on negative size"
+         (test-error <error> #/size must be a nonnegative/)
+         (copy-handle-memory! h h -1))
+  (test* "copy-handle-memory! errors on negative offset"
+         (test-error <error> #/offset must be a nonnegative/)
+         (copy-handle-memory! h h #f -1)))
+
+;; NULL handle errors.
+(let* ([s1    (make-c-struct-type 's1 `((a ,<int32>)))]
+       [s1*   (make-c-pointer-type s1)]
+       [buf   (make-u8vector (~ s1'size) 0)]
+       [h     (uvector->native-handle buf s1)]
+       [nullh (null-pointer-handle s1*)])
+  (test* "copy-handle-memory! errors on NULL src"
+         (test-error <error> #/NULL/)
+         (copy-handle-memory! h nullh))
+  (test* "copy-handle-memory! errors on NULL dst"
+         (test-error <error> #/NULL/)
+         (copy-handle-memory! nullh h)))
+
+;;;----------------------------------------------------------
 (test-section "pointer comparison")
 
 (define (sign x) (cond [(< x 0) -1] [(> x 0) 1] [else 0]))

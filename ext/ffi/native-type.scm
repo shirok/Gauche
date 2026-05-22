@@ -86,6 +86,7 @@
           c-pointer-like-handle?
 
           cast-handle
+          copy-handle-memory!
 
           c-pointer-compare
           c-pointer=?
@@ -612,6 +613,22 @@
                                    (-> handle attrs)
                                    (-> handle flags)))))
 
+;; Copy memory pointed by src-handle into the memory pointed by dst-handle.
+;; The source region begins at src.ptr; if size is #f, the entire region
+;; from src.ptr+offset up to src's region-max is copied (src must have
+;; known region bounds in that case).  If dst has known region bounds, the
+;; copy must fit within them.
+(define (copy-handle-memory! dst-handle src-handle
+                             :optional (size #f) (offset 0))
+  (assume-type dst-handle <native-handle>)
+  (assume-type src-handle <native-handle>)
+  (assume (or (not size)
+              (and (fixnum? size) (>= size 0)))
+    "size must be a nonnegative integer or #f, but got:" size)
+  (assume (and (fixnum? offset) (>= offset 0))
+    "offset must be a nonnegative integer, but got:" offset)
+  (%pcopy! dst-handle 0 src-handle offset (or size -1)))
+
 ;;
 ;; Comparison
 ;;
@@ -720,27 +737,52 @@
       (Scm_Error "Offset out of range: %ld" offset))
     (c-set element-type p val)))
 
-;; Verbatim memcpy of `size` bytes from src.ptr into handle.ptr + offset,
-;; with bounds validation against handle's region.
-(define-cproc %pcopy! (handle::<native-handle>
-                       offset::<fixnum>
+;; Verbatim memcpy of `size` bytes from src.ptr+src-offset into
+;; dst.ptr+dst-offset, with bounds validation against both handles' regions
+;; when known.  If size is -1, the size is derived from size of src's type,
+;; minus offset.
+(define-cproc %pcopy! (dst::<native-handle>
+                       dst-offset::<fixnum>
                        src::<native-handle>
+                       src-offset::<fixnum>
                        size::<fixnum>)
   ::<void>
-  (when (== (-> handle ptr)  NULL)
-    (Scm_Error "Attempt to copy into NULL pointer: %S" handle))
+  (when (== (-> dst ptr) NULL)
+    (Scm_Error "Attempt to copy into NULL pointer: %S" dst))
   (when (== (-> src ptr) NULL)
     (Scm_Error "Attempt to copy from NULL pointer: %S" src))
-  (when (< size 0)
-    (Scm_Error "Negative size: %ld" size))
-  (let* ([dst::void* (+ (-> handle ptr) offset)])
-    (when (and (!= (-> handle region-max) NULL)
-               (!= (-> handle region-min) NULL)
-               (not (and (<= (-> handle region-min) dst)
-                         (<= (+ dst size) (-> handle region-max)))))
-      (Scm_Error "Offset %ld + size %ld out of range for %S"
-                 offset size handle))
-    (memcpy dst (-> src ptr) size)))
+  (when (< size -1)
+    (Scm_Error "Invalid size: %ld" size))
+  (let* ([dst-ptr::void* (+ (-> dst ptr) dst-offset)]
+         [src-ptr::void* (+ (-> src ptr) src-offset)]
+         [src-region-known?::int
+          (and (!= (-> src region-min) NULL)
+               (!= (-> src region-max) NULL))]
+         [dst-region-known?::int
+          (and (!= (-> dst region-min) NULL)
+               (!= (-> dst region-max) NULL))]
+         [actual-size::ScmSmallInt size])
+    ;; Derive size from src region when -1 is given.
+    (when (< actual-size 0)
+      (set! actual-size (- (-> (-> src type) size) src-offset))
+      (when (< actual-size 0)
+        (Scm_Error "src-offset %ld is too large for source type size: %S"
+                   src-offset src)))
+    ;; Validate source region when known.
+    (when (and src-region-known?
+               (not (and (<= (-> src region-min) src-ptr)
+                         (<= (+ src-ptr actual-size)
+                             (-> src region-max)))))
+      (Scm_Error "src-offset %ld + size %ld out of range for %S"
+                 src-offset actual-size src))
+    ;; Validate destination region when known.
+    (when (and dst-region-known?
+               (not (and (<= (-> dst region-min) dst-ptr)
+                         (<= (+ dst-ptr actual-size)
+                             (-> dst region-max)))))
+      (Scm_Error "dst-offset %ld + size %ld out of range for %S"
+                 dst-offset actual-size dst))
+    (memcpy dst-ptr src-ptr actual-size)))
 
 (define (%handle-ref type handle offset)
   (if (c-aggregate-type? type)
@@ -760,7 +802,7 @@
       (errorf "Type mismatch: can't set a value of type ~s into a field \
                of type ~s"
               (native-handle-type val) type))
-    (%pcopy! handle offset val (~ type'size))]
+    (%pcopy! handle offset val 0 (~ type'size))]
    [else
     (%pset! type handle offset val)]))
 
