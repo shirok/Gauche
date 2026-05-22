@@ -1346,8 +1346,8 @@
     (test* "copy-handle-memory! inner struct (size = inner.size): field y"
            #x77665544 (native. dst-h 'y)))
 
-  ;; Size larger than inner struct must error.
-  (let* ([dst-buf (make-u8vector (+ (~ inner'size) 1) 0)]
+  ;; Size larger than destination is error
+  (let* ([dst-buf (make-u8vector (~ inner'size) 0)]
          [dst-h   (uvector->native-handle dst-buf inner)]
          [src-h   (native. outer-h 'mid)])
     (test* "copy-handle-memory! errors when size > inner struct size"
