@@ -15900,7 +15900,7 @@ returned.
 @end example
 @end defun
 
-@subsubheading Pointer handle operations
+@subsubheading Handle operations
 
 @defun cast-handle type handle :optional offset
 @c MOD gauche.native-type
@@ -15938,11 +15938,37 @@ Both @var{handle-a} and @var{handle-b} must be pointer-like
 handles.  It compares the value of those pointer values,
 @end defun
 
-@subsubheading Aggregate handle operations
-
 @defun c-memwise-compare handle-a handle-b
 @c MOD gauche.native-type
+Both @var{handle-a} and @var{handle-b} must be references
+to aggregate type objects.  Returns either @code{-1}, @code{0},
+or @code{1}, depending on whether @var{handle-a} is smaller,
+the same, or @code{handle-a} is greater.  The actual types
+of two handles may differ.
+
+First, the sizes are compared.  If they differ, that's the result.
+If the sizes are the same, contents are compared bytewise.
+This is the same as how @code{bytevector-comparator} compares
+two bytevectors (@pxref{Predefined comparators}).
 @end defun
+
+@defun copy-handle-memory! dst-handle src-handle :optional size offset
+@c MOD gauche.native-type
+Copy the memory content of @var{size} bytes
+pointed or reference by @var{src-handle}
+to the memory pointed or reference by @var{dst-handle}.
+
+If @var{size} argument is omitted or @code{#f},
+bytes of the size determined by the type of @var{src-handle}
+are copied.
+
+Optional @var{offset} allows to copy from non-zero offset.
+If integer @var{size} is given, @var{size} bytes from
+@var{src-handle} + @var{offset} are copied.  If @var{size} is
+@code{#f}, from @code{src-handle} + @var{offset} to the end
+of the type size are copied.
+@end defun
+
 
 @subsubheading Creating a native handle
 
