@@ -91,6 +91,10 @@
                                               :optional (prompt-tag #f)
                                                         (abort-handler #f))
   Scm_VMCallWithContinuationPrompt)
+(define-cproc %continuation-prompt-available? (prompt-tag
+                                               :optional (cont #f))
+                                              ::<boolean>
+  Scm_ContinuationPromptAvailableP)
 
 ;; Continuaton prompts
 (select-module gauche)
@@ -136,6 +140,10 @@
   (unless (non-composable-continuation? cont)
     (errorf "cont must be a non-composable continuation, but got: ~S" cont))
   (apply call-in-continuation cont values args))
+(define (continuation-prompt-available? prompt-tag :optional (cont #f))
+  ((with-module gauche.internal %continuation-prompt-available?)
+   prompt-tag
+   (or cont (call-with-non-composable-continuation values))))
 
 ;; Continuation marks
 (select-module gauche)

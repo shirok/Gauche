@@ -180,7 +180,7 @@ typedef struct ScmEscapePointRec {
                                 */
 
     /* The following fields are used for new implementation of partial cont. */
-    ScmObj promptTag;           /* (not used now) */
+    ScmObj promptTag;           /* prompt tag */
     ScmObj abortHandler;        /* abort handler */
     ScmObj abortArgs;           /* abort handler's arguments */
     ScmObj noCompHandler;       /* for non-composable partial continuation */

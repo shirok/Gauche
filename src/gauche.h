@@ -670,6 +670,8 @@ SCM_EXTERN ScmObj Scm_VMCallWithNonComposableContinuation(ScmObj proc,
                                                           ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_VMCallInContinuation(ScmObj cont, ScmObj proc,
                                            ScmObj args);
+SCM_EXTERN int    Scm_ContinuationPromptAvailableP(ScmObj promptTag,
+                                                   ScmObj cont);
 
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk);

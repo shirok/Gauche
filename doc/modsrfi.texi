@@ -16618,7 +16618,7 @@ Implemented experimentally.
 @item call-with-continuation-barrier
 Not implemented yet.
 @item continuation-prompt-available?
-Not implemented yet.
+Implemented experimentally.
 @item dynamic-wind
 @xref{Continuations}.
 @item unwind-protect
