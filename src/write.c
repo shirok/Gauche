@@ -90,8 +90,9 @@ static const ScmWriteControls *defaultWriteControls;
 
 /* Whether we need 'walk' pass to find out shared and/or circular
    structure.  Now we use two-pass writing by default, and use one-pass
-   writing only when requested specifically. */
-#define WRITER_NEED_2PASS(ctx) (SCM_WRITE_MODE(ctx) != SCM_WRITE_SIMPLE)
+   writing only when requested specifically (write-simple).  This is decided
+   by the structure axis, independent of the escaping (write/display). */
+#define WRITER_NEED_2PASS(ctx) ((ctx)->structure != SCM_WRITE_STRUCT_SIMPLE)
 
 /*
  * WriteContext public API
@@ -106,15 +107,34 @@ int Scm_WriteContextCase(const ScmWriteContext *ctx)
     return SCM_WRITE_CASE(ctx);
 }
 
-static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int limit)
+static void write_context_init(ScmWriteContext *ctx, int mode, int structure,
+                               int flags, int limit)
 {
     ctx->mode = mode;
     /* if case mode is not specified, use default taken from VM default */
     if (SCM_WRITE_CASE(ctx) == 0) ctx->mode |= DEFAULT_CASE;
+    ctx->structure = structure;
     ctx->flags = flags;
     ctx->limit = limit;
     ctx->controls = NULL;
     if (limit > 0) ctx->flags |= WRITE_LIMITED;
+}
+
+/* Resolve the structure axis for a toplevel write.  SCM_WRITE_DEFAULT takes
+   it from the controls; the rest is implied by the (legacy) mode value.
+   Recursive calls don't use this---they inherit the structure of the ongoing
+   write through the port (the SCM_PORT_WRITESS flag and the shared table). */
+static int toplevel_structure(int mode, const ScmWriteControls *ctrl)
+{
+    switch (mode) {
+    case SCM_WRITE_SIMPLE:  return SCM_WRITE_STRUCT_SIMPLE;
+    case SCM_WRITE_SHARED:  return SCM_WRITE_STRUCT_SHARED;
+    case SCM_WRITE_DEFAULT:
+        return (ctrl && SCM_WRITE_CONTROL_SHARED(ctrl))
+            ? SCM_WRITE_STRUCT_SHARED : SCM_WRITE_STRUCT_CIRCULAR;
+    default: /* SCM_WRITE_WRITE, SCM_WRITE_DISPLAY */
+        return SCM_WRITE_STRUCT_CIRCULAR;
+    }
 }
 
 /*
@@ -131,6 +151,7 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
         p->printLevel = -1;
         p->printWidth = -1;
         p->printPretty = FALSE;
+        p->printShared = FALSE;
         p->printIndent = 0;
         p->bytestring = 0;
         p->stringLength = -1;
@@ -231,7 +252,11 @@ void Scm_WriteWithControls(ScmObj obj, ScmObj p, int mode,
         /* We're in the recursive call, so we just recurse into write_walk
            or write_rec, according to the phase.   NB: The controls passed
            into the argument CTRL is ignored; the "root" control, passed
-           to the toplevel write API, will be used.  */
+           to the toplevel write API, will be used.  The structure axis is
+           likewise inherited from the ongoing write (via the port), so we
+           don't resolve it here; only the escaping (write/display) carried
+           in 'mode' is honored per-call.  Note SCM_WRITE_DEFAULT masks to
+           SCM_WRITE_WRITE, giving write escaping. */
         if (PORT_WALKER_P(port)) {
             /* Special treatment - if we're "display"-ing a string, we'll
                bypass walk path even if we're in the middle of write/ss.
@@ -242,14 +267,14 @@ void Scm_WriteWithControls(ScmObj obj, ScmObj p, int mode,
             }
         } else {
             ScmWriteContext ctx;
-            write_context_init(&ctx, mode, 0, 0);
+            write_context_init(&ctx, mode, SCM_WRITE_STRUCT_CIRCULAR, 0, 0);
             write_rec(obj, port, &ctx);
         }
 
     } else {
         /* We're in the toplevel call.*/
         ScmWriteContext ctx;
-        write_context_init(&ctx, mode, 0, 0);
+        write_context_init(&ctx, mode, toplevel_structure(mode, ctrl), 0, 0);
         PORT_LOCK(port, vm);
         if (WRITER_NEED_2PASS(&ctx)) {
             ctx.controls = ctrl;
@@ -293,7 +318,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
     ScmObj out = Scm_MakeOutputStringPort(TRUE);
     Scm_PortWriteStateSet(SCM_PORT(out), Scm_PortWriteState(port));
     ScmWriteContext ctx;
-    write_context_init(&ctx, mode, 0, width);
+    write_context_init(&ctx, mode, toplevel_structure(mode, NULL), 0, width);
 
     /* We don't need to lock 'out', nor clean it up, for it is private. */
     /* This part is a bit confusing - we only need to call write_ss
@@ -369,7 +394,8 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs,
                function.  We'll address it later, but for now
                we use the default context. */
             ScmWriteContext ctx;
-            write_context_init(&ctx, SCM_WRITE_WRITE, 0, 0);
+            write_context_init(&ctx, SCM_WRITE_WRITE,
+                               SCM_WRITE_STRUCT_CIRCULAR, 0, 0);
             (*cpa)->print(args[0], SCM_PORT(args[1]), &ctx);
             return SCM_TRUE;
         }
@@ -835,7 +861,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
     /* pass 1 */
     port->flags |= SCM_PORT_WALKING;
-    if (SCM_WRITE_MODE(ctx)==SCM_WRITE_SHARED) port->flags |= SCM_PORT_WRITESS;
+    if (ctx->structure == SCM_WRITE_STRUCT_SHARED) port->flags |= SCM_PORT_WRITESS;
     ScmWriteState *s = Scm_MakeWriteState(NULL);
     s->sharedTable = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     s->controls = ctx->controls;

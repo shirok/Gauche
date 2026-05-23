@@ -43,6 +43,9 @@ struct ScmWriteControlsRec {
     int printLevel;             /* -1 for no limit */
     int printWidth;             /* -1 for no limit */
     int printPretty;            /* boolean, #t to use pretty printer */
+    int printShared;            /* boolean, #t to show shared structure with
+                                   datum labels in plain 'write' (cf. the
+                                   SCM_WRITE_DEFAULT entry mode) */
     int printIndent;            /* >=0 extra indent to be added after each
                                    newline when pretty printing. */
     int bytestring;             /* boolean, #t to use bytestring repr for
@@ -63,6 +66,16 @@ enum ScmWriteArrayFormat {
     SCM_WRITE_ARRAY_READER_CTOR, /* #,(<array> (0 3 0 3) ...) */
 };
 
+/* The "structure" axis of the writer, orthogonal to the escaping axis
+   (write/display) carried in ScmWriteContext.mode.  This determines how
+   shared/circular structure is detected and labeled, and is a whole-graph
+   property fixed at the toplevel write call (recursive calls inherit it). */
+enum ScmWriteStructure {
+    SCM_WRITE_STRUCT_SIMPLE = 0,   /* one-pass, no datum labels at all */
+    SCM_WRITE_STRUCT_CIRCULAR = 1, /* two-pass, label cycles only */
+    SCM_WRITE_STRUCT_SHARED = 2    /* two-pass, label all shared structure */
+};
+
 #define SCM_WRITE_CONTROL_LENGTH(wc)         ((wc)->printLength)
 #define SCM_WRITE_CONTROL_LEVEL(wc)          ((wc)->printLevel)
 #define SCM_WRITE_CONTROL_WIDTH(wc)          ((wc)->printWidth)
@@ -70,6 +83,7 @@ enum ScmWriteArrayFormat {
 #define SCM_WRITE_CONTROL_RADIX(wc)                           \
     ((wc)->numberFormat.flags & SCM_NUMBER_FORMAT_ALT_RADIX)
 #define SCM_WRITE_CONTROL_PRETTY(wc)         ((wc)->printPretty)
+#define SCM_WRITE_CONTROL_SHARED(wc)         ((wc)->printShared)
 #define SCM_WRITE_CONTROL_INDENT(wc)         ((wc)->printIndent)
 #define SCM_WRITE_CONTROL_BYTESTRING(wc)     ((wc)->bytestring)
 #define SCM_WRITE_CONTROL_STRINGLENGTH(wc)   ((wc)->stringLength)
@@ -105,8 +119,10 @@ enum ScmWriteArrayFormat {
  */
 
 struct ScmWriteContextRec {
-    short mode;                 /* print mode */
+    short mode;                 /* escaping mode (write/display) + case mode.
+                                   See SCM_WRITE_MODE / SCM_WRITE_CASE. */
     short flags;                /* internal */
+    short structure;            /* enum ScmWriteStructure */
     int limit;                  /* used in WriteLimited */
     const ScmWriteControls *controls;
 };

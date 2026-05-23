@@ -1,5 +1,17 @@
-2026-05-19  Shiro Kawai  <shiro@acm.org>
+2026-05-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/writer.h, src/gauche/priv/writerP.h, src/write.c,
+	  src/libio.scm, src/libobj.scm: Add 'shared write-control.  When set,
+	  plain 'write' (and format's ~s, and the pretty printer) shows shared
+	  structure with datum labels, like write-shared.  Internally the
+	  writer's structure axis (simple/circular/shared) is now separated
+	  from the escaping axis (write/display) in ScmWriteContext, and a new
+	  SCM_WRITE_DEFAULT entry mode resolves the structure from the controls
+	  at the toplevel and inherits it on recursive calls.  As a side effect,
+	  format/ss is now consistently shared (previously ~w under format/ss
+	  lost its shared labels).
+
+2026-05-19  Shiro Kawai  <shiro@acm.org>
 	* lib/file/elf.scm: Added.
 
 2026-05-17  Shiro Kawai  <shiro@acm.org>

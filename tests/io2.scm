@@ -269,6 +269,56 @@
          (set-cdr! a a)
          (format/ss "The answer is ~s ~s" a a)))
 
+;; Non-cyclic shared structure under format/ss (regression: ~w used to lose
+;; its shared labels under format/ss, and ~s used to ignore sharing).
+(test* "format/ss ~s shared" "(#0=(x) #0#)"
+       (let* ((a (list 'x)) (y (list a a)))
+         (format/ss "~s" y)))
+(test* "format/ss ~w shared" "(#0=(x) #0#)"
+       (let* ((a (list 'x)) (y (list a a)))
+         (format/ss "~w" y)))
+
+;;---------------------------------------------------------------
+(test-section "shared write-control")
+
+;; The 'shared write-control makes plain 'write' (and 'format's ~s, and the
+;; pretty printer) show shared structure with datum labels, like write/ss.
+;; 'display' ignores it (it still labels cycles to avoid infinite loops).
+(let* ((a (list 'x))
+       (y (list a a))                   ; shared, non-cyclic
+       (sc (make-write-controls :shared #t)))
+  (test* "write default (circular)" "((x) (x))"
+         (write-to-string y))
+  (test* "write :shared" "(#0=(x) #0#)"
+         (with-output-to-string (^[] (write y sc))))
+  (test* "write-controls-copy :shared" "(#0=(x) #0#)"
+         (with-output-to-string
+           (^[] (write y (write-controls-copy (make-write-controls)
+                                              :shared #t)))))
+  (test* "display ignores :shared" "((x) (x))"
+         (with-output-to-string (^[] (display y sc))))
+  (test* "format ~s honors :shared" "(#0=(x) #0#)"
+         (format sc "~s" y))
+  (test* "pretty-print honors :shared" "(#0=(x)\n #0#)"
+         (with-output-to-string
+           (^[] (write y (make-write-controls :pretty #t :shared #t)))))
+  (test* "write-controls slot" #t (~ sc 'shared)))
+
+;; The 'shared structure is fixed at the toplevel and inherited; the escaping
+;; (write/display) is per-call.  A custom printer that 'write's a string field
+;; keeps it quoted even when the object is displayed, and vice versa.
+(let ()
+  (define-class <wc-q> () ((s :init-keyword :s)))
+  (define-method write-object ((o <wc-q>) port)
+    (display "#<wc-q " port) (write (slot-ref o 's) port) (display ">" port))
+  (define-class <wc-p> () ((s :init-keyword :s)))
+  (define-method write-object ((o <wc-p>) port)
+    (display "#<wc-p " port) (display (slot-ref o 's) port) (display ">" port))
+  (test* "write inside display stays quoted" "#<wc-q \"hi\">"
+         (write-to-string (make <wc-q> :s "hi") display))
+  (test* "display inside write stays unquoted" "(#<wc-p hi> \"x\")"
+         (write-to-string (list (make <wc-p> :s "hi") "x"))))
+
 ;;---------------------------------------------------------------
 ;; Issue #1190 - ~:w inside write-object should pretty-print
 (let ()

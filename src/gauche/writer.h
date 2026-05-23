@@ -45,7 +45,14 @@ enum ScmWriteModeFlags {
     SCM_WRITE_WRITE = 0,        /* write mode   */
     SCM_WRITE_DISPLAY = 1,      /* display mode */
     SCM_WRITE_SHARED = 2,       /* write/ss mode */
-    SCM_WRITE_SIMPLE = 3        /* write-simple mode */
+    SCM_WRITE_SIMPLE = 3,       /* write-simple mode */
+    /* SCM_WRITE_DEFAULT may be passed as the 'mode' argument of the entry
+       procedures (Scm_Write etc.).  It means write escaping, with the
+       structure axis (circular vs shared) taken from the write-controls when
+       called at the toplevel, or inherited from the ongoing write when called
+       recursively.  It is resolved at the entry and is never stored in
+       ScmWriteContext. */
+    SCM_WRITE_DEFAULT = 16
 };
 
 /* Case folding mode flags */

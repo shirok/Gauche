@@ -539,11 +539,19 @@
                  port))
         (set! (%port-write-state port)
               (make <write-state> :shared-table (make-hash-table 'eq?)))
+        ;; This driver implements write/ss-style (shared) two-pass output.
+        ;; Mark the port as "writing shared" during the walk pass so it detects
+        ;; all shared structure, not just cycles---consistent with write_ss()
+        ;; in write.c, where SCM_PORT_WRITESS is set for the walk only.  The
+        ;; emit pass then labels from the table that the walk built.
+        (set! (%port-writing-shared? port) #t)
         (set! (%port-walking? port) #t)
         (apply walker args)
         (set! (%port-walking? port) #f)
+        (set! (%port-writing-shared? port) #f)
         (apply emitter args))
     (set! (%port-walking? port) #f)
+    (set! (%port-writing-shared? port) #f)
     (set! (%port-write-state port) #f)
     (%port-unlock! port)))
 
@@ -797,7 +805,9 @@
   ::<void>
   (let* ([p::ScmPort*] [c::(const ScmWriteControls*)])
     (parse-write-optionals port-or-control-1 port-or-control-2 (& p) (& c))
-    (Scm_WriteWithControls obj (SCM_OBJ p) SCM_WRITE_WRITE c)))
+    ;; SCM_WRITE_DEFAULT: write escaping, but honor the 'shared control of the
+    ;; write-controls (and inherit shared/circular when called recursively).
+    (Scm_WriteWithControls obj (SCM_OBJ p) SCM_WRITE_DEFAULT c)))
 
 (define-cproc write-simple (obj :optional (port::<output-port>
                                            (current-output-port)))
@@ -1069,6 +1079,10 @@
      :type <boolean>
      :getter (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_PRETTY obj)))
      :setter (set! (SCM_WRITE_CONTROL_PRETTY obj) (SCM_BOOL_VALUE value)))
+    (shared
+     :type <boolean>
+     :getter (return (SCM_MAKE_BOOL (SCM_WRITE_CONTROL_SHARED obj)))
+     :setter (set! (SCM_WRITE_CONTROL_SHARED obj) (SCM_BOOL_VALUE value)))
     (indent
      :type <int>
      :getter (return (SCM_MAKE_INT(SCM_WRITE_CONTROL_INDENT obj)))
@@ -1133,7 +1147,7 @@
 
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (make-write-controls :key length level width base radix-prefix
-                                  pretty indent
+                                  pretty shared indent
                                   bytestring string-length exact-decimal
                                   array complex explicit-plus-sign
                                   notational-rounding flonum-digits
@@ -1155,6 +1169,7 @@
     :base   (arg base   print-base)
     :radix-prefix (arg radix-prefix radix print-radix)
     :pretty (arg pretty print-pretty)
+    :shared shared
     :bytestring bytestring
     :string-length string-length
     :indent indent
@@ -1177,7 +1192,7 @@
 ;; (Maybe we should write this in C to avoid overhead.)
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (write-controls-copy wc :key length level width base radix-prefix
-                                     pretty indent
+                                     pretty shared indent
                                      bytestring string-length exact-decimal
                                      array complex explicit-plus-sign
                                      notational-rounding flonum-digits
@@ -1216,6 +1231,7 @@
           [base   (select base   print-base)]
           [radix-prefix  (select radix-prefix radix  print-radix)]
           [pretty (select pretty print-pretty)]
+          [shared (select shared)]
           [indent (select indent)]
           [bytestring    (select bytestring)]
           [string-length (select string-length)]
@@ -1237,6 +1253,7 @@
           :base   base
           :radix-prefix radix-prefix
           :pretty pretty
+          :shared shared
           :indent indent
           :bytestring bytestring
           :string-length string-length

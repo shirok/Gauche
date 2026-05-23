@@ -934,6 +934,7 @@
             :base          ,(~ obj'base)
             :radix-prefix  ,(~ obj'radix-prefix)
             :pretty        ,(~ obj'pretty)
+            :shared        ,(~ obj'shared)
             :width         ,(~ obj'width)
             :indent        ,(~ obj'indent)
             :bytestring    ,(~ obj'bytestring)
