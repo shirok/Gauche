@@ -26796,7 +26796,7 @@ name is still recognized but deprecated.)
 
 @defivar <write-controls> pretty
 @c EN
-If this slot has true value,
+If this slot has a true value,
 @emph{pretty printing} is used, that is, newlines and indentations are
 inserted
 to show nested data structures fit in the specified width of columns.
@@ -26804,6 +26804,21 @@ to show nested data structures fit in the specified width of columns.
 このスロットが真の値の場合、
 指定されたカラム幅内で、改行やインデントを適宜挿入してネストした構造を見やすく表示する、
 @emph{プリティプリント}機能を使います。
+@c COMMON
+@end defivar
+
+@defivar <write-contols> shared
+@c EN
+By default, output uses labels (@code{#@var{n}=} and @code{#@var{n}#}) only to
+show circular structures.  If this slot has a true value, labels
+are used to shared structures as sell, just as @code{write-shared}
+(@pxref{Object output}).
+@c JP
+デフォルトでは、出力は循環構造の場合にのみラベル
+(@code{#@var{n}=}および@code{#@var{n}#})を使います。
+このスロットが真の値の場合、
+@code{write-shared}がやるように、共有構造にもラベルを使います
+(@ref{Object output}参照)。
 @c COMMON
 @end defivar
 

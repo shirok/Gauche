@@ -10,6 +10,8 @@
 	  at the toplevel and inherits it on recursive calls.  As a side effect,
 	  format/ss is now consistently shared (previously ~w under format/ss
 	  lost its shared labels).
+	* lib/gauche/interactive/toplevel.scm: add 'shared' switch to
+	  print-mode.
 
 2026-05-19  Shiro Kawai  <shiro@acm.org>
 	* lib/file/elf.scm: Added.
