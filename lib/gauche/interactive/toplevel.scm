@@ -405,6 +405,7 @@
   \n                      - Max length of string literals before abbreviated.\
   \n                        [default: ~(~ default-pm'string-length)]\
   \n  pretty <boolean>    - Use pretty printer [default: ~(~ default-pm'pretty)]\
+  \n  shared <boolean>    - Show shared substrucuctures with labels [default: ~(~ default-pm'shared)]\
   \n  base <integer>      - Base radix of showing whole numbers.  [default: ~(~ default-pm'base)]\
   \n  radix-prefix <boolean> \
   \n                      - Add radix prefix ('#x' etc.) befors whole numbers.\
@@ -431,7 +432,8 @@
               (append-map
                (^[kv]
                  `(,(if (memq (car kv)
-                              '(pretty length level width base radix-prefix
+                              '(pretty shared length level width
+                                base radix-prefix
                                 string-length bytestring exact-decimal
                                 array complex))
                       (make-keyword (car kv))
@@ -446,6 +448,7 @@
              (format "        width : ~3d"  (~ c'width))
              (format "string-length : ~3d"  (~ c'string-length))
              (format "       pretty : ~3@a" (~ c'pretty))
+             (format "       shared : ~3@a" (~ c'shared))
              (format "         base : ~3d"  (~ c'base))
              (format " radix-prefix : ~3@a" (~ c'radix))
              (format "exact-decimal : ~3d"  (~ c'exact-decimal))
