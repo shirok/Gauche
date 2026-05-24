@@ -352,10 +352,10 @@
                 next
                 (lambda () (display "[D02]"))))))))
 
-;; native : error
-;; meta   : error
-;; srfi226: error
-;; racket : error
+;; native : "catch error!!"
+;; meta   : "catch error!!"
+;; srfi226: "catch error!!"
+;; racket : "catch error!!"
 ;; ( https://github.com/shirok/Gauche/pull/848 )
 (test* "reset/shift + guard 2"
        "catch error!!"

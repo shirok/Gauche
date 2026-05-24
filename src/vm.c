@@ -1195,7 +1195,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm, ScmEnvFrame *env_begin)
 }
 
 static ScmContFrame *copy_cont_1(ScmVM *vm, ScmContFrame *c,
-                                  int promptDataCopy)
+                                 int promptDataCopy)
 {
     int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
     ScmObj *heap = SCM_NEW2(ScmObj*, size);
@@ -1582,7 +1582,8 @@ static ScmObj find_dynamic_env(ScmVM *vm, ScmObj key, ScmObj fallback)
     else return fallback;
 }
 
-static ScmObj find_dynamic_env_specified(ScmObj denv, ScmObj key, ScmObj fallback)
+static ScmObj find_dynamic_env_specified(ScmObj denv, ScmObj key,
+                                         ScmObj fallback)
 {
     ScmObj p = Scm_Assq(key, denv);
     if (SCM_PAIRP(p)) return SCM_CDR(p);
@@ -1596,8 +1597,7 @@ ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback)
 }
 
 /* Copy cont frames from c to c_last */
-static ScmContFrame *copy_cont_frames(ScmContFrame *c,
-                                      ScmContFrame *c_last)
+static ScmContFrame *copy_cont_frames(ScmContFrame *c, ScmContFrame *c_last)
 {
     ScmVM *vm = theVM;
 
@@ -1632,13 +1632,8 @@ static ScmContFrame *merge_cont_frames(ScmContFrame *c1, ScmContFrame *c2)
 {
     if (c1 == NULL) { return c2; }
     ScmContFrame *c_cur = c1;
-    while (1) {
-        if (c_cur->prev == NULL) {
-            c_cur->prev = c2;
-            break;
-        }
-        c_cur = c_cur->prev;
-    }
+    while (c_cur->prev) { c_cur = c_cur->prev; }
+    c_cur->prev = c2;
     return c1;
 }
 
@@ -3844,7 +3839,8 @@ int Scm_NonComposableContinuationP(ScmObj proc)
    in shift/reset controls (Gasbichler&Sperber, "Final Shift for Call/cc",
    ICFP02.)   Note that we treat the boundary frame as the bottom of
    partial continuation. */
-ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
+ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag,
+                                    int contType)
 {
     ScmVM *vm = theVM;
 
@@ -3896,16 +3892,22 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
            NB: We leave at least one informations each for exception handlers
                and parameters in denv.
         */
-        ScmObj ehandlers = Scm_VMFindDynamicEnv(denv_key_exception_handler, SCM_NIL);
-        ScmObj parameters = Scm_VMFindDynamicEnv(denv_key_parameterization, SCM_NIL);
+        ScmObj ehandlers = Scm_VMFindDynamicEnv(denv_key_exception_handler,
+                                                SCM_NIL);
+        ScmObj parameters = Scm_VMFindDynamicEnv(denv_key_parameterization,
+                                                 SCM_NIL);
         for (ScmContFrame *c = ep->partialCont; c; c = c->prev) {
             ScmObj h = SCM_NIL, t = SCM_NIL, p;
             SCM_FOR_EACH(p, c->denv) {
                 if (p == ep->denv) { break; }
                 SCM_APPEND1(h, t, SCM_CAR(p));
             }
-            ScmObj eh = find_dynamic_env_specified(h, denv_key_exception_handler, SCM_NIL);
-            ScmObj pr = find_dynamic_env_specified(h, denv_key_parameterization, SCM_NIL);
+            ScmObj eh =
+                find_dynamic_env_specified(h, denv_key_exception_handler,
+                                           SCM_NIL);
+            ScmObj pr =
+                find_dynamic_env_specified(h, denv_key_parameterization,
+                                           SCM_NIL);
             if (!SCM_PAIRP(eh) && SCM_PAIRP(ehandlers)) {
                 h = Scm_Acons(denv_key_exception_handler, ehandlers, h);
             }
@@ -3949,17 +3951,20 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag, int contType)
 
 ScmObj Scm_VMCallPC(ScmObj proc)
 {
-    return vm_call_pc_with_tag_and_type(proc, SCM_FALSE, CONT_TYPE_COMPOSABLE);
+    return vm_call_pc_with_tag_and_type(proc, SCM_FALSE,
+                                        CONT_TYPE_COMPOSABLE);
 }
 
 ScmObj Scm_VMCallWithComposableContinuation(ScmObj proc, ScmObj promptTag)
 {
-    return vm_call_pc_with_tag_and_type(proc, promptTag, CONT_TYPE_COMPOSABLE);
+    return vm_call_pc_with_tag_and_type(proc, promptTag,
+                                        CONT_TYPE_COMPOSABLE);
 }
 
 ScmObj Scm_VMCallWithNonComposableContinuation(ScmObj proc, ScmObj promptTag)
 {
-    return vm_call_pc_with_tag_and_type(proc, promptTag, CONT_TYPE_NON_COMPOSABLE);
+    return vm_call_pc_with_tag_and_type(proc, promptTag,
+                                        CONT_TYPE_NON_COMPOSABLE);
 }
 
 ScmObj Scm_VMCallInContinuation(ScmObj cont, ScmObj proc, ScmObj args)
@@ -4599,7 +4604,8 @@ void Scm_VMDump(ScmVM *vm_to_dump)
         }
     }
 
-    Scm_Printf(out, "partial-chain-length: %d\n", (int)Scm_Length(vm->partialChain));
+    Scm_Printf(out, "partial-chain-length: %d\n",
+               (int)Scm_Length(vm->partialChain));
 
     if (vm->base) {
         Scm_Printf(out, "Code:\n");
