@@ -134,6 +134,11 @@
 (test-assert ((lambda-checked (a (b integer?)) #t) "hello" 3))
 (test-error ((lambda-checked ((a integer?)) #t) "hello"))
 (test-error ((lambda-checked (a (b integer?)) #t) "hello" "hi"))
+;; SRFI 273
+(test-assert ((lambda-checked ((b integer?)) => (integer?) 2) 1))
+(test-error ((lambda-checked ((b integer?)) => (integer?) #t) 1))
+(test-error ((lambda-checked () => (integer?) #t)))
+(test-error ((lambda-checked args => (integer?) #t) 1 2 3))
 ;; Rest args. Sample implementation doesn't reliably pass this.
 ;; (test-assert (lambda-checked (a . c) #t))
 ;; (test-assert (lambda-checked ((a integer?) . c) #t))
@@ -174,13 +179,30 @@
    (() #t)
    (((a integer?)) #t)
    ((a (b string?)) #t)
-   (((a string?) b . rest) #t)))
+   (rest #t)))
 (test-assert (checked-case-lambda))
 (test-assert (checked-case-lambda 3))
 (test-error (checked-case-lambda "hello"))
 (test-assert (checked-case-lambda 3 "hello"))
 (test-assert (checked-case-lambda "hi" "hello"))
 (test-error (checked-case-lambda 3 3 3))
+;; SRFI 273 return value checks
+(define good-return-checked-case-lambda
+  (case-lambda-checked
+   (() => (integer?) 1)
+   (((a integer?)) => (integer?) 1)
+   (args => (integer?) 1)))
+(test-assert (good-return-checked-case-lambda 1))
+(test-assert (good-return-checked-case-lambda))
+(test-assert (good-return-checked-case-lambda 1 2 3))
+(define bad-return-checked-case-lambda
+  (case-lambda-checked
+   (() => (integer?) #t)
+   (((a integer?)) => (integer?) #t)
+   (args => (integer?) #t)))
+(test-error (bad-return-checked-case-lambda 1))
+(test-error (bad-return-checked-case-lambda))
+(test-error (bad-return-checked-case-lambda 1 2 3))
 (test-end "case-lambda-checked")
 
 
