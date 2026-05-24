@@ -1509,7 +1509,8 @@
 ;; appear in the operator position of a valid expression.
 (define (type-decl-initial? sym)
   (or (memq sym '(const class enum struct volatile unsigned long
-                  char short int float double .array .struct .union .function))
+                  char short int float double
+                  .array .struct .union .function .enum))
       (and (symbol? sym)
            (#/.[*&]$/ (symbol->string sym)))))
 
@@ -1549,6 +1550,14 @@
               $ map (^.[(arg ':: type) (cise-render-typed-var type arg env)])
               $ cgen-canonical-typed-var-list args 'ScmObj)
          ")"))]
+    [('.enum (enumerator ...) . rest)
+     (render-enum #f #f enumerator rest var env)]
+    [('.enum ': typespec (enumerator ...) . rest)
+     (render-enum #f typespec enumerator rest var env)]
+    [('.enum tag (enumerator ...) . rest)
+     (render-enum tag #f enumerator rest var env)]
+    [('.enum tag ': typespec (enumerator ...) . rest)
+     (render-enum tag typespec enumerator rest var env)]
     [(x)
      `(,(x->string x) " " ,(cise-render-identifier var))]
     [(x xs ...)
@@ -1567,6 +1576,24 @@
                            (canonicalize-field-decls fields))
                     "} ")]
                  [(not fields) '(" ")])
+    ,(if (null? rest)
+       (cise-render-identifier var)
+       (cise-render-typed-var rest var env))))
+
+(define (render-enum tag typespec enumerators rest var env)
+  `("enum"
+    ,@(cond-list [tag `(" " ,tag)]
+                 [typespec `(": " ,@(cise-render-typed-var typespec '|| env))]
+                 [enumerators
+                  `(" { "
+                    ,@(map (match-lambda
+                             [(sym val)
+                              `(,(cise-render-identifier sym)
+                                " = " ,val ", ")]
+                             [(? symbol? sym)
+                              `(,(cise-render-identifier sym) ", ")])
+                           enumerators)
+                    "} ")])
     ,(if (null? rest)
        (cise-render-identifier var)
        (cise-render-typed-var rest var env))))
