@@ -1506,6 +1506,130 @@
      [else (return enum_size_64)]))
  )
 
+(inline-stub
+ (define-cproc %native-type-integral? (nt::<native-type>) ::<boolean>
+   (return (Scm_NativeTypeIntegralP nt)))
+
+ ;; Pick the builtin native integer type of the given byte size and signedness.
+ (define-cproc %native-int-type-of-size (size::<fixnum> unsigned?::<boolean>)
+   (case size
+     [(1) (return (?: unsigned? (Scm_NativeUint8Type) (Scm_NativeInt8Type)))]
+     [(2) (return (?: unsigned? (Scm_NativeUint16Type) (Scm_NativeInt16Type)))]
+     [(4) (return (?: unsigned? (Scm_NativeUint32Type) (Scm_NativeInt32Type)))]
+     [(8) (return (?: unsigned? (Scm_NativeUint64Type) (Scm_NativeInt64Type)))]
+     [else
+      (Scm_Error "enum underlying integer size must be 1, 2, 4 or 8 bytes, \
+                  but got %ld" (cast long size))
+      (return SCM_UNDEFINED)]))
+
+ (define-cproc %make-c-enum-type (type-name::<const-cstring>
+                                  c-type-name::<const-cstring>
+                                  underlying
+                                  size::<fixnum>
+                                  alignment::<fixnum>
+                                  tag-name::<symbol>?
+                                  type-spec
+                                  enumerator-alist)
+   (SCM_ASSERT (SCM_NATIVE_TYPE_P underlying))
+   (let* ([u::ScmNativeType* (SCM_NATIVE_TYPE underlying)]
+          [z::ScmCEnum* (SCM_NEW_INSTANCE ScmCEnum (& Scm_CEnumClass))]
+          [nt::ScmNativeType* (& (-> z common))])
+     ;; Borrow integer accessors from the underlying integral native type.
+     ;; (We copy field-by-field rather than the whole struct, to keep z's
+     ;; instance header pointing at Scm_CEnumClass.)
+     (set! (-> nt name) (SCM_INTERN type-name))
+     (set! (-> nt super) (SCM_OBJ SCM_CLASS_INTEGER))
+     (set! (-> nt c-type-name) c-type-name)
+     (set! (-> nt c-of-type) (-> u c-of-type))
+     (set! (-> nt c-ref) (-> u c-ref))
+     (set! (-> nt c-set) (-> u c-set))
+     (set! (-> nt c-typecheck-name) (-> u c-typecheck-name))
+     (set! (-> nt c-boxer-name) (-> u c-boxer-name))
+     (set! (-> nt c-unboxer-name) (-> u c-unboxer-name))
+     (set! (-> nt size) (cast size_t size))
+     (set! (-> nt alignment) (cast size_t alignment))
+     (set! (-> nt unsigned-p) (-> u unsigned-p))
+     (set! (-> nt bounded-p) TRUE)
+     ;; Enum-specific fields
+     (set! (-> z tag) (?: tag-name (SCM_OBJ tag-name) SCM_FALSE))
+     (set! (-> z type-spec) type-spec)
+     (set! (-> z enumerator-alist) enumerator-alist)
+     (return (SCM_OBJ z))))
+ )
+
+;; Validate the enumerator list and turn it into an alist ((id . value) ...).
+;; Each enumerator is a symbol or (symbol integer-value).  A symbol without an
+;; explicit value takes the previous enumerator's value plus one; the first
+;; such symbol takes 0.  As in C, duplicate ids are rejected, but duplicate
+;; values (aliases) are allowed.
+(define (%build-enum-alist enumerators)
+  (let loop ([es enumerators] [next 0] [seen '()] [acc '()])
+    (match es
+      [() (reverse acc)]
+      [(e . rest)
+       (receive (id val)
+           (match e
+             [(? symbol? id) (values id next)]
+             [((? symbol? id) (? exact-integer? val)) (values id val)]
+             [_ (error "bad c-enum enumerator; must be a symbol or \
+                        (symbol integer), but got:" e)])
+         (when (memq id seen)
+           (error "duplicate enumerator id in c-enum:" id))
+         (loop rest (+ val 1) (cons id seen) (cons (cons id val) acc)))]
+      [_ (error "bad c-enum enumerator list; must be a proper list, but got:"
+                enumerators)])))
+
+;; Smallest of {8,16,32,64} that can represent [lo, hi].  If lo is negative
+;; the range is signed and needs one extra bit for the sign.  integer-length
+;; gives the number of significant (sign-excluded) bits of each end.
+(define (%enum-bit-width lo hi)
+  (let1 bits (if (negative? lo)
+               (+ 1 (max (integer-length lo) (integer-length hi)))
+               (integer-length hi))
+    (cond [(<= bits 8) 8]
+          [(<= bits 16) 16]
+          [(<= bits 32) 32]
+          [(<= bits 64) 64]
+          [else (error "c-enum value range too large to fit in 64 bits:"
+                       (list lo hi))])))
+
+;; make-c-enum-type tag typespec (enumerator ...)
+;;   enumerator : symbol | (symbol integer-value)
+(define (make-c-enum-type tag typespec enumerators)
+  ;; NB: We can't use <?> type constructor yet
+  (assume (or (not tag) (symbol? tag))
+    "c-enum tag must be a symbol or #f, but got:" tag)
+  (assume (or (not typespec) (is-a? typespec <native-type>))
+    "c-enum typespec must be a native-type or #f, but got:" typespec)
+  (let* ([alist (%build-enum-alist enumerators)]
+         [vals (map cdr alist)])
+    (receive (underlying size alignment)
+        (cond
+         [typespec
+          (unless (%native-type-integral? typespec)
+            (error "c-enum typespec must be an integral native type, but got:"
+                   typespec))
+          (dolist [v vals]
+            (unless (of-type? v typespec)
+              (error "enumerator value out of range for the enum type:" v)))
+          (values typespec (~ typespec'size) (~ typespec'alignment))]
+         [(null? vals)
+          ;; TODO: We should support incomplete declaration.
+          (error "cannot determine c-enum size: give a typespec or \
+                  at least one enumerator")]
+         [else
+          (receive (lo hi) (apply min&max vals)
+            (let1 size (implicit-enum-size (%enum-bit-width lo hi))
+              (values (%native-int-type-of-size size (not (negative? lo)))
+                      size size)))])
+      (let ([cname (cond [(and tag typespec)
+                          #"enum ~tag : ~(~ typespec'c-type-name)"]
+                         [tag #"enum ~tag"]
+                         [else (~ underlying'c-type-name)])]
+            [pname (if tag #"enum ~tag" "enum anonymous")])
+        (%make-c-enum-type pname cname underlying size alignment
+                           tag typespec alist)))))
+
 ;;;
 ;;; Pointer fill gate
 ;;;
@@ -1534,7 +1658,8 @@
 ;; We export those only to be used by selected library modules to
 ;; workaround dependency issues. User programs should use gauche.native-type
 ;; for these identifiers.
-(export <native-handle> <c-pointer> <c-array> <c-struct> <c-union> <c-function>)
+(export <native-handle> <c-pointer> <c-array> <c-struct> <c-union> <c-function>
+        <c-enum>)
 
 (let ((xfer (with-module gauche.internal %transfer-bindings)))
   (xfer (current-module)
