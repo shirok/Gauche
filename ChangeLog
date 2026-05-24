@@ -1,3 +1,9 @@
+2026-10-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/253.scm (lambda-checked, case-lambda-checked): Enhanced
+	  to support srfi-273 return value check.
+	  Based on Artyom Bologov's PR https://github.com/shirok/Gauche/pull/1273
+
 2026-10-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-2.scm (pass2/local-call-inliner): Update $call-flag

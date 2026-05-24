@@ -90,30 +90,30 @@
        (%check-case v () clause ...)))))
 
 (define-syntax %lambda-checked
-  (syntax-rules ()
-    ((_ name (body ...) args (checks ...) ())
+  (syntax-rules (=>)
+    ((_ name (=> (returns ...) body ...) args (checks ...))
+     (lambda args
+       checks ...
+       (values-checked
+        (returns ...)
+        (begin body ...))))
+    ((_ name (body ...) args (checks ...))
      (lambda args
        checks ...
        body ...))
-    ((_ name body (args ...) (checks ...) ((arg pred) . rest))
+    ((_ name body (args ...) (checks ...) (arg pred) rest ...)
      (%lambda-checked
       name body
-      (args ... arg) (checks ... (check-arg pred arg 'name)) rest))
-    ((_ name body (args ...) (checks ...) (arg . rest))
+      (args ... arg) (checks ... (check-arg pred arg 'name)) rest ...))
+    ((_ name body (args ...) (checks ...) arg rest ...)
      (%lambda-checked
       name body
-      (args ... arg) (checks ...) rest))
-    ((_ name body (args ...) (checks ...) last)
-     (%lambda-checked
-      name body
-      (args ... . last) (checks ...) ()))))
+      (args ... arg) (checks ...) rest ...))))
 
 (define-syntax lambda-checked
   (syntax-rules ()
-    ((_ () body ...)
-     (lambda () body ...))
-    ((_ (arg . args) body ...)
-     (%lambda-checked lambda-checked (body ...) () () (arg . args)))
+    ((_ (args ...) body ...)
+     (%lambda-checked lambda-checked (body ...) () () args ...))
     ;; Case of arg->list lambda, no-op.
     ((_ arg body ...)
      (lambda arg body ...))))
@@ -121,69 +121,87 @@
 (define-syntax define-checked
   (syntax-rules ()
     ;; Procedure
-    ((_ (name . args) body ...)
-     (define name (%lambda-checked name (body ...) () () args)))
+    ((_ (name args ...) body ...)
+     (define name (%lambda-checked name (body ...) () () args ...)))
     ;; Variable
     ((_ name pred value)
      (define name (values-checked (pred) value)))))
 
+;; This aux macro integrates two loops.  Outer loop process
+;; clauses-to-process one by one, and inner loop walks.
+;; (possibly predicated) argument list.
+;;
+;; (%case-lambda-checked
+;;   (clauses-so-far ...)    ; accumulating generated clauses
+;;   (clauses-to-process ..) ; original clauses
+;;   ;; the following args are for inner loop
+;;   args-so-far             ; list of final arguments
+;;   checks-so-far           ; list of generated checks
+;;   body                    ; body expression of the currently processed clause
+;;   args-to-process         ; arg list to process
 (define-syntax %case-lambda-checked
-  (syntax-rules ()
+  (syntax-rules (=>)
+    ;; Terminal case, generate the actual case-lambda
     ((_ (clauses-so-far ...)
         ()
         args-so-far (checks-so-far ...) (body ...) ())
      (case-lambda
-      clauses-so-far ...
-      (args-so-far
-       checks-so-far ...
-       body ...)))
+       clauses-so-far ...
+       (args-so-far
+        checks-so-far ...
+        body ...)))
+    ;; Outer loop
+    ;; arglist with returns
     ((_ (clauses-so-far ...)
-        ((() body-to-process ...) clauses-to-process ...)
+        ((args => (returns ...) body-to-process ...) clauses-to-process ...)
         args-so-far (checks-so-far ...) (body ...) ())
      (%case-lambda-checked
       (clauses-so-far ... (args-so-far checks-so-far ... body ...))
       (clauses-to-process ...)
-      () () (body-to-process ...) ()))
+      () () ((values-checked (returns ...) (begin body-to-process ...))) args))
+    ;; args without returns
     ((_ (clauses-so-far ...)
-        (((arg . args-to-process) body-to-process ...) clauses-to-process ...)
+        ((args body-to-process ...) clauses-to-process ...)
         args-so-far (checks-so-far ...) (body ...) ())
      (%case-lambda-checked
       (clauses-so-far ... (args-so-far checks-so-far ... body ...))
       (clauses-to-process ...)
-      () () (body-to-process ...) (arg . args-to-process)))
-    ((_ (clauses-so-far ...)
-        ((arg-to-process body-to-process ...) clauses-to-process ...)
-        args-so-far (checks-so-far ...) (body ...) ())
-     (%case-lambda-checked
-      (clauses-so-far ... (args-so-far checks-so-far ... body ...))
-      (clauses-to-process ...)
-      arg-to-process () (body-to-process ...) ()))
+      () () (body-to-process ...) args))
+    ;; Inner loop
+    ;; Consume arg with predicate / check
     ((_ (clauses-so-far ...) (clauses-to-process ...)
-        (args-so-far ...) (checks-so-far ...) (body ...) ((arg pred) . args))
+        (args-so-far ...) (checks-so-far ...) (body ...)
+        ((arg pred) . args))
      (%case-lambda-checked
       (clauses-so-far ...) (clauses-to-process ...)
       (args-so-far ... arg)
       (checks-so-far ... (check-arg pred arg 'case-lambda-checked))
       (body ...) args))
+    ;; Consume regular arg
     ((_ (clauses-so-far ...) (clauses-to-process ...)
         (args-so-far ...) (checks-so-far ...) (body ...) (arg . args))
      (%case-lambda-checked
       (clauses-so-far ...) (clauses-to-process ...)
       (args-so-far ... arg) (checks-so-far ...) (body ...) args))
+    ;; Consue rest arg
     ((_ (clauses-so-far ...) (clauses-to-process ...)
-        (args-so-far ...) (checks-so-far ...) (body ...) arg)
+        (args-so-far ...) (checks-so-far ...) (body ...) rest)
      (%case-lambda-checked
       (clauses-so-far ...) (clauses-to-process ...)
-      (args-so-far ... . arg) (checks-so-far ...) (body ...) ()))))
+      (args-so-far ... . rest) (checks-so-far ...) (body ...) ()))))
 
 (define-syntax case-lambda-checked
   (syntax-rules ()
-    ((_ (() first-body ...) rest-clauses ...)
-     (%case-lambda-checked () (rest-clauses ...) () () (first-body ...) ()))
-    ((_ ((first-arg . first-args) first-body ...) rest-clauses ...)
-     (%case-lambda-checked () (rest-clauses ...) () () (first-body ...) (first-arg . first-args)))
-    ((_ (args-var first-body ...) rest-clauses ...)
-     (%case-lambda-checked () (rest-clauses ...) args-var () (first-body ...) ()))))
+    ((_ (args => (returns ...) body-to-process ...) clauses ...)
+     (%case-lambda-checked
+      ()
+      (clauses ...)
+      () () ((values-checked (returns ...) (begin body-to-process ...))) args))
+    ((_ (args body-to-process ...) clauses ...)
+     (%case-lambda-checked
+      ()
+      (clauses ...)
+      () () (body-to-process ...) args))))
 
 ;; define-record-type-checked
 
@@ -204,7 +222,7 @@
       (fields ... (field internal-accessor internal-modifier))
       (field-wrappers
        ...
-       (define-checked (accessor (record predicate))
+       (define-checked (accessor (record predicate)) => (pred)
          (internal-accessor record))
        (define-checked (modifier (record predicate) (val pred))
          (internal-modifier record val)))
