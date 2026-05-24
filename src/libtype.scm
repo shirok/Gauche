@@ -263,6 +263,15 @@
     (fields))
    (printer (Scm_Printf port "#<c-union %A>" (-> (& (-> (SCM_C_UNION obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
+
+ (define-cclass <c-enum> :base :no-meta
+   "ScmCEnum*" "Scm_CEnumClass"
+   (c "native_type_cpa")
+   ((tag)
+    (type-spec)
+    (enumerator-alist))
+   (printer (Scm_Printf port "#<c-enum %A>" (-> (& (-> (SCM_C_ENUM obj) common)) name)))
+   (comparer (c Scm_ObjectCompare)))
  )
 
 (define-method initialize ((c <type-constructor-meta>) initargs)
@@ -1467,6 +1476,35 @@
 
 (define (make-c-union-type tag fields)
   (make-c-struct/union-type tag fields #f))
+
+(inline-stub
+ ;; Size of enum is implementation-dependent.  For our purpose, the external
+ ;; code will be compiled with the same compiler & options as Gauche core,
+ ;; so we compute them at initialization time.
+ ;; TODO: C++ enums may use different size.  How shall we check them?
+ (define-cvar enum_size_8::int :static)
+ (define-cvar enum_size_16::int :static)
+ (define-cvar enum_size_32::int :static)
+ (define-cvar enum_size_64::int :static)
+
+ (define-ctype enum_size_8_t ::(.enum ((enum_8 255))))
+ (define-ctype enum_size_16_t ::(.enum ((enum_16 65535))))
+ (define-ctype enum_size_32_t ::(.enum ((enum_32 UINT32_MAX))))
+ (define-ctype enum_size_64_t ::(.enum ((enum_64 UINT64_MAX))))
+
+ (initcode
+  (set! enum_size_8 (sizeof enum_size_8_t))
+  (set! enum_size_16 (sizeof enum_size_16_t))
+  (set! enum_size_32 (sizeof enum_size_32_t))
+  (set! enum_size_64 (sizeof enum_size_64_t)))
+
+ (define-cproc implicit-enum-size (width::<fixnum>) ::<fixnum>
+   (case width
+     [(8) (return enum_size_8)]
+     [(16) (return enum_size_16)]
+     [(32) (return enum_size_32)]
+     [else (return enum_size_64)]))
+ )
 
 ;;;
 ;;; Pointer fill gate

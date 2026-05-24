@@ -115,7 +115,7 @@ SCM_EXTERN ScmObj Scm_NativeCStringType(void);
 SCM_EXTERN ScmObj Scm_NativeVoidType(void);
 SCM_EXTERN ScmObj Scm_NativeVoidPointerType(void);
 
-/* <native-pointer> - a pointer to another native type */
+/* <c-pointer> - a pointer to another native type */
 typedef struct ScmCPointerRec {
     ScmNativeType common;
     ScmNativeType *pointee_type;
@@ -126,7 +126,7 @@ SCM_CLASS_DECL(Scm_CPointerClass);
 #define SCM_C_POINTER(obj)  ((ScmCPointer*)(obj))
 #define SCM_C_POINTER_P(obj) (SCM_ISA(obj, SCM_CLASS_C_POINTER))
 
-/* <native-function> - a function pointer type */
+/* <c-function> - a function pointer type */
 typedef struct ScmCFunctionRec {
     ScmNativeType common;
     ScmNativeType *return_type;
@@ -139,7 +139,7 @@ SCM_CLASS_DECL(Scm_CFunctionClass);
 #define SCM_C_FUNCTION(obj) ((ScmCFunction*)(obj))
 #define SCM_C_FUNCTION_P(obj) (SCM_ISA(obj, SCM_CLASS_C_FUNCTION))
 
-/* <native-array> - an array of a native type */
+/* <c-array> - an array of a native type */
 typedef struct ScmCArrayRec {
     ScmNativeType common;
     ScmNativeType *element_type;
@@ -151,7 +151,7 @@ SCM_CLASS_DECL(Scm_CArrayClass);
 #define SCM_C_ARRAY(obj)    ((ScmCArray*)(obj))
 #define SCM_C_ARRAY_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_ARRAY))
 
-/* <native-struct> - a C struct type */
+/* <c-struct> - a C struct type */
 typedef struct ScmCStructRec {
     ScmNativeType common;
     ScmObj tag;                  /* symbol or #f */
@@ -163,7 +163,7 @@ SCM_CLASS_DECL(Scm_CStructClass);
 #define SCM_C_STRUCT(obj)   ((ScmCStruct*)(obj))
 #define SCM_C_STRUCT_P(obj) (SCM_ISA(obj, SCM_CLASS_C_STRUCT))
 
-/* <native-union> - a C union type.
+/* <c-union> - a C union type.
    The C-level structure is the same as native-struct;
    the difference (all field offsets are 0) is handled at the Scheme level. */
 typedef ScmCStruct ScmCUnion;
@@ -172,6 +172,22 @@ SCM_CLASS_DECL(Scm_CUnionClass);
 #define SCM_CLASS_C_UNION   (&Scm_CUnionClass)
 #define SCM_C_UNION(obj)    ((ScmCUnion*)(obj))
 #define SCM_C_UNION_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_UNION))
+
+/* <c-enum> - a C enum type.
+   type-spec is C23's enum-type-specifier, e.g. 'int8_t' in
+     'enum foo : int8_t { ... }'.
+*/
+typedef struct ScmCEnumRec {
+    ScmNativeType common;
+    ScmObj tag;                 /* symbol or #f */
+    ScmObj type_spec;           /* native-type or #f */
+    ScmObj enumerator_alist;    /* ((id . value) ...) */
+} ScmCEnum;
+
+SCM_CLASS_DECL(Scm_CEnumClass);
+#define SCM_CLASS_C_ENUM   (&Scm_CEnumClass)
+#define SCM_C_ENUM(obj)    ((ScmCEnum*)(obj))
+#define SCM_C_ENUM_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_ENUM))
 
 /*
  * Native handle
