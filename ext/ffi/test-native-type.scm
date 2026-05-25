@@ -847,6 +847,32 @@
   (test* "c-enum-symbol on aliased value picks first key" 'x
          (c-enum-symbol e 0)))
 
+;; equal? compares enum types structurally (tag, type-spec, enumerator-alist)
+(test* "enum equal?: same tag/values" #t
+       (equal? (make-c-enum-type 'C #f '(r g b))
+               (make-c-enum-type 'C #f '(r g b))))
+(test* "enum equal?: anonymous" #t
+       (equal? (make-c-enum-type #f #f '(r g b))
+               (make-c-enum-type #f #f '(r g b))))
+(test* "enum equal?: same typespec" #t
+       (equal? (make-c-enum-type 'C <int8> '(r g b))
+               (make-c-enum-type 'C <int8> '(r g b))))
+(test* "enum equal?: different tag" #f
+       (equal? (make-c-enum-type 'C #f '(r g b))
+               (make-c-enum-type 'D #f '(r g b))))
+(test* "enum equal?: different values" #f
+       (equal? (make-c-enum-type 'C #f '(r g b))
+               (make-c-enum-type 'C #f '(r g (b 5)))))
+(test* "enum equal?: typespec vs none" #f
+       (equal? (make-c-enum-type 'C <int8> '(r g b))
+               (make-c-enum-type 'C #f '(r g b))))
+(test* "enum equal?: different typespec" #f
+       (equal? (make-c-enum-type 'C <int8> '(r g b))
+               (make-c-enum-type 'C <uint8> '(r g b))))
+(test* "enum equal?: enum vs struct" #f
+       (equal? (make-c-enum-type 'C #f '(r g b))
+               (make-c-struct-type 'C '())))
+
 ;; flexible enumerator spec: bare symbol auto-increments, explicit value
 ;; resets the counter, duplicate values (aliases) are allowed.
 (test* "enum auto-numbering / explicit / alias"
@@ -2298,8 +2324,9 @@
 (test* "round-trip array of int32_le" #t
        (round-trip '(.array int32_le (4))))
 
-;; Enums: native-type instances aren't compared structurally, so round-trip
-;; at the signature level instead.
+;; Enums: check signature-level stability, i.e. native-type->signature emits
+;; the canonical (minimal) form that reproduces itself.  (This is stronger
+;; than the structural round-trip above, which only checks type equality.)
 (define (sig-round-trip sig)
   (equal? (native-type->signature (native-type sig)) sig))
 (test* "round-trip enum" #t

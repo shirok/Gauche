@@ -1125,6 +1125,12 @@
      (return FALSE))
    (return TRUE))
 
+ ;; An enum's type-spec is either #f or an integral native type.
+ (define-cfn enum_type_spec_equalP (a b) ::int :static
+   (cond [(and (SCM_NATIVE_TYPE_P a) (SCM_NATIVE_TYPE_P b))
+          (return (Scm_NativeTypeEqualP (SCM_NATIVE_TYPE a) (SCM_NATIVE_TYPE b)))]
+         [else (return (SCM_EQ a b))])) ;both #f
+
  (define-cfn Scm_NativeTypeEqualP (a::ScmNativeType* b::ScmNativeType*) ::int
    (cond
     [(SCM_EQ a b) (return TRUE)]
@@ -1155,6 +1161,16 @@
                       (-> (SCM_C_STRUCT b) tag))
             (native_type_list_equalP (-> (SCM_C_ARRAY a) dimensions)
                                      (-> (SCM_C_ARRAY b) dimensions))))]
+     [(SCM_C_ENUM_P a)
+      (return
+       (and (SCM_C_ENUM_P b)
+            (Scm_EqvP (-> (SCM_C_ENUM a) tag)
+                      (-> (SCM_C_ENUM b) tag))
+            (enum_type_spec_equalP (-> (SCM_C_ENUM a) type-spec)
+                                   (-> (SCM_C_ENUM b) type-spec))
+            ;; enumerator-alist holds only symbols and integers
+            (Scm_EqualP (-> (SCM_C_ENUM a) enumerator-alist)
+                        (-> (SCM_C_ENUM b) enumerator-alist))))]
      [else (return FALSE)]))
 
  ) ;inline-stub
