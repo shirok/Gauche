@@ -46,6 +46,7 @@
           make-c-array-type
           make-c-struct-type
           make-c-union-type
+          make-c-enum-type
 
           c-pointer-type-pointee
           c-array-type-dimensions
@@ -56,6 +57,10 @@
           c-struct/union-type-field-names
           c-struct/union-type-field-type
           c-struct/union-type-field-offset
+          c-enum-type-tag
+          c-enum-type-enumerator-alist
+          c-enum-value
+          c-enum-symbol
 
           c-pointer-type?
           c-array-type?
@@ -63,6 +68,7 @@
           c-struct-type?
           c-union-type?
           c-struct/union-type?
+          c-enum-type?
           c-aggregate-type?
           c-pointer-like-type?
 
@@ -135,6 +141,7 @@
 (define-inline (c-function-type? type) (is-a? type <c-function>))
 (define-inline (c-struct-type? type) (is-a? type <c-struct>))
 (define-inline (c-union-type? type) (is-a? type <c-union>))
+(define-inline (c-enum-type? type) (is-a? type <c-enum>))
 
 (define-inline (c-struct/union-type? type)
   (or (is-a? type <c-struct>)
@@ -191,6 +198,26 @@
   (if-let1 e (assq field-name (~ type'fields))
     (caddr e)
     (errorf "~s does not have a field named ~a" type field-name)))
+
+(define-inline (c-enum-type-tag type)
+  (assume-type type <c-enum>)
+  (~ type'tag))
+
+(define-inline (c-enum-type-enumerator-alist type)
+  (assume-type type <c-enum>)
+  (~ type'enumerator-alist))
+
+(define-inline (c-enum-value type symbol)
+  (assume-type type <c-enum>)
+  (assume-type symbol <symbol>)
+  (or (alist-ref (~ type'enumerator-alist) symbol)
+      (errorf "Invalid enum symbol ~s for ~s" symbol type)))
+
+(define-inline (c-enum-symbol type value)
+  (assume-type type <c-enum>)
+  (assume-type value <integer>)
+  (or (alist-key (~ type'enumerator-alist) value)
+      (errorf "Invalid enum value ~s for ~s" value type)))
 
 ;;;
 ;;; Endian-specified types

@@ -1,3 +1,8 @@
+2026-05-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (<c-enum>), ext/ffi/native-type.scm:
+	  Add c-enum interface.
+
 2026-05-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (cise-render-typed-var): Support .enum

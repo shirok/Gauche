@@ -801,6 +801,115 @@
 
 
 ;;;----------------------------------------------------------
+(test-section "enums")
+
+(define %implicit-enum-size (with-module gauche.typeutil implicit-enum-size))
+
+;; predicate and accessors
+(let ([color (make-c-enum-type 'Color #f '(red green blue))]
+      [s (make-c-struct-type 's '())])
+  (test* "c-enum-type? on enum" #t (c-enum-type? color))
+  (test* "c-enum-type? on struct" #f (c-enum-type? s))
+  (test* "c-enum-type? on native int" #f (c-enum-type? <int>))
+  (test* "c-enum-type-tag" 'Color (c-enum-type-tag color))
+  (test* "c-enum-type-enumerator-alist" '((red . 0) (green . 1) (blue . 2))
+         (c-enum-type-enumerator-alist color))
+  (test* "c-enum-type-tag rejects non-enum" (test-error <error>)
+         (c-enum-type-tag <int>))
+  (test* "enum maps to <integer>" #t (subtype? color <integer>))
+  (test* "enum of-type?: in-range integer yes, out-of-range/symbol no"
+         '(#t #f #f)
+         (list (of-type? 2 color)        ; fits the unsigned underlying
+               (of-type? -1 color)       ; negative, but underlying is unsigned
+               (of-type? 'red color))))  ; not an integer
+
+;; c-enum-value / c-enum-symbol: symbol <-> value lookup
+(let ([color (make-c-enum-type 'Color #f '(red green blue))])
+  (test* "c-enum-value" '(0 1 2)
+         (map (cut c-enum-value color <>) '(red green blue)))
+  (test* "c-enum-symbol" '(red green blue)
+         (map (cut c-enum-symbol color <>) '(0 1 2)))
+  (test* "c-enum-value invalid symbol"
+         (test-error <error> #/Invalid enum symbol/)
+         (c-enum-value color 'magenta))
+  (test* "c-enum-symbol invalid value"
+         (test-error <error> #/Invalid enum value/)
+         (c-enum-symbol color 99))
+  (test* "c-enum-value rejects non-enum" (test-error <error>)
+         (c-enum-value <int> 'red))
+  (test* "c-enum-symbol rejects non-enum" (test-error <error>)
+         (c-enum-symbol <int> 0)))
+
+;; with aliases (duplicate values), c-enum-symbol returns the first match
+(let ([e (make-c-enum-type 'A #f '((x 0) (y 0) z))])
+  (test* "c-enum-value of aliased symbols" '(0 0 1)
+         (map (cut c-enum-value e <>) '(x y z)))
+  (test* "c-enum-symbol on aliased value picks first key" 'x
+         (c-enum-symbol e 0)))
+
+;; flexible enumerator spec: bare symbol auto-increments, explicit value
+;; resets the counter, duplicate values (aliases) are allowed.
+(test* "enum auto-numbering / explicit / alias"
+       '((a . 0) (b . 10) (c . 11) (d . 11) (e . 12))
+       (c-enum-type-enumerator-alist
+        (make-c-enum-type 'E #f '(a (b 10) c (d 11) e))))
+(test* "enum first symbol without value is 0; negatives ok"
+       '((lo . -2) (mid . -1) (hi . 0))
+       (c-enum-type-enumerator-alist
+        (make-c-enum-type 'N #f '((lo -2) mid hi))))
+
+;; size / alignment / signedness derived from the value range
+(define (enum-shape e)
+  (list (~ e'size) (~ e'alignment) (~ e'unsigned?) (~ e'c-type-name)))
+(test* "implicit small nonnegative -> unsigned"
+       (list (%implicit-enum-size 8) (%implicit-enum-size 8) #t "enum A")
+       (enum-shape (make-c-enum-type 'A #f '(x y z))))
+(test* "implicit with a negative value -> signed"
+       (list (%implicit-enum-size 8) (%implicit-enum-size 8) #f "enum B")
+       (enum-shape (make-c-enum-type 'B #f '((p -1) q))))
+(test* "implicit value needing 64 bits"
+       (list (%implicit-enum-size 64) (%implicit-enum-size 64) #t "enum C")
+       (enum-shape (make-c-enum-type 'C #f '((m 5000000000)))))
+
+;; explicit typespec (C23 'enum tag : T')
+(let ([e (make-c-enum-type 'T8 <int8> '(a (b -1) c))])
+  (test* "typespec: size/alignment taken from typespec"
+         (list (~ <int8>'size) (~ <int8>'alignment))
+         (list (~ e'size) (~ e'alignment)))
+  (test* "typespec: c-type-name" "enum T8 : int8_t" (~ e'c-type-name))
+  (test* "typespec: type-spec slot" <int8> (~ e'type-spec))
+  (test* "typespec: not unsigned" #f (~ e'unsigned?)))
+
+;; anonymous enum: no tag, c-type-name falls back to the underlying int
+(test* "anonymous enum: tag #f, c-type-name is the underlying int"
+       '(#f #f)
+       (let1 e (make-c-enum-type #f #f '((x 0) (y 300)))
+         (list (c-enum-type-tag e)
+               (and (#/enum/ (~ e'c-type-name)) #t))))
+
+;; an enum is read/written through memory as its underlying integer
+(let* ([data (u8vector-copy *fobject-storage*)]
+       [e8  (make-c-enum-type 'E8 <int8> '(a))]
+       [u8  (make-c-enum-type 'U8 <uint8> '(a))]
+       [e8* (make-c-pointer-type e8)]
+       [u8* (make-c-pointer-type u8)])
+  (define (bc pos type) (uvector->native-handle data type pos))
+  (test* "enum read (signed int8 underlying)"  #x-80 (native* (bc 0 e8*)))
+  (test* "enum read (unsigned uint8 underlying)" #x80 (native* (bc 0 u8*)))
+  (test* "enum write through memory" 42
+         (begin (set! (native* (bc 0 e8*)) 42) (native* (bc 0 e8*)))))
+
+;; error cases
+(test* "enum duplicate id" (test-error <error> #/duplicate enumerator id/)
+       (make-c-enum-type 'X #f '(a a)))
+(test* "enum bad enumerator form" (test-error <error> #/bad c-enum enumerator/)
+       (make-c-enum-type 'X #f '((a 1 2))))
+(test* "enum value out of range for typespec" (test-error <error>)
+       (make-c-enum-type 'X <int8> '((a 300))))
+(test* "enum bad tag" (test-error <error> #/tag must be a symbol/)
+       (make-c-enum-type "x" #f '(a)))
+
+;;;----------------------------------------------------------
 (test-section "native&")
 
 ;; native& on c-struct: extract pointer to a field
