@@ -1981,6 +1981,29 @@
   (test* "native-type union offsets all zero" '(0 0 0)
          (map (cut native-type-offset* u <>) '(a b c))))
 
+;; Enums
+(let1 e (native-type '(.enum color (red green blue)))
+  (test* "native-type .enum is <c-enum>" #t (c-enum-type? e))
+  (test* "native-type .enum tag" 'color (c-enum-type-tag e))
+  (test* "native-type .enum alist" '((red . 0) (green . 1) (blue . 2))
+         (c-enum-type-enumerator-alist e)))
+(test* "native-type (.enum (a b c)) -- anonymous" '(#t #f)
+       (let1 e (native-type '(.enum (a b c)))
+         (list (c-enum-type? e) (c-enum-type-tag e))))
+(test* "native-type (.enum flag : uint8_t (a (b 4) c))"
+       (list 'flag <uint8> '((a . 0) (b . 4) (c . 5)))
+       (let1 e (native-type '(.enum flag : uint8_t (a (b 4) c)))
+         (list (c-enum-type-tag e) (~ e'type-spec)
+               (c-enum-type-enumerator-alist e))))
+(test* "native-type (.enum : int8_t ((lo -2) mid hi)) -- anonymous w/ typespec"
+       (list #f <int8> '((lo . -2) (mid . -1) (hi . 0)))
+       (let1 e (native-type '(.enum : int8_t ((lo -2) mid hi)))
+         (list (c-enum-type-tag e) (~ e'type-spec)
+               (c-enum-type-enumerator-alist e))))
+(test* "native-type bad .enum signature"
+       (test-error <error> #/Invalid .enum signature/)
+       (native-type '(.enum a b (c))))
+
 ;; Function types
 
 (test* "native-type (.function (int int) double)" #t
@@ -2202,6 +2225,24 @@
        (native-type->signature
         (make-c-union-type #f `((x ,<int>) (y ,<float>)))))
 
+;; Enum types
+(test* "signature enum" '(.enum color (red green blue))
+       (native-type->signature
+        (make-c-enum-type 'color #f '(red green blue))))
+(test* "signature enum (anonymous)" '(.enum (red green blue))
+       (native-type->signature
+        (make-c-enum-type #f #f '(red green blue))))
+(test* "signature enum with typespec" '(.enum flag : uint8_t (a (b 4) c))
+       (native-type->signature
+        (make-c-enum-type 'flag <uint8> '(a (b 4) c))))
+(test* "signature enum (anonymous) with typespec" '(.enum : int8_t (a b c))
+       (native-type->signature
+        (make-c-enum-type #f <int8> '(a b c))))
+(test* "signature enum bare/explicit minimal form"
+       '(.enum E (a (b 10) c (d 11) e))
+       (native-type->signature
+        (make-c-enum-type 'E #f '(a (b 10) c (d 11) e))))
+
 ;; Function types
 (test* "signature function" '(.function (int int) double)
        (native-type->signature
@@ -2256,5 +2297,18 @@
        (round-trip '(.struct pkt (len::uint16_be data::uint32_be))))
 (test* "round-trip array of int32_le" #t
        (round-trip '(.array int32_le (4))))
+
+;; Enums: native-type instances aren't compared structurally, so round-trip
+;; at the signature level instead.
+(define (sig-round-trip sig)
+  (equal? (native-type->signature (native-type sig)) sig))
+(test* "round-trip enum" #t
+       (sig-round-trip '(.enum color (red green blue))))
+(test* "round-trip enum anonymous" #t
+       (sig-round-trip '(.enum (a b c))))
+(test* "round-trip enum with typespec" #t
+       (sig-round-trip '(.enum flag : uint8_t (a (b 4) c))))
+(test* "round-trip enum anonymous with typespec" #t
+       (sig-round-trip '(.enum : int8_t ((lo -2) mid hi))))
 
 (test-end)

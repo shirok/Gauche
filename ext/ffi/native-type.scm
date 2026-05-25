@@ -1096,7 +1096,24 @@
 ;;     => (make-c-function-type <c-double> `(,<int> ,<int>))
 ;;   (native-type (.function (int char* ...) void))
 ;;     => (make-c-function-type <void> `(,<int> ,(make-c-pointer-type <int8>) ...))
+;;   (native-type (.enum color (red green blue)))
+;;     => (make-c-enum-type 'color #f '(red green blue))
+;;   (native-type (.enum flag : uint8 (a (b 4) c)))
+;;     => (make-c-enum-type 'flag <uint8> '(a (b 4) c))
 ;;
+;; Parse the part following '.enum: [tag] [: signature] (enumerator ...)
+(define (%parse-enum-spec rest)
+  (match rest
+    [(enumerators)
+     (values #f #f enumerators)]
+    [(': sig enumerators)
+     (values #f (native-type sig) enumerators)]
+    [((? symbol? tag) enumerators)
+     (values tag #f enumerators)]
+    [((? symbol? tag) ': sig enumerators)
+     (values tag (native-type sig) enumerators)]
+    [_ (error "Invalid .enum signature:" (cons '.enum rest))]))
+
 (define (native-type signature)
   (match signature
     ;; Pass-through if already a native type instance
@@ -1121,6 +1138,11 @@
     ;; (.union (field-specs ...))  -- anonymous
     [('.union (field-specs ...))
      (make-c-union-type #f (%parse-field-specs field-specs))]
+
+    ;; (.enum [tag] [: signature] (enumerator ...))
+    [('.enum . rest)
+     (receive (tag typespec enumerators) (%parse-enum-spec rest)
+       (make-c-enum-type tag typespec enumerators))]
 
     ;; (.function (arg-types ...) return-type)
     [('.function (arg-types ...) ret-type)
@@ -1204,6 +1226,17 @@
                sig))))
    fields))
 
+;; Reverse enumerator alist ((id . value) ...) -> (enumerator ...), using the
+;; bare-symbol form when the value matches the running auto-increment (0, then
+;; previous+1), and (id value) otherwise.  Round-trips through native-type.
+(define (%unparse-enumerators alist)
+  (let loop ([as alist] [next 0] [acc '()])
+    (if (null? as)
+      (reverse acc)
+      (let ([id (caar as)] [val (cdar as)])
+        (loop (cdr as) (+ val 1)
+              (cons (if (= val next) id (list id val)) acc))))))
+
 ;; (native-type->signature native-type) => S-expression signature
 ;;
 ;; Reverse of native-type: given a <native-type> instance, produce the
@@ -1235,6 +1268,12 @@
     [(is-a? type <c-union>)
      `(.union ,@(cond-list [(~ type'tag)])
               ,(%unparse-field-specs (~ type'fields)))]
+    ;; Enum
+    [(is-a? type <c-enum>)
+     `(.enum ,@(cond-list [(~ type'tag)])
+             ,@(cond-list [(~ type'type-spec)
+                           @ `(: ,(native-type->signature (~ type'type-spec)))])
+             ,(%unparse-enumerators (~ type'enumerator-alist)))]
     ;; Function
     [(is-a? type <c-function>)
      (let ([args (map native-type->signature (~ type'argument-types))]
