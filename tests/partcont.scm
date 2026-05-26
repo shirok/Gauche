@@ -157,7 +157,7 @@
 
 ;; native : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
 ;; meta   : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
-;; srfi226: [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
+;; srfi226: [r01][s01][s02][d01][d02][s02]12345[d03]
 ;; racket : [r01][s01][s02][d01][d02][s02]12345[d03]
 (test* "reset/shift + call/cc 2-D (from Kahua nqueen broken)"
        "[r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]"
@@ -200,7 +200,7 @@
 
 ;; native : error
 ;; meta   : ""
-;; srfi226: -
+;; srfi226: no error
 ;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc error 1"
@@ -218,7 +218,7 @@
 
 ;; native : error
 ;; meta   : ""
-;; srfi226: -
+;; srfi226: no error
 ;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc error 2"
@@ -301,9 +301,9 @@
   ;; racket : 23#<void>
   (test* "reset/shift + temporarily + parameterize" "232"
          (with-output-to-string foo))
-  ;; native : 32
+  ;; native : "32"
   ;; meta   : ""
-  ;; srfi226: ""
+  ;; srfi226: "32"
   ;; racket : #<void>#<void>
   (test* "reset/shift + temporarily + parameterize (cont)" "32"
          (with-output-to-string c)))
@@ -318,7 +318,7 @@
         (with-output-to-string
           (lambda ()
             (with-error-handler
-                (lambda (e) (display (~ e 'message)))
+                (lambda (e) (display (condition-message e)))
               (lambda ()
                 (display "[E01]")
                 (reset (error "[E02]"))
@@ -326,7 +326,7 @@
 
 ;; native : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
 ;; meta   : [W01][D01][D02][W01][D01][D02][D01][E01][D02][D01][D02]
-;; srfi226: [W01][D01][D02][W01][D01][D02][D01][E01][D02][D01][D02]
+;; srfi226: [W01][D01][D02][W01][D01][D01][D02][D01][E01][D02][D02]
 ;; racket : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
 (test* "reset/shift + guard 1"
        "[W01][D01][D02][W01][D01][D01][E01][D02][D02]"
