@@ -202,11 +202,11 @@ typedef struct ScmContFrameRec {
     ScmEnvFrame *env;             /* saved environment */
     ScmObj denv;                  /* dynamic environment links */
 #if SIZEOF_LONG == 4
-    long size : 30;               /* size of argument frame */
-    u_long marker : 2;            /* end marker of partial continuation */
+    long size : 29;               /* size of argument frame */
+    u_long marker : 3;            /* marker bits; see SCM_CONT_*_MARKER */
 #else
     int size;                     /* size of argument frame */
-    int marker;                   /* end marker of partial continuation */
+    int marker;                   /* marker bits; see SCM_CONT_*_MARKER */
 #endif
     SCM_PCTYPE cpc;               /* current PC (for debugging info) */
     SCM_PCTYPE pc;                /* next PC */
@@ -260,8 +260,6 @@ SCM_CLASS_DECL(Scm_PromptTagClass);
 
 SCM_EXTERN ScmObj Scm_MakePromptTag(ScmObj name);
 SCM_EXTERN ScmObj Scm_DefaultPromptTag();
-
-typedef struct ScmContinuationPromptRec ScmContinuationPrompt;
 
 /*
  * Identifier
@@ -329,6 +327,9 @@ typedef struct ScmCStackRec {
 
 /* ScmEscapePoint definition is in vmP.h */
 typedef struct ScmEscapePointRec ScmEscapePoint;
+
+/* ScmMetaCont definition is in vmP.h */
+typedef struct ScmMetaContRec ScmMetaCont;
 
 /*
  * Signal queue
@@ -577,13 +578,15 @@ struct ScmVMRec {
     ScmCodeCache *codeCache;
 
     /* for reset/shift */
-    ScmContinuationPrompt *currentPrompt;
     ScmObj resetChain;          /* list of reset information,
                                    where reset information is
                                    (delimited . <dynamic handlers chain>).
                                    the delimited flag is set when 'shift'
                                    appears in 'reset' and the end marker of
                                    partial continuation is set. */
+
+    /* Innermost meta-continuation; chain via prev reaches the outermost. */
+    ScmMetaCont *currentMetaCont;
 
 };
 

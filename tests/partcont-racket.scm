@@ -59,6 +59,10 @@
   (syntax-rules ()
     ((gauche-only x ...) (values))))
 
+;; Keep the older expected column; this run compares Racket's actual output
+;; against it and reports divergences manually.
+(define (srfi226-continuation?) #f)
+
 (define *discrepancies* '())
 
 (define-syntax test*

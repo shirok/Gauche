@@ -45,12 +45,22 @@
 
 (define-syntax gauche-only (syntax-rules () ((_ x ...) (begin x ...))))
 
+;; The oracle records actual results against the older expected column.
+(define (srfi226-continuation?) #t)
+
 (define (with-output-to-string thunk)
   (let ((p (open-output-string)))
     (parameterize ((current-output-port p)) (thunk))
     (get-output-string p)))
 
 (define (error msg . args) (apply r6rs:error 'partcont msg args))
+
+(define-syntax test*/switch
+  (syntax-rules ()
+    ((_ name native-expected legacy-expected expr)
+     (if (srfi226-continuation?)
+         (test* name native-expected expr)
+         (test* name legacy-expected expr)))))
 
 ;; Emit (RESULTROW name expect pass? actual) from INSIDE run.
 (define-syntax test*

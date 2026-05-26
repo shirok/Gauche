@@ -159,17 +159,63 @@ typedef struct ScmEscapePointRec {
                                    with-error-handler uses the latter model,
                                    but SRFI-34's guard needs the former model.
                                 */
-
     /* The following fields are used for new implementation of partial cont. */
-    ScmObj promptTag;
-    ScmObj abortHandler;
-    struct ScmEscapePointRec *bottom;
+    ScmContFrame *partContBottom; /* bottom frame of a captured (partial or
+                                     delimited-full) continuation chain.  The
+                                     frame carries SCM_CONT_SHIFT_MARKER.  This
+                                     is the *canonical* captured bottom and is
+                                     immutable after capture: each invocation
+                                     clones the chain (partContTop..this) before
+                                     splicing, so the original is never mutated
+                                     and the same continuation may be invoked
+                                     multiple times (incl. re-entrantly) without
+                                     forming a cont-frame cycle.  NULL for an
+                                     empty capture, or for captures whose chain
+                                     extends all the way to a cstack boundary
+                                     (legacy full call/cc). */
+    ScmContFrame *partContTop;    /* top frame of the canonical captured chain
+                                     (== ep->cont at capture).  Immutable clone
+                                     source; ep->cont itself is overwritten per
+                                     invocation with the freshly-cloned top that
+                                     throw_cont_body installs. */
+    struct ScmMetaContRec *capturedMetaCont; /* vm->currentMetaCont at capture;
+                                     identifies the prompt frame bounding the
+                                     captured continuation. */
 } ScmEscapePoint;
 
 SCM_CLASS_DECL(Scm_EscapePointClass);
 #define SCM_CLASS_ESCAPE_POINT  (&Scm_EscapePointClass)
 #define SCM_ESCAPE_POINT(obj)   ((ScmEscapePoint*)obj)
 #define SCM_ESCAPE_POINT_P(obj) SCM_ISA(obj, SCM_CLASS_ESCAPE_POINT)
+
+/*
+ * Meta-continuation
+ *
+ *  An ScmMetaCont is a heap-allocated record mirroring the state at a
+ *  continuation prompt boundary.  At the moment its prompt is installed it
+ *  snapshots the parent segment's continuation chain, dynamic env, and
+ *  dynamic-wind chain, along with the prompt tag and abort handler.
+ *
+ *  Meta-conts form a chain via `prev`: vm->currentMetaCont is the innermost
+ *  (current) prompt; walking `prev` reaches the outermost (the initial thread
+ *  prompt at the bottom of the chain).
+ */
+typedef struct ScmMetaContRec {
+    SCM_HEADER;
+    ScmObj promptTag;                /* prompt tag delimiting this meta-cont */
+    ScmObj abortHandler;             /* handler invoked on abort-to this tag */
+    ScmContFrame *frame;             /* the prompt cont frame on vm->cont */
+    ScmContFrame *cont;              /* parent vm->cont when prompt installed
+                                        (i.e. frame->prev at install time) */
+    ScmObj denv;                     /* parent vm->denv */
+    ScmObj dynamicHandlers;          /* parent dynamic-wind chain */
+    struct ScmMetaContRec *prev;     /* outer meta-cont, NULL at bottom */
+} ScmMetaCont;
+
+SCM_CLASS_DECL(Scm_MetaContClass);
+#define SCM_CLASS_META_CONT     (&Scm_MetaContClass)
+#define SCM_META_CONT(obj)      ((ScmMetaCont*)obj)
+#define SCM_META_CONT_P(obj)    SCM_ISA(obj, SCM_CLASS_META_CONT)
 
 /* Escape types */
 #define SCM_VM_ESCAPE_NONE   0
