@@ -145,17 +145,6 @@
 (t-subtype (</> (<Assortment> #f) <char>) (<?> <char>) #t)
 (t-subtype (<?> <char>) (</> (<Assortment> #f) <char>) #t)
 
-(let* ([int*  ((with-module gauche.typeutil make-c-pointer-type) <int>)]
-       [int** ((with-module gauche.typeutil make-c-pointer-type) int*)])
-  (test* "int* native-pointer" #t
-        (is-a? int* (with-module gauche.typeutil <c-pointer>)))
-  (test* "int** native-pointer" #t
-         (is-a? int** (with-module gauche.typeutil <c-pointer>)))
-  (t-subtype int** int* #f)
-  (test* "int* poointee" <int> (~ int*'pointee-type))
-  (test* "int** poointee" int* (~ int**'pointee-type))
-  )
-
 (test-section "built-in type constructors")
 
 (define (validation-test type alist)

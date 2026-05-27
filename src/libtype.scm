@@ -1313,14 +1313,6 @@
     (return (Scm_NativeVoidPointerType))
     (return (%make-c-pointer-type-fn pointer-type-name pointee-type))))
 
-(define (make-c-pointer-type pointee-type)
-  (assume-type pointee-type <native-type>)
-  (let* ([bare-name (regexp-replace* (symbol->string (~ pointee-type'name))
-                                     #/^</ ""
-                                     #/>$/ "")]
-         [pointer-name #"<~|bare-name|*>"])
-    (%make-c-pointer-type pointer-name pointee-type)))
-
 (define-cproc %make-c-function-type (type-name::<const-cstring>
                                      return-type
                                      argument-types
@@ -1353,22 +1345,6 @@
                    (Scm_NativeVoidPointerType)
                    SCM_BINDING_INLINABLE)))
 
-;; Argument-types are list of native types, optionally end with
-;; a symbol ... for varargs.
-(define (make-c-function-type return-type argument-types)
-  (assume-type return-type <native-type>)
-  (receive (arg-types variadic?)
-      (if (and (pair? argument-types) (eq? (last argument-types) '...))
-        (values (drop-right argument-types 1) #t)
-        (values argument-types #f))
-    (dolist [arg-type arg-types]
-      (assume-type arg-type <native-type>))
-    (%make-c-function-type
-     (format "~{ ~a~}~:[~; ...~] -> ~a"
-             (map (cut ~ <>'name) arg-types) variadic?
-             (~ return-type'name))
-     return-type arg-types variadic?)))
-
 ;; For array, we keep element-type and dimensions in dedicated fields.
 ;; Each <dim> is a nonnegative fixnum.  The first <dim> can be '*,
 ;; indicating it is not specified (C allows it).
@@ -1399,33 +1375,6 @@
     (set! (-> z dimensions) dimensions)
     (return (SCM_OBJ z))))
 
-(define (make-c-array-type element-type dimensions)
-  (assume-type element-type <native-type>)
-  (let loop ([dims dimensions])
-    (cond [(null? dims)]
-          [(not (pair? dims))
-           (error "Bad native array dimensions; must be a proper list, but got:"
-                  dimensions)]
-          [(and (eq? dims dimensions)
-                (eq? (car dims) '*))
-           (loop (cdr dims))]   ;first dimension can be *
-          [(and (exact-integer? (car dims))
-                (>= (car dims) 0))
-           (loop (cdr dims))]
-          [else
-           (error "Bad native array dimensions; must be a list of nonnegative \
-                   integers, or '* at the last position, but got:"
-                  dimensions)]))
-  (let ([name (format "~a~a" (~ element-type 'name) dimensions)]
-        [num-elts (if (eq? (car dimensions) '*)
-                    0                   ; unknown sized array
-                    (fold * 1 dimensions))]
-        [elt-size (~ element-type'size)])
-    (%make-c-array-type name element-type
-                             (* elt-size num-elts)
-                             (~ element-type'alignment)
-                             dimensions)))
-
 ;; For struct/union, we keep tag and field-list in dedicated fields.
 (define-cproc %make-c-struct/union-type (klass::<class>
                                          type-name::<const-cstring>
@@ -1450,48 +1399,6 @@
     (set! (-> z tag) (?: tag-name (SCM_OBJ tag-name) SCM_FALSE))
     (set! (-> z fields) field-list)
     (return (SCM_OBJ z))))
-
-(define (struct-size-roundup size alignment)
-  (* alignment (quotient (+ size alignment -1) alignment)))
-
-(define (make-c-struct/union-type tag fields struct?)
-  (let loop ([fs fields] [offset 0] [alignment 1] [descs '()] [bounded #t])
-    (match fs
-      [()
-       (let* ([size (struct-size-roundup offset alignment)]
-              [tname (if struct? "struct" "union")]
-              [name (if tag
-                      #"~tname ~tag"
-                      #"~tname anonymous")]) ;TODO: Give better name
-         (%make-c-struct/union-type
-          (if struct? <c-struct> <c-union>)
-          name size alignment (if bounded 1 0) tag (reverse descs)))]
-      [(((? symbol? fname) ftype) . rest)
-       (assume-type ftype <native-type>)
-       (when (and (not bounded) struct?)
-         (error "Struct type can have unbounded field only at the end:" fs))
-       (let* ([falign (~ ftype'alignment)]
-              [foffset (if struct?
-                         (struct-size-roundup offset falign)
-                         0)]
-              [next (if struct?
-                      (+ foffset (~ ftype'size))
-                      (max offset (~ ftype'size)))]
-              [new-align (max alignment falign)])
-         (loop rest
-               next
-               new-align
-               (cons (list fname ftype foffset) descs)
-               (and bounded (~ ftype'bounded?))))]
-      [_
-       (error "Bad native struct fields; must be a proper list, but got:"
-              fields)])))
-
-(define (make-c-struct-type tag fields)
-  (make-c-struct/union-type tag fields #t))
-
-(define (make-c-union-type tag fields)
-  (make-c-struct/union-type tag fields #f))
 
 (inline-stub
  ;; Size of enum is implementation-dependent.  For our purpose, the external
@@ -1608,43 +1515,6 @@
           [(<= bits 64) 64]
           [else (error "c-enum value range too large to fit in 64 bits:"
                        (list lo hi))])))
-
-;; make-c-enum-type tag typespec (enumerator ...)
-;;   enumerator : symbol | (symbol integer-value)
-(define (make-c-enum-type tag typespec enumerators)
-  ;; NB: We can't use <?> type constructor yet
-  (assume (or (not tag) (symbol? tag))
-    "c-enum tag must be a symbol or #f, but got:" tag)
-  (assume (or (not typespec) (is-a? typespec <native-type>))
-    "c-enum typespec must be a native-type or #f, but got:" typespec)
-  (let* ([alist (%build-enum-alist enumerators)]
-         [vals (map cdr alist)])
-    (receive (underlying size alignment)
-        (cond
-         [typespec
-          (unless (%native-type-integral? typespec)
-            (error "c-enum typespec must be an integral native type, but got:"
-                   typespec))
-          (dolist [v vals]
-            (unless (of-type? v typespec)
-              (error "enumerator value out of range for the enum type:" v)))
-          (values typespec (~ typespec'size) (~ typespec'alignment))]
-         [(null? vals)
-          ;; TODO: We should support incomplete declaration.
-          (error "cannot determine c-enum size: give a typespec or \
-                  at least one enumerator")]
-         [else
-          (receive (lo hi) (apply min&max vals)
-            (let1 size (implicit-enum-size (%enum-bit-width lo hi))
-              (values (%native-int-type-of-size size (not (negative? lo)))
-                      size size)))])
-      (let ([cname (cond [(and tag typespec)
-                          #"enum ~tag : ~(~ typespec'c-type-name)"]
-                         [tag #"enum ~tag"]
-                         [else (~ underlying'c-type-name)])]
-            [pname (if tag #"enum ~tag" "enum anonymous")])
-        (%make-c-enum-type pname cname underlying size alignment
-                           tag typespec alist)))))
 
 ;;;
 ;;; Pointer fill gate

@@ -1,3 +1,9 @@
+2026-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/native-type.scm: Add native type tag registry.
+	  Move public native type constructors (make-c-pointer-type etc.)
+	  to ext/ffi.
+
 2026-05-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm (<c-enum>), ext/ffi/native-type.scm:

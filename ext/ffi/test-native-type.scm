@@ -5,7 +5,7 @@
 (use gauche.test)
 (use gauche.uvector)
 
-(test-start "Native types")
+(test-start "native types")
 
 (use gauche.native-type)
 (test-module 'gauche.native-type)
@@ -799,6 +799,21 @@
            (list (native-aref (native. h 'data) '(0))
                  (native-aref (native. h 'data) '(3))))))
 
+;; native tag registry
+(parameterize ([current-native-tag-namespace
+                (make-native-tag-namespace)])
+  (let* ([t1 (make-c-struct-type 'foo `((x ,<int>)))]
+         [t2 (make-c-union-type 'bar `((x ,<int>)))])
+    (test* "tag->native-type" t1 (tag->native-type 'foo))
+    (test* "tag->native-type" t2 (tag->native-type 'bar))
+
+    (test* "dupe tags (different kind)" (test-error <error> #/already used/)
+           (make-c-struct-type 'bar `((x ,<int>))))
+    (test* "dupe tags (different fields)" (test-error <error> #/already used/)
+           (make-c-union-type 'bar `((x ,<int8>))))
+    (test* "dupe tags (equal allowed)" t2
+           (make-c-union-type 'bar `((x ,<int>))))
+    ))
 
 ;;;----------------------------------------------------------
 (test-section "enums")

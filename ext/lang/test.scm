@@ -704,27 +704,28 @@
 
 ;; --- c-array parameter ---
 
-(let ([make-array-type (with-module gauche.typeutil make-c-array-type)]
-      [tmpl (make-obj-template
+(autoload gauche.native-type make-c-array-type)
+
+(let ([tmpl (make-obj-template
              (list (make-obj-fragment (make-u8vector 12 0) '() '((:data 0 0)) 'text))
              'little-endian)])
-  (receive (b _) (link-templates (list tmpl)`((:data ,(make-array-type <uint8> '(4)) (10 20 30))))
+  (receive (b _) (link-templates (list tmpl)`((:data ,(make-c-array-type <uint8> '(4)) (10 20 30))))
     (test* "c-array <uint8>"
            '(10 20 30 0 0 0 0 0 0 0 0 0)
            (u8vector->list b)))
-  (receive (b _) (link-templates (list tmpl)`((:data ,(make-array-type <int32> '(3)) (1 2 3))))
+  (receive (b _) (link-templates (list tmpl)`((:data ,(make-c-array-type <int32> '(3)) (1 2 3))))
     (test* "c-array <int32>"
            '(1 0 0 0 2 0 0 0 3 0 0 0)
            (u8vector->list b)))
   ;; c-array with extra-offset: fill starting at base + 4
-  (receive (b _) (link-templates (list tmpl)`((:data ,(make-array-type <uint8> '(4)) (10 20 30) 4)))
+  (receive (b _) (link-templates (list tmpl)`((:data ,(make-c-array-type <uint8> '(4)) (10 20 30) 4)))
     (test* "c-array <uint8> with extra-offset"
            '(0 0 0 0 10 20 30 0 0 0 0 0)
            (u8vector->list b)))
   (test* "c-array non-list error"
          (test-error)
          (receive (b _)
-           (link-templates (list tmpl)`((:data ,(make-array-type <uint8> '(4)) not-a-list)))
+           (link-templates (list tmpl)`((:data ,(make-c-array-type <uint8> '(4)) not-a-list)))
            b)))
 
 ;; --- movs_ instruction-variant placeholder ---
