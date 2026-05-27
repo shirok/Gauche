@@ -15424,6 +15424,35 @@ Returns the type and the byte offset of @var{field-name} (symbol)
 of @var{c-struct/union-type}.
 @end defun
 
+@subsubsection C enums
+
+@deftp {Class} <c-enum>
+@clindex c-enum
+@c MOD gauche.native-type
+A class of native types representing C enum types.
+C enum type is a subtype of @code{<integer>}.
+A new enum type can be creatd with @code{make-c-enum-type}, or
+from a signature with
+@code{native-type} (e.g.
+@code{(native-type '(.enum Color (Red Green Blue)))}.
+@end deftp
+
+@defun c-enum-type-tag type
+@c MOD gauche.native-type
+@end defun
+
+@defun c-enum-type-enumerator-alist
+@c MOD gauche.native-type
+@end defun
+
+@defun c-enum-value type symbol
+@c MOD gauche.native-type
+@end defun
+
+@defun c-enum-symbol type value
+@c MOD gauche.native-type
+@end defun
+
 @subsubsection Predicates
 
 @defun c-pointer-type? obj
@@ -15431,9 +15460,11 @@ of @var{c-struct/union-type}.
 @defunx c-function-type? obj
 @defunx c-struct-type? obj
 @defunx c-union-type? obj
+@defunx c-enum-type? obj
 @c MOD gauche.native-type
 Returns @code{#t} if @var{obj} is an instance of @code{<c-pointer>},
-@code{<c-array>}, @code{c-function>}, @code{c-struct}, or @code{<c-union>},
+@code{<c-array>}, @code{c-function>}, @code{c-struct}, @code{<c-union>},
+or @code{c-enum},
 and @code{#f} otherwise, respectively.
 @end defun
 
@@ -15614,6 +15645,21 @@ common across Gauche.  @var{name} is a symbol naming the field, and
 compound type as well.  For the convenience, the delimiter @code{::}
 may be concatenated to @code{name} and/or @code{type}--
 for example, @code{a::int} and @code{a :: int} are equivalent.
+
+@subsubheading Enum types
+
+@example
+(.enum [@var{tag}] [: @var{typespec}] (@var{enumerator} @dots{}))
+@end example
+
+Denote a C enum type.  @var{tag}, when given, is a symbol that names
+the enum tag.  @var{typespec} is a native type signature to resolve
+to an integral type, or a native integral type instance, to specify
+the size and alignment of the enum.  If @var{typespec} isn't given,
+the size and alignment of the enum type follows the compiler settings
+with which Gauche runtime is compiled.
+
+@var{enumerator} is either a symbol, or @code{(symbol integer-value)}.
 
 @subsubheading Function types
 
