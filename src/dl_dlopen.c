@@ -33,6 +33,7 @@
 
 /* This file is included in load.c */
 
+#define _GNU_SOURCE  // Need this to get RTLD_DEFAULT
 #include <dlfcn.h>
 
 static void *dl_open(const char *path)
