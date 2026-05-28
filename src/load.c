@@ -31,6 +31,10 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* This is needed before including features.h first time, in order
+   to get RTDL_DEFAULT in dlfcn.h  */
+#define _GNU_SOURCE
+
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/configP.h"
