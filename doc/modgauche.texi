@@ -15230,10 +15230,53 @@ For example, ``pointer to int'' native type is an instance of
 @code{<c-pointer>} class.  Note that @code{<c-pointer>} itself
 is not an instance of @code{<native-type>}.
 
+@subsubheading Tag namespace
+
+In C, tags of struct, union, and enum share the same namespace,
+and you cannot use the same tag to define different struct/union/enums.
+
+We don't automatically track tags by default.  It's up to the
+user to set up the tag namespace as required by the application.
+We have tools to help it.
+
+@deffn {Parameter}  current-native-tag-namespace
+@c MOD gauche.native-type
+A parameter that holds the current tag namespace.  Its value must
+be @code{#f} or an object created by
+@code{make-native-tag-namespace} below.
+
+If it is @code{#f} (default), tags are not tracked.
+If it is a tag namespace object, whenever a new c-struct/c-union/c-enum
+type is created, its tag is registered.  If there's already
+a native type with the same tag, an error is signaled
+unless the type definition exactly matches.
+@end deffn
+
+@defun make-native-tag-namespace :optional parent
+@c MOD gauche.native-type
+Create a new native tag namespace object (which is actually
+an instance of  @code{<stacked-map>},
+@pxref{Generic dictionaries}).
+
+If @var{parent} is given and not @code{#f}, it must be another
+tag namespace object.  The new namespace is stacked on it---that is,
+all the tags registered in @var{parent} is visible, but newly
+added tags are put in the new namespace and do not affect @var{parent}.
+@end defun
+
+@defun tag->native-type tag :optional namespace
+@c MOD gauche.native-type
+Returns a c-struct/c-union/c-enum type associated with the @var{tag}
+(symbol) int the @var{namespace}.  If @var{namespace} is omitted
+or @code{#f}, the value of @code{current-native-tag-namespace}
+parameter is used.
+@end defun
+
 @subsubheading C pointers
 
 @deftp {Class} <c-pointer>
 @clindex c-pointer
+@c MOD gauche.native-type
 A class of native types representing pointers.  Can be created
 with @code{make-c-pointer-type}, or from a signature
 with @code{native-type} (e.g. @code{(native-type 'int*)},
@@ -15439,18 +15482,40 @@ from a signature with
 
 @defun c-enum-type-tag type
 @c MOD gauche.native-type
+Returns the enum tag of a c-enum type @var{type}.  If the type doesn't
+have a tag, @code{#f} is returned.
 @end defun
 
-@defun c-enum-type-enumerator-alist
+@defun c-enum-type-enumerator-alist type
 @c MOD gauche.native-type
+Returns a list of @code{(@var{enum-symbol} . @var{integer-value})}
+of a c-enum type @var{type}.
 @end defun
 
 @defun c-enum-value type symbol
 @c MOD gauche.native-type
+Returns the integer value corresponding to @var{symbol}
+defined in a c-enum type @var{type}.
+
+It is an error if @var{symbol} does not correspond to
+an enumerator introduced by @var{type}.
+
+Note that, in C, the enumerator has the same scope as the
+enum itself, but in @code{gauche.native-type} we don't
+track each enumerator in the outer scope yet,
+so we need the c-enum type that introduced
+the enumerator symbol to know the value.
 @end defun
 
 @defun c-enum-symbol type value
 @c MOD gauche.native-type
+Returns the enumerator symbol introduced by a c-enum @var{type}
+that has the integer @var{value}.  If there are more than
+one enumerator symbol with @var{value}, the first one is
+returned.
+
+It is an error if @var{type} does not have an enumerator
+with @var{value}.
 @end defun
 
 @subsubsection Predicates

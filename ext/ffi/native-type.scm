@@ -154,8 +154,8 @@
 (define current-native-tag-namespace
   (make-parameter #f))
 
-(define (tag->native-type tag)
-  (and-let1 registry (current-native-tag-namespace)
+(define (tag->native-type tag :optional (ns #f))
+  (and-let1 registry (or ns (current-native-tag-namespace))
     (dict-get registry tag #f)))
 
 (define (%register-native-tag! tag type)
