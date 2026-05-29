@@ -1,3 +1,14 @@
+2026-05-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c: Introduce meta continuation in C level.  The continuation
+	  frame chain is segmented by prompt tags, and the chain of meta
+	  continuation consists the continuation.  Capturing (full/partial)
+	  continuation needs to copy frames into the heap, but invoking
+	  them doesn't require copy back---only the meta continuation
+	  chain needs to be reconstructed.
+	  The semantics is closer to srfi-226 reference implementation
+	  (we still have a couple of divergence).
+
 2026-05-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/native-type.scm: Add native type tag registry.

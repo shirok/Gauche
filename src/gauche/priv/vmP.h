@@ -161,26 +161,26 @@ typedef struct ScmEscapePointRec {
                                 */
     /* The following fields are used for new implementation of partial cont. */
     ScmContFrame *partContBottom; /* bottom frame of a captured (partial or
-                                     delimited-full) continuation chain.  The
-                                     frame carries SCM_CONT_SHIFT_MARKER.  This
-                                     is the *canonical* captured bottom and is
-                                     immutable after capture: each invocation
-                                     clones the chain (partContTop..this) before
-                                     splicing, so the original is never mutated
-                                     and the same continuation may be invoked
-                                     multiple times (incl. re-entrantly) without
-                                     forming a cont-frame cycle.  NULL for an
-                                     empty capture, or for captures whose chain
-                                     extends all the way to a cstack boundary
-                                     (legacy full call/cc). */
-    ScmContFrame *partContTop;    /* top frame of the canonical captured chain
-                                     (== ep->cont at capture).  Immutable clone
-                                     source; ep->cont itself is overwritten per
-                                     invocation with the freshly-cloned top that
-                                     throw_cont_body installs. */
-    struct ScmMetaContRec *capturedMetaCont; /* vm->currentMetaCont at capture;
-                                     identifies the prompt frame bounding the
-                                     captured continuation. */
+                                     delimited-full) continuation's *last*
+                                     segment -- the frame adjacent to the
+                                     bounding prompt frame.  Captured frames are
+                                     immutable: invocation installs the
+                                     continuation by pushing resume boundaries
+                                     (see install_partial_cont / RETURN_OP).
+                                     NULL for an empty capture, or for
+                                     captures whose chain extends
+                                     all the way to a cstack boundary (legacy
+                                     full call/cc). */
+    ScmContFrame *partContTop;    /* top frame of the captured chain
+                                     (== ep->cont at capture); installed as
+                                     vm->cont on invocation. */
+    struct ScmMetaContRec *capturedMetaCont; /* vm->currentMetaCont at capture.
+                                     Identifies the innermost real prompt
+                                     bounding the captured continuation, and -
+                                     when the capture spans nested partial-cont
+                                     invocations - the resume boundaries that
+                                     join its segments (replicated at
+                                     invocation by install_partial_cont). */
 } ScmEscapePoint;
 
 SCM_CLASS_DECL(Scm_EscapePointClass);
