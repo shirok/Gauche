@@ -87,11 +87,10 @@ static ScmPromptTag defaultPromptTag; /* initialized in initVM */
  *  BOUNDARY - this is a user_eval_inner boundary; when RETURN_OP encounters
  *             this frame, run_loop returns control to the surrounding C
  *             stack.  Boundary frames are also PROMPT frames.
- *  PROMPT   - this is a prompt cont frame; its cpc points to ScmPromptData.
- *             Both boundary frames and frames pushed by
- *             call-with-continuation-prompt (and reset) carry this.
- *             save_cont must copy the ScmPromptData when moving the frame
- *             from stack to heap.
+ *  PROMPT   - this is a prompt cont frame.  Both boundary frames and frames
+ *             pushed by call-with-continuation-prompt (and reset) carry this.
+ *             The abort handler and dynamic-wind chain captured at the prompt
+ *             live in the ScmMetaCont pushed alongside the frame.
  */
 enum {
       SCM_CONT_SHIFT_MARKER    = (1L<<0),
@@ -105,7 +104,7 @@ static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 /* return true if cont is a boundary continuation frame (C-stack boundary) */
 #define BOUNDARY_FRAME_P(cont) ((cont)->marker & SCM_CONT_BOUNDARY_MARKER)
 
-/* return true if cont is a prompt cont frame (cpc -> ScmPromptData) */
+/* return true if cont is a prompt cont frame */
 #define PROMPT_FRAME_P(cont)   ((cont)->marker & SCM_CONT_PROMPT_MARKER)
 
 /* return true if cont has the end marker of partial continuation */
@@ -1299,16 +1298,6 @@ static void save_cont_1(ScmVM *vm, ScmContFrame *c)
             }
         }
 
-        /* For any prompt frame (boundary or regular), we also need to copy
-           ScmPromptData -- it was allocated on the VM stack at push time,
-           and the stack memory may be reused once we leave this frame. */
-        if (PROMPT_FRAME_P(c)) {
-            ScmPromptData *psrc = (ScmPromptData*)c->cpc;
-            ScmPromptData *psave = SCM_NEW(ScmPromptData);
-            *psave = *psrc;
-            csave->cpc = &psave->dummy;
-        }
-
         /* make the orig frame forwarded */
         if (prev) prev->prev = csave;
         prev = csave;
@@ -2340,30 +2329,8 @@ static ScmObj user_eval_inner(ScmObj program,
 
 void push_prompt_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
 {
-    /* We want to allocate ScmPromptData on stack.  If there's already
-       an unfinished argument frame, however, we need to insert ScmPromptData
-       before it (for other parts of code assumes unfinished argument frame
-       immediately precedes cont frame).
-    */
-    CHECK_STACK(CONT_FRAME_SIZE + PROMPT_DATA_SIZE + (SP - ARGP));
-
-    ScmPromptData *a = (ScmPromptData*)ARGP;
-
-    if (SP - ARGP > 0) {
-        for (ScmObj *s = SP-1, *d = SP+PROMPT_DATA_SIZE-1;
-             s >= ARGP;
-             s--, d--) {
-            *d = *s;
-        }
-    }
-    SP += PROMPT_DATA_SIZE;
-    ARGP += PROMPT_DATA_SIZE;
-
-    a->dummy = SCM_VM_INSN(SCM_VM_RET);
-    a->abortHandler = abortHandler;
-    a->dynamicHandlers = get_dynamic_handlers(vm);
+    CHECK_STACK(CONT_FRAME_SIZE + (SP - ARGP));
     PUSH_CONT(SCM_PROMPT_TAG_PC(promptTag));
-    CONT->cpc = &a->dummy;
     CONT->marker |= SCM_CONT_PROMPT_MARKER;
     push_meta_cont(vm, promptTag, abortHandler);
 }
@@ -3377,10 +3344,9 @@ static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
 
 static ScmObj vm_abort_cc(ScmObj val0, void *data[]);
 
-static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
+static ScmObj vm_abort_body(ScmMetaCont *targetMeta, ScmObj args)
 {
-    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
-    ScmObj abortHandler = pd->abortHandler;
+    ScmObj abortHandler = targetMeta->abortHandler;
 
     if (SCM_FALSEP(abortHandler)) {
         if (!(Scm_Length(args) == 1
@@ -3400,9 +3366,8 @@ static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
 
 static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])
 {
-    ScmContFrame *abortTo = data[0];
-    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
-    ScmObj targetHandlers = pd->dynamicHandlers;
+    ScmMetaCont *targetMeta = data[0];
+    ScmObj targetHandlers = targetMeta->dynamicHandlers;
     ScmVM *vm = theVM;
     ScmObj currentHandlers = get_dynamic_handlers(vm);
     if (targetHandlers != currentHandlers && SCM_PAIRP(currentHandlers)) {
@@ -3411,7 +3376,7 @@ static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])
         return vm_call_after_thunk(vm, handler_entry);
     } else {
         ScmObj args = SCM_OBJ(data[1]);
-        return vm_abort_body(abortTo, args);
+        return vm_abort_body(targetMeta, args);
     }
 }
 
@@ -3431,10 +3396,7 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
                            promptTag);
     }
     ScmContFrame *abortTo = targetMeta->frame;
-
-    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
-    SCM_ASSERT(pd->dummy == SCM_VM_INSN(SCM_VM_RET));
-    ScmObj targetHandlers = pd->dynamicHandlers;
+    ScmObj targetHandlers = targetMeta->dynamicHandlers;
 
     /* Discard the continuation up to the prompt and reinstate abortTo frame
        and its dynamic environment.  Also drop every meta-cont above the
@@ -3451,13 +3413,13 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
         ENSURE_SAVE_CONT(abortTo);
 
         void *data[2];
-        data[0] = abortTo;
+        data[0] = targetMeta;
         data[1] = args;
         Scm_VMPushCC(vm_abort_cc, data, 2);
         ScmObj handler_entry = pop_dynamic_handlers(vm);
         return vm_call_after_thunk(vm, handler_entry);
     } else {
-        return vm_abort_body(abortTo, args);
+        return vm_abort_body(targetMeta, args);
     }
 }
 

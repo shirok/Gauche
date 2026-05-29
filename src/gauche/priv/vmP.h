@@ -47,12 +47,6 @@ SCM_DECL_BEGIN
  *   A prompt tag is an ScmObj to distinguish tagged continuation frame.
  *   ScmContFrame->pc points to &(ScmPromptTag->insn), which contains dummy
  *   RET instruction (so that it won't confuse codes that inspect VM state.)
- *
- *   A tagged continuation frame also points ScmPromptData from
- *   ScmContFrame->cpc.  ScmPromptData is not an ScmObj.  It is a struct
- *   to hold abort handler and some dynamic states.  The first word of
- *   ScmPromptData contains a dummy RET instruction, so that it won't confuse
- *   codes that inspect VM state.
  */
 
 struct ScmPromptTagRec {
@@ -68,16 +62,6 @@ struct ScmPromptTagRec {
 #define SCM_PROMPT_TAG_PC(ptag)   (&SCM_PROMPT_TAG(ptag)->insn)
 #define SCM_PC_TO_PROMPT_TAG(pc)  \
     ((ScmPromptTag*)((char*)(pc) - offsetof(ScmPromptTag, insn)))
-
-/* ScmPromptData is allocated on the VM stack.  The size must be
-   multiple of ScmWord. */
-typedef struct ScmPromptDataRec {
-    ScmWord dummy;              /* RET insn */
-    ScmObj abortHandler;        /* abort handler */
-    ScmObj dynamicHandlers;     /* dynamic-wind handler chain */
-} ScmPromptData;
-
-#define PROMPT_DATA_SIZE       sizeof(ScmPromptData)/sizeof(ScmWord)
 
 /*
  * Continuation mark set
