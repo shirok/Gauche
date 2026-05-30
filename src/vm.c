@@ -82,8 +82,6 @@ static ScmPromptTag defaultPromptTag; /* initialized in initVM */
 
 /* bitflags for ScmContFrame->marker
  *
- *  SHIFT    - this is the bottom frame of a captured partial continuation
- *             (set by shift; the chain ends here for invocation purposes).
  *  BOUNDARY - this is a user_eval_inner boundary; when RETURN_OP encounters
  *             this frame, run_loop returns control to the surrounding C
  *             stack.  Boundary frames are also PROMPT frames.
@@ -93,9 +91,8 @@ static ScmPromptTag defaultPromptTag; /* initialized in initVM */
  *             live in the ScmMetaCont pushed alongside the frame.
  */
 enum {
-      SCM_CONT_SHIFT_MARKER    = (1L<<0),
-      SCM_CONT_BOUNDARY_MARKER = (1L<<1),
-      SCM_CONT_PROMPT_MARKER   = (1L<<2),
+      SCM_CONT_BOUNDARY_MARKER = (1L<<0),
+      SCM_CONT_PROMPT_MARKER   = (1L<<1),
 };
 
 static void push_prompt_cont(ScmVM*, ScmObj, ScmObj);
@@ -107,12 +104,10 @@ static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 /* return true if cont is a prompt cont frame */
 #define PROMPT_FRAME_P(cont)   ((cont)->marker & SCM_CONT_PROMPT_MARKER)
 
-/* return true if cont has the end marker of partial continuation */
-#define MARKER_FRAME_P(cont)   ((cont)->marker & SCM_CONT_SHIFT_MARKER)
-
 /* A "resume boundary" is a meta-cont pushed when a composable continuation is
    invoked.  It records where to resume (m->cont) once the partial cont has run
-   down through its bottom frame (m->frame, which carries SCM_CONT_SHIFT_MARKER).
+   down through its bottom frame (m->frame).  RETURN_OP detects the return by
+   comparing the current cont frame against the active boundary's m->frame.
    It is marked by promptTag == SCM_FALSE. */
 #define RESUME_BOUNDARY_P(m)   (SCM_FALSEP((m)->promptTag))
 
@@ -238,14 +233,6 @@ static void   pop_meta_cont(ScmVM*);
 static ScmMetaCont *find_meta_cont_by_tag(ScmVM*, ScmObj);
 static ScmContFrame *install_partial_cont(ScmVM*, ScmEscapePoint*) SCM_UNUSED;
 
-/* Continuation-semantics switch.  By default, Scm_VMReset / Scm_VMCallPC /
-   Scm_VMCallCC / throw_continuation use the meta-cont-based delimited
-   continuation semantics.  Defining GAUCHE_LEGACY_CONTINUATION in the
-   environment selects the older shift/reset behavior instead.  Read once at
-   Scm__InitVM time; read-only thereafter (race-free across threads). */
-static int legacy_continuation_enabled = 0;
-static int legacy_continuation_p(void) SCM_UNUSED;
-static int legacy_continuation_p(void) { return legacy_continuation_enabled; }
 static void   process_queued_requests(ScmVM *vm);
 static void   vm_finalize(ScmObj vm, void *data);
 static int    check_arglist_tail_for_apply(ScmVM *vm, ScmObj restargs, int max_count);
@@ -385,7 +372,6 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
                     : NULL);
     v->codeCache = NULL;
 
-    v->resetChain = SCM_NIL;
     v->currentMetaCont = NULL;
 
     Scm_RegisterFinalizer(SCM_OBJ(v), vm_finalize, NULL);
@@ -504,7 +490,6 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *vm)
     v->codeCache = NULL;        /* We might need to copy this as well
                                    if we want to debug JIT code cache */
 
-    v->resetChain = vm->resetChain;
     v->currentMetaCont = vm->currentMetaCont;
     /* NB: We don't register the finalizer vm_finalize to the snapshot,
        for we do not want the associated system resources to be cleaned
@@ -853,10 +838,6 @@ static void vm_unregister(ScmVM *vm)
             pop_meta_cont(vm);                          \
             POP_CONT();                                 \
             vm->cont = into__;                          \
-        } else if (MARKER_FRAME_P(CONT)) {              \
-            POP_CONT();                                 \
-            /* legacy: end of a partial cont run to C */ \
-            vm->cont = NULL;                            \
         } else {                                        \
             if (vm->currentMetaCont != NULL             \
                 && CONT == vm->currentMetaCont->frame) {\
@@ -2014,7 +1995,6 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     ep->dynamicHandlers = get_dynamic_handlers(vm);
     ep->cstack = vm->cstack;
     ep->xhandler = Scm_VMCurrentExceptionHandler();
-    ep->resetChain = vm->resetChain;
     ep->partHandlers = SCM_NIL;
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
@@ -2201,7 +2181,6 @@ static ScmObj user_eval_inner(ScmObj program,
        to mark the boundary. */
     ScmWord * volatile prev_pc = PC;
     ScmObj vmhandlers = get_dynamic_handlers(vm);
-    ScmObj vmresetChain = vm->resetChain;
 
     if (SCM_FALSEP(promptTag)) {
         promptTag = SCM_OBJ(&defaultPromptTag);
@@ -2237,9 +2216,6 @@ static ScmObj user_eval_inner(ScmObj program,
             PC = prev_pc;
         } else if (vm->cont == NULL) {
             /* we're finished with executing partial continuation. */
-
-            /* restore reset-chain for reset/shift */
-            vm->resetChain = vmresetChain;
 
             /* save return values */
             ScmObj val0 = vm->val0;
@@ -2297,8 +2273,6 @@ static ScmObj user_eval_inner(ScmObj program,
                 vm->cont = ep->cont;
                 vm->denv = ep->denv;
                 vm->pc = PC_TO_RETURN;
-                /* restore reset-chain for reset/shift */
-                if (ep->cstack) vm->resetChain = ep->resetChain;
                 goto restart;
             } else if (vm->cstack->prev == NULL) {
                 /* This loop is the outermost C stack, and nobody will
@@ -3021,8 +2995,6 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
     if (ep->errorReporting) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
     }
-    /* restore reset-chain for reset/shift */
-    if (ep->cstack) vm->resetChain = ep->resetChain;
 
     SCM_ASSERT(vm->cstack);
     vm->escapeReason = SCM_VM_ESCAPE_ERROR;
@@ -3659,12 +3631,8 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
      * the partial continuation.  The returning part is handled by
      * user_level_inner, but we have to make sure that our current continuation
      * won't be overwritten by execution of the partial continuation.
-     *
-     * NB: As an exception case, if we'll jump into reset,
-     * we might reach to the end of partial continuation even though
-     * the target continuation is a full continuation.
      */
-    if (ep->cstack == NULL || SCM_PAIRP(ep->resetChain)) {
+    if (ep->cstack == NULL) {
         save_cont(vm);
     }
 
@@ -3674,9 +3642,6 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
     vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
     vm->denv = ep->denv;
-
-    /* restore reset-chain for reset/shift */
-    if (ep->cstack) vm->resetChain = ep->resetChain;
 
     nargs = Scm_Length(args);
     if (nargs == 1) {
@@ -3719,186 +3684,113 @@ static ScmObj throw_continuation(ScmObj *argframe,
     ScmObj args = argframe[0];
     ScmVM *vm = theVM;
 
-    if (!legacy_continuation_p()) {
-        /* Meta-cont-driven invocation.
-             - composable (ep->cstack == NULL): splice the captured tail
-               onto vm->cont; ep->cont becomes the new vm->cont via
-               throw_cont_body.
-             - non-composable (ep->cstack != NULL): if the captured
-               prompt is still on the meta-cont chain, rewind cstack
-               (siglongjmp) if needed and reset vm->currentMetaCont to
-               the captured prompt; otherwise fall back to the legacy
-               ghost path (execute on current cstack).
-           Handler walks are unchanged from the legacy paths. */
-        ScmObj currentHandlers = get_dynamic_handlers(vm);
-        ScmObj hdlist;
+    /* Meta-cont-driven invocation.
+         - composable (ep->cstack == NULL): splice the captured tail
+           onto vm->cont; ep->cont becomes the new vm->cont via
+           throw_cont_body.
+         - non-composable (ep->cstack != NULL): if the captured
+           prompt is still on the meta-cont chain, rewind cstack
+           (siglongjmp) if needed and reset vm->currentMetaCont to
+           the captured prompt; otherwise fall back to the ghost
+           path (execute on current cstack). */
+    ScmObj currentHandlers = get_dynamic_handlers(vm);
+    ScmObj hdlist;
 
-        if (ep->cstack == NULL) {
-            /* composable: install via resume boundary (no frame mutation) */
-            save_cont(vm);     /* heapify vm->cont (== into) before recording it */
-            if (ep->partContBottom != NULL) {
-                /* Re-establish the captured (possibly multi-segment) chain via
-                   resume boundaries */
-                ep->cont = install_partial_cont(vm, ep);
-            } else {
-                /* Empty capture: the captured partial cont is the
-                   identity.  Set ep->cont = vm->cont so
-                   throw_cont_body's `vm->cont = ep->cont` is a no-op
-                   and run_loop continues in the invocation's context
-                   rather than treating vm->cont == NULL as a partial-
-                   cont termination. */
-                ep->cont = vm->cont;
-            }
-            hdlist = throw_cont_calculate_handlers(
-                Scm_Append2(ep->partHandlers, currentHandlers),
-                currentHandlers);
+    if (ep->cstack == NULL) {
+        /* composable: install via resume boundary (no frame mutation) */
+        save_cont(vm);     /* heapify vm->cont (== into) before recording it */
+        if (ep->partContBottom != NULL) {
+            /* Re-establish the captured (possibly multi-segment) chain via
+               resume boundaries */
+            ep->cont = install_partial_cont(vm, ep);
         } else {
-            /* non-composable: three sub-cases, distinguished by whether
-               the captured prompt (capturedMetaCont) is still on the
-               active meta-cont chain and whether the captured cstack
-               (ep->cstack) is still on vm->cstack chain.
-                 - prompt alive: rewind cstack (if needed) and reset
-                   currentMetaCont; mc->frame is back on chain so
-                   RETURN_OP fires pop_meta_cont naturally.
-                 - prompt gone, cstack alive (same frame): the
-                   "prompt-exited" case.  Splice ep->partContBottom onto
-                   vm->cont so the captured chain resumes the caller of
-                   the invocation.
-                 - prompt gone, cstack gone: legacy "ghost continuation".
-                   Do *not* splice; let user_eval_inner detect that
-                   vm->cont no longer reaches cstack.cont and raise. */
-            ScmMetaCont *m;
-            for (m = vm->currentMetaCont; m; m = m->prev) {
-                if (m == ep->capturedMetaCont) break;
-            }
-            ScmCStack *cs;
-            for (cs = vm->cstack; cs; cs = cs->prev) {
-                if (cs == ep->cstack) break;
-            }
-            int splice_mode = 0;
-            if (m != NULL) {
-                if (vm->cstack != ep->cstack) {
-                    vm->escapeReason = SCM_VM_ESCAPE_CONT;
-                    vm->escapeData[0] = ep;
-                    vm->escapeData[1] = args;
-                    siglongjmp(vm->cstack->jbuf, 1);
-                }
-                vm->currentMetaCont = ep->capturedMetaCont;
-            } else if (cs == NULL) {
-                /* Ghost cstack: legacy semantics — raise on return. */
-                save_cont(vm);
-            } else if (cs != vm->cstack) {
-                /* Captured cstack is an outer frame; escape to it. */
+            /* Empty capture: the captured partial cont is the
+               identity.  Set ep->cont = vm->cont so
+               throw_cont_body's `vm->cont = ep->cont` is a no-op
+               and run_loop continues in the invocation's context
+               rather than treating vm->cont == NULL as a partial-
+               cont termination. */
+            ep->cont = vm->cont;
+        }
+        hdlist = throw_cont_calculate_handlers(
+            Scm_Append2(ep->partHandlers, currentHandlers),
+            currentHandlers);
+    } else {
+        /* non-composable: three sub-cases, distinguished by whether
+           the captured prompt (capturedMetaCont) is still on the
+           active meta-cont chain and whether the captured cstack
+           (ep->cstack) is still on vm->cstack chain.
+             - prompt alive: rewind cstack (if needed) and reset
+               currentMetaCont; mc->frame is back on chain so
+               RETURN_OP fires pop_meta_cont naturally.
+             - prompt gone, cstack alive (same frame): the
+               "prompt-exited" case.  Splice ep->partContBottom onto
+               vm->cont so the captured chain resumes the caller of
+               the invocation.
+             - prompt gone, cstack gone: "ghost continuation".
+               Do *not* splice; let user_eval_inner detect that
+               vm->cont no longer reaches cstack.cont and raise. */
+        ScmMetaCont *m;
+        for (m = vm->currentMetaCont; m; m = m->prev) {
+            if (m == ep->capturedMetaCont) break;
+        }
+        ScmCStack *cs;
+        for (cs = vm->cstack; cs; cs = cs->prev) {
+            if (cs == ep->cstack) break;
+        }
+        int splice_mode = 0;
+        if (m != NULL) {
+            if (vm->cstack != ep->cstack) {
                 vm->escapeReason = SCM_VM_ESCAPE_CONT;
                 vm->escapeData[0] = ep;
                 vm->escapeData[1] = args;
                 siglongjmp(vm->cstack->jbuf, 1);
-            } else {
-                /* Prompt-exited but same cstack: install the captured
-                   chain into the invocation context.  This yields
-                   SRFI-226 composable semantics for a call/cc whose
-                   delimiting prompt has already returned. */
-                save_cont(vm);
-                if (ep->partContBottom != NULL) {
-                    /* Re-establish the captured chain via resume boundaries
-                       (no frame mutation); see composable branch. */
-                    ep->cont = install_partial_cont(vm, ep);
-                } else {
-                    /* Empty capture (cp was NULL at capture, e.g.
-                       call/cc at the tail of a reset body): identity
-                       behavior — keep vm->cont so throw_cont_body's
-                       `vm->cont = ep->cont` is a no-op rather than a
-                       partial-cont termination. */
-                    ep->cont = vm->cont;
-                }
-                splice_mode = 1;
             }
-            if (splice_mode) {
-                /* Composable-style handler swap: don't fire 'after' for
-                   handlers added between capture and invocation (e.g.
-                   a dynamic-wind body around the invocation site).
-                   Only wind up handlers that were added inside the
-                   captured prompt (ep->partHandlers).  This matches
-                   SRFI-226 splice semantics and keeps the invocation
-                   site's body_cc / handler chain intact. */
-                hdlist = throw_cont_calculate_handlers(
-                    Scm_Append2(ep->partHandlers, currentHandlers),
-                    currentHandlers);
-            } else {
-                hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
-                                                       currentHandlers);
-            }
-        }
-        return throw_cont_body(hdlist, ep, args);
-    }
-
-    /* First, check to see if we need to rewind C stack.
-       NB: If we are invoking a partial continuation (ep->cstack == NULL),
-       we execute it on the current cstack. */
-    if (ep->cstack && vm->cstack != ep->cstack) {
-        ScmCStack *cs;
-        for (cs = vm->cstack; cs; cs = cs->prev) {
-            if (ep->cstack == cs) break;
-        }
-
-        /* Parallel ghost check via meta-cont chain.
-           If the EP recorded a captured prompt, that prompt being still
-           reachable in vm->currentMetaCont must imply the captured cstack
-           is also still reachable (cs != NULL).  The converse need not
-           hold (we can leave a prompt and stay on the same cstack).  Not
-           release-only: SCM_ASSERT is active in normal builds and only
-           compiled out under GAUCHE_RECKLESS. */
-        if (ep->capturedMetaCont != NULL) {
-            ScmMetaCont *m;
-            for (m = vm->currentMetaCont; m; m = m->prev) {
-                if (m == ep->capturedMetaCont) break;
-            }
-            SCM_ASSERT(m == NULL || cs != NULL);
-        }
-
-        /* If the continuation captured below the current C stack, we rewind
-           to the captured stack first. */
-        if (cs != NULL) {
+            vm->currentMetaCont = ep->capturedMetaCont;
+        } else if (cs == NULL) {
+            /* Ghost cstack: raise on return. */
+            save_cont(vm);
+        } else if (cs != vm->cstack) {
+            /* Captured cstack is an outer frame; escape to it. */
             vm->escapeReason = SCM_VM_ESCAPE_CONT;
             vm->escapeData[0] = ep;
             vm->escapeData[1] = args;
             siglongjmp(vm->cstack->jbuf, 1);
+        } else {
+            /* Prompt-exited but same cstack: install the captured
+               chain into the invocation context.  This yields
+               SRFI-226 composable semantics for a call/cc whose
+               delimiting prompt has already returned. */
+            save_cont(vm);
+            if (ep->partContBottom != NULL) {
+                /* Re-establish the captured chain via resume boundaries
+                   (no frame mutation); see composable branch. */
+                ep->cont = install_partial_cont(vm, ep);
+            } else {
+                /* Empty capture (cp was NULL at capture, e.g.
+                   call/cc at the tail of a reset body): identity
+                   behavior — keep vm->cont so throw_cont_body's
+                   `vm->cont = ep->cont` is a no-op rather than a
+                   partial-cont termination. */
+                ep->cont = vm->cont;
+            }
+            splice_mode = 1;
         }
-        /* If we're here, the continuation is 'ghost'---it was captured on
-           a C stack that no longer exists, or that was in another thread.
-           We'll execute the Scheme part of such a ghost continuation
-           on the current C stack.  User_eval_inner will catch if we
-           ever try to return to the stale C frame.
-
-           Note that current vm->cstack chain may point to a continuation
-           frame in vm stack, so we need to save the continuation chain
-           first, since vm->cstack may be popped when other continuation
-           is invoked during the execution of the target one.  (We may be
-           able to save some memory access by checking vm->cstack chain to see
-           if we really have such a frame, but just calling save_cont is
-           easier and always safe.)
-        */
-        save_cont(vm);
-    }
-
-    /* check reset-chain to avoid the wrong return from partial
-       continuation */
-    if (ep->cstack == NULL && !SCM_PAIRP(ep->resetChain)) {
-        Scm_Error("reset missing.");
-    }
-
-    ScmObj hdlist;
-    ScmObj currentHandlers = get_dynamic_handlers(vm);
-    if (ep->cstack) {
-        /* for full continuation */
-        hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
-                                               currentHandlers);
-    } else {
-        /* for partial continuation */
-        hdlist
-            = throw_cont_calculate_handlers(Scm_Append2(ep->partHandlers,
-                                                        currentHandlers),
-                                            currentHandlers);
+        if (splice_mode) {
+            /* Composable-style handler swap: don't fire 'after' for
+               handlers added between capture and invocation (e.g.
+               a dynamic-wind body around the invocation site).
+               Only wind up handlers that were added inside the
+               captured prompt (ep->partHandlers).  This matches
+               SRFI-226 splice semantics and keeps the invocation
+               site's body_cc / handler chain intact. */
+            hdlist = throw_cont_calculate_handlers(
+                Scm_Append2(ep->partHandlers, currentHandlers),
+                currentHandlers);
+        } else {
+            hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
+                                                   currentHandlers);
+        }
     }
     return throw_cont_body(hdlist, ep, args);
 }
@@ -3909,59 +3801,48 @@ ScmObj Scm_VMCallCC(ScmObj proc)
 
     save_cont(vm);
 
-    if (!legacy_continuation_p()) {
-        /* Delimited capture bounded by the innermost real prompt P.  Unlike
-           Scm_VMCallPC, this is "full" call/cc: ep->cstack stays set (by
-           new_ep) so throw_continuation can distinguish this from a partial-
-           cont invocation, and we do NOT consume the continuation (the body
-           runs with it still in place).  If we are inside invoked partial
-           conts, resume boundaries sit above P; the capture spans the segments
-           they join, so we walk the logical chain to find its bottom.  Frames
-           below P are not part of the capture (including them would re-run
-           pre-prompt code on invocation in a foreign context). */
-        ScmMetaCont *P;
-        int reached;
-        ScmContFrame *cp = logical_partcont_bottom(vm, &P, &reached);
-        SCM_ASSERT(P != NULL);
-
-        ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE);
-        if (reached) {
-            ep->cont = (cp ? vm->cont : NULL);
-            ep->partContBottom = cp;
-        } else {
-            /* P->frame is not reachable from vm->cont (disconnected by a prior
-               continuation invocation).  Capture the full chain; invocation
-               falls back to splice-on-current semantics via the ghost branch
-               in throw_continuation. */
-            ep->cont = vm->cont;
-            ep->partContBottom = NULL;
-        }
-        ep->partContTop = ep->cont;
-        ep->capturedMetaCont = vm->currentMetaCont;
-
-        /* partHandlers = handlers pushed *inside* the prompt, i.e. the
-           prefix of the current handler chain that ends at
-           P->dynamicHandlers.  Used by throw_continuation's splice
-           branch (prompt-exited case) to wind up only the handlers
-           added inside the captured prompt, matching composable
-           semantics for cross-prompt invocation. */
-        ScmObj h = SCM_NIL, t = SCM_NIL, p;
-        SCM_FOR_EACH(p, get_dynamic_handlers(vm)) {
-            if (p == P->dynamicHandlers) break;
-            SCM_APPEND1(h, t, SCM_CAR(p));
-        }
-        ep->partHandlers = h;
-
-        ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
-                                       continuation_symbol);
-        return Scm_VMApply1(proc, contproc);
-    }
+    /* Delimited capture bounded by the innermost real prompt P.  Unlike
+       Scm_VMCallPC, this is "full" call/cc: ep->cstack stays set (by
+       new_ep) so throw_continuation can distinguish this from a partial-
+       cont invocation, and we do NOT consume the continuation (the body
+       runs with it still in place).  If we are inside invoked partial
+       conts, resume boundaries sit above P; the capture spans the segments
+       they join, so we walk the logical chain to find its bottom.  Frames
+       below P are not part of the capture (including them would re-run
+       pre-prompt code on invocation in a foreign context). */
+    ScmMetaCont *P;
+    int reached;
+    ScmContFrame *cp = logical_partcont_bottom(vm, &P, &reached);
+    SCM_ASSERT(P != NULL);
 
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE);
-    /* Legacy full-call/cc capture.  capturedMetaCont is recorded for parity
-       with the meta-cont path, but the legacy throw_continuation branch keys
-       off ep->cstack. */
+    if (reached) {
+        ep->cont = (cp ? vm->cont : NULL);
+        ep->partContBottom = cp;
+    } else {
+        /* P->frame is not reachable from vm->cont (disconnected by a prior
+           continuation invocation).  Capture the full chain; invocation
+           falls back to splice-on-current semantics via the ghost branch
+           in throw_continuation. */
+        ep->cont = vm->cont;
+        ep->partContBottom = NULL;
+    }
+    ep->partContTop = ep->cont;
     ep->capturedMetaCont = vm->currentMetaCont;
+
+    /* partHandlers = handlers pushed *inside* the prompt, i.e. the
+       prefix of the current handler chain that ends at
+       P->dynamicHandlers.  Used by throw_continuation's splice
+       branch (prompt-exited case) to wind up only the handlers
+       added inside the captured prompt, matching composable
+       semantics for cross-prompt invocation. */
+    ScmObj h = SCM_NIL, t = SCM_NIL, p;
+    SCM_FOR_EACH(p, get_dynamic_handlers(vm)) {
+        if (p == P->dynamicHandlers) break;
+        SCM_APPEND1(h, t, SCM_CAR(p));
+    }
+    ep->partHandlers = h;
+
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply1(proc, contproc);
@@ -3986,140 +3867,60 @@ ScmObj Scm_VMCallPC(ScmObj proc)
        performance we'll optimize it later. */
     save_cont(vm);
 
-    if (!legacy_continuation_p()) {
-        /* Delimited capture bounded by the innermost real prompt P.  If we are
-           running inside one or more invoked partial conts, resume boundaries
-           sit above P; the captured continuation spans the segments they join,
-           so we walk the logical chain (crossing boundaries) to find its
-           bottom.  capturedMetaCont records the capture-time meta-cont so the
-           boundary joins can be re-established at invocation. */
-        ScmMetaCont *P;
-        int reached;
-        ScmContFrame *cp = logical_partcont_bottom(vm, &P, &reached);
-        SCM_ASSERT(P != NULL);   /* a shift is always inside some reset/prompt */
+    /* Delimited capture bounded by the innermost real prompt P.  If we are
+       running inside one or more invoked partial conts, resume boundaries
+       sit above P; the captured continuation spans the segments they join,
+       so we walk the logical chain (crossing boundaries) to find its
+       bottom.  capturedMetaCont records the capture-time meta-cont so the
+       boundary joins can be re-established at invocation. */
+    ScmMetaCont *P;
+    int reached;
+    ScmContFrame *cp = logical_partcont_bottom(vm, &P, &reached);
+    SCM_ASSERT(P != NULL);   /* a shift is always inside some reset/prompt */
 
-        ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE);
-        ep->partContBottom = cp;
-        ep->capturedMetaCont = vm->currentMetaCont;
-        ep->cont = (cp? vm->cont : NULL);
-        ep->partContTop = ep->cont;
-        ep->denv = P->denv;
-        ep->dynamicHandlers = SCM_NIL; /* unused on partial cont */
-        ep->cstack = NULL;
-        ep->resetChain = SCM_NIL;      /* unused on the meta-cont path */
-
-        /* partHandlers = handlers pushed *inside* the prompt, i.e. the
-           prefix of the current chain that ends at P->dynamicHandlers. */
-        ScmObj h = SCM_NIL, t = SCM_NIL, p;
-        SCM_FOR_EACH(p, get_dynamic_handlers(vm)) {
-            if (p == P->dynamicHandlers) break;
-            SCM_APPEND1(h, t, SCM_CAR(p));
-        }
-        ep->partHandlers = h;
-
-        /* Rewind dynamic-wind 'after' handlers down to the prompt. */
-        call_dynamic_handlers(vm, P->dynamicHandlers,
-                              get_dynamic_handlers(vm));
-
-        ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
-                                       continuation_symbol);
-
-        /* The shift consumes the delimited continuation: truncate vm->cont to
-           the prompt frame and pop the resume boundaries that were part of the
-           captured continuation (currentMetaCont = P).  The shift body returns
-           through P, making its value the reset's value. */
-        vm->cont = P->frame;
-        vm->currentMetaCont = P;
-        vm->denv = P->denv;
-        return Scm_VMApply1(proc, contproc);
-    }
-
-    /* find the latest boundary frame */
-    ScmContFrame *c, *cp;
-    for (c = vm->cont, cp = NULL;
-         c && !BOUNDARY_FRAME_P(c);
-         cp = c, c = c->prev)
-        /*empty*/;
-
-    /* set the end marker of partial continuation */
-    if (cp && !MARKER_FRAME_P(cp)) {
-        cp->marker |= SCM_CONT_SHIFT_MARKER;
-        /* also set the delimited flag in reset information */
-        if (SCM_PAIRP(vm->resetChain)) {
-            SCM_SET_CAR_UNCHECKED(SCM_CAR(vm->resetChain), SCM_TRUE);
-        }
-    }
-
-    /* We need some special setup of EscapePoint for partial continaution.
-       Hoping these tricks won't be necessary once we ovehauled partcont
-       handling. */
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE);
-    /* Legacy partial-cont capture.  partContBottom (the frame carrying
-       SCM_CONT_SHIFT_MARKER) and capturedMetaCont are recorded for parity
-       with the meta-cont path; the legacy throw_continuation branch keys
-       off ep->cstack / resetChain. */
     ep->partContBottom = cp;
     ep->capturedMetaCont = vm->currentMetaCont;
     ep->cont = (cp? vm->cont : NULL);
-    ep->denv = c? c->denv : (cp? cp->denv : SCM_NIL);
-    ep->dynamicHandlers = SCM_NIL; /* don't use for partial continuation */
-    ep->cstack = NULL; /* so that the partial continuation can be run
-                          on any cstack state. */
-    ep->resetChain = (SCM_PAIRP(vm->resetChain)?
-                      Scm_Cons(Scm_Cons(SCM_FALSE, SCM_NIL), SCM_NIL) :
-                      SCM_NIL); /* used only to detect reset missing */
+    ep->partContTop = ep->cont;
+    ep->denv = P->denv;
+    ep->dynamicHandlers = SCM_NIL; /* unused on partial cont */
+    ep->cstack = NULL;
 
-    /* get the dynamic handlers chain saved on reset */
-    ScmObj reset_handlers = (SCM_PAIRP(vm->resetChain)?
-                             SCM_CDAR(vm->resetChain) : SCM_NIL);
-
-    /* cut the dynamic handlers chain from current to reset */
+    /* partHandlers = handlers pushed *inside* the prompt, i.e. the
+       prefix of the current chain that ends at P->dynamicHandlers. */
     ScmObj h = SCM_NIL, t = SCM_NIL, p;
     SCM_FOR_EACH(p, get_dynamic_handlers(vm)) {
-        if (p == reset_handlers) break;
+        if (p == P->dynamicHandlers) break;
         SCM_APPEND1(h, t, SCM_CAR(p));
     }
     ep->partHandlers = h;
 
-    /* call dynamic handlers for exiting reset */
-    call_dynamic_handlers(vm, reset_handlers, get_dynamic_handlers(vm));
+    /* Rewind dynamic-wind 'after' handlers down to the prompt. */
+    call_dynamic_handlers(vm, P->dynamicHandlers,
+                          get_dynamic_handlers(vm));
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
-    /* Remove the saved continuation chain.
-       NB: vm->cont can be NULL if we've been executing a partial continuation.
-           It's ok, for a continuation pointed by cstack will be restored
-           in user_eval_inner.
-       NB: If the delimited flag in reset information is not set,
-           we can consider we've been executing a partial continuation. */
-    if (cp && (SCM_PAIRP(vm->resetChain) &&
-               SCM_FALSEP(SCM_CAAR(vm->resetChain)))) {
-        vm->cont = NULL;
-    } else {
-        vm->cont = c;
-    }
-    vm->denv = c? c->denv : (cp? cp->denv : SCM_NIL);
 
+    /* The shift consumes the delimited continuation: truncate vm->cont to
+       the prompt frame and pop the resume boundaries that were part of the
+       captured continuation (currentMetaCont = P).  The shift body returns
+       through P, making its value the reset's value. */
+    vm->cont = P->frame;
+    vm->currentMetaCont = P;
+    vm->denv = P->denv;
     return Scm_VMApply1(proc, contproc);
 }
 
 ScmObj Scm_VMReset(ScmObj proc)
 {
     ScmVM *vm = theVM;
-    if (!legacy_continuation_p()) {
-        /* Same-cstack prompt install, no C recursion.
-           The captured prompt frame and meta-cont carry the dynamic-handler
-           snapshot, so no resetChain push is needed. */
-        push_prompt_cont(vm, SCM_OBJ(&defaultPromptTag), SCM_FALSE);
-        return Scm_VMApply0(proc);
-    }
-    /* push/pop reset-chain for reset/shift */
-    vm->resetChain = Scm_Cons(Scm_Cons(SCM_FALSE, get_dynamic_handlers(vm)),
-                              vm->resetChain);
-    ScmObj ret = Scm_ApplyRec(proc, SCM_NIL);
-    SCM_ASSERT(SCM_PAIRP(vm->resetChain));
-    vm->resetChain = SCM_CDR(vm->resetChain);
-    return ret;
+    /* Same-cstack prompt install, no C recursion.
+       The captured prompt frame and meta-cont carry the dynamic-handler
+       snapshot. */
+    push_prompt_cont(vm, SCM_OBJ(&defaultPromptTag), SCM_FALSE);
+    return Scm_VMApply0(proc);
 }
 
 /*==============================================================
@@ -4708,7 +4509,6 @@ void Scm_VMDump(ScmVM *vm_to_dump)
         }
     }
 
-    Scm_Printf(out, "reset-chain-length: %d\n", (int)Scm_Length(vm->resetChain));
     if (vm->base) {
         Scm_Printf(out, "Code:\n");
         Scm_CompiledCodeDump(vm->base);
@@ -4823,12 +4623,6 @@ void Scm__InitVM(void)
         SCM_VM_RUNTIME_FLAG_CLEAR(rootVM, SCM_CHECK_UNDEFINED_TEST);
     } else {
         SCM_VM_RUNTIME_FLAG_SET(rootVM, SCM_CHECK_UNDEFINED_TEST); /* default */
-    }
-    /* Continuation-semantics gate.  Any non-NULL env value selects the
-       legacy behavior; matches the convention of the surrounding GAUCHE_*
-       flags. */
-    if (Scm_GetEnv("GAUCHE_LEGACY_CONTINUATION") != NULL) {
-        legacy_continuation_enabled = 1;
     }
     if (Scm_GetEnv("GAUCHE_LEGACY_DEFINE") != NULL) {
         SCM_VM_COMPILER_FLAG_SET(rootVM, SCM_COMPILE_LEGACY_DEFINE);

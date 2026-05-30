@@ -658,12 +658,6 @@
         (^[] ((sprintf (^[] (fmt s))) "world")))
   )
 
-;; partcont.scm has a handful of tests that diverge between the SRFI-226
-;; semantics (Gauche's default) and the older shift/reset behavior.  When
-;; GAUCHE_LEGACY_CONTINUATION is set the VM uses the old behavior, so those
-;; tests pick their expected value via srfi226-continuation?.
-(define (srfi226-continuation?) (not (sys-getenv "GAUCHE_LEGACY_CONTINUATION")))
-
 (let-syntax ([gauche-only
               (syntax-rules ()
                 [(_ expr ...) (begin expr ...)])])

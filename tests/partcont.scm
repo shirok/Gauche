@@ -7,25 +7,12 @@
 
 ;; The comment before each test records results with different implementations.
 ;;
-;; legacy : Gauche legacy partial continuation
 ;; native : Gauche native partial continuation
 ;; meta   : gauche.partcont-meta, implementation using full continuation
 ;; srfi226: Srfi-226 reference implementation run on ChezScheme
 ;; racket : Racket r7rs + racket/control
 
-;; A few tests yield different results in the legacy continuation and
-;; the new continuation.  This macro switches expected result
-;; according to which system we're in.
 
-(define-syntax test*/switch
-  (syntax-rules ()
-    ((_ name native-expected legacy-expected expr)
-     (if (srfi226-continuation?)
-         (test* name native-expected expr)
-         (test* name legacy-expected expr)))))
-
-
-;; legacy : 1000
 ;; native : 1000
 ;; meta   : 1000
 ;; srfi226: 1000
@@ -46,7 +33,6 @@
          ;(k3)
          ))
 
-;; legacy : (1 2 3)
 ;; native : (1 2 3)
 ;; meta   : (1 2 3)
 ;; srfi226: (1 2 3)
@@ -55,7 +41,6 @@
        '(1 2 3)
        (values->list (reset (values 1 2 3))))
 
-;; legacy : (1 2 3)
 ;; native : (1 2 3)
 ;; meta   : (1 2 3)
 ;; srfi226: (1 2 3)
@@ -69,7 +54,6 @@
           (values 1 2 3))
          (values->list (k1))))
 
-;; legacy : 010
 ;; native : 010
 ;; meta   : 010
 ;; srfi226: 010
@@ -86,7 +70,6 @@
               ;; expr of 'shift' is executed on the outside of 'reset'
               (shift k (display (p))))))))
 
-;; legacy : [r01][r02][r02][r03]
 ;; native : [r01][r02][r02][r03]
 ;; meta   : [r01][r02][r02][r03]
 ;; srfi226: [r01][r02][r02][r03]
@@ -109,7 +92,6 @@
                (display "[r03]"))))
            (k1))))
 
-;; legacy : [r01][s01][s02][s02]
 ;; native : [r01][s01][s02][s02]
 ;; meta   : [r01][s01][s02][s02]
 ;; srfi226: [r01][s01][s02][s02]
@@ -129,7 +111,6 @@
            (k1)
            (reset (reset (k2))))))
 
-;; legacy : [r01][s01]
 ;; native : [r01][s01]
 ;; meta   : [r01][s01]
 ;; srfi226: [r01][s01]
@@ -151,7 +132,6 @@
            (k1)
            (reset (reset (k2))))))
 
-;; legacy : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
 ;; native : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
 ;; meta   : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
 ;; srfi226: [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
@@ -175,33 +155,30 @@
            (k1)
            (reset (reset (k2))))))
 
-;; legacy : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
 ;; native : [r01][s01][s02][d01][d02][s02]12345[d03]
 ;; meta   : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
 ;; srfi226: [r01][s01][s02][d01][d02][s02]12345[d03]
 ;; racket : [r01][s01][s02][d01][d02][s02]12345[d03]
-(test*/switch "reset/shift + call/cc 2-D (from Kahua nqueen broken)"
-              "[r01][s01][s02][d01][d02][s02]12345[d03]" ; srfi-226
-              "[r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]" ;legacy
-              (with-output-to-string
-                (lambda ()
-                  (define k1 #f)
-                  (define k2 #f)
-                  (reset
-                   (display "[r01]")
-                   (shift k (set! k1 k))
-                   (display "[s01]")
-                   (call/cc (lambda (k) (set! k2 k)))
-                   (display "[s02]")
-                   12345)
-                  (k1)
-                  (dynamic-wind
-                    (lambda () (display "[d01]"))
-                    (lambda () (display "[d02]")
-                            (display (reset (reset (k2)))))
-                    (lambda () (display "[d03]"))))))
+(test* "reset/shift + call/cc 2-D (from Kahua nqueen broken)"
+       "[r01][s01][s02][d01][d02][s02]12345[d03]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (shift k (set! k1 k))
+            (display "[s01]")
+            (call/cc (lambda (k) (set! k2 k)))
+            (display "[s02]")
+            12345)
+           (k1)
+           (dynamic-wind
+             (lambda () (display "[d01]"))
+             (lambda () (display "[d02]")
+                     (display (reset (reset (k2)))))
+             (lambda () (display "[d03]"))))))
 
-;; legacy : [r01][s01][s01]
 ;; native : [r01][s01][s01]
 ;; meta   : [r01][s01][s01]
 ;; srfi226: [r01][s01][s01]
@@ -221,104 +198,43 @@
            (k2)
            (reset (k1)))))
 
-;; legacy : error
 ;; native : ""
 ;; meta   : ""
 ;; srfi226: ""
 ;; racket : -
 (gauche-only
- (test*/switch "reset/shift + call/cc error 1"
-               ""                       ;srfi-226
-               (test-error)             ;legacy
-               (with-output-to-string
-                 (lambda ()
-                   (define k1 #f)
-                   (define k2 #f)
-                   (define (f1) (call/cc (lambda (k) (set! k1 k)))
-                     (shift k (set! k2 k))
-                     (display "[f01]"))
-                   (define (f2) (display "[f02]"))
-                   (reset (f1) (f2))
-                   (reset (k1))))))
+ (test* "reset/shift + call/cc error 1"
+        ""
+        (with-output-to-string
+          (lambda ()
+            (define k1 #f)
+            (define k2 #f)
+            (define (f1) (call/cc (lambda (k) (set! k1 k)))
+              (shift k (set! k2 k))
+              (display "[f01]"))
+            (define (f2) (display "[f02]"))
+            (reset (f1) (f2))
+            (reset (k1))))))
 
-;; legacy : error
 ;; native : ""
 ;; meta   : ""
 ;; srfi226: ""
 ;; racket : -
 (gauche-only
- (test*/switch "reset/shift + call/cc error 2"
-               ""                       ;srfi-226
-               (test-error)             ;legacy
-               (with-output-to-string
-                 (lambda ()
-                   (define k1 #f)
-                   (define k2 #f)
-                   (define k3 #f)
-                   (define (f1) (call/cc (lambda (k) (set! k1 k)))
-                     (shift k (set! k2 k))
-                     (display "[f01]"))
-                   (define (f2) (display "[f02]"))
-                   (reset (f1) (f2))
-                   (reset (shift k (set! k3 k)) (k1))
-                   (k3)))))
-
-;; legacy : error
-;; native : ""
-;; meta   : -
-;; srfi226: -
-;; racket : -
-(gauche-only
- ;; Avoid running with partcont-meta, for it hangs.
- ;; Under SRFI-226 semantics the re-invoked call/cc continuation runs a shift
- ;; that escapes to the enclosing (test-file) prompt instead of raising
- ;; the old "ghost continuation" error, so we skip it there.
- (unless (or (provided? "gauche/partcont-meta") (srfi226-continuation?))
-   (test* "reset/shift + call/cc error 3"
-          (test-error)
-          (with-output-to-string
-            (lambda ()
-              (define k1 #f)
-              (define k2 #f)
-              (reset
-               (call/cc (lambda (k) (set! k1 k)))
-               (shift k (set! k2 k)))
-              (k2)
-              (k1))))))
-
-(gauche-only
- ;; Avoid running with partcont-meta, for something weird happnes.
- ;; Under SRFI-226 semantics the call/cc continuation captured inside the
- ;; parameterize re-invokes a shift that escapes the (now-returned) reset
- ;; to the enclosing test prompt, so we skip it there.
- (unless (or (provided? "gauche/partcont-meta") (srfi226-continuation?))
-   (let ((p (make-parameter 0))
-         (c #f))
-     (define (foo)
-       (reset
-        (display (p))
-        (parameterize ((p 1))
-          (call/cc
-           (lambda (cont)
-             (display (p))
-             (shift k (display (p)) (cont k))
-             (display (p)))))))
-     ;; legacy : 010
-     ;; native :
-     ;; meta   :
-     ;; srfi226: -
-     ;; racket : -
-     (test* "reset/shift + call/cc + parameterize" "010"
-            (with-output-to-string
-              (lambda () (set! c (foo)))))
-     ;; legacy : 1
-     ;; native :
-     ;; meta   :
-     ;; srfi226: -
-     ;; racket : -
-     (test* "reset/shift + call/cc + parameterize" "1"
-            (with-output-to-string c)))))
-
+ (test* "reset/shift + call/cc error 2"
+        ""
+        (with-output-to-string
+          (lambda ()
+            (define k1 #f)
+            (define k2 #f)
+            (define k3 #f)
+            (define (f1) (call/cc (lambda (k) (set! k1 k)))
+              (shift k (set! k2 k))
+              (display "[f01]"))
+            (define (f2) (display "[f02]"))
+            (reset (f1) (f2))
+            (reset (shift k (set! k3 k)) (k1))
+            (k3)))))
 
 (let ((p (make-parameter 1))
       (c #f))
@@ -331,14 +247,12 @@
          (shift k (display (p)) (set! c k))
          (display (p)))
        (display (p)))))
-  ;; legacy : 232
   ;; native : 232
   ;; meta   : 232
   ;; srfi226: 232
   ;; racket : 23#<void>
   (test* "reset/shift + temporarily + parameterize" "232"
          (with-output-to-string foo))
-  ;; legacy : "32"
   ;; native : "32"
   ;; meta   : ""
   ;; srfi226: ""
@@ -346,7 +260,6 @@
   (test* "reset/shift + temporarily + parameterize (cont)" "32"
          (with-output-to-string c)))
 
-;; legacy : [E01][E02]
 ;; native : [E01][E02]
 ;; meta   : [E01][E02]
 ;; srfi226: [E01][E02]
@@ -363,7 +276,6 @@
                 (reset (error "[E02]"))
                 (display "[E03]")))))))
 
-;; legacy : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
 ;; native : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
 ;; meta   : [W01][D01][D02][W01][D01][D02][D01][E01][D02][D01][D02]
 ;; srfi226: [W01][D01][D02][W01][D01][D01][D02][D01][E01][D02][D02]
@@ -387,7 +299,6 @@
                 next
                 (lambda () (display "[D02]"))))))))
 
-;; legacy : [d01][d02][d03][d04]
 ;; native : [d01][d02][d03][d04]
 ;; meta   : [d01][d02][d04][d01][d03][d04]
 ;; srfi226: [d01][d02][d03][d04]
@@ -406,7 +317,6 @@
                    (display "[d03]"))
               (lambda () (display "[d04]"))))))))
 
-;; legacy : [d01][d02][d04][d01][d03][d04]
 ;; native : [d01][d02][d04][d01][d03][d04]
 ;; meta   : [d01][d02][d04][d01][d03][d04]
 ;; srfi226: [d01][d02][d04][d01][d03][d04]
@@ -426,7 +336,6 @@
              (lambda () (display "[d04]"))))
            (k1))))
 
-;; legacy : [d01][d02][d01][d02][d01][d02][d01][d02]
 ;; native : [d01][d02][d01][d02][d01][d02][d01][d02]
 ;; meta   : [d01][d02][d01][d02][d01][d02][d01][d02]
 ;; srfi226: [d01][d02][d01][d02][d01][d02][d01][d02]
@@ -449,7 +358,6 @@
             (k2)
             (k2)))))
 
-;; legacy : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; native : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; srfi226: [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
@@ -475,7 +383,6 @@
             (k2)
             (k2)))))
 
-;; legacy : [d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]
 ;; native : [d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]
 ;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; srfi226: [d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]
@@ -502,7 +409,6 @@
               (lambda () (k1) (k2) (k2))
               (lambda () (display "[d22]")))))))
 
-;; legacy : [d01][d11][d12][d02][d11][d12]
 ;; native : [d01][d11][d12][d02][d11][d12]
 ;; meta   : [d01][d11][d12][d02][d01][d11][d12][d02]
 ;; srfi226: [d01][d11][d12][d02][d11][d12]
@@ -524,7 +430,6 @@
               (lambda () (display "[d02]"))))
            (k1))))
 
-;; legacy : [d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]
 ;; native : [d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]
 ;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; srfi226: [d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]
@@ -554,7 +459,6 @@
             (k2)
             (k3)))))
 
-;; legacy : [d01][d02][d11][d12][d13][d14][d03][d04]
 ;; native : [d01][d02][d11][d12][d13][d14][d03][d04]
 ;; meta   : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 ;; srfi226: [d01][d02][d11][d12][d13][d14][d03][d04]
@@ -580,7 +484,6 @@
                 (display "[d03]"))
               (lambda () (display "[d04]"))))))))
 
-;; legacy : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 ;; native : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 ;; meta   : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 ;; srfi226: [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
@@ -606,7 +509,6 @@
              (lambda () (display "[d04]"))))
            (k1))))
 
-;; legacy : [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
 ;; native : [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
 ;; meta   : [d01][d02][d04][d11][d12][d14][d01][d03][d04][d11][d13][d14]
 ;; srfi226: [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]

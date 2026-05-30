@@ -202,8 +202,8 @@ typedef struct ScmContFrameRec {
     ScmEnvFrame *env;             /* saved environment */
     ScmObj denv;                  /* dynamic environment links */
 #if SIZEOF_LONG == 4
-    long size : 29;               /* size of argument frame */
-    u_long marker : 3;            /* marker bits; see SCM_CONT_*_MARKER */
+    long size : 30;               /* size of argument frame */
+    u_long marker : 2;            /* marker bits; see SCM_CONT_*_MARKER */
 #else
     int size;                     /* size of argument frame */
     int marker;                   /* marker bits; see SCM_CONT_*_MARKER */
@@ -576,14 +576,6 @@ struct ScmVMRec {
 
     ScmCallTrace *callTrace;
     ScmCodeCache *codeCache;
-
-    /* for reset/shift */
-    ScmObj resetChain;          /* list of reset information,
-                                   where reset information is
-                                   (delimited . <dynamic handlers chain>).
-                                   the delimited flag is set when 'shift'
-                                   appears in 'reset' and the end marker of
-                                   partial continuation is set. */
 
     /* Innermost meta-continuation; chain via prev reaches the outermost. */
     ScmMetaCont *currentMetaCont;
