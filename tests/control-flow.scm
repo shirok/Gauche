@@ -908,7 +908,7 @@
 (test* "re-entrant composable cont must not cycle" 42
        (let ()
          (cond-expand
-          (gauche
+          ((and gauche (not gauche.os.windows))
            (define (with-alarm-guard secs thunk)
              (let ([prev (set-signal-handler! SIGALRM
                                               (lambda (sig) (error "alarm-timeout")))])
