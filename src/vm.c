@@ -2249,8 +2249,10 @@ static ScmObj user_eval_inner(ScmObj program,
         }
     } else {
         /* An escape situation happened. */
-        if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
-            ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
+        ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
+        switch (vm->escapeReason) {
+        case SCM_VM_ESCAPE_CONT:
+            SCM_ASSERT(ep != NULL);
             if (ep->cstack == vm->cstack) {
                 ScmObj handlers =
                     throw_cont_calculate_handlers(ep->dynamicHandlers,
@@ -2267,8 +2269,8 @@ static ScmObj user_eval_inner(ScmObj program,
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
             }
-        } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
-            ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
+            /* NOTREACHED */
+        case SCM_VM_ESCAPE_ERROR:
             if (ep && ep->cstack == vm->cstack) {
                 vm->cont = ep->cont;
                 vm->denv = ep->denv;
@@ -2292,7 +2294,8 @@ static ScmObj user_eval_inner(ScmObj program,
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
             }
-        } else {
+            /* NOTREACHED */
+        default:
             Scm_Panic("invalid longjmp");
         }
         /* NOTREACHED */
@@ -3632,7 +3635,7 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
      * user_level_inner, but we have to make sure that our current continuation
      * won't be overwritten by execution of the partial continuation.
      */
-    if (ep->cstack == NULL) {
+    if (SCM_ESCAPE_POINT_COMPOSABLE_P(ep)) {
         save_cont(vm);
     }
 
@@ -3685,18 +3688,16 @@ static ScmObj throw_continuation(ScmObj *argframe,
     ScmVM *vm = theVM;
 
     /* Meta-cont-driven invocation.
-         - composable (ep->cstack == NULL): splice the captured tail
-           onto vm->cont; ep->cont becomes the new vm->cont via
-           throw_cont_body.
-         - non-composable (ep->cstack != NULL): if the captured
-           prompt is still on the meta-cont chain, rewind cstack
-           (siglongjmp) if needed and reset vm->currentMetaCont to
-           the captured prompt; otherwise fall back to the ghost
-           path (execute on current cstack). */
+         - composable: splice the captured tail onto vm->cont; ep->cont
+           becomes the new vm->cont via throw_cont_body.
+         - non-composable: if the captured prompt is still on the
+           meta-cont chain, rewind cstack (siglongjmp) if needed and
+           reset vm->currentMetaCont to the captured prompt; otherwise
+           fall back to the ghost path (execute on current cstack). */
     ScmObj currentHandlers = get_dynamic_handlers(vm);
     ScmObj hdlist;
 
-    if (ep->cstack == NULL) {
+    if (SCM_ESCAPE_POINT_COMPOSABLE_P(ep)) {
         /* composable: install via resume boundary (no frame mutation) */
         save_cont(vm);     /* heapify vm->cont (== into) before recording it */
         if (ep->partContBottom != NULL) {

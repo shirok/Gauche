@@ -171,6 +171,9 @@ SCM_CLASS_DECL(Scm_EscapePointClass);
 #define SCM_ESCAPE_POINT(obj)   ((ScmEscapePoint*)obj)
 #define SCM_ESCAPE_POINT_P(obj) SCM_ISA(obj, SCM_CLASS_ESCAPE_POINT)
 
+#define SCM_ESCAPE_POINT_COMPOSABLE_P(obj) \
+    (SCM_ESCAPE_POINT_P(obj) && SCM_ESCAPE_POINT(obj)->cstack == NULL)
+
 /*
  * Meta-continuation
  *
