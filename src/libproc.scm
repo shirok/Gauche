@@ -75,6 +75,11 @@
 
 ;; SRFI-226
 (define-cproc continuation? (obj) ::<boolean> Scm_ContinuationP)
+(define-cproc composable-continuation? (obj) ::<boolean>
+  Scm_ComposableContinuationP)
+(define-cproc non-composable-continuation? (obj) ::<boolean>
+  Scm_NonComposableContinuationP)
+
 
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
