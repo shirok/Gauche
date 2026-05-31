@@ -3156,19 +3156,6 @@ ScmObj Scm_VMCallWithContinuationPrompt(ScmObj thunk,
     return Scm_VMApply0(thunk);
 }
 
-static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
-{
-    if (!SCM_PROMPT_TAG(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
-    ScmWord *pc = SCM_PROMPT_TAG_PC(promptTag);
-    for (ScmContFrame *c = vm->cont; c; c = c->prev) {
-        if (c->pc == pc) {
-            return c;
-         }
-     }
-     return NULL;
-}
-
-
 static ScmObj vm_abort_cc(ScmObj val0, void *data[]);
 
 static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
@@ -3263,8 +3250,7 @@ static ScmObj make_continuation_mark_set(ScmVM *vm,
                                          ScmObj promptTag)
 {
     if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
-
-    ScmContFrame *bottom = find_prompt_frame(vm, promptTag);
+    ScmMetaCont *bottom = find_meta_cont_by_tag(vm, promptTag);
     if (bottom == NULL) {
         Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                            "prompt-tag", promptTag,
@@ -3272,12 +3258,13 @@ static ScmObj make_continuation_mark_set(ScmVM *vm,
                            "Stale prompt tag: %S",
                            promptTag);
     }
+    SCM_ASSERT(bottom->frame);
 
     ScmContinuationMarkSet *cm = SCM_NEW(ScmContinuationMarkSet);
     SCM_SET_CLASS(cm, SCM_CLASS_CONTINUATION_MARK_SET);
     cm->cont = cont;
     cm->denv = denv;
-    cm->bottomDenv = bottom->denv;
+    cm->bottomDenv = bottom->frame->denv;
     return SCM_OBJ(cm);
 }
 
