@@ -3618,6 +3618,28 @@ int Scm_ContinuationP(ScmObj proc)
     return (SCM_SUBRP(proc) && SCM_PROCEDURE_INFO(proc) == continuation_symbol);
 }
 
+static ScmEscapePoint *continuation_proc_ep(ScmObj proc)
+{
+    if (Scm_ContinuationP(proc)) {
+        return (ScmEscapePoint*)SCM_SUBR_DATA(proc);
+    }
+    return NULL;
+}
+
+int Scm_NonComposableContinuationP(ScmObj proc)
+{
+    ScmEscapePoint *ep = continuation_proc_ep(proc);
+    if (ep && !SCM_ESCAPE_POINT_COMPOSABLE_P(ep)) return TRUE;
+    return FALSE;
+}
+
+int Scm_ComposableContinuationP(ScmObj proc)
+{
+    ScmEscapePoint *ep = continuation_proc_ep(proc);
+    if (ep && SCM_ESCAPE_POINT_COMPOSABLE_P(ep)) return TRUE;
+    return FALSE;
+}
+
 /* call with partial continuation.  this corresponds to the 'shift' operator
    in shift/reset controls (Gasbichler&Sperber, "Final Shift for Call/cc",
    ICFP02.)   Note that we treat the boundary frame as the bottom of

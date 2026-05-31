@@ -135,8 +135,7 @@
                 (lambda (k)
                   (+ 1 (call-in-continuation k (lambda (x) x) 10))))))
 
-;; Missing non-composable-continuation?
-'(test #t (call-with-current-continuation
+(test #t (call-with-current-continuation
            (lambda (k)
              (non-composable-continuation? k))))
 
@@ -145,8 +144,7 @@
            (lambda (k)
              (non-composable-continuation? k))))
 
-;; Missing non-composable-continuation?
-'(test #f (non-composable-continuation? values))
+(test #f (non-composable-continuation? values))
 
 (test #t (call-with-current-continuation
            (lambda (k)
@@ -731,8 +729,7 @@
 (test #t (continuation? (call/cc values)))
 ;; Missing call-with-composable-continuation
 '(test #t (continuation? (call-with-composable-continuation values)))
-;; Missing non-composable-continuation?
-'(test #t (non-composable-continuation? (call/cc values)))
+(test #t (non-composable-continuation? (call/cc values)))
 ;; Missing call-with-composable-continuation
 '(test #f (non-composable-continuation? (call-with-composable-continuation values)))
 
