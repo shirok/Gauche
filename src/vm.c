@@ -3305,18 +3305,6 @@ ScmObj Scm_VMCallWithContinuationPrompt(ScmObj thunk,
     return Scm_VMApply0(thunk);
 }
 
-/* Find the cont frame of the innermost prompt with the given tag.
-   Prompt tag always interoduce meta cont, so we don't need to walk the
-   cont frame chain---just walking the meta cont chain is enough.
-   May return NULL if no tag is found.
-*/
-static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
-{
-    ScmMetaCont *m = find_meta_cont_by_tag(vm, promptTag);
-    return m ? m->frame : NULL;
-}
-
-
 static ScmObj vm_abort_cc(ScmObj val0, void *data[]);
 
 static ScmObj vm_abort_body(ScmMetaCont *targetMeta, ScmObj args)
@@ -3412,8 +3400,7 @@ static ScmObj make_continuation_mark_set(ScmVM *vm,
                                          ScmObj promptTag)
 {
     if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
-
-    ScmContFrame *bottom = find_prompt_frame(vm, promptTag);
+    ScmMetaCont *bottom = find_meta_cont_by_tag(vm, promptTag);
     if (bottom == NULL) {
         Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                            "prompt-tag", promptTag,
@@ -3421,12 +3408,13 @@ static ScmObj make_continuation_mark_set(ScmVM *vm,
                            "Stale prompt tag: %S",
                            promptTag);
     }
+    SCM_ASSERT(bottom->frame);
 
     ScmContinuationMarkSet *cm = SCM_NEW(ScmContinuationMarkSet);
     SCM_SET_CLASS(cm, SCM_CLASS_CONTINUATION_MARK_SET);
     cm->cont = cont;
     cm->denv = denv;
-    cm->bottomDenv = bottom->denv;
+    cm->bottomDenv = bottom->frame->denv;
     return SCM_OBJ(cm);
 }
 
