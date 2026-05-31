@@ -14,7 +14,7 @@
 #   $top_srcdir/tests/partcont-srfi-226.scm
 #
 # Usage (from the tests/ directory):
-#   ./partcont-srfi-226.sh
+#   ./partcont-oracle.sh
 # Env overrides: GOSH, CHEZ, SRFI226_LIB
 set -e
 
@@ -72,8 +72,7 @@ $GOSH -e "
 (call-with-input-file \"$RAW\"
   (lambda (p) (let loop () (let ((f (read p)))
     (unless (eof-object? f)
-      (let ((name (~ f 1)))   ; f = (RESULTROW name expect pass? actual)
-        (print \"Run: \" name)
+      (let ((name (list-ref f 1)))   ; f = (RESULTROW name expect pass? actual)
         (unless (hash-table-exists? seen name)
           (hash-table-put! seen name #t) (set! total (+ total 1))
           (unless (list-ref f 3)
