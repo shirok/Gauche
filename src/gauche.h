@@ -656,6 +656,7 @@ SCM_EXTERN ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
 SCM_EXTERN ScmObj Scm_VMCallCC(ScmObj proc);
 SCM_EXTERN ScmObj Scm_VMCallCCWithTag(ScmObj proc, ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_VMCallPC(ScmObj proc);
+SCM_EXTERN ScmObj Scm_VMCallPCWithTag(ScmObj proc, ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_VMReset(ScmObj proc);
 SCM_EXTERN void   Scm_VMPushDynamicHandlers(ScmObj, ScmObj, ScmObj);
 SCM_EXTERN ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
