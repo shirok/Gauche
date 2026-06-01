@@ -2106,7 +2106,7 @@ static void pop_meta_cont(ScmVM *vm)
    is not a <prompt-tag>, default prompt tag is used. */
 static ScmMetaCont *find_meta_cont_by_tag(ScmVM *vm, ScmObj promptTag)
 {
-    if (!SCM_PROMPT_TAG(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
+    if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
     for (ScmMetaCont *m = vm->currentMetaCont; m; m = m->prev) {
         if (SCM_EQ(m->promptTag, promptTag)) return m;
     }
