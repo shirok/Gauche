@@ -220,6 +220,7 @@ static void   push_resume_boundary(ScmVM*, ScmContFrame*, ScmContFrame*);
 static void   pop_meta_cont(ScmVM*);
 static ScmMetaCont *find_meta_cont_by_tag(ScmVM*, ScmObj);
 static ScmContFrame *install_partial_cont(ScmVM*, ScmEscapePoint*) SCM_UNUSED;
+static ScmObj abort_current_continuation(ScmMetaCont*, ScmObj);
 
 static void   process_queued_requests(ScmVM *vm);
 static void   vm_finalize(ScmObj vm, void *data);
@@ -1963,25 +1964,25 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_EscapePointClass,
 static ScmEscapePoint *new_ep(ScmVM *vm,
                               ScmObj errorHandler,
                               int rewindBefore,
-                              ScmObj promptTag,
-                              ScmObj abortHandler)
+                              ScmEscapePoint *proto)
 {
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
     SCM_SET_CLASS(ep, SCM_CLASS_ESCAPE_POINT);
     ep->ehandler = errorHandler;
-    ep->cont = vm->cont;
-    ep->denv = vm->denv;
-    ep->dynamicHandlers = get_dynamic_handlers(vm);
-    ep->cstack = vm->cstack;
-    ep->xhandler = Scm_VMCurrentExceptionHandler();
-    ep->resetChain = vm->resetChain;
-    ep->partHandlers = SCM_NIL;
-    ep->errorReporting =
-        SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
+    ep->cont = proto? proto->cont : vm->cont;
+    ep->denv = proto? proto->denv : vm->denv;
+    ep->dynamicHandlers = proto? proto->dynamicHandlers : get_dynamic_handlers(vm);
+    ep->cstack = proto? proto->cstack : vm->cstack;
+    ep->xhandler = proto? proto->xhandler : Scm_VMCurrentExceptionHandler();
+    ep->partHandlers = proto? proto->partHandlers : SCM_NIL;
+    ep->errorReporting = proto
+        ? proto->errorReporting
+        : (int)(!!SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED));
     ep->rewindBefore = rewindBefore;
-    ep->promptTag = promptTag;
-    ep->abortHandler = abortHandler;
-    ep->bottom = NULL;
+    ep->partContTop = proto? proto->partContTop : NULL;
+    ep->boundingMetaCont = proto? proto->boundingMetaCont : NULL;
+    ep->capturedMetaCont = proto? proto->capturedMetaCont : NULL;
+    ep->applyProc = proto? proto->applyProc : SCM_FALSE;
     return ep;
 }
 
@@ -2006,6 +2007,7 @@ static void push_meta_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
     m->cont = vm->cont->prev;
     m->denv = vm->cont->denv;
     m->dynamicHandlers = get_dynamic_handlers(vm);
+    m->cstack = vm->cstack;
     m->prev = vm->currentMetaCont;
     vm->currentMetaCont = m;
 }
@@ -2028,6 +2030,7 @@ static void push_resume_boundary(ScmVM *vm, ScmContFrame *bottom,
     m->cont = into;                    /* caller's cont to restore */
     m->denv = SCM_FALSE;               /* unused for a resume boundary */
     m->dynamicHandlers = SCM_NIL;      /* unused for a resume boundary */
+    m->cstack = vm->cstack;
     m->prev = vm->currentMetaCont;
     vm->currentMetaCont = m;
 }
@@ -2040,7 +2043,7 @@ static void pop_meta_cont(ScmVM *vm)
     }
 }
 
-/* Walk vm->currentMetaCont prev-chain and return the innermost meta-cont
+/* Walk vm->currentMetaCont prev-chain and return the innermost metacont
    whose promptTag matches.  Returns NULL if not found.  If promptTag
    is not a <prompt-tag>, default prompt tag is used. */
 static ScmMetaCont *find_meta_cont_by_tag(ScmVM *vm, ScmObj promptTag)
@@ -2063,8 +2066,9 @@ static ScmMetaCont *find_meta_cont_by_tag(ScmVM *vm, ScmObj promptTag)
    top and the target prompt.  Real prompts within the captured slice are
    re-installed as real meta-conts (so abort/shift inside the invoked partial
    cont can target them, per SRFI-226); resume boundaries are re-pushed as
-   resume boundaries.  The target prompt itself (whose frame == partContBottom)
-   is NOT re-installed -- cwcc captures up to but not including the prompt.
+   resume boundaries.  The target prompt itself (the bounding prompt, whose
+   frame == boundingMetaCont->frame) is NOT re-installed -- cwcc captures up to
+   but not including the prompt.
 
    Returns the top cont frame, which will be set to the EP of thrown
    continuation, and eventually set to vm->cont.
@@ -2072,12 +2076,13 @@ static ScmMetaCont *find_meta_cont_by_tag(ScmVM *vm, ScmObj promptTag)
 static ScmContFrame *install_partial_cont(ScmVM *vm, ScmEscapePoint *ep)
 {
     ScmContFrame *into = vm->cont;
-    push_resume_boundary(vm, ep->partContBottom, into);
+    ScmContFrame *partContBottom = ep->boundingMetaCont->frame;
+    push_resume_boundary(vm, partContBottom, into);
 
     ScmObj mc_chain = SCM_NIL;
 
     for (ScmMetaCont *m = ep->capturedMetaCont;
-         m != NULL && m->frame != ep->partContBottom;
+         m != NULL && m->frame != partContBottom;
          m = m->prev) {
         mc_chain = Scm_Cons(SCM_OBJ(m), mc_chain);
     }
@@ -2093,6 +2098,7 @@ static ScmContFrame *install_partial_cont(ScmVM *vm, ScmEscapePoint *ep)
         m->cont = src->cont;
         m->denv = src->denv;
         m->dynamicHandlers = src->dynamicHandlers;
+        m->cstack = vm->cstack;
         m->prev = vm->currentMetaCont;
         vm->currentMetaCont = m;
     }
@@ -2156,6 +2162,9 @@ static ScmObj user_eval_inner(ScmObj program,
     cstack.prev = vm->cstack;
     cstack.cont = vm->cont;
     vm->cstack = &cstack;
+    /* push_boundary_cont sets currentMetaCont->cstack, but that's before
+       we update vm->cstack, so we reset it. */
+    vm->currentMetaCont->cstack = &cstack;
 
   restart:
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
@@ -2244,7 +2253,27 @@ static ScmObj user_eval_inner(ScmObj program,
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
             }
-        } else {
+            /* NOTREACHED */
+        case SCM_VM_ESCAPE_ABORT: {
+            /* abort-current-continuation whose target prompt is not on the
+               same cstack. */
+            ScmMetaCont *targetMeta = (ScmMetaCont*)vm->escapeData[0];
+            if (targetMeta->cstack == vm->cstack) {
+                /* force popping continuation when restarted */
+                vm->pc = PC_TO_RETURN;
+                vm->val0 = abort_current_continuation(targetMeta, SCM_OBJ(vm->escapeData[1]));
+                goto restart;
+            } else {
+                SCM_ASSERT(vm->cstack && vm->cstack->prev);
+                vm->cont = cstack.cont;
+                pop_meta_cont(vm);
+                POP_CONT();
+                vm->cstack = vm->cstack->prev;
+                siglongjmp(vm->cstack->jbuf, 1);
+            }
+            /* NOTREACHED */
+        }
+        default:
             Scm_Panic("invalid longjmp");
         }
         /* NOTREACHED */
@@ -3126,8 +3155,7 @@ static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
 static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
                                  ScmObj thunk, int rewindBefore)
 {
-    ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore,
-                                SCM_FALSE, SCM_FALSE);
+    ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore, NULL);
 
     ScmObj ehandler = make_escape_handler(ep);
     Scm_VMPushExceptionHandler(ehandler);
@@ -3322,28 +3350,15 @@ static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])
     }
 }
 
-
-ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
+/* Perform the actual abort-current-continuation.
+   This can be called directly from Scm_VMAbortCurrentContinuation,
+   or from user_eval_inner when cstack is popped. */
+static ScmObj abort_current_continuation(ScmMetaCont *targetMeta, ScmObj args)
 {
-    if (!(SCM_PROMPT_TAG_P(promptTag) || SCM_FALSEP(promptTag))) {
-        SCM_TYPE_ERROR(promptTag, "prompt tag or #f");
-    }
     ScmVM *vm = theVM;
-    ScmContFrame *abortTo = find_prompt_frame(vm, promptTag);
-    if (abortTo == NULL) {
-        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
-                           "prompt-tag", promptTag,
-                           SCM_RAISE_CONDITION_MESSAGE,
-                           "Attempt to abort to stale prompt tag: %S",
-                           promptTag);
-    }
+    ScmContFrame *abortTo = targetMeta->frame;
+    ScmObj targetHandlers = targetMeta->dynamicHandlers;
 
-    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
-    SCM_ASSERT(pd->dummy == SCM_VM_INSN(SCM_VM_RET));
-    ScmObj targetHandlers = pd->dynamicHandlers;
-
-    /* Discard continuation, and reinstate abortTo frame and its
-       dynamic environment. */
     CONT = abortTo;
     DENV = abortTo->denv;
 
@@ -3360,6 +3375,34 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     } else {
         return vm_abort_body(abortTo, args);
     }
+}
+
+ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
+{
+    if (!(SCM_PROMPT_TAG_P(promptTag) || SCM_FALSEP(promptTag))) {
+        SCM_TYPE_ERROR(promptTag, "prompt tag or #f");
+    }
+    ScmVM *vm = theVM;
+    ScmMetaCont *targetMeta = find_meta_cont_by_tag(vm, promptTag);
+    if (targetMeta == NULL) {
+        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                           "prompt-tag", promptTag,
+                           SCM_RAISE_CONDITION_MESSAGE,
+                           "Attempt to abort to stale prompt tag: %S",
+                           promptTag);
+    }
+
+    /* If the target prompt lives on inner cstack, we have to adjust it.
+       user_eval_inner calls abort_current_continuation when we reach
+       the proper cstack. */
+    if (targetMeta->cstack != vm->cstack) {
+        vm->escapeReason = SCM_VM_ESCAPE_ABORT;
+        vm->escapeData[0] = targetMeta;
+        vm->escapeData[1] = args;
+        siglongjmp(vm->cstack->jbuf, 1);
+    }
+
+    return abort_current_continuation(targetMeta, args);
 }
 
 /*
@@ -3614,8 +3657,11 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
     vm->cont = ep->cont;
     vm->denv = ep->denv;
 
-    /* restore reset-chain for reset/shift */
-    if (ep->cstack) vm->resetChain = ep->resetChain;
+    /* SRFI-226 call-in-continuation: ep->applyProc is called after
+       the continuation is thrown.  It is set by Scm_VMCallInContinuation. */
+    if (!SCM_FALSEP(ep->applyProc)) {
+        return Scm_VMApply(ep->applyProc, args);
+    }
 
     nargs = Scm_Length(args);
     if (nargs == 1) {
@@ -3671,7 +3717,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
     if (SCM_ESCAPE_POINT_COMPOSABLE_P(ep)) {
         /* composable: install via resume boundary (no frame mutation) */
         save_cont(vm);     /* heapify vm->cont (== into) before recording it */
-        if (ep->partContBottom != NULL) {
+        if (ep->boundingMetaCont != NULL) {
             /* Re-establish the captured (possibly multi-segment) chain via
                resume boundaries */
             ep->cont = install_partial_cont(vm, ep);
@@ -3732,35 +3778,46 @@ static ScmObj throw_continuation(ScmObj *argframe,
             siglongjmp(vm->cstack->jbuf, 1);
         }
 
-        ScmMetaCont *capturedAlive;
-        for (capturedAlive = vm->currentMetaCont;
-             capturedAlive;
-             capturedAlive = capturedAlive->prev) {
-            if (capturedAlive == ep->capturedMetaCont) break;
-        }
+        /* For a non-composable continuation, invocation aborts the current
+           continuation up to the closest enclosing prompt that carries the
+           tag the continuation was captured with (ep->promptTag). The target
+           may not be the same as the "bottom" of the captured continuation,
+           for there may be a closer frame with the same prompt tag (srfi-226).
+        */
         ScmMetaCont *targetMeta =
-            (capturedAlive != NULL)
-            ? find_meta_cont_by_tag(vm, ep->capturedMetaCont->promptTag)
-            : NULL;
+            find_meta_cont_by_tag(vm, ep->boundingMetaCont->promptTag);
 
         if (targetMeta != NULL) { /* Case 2 */
             if (targetMeta == ep->capturedMetaCont) { /* 2a */
                 vm->currentMetaCont = ep->capturedMetaCont;
             } else {            /* 2b */
                 save_cont(vm);
-                vm->cont = targetMeta->cont;
-                vm->currentMetaCont = targetMeta->prev;
-                if (ep->partContBottom != NULL) {
-                    ep->cont = install_partial_cont(vm, ep);
-                } else {
-                    ep->cont = vm->cont;
-                }
+                /* Abort up to targetMeta, but keep the prompt in place as the
+                   delimiter for the reinstated continuation.
+                   install_partial_cont then splices the captured slice
+                   on top, so when the slice returns it falls through the
+                   re-established prompt to targetMeta->cont, and any control
+                   operation inside the slice (e.g. a nested shift) can still
+                   find a prompt of this tag to abort to. */
+                vm->cont = targetMeta->frame;
+                vm->currentMetaCont = targetMeta;
+                ep->cont = install_partial_cont(vm, ep);
             }
-            hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
-                                                   currentHandlers);
+            /* Wind down the current dynamic handlers to the abort target's
+               handler level (targetMeta->dynamicHandlers), then wind up the
+               handlers that live inside the captured continuation
+               (ep->partHandlers).  Handlers that were dynamically active when
+               the continuation was captured but have since exited (they are in
+               ep->dynamicHandlers but not ep->partHandlers) must NOT be
+               re-wound.  For the 2a case targetMeta == bottom, so this
+               coincides with the full ep->dynamicHandlers chain. */
+            hdlist = throw_cont_calculate_handlers(
+                        Scm_Append2(ep->partHandlers,
+                                    targetMeta->dynamicHandlers),
+                        currentHandlers);
         } else {
             save_cont(vm);
-            if (ep->partContBottom != NULL) { /* 3 */
+            if (ep->boundingMetaCont != NULL) { /* 3 */
                 /* Re-establish the captured chain via resume boundaries */
                 ep->cont = install_partial_cont(vm, ep);
             } else {
@@ -3846,10 +3903,10 @@ ScmObj call_cc_common(ScmObj proc,
                            promptTag);
     }
 
-    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE);
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, NULL);
     ep->cont = vm->cont;
-    ep->partContBottom = bottom->frame;
     ep->partContTop = ep->cont;
+    ep->boundingMetaCont = bottom;
     ep->capturedMetaCont = vm->currentMetaCont;
     if (composable) {
         ep->denv = bottom->denv;
@@ -3937,6 +3994,50 @@ ScmObj Scm_VMCallPCWithTag(ScmObj proc, ScmObj promptTag)
 ScmObj Scm_VMCallPC(ScmObj proc)
 {
     return call_cc_common(proc, SCM_FALSE, TRUE, TRUE);
+}
+
+ScmObj Scm_VMCallInContinuation(ScmObj cont, ScmObj proc, ScmObj args)
+{
+    if (!Scm_ContinuationP(cont)) {
+        SCM_TYPE_ERROR(cont, "continuation");
+    }
+
+    /* call-in-continuation behaves as if (apply proc args) were evaluated in
+       place of the original continuation-capturing form.  By setting
+       ep->applyProc, we can make throw_continuation behave so.
+       (See throw_cont_body). */
+    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
+    *ep = *(ScmEscapePoint*)SCM_SUBR_DATA(cont);
+    ep->applyProc = proc;
+
+    ScmObj argframe[1];
+    argframe[0] = args;
+    return throw_continuation(argframe, 1, ep);
+}
+
+int Scm_ContinuationPromptAvailableP(ScmObj promptTag, ScmObj cont)
+{
+    if (!SCM_PROMPT_TAG_P(promptTag)) {
+        SCM_TYPE_ERROR(promptTag, "prompt tag");
+    }
+    if (!Scm_ContinuationP(cont)) {
+        SCM_TYPE_ERROR(cont, "continuation");
+    }
+
+    ScmEscapePoint *ep = (ScmEscapePoint*)SCM_SUBR_DATA(cont);
+    ScmContFrame *partContBottom = ep->boundingMetaCont->frame;
+
+    for (ScmMetaCont *m = ep->capturedMetaCont; m; m = m->prev) {
+        if (SCM_ESCAPE_POINT_COMPOSABLE_P(ep)
+            && m->frame == partContBottom) {
+            /* For composable cont, the very bottom frame is _not_
+               a part of the capture. So we break before comparing. */
+            break;
+        }
+        if (SCM_EQ(m->promptTag, promptTag)) return TRUE;
+        if (m->frame == partContBottom) break; /* non composbale case */
+    }
+    return FALSE;
 }
 
 ScmObj Scm_VMReset(ScmObj proc)

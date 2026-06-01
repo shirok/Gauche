@@ -72,6 +72,17 @@
 (define-cproc call-with-composable-continuation (proc
                                                  :optional (prompt-tag '#f))
   Scm_VMCallPCWithTag)
+(define-cproc call-in-continuation (cont proc :rest objs)
+  Scm_VMCallInContinuation)
+(define (call-in cont proc :rest args)
+  (unless (non-composable-continuation? cont)
+    (errorf "cont must be a non-composable continuation, but got: ~S" cont))
+  (apply call-in-continuation cont proc args))
+(define (return-to cont :rest args)
+  (unless (non-composable-continuation? cont)
+    (errorf "cont must be a non-composable continuation, but got: ~S" cont))
+  (apply call-in-continuation cont values args))
+
 (define-cproc values (:rest args) :constant (inliner VALUES) Scm_Values)
 (define-cproc dynamic-wind (pre body post) Scm_VMDynamicWind)
 
@@ -90,7 +101,7 @@
 
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
-(define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
+(define-cproc %call/pc (proc :optional (prompt-tag #f)) Scm_VMCallPCWithTag)
 (define-cproc %reset (proc) (return (Scm_VMReset proc)))
 
 ;; Continuaton prompts
@@ -108,6 +119,15 @@
   Scm_VMCallWithContinuationPrompt)
 (define-cproc abort-current-continuation (prompt-tag :rest objs)
   Scm_VMAbortCurrentContinuation)
+
+(select-module gauche.internal)
+(define-cproc %continuation-prompt-available? (prompt-tag cont)
+  ::<boolean>
+  Scm_ContinuationPromptAvailableP)
+(define-in-module gauche (continuation-prompt-available? prompt-tag
+                                                         :optional (cont #f))
+  (%continuation-prompt-available? prompt-tag
+                                   (or cont (call-with-non-composable-continuation values))))
 
 ;; Continuation marks
 (select-module gauche)
