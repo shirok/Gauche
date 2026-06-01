@@ -69,6 +69,9 @@
   Scm_VMCallCCWithTag)
 (define-cproc call-with-current-continuation (proc)
   (return (Scm_VMCallCCWithTag proc SCM_FALSE)))
+(define-cproc call-with-composable-continuation (proc
+                                                 :optional (prompt-tag '#f))
+  Scm_VMCallPCWithTag)
 (define-cproc values (:rest args) :constant (inliner VALUES) Scm_Values)
 (define-cproc dynamic-wind (pre body post) Scm_VMDynamicWind)
 

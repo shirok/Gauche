@@ -99,8 +99,7 @@
                          (lambda () 4))))
                tag)))
 
-;; Missing call-with-composable-continuation
-'(test 9 (+ 2 (call-with-continuation-prompt
+(test 9 (+ 2 (call-with-continuation-prompt
                (lambda ()
                  (if (call-with-composable-continuation
                       (lambda (proc)
@@ -125,8 +124,7 @@
                 (lambda (k)
                   (+ 1 (k 10))))))
 
-;; Missing call-with-composable-continuation
-'(test 15 (+ 2 (call-with-composable-continuation
+(test 15 (+ 2 (call-with-composable-continuation
                 (lambda (k)
                   (+ 1 (k 10))))))
 
@@ -139,8 +137,7 @@
            (lambda (k)
              (non-composable-continuation? k))))
 
-;; Missing call-with-composable-continuation
-'(test #f (call-with-composable-continuation
+(test #f (call-with-composable-continuation
            (lambda (k)
              (non-composable-continuation? k))))
 
@@ -150,10 +147,9 @@
            (lambda (k)
              (continuation? k))))
 
-;; Missing call-with-composable-continuation
-'(test #t (call-with-composable-continuation
-           (lambda (k)
-             (continuation? k))))
+(test #t (call-with-composable-continuation
+          (lambda (k)
+            (continuation? k))))
 
 (test #f (continuation? values))
 
@@ -163,8 +159,7 @@
 ;; Missing continuation-prompt-available?
 '(test #t (continuation-prompt-available? (default-continuation-prompt-tag)))
 
-;; Should work.  Need to check.
-'(test 111 (call-with-current-continuation
+(test 111 (call-with-current-continuation
            (lambda (k)
              (call-with-continuation-prompt
               (lambda ()
@@ -286,8 +281,7 @@
             (lambda () (put-string p "out")))))
 
 ;;; See: <https://docs.racket-lang.org/reference/cont.html>.
-;; DIVERGE
-'(test 'cancel-canceled
+(test 'cancel-canceled
       (call/cc
        (lambda (k0)
          (call/cc
@@ -334,7 +328,7 @@
                  (unwind-protect (+ x (k 42)) (set! x 1) (set! x (* x 2)))))])
         (list x y)))
 
-;; Missing call-with-composable-continuation
+;; DIVERGE
 '(test '(2 62)
       (let* ([x 10]
              [y
@@ -641,7 +635,6 @@
                    27)))))
          tag #f)))
 
-;; Missing call-with-non-composable-continuation
 (test 990
       (let ([tag (make-continuation-prompt-tag)])
         (* 2
@@ -658,8 +651,7 @@
                   tag)))
             tag))))
 
-;; Missing call-with-composable-continuation
-'(test 6930
+(test 6930
       (let ([tag (make-continuation-prompt-tag)])
         (* 2
            (call-with-continuation-prompt
@@ -675,8 +667,7 @@
                   tag)))
             tag))))
 
-;; Missing call-with-composable-continuation
-'(test '(4 5 9 17 25)
+(test '(4 5 9 17 25)
       (let* ()
         (define-syntax reset
           (syntax-rules ()
@@ -699,8 +690,7 @@
          (+ 1 (reset (* 2 (shift k (k (k 4))))))
          (+ 1 (reset (* 2 (shift k1 (* 3 (shift k2 (k1 (k2 4)))))))))))
 
-;; Missing call-with-composable-continuation
-'(test '(7 5 12 8 18)
+(test '(7 5 12 8 18)
       (let* ()
         (define-syntax prompt
           (syntax-rules ()
@@ -727,11 +717,9 @@
          (prompt (+ 12 (prompt (+ 5 (prompt (+ 2 (control k1 (control k2 (control k3 (k3 6)))))))))))))
 
 (test #t (continuation? (call/cc values)))
-;; Missing call-with-composable-continuation
-'(test #t (continuation? (call-with-composable-continuation values)))
+(test #t (continuation? (call-with-composable-continuation values)))
 (test #t (non-composable-continuation? (call/cc values)))
-;; Missing call-with-composable-continuation
-'(test #f (non-composable-continuation? (call-with-composable-continuation values)))
+(test #f (non-composable-continuation? (call-with-composable-continuation values)))
 
 ;; Missing call-with-continuation-barrier
 '(test 'exception
@@ -748,7 +736,7 @@
           (lambda ()
             (k 'ok))))))
 
-;; Missing call-with-non-composable-continuation
+;; Missing continuation-prompt-available?
 '(test '(#t #t #f)
       (let ([tag (make-continuation-prompt-tag)])
         (call-with-continuation-prompt
@@ -1007,7 +995,7 @@
 
 ;;; See <https://srfi-email.schemers.org/srfi-226/msg/20946964/>.
 
-;; Missing - call-with-composable-continuation
+;; Missing - call-with-continuation-barrier
 '(test '((1 3 5) . 11)
       (let ([res '()])
         (define put!
@@ -1217,8 +1205,7 @@
          (f new-val k))
        values))))
 
-;; Missing call-with-composable-continuation
-'(test '(a b)
+(test '(a b)
       (run-with-state
        (lambda (get put)
          (let ([x (get)])
@@ -1226,8 +1213,7 @@
            (list x (get))))
        'a))
 
-;; Missing call-with-composable-continuation
-'(test '(a b c d)
+(test '(a b c d)
       (run-with-state
        (lambda (get1 put1)
          (run-with-state
@@ -1288,20 +1274,17 @@
         (cons (stream-car stream)
               (f (stream-cdr stream))))))
 
-;; Missing call-with-composable-continuation
-'(test '(1 2 3)
+(test '(1 2 3)
       (stream->list (for-each->stream for-each '(1 2 3))))
 
-;; Missing call-with-composable-continuation
-'(test '(1 2)
+(test '(1 2)
       (reset
        (begin
          (shift k (cons 1 (k 'void)))
          (shift k (cons 2 (k 'void)))
          '())))
 
-;; Missing call-with-composable-continuation
-'(test '(1 0)
+(test '(1 0)
       (let ((m (make-parameter 0))
             (n (make-parameter 0)))
         (define k
@@ -1314,8 +1297,7 @@
                      (lambda () k)))))))))
         (k (lambda () (list (m) (n))))))
 
-;; Missing call-with-composable-continuation
-'(test '(1 1)
+(test '(1 1)
       (let ((m (make-parameter 0))
             (n (make-parameter 0)))
         (define k
