@@ -1979,6 +1979,151 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     return ep;
 }
 
+/*
+ * Meta-continuations.  See gauche/priv/vmP.h for the data layout.
+ */
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_MetaContClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
+
+/* Push a new meta-cont onto vm->currentMetaCont.  Called immediately after a
+   prompt cont frame has been pushed: vm->cont is the prompt frame itself, its
+   prev is the parent continuation, and its denv is the parent denv. */
+static void push_meta_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
+{
+    ScmMetaCont *m = SCM_NEW(ScmMetaCont);
+    SCM_SET_CLASS(m, SCM_CLASS_META_CONT);
+    m->promptTag = promptTag;
+    m->abortHandler = abortHandler;
+    m->frame = vm->cont;
+    m->cont = vm->cont->prev;
+    m->denv = vm->cont->denv;
+    m->dynamicHandlers = get_dynamic_handlers(vm);
+    m->prev = vm->currentMetaCont;
+    vm->currentMetaCont = m;
+}
+
+/* Push a resume boundary onto vm->currentMetaCont when a composable
+   continuation is invoked.  `bottom` is the captured partial cont's bottom
+   frame; `into` is the caller's vm->cont, to be restored when RETURN_OP runs
+   the partial cont down through `bottom`.
+
+   RETURN_OP recognises the boundary purely by `currentMetaCont` being a resume
+   boundary whose `frame` equals the frame being returned through. */
+static void push_resume_boundary(ScmVM *vm, ScmContFrame *bottom,
+                                 ScmContFrame *into)
+{
+    ScmMetaCont *m = SCM_NEW(ScmMetaCont);
+    SCM_SET_CLASS(m, SCM_CLASS_META_CONT);
+    m->promptTag = SCM_FALSE;          /* sentinel: this is a resume boundary */
+    m->abortHandler = SCM_FALSE;
+    m->frame = bottom;                 /* partcont bottom */
+    m->cont = into;                    /* caller's cont to restore */
+    m->denv = SCM_FALSE;               /* unused for a resume boundary */
+    m->dynamicHandlers = SCM_NIL;      /* unused for a resume boundary */
+    m->prev = vm->currentMetaCont;
+    vm->currentMetaCont = m;
+}
+
+/* Walk past leading resume boundaries on a meta-cont chain and return the
+   first real prompt (or NULL).  The innermost real prompt delimits a
+   continuation capture, even when nested partial-cont invocations have pushed
+   resume boundaries above it. */
+static ScmMetaCont *skip_resume_boundaries(ScmMetaCont *m)
+{
+    while (m != NULL && RESUME_BOUNDARY_P(m)) m = m->prev;
+    return m;
+}
+
+/* Walk the *logical* continuation from vm->cont toward the innermost real
+   prompt, crossing each live resume boundary via its `cont` link.  Returns the
+   bottom frame of the last segment -- the frame adjacent to the prompt frame,
+   which becomes ep->partContBottom -- or NULL if the logical continuation is
+   empty.  *prompt_out receives the innermost real-prompt meta-cont.
+   *reached is set TRUE if the walk actually reached the prompt frame; FALSE
+   means the prompt is disconnected from vm->cont (ghost-ish), in which case the
+   returned frame is the bottom-most frame physically reachable. */
+static ScmContFrame *logical_partcont_bottom(ScmVM *vm,
+                                             ScmMetaCont **prompt_out , /*out*/
+                                             int *reached) /*out*/
+{
+    ScmMetaCont *P = skip_resume_boundaries(vm->currentMetaCont);
+    *prompt_out = P;
+    ScmContFrame *prompt_frame = (P != NULL) ? P->frame : NULL;
+    ScmMetaCont *b = vm->currentMetaCont;   /* next boundary expected, in order */
+    ScmContFrame *c = vm->cont, *cp = NULL;
+    while (c != NULL && c != prompt_frame) {
+        if (b != NULL && RESUME_BOUNDARY_P(b) && c == b->frame) {
+            cp = c;
+            c = b->cont;                    /* cross to the next segment */
+            b = b->prev;
+        } else {
+            cp = c;
+            c = c->prev;
+        }
+    }
+    *reached = (c == prompt_frame);
+    return cp;
+}
+
+/* Pop the current meta-cont.  Safe to call when chain is empty (no-op). */
+static void pop_meta_cont(ScmVM *vm)
+{
+    if (vm->currentMetaCont) {
+        vm->currentMetaCont = vm->currentMetaCont->prev;
+    }
+}
+
+/* Walk vm->currentMetaCont prev-chain and return the innermost meta-cont
+   whose promptTag matches.  Returns NULL if not found.  If promptTag
+   is not a <prompt-tag>, default prompt tag is used. */
+static ScmMetaCont *find_meta_cont_by_tag(ScmVM *vm, ScmObj promptTag)
+{
+    if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
+    for (ScmMetaCont *m = vm->currentMetaCont; m; m = m->prev) {
+        if (SCM_EQ(m->promptTag, promptTag)) return m;
+    }
+    return NULL;
+}
+
+/* Install a captured (possibly multi-segment) partial continuation by pushing
+   resume boundaries, and return the chain top to install as the new vm->cont.
+   Caller must have run save_cont(vm) already.
+
+   The actual continaution frames in the chain don't need to be mutated,
+   so we keep them in the heap (no need to copy back).
+
+   We do need to reconstruct the meta-cont chain, between the innermost
+   real prompt and capturedMetaCont.
+
+   Returns the top cont frame, which will be set to the EP of thrown
+   continuation, and eventually set to vm->cont.
+ */
+static ScmContFrame *install_partial_cont(ScmVM *vm, ScmEscapePoint *ep)
+{
+    ScmContFrame *into = vm->cont;
+    push_resume_boundary(vm, ep->partContBottom, into);
+
+    ScmMetaCont *P = skip_resume_boundaries(ep->capturedMetaCont);
+    int n = 0;
+    for (ScmMetaCont *m = ep->capturedMetaCont; m != P; m = m->prev) {
+        if (m->frame != ep->partContBottom) n++;
+    }
+    if (n > 0) {
+        ScmMetaCont **arr = SCM_NEW_ARRAY(ScmMetaCont*, n);
+        int i = 0;
+        for (ScmMetaCont *m = ep->capturedMetaCont; m != P; m = m->prev) {
+            if (m->frame != ep->partContBottom) arr[i++] = m;
+        }
+        for (int j = n-1; j >= 0; j--) {
+            push_resume_boundary(vm, arr[j]->frame, arr[j]->cont);
+        }
+    }
+    return ep->partContTop;
+}
+
+
 /*-------------------------------------------------------------
  * User level eval and apply.
  *   When the C routine wants the Scheme code to return to it,
