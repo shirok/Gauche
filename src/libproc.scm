@@ -64,7 +64,11 @@
                   (SCM_APPEND1 head tail (SCM_CAR cp)))
                 (return (Scm_VMApply proc head))])))
 
-(define-cproc call-with-current-continuation (proc) Scm_VMCallCC)
+(define-cproc call-with-non-composable-continuation (proc
+                                                     :optional (prompt-tag '#f))
+  Scm_VMCallCCWithTag)
+(define-cproc call-with-current-continuation (proc)
+  (return (Scm_VMCallCCWithTag proc SCM_FALSE)))
 (define-cproc values (:rest args) :constant (inliner VALUES) Scm_Values)
 (define-cproc dynamic-wind (pre body post) Scm_VMDynamicWind)
 

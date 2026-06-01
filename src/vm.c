@@ -3705,55 +3705,80 @@ static ScmObj throw_continuation(ScmObj *argframe,
             Scm_Append2(ep->partHandlers, currentHandlers),
             currentHandlers);
     } else {
-        /* non-composable: three sub-cases, distinguished by whether
-           the captured prompt (capturedMetaCont) is still on the
-           active meta-cont chain and whether the captured cstack
-           (ep->cstack) is still on vm->cstack chain.
-             - prompt alive: rewind cstack (if needed) and reset
-               currentMetaCont; mc->frame is back on chain so
-               RETURN_OP fires pop_meta_cont naturally.
-             - prompt gone, cstack alive (same frame): the
-               "prompt-exited" case.  Splice ep->partContBottom onto
-               vm->cont so the captured chain resumes the caller of
-               the invocation.
-             - prompt gone, cstack gone: "ghost continuation".
-               Do *not* splice; let user_eval_inner detect that
-               vm->cont no longer reaches cstack.cont and raise. */
-        ScmMetaCont *m;
-        for (m = vm->currentMetaCont; m; m = m->prev) {
-            if (m == ep->capturedMetaCont) break;
-        }
+        /* non-composable: We have a few cases.
+
+           1. We're not on the same cstack as captured continuation's
+              cstack.
+            1a. Captured continuation's cstack is still alive.  We
+                rewound cstack by longjmp and handle the rest there
+                (user_eval_inner).
+            1b. Captured continuation's cstack is gone.  We have a
+                ghost continuation.  We still allow transferring
+                control to the target continuation, but if the control
+                tries to return to the now-gone frame, an error
+                will be raised.
+           2. Captured frame is still alive---'upward escape'.
+            2a. No inner metacont's prompt-tag shadows the captured
+                prompt-tag.  We can simply discard current (meta-)continuation
+                and put the ep's (meta-)continuation.
+            2b. Inner metacont has the same prompt-tag as the captured
+                metacont.  SRFI-226 requires to abort to the closest
+                prompt tag.  After aborting to targetMeta, we need to
+                reinstall the tagged frame so that the tag is preserved.
+           3. Capturef frame is gone---we abort to the very bottom
+              (cstack bottom).
+              We can install the captured continuation on top of
+              the 'bottom' of frame when the cstack is entered.
+        */
+
+        /* First, handle the case where we're not on the same cstack
+           as target. */
         ScmCStack *cs;
         for (cs = vm->cstack; cs; cs = cs->prev) {
             if (cs == ep->cstack) break;
         }
-        int splice_mode = 0;
-        if (m != NULL) {
-            if (vm->cstack != ep->cstack) {
-                vm->escapeReason = SCM_VM_ESCAPE_CONT;
-                vm->escapeData[0] = ep;
-                vm->escapeData[1] = args;
-                siglongjmp(vm->cstack->jbuf, 1);
-            }
-            vm->currentMetaCont = ep->capturedMetaCont;
-        } else if (cs == NULL) {
-            /* Ghost cstack: raise on return. */
+        if (cs == NULL) {       /* 1b */
             save_cont(vm);
-        } else if (cs != vm->cstack) {
-            /* Captured cstack is an outer frame; escape to it. */
+            hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
+                                                   currentHandlers);
+            return throw_cont_body(hdlist, ep, args);
+        } else if (vm->cstack != ep->cstack) { /* 1a */
             vm->escapeReason = SCM_VM_ESCAPE_CONT;
             vm->escapeData[0] = ep;
             vm->escapeData[1] = args;
             siglongjmp(vm->cstack->jbuf, 1);
+        }
+
+        ScmMetaCont *capturedAlive;
+        for (capturedAlive = vm->currentMetaCont;
+             capturedAlive;
+             capturedAlive = capturedAlive->prev) {
+            if (capturedAlive == ep->capturedMetaCont) break;
+        }
+        ScmMetaCont *targetMeta =
+            (capturedAlive != NULL)
+            ? find_meta_cont_by_tag(vm, ep->capturedMetaCont->promptTag)
+            : NULL;
+
+        if (targetMeta != NULL) { /* Case 2 */
+            if (targetMeta == ep->capturedMetaCont) { /* 2a */
+                vm->currentMetaCont = ep->capturedMetaCont;
+            } else {            /* 2b */
+                save_cont(vm);
+                vm->cont = targetMeta->cont;
+                vm->currentMetaCont = targetMeta->prev;
+                if (ep->partContBottom != NULL) {
+                    ep->cont = install_partial_cont(vm, ep);
+                } else {
+                    ep->cont = vm->cont;
+                }
+            }
+            hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
+                                                   currentHandlers);
         } else {
-            /* Prompt-exited but same cstack: install the captured
-               chain into the invocation context.  This yields
-               SRFI-226 composable semantics for a call/cc whose
-               delimiting prompt has already returned. */
             save_cont(vm);
-            if (ep->partContBottom != NULL) {
-                /* Re-establish the captured chain via resume boundaries
-                   (no frame mutation); see composable branch. */
+            if (ep->partContBottom != NULL) { /* 3 */
+                /* Re-establish the captured chain via resume boundaries */
                 ep->cont = install_partial_cont(vm, ep);
             } else {
                 /* Empty capture (cp was NULL at capture, e.g.
@@ -3763,9 +3788,6 @@ static ScmObj throw_continuation(ScmObj *argframe,
                    partial-cont termination. */
                 ep->cont = vm->cont;
             }
-            splice_mode = 1;
-        }
-        if (splice_mode) {
             /* Composable-style handler swap: don't fire 'after' for
                handlers added between capture and invocation (e.g.
                a dynamic-wind body around the invocation site).
@@ -3774,48 +3796,33 @@ static ScmObj throw_continuation(ScmObj *argframe,
                SRFI-226 splice semantics and keeps the invocation
                site's body_cc / handler chain intact. */
             hdlist = throw_cont_calculate_handlers(
-                Scm_Append2(ep->partHandlers, currentHandlers),
-                currentHandlers);
-        } else {
-            hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
-                                                   currentHandlers);
+                        Scm_Append2(ep->partHandlers, currentHandlers),
+                        currentHandlers);
         }
     }
     return throw_cont_body(hdlist, ep, args);
 }
 
-ScmObj Scm_VMCallCC(ScmObj proc)
+ScmObj call_cc_common(ScmObj proc,
+                      ScmObj promptTag,
+                      _Bool composable SCM_UNUSED)
 {
     ScmVM *vm = theVM;
-
     save_cont(vm);
+    if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
 
-    /* Delimited capture bounded by the innermost real prompt P.  Unlike
-       Scm_VMCallPC, this is "full" call/cc: ep->cstack stays set (by
-       new_ep) so throw_continuation can distinguish this from a partial-
-       cont invocation, and we do NOT consume the continuation (the body
-       runs with it still in place).  If we are inside invoked partial
-       conts, resume boundaries sit above P; the capture spans the segments
-       they join, so we walk the logical chain to find its bottom.  Frames
-       below P are not part of the capture (including them would re-run
-       pre-prompt code on invocation in a foreign context). */
-    ScmMetaCont *P;
-    int reached;
-    ScmContFrame *cp = logical_partcont_bottom(vm, &P, &reached);
-    SCM_ASSERT(P != NULL);
+    ScmMetaCont *bottom = find_meta_cont_by_tag(vm, promptTag);
+    if (bottom == NULL) {
+        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                           "prompt-tag", promptTag,
+                           SCM_RAISE_CONDITION_MESSAGE,
+                           "Attempt to take continuation to a stale prompt tag: %S",
+                           promptTag);
+    }
 
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE);
-    if (reached) {
-        ep->cont = (cp ? vm->cont : NULL);
-        ep->partContBottom = cp;
-    } else {
-        /* P->frame is not reachable from vm->cont (disconnected by a prior
-           continuation invocation).  Capture the full chain; invocation
-           falls back to splice-on-current semantics via the ghost branch
-           in throw_continuation. */
-        ep->cont = vm->cont;
-        ep->partContBottom = NULL;
-    }
+    ep->cont = vm->cont;
+    ep->partContBottom = bottom->frame;
     ep->partContTop = ep->cont;
     ep->capturedMetaCont = vm->currentMetaCont;
 
@@ -3827,7 +3834,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
        semantics for cross-prompt invocation. */
     ScmObj h = SCM_NIL, t = SCM_NIL, p;
     SCM_FOR_EACH(p, get_dynamic_handlers(vm)) {
-        if (p == P->dynamicHandlers) break;
+        if (p == bottom->dynamicHandlers) break;
         SCM_APPEND1(h, t, SCM_CAR(p));
     }
     ep->partHandlers = h;
@@ -3835,6 +3842,17 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply1(proc, contproc);
+}
+
+
+ScmObj Scm_VMCallCC(ScmObj proc)
+{
+    return call_cc_common(proc, SCM_FALSE, FALSE);
+}
+
+ScmObj Scm_VMCallCCWithTag(ScmObj proc, ScmObj promptTag)
+{
+    return call_cc_common(proc, promptTag, FALSE);
 }
 
 int Scm_ContinuationP(ScmObj proc)

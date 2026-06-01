@@ -642,7 +642,7 @@
          tag #f)))
 
 ;; Missing call-with-non-composable-continuation
-'(test 990
+(test 990
       (let ([tag (make-continuation-prompt-tag)])
         (* 2
            (call-with-continuation-prompt
