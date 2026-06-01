@@ -111,6 +111,37 @@ SCM_CLASS_DECL(Scm_DynamicHandlerClass);
 #define SCM_DYNAMIC_HANDLER_P(obj) SCM_ISA(obj,SCM_CLASS_DYNAMIC_HANDLER)
 
 /*
+ * Meta-continuation
+ *
+ *  An ScmMetaCont is a heap-allocated record mirroring the state at a
+ *  continuation prompt boundary.  At the moment its prompt is installed it
+ *  snapshots the parent segment's continuation chain, dynamic env, and
+ *  dynamic-wind chain, along with the prompt tag and abort handler.
+ *
+ *  Meta-conts form a chain via `prev`: vm->currentMetaCont is the innermost
+ *  (current) prompt; walking `prev` reaches the outermost (the initial thread
+ *  prompt at the bottom of the chain).
+ */
+typedef struct ScmMetaContRec {
+    SCM_HEADER;
+    ScmObj promptTag;                /* prompt tag delimiting this meta-cont */
+    ScmObj abortHandler;             /* handler invoked on abort-to this tag */
+    ScmContFrame *frame;             /* the prompt cont frame on vm->cont */
+    ScmContFrame *cont;              /* parent vm->cont when prompt installed
+                                        (i.e. frame->prev at install time) */
+    ScmObj denv;                     /* parent vm->denv */
+    ScmObj dynamicHandlers;          /* parent dynamic-wind chain */
+    ScmCStack *cstack;               /* vm->cstack when this prompt was
+                                        installed. */
+    struct ScmMetaContRec *prev;     /* outer meta-cont, NULL at bottom */
+} ScmMetaCont;
+
+SCM_CLASS_DECL(Scm_MetaContClass);
+#define SCM_CLASS_META_CONT     (&Scm_MetaContClass)
+#define SCM_META_CONT(obj)      ((ScmMetaCont*)obj)
+#define SCM_META_CONT_P(obj)    SCM_ISA(obj, SCM_CLASS_META_CONT)
+
+/*
  * Escape point
  *
  *  EscapePoint (EP) structure is a saved continuation.  It grabs
@@ -143,27 +174,20 @@ typedef struct ScmEscapePointRec {
                                    but SRFI-34's guard needs the former model.
                                 */
     /* The following fields are used for new implementation of partial cont. */
-    ScmContFrame *partContBottom; /* bottom frame of a captured (partial or
-                                     delimited-full) continuation's *last*
-                                     segment -- the frame adjacent to the
-                                     bounding prompt frame.  Captured frames are
-                                     immutable: invocation installs the
-                                     continuation by pushing resume boundaries
-                                     (see install_partial_cont / RETURN_OP).
-                                     NULL for an empty capture, or for
-                                     captures whose chain extends
-                                     all the way to a cstack boundary (legacy
-                                     full call/cc). */
     ScmContFrame *partContTop;    /* top frame of the captured chain
                                      (== ep->cont at capture); installed as
                                      vm->cont on invocation. */
-    struct ScmMetaContRec *capturedMetaCont; /* vm->currentMetaCont at capture.
+    ScmMetaCont *boundingMetaCont; /* The prompt the continuation was
+                                     captured with (the "bottom" of the
+                                     meta-cont chain). */
+    ScmMetaCont *capturedMetaCont; /* vm->currentMetaCont at capture.
                                      Identifies the innermost real prompt
-                                     bounding the captured continuation, and -
-                                     when the capture spans nested partial-cont
-                                     invocations - the resume boundaries that
-                                     join its segments (replicated at
-                                     invocation by install_partial_cont). */
+                                     bounding the captured continuation. */
+    ScmObj applyProc;             /* A procedure to be called by
+                                     call-in-continuation.   Usually #f.
+                                     If this is not #f, the procedure is
+                                     invoked after the continuation is
+                                     thrown. */
 } ScmEscapePoint;
 
 SCM_CLASS_DECL(Scm_EscapePointClass);
@@ -173,35 +197,6 @@ SCM_CLASS_DECL(Scm_EscapePointClass);
 
 #define SCM_ESCAPE_POINT_COMPOSABLE_P(obj) \
     (SCM_ESCAPE_POINT_P(obj) && SCM_ESCAPE_POINT(obj)->cstack == NULL)
-
-/*
- * Meta-continuation
- *
- *  An ScmMetaCont is a heap-allocated record mirroring the state at a
- *  continuation prompt boundary.  At the moment its prompt is installed it
- *  snapshots the parent segment's continuation chain, dynamic env, and
- *  dynamic-wind chain, along with the prompt tag and abort handler.
- *
- *  Meta-conts form a chain via `prev`: vm->currentMetaCont is the innermost
- *  (current) prompt; walking `prev` reaches the outermost (the initial thread
- *  prompt at the bottom of the chain).
- */
-typedef struct ScmMetaContRec {
-    SCM_HEADER;
-    ScmObj promptTag;                /* prompt tag delimiting this meta-cont */
-    ScmObj abortHandler;             /* handler invoked on abort-to this tag */
-    ScmContFrame *frame;             /* the prompt cont frame on vm->cont */
-    ScmContFrame *cont;              /* parent vm->cont when prompt installed
-                                        (i.e. frame->prev at install time) */
-    ScmObj denv;                     /* parent vm->denv */
-    ScmObj dynamicHandlers;          /* parent dynamic-wind chain */
-    struct ScmMetaContRec *prev;     /* outer meta-cont, NULL at bottom */
-} ScmMetaCont;
-
-SCM_CLASS_DECL(Scm_MetaContClass);
-#define SCM_CLASS_META_CONT     (&Scm_MetaContClass)
-#define SCM_META_CONT(obj)      ((ScmMetaCont*)obj)
-#define SCM_META_CONT_P(obj)    SCM_ISA(obj, SCM_CLASS_META_CONT)
 
 /* Escape types */
 #define SCM_VM_ESCAPE_NONE   0

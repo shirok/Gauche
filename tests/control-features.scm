@@ -128,8 +128,7 @@
                 (lambda (k)
                   (+ 1 (k 10))))))
 
-;; Missing call-in-continuation
-'(test 13 (+ 3 (call-with-current-continuation
+(test 13 (+ 3 (call-with-current-continuation
                 (lambda (k)
                   (+ 1 (call-in-continuation k (lambda (x) x) 10))))))
 
@@ -153,11 +152,9 @@
 
 (test #f (continuation? values))
 
-;; Missing continuation-prompt-available?
-'(test #f (continuation-prompt-available? tag))
+(test #f (continuation-prompt-available? tag))
 
-;; Missing continuation-prompt-available?
-'(test #t (continuation-prompt-available? (default-continuation-prompt-tag)))
+(test #t (continuation-prompt-available? (default-continuation-prompt-tag)))
 
 (test 111 (call-with-current-continuation
            (lambda (k)
@@ -736,8 +733,7 @@
           (lambda ()
             (k 'ok))))))
 
-;; Missing continuation-prompt-available?
-'(test '(#t #t #f)
+(test '(#t #t #f)
       (let ([tag (make-continuation-prompt-tag)])
         (call-with-continuation-prompt
          (lambda ()
