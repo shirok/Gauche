@@ -218,7 +218,7 @@ static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   push_meta_cont(ScmVM*, ScmObj, ScmObj);
 static void   push_resume_boundary(ScmVM*, ScmContFrame*, ScmContFrame*);
 static void   pop_meta_cont(ScmVM*);
-static ScmMetaCont *find_meta_cont_by_tag(ScmVM*, ScmObj);
+static ScmMetaCont *find_meta_cont_with_tag(ScmMetaCont *, ScmObj);
 static ScmContFrame *install_partial_cont(ScmVM*, ScmEscapePoint*) SCM_UNUSED;
 static ScmObj abort_current_continuation(ScmMetaCont*, ScmObj);
 
@@ -1614,6 +1614,24 @@ ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback)
     return find_dynamic_env(theVM, key, fallback);
 }
 
+/* Build a fresh dynamic-env base for a newly installed prompt segment.
+   Following the SRFI-226 model, a prompt starts a new mark segment: user
+   continuation marks added outside the prompt do not bleed into it.
+   Selected system marks are 'inherited', though, to allow simple linear
+   search. */
+#define NUM_SYSTEM_DENV_KEYS 4
+static ScmObj system_denv_keys[NUM_SYSTEM_DENV_KEYS]; /* initialized by initVM */
+
+static ScmObj make_seeded_denv_base(ScmVM *vm)
+{
+    ScmObj base = SCM_NIL;
+    for (int i = 0; i < NUM_SYSTEM_DENV_KEYS; i++) {
+        ScmObj e = Scm_Assq(system_denv_keys[i], vm->denv);
+        if (SCM_PAIRP(e)) base = Scm_Cons(e, base);
+    }
+    return base;
+}
+
 
 /*==================================================================
  * Function application from C
@@ -2028,7 +2046,7 @@ static void push_resume_boundary(ScmVM *vm, ScmContFrame *bottom,
     m->abortHandler = SCM_FALSE;
     m->frame = bottom;                 /* partcont bottom */
     m->cont = into;                    /* caller's cont to restore */
-    m->denv = SCM_FALSE;               /* unused for a resume boundary */
+    m->denv = vm->denv;                /* invocation-site mark segment */
     m->dynamicHandlers = SCM_NIL;      /* unused for a resume boundary */
     m->cstack = vm->cstack;
     m->prev = vm->currentMetaCont;
@@ -2043,13 +2061,13 @@ static void pop_meta_cont(ScmVM *vm)
     }
 }
 
-/* Walk vm->currentMetaCont prev-chain and return the innermost metacont
-   whose promptTag matches.  Returns NULL if not found.  If promptTag
+/* Walk a metacont prev-chain starting at `head` and return the innermost
+   metacont whose promptTag matches.  Returns NULL if not found.  If promptTag
    is not a <prompt-tag>, default prompt tag is used. */
-static ScmMetaCont *find_meta_cont_by_tag(ScmVM *vm, ScmObj promptTag)
+static ScmMetaCont *find_meta_cont_with_tag(ScmMetaCont *head, ScmObj promptTag)
 {
     if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
-    for (ScmMetaCont *m = vm->currentMetaCont; m; m = m->prev) {
+    for (ScmMetaCont *m = head; m; m = m->prev) {
         if (SCM_EQ(m->promptTag, promptTag)) return m;
     }
     return NULL;
@@ -2307,7 +2325,11 @@ void push_prompt_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
     a->abortHandler = abortHandler;
     a->dynamicHandlers = get_dynamic_handlers(vm);
     PUSH_CONT(SCM_PROMPT_TAG_PC(promptTag));
-    CONT->cpc = &a->dummy;
+    CONT->marker |= SCM_CONT_PROMPT_MARKER;
+    push_meta_cont(vm, promptTag, abortHandler);
+    /* Start a fresh mark segment for the prompt body.  push_meta_cont
+       alreay saved original DENV in currentMetaCont. */
+    vm->denv = make_seeded_denv_base(vm);
 }
 
 void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
@@ -3383,7 +3405,8 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
         SCM_TYPE_ERROR(promptTag, "prompt tag or #f");
     }
     ScmVM *vm = theVM;
-    ScmMetaCont *targetMeta = find_meta_cont_by_tag(vm, promptTag);
+    ScmMetaCont *targetMeta = find_meta_cont_with_tag(vm->currentMetaCont,
+                                                      promptTag);
     if (targetMeta == NULL) {
         Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                            "prompt-tag", promptTag,
@@ -3413,13 +3436,13 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_ContinuationMarkSetClass,
                          NULL, NULL, NULL, NULL,
                          SCM_CLASS_OBJECT_CPL);
 
-static ScmObj make_continuation_mark_set(ScmVM *vm,
-                                         ScmContFrame *cont,
-                                         ScmObj denv,
+static ScmObj make_continuation_mark_set(ScmObj denv0,
+                                         ScmMetaCont *mc,
                                          ScmObj promptTag)
 {
     if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
-    ScmMetaCont *bottom = find_meta_cont_by_tag(vm, promptTag);
+
+    ScmMetaCont *bottom = find_meta_cont_with_tag(mc, promptTag);
     if (bottom == NULL) {
         Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                            "prompt-tag", promptTag,
@@ -3427,14 +3450,38 @@ static ScmObj make_continuation_mark_set(ScmVM *vm,
                            "Stale prompt tag: %S",
                            promptTag);
     }
-    SCM_ASSERT(bottom->frame);
 
+    SCM_ASSERT(mc != NULL);
     ScmContinuationMarkSet *cm = SCM_NEW(ScmContinuationMarkSet);
     SCM_SET_CLASS(cm, SCM_CLASS_CONTINUATION_MARK_SET);
-    cm->cont = cont;
-    cm->denv = denv;
-    cm->bottomDenv = bottom->frame->denv;
+    cm->denv = denv0;
+    cm->metaCont = mc;
+    cm->bottom = bottom;
     return SCM_OBJ(cm);
+}
+
+/* Walk the mark segments of `cmset` looking for `key`.
+   If firstOnly, return the innermost match (or `fallback`);
+   otherwise return the list of all matches, innermost first. */
+static ScmObj cmset_walk(const ScmContinuationMarkSet *cmset, ScmObj key,
+                         int firstOnly, ScmObj fallback)
+{
+    ScmObj p = cmset->denv;
+    ScmMetaCont *m = cmset->metaCont;
+
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    for (;;) {
+        for (; SCM_PAIRP(p); p = SCM_CDR(p)) {
+            if (SCM_EQ(SCM_CAAR(p), key)) {
+                if (firstOnly) return SCM_CDAR(p);
+                SCM_APPEND1(h, t, SCM_CDAR(p));
+            }
+        }
+        if (m == NULL || m == cmset->bottom) break;
+        p = m->denv;
+        m = m->prev;
+    }
+    return firstOnly? fallback : h;
 }
 
 ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag)
@@ -3442,9 +3489,8 @@ ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag)
     if (!Scm_ContinuationP(contProc)) {
         SCM_TYPE_ERROR(contProc, "continuation");
     }
-    ScmEscapePoint *ep = (ScmEscapePoint*)SCM_SUBR(contProc)->data;
-    ScmContFrame *cont = ep->cont;
-    return make_continuation_mark_set(theVM, cont, ep->denv, promptTag);
+    ScmEscapePoint *ep = (ScmEscapePoint*)SCM_SUBR_DATA(contProc);
+    return make_continuation_mark_set(ep->denv, ep->capturedMetaCont, promptTag);
 }
 
 
@@ -3452,7 +3498,7 @@ ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag)
 {
     ScmVM *vm = theVM;
     save_cont(vm);
-    return make_continuation_mark_set(vm, CONT, DENV, promptTag);
+    return make_continuation_mark_set(DENV, vm->currentMetaCont, promptTag);
 }
 
 ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
@@ -3462,36 +3508,18 @@ ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
     if (cmset == NULL) {
         cmset = SCM_CONTINUATION_MARK_SET(Scm_CurrentContinuationMarks(promptTag));
     }
+    return cmset_walk(cmset, key, FALSE, SCM_NIL);
+}
 
-    ScmObj h = SCM_NIL, t = SCM_NIL;
-    ScmContFrame *c = cmset->cont;
-    ScmObj p = cmset->denv;
-
-    while (c && c->denv == p) {
-        /* no new marks in the current frame */
-        c = c->prev;
+ScmObj Scm_ContinuationMarkSetFirst(const ScmContinuationMarkSet *cmset,
+                                    ScmObj key, ScmObj fallback,
+                                    ScmObj promptTag)
+{
+    if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
+    if (cmset == NULL) {
+        cmset = SCM_CONTINUATION_MARK_SET(Scm_CurrentContinuationMarks(promptTag));
     }
-    while (SCM_PAIRP(p)) {
-        if (p == cmset->bottomDenv) break;
-        /* TODO: Bail out if we hit promptTag */
-        if (SCM_CAAR(p) == key) {
-            SCM_APPEND1(h, t, SCM_CDAR(p));
-            /* skip to the next continuation frame */
-            if (c == NULL) break;
-            for (p = SCM_CDR(p); SCM_PAIRP(p); p = SCM_CDR(p)) {
-                if (c->denv == p) {
-                    do {
-                        c = c->prev;
-                    } while (c && c->denv == p);
-                    break;
-                }
-            }
-            continue;
-        } else {
-            p = SCM_CDR(p);
-        }
-    }
-    return h;
+    return cmset_walk(cmset, key, TRUE, fallback);
 }
 
 /*==============================================================
@@ -3785,7 +3813,8 @@ static ScmObj throw_continuation(ScmObj *argframe,
            for there may be a closer frame with the same prompt tag (srfi-226).
         */
         ScmMetaCont *targetMeta =
-            find_meta_cont_by_tag(vm, ep->boundingMetaCont->promptTag);
+            find_meta_cont_with_tag(vm->currentMetaCont,
+                                    ep->boundingMetaCont->promptTag);
 
         if (targetMeta != NULL) { /* Case 2 */
             if (targetMeta == ep->capturedMetaCont) { /* 2a */
@@ -3894,7 +3923,8 @@ ScmObj call_cc_common(ScmObj proc,
     save_cont(vm);
     if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
 
-    ScmMetaCont *bottom = find_meta_cont_by_tag(vm, promptTag);
+    ScmMetaCont *bottom = find_meta_cont_with_tag(vm->currentMetaCont,
+                                                  promptTag);
     if (bottom == NULL) {
         Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
                            "prompt-tag", promptTag,
@@ -3909,7 +3939,6 @@ ScmObj call_cc_common(ScmObj proc,
     ep->boundingMetaCont = bottom;
     ep->capturedMetaCont = vm->currentMetaCont;
     if (composable) {
-        ep->denv = bottom->denv;
         ep->dynamicHandlers = SCM_NIL; /* unused on partial cont */
         ep->cstack = NULL;
     }
@@ -4711,6 +4740,13 @@ void Scm__InitVM(void)
     denv_key_expression_name   = UNINTERNED(expression-name);
     denv_key_include_source    = UNINTERNED(include-source);
     continuation_symbol        = UNINTERNED(continuation);
+
+    int keys = 0;
+    system_denv_keys[keys++] = denv_key_exception_handler;
+    system_denv_keys[keys++] = denv_key_parameterization;
+    system_denv_keys[keys++] = denv_key_expression_name;
+    system_denv_keys[keys++] = denv_key_include_source;
+    SCM_ASSERT(keys == NUM_SYSTEM_DENV_KEYS);
 
     /* Initialize statically allocated default prompt tag.
        Again, be aware that most modules are not initialized yet.

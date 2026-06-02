@@ -973,6 +973,30 @@
                          'a))])
          (continuation-mark-set->list (car p) key)))
 
+(test* "continuation marks with two tags"
+       '(200)
+       (let ()
+         (define tag1 (make-continuation-prompt-tag 'tag1))
+         (define tag2 (make-continuation-prompt-tag 'tag2))
+         (define k1 #f)
+         (define k2 #f)
+         (define mark-set-1 #f)
+         (reset-at tag1 ;; --- (A)
+          (with-continuation-mark 'key1 100
+           (begin
+            (reset-at tag2
+             (shift-at tag2 k
+              (set! k1 k))
+             (shift-at tag1 k
+              (set! k2 k))
+             (set! mark-set-1 (current-continuation-marks tag1))))))
+         (reset-at tag1 ;; --- (B)
+          (with-continuation-mark 'key1 200
+           (begin
+            (k1))))
+         (k2)
+         (continuation-mark-set->list mark-set-1 'key1)))
+
 (define-module ccm-fact
   (use gauche.test)
 
