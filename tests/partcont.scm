@@ -533,3 +533,38 @@
               (k1)
               (display "[d13]"))
             (lambda () (display "[d14]"))))))
+
+;; Tests gauche.partcont version of control/prompt.
+;; native : (1)
+;; meta   : -
+;; srfi226: (1)
+;; racket : -
+(gauche-only
+ (let ()
+   (define-syntax prompt
+     (syntax-rules ()
+       ((prompt e1 e2 ...)
+        (call-with-continuation-prompt
+         (lambda ()
+           e1 e2 ...)
+         (default-continuation-prompt-tag)
+         (lambda (thunk)
+           (thunk))))))
+   (define (call/control proc)
+     (call-with-composable-continuation
+      (lambda (k)
+        (abort-current-continuation
+            (default-continuation-prompt-tag)
+          (lambda () (proc k))))
+      (default-continuation-prompt-tag)))
+   (define-syntax control
+     (syntax-rules ()
+       ((control var expr ...)
+        (call/control (lambda (var) expr ...)))))
+   (test* "prompt / control (for-each)"
+          '(1)
+          (prompt
+           (for-each
+            (lambda (x) (control k (cons x (k 'next))))
+            '(1 2 3))
+           '()))))

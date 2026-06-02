@@ -740,9 +740,10 @@
          (lambda (x) (shift k (cons x (k 'next))))
          '(1 2 3))
         '()))
-;; DIVERGE
-'(test* "prompt / control (for-each)"
-       '(3 2 1)
+;; This diverges from original Hamayama's PR https://github.com/shirok/Gauche/pull/1263
+;; but agrees with srfi-226 reference implementation
+(test* "prompt / control (for-each)"
+       '(1)
        (prompt
         (for-each
          (lambda (x) (control k (cons x (k 'next))))

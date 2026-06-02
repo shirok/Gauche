@@ -60,7 +60,7 @@
    (^k
     (abort-current-continuation
      (or prompt-tag (default-continuation-prompt-tag))
-     (^[] (proc (^ args (apply k args))))))
+     (^[] (proc k))))
    prompt-tag))
 
 (define-syntax control
