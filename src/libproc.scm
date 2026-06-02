@@ -170,14 +170,7 @@
 (define-cproc continuation-mark-set-first (cmset::<continuation-mark-set>?
                                            key :optional (fallback #f)
                                                          (prompt-tag #f))
-  (let* ([cms::ScmContinuationMarkSet*
-          (?: cmset cmset
-              (SCM_CONTINUATION_MARK_SET (Scm_CurrentContinuationMarks prompt-tag)))]
-         [p (-> cms denv)])
-    (for [() (SCM_PAIRP p) (set! p (SCM_CDR p))]
-      (when (SCM_EQ (SCM_CAAR p) key)
-        (return (SCM_CDAR p))))
-    (return fallback)))
+  (return (Scm_ContinuationMarkSetFirst cmset key fallback prompt-tag)))
 
 ;; SRFI-226
 ;; We use uninterned symbols for unique continuation mark key.

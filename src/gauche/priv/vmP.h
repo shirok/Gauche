@@ -68,15 +68,16 @@ struct ScmPromptTagRec {
  *
  *   Continuation mark set is an opaque object to extract a set of continuation
  *   marks.  In Gauche, it is just a wrapper of the dynamic environment
- *   and continuation chain; continuation-mark-set->list will do the actual
+ *   and meta-continuation chain; continuation-mark-set->list will do the actual
  *   extraction work.
  */
 
 struct ScmContinuationMarkSetRec {
     SCM_HEADER;
-    ScmContFrame *cont;         /* current cont frame */
-    ScmObj denv;                /* vm->denv */
-    ScmObj bottomDenv;          /* limit of denv to look for */
+    ScmObj denv;                /* current denv segment */
+    ScmMetaCont *metaCont;      /* meta-cont chain head */
+    ScmMetaCont *bottom;        /* bounding meta-cont.  we stop searching
+                                   right before this metacont. */
 };
 
 /* To obtain denv keys */

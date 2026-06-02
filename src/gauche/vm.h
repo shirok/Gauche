@@ -130,6 +130,8 @@ SCM_EXTERN ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
                                                 ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_ContinuationMarkSetFirst(const ScmContinuationMarkSet *,
+                                               ScmObj, ScmObj, ScmObj);
 
 /*
  * Continuation frame
