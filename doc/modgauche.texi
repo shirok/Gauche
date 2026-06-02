@@ -15201,17 +15201,35 @@ only a couple of dozen lines of code.
 
 @deftp {Module} gauche.native-type
 @mdindex gauche.native-type
+@c EN
 This module provides a type infrastructure to communicate with the
 ``native'', or ``close to the metal'' layer.  Examples include
 foreign function interface (FFI) and structured binary data access.
+@c JP
+このモジュールは、「ネイティブ」つまり「よりメタルに近い」層とやりとりする
+ためのインフラを提供します。例えばFFIやバイナリデータ構造体へのアクセス
+に必要な基礎部分です。
+@c COMMON
 
+@c EN
 Basic native types are built-in (@pxref{Native types}).  This module
 adds constructors for derived or aggregate types (such as arrays
 and structs), endian-specified types, conversions between
 native type objects and compact signatures, and so on.
+@c JP
+基本的なネイティブタイプは組み込みになっています(@ref{Native types}参照)。
+このモジュールはそれに加え、導出型や集合型(配列や構造体)、
+バイトオーダーを特定した型、
+ネイテイブタイプオブジェクトとその簡潔な表記(シグネチャ)の相互変換などを提供します。
+@c COMMON
 
+@c EN
 This module also provides @emph{native handles}, via which
 you access native data from Scheme world (@pxref{Native handles}).
+@c JP
+また、ネイティブデータをSchemeからアクセスするための
+@emph{ネイティブハンドル}も提供されます(@ref{Native handles}参照)。
+@c COMMON
 @end deftp
 
 @menu
@@ -15223,6 +15241,7 @@ you access native data from Scheme world (@pxref{Native handles}).
 
 @node Derived and aggregate native types, Representation-specific types, Native type utilities, Native type utilities
 @subsection Derived and aggregate native types
+@c NODE 導出および集合ネイティブタイプ
 
 We have subclasses of @code{<native-type>}, which are classes
 of individual derived or aggregate native types.
@@ -15555,6 +15574,7 @@ a C struct type, or a C union type.
 
 @node Representation-specific types, Native type signature, Derived and aggregate native types, Native type utilities
 @subsection Representation-specific types
+@c NODE レイアウトを特定した型
 
 Primitive native types such as @code{<int16>} read/write memory
 with the system's native endianness.  For FFI it is fine.  However,
@@ -15609,6 +15629,7 @@ within derived or aggregate types.
 
 @node Native type signature, Native handles, Representation-specific types, Native type utilities
 @subsection Native type signature
+@c NODE ネイティブタイプシグネチャ
 
 A @dfn{native type signature} is a compact S-expression description of
 a native type.  It lets you specify pointer, array, struct, union, and
@@ -15811,6 +15832,7 @@ Returns a native type signature that denotes the given native type.
 
 @node Native handles,  , Native type signature, Native type utilities
 @subsection Native handles
+@c NODE ネイティブハンドル
 
 A native handle is a handle through which you can access native data.
 Native handles may be returned from a foreign function call, or you can
