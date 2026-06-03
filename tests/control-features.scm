@@ -316,7 +316,7 @@
               (unwind-protect (+ x 42) (set! x 1) (set! x (* x 2)))])
         (list x y)))
 
-;; DIVERGE
+;; DIVERGE - Due to semantic difference of unwind-protect
 '(test '(2 42)
       (let* ([x 10]
              [y
@@ -325,7 +325,7 @@
                  (unwind-protect (+ x (k 42)) (set! x 1) (set! x (* x 2)))))])
         (list x y)))
 
-;; DIVERGE
+;; DIVERGE - Due to semantic difference of unwind-protect
 '(test '(2 62)
       (let* ([x 10]
              [y

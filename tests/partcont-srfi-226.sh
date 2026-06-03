@@ -73,7 +73,7 @@ $GOSH -e "
   (lambda (p) (let loop () (let ((f (read p)))
     (unless (eof-object? f)
       (let ((name (~ f 1)))   ; f = (RESULTROW name expect pass? actual)
-        (print \"Run: \" name)
+        (format #t \"~a: ~a~%\" (if (~ f 3) 'ok 'NG) name)
         (unless (hash-table-exists? seen name)
           (hash-table-put! seen name #t) (set! total (+ total 1))
           (unless (list-ref f 3)
