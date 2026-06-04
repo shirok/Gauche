@@ -851,11 +851,14 @@ static void vm_unregister(ScmVM *vm)
         } else if (vm->currentMetaCont != NULL          \
                    && vm->currentMetaCont->frame == CONT) {\
             /* returning through a prompt boundary.  The continuation   \
-               continues via metacont's cont field. */                  \
+               continues via the metacont's cont field, and the denv    \
+               is restored from the metacont's denv */                  \
             ScmContFrame *into__ = vm->currentMetaCont->cont;\
+            ScmObj denv__ = vm->currentMetaCont->denv;  \
             pop_meta_cont(vm);                          \
             POP_CONT();                                 \
             vm->cont = into__;                          \
+            DENV = denv__;                              \
         } else {                                        \
             POP_CONT();                                 \
         }                                               \
@@ -1408,7 +1411,7 @@ static ScmEnvFrame *get_env(ScmVM *vm)
 }
 
 /* Returns an denv to be inherited from the calling thread.
- * Note that we only need parameterizations.  Other dynamic envs are "reset"
+ * Note that we only need parameterizations.  Other dynamic envs are reset
  * at the entrance of thread and the previous values will never be accessed.
  * To support thread parameters, we have to copy the parameter alist.
  */
@@ -1416,16 +1419,20 @@ ScmObj get_inheriting_denv(ScmVM *vm)
 {
     if (vm == NULL) return SCM_NIL;
 
-    ScmObj orig = vm->denv, cp;
-    ScmObj new_denv = SCM_NIL;
-
-    SCM_FOR_EACH(cp, orig) {
-        if (!SCM_PAIRP(SCM_CAR(cp))) continue; /* can't happen, just in case */
-        if (SCM_EQ(SCM_CAAR(cp), denv_key_parameterization)) {
-            ScmObj hh = SCM_NIL, tt = SCM_NIL, ccp;
-            SCM_FOR_EACH(ccp, SCM_CDAR(cp)) {
+    /* Parameterizations are segmented across the metacont chain so
+       we need to walk every segment and merge their parameter bindings,
+       copying non-shared cells so the child thread gets its own storage. */
+    ScmObj hh = SCM_NIL, tt = SCM_NIL;
+    ScmObj seg = vm->denv;
+    ScmMetaCont *m = vm->currentMetaCont;
+    for (;;) {
+        ScmObj e = Scm_Assq(denv_key_parameterization, seg);
+        if (SCM_PAIRP(e)) {
+            ScmObj ccp;
+            SCM_FOR_EACH(ccp, SCM_CDR(e)) {
                 ScmObj p = SCM_CAR(ccp); /* (<param> . <value>) */
                 SCM_ASSERT(SCM_PRIMITIVE_PARAMETER_P(SCM_CAR(p)));
+                if (!SCM_FALSEP(Scm_Assq(SCM_CAR(p), hh))) continue; /* shadowed */
                 ScmPrimitiveParameter *param =
                     SCM_PRIMITIVE_PARAMETER(SCM_CAR(p));
                 ScmObj newp = p;
@@ -1434,11 +1441,13 @@ ScmObj get_inheriting_denv(ScmVM *vm)
                 }
                 SCM_APPEND1(hh, tt, newp);
             }
-            new_denv = SCM_LIST1(Scm_Cons(SCM_CAAR(cp), hh));
-            break;
         }
+        if (m == NULL) break;
+        seg = m->denv;
+        m = m->prev;
     }
-    return new_denv;
+    if (SCM_NULLP(hh)) return SCM_NIL;
+    return SCM_LIST1(Scm_Cons(denv_key_parameterization, hh));
 }
 
 /* When VM stack has incomplete stack frame (that is, SP != ARGP or
@@ -1636,12 +1645,59 @@ ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback)
     return find_dynamic_env(theVM, key, fallback);
 }
 
+/* Parameterization lookup across denv segments, and returns
+   (param . value) if found, #f otherwise. */
+ScmObj Scm_VMParameterCell(ScmObj param)
+{
+    ScmVM *vm = theVM;
+    ScmObj seg = vm->denv;
+    ScmMetaCont *m = vm->currentMetaCont;
+    for (;;) {
+        ScmObj pz = Scm_Assq(denv_key_parameterization, seg);
+        if (SCM_PAIRP(pz)) {
+            ScmObj r = Scm_Assq(param, SCM_CDR(pz));
+            if (SCM_PAIRP(r)) return r;
+        }
+        if (m == NULL) break;
+        seg = m->denv;
+        m = m->prev;
+    }
+    return SCM_FALSE;
+}
+
+/* Flatten all dynamically-visible parameter bindings across denv segments
+   into a single fresh alist.  The (param . val) cells are shared with the
+   live denv. */
+ScmObj Scm_VMParameterization(void)
+{
+    ScmVM *vm = theVM;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmObj seg = vm->denv;
+    ScmMetaCont *m = vm->currentMetaCont;
+    for (;;) {
+        ScmObj pz = Scm_Assq(denv_key_parameterization, seg);
+        if (SCM_PAIRP(pz)) {
+            ScmObj cp;
+            SCM_FOR_EACH(cp, SCM_CDR(pz)) {
+                ScmObj cell = SCM_CAR(cp); /* (param . val) */
+                if (SCM_FALSEP(Scm_Assq(SCM_CAR(cell), h))) {
+                    SCM_APPEND1(h, t, cell);
+                }
+            }
+        }
+        if (m == NULL) break;
+        seg = m->denv;
+        m = m->prev;
+    }
+    return h;
+}
+
 /* Build a fresh dynamic-env base for a newly installed prompt segment.
    Following the SRFI-226 model, a prompt starts a new mark segment: user
    continuation marks added outside the prompt do not bleed into it.
-   Selected system marks are 'inherited', though, to allow simple linear
-   search. */
-#define NUM_SYSTEM_DENV_KEYS 4
+   Selected system marks are 'inherited' (copied into the base) to allow a
+   simple linear search for them.  */
+#define NUM_SYSTEM_DENV_KEYS 3
 static ScmObj system_denv_keys[NUM_SYSTEM_DENV_KEYS]; /* initialized by initVM */
 
 static ScmObj make_seeded_denv_base(ScmVM *vm)
@@ -2249,8 +2305,13 @@ static void delimit_composable_cont(ScmEscapePoint *ep)
         else head = mc;
         prevCopy = mc;
         if (m == bounding) {
+            /* The bounding prompt itself is not part of the captured
+               partial continuation, so these references are never
+               consulted. */
             mc->cont = NULL;
             mc->prev = NULL;
+            mc->denv = SCM_NIL;
+            mc->dynamicHandlers = SCM_NIL;
             break;
         }
         mc->cont = m->cont;            /* within the captured segment */
@@ -2459,8 +2520,10 @@ void push_prompt_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
     CONT->prev = NULL;
     CONT->env = NULL;
     /* Start a fresh mark segment for the prompt body.  push_meta_cont
-       alreay saved original DENV in currentMetaCont. */
+       already saved the original DENV in currentMetaCont->denv, and that is
+       what RETURN_OP restores when control returns through the prompt. */
     vm->denv = make_seeded_denv_base(vm);
+    CONT->denv = vm->denv;
     CHECK_METACONT(vm, "push_prompt_cont");
 }
 
@@ -2471,9 +2534,12 @@ void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
     CONT->marker |= SCM_CONT_BOUNDARY_MARKER;
     /* Unlike a plain prompt, a boundary frame is returned through by
        POP_CONT when control crosses back to the C caller, which restores
-       ENV from it.  So keep the real env here (push_prompt_cont nulled it).
-       ENV is unchanged since user_eval_inner entry. */
+       ENV and DENV from it.  So keep the real env and the parent denv here
+       (push_prompt_cont nulled the env and reseeded the denv).  ENV is
+       unchanged since user_eval_inner entry; the parent denv is the one
+       push_meta_cont saved in currentMetaCont->denv. */
     CONT->env = ENV;
+    CONT->denv = vm->currentMetaCont->denv;
 }
 
 /* API for recursive call to VM.  Exceptions are not captured.
@@ -4854,7 +4920,6 @@ void Scm__InitVM(void)
 
     int keys = 0;
     system_denv_keys[keys++] = denv_key_exception_handler;
-    system_denv_keys[keys++] = denv_key_parameterization;
     system_denv_keys[keys++] = denv_key_expression_name;
     system_denv_keys[keys++] = denv_key_include_source;
     SCM_ASSERT(keys == NUM_SYSTEM_DENV_KEYS);

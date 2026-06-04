@@ -46,14 +46,16 @@
     ((_ . other)
      (syntax-error "malformed while" (while . other)))))
 
+;; NB: Racket's parameter doesn't return previous value when called
+;; with (parameter new-value).
 (define-syntax temporarily
   (syntax-rules ()
     ((temporarily ((state init) ...) expr ...)
      (let ((tmp init) ...)
-       (dynamic-wind
-         (lambda () (set! tmp (state tmp)) ...)
-         (lambda () expr ...)
-         (lambda () (set! tmp (state tmp)) ...))))))
+       (define (swap!)
+         (let ((old (state))) (state tmp) (set! tmp old))
+         ...)
+       (dynamic-wind swap! (lambda () expr ...) swap!)))))
 
 (define-syntax gauche-only
   (syntax-rules ()
