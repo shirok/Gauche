@@ -51,7 +51,6 @@
    to perform consistency checks about metacont chain and continuation
    chain.  The check needs the env var GAUCHE_DEBUG_METACONT to be defined
    as ell. */
-#undef USE_METACONT_CHECKER
 //#define USE_METACONT_CHECKER 1
 
 /* Experimental code to use custom mark procedure for stack gc.
@@ -2006,7 +2005,7 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     ep->rewindBefore = rewindBefore;
     ep->partContTop = proto? proto->partContTop : NULL;
     ep->boundingMetaCont = proto? proto->boundingMetaCont : NULL;
-    ep->capturedMetaCont = proto? proto->capturedMetaCont : NULL;
+    ep->capturedMetaCont = proto? proto->capturedMetaCont : vm->currentMetaCont;
     ep->applyProc = proto? proto->applyProc : SCM_FALSE;
     return ep;
 }
@@ -2345,6 +2344,7 @@ static ScmObj user_eval_inner(ScmObj program,
             if (ep && ep->cstack == vm->cstack) {
                 vm->cont = ep->cont;
                 vm->denv = ep->denv;
+                vm->currentMetaCont = ep->capturedMetaCont;
                 vm->pc = PC_TO_RETURN;
                 /* restore reset-chain for reset/shift */
                 if (ep->cstack) vm->resetChain = ep->resetChain;
@@ -4036,7 +4036,6 @@ ScmObj call_cc_common(ScmObj proc,
     ep->cont = vm->cont;
     ep->partContTop = ep->cont;
     ep->boundingMetaCont = bottom;
-    ep->capturedMetaCont = vm->currentMetaCont;
     if (composable) {
         ep->dynamicHandlers = SCM_NIL; /* unused on partial cont */
         ep->cstack = NULL;
