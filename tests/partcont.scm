@@ -287,26 +287,37 @@
 (let ((p (make-parameter 1))
       (c #f))
   (define (foo)
-    (parameterize ((p 2))
-      (reset
-       (display (p))
-       (temporarily ((p 3))
-         (display (p))
-         (shift k (display (p)) (set! c k))
-         (display (p)))
-       (display (p)))))
-  ;; native : 232
-  ;; meta   : 232
-  ;; srfi226: 232
-  ;; racket : 23#<void>
-  (test* "reset/shift + temporarily + parameterize" "232"
-         (with-output-to-string foo))
-  ;; native : "32"
-  ;; meta   : ""
-  ;; srfi226: "32"
-  ;; racket : #<void>#<void>
-  (test* "reset/shift + temporarily + parameterize (cont)" "32"
-         (with-output-to-string c)))
+    (let ((r '()))
+      (define (record! v)
+        (push! r (if (number? v) v 'nonumber)))
+      (parameterize ((p 2))
+        (reset
+         (record! (p))
+         (temporarily ((p 3))
+           (record! (p))
+           (shift k (record! (p)) (set! c k))
+           (record! (p)))
+         (record! (p))
+         r))
+      r))
+  ;; native : (2 3 2)
+  ;; meta   : (2 3 2)
+  ;; srfi226: (2 3 2)
+  ;; racket : (2 3 2)
+  (test* "reset/shift + temporarily + parameterize" '(2 3 2)
+         (foo))
+  ;; native : (1 3 2 3 2)
+  ;; meta   : (2 3 2 3 2)
+  ;; srfi226: (2 3 2 3 2)
+  ;; racket : (1 3 2 3 2)
+  ;; The divergence is caused from the difference of whether composable
+  ;; continuation keeps parameterization on and below the reset frame.
+  ;; SRFI text seems to read it does not, so when invoked, it installs
+  ;; sliced parameterization on top of the caller's aprameterization---that's
+  ;; why we see the outermost level '1' in the output.  The srfi reference
+  ;; implementation does not agree, but we suspect racket is right here.
+  (test* "reset/shift + temporarily + parameterize (cont)" '(1 3 2 3 2)
+         (c)))
 
 ;; native : [E01][E02]
 ;; meta   : [E01][E02]

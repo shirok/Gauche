@@ -119,6 +119,9 @@ typedef struct ScmEnvFrameRec {
 SCM_EXTERN void   Scm_VMPushDynamicEnv(ScmObj key, ScmObj val);
 SCM_EXTERN ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback);
 
+SCM_EXTERN ScmObj Scm_VMParameterCell(ScmObj param); /* (param . val) or #f */
+SCM_EXTERN ScmObj Scm_VMParameterization(void);      /* flat alist */
+
 typedef struct ScmContinuationMarkSetRec ScmContinuationMarkSet;
 
 SCM_CLASS_DECL(Scm_ContinuationMarkSetClass);

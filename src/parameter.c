@@ -249,8 +249,9 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
 
 ScmObj Scm_CurrentParameterization()
 {
-    ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
-    ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
+    /* Snapshot the full visible parameterization, flattened across the
+       segmented denv (see Scm_VMParameterization). */
+    ScmObj parameterization = Scm_VMParameterization();
 
     ScmParameterization *pz = SCM_NEW(ScmParameterization);
     SCM_SET_CLASS(pz, SCM_CLASS_PARAMETERIZATION);
@@ -265,7 +266,8 @@ void Scm_PushParameterization(ScmObj params, ScmObj vals)
     }
 
     ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
-    ScmObj prev = Scm_VMFindDynamicEnv(k, SCM_NIL);
+    /* The new parameterization extends the FULL visible parameterization, */
+    ScmObj prev = Scm_VMParameterization();
     ScmObj h = SCM_NIL, t = SCM_NIL;
 
     while (SCM_PAIRP(params)) {
@@ -302,9 +304,7 @@ void Scm_InstallParameterization(ScmParameterization *pz)
  */
 ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 {
-    ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
-    ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
-    ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
+    ScmObj r = Scm_VMParameterCell(SCM_OBJ(p));
 
     if (SCM_PAIRP(r)) {
         /* dynamically bound */
@@ -331,9 +331,7 @@ ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
                                  ScmObj val)
 {
-    ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
-    ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
-    ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
+    ScmObj r = Scm_VMParameterCell(SCM_OBJ(p));
     ScmObj old;
 
     if (SCM_PAIRP(r)) {
