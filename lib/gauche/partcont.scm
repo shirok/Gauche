@@ -1,6 +1,7 @@
 (define-module gauche.partcont
   (export reset shift call/pc reset-at shift-at
-          prompt control prompt-at control-at))
+          prompt control prompt-at control-at
+          guard-r7))                    ;Temporary
 (select-module gauche.partcont)
 
 (define %reset (with-module gauche.internal %reset))
@@ -72,3 +73,67 @@
   (syntax-rules ()
     [(control-at prompt-tag var expr ...)
      (call/control (^[var] expr ...) prompt-tag)]))
+
+;; TEMPORARY:
+;; Implementation of `guard` from R7RS 7.3, that properly handles
+;; continuations where handlers are called and fell-through exceptions
+;; are reraised.  This is included so that we can easily compare
+;; the behavior against Gauche's native guard.  Eventually we plan to
+;; make the native guard work the same way.
+(define-syntax guard-r7
+  (syntax-rules ()
+    ((guard (var clause ...) e1 e2 ...)
+     ((call/cc
+       (lambda (guard-k)
+         (with-exception-handler
+          (lambda (condition)
+            ((call/cc
+              (lambda (handler-k)
+                (guard-k
+                 (lambda ()
+                   (let ((var condition))
+                     (guard-aux
+                      (handler-k
+                       (lambda ()
+                         (raise-continuable condition)))
+                      clause ...))))))))
+          (lambda ()
+            (call-with-values
+                (lambda () e1 e2 ...)
+              (lambda args
+                (guard-k
+                 (lambda ()
+                   (apply values args)))))))))))))
+
+(define-syntax guard-aux
+  (syntax-rules (else =>)
+    ((guard-aux reraise (else result1 result2 ...))
+     (begin result1 result2 ...))
+    ((guard-aux reraise (test => result))
+     (let ((temp test))
+       (if temp
+         (result temp)
+         reraise)))
+    ((guard-aux reraise (test => result)
+                clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+         (result temp)
+         (guard-aux reraise clause1 clause2 ...))))
+    ((guard-aux reraise (test))
+     (or test reraise))
+    ((guard-aux reraise (test) clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+         temp
+         (guard-aux reraise clause1 clause2 ...))))
+    ((guard-aux reraise (test result1 result2 ...))
+     (if test
+       (begin result1 result2 ...)
+       reraise))
+    ((guard-aux reraise
+                (test result1 result2 ...)
+                clause1 clause2 ...)
+     (if test
+       (begin result1 result2 ...)
+       (guard-aux reraise clause1 clause2 ...)))))
