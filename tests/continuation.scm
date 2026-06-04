@@ -849,6 +849,21 @@
            (reset-at t1 (cons 'c (reset-at t2 (cons 'd (k '())))))))
   )
 
+;; partial continuation leak test
+;; http://okmij.org/ftp/continuations/against-callcc.html#memory-leak
+(define (oleg-leak-test identity-thunk)
+  (define (total-heap) (cadr (assq :total-heap-size (gc-stat))))
+  (define initial-heap (total-heap))
+  (let loop ([id (lambda (x) x)]
+             [n 0])
+    (cond [(= n 1_000_000) 'ok]
+          [(> (total-heap) (* 10 initial-heap))
+           (error "Leaking")]
+          [else (loop (id (identity-thunk)) (+ n 1))])))
+
+(test* "Oleg's leak test" 'ok (oleg-leak-test (lambda () (reset (shift k k)))))
+
+
 ;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
 (let ()
   (define (eta x) (list (x)))                    ; unit
