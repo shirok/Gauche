@@ -415,7 +415,7 @@
               (lambda ()
                 (tail?))))))
 
-;; DIVERGE : We're lax with continuable continuations
+;; DIVERGE : We're lax with continuable exception
 '(test "ok" (guard (c
                    [(non-continuable-violation? c) "ok"])
              (with-exception-handler
@@ -432,8 +432,7 @@
 
 ;;; Initial Continuations
 
-;; Missing call-in-initial-continuation
-'(test #f (with-continuation-mark 'key 'mark
+(test #f (with-continuation-mark 'key 'mark
            (call-in-initial-continuation
             (lambda ()
               (continuation-mark-set-first #f 'key)))))
@@ -845,25 +844,22 @@
         (parameterize ([(make-parameter 0) 1])
           (call-with-immediate-continuation-mark 'in-tail-context? values))))
 
-;; Missing call-in-initial-continuation
-'(test '(#f 1)
+(test '(#f 1)
       (let ([tag (make-continuation-prompt-tag)]
             [p (make-parameter 0)])
         (parameterize ([p 1])
           (call-in-initial-continuation
            (lambda ()
-             (list (continuation-prompt-available? (call/cc values))
+             (list (continuation-prompt-available? tag (call/cc values))
                    (p)))))))
-;; Missing call-in-initial-continuation
-'(test 42
+(test 42
       (guard (c
               [(uncaught-exception-condition? c) (uncaught-exception-condition-reason c)])
         (call-in-initial-continuation
          (lambda ()
            (raise 42)))))
 
-;; Missing call-in-initial-continuation
-'(test 43
+(test 43
       (with-exception-handler
        (lambda (exc)
          (cond

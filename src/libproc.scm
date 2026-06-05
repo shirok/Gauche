@@ -120,6 +120,23 @@
 (define-cproc abort-current-continuation (prompt-tag :rest objs)
   Scm_VMAbortCurrentContinuation)
 
+(define (call-in-initial-continuation thunk)
+  (define make-uncaught
+    (with-module gauche.threads make-uncaught-exception-condition))
+  (let1 thunk2
+      (let/cc return
+        (^[]
+          (call-with-continuation-prompt
+           (^[]
+             (with-exception-handler
+              (^[exc]
+                (if (and (condition? exc) (not (serious-condition? exc)))
+                  (undefined)             ;non-serious: resume the raise site
+                  (return (^[] (raise-continuable (make-uncaught exc))))))
+              thunk))
+           (default-continuation-prompt-tag))))
+    (thunk2)))
+
 (select-module gauche.internal)
 (define-cproc %continuation-prompt-available? (prompt-tag cont)
   ::<boolean>
