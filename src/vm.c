@@ -47,12 +47,6 @@
 #include "gauche/prof.h"
 #include "gauche/precomp.h"
 
-/* If METACONT_CHECKER is defined, it enables CHECK_METACONT macro
-   to perform consistency checks about metacont chain and continuation
-   chain.  The check needs the env var GAUCHE_DEBUG_METACONT to be defined
-   as ell. */
-//#define USE_METACONT_CHECKER 1
-
 /* Experimental code to use custom mark procedure for stack gc.
    Currently it doens't show any improvement, so we disable it
    by default. */
@@ -2157,85 +2151,6 @@ static ScmMetaCont *find_meta_cont_with_tag(ScmMetaCont *head, ScmObj promptTag)
     return NULL;
 }
 
-#ifdef USE_METACONT_CHECKER
-/* Metacont consistency checker.
-
-   The continuation is segmented: the cont chain is severed at every prompt
-   (the prompt frame's prev == NULL), and the continuation below a prompt
-   lives in the metacont (metacont->cont).  This checker walks the cont
-   chain and, at each prompt frame, verifies it matches the current
-   metacont (metacont->frame == frame) and crosses the boundary via
-   metacont->cont, advancing the metacont chain in lock step.  At the end
-   both chains must be exhausted together. */
-static int metacont_check_enabled(void)
-{
-    static int cached = -1;
-    if (cached < 0) cached = (getenv("GAUCHE_DEBUG_METACONT") != NULL);
-    return cached;
-}
-
-static void metacont_dump(ScmVM *vm, const char *where, const char *why)
-{
-    fprintf(stderr, "\n=== metacont_check(%s): %s ===\n", where, why);
-    fprintf(stderr, "vm->cstack=%p\n", (void*)vm->cstack);
-    fprintf(stderr, "-- cont chain (vm->cont down via prev) --\n");
-    long g = 0;
-    for (ScmContFrame *c = vm->cont; c != NULL && g < 200; c = c->prev, g++) {
-        fprintf(stderr, "  frame=%p prev=%p%s%s\n", (void*)c, (void*)c->prev,
-                PROMPT_FRAME_P(c) ? " PROMPT" : "",
-                BOUNDARY_FRAME_P(c) ? " BOUNDARY" : "");
-    }
-    fprintf(stderr, "-- meta-cont chain (currentMetaCont down via prev) --\n");
-    g = 0;
-    for (ScmMetaCont *m = vm->currentMetaCont; m != NULL && g < 200;
-         m = m->prev, g++) {
-        fprintf(stderr, "  meta=%p frame=%p cont=%p cstack=%p%s\n",
-                (void*)m, (void*)m->frame, (void*)m->cont, (void*)m->cstack,
-                RESUME_BOUNDARY_P(m) ? " RESUME-BOUNDARY" : "");
-    }
-    fflush(stderr);
-}
-
-static void metacont_check(ScmVM *vm, const char *where)
-{
-    if (!metacont_check_enabled()) return;
-    ScmContFrame *c = vm->cont;
-    ScmMetaCont *m = vm->currentMetaCont;
-    long guard = 0;
-    const long GUARD_MAX = 200000000L; /* runaway protection */
-
-    while (c != NULL) {
-        if (++guard > GUARD_MAX) {
-            metacont_dump(vm, where, "runaway cont chain");
-            goto bad;
-        }
-        if (PROMPT_FRAME_P(c)) {
-            if (m == NULL) {
-                metacont_dump(vm, where, "prompt frame with no meta-cont left");
-                goto bad;
-            }
-            if (m->frame != c) {
-                metacont_dump(vm, where, "prompt frame / meta-cont frame mismatch");
-                goto bad;
-            }
-            c = m->cont;        /* cross the boundary */
-            m = m->prev;
-        } else {
-            c = c->prev;
-        }
-    }
-    if (m == NULL) return;      /* Everything ok. */
-
-    metacont_dump(vm, where, "cont chain ended, meta-cont chain remains");
- bad:
-    Scm_Panic("metacont-check failed");
-}
-
-#define CHECK_METACONT(vm, where)  metacont_check(vm, where)
-#else  /* !USE_METACONT_CHECKER */
-#define CHECK_METACONT(vm, where) /* no op */
-#endif /* !USE_METACONT_CHECKER */
-
 /* Install a captured (possibly multi-segment) partial continuation by pushing
    resume boundaries, and return the chain top to install as the new vm->cont.
    Caller must have run save_cont(vm) already.
@@ -2390,7 +2305,6 @@ static ScmObj user_eval_inner(ScmObj program,
     /* push_boundary_cont sets currentMetaCont->cstack, but that's before
        we update vm->cstack, so we reset it. */
     vm->currentMetaCont->cstack = &cstack;
-    CHECK_METACONT(vm, "user_eval_inner/enter");
 
   restart:
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
@@ -2551,7 +2465,6 @@ void push_prompt_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
        what RETURN_OP restores when control returns through the prompt. */
     vm->denv = make_seeded_denv_base(vm);
     CONT->denv = vm->denv;
-    CHECK_METACONT(vm, "push_prompt_cont");
 }
 
 void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
@@ -3608,7 +3521,6 @@ static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])
 static ScmObj abort_current_continuation(ScmMetaCont *targetMeta, ScmObj args)
 {
     ScmVM *vm = theVM;
-    CHECK_METACONT(vm, "abort_current_continuation/enter");
     ScmContFrame *abortTo = targetMeta->frame;
     ScmObj targetHandlers = targetMeta->dynamicHandlers;
 
@@ -3962,7 +3874,6 @@ static ScmObj throw_continuation(ScmObj *argframe,
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmObj args = argframe[0];
     ScmVM *vm = theVM;
-    CHECK_METACONT(vm, "throw_continuation/enter");
 
     /* Meta-cont-driven invocation.
          - composable: splice the captured tail onto vm->cont; ep->cont
@@ -4153,7 +4064,6 @@ ScmObj call_cc_common(ScmObj proc,
 {
     ScmVM *vm = theVM;
     save_cont(vm);
-    CHECK_METACONT(vm, "call_cc_common/enter");
     if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
 
     ScmMetaCont *bottom = find_meta_cont_with_tag(vm->currentMetaCont,
@@ -4203,7 +4113,6 @@ ScmObj call_cc_common(ScmObj proc,
         vm->currentMetaCont = bottom;
         vm->denv = bottom->denv;
     }
-    CHECK_METACONT(vm, "call_cc_common/before-apply");
     return Scm_VMApply1(proc, contproc);
 }
 
