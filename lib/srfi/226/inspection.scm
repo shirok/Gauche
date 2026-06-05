@@ -4,5 +4,5 @@
 
 (define-module srfi.226.inspection
   (export continuation?
-          ;; non-composable-continuation?
+          non-composable-continuation?
           ))
