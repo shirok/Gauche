@@ -1,3 +1,9 @@
+2026-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_ExitWithMessage), src/libeval.scm (exit):
+	  Ensure calling exit-handler both from Scheme's exit and
+	  C's Scm_Exit.  https://github.com/shirok/Gauche/issues/1278
+
 2026-05-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/native-type.scm: Add native type tag registry.
