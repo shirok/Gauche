@@ -74,7 +74,7 @@ struct ScmPromptTagRec {
 typedef struct ScmPromptDataRec {
     ScmWord dummy;              /* RET insn */
     ScmObj abortHandler;        /* abort handler */
-    ScmObj dynamicHandlers;     /* dynamic-wind handler chain */
+    ScmEscapePoint *escapePoint; /* escape point */
 } ScmPromptData;
 
 #define PROMPT_DATA_SIZE       sizeof(ScmPromptData)/sizeof(ScmWord)
@@ -132,6 +132,12 @@ SCM_CLASS_DECL(Scm_DynamicHandlerClass);
  *  EscapePoint (EP) structure is a saved continuation.  It grabs
  *  a head of continuation chain with some auxiliary data.
  */
+
+enum {
+    CONT_TYPE_FULL = 0,
+    CONT_TYPE_PARTIAL = 1,
+};
+
 typedef struct ScmEscapePointRec {
     SCM_HEADER;
     ScmObj ehandler;            /* handler closure */
@@ -159,11 +165,18 @@ typedef struct ScmEscapePointRec {
                                    with-error-handler uses the latter model,
                                    but SRFI-34's guard needs the former model.
                                 */
+    int contType;               /* continuation type
+                                     CONT_TYPE_FULL
+                                       - full continuation
+                                     CONT_TYPE_COMPOSABLE
+                                       - composable partial continuation
+                                */
 
     /* The following fields are used for new implementation of partial cont. */
-    ScmObj promptTag;
-    ScmObj abortHandler;
-    struct ScmEscapePointRec *bottom;
+    ScmObj promptTag;           /* prompt tag */
+    ScmObj abortHandler;        /* abort handler */
+    ScmObj abortArgs;           /* abort handler's arguments */
+    struct ScmEscapePointRec *bottom; /* (not used now) */
 } ScmEscapePoint;
 
 SCM_CLASS_DECL(Scm_EscapePointClass);
