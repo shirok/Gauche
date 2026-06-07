@@ -3291,16 +3291,6 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     /* get abort handler */
     ScmObj abortHandler = ep->abortHandler;
     ScmObj abortArgs = args;
-    if (SCM_FALSEP(abortHandler)) {
-        if (!(Scm_Length(args) == 1
-              && SCM_PROCEDUREP(SCM_CAR(args))
-              && SCM_PROCEDURE_REQUIRED(SCM_CAR(args)) == 0)) {
-            Scm_Error("default abort-handler requires exactly one argument, "
-                      "which must be a thunk, but got: %S", args);
-        }
-        abortHandler = SCM_CAR(args);
-        abortArgs = SCM_NIL;
-    }
 
     /* get abort continuation */
     ScmContFrame *abortTo;
@@ -3312,11 +3302,6 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
         SCM_ASSERT(ep && ep->cont && ep->cont->prev);
         abortTo = ep->cont->prev->prev;
     }
-
-    /* Discard continuation, and reinstate abortTo frame and its
-       dynamic environment. */
-    CONT = abortTo;
-    DENV = abortTo->denv;
 
     /* call continuation procedure to abort */
     ScmEscapePoint *ep2 = copy_ep(ep);
