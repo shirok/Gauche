@@ -86,20 +86,27 @@ struct ScmContinuationPromptRec {
     struct ScmContinuationPromptRec *prev;
 };
 
-/* bitflags for ScmContFrame->marker */
+/* bitflags for ScmContFrame->marker
+ *
+ *  BOUNDARY - this is a user_eval_inner boundary; when RETURN_OP encounters
+ *             this frame, run_loop returns control to the surrounding C
+ *             stack.  Boundary frames are also PROMPT frames.
+ *  PROMPT   - this is a prompt cont frame.  Both boundary frames and frames
+ *             pushed by call-with-continuation-prompt carry this.
+ */
 enum {
-    SCM_CONT_PROMPT_MARKER = (1L<<0),
-    SCM_CONT_BOUNDARY_MARKER = (1L<<1)
+    SCM_CONT_BOUNDARY_MARKER = (1L<<0),
+    SCM_CONT_PROMPT_MARKER   = (1L<<1),
 };
 
 static void push_prompt_cont(ScmVM*, ScmObj, ScmObj);
 static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 
-/* return true if cont is a boundary continuation frame */
+/* return true if cont is a boundary continuation frame (C-stack boundary) */
 #define BOUNDARY_FRAME_P(cont) ((cont)->marker & SCM_CONT_BOUNDARY_MARKER)
 
-/* return true if cont is a prompt continuation frame */
-#define PROMPT_FRAME_P(cont) ((cont)->marker & SCM_CONT_PROMPT_MARKER)
+/* return true if cont is a prompt cont frame */
+#define PROMPT_FRAME_P(cont)   ((cont)->marker & SCM_CONT_PROMPT_MARKER)
 
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_VM_INSN(SCM_VM_RET) };
@@ -794,13 +801,13 @@ static void vm_unregister(ScmVM *vm)
     } while (0)
 
 /* return operation. */
-#define RETURN_OP()                                   \
-    do {                                              \
-        if (CONT == NULL || BOUNDARY_FRAME_P(CONT)) { \
-            return; /* no more continuations */       \
-        } else {                                      \
-            POP_CONT();                               \
-        }                                             \
+#define RETURN_OP()                                     \
+    do {                                                \
+        if (CONT == NULL || BOUNDARY_FRAME_P(CONT)) {   \
+            return; /* no more continuations */         \
+        } else {                                        \
+            POP_CONT();                                 \
+        }                                               \
     } while (0)
 
 /* push environment header to finish the environment frame.
@@ -1992,6 +1999,10 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
                               ScmObj abortHandler)
 {
     /* save continuation to heap before capturing escape point */
+    /*
+       NB: This avoids ep->cont remains pointing to the stack
+           after vm->cont has moved to heap.
+    */
     save_cont(vm);
 
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
@@ -3724,7 +3735,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
                                                currentHandlers);
     } else if (ep->contType == CONT_TYPE_COMPOSABLE) {
         /* for composable partial continuation */
-        /* this avoids redundant calls of dynamic handlers. */
+        /* NB: this avoids redundant calls of dynamic handlers */
         hdlist =
             throw_cont_calculate_handlers(Scm_Append2(ep->partialHandlers,
                                                       currentHandlers),
@@ -3733,7 +3744,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
         /* for non-composable partial continuation */
         /* get escape point from continuation */
         ScmEscapePoint *ep2 = (ScmEscapePoint*)((ScmSubr*)ep->noCompHandler)->data;
-        /* this avoids redundant calls of dynamic handlers. */
+        /* NB: this avoids redundant calls of dynamic handlers */
         hdlist =
             throw_cont_calculate_handlers(Scm_Append2(ep2->partialHandlers,
                                                       ep->dynamicHandlers),
@@ -3911,7 +3922,7 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag,
         }
     }
 
-    /* Cut partial continuation information from current to prompt */
+    /* cut partial continuation information from current to prompt */
     {
         ScmObj h = SCM_NIL, t = SCM_NIL, p;
         SCM_FOR_EACH(p, vm->partialChain) {
@@ -3924,9 +3935,8 @@ ScmObj vm_call_pc_with_tag_and_type(ScmObj proc, ScmObj promptTag,
     /* get dynamic handlers chain on prompt */
     ScmObj targetHandlers = ep2->dynamicHandlers;
 
-    /* Cut dynamic handlers chain from current to prompt.
-       This is important to avoid redundant calls of dynamic handlers.
-    */
+    /* cut dynamic handlers chain from current to prompt */
+    /* NB: this avoids redundant calls of dynamic handlers */
     {
         ScmObj h = SCM_NIL, t = SCM_NIL, p;
         SCM_FOR_EACH(p, get_dynamic_handlers(vm)) {
