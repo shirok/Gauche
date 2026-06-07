@@ -2825,6 +2825,14 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
     ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
     int numVals = 0;
 
+    /* Save continuation chains into heap.  This has non-negligible
+       overhead, but we need to keep all active EPs' cont field valid.
+       Without this, a complication occurs when save_cont occurs during
+       executing the error handler and it returns subsequently.
+       See https://github.com/shirok/Gauche/issues/852 for the details.
+    */
+    save_cont(vm);
+
 #if GAUCHE_SPLIT_STACK
     vm->lastErrorCont = vm->cont;
     vm->stackBase = vm->sp;
