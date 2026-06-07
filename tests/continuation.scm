@@ -861,8 +861,10 @@
            (error "Leaking")]
           [else (loop (id (identity-thunk)) (+ n 1))])))
 
-(test* "Oleg's leak test" 'ok (oleg-leak-test (lambda () (reset (shift k k)))))
-
+(test* "Oleg's leak test 1" 'ok
+       (oleg-leak-test (lambda () (reset (shift k k)))))
+(test* "Oleg's leak test 2" 'ok
+       (oleg-leak-test (lambda () (reset (values (shift k k))))))
 
 ;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
 (let ()
