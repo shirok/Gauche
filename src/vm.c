@@ -2263,9 +2263,7 @@ static void delimit_composable_cont(ScmEscapePoint *ep)
  */
 
 static ScmObj user_eval_inner(ScmObj program,
-                              ScmWord *codevec,
-                              ScmObj promptTag,
-                              ScmObj abortHandler)
+                              ScmWord *codevec)
 {
     ScmCStack cstack;
     ScmVM * volatile vm = theVM;
@@ -2275,16 +2273,12 @@ static ScmObj user_eval_inner(ScmObj program,
     ScmObj vmhandlers = get_dynamic_handlers(vm);
     ScmObj vmresetChain = vm->resetChain;
 
-    if (SCM_FALSEP(promptTag)) {
-        promptTag = SCM_OBJ(&defaultPromptTag);
-    }
-
     /* Push extra continuation.  This continuation frame is a 'boundary
        frame' and marked by marker == SCM_CONT_RESET_MARKER.   VM loop knows
        it should return to C frame when it sees a boundary frame.
        A boundary frame also keeps the unfinished argument frame at
        the point when Scm_Eval or Scm_Apply is called. */
-    push_boundary_cont(vm, promptTag, abortHandler);
+    push_boundary_cont(vm, SCM_OBJ(&defaultPromptTag), SCM_FALSE);
     /* The boundary's metacont records the parent continuation (its `cont`).
        The cont chain is severed at the boundary frame (prev == NULL), so we
        recover the parent from here when popping the boundary below. */
@@ -2493,7 +2487,7 @@ ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
         Scm_CompiledCodeDump(SCM_COMPILED_CODE(v));
     }
-    return user_eval_inner(v, NULL, SCM_FALSE, SCM_FALSE);
+    return user_eval_inner(v, NULL);
 }
 
 /* NB: The ApplyRec family can be called in an inner loop (e.g. the display
@@ -2511,7 +2505,7 @@ static ScmObj apply_rec(ScmVM *vm, ScmObj proc, int nargs)
     vm->val0 = proc;
     ScmObj program = vm->base?
             SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
-    return user_eval_inner(program, code, SCM_FALSE, SCM_FALSE);
+    return user_eval_inner(program, code);
 }
 
 ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
