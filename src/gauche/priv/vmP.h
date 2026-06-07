@@ -168,8 +168,8 @@ typedef struct ScmEscapePointRec {
     int contType;               /* continuation type
                                      CONT_TYPE_FULL
                                        - full continuation
-                                     CONT_TYPE_COMPOSABLE
-                                       - composable partial continuation
+                                     CONT_TYPE_PARTIAL
+                                       - partial continuation
                                 */
 
     /* The following fields are used for new implementation of partial cont. */

@@ -3539,7 +3539,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
         hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
                                                currentHandlers);
     } else {
-        /* for composable partial continuation */
+        /* for partial continuation */
         /* NB: this avoids redundant calls of dynamic handlers */
         hdlist =
             throw_cont_calculate_handlers(Scm_Append2(ep->partHandlers,
