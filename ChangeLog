@@ -1,3 +1,11 @@
+2026-06-07  Shiro Kawai  <shiro@acm.org>
+
+	* tests/standalone.scm: Ensure test failure propagates to
+	  exit status.
+	* src/libmod.scm (%expand-user-import): Fix misdetection of
+	  REPL environment, caused self-host-test standalone check fail.
+	  Cf. https://github.com/shirok/Gauche/issues/1281
+
 2026-06-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm_ExitWithMessage), src/libeval.scm (exit):

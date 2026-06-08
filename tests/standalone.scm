@@ -22,7 +22,8 @@
      (^[] (write '(define (main args)
                     (format #t "Hello, ~a\n" (cadr args))
                     0))))
-   (test* "Build" #t
+   (test* (format "Build with ~a" (find-file-in-paths "gosh"))
+          #t
           (and (do-process `(gosh tools/build-standalone -o ,executable ,source))
                (file-is-executable? executable)))
    (test* "Run" "Hello, Gauche"
@@ -44,11 +45,12 @@
        (write '(display "Hello, "))
        (write '(display (cadr (command-line))))
        (write '(newline))))
-   (test* "Build" #t
+   (test* (format "Build with ~a" (find-file-in-paths "gauche-compile-r7rs"))
+          #t
           (and (do-process `(gauche-compile-r7rs -o ,executable ,source))
                (file-is-executable? executable)))
    (test* "Run" "Hello, Droit"
           (process-output->string `(,executable "Droit")))
    ))
 
-(test-end)
+(test-end :exit-on-failure #t)
