@@ -119,6 +119,9 @@ typedef struct ScmEnvFrameRec {
 SCM_EXTERN void   Scm_VMPushDynamicEnv(ScmObj key, ScmObj val);
 SCM_EXTERN ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback);
 
+SCM_EXTERN ScmObj Scm_VMParameterCell(ScmObj param); /* (param . val) or #f */
+SCM_EXTERN ScmObj Scm_VMParameterization(void);      /* flat alist */
+
 typedef struct ScmContinuationMarkSetRec ScmContinuationMarkSet;
 
 SCM_CLASS_DECL(Scm_ContinuationMarkSetClass);
@@ -130,6 +133,8 @@ SCM_EXTERN ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
                                                 ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_ContinuationMarkSetFirst(const ScmContinuationMarkSet *,
+                                               ScmObj, ScmObj, ScmObj);
 
 /*
  * Continuation frame

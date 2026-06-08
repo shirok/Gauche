@@ -12,6 +12,14 @@
 	  Ensure calling exit-handler both from Scheme's exit and
 	  C's Scm_Exit.  https://github.com/shirok/Gauche/issues/1278
 
+2026-06-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c etc. Each continuation prompt 'segments' the slice of
+	  continuatin frame chain and dynamic environment.  Their link
+	  are solely kept in the meta continuation chain, so that when
+	  delimited continuation are captured and invoked, we only
+	  need to copy the metacont chain.
+
 2026-05-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/native-type.scm: Add native type tag registry.

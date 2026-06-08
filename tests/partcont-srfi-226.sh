@@ -72,7 +72,8 @@ $GOSH -e "
 (call-with-input-file \"$RAW\"
   (lambda (p) (let loop () (let ((f (read p)))
     (unless (eof-object? f)
-      (let ((name (list-ref f 1)))   ; f = (RESULTROW name expect pass? actual)
+      (let ((name (~ f 1)))   ; f = (RESULTROW name expect pass? actual)
+        (format #t \"~a: ~a~%\" (if (~ f 3) 'ok 'NG) name)
         (unless (hash-table-exists? seen name)
           (hash-table-put! seen name #t) (set! total (+ total 1))
           (unless (list-ref f 3)

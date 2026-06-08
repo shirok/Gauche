@@ -654,14 +654,21 @@ SCM_EXTERN ScmObj Scm_VMEval(ScmObj expr, ScmObj env);
 SCM_EXTERN ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
 
 SCM_EXTERN ScmObj Scm_VMCallCC(ScmObj proc);
+SCM_EXTERN ScmObj Scm_VMCallCCWithTag(ScmObj proc, ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_VMCallPC(ScmObj proc);
+SCM_EXTERN ScmObj Scm_VMCallPCWithTag(ScmObj proc, ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_VMReset(ScmObj proc);
 SCM_EXTERN void   Scm_VMPushDynamicHandlers(ScmObj, ScmObj, ScmObj);
 SCM_EXTERN ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
 SCM_EXTERN int    Scm_ContinuationP(ScmObj proc);
+SCM_EXTERN int    Scm_ComposableContinuationP(ScmObj proc);
+SCM_EXTERN int    Scm_NonComposableContinuationP(ScmObj proc);
 
 SCM_EXTERN ScmObj Scm_VMCallWithContinuationPrompt(ScmObj, ScmObj, ScmObj);
 SCM_EXTERN ScmObj Scm_VMAbortCurrentContinuation(ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_VMCallInContinuation(ScmObj, ScmObj, ScmObj);
+SCM_EXTERN int    Scm_ContinuationPromptAvailableP(ScmObj promptTag,
+                                                   ScmObj cont);
 
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk);
