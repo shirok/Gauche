@@ -8,6 +8,7 @@
 (define-module ffi-libuuid
   (use gauche.native-type)
   (use gauche.ffi)
+  (use gauche.uvector)
   (export uuid_t
 
           UUID_VARIANT_NCS
@@ -51,11 +52,17 @@
           ;; uuid-time
           uuid-type
           uuid-variant
-          uuid-get-template))
+          uuid-get-template
+
+          uvector->uuid_t/shared
+          uuid_t->u8vector
+          ))
 (select-module ffi-libuuid)
 
 ;; typedef unsigned char uuid_t[16];
-(define uuid_t (native-type '(.array char (16))))
+;; NB: If we use (.array char (16)), it maps to Scheme character array.
+;; For uuid raw representation, it is really a uint8_t array.
+(define uuid_t (native-type '(.array uint8_t (16))))
 
 ;; UUID Variant definitions
 (define-constant UUID_VARIANT_NCS       0)
@@ -94,7 +101,7 @@
 
   (define-c-function uuid-is-null `((const ,uuid_t)) 'int)
 
-  (define-c-function uuid-parse `((const char*) ,uuid_t) 'int)
+  (define-c-function uuid-parse `(c-string ,uuid_t) 'int)
   (define-c-function uuid-parse-range `((const char*) (const char*) ,uuid_t) 'int)
   (define-c-function uuid-unparse `((const ,uuid_t) char*) 'void)
   (define-c-function uuid-unparse-lower `((const ,uuid_t) char*) 'void)
@@ -106,3 +113,16 @@
 
   (define-c-function uuid-get-template `(c-string) uuid_t)
   )
+
+;; Some support routines
+
+(define (uvector->uuid_t/shared uv)
+  (assume (and (u8vector? uv) (= (u8vector-length uv) 16))
+    "Argument must be a u8vector of length 16, but got:" uv)
+  (uvector->native-handle uv uuid_t))
+
+(define (uuid_t->u8vector uuid)
+  (assume-type uuid uuid_t)
+  (rlet1 uv (make-u8vector 16)
+    (dotimes [i 16]
+      (u8vector-set! uv i (native-aref uuid (list i))))))
