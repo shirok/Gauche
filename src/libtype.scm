@@ -1083,6 +1083,10 @@
   (define-native-type <double>  Scm_NativeDoubleType  SCM_CLASS_REAL double
     SCM_REALP Scm_MakeFlonum Scm_GetDouble FALSE)
 
+  ;; Technically, time_t can be a real numebr.
+  (define-native-type <time_t>  Scm_UnixTimeType      SCM_CLASS_NUMBER time_t
+    SCM_REALP Scm_MakeSysTime Scm_GetSysTime FALSE)
+
   ;; We map C char to our character in 8-bit range.  If you want to use
   ;; char as a one-byte integer, use <c-int8> or <c-uint8>.
   (define-native-type <c-char>   Scm_NativeCCharType   SCM_CLASS_INTEGER char
