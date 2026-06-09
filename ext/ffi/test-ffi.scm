@@ -24,6 +24,8 @@
                               l::long f::float d::double))))
   (define foo* (make-c-pointer-type foo))
 
+  (define bar (native-type `(.array int32_t (4))))
+
   (define-syntax do-test-f
     (syntax-rules ::: ()
       [(_ opts)
@@ -84,6 +86,9 @@
                      (define-c-function F-pstruct-l-pstruct `(,foo* long) foo*)
                      (define-c-function F-pstruct-f-pstruct `(,foo* float) foo*)
                      (define-c-function F-pstruct-d-pstruct `(,foo* double) foo*)
+
+                     ;; array
+                     (define-c-function Fia-i `(int ,bar) 'int)
                      )
                    (current-module))
                   'ok))
@@ -132,6 +137,11 @@
          (t 1 (Fpnull-i (null-pointer-handle (native-type 'int*))))
          (t 0 (let1 data (make-u8vector (~ foo'size))
                 (Fpnull-i (uvector->native-handle data foo*))))
+
+         ;; array pasing
+         (t 0 (Fia-i 0 (null-pointer-handle (native-type 'int*))))
+         (t 6 (Fia-i 3 (uvector->native-handle '#s32(1 2 3 4) bar)))
+         (t 10 (Fia-i 4 (uvector->native-handle '#s32(1 2 3 4) bar)))
 
          (let* ([p (uvector->native-handle
                     (make-u8vector (~ foo'size))

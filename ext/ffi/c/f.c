@@ -187,6 +187,17 @@ const char *Fi_s(int n)
     return "";
 }
 
+/* array */
+int Fia_i(int n, int32_t *a)
+{
+    int r = 0;
+    for (int i = 0; i < n; i++) {
+        r += a[i];
+    }
+    return r;
+}
+
+
 /* Returns 1 if pointer is NULL, 0 otherwise */
 int Fpnull_i(void *p)
 {

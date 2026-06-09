@@ -115,8 +115,10 @@
 (define (native-type->call-canon type)
   (cond
     [(or (is-a? type <c-pointer>)
-         (is-a? type <c-array>)
          (is-a? type <c-function>)) type]
+    ;; An array argument is treated the same way as a pointer.
+    [(is-a? type <c-array>)
+     (make-c-pointer-type (~ type 'element-type))]
     [(or (is-a? type <c-struct>)
          (is-a? type <c-union>))
      (error "Directly passing struct or union isn't supported yet")]
