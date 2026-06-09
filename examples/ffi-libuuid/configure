@@ -1,0 +1,20 @@
+#!/usr/bin/env gosh
+;; Configuring libuuid
+;; Run ./configure (or gosh ./configure) to generate Makefiles.
+
+(use gauche.configure)
+
+(cf-init-gauche-extension)
+
+(cf-check-headers '("uuid/uuid.h"))
+(cf-search-libs "uuid_clear" '("uuid"))
+
+(unless (cf$ 'HAVE_LIB_UUID)
+  (cf-msg-error "libuuid is not found.  Configure aborted."))
+
+;; Output
+(cf-output-default)
+
+;; Local variables:
+;; mode: scheme
+;; end:

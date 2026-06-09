@@ -1,5 +1,7 @@
 2026-06-08  Shiro Kawai  <shiro@acm.org>
 
+	* examples/ffi-libuuid: Example for FFI
+
 	* src/libtype.scm (<type_t>): Add a native type corresponding to
 	  type_t.  (It is debatable whether those system-specific types
 	  should go---do they need to be in the core, or gauche.native-type?)
