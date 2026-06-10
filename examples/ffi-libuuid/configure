@@ -7,9 +7,12 @@
 (cf-init-gauche-extension)
 
 (cf-check-headers '("uuid/uuid.h"))
-(cf-search-libs "uuid_clear" '("uuid"))
 
-(unless (cf$ 'HAVE_LIB_UUID)
+(define *have-libuuid* #f)
+(cf-search-libs "uuid_clear" '("uuid")
+                :if-found (^_ (set! *have-libuuid* #t)))
+
+(unless *have-libuuid*
   (cf-msg-error "libuuid is not found.  Configure aborted."))
 
 ;; Output
