@@ -10,7 +10,8 @@
 (cf-check-headers '("uuid/uuid.h"))
 (define *have-libuuid* #f)
 (cf-search-libs "uuid_clear" '("uuid")
-                :if-found (^_ (set! *have-libuuid* #t)))
+                :if-found (^z  ; can be #f, if uuid_clear is available by default
+                            (set! *have-libuuid* (boolean z))))
 
 ;; If libuuid isn't available, just skip the test.
 (unless *have-libuuid*
