@@ -1491,8 +1491,14 @@ void Scm__InitLoad(void)
     ldinfo.provided = SCM_NIL;
     ldinfo.providing = SCM_NIL;
     ldinfo.waiting = SCM_NIL;
-    ldinfo.dso_suffixes = SCM_LIST2(SCM_MAKE_STR(".la"),
-                                    SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
+    if (strcmp(SHLIB_SO_SUFFIX, SHLIB_DYLIB_SUFFIX) == 0) {
+        ldinfo.dso_suffixes = SCM_LIST2(SCM_MAKE_STR(".la"),
+                                        SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
+    } else {
+        ldinfo.dso_suffixes = SCM_LIST3(SCM_MAKE_STR(".la"),
+                                        SCM_MAKE_STR("." SHLIB_SO_SUFFIX),
+                                        SCM_MAKE_STR("." SHLIB_DYLIB_SUFFIX));
+    }
     ldinfo.dso_table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING,0));
     ldinfo.dso_prelinked = SCM_NIL;
 
