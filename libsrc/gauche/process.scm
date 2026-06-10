@@ -254,7 +254,7 @@
                     :iomap iomap :directory dir
                     :sigmask (%ensure-mask sigmask)
                     :detached detached
-                    :enrivonment environment))))))
+                    :environment environment))))))
 
 (define (%canon-redirects redirects in out err)
   (rlet1 redirs
