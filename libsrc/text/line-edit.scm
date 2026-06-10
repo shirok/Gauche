@@ -172,6 +172,10 @@
                         :overflow-handler 'overwrite))
    (history-pos :init-value -1)
    (history-transient :init-value #f)
+
+   ;; Last accepted i-search string; an empty query followed by C-r/C-s
+   ;; recalls it.
+   (last-isearch-string :init-value "")
    ))
 
 (define (%load-history ctx path)
@@ -750,11 +754,13 @@
                      (cons (gap-buffer->string buffer)
                            (dequeue-all! (~ ctx'undo-stack))))))
 
-;; returns (<string> . <undo-list>)
-(define (get-history ctx)
+;; Returns (<string> . <undo-list>) for history position POS (the current
+;; position by default).  A transient (edited) entry takes precedence over the
+;; committed line; POS -1 is the fresh line being edited.
+(define (get-history ctx :optional (pos (~ ctx'history-pos)))
   (let1 tab (ensure-history-transient ctx)
-    (or (hash-table-get tab (~ ctx'history-pos) #f)
-        (cons (ring-buffer-ref (~ ctx'history) (~ ctx'history-pos) "")
+    (or (hash-table-get tab pos #f)
+        (cons (ring-buffer-ref (~ ctx'history) pos "")
               '()))))
 
 (define (history-pos ctx) (~ ctx'history-pos))
@@ -1581,6 +1587,155 @@
       (begin (buffer-set-line&col! buf (+ lines 1) col) 'moved))))
 
 
+;; Incremental history search (i-search), bound to C-r and C-s.
+;;
+;; %isearch reads keystrokes in its own loop within a single edit command,
+;; redrawing on every key, and rejoins edit-loop's return protocol on exit.
+;; The matched line is shown in the buffer with the cursor on the match,
+;; while the prompt is temporarily replaced with the search status:
+;;   (reverse-i-search)`foo': (use foo.bar)
+
+;; Search for QUERY in the history, starting at history index HIST-POS and
+;; in-line offset FROM-POS, moving in DIRECTION (1 = older/reverse, -1 =
+;; newer/forward).  A match may start exactly at FROM-POS if INCLUSIVE?,
+;; only beyond it otherwise.  Returns (history-index offset found?); on
+;; failure HIST-POS and FROM-POS are returned as-is, so the caller can
+;; stay on the current match.
+(define (%isearch-find ctx query hist-pos from-pos direction inclusive?)
+  (define qlen (string-length query))
+  ;; Find the match offset within LINE closest to BOUND (start <= BOUND for
+  ;; reverse, >= for forward; #f means unbounded), or #f.
+  (define (scan line bound)
+    (let1 len (string-length line)
+      (if (> direction 0)
+        (string-scan-right (substring line 0 (min len (+ (or bound len) qlen)))
+                           query)
+        (let1 start (min (or bound 0) len)
+          (and-let1 i (string-scan (substring line start len) query)
+            (+ start i))))))
+  (if (zero? qlen)
+    (list hist-pos from-pos #t)         ; empty query matches the current spot
+    (let loop ([hp hist-pos]
+               [bound (if inclusive? from-pos (- from-pos direction))])
+      (if (<= -1 hp (- (history-size ctx) 1))
+        (if-let1 p (scan (car (get-history ctx hp)) bound)
+          (list hp p #t)
+          (loop (+ hp direction) #f))
+        (list hist-pos from-pos #f)))))
+
+;; Core modal sub-loop.  start-direction is 1 for backward/reverse (C-r),
+;; -1 for forward (C-s).  The search state is threaded through the loop; only
+;; the shared context and buffer are mutated.
+(define (%isearch ctx buf start-direction)
+  (define orig-pos (gap-buffer-pos buf))
+  (define orig-hist-pos (history-pos ctx))
+  (define orig-prompt (~ ctx'prompt))
+  (define orig-initpos-x (~ ctx'initpos-x))
+
+  (define (prompt-width s)
+    (fold (^[ch w] (+ w (get-char-width (~ ctx'wide-char-pos-setting) ch)))
+          0 s))
+
+  ;; Draw one frame: the matched line in the buffer with the cursor on the
+  ;; match (on failure, keep the last good match), and the search status in
+  ;; place of the prompt.  %redisplay redraws the prompt on every frame, so
+  ;; we just swap ctx'prompt, keeping initpos-x consistent with its width.
+  (define (render query direction cur-hp match-pos found?)
+    (when found?
+      (let1 line (car (get-history ctx cur-hp))
+        (gap-buffer-clear! buf)
+        (gap-buffer-insert! buf line)
+        (gap-buffer-move! buf match-pos)
+        ;; %redisplay highlights between marker-pos and the cursor
+        (set! (~ ctx'marker-pos) (+ match-pos (string-length query)))))
+    (let1 p (string-append "(" (if found? "" "failed ")
+                           (if (> direction 0) "reverse-i-search" "i-search")
+                           ")`" query "': ")
+      (set! (~ ctx'prompt) p)
+      (set! (~ ctx'initpos-x) (prompt-width p)))
+    (redisplay ctx buf))
+
+  ;; Finish the search on the match (or, while failing, the last good one
+  ;; already in the buffer): settle history-pos and adopt that line's undo
+  ;; for later C-p/C-n.
+  (define (finish query cur-hp)
+    (set! (~ ctx'last-isearch-string) query)
+    (set! (~ ctx'history-pos) cur-hp)
+    (set-undo-info! ctx (cdr (get-history ctx)))
+    'visible)
+
+  ;; Save the current line and undo in the transient table, like prev-history.
+  (save-history-transient ctx buf)
+  ;; query/direction/cur-hp/match-pos: the current search and its match.
+  ;; found?: whether the last search succeeded.  stack: prior loop argument
+  ;; lists, one per search-changing key, that DEL restores via apply.
+  ;; The cleanup below also covers non-local exits (e.g. SIGINT).
+  (unwind-protect
+   (let loop ([query ""] [direction start-direction] [stack '()]
+              [cur-hp orig-hist-pos] [match-pos orig-pos] [found? #t])
+     (render query direction cur-hp match-pos found?)
+     ;; snap is this iteration's full argument list: pushed on a change, and the
+     ;; thing DEL re-applies (the previous one, or this one when there's none).
+     (let ([ch (next-keystroke ctx)]
+           [snap (list query direction stack cur-hp match-pos found?)])
+       (cond
+        ;; C-h/DEL undoes the last search-changing key
+        [(memv ch (list (ctrl #\h) #\x7f 'KEY_DEL))
+         (apply loop (if (null? stack) snap (car stack)))]
+        ;; C-r/C-s steps to the previous/next match; an empty query
+        ;; recalls the last accepted one and may match in place
+        [(eqv? ch (ctrl #\r))
+         (let* ([recall? (string=? query "")]
+                [q (if recall? (~ ctx'last-isearch-string) query)])
+           (apply loop q 1 (cons snap stack)
+                  (%isearch-find ctx q cur-hp match-pos 1 recall?)))]
+        [(eqv? ch (ctrl #\s))
+         (let* ([recall? (string=? query "")]
+                [q (if recall? (~ ctx'last-isearch-string) query)])
+           (apply loop q -1 (cons snap stack)
+                  (%isearch-find ctx q cur-hp match-pos -1 recall?)))]
+        ;; C-g cancels the search: restore the original position, line and
+        ;; undo (saved above), the way prev-history/next-history reload a
+        ;; position.
+        [(eqv? ch (ctrl #\g))
+         (set! (~ ctx'history-pos) orig-hist-pos)
+         (let1 p (get-history ctx)
+           (set-undo-info! ctx (cdr p))
+           (gap-buffer-clear! buf)
+           (gap-buffer-insert! buf (car p))
+           (gap-buffer-move! buf orig-pos))
+         'visible]
+        ;; ESC finishes the search without running the matched line
+        [(or (eqv? ch #\escape) (equal? ch (alt #\escape)))
+         (finish query cur-hp)]
+        ;; any other printable key extends the query and searches from the
+        ;; current match
+        [(and (char? ch) (char>=? ch #\space))
+         (let1 q (string-append query (string ch))
+           (apply loop q direction (cons snap stack)
+                  (%isearch-find ctx q cur-hp match-pos direction #t)))]
+        ;; any other key finishes the search and is pushed back to run
+        ;; normally -- so e.g. C-f moves the cursor and RET re-dispatches
+        ;; and runs the line.
+        [else (rlet1 r (finish query cur-hp)
+                (macro! ctx ch))])))
+   (set! (~ ctx'prompt) orig-prompt)
+   (set! (~ ctx'initpos-x) orig-initpos-x)
+   (clear-mark! ctx buf)))
+
+(define-edit-command (isearch-backward ctx buf key)
+  "Search the history incrementally for an older line containing the typed \
+   string.  C-r and C-s repeat the search backward and forward, DEL undoes \
+   the last change, C-g cancels, RET accepts the match, and any other key \
+   accepts it and is then processed normally."
+  (%isearch ctx buf 1))
+
+(define-edit-command (isearch-forward ctx buf key)
+  "Search the history incrementally for a newer line, like isearch-backward \
+   but starting in the forward direction."
+  (%isearch ctx buf -1))
+
+
 (define-edit-command (transpose-chars ctx buf key)
   "Exchange characters on the cursor and before the cursor and position \
    the cursor one character before.  If the buffer is empty, do nothing. \
@@ -2016,8 +2171,8 @@
 ;;(define-key *default-keymap* (ctrl #\o) undefined-command)
 (define-key *default-keymap* (ctrl #\p) prev-line-or-history)
 (define-key *default-keymap* (ctrl #\q) quoted-insert)
-;;(define-key *default-keymap* (ctrl #\r) undefined-command)
-;;(define-key *default-keymap* (ctrl #\s) undefined-command)
+(define-key *default-keymap* (ctrl #\r) isearch-backward)
+(define-key *default-keymap* (ctrl #\s) isearch-forward)
 (define-key *default-keymap* (ctrl #\t) transpose-chars)
 ;;(define-key *default-keymap* (ctrl #\u) undefined-command)
 ;;(define-key *default-keymap* (ctrl #\v) undefined-command)
