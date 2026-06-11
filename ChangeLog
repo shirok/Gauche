@@ -1,3 +1,8 @@
+2026-06-11  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/line-edit: Incremental search added by @yutayamamoto
+	  https://github.com/shirok/Gauche/pull/1283
+
 2026-06-08  Shiro Kawai  <shiro@acm.org>
 
 	* examples/ffi-libuuid: Example for FFI
