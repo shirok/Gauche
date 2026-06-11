@@ -1596,36 +1596,40 @@
 ;;   (reverse-i-search)`foo': (use foo.bar)
 
 ;; Search for QUERY in the history, starting at history index HIST-POS and
-;; in-line offset FROM-POS, moving in DIRECTION (1 = older/reverse, -1 =
-;; newer/forward).  A match may start exactly at FROM-POS if INCLUSIVE?,
-;; only beyond it otherwise.  Returns (history-index offset found?); on
-;; failure HIST-POS and FROM-POS are returned as-is, so the caller can
-;; stay on the current match.
+;; in-line offset FROM-POS, moving in DIRECTION ('reverse = older, 'forward =
+;; newer).  A match may start exactly at FROM-POS if INCLUSIVE?, only beyond
+;; it otherwise.  Returns (history-index offset found?); on failure HIST-POS
+;; and FROM-POS are returned as-is, so the caller can stay on the current
+;; match.
 (define (%isearch-find ctx query hist-pos from-pos direction inclusive?)
   (define qlen (string-length query))
+  ;; The history-index step for the search direction.
+  (define delta (ecase direction [(reverse) 1] [(forward) -1]))
   ;; Find the match offset within LINE closest to BOUND (start <= BOUND for
   ;; reverse, >= for forward; #f means unbounded), or #f.
   (define (scan line bound)
     (let1 len (string-length line)
-      (if (> direction 0)
-        (string-scan-right (substring line 0 (min len (+ (or bound len) qlen)))
-                           query)
-        (let1 start (min (or bound 0) len)
-          (and-let1 i (string-scan (substring line start len) query)
-            (+ start i))))))
+      (ecase direction
+        [(reverse)
+         (string-scan-right (substring line 0 (min len (+ (or bound len) qlen)))
+                            query)]
+        [(forward)
+         (let1 start (min (or bound 0) len)
+           (and-let1 i (string-scan (substring line start len) query)
+             (+ start i)))])))
   (if (zero? qlen)
     (list hist-pos from-pos #t)         ; empty query matches the current spot
     (let loop ([hp hist-pos]
-               [bound (if inclusive? from-pos (- from-pos direction))])
+               [bound (if inclusive? from-pos (- from-pos delta))])
       (if (<= -1 hp (- (history-size ctx) 1))
         (if-let1 p (scan (car (get-history ctx hp)) bound)
           (list hp p #t)
-          (loop (+ hp direction) #f))
+          (loop (+ hp delta) #f))
         (list hist-pos from-pos #f)))))
 
-;; Core modal sub-loop.  start-direction is 1 for backward/reverse (C-r),
-;; -1 for forward (C-s).  The search state is threaded through the loop; only
-;; the shared context and buffer are mutated.
+;; Core modal sub-loop.  start-direction is 'reverse for backward (C-r),
+;; 'forward for forward (C-s).  The search state is threaded through the loop;
+;; only the shared context and buffer are mutated.
 (define (%isearch ctx buf start-direction)
   (define orig-pos (gap-buffer-pos buf))
   (define orig-hist-pos (history-pos ctx))
@@ -1649,7 +1653,9 @@
         ;; %redisplay highlights between marker-pos and the cursor
         (set! (~ ctx'marker-pos) (+ match-pos (string-length query)))))
     (let1 p (string-append "(" (if found? "" "failed ")
-                           (if (> direction 0) "reverse-i-search" "i-search")
+                           (ecase direction
+                             [(reverse) "reverse-i-search"]
+                             [(forward) "i-search"])
                            ")`" query "': ")
       (set! (~ ctx'prompt) p)
       (set! (~ ctx'initpos-x) (prompt-width p)))
@@ -1687,13 +1693,13 @@
         [(eqv? ch (ctrl #\r))
          (let* ([recall? (string=? query "")]
                 [q (if recall? (~ ctx'last-isearch-string) query)])
-           (apply loop q 1 (cons snap stack)
-                  (%isearch-find ctx q cur-hp match-pos 1 recall?)))]
+           (apply loop q 'reverse (cons snap stack)
+                  (%isearch-find ctx q cur-hp match-pos 'reverse recall?)))]
         [(eqv? ch (ctrl #\s))
          (let* ([recall? (string=? query "")]
                 [q (if recall? (~ ctx'last-isearch-string) query)])
-           (apply loop q -1 (cons snap stack)
-                  (%isearch-find ctx q cur-hp match-pos -1 recall?)))]
+           (apply loop q 'forward (cons snap stack)
+                  (%isearch-find ctx q cur-hp match-pos 'forward recall?)))]
         ;; C-g cancels the search: restore the original position, line and
         ;; undo (saved above), the way prev-history/next-history reload a
         ;; position.
@@ -1728,12 +1734,12 @@
    string.  C-r and C-s repeat the search backward and forward, DEL undoes \
    the last change, C-g cancels, RET accepts the match, and any other key \
    accepts it and is then processed normally."
-  (%isearch ctx buf 1))
+  (%isearch ctx buf 'reverse))
 
 (define-edit-command (isearch-forward ctx buf key)
   "Search the history incrementally for a newer line, like isearch-backward \
    but starting in the forward direction."
-  (%isearch ctx buf -1))
+  (%isearch ctx buf 'forward))
 
 
 (define-edit-command (transpose-chars ctx buf key)
