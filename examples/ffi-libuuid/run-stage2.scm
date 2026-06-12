@@ -20,4 +20,5 @@
   (exit 0))
 
 (cf-output-default)
+(flush-all-ports)
 (run-process '(make -s check) :fork #f)
