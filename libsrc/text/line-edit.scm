@@ -1932,6 +1932,8 @@
     (define C-n    (lookup 'next-line-or-history))
     (define C-a    (lookup 'move-beginning-of-line))
     (define C-e    (lookup 'move-end-of-line))
+    (define C-r    (lookup 'isearch-backward))
+    (define C-s    (lookup 'isearch-forward))
     (define M-f    (lookup 'forward-word))
     (define M-b    (lookup 'backward-word))
     (define M-p    (lookup 'prev-history))
@@ -1967,6 +1969,7 @@
   ~|C-y|       yank                         ~|M-y|       yank pop
   ~|C-_|       undo                         ~|M-C-x|     commit input
   ~|C-l|       refresh disiplay
+  ~|C-s|~C-r    isearch history forward/backward
 
   ~|M-C-f|/~M-C-b   forward/backward sexpr   ~|M-C-u|     backward up list
   ~|M-C-@|     mark sexpr                   ~|M-C-t|     transpose sexps
