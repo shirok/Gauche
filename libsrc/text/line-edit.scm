@@ -1593,10 +1593,10 @@
 ;; redrawing on every key, and rejoins edit-loop's return protocol on exit.
 ;; The matched line is shown in the buffer with the cursor on the match,
 ;; while the prompt is temporarily replaced with the search status:
-;;   (reverse-i-search)`foo': (use foo.bar)
+;;   (i-search-backward)`foo': (use foo.bar)
 
 ;; Search for QUERY in the history, starting at history index HIST-POS and
-;; in-line offset FROM-POS, moving in DIRECTION ('reverse = older, 'forward =
+;; in-line offset FROM-POS, moving in DIRECTION ('backward = older, 'forward =
 ;; newer).  A match may start exactly at FROM-POS if INCLUSIVE?, only beyond
 ;; it otherwise.  Returns (history-index offset found?); on failure HIST-POS
 ;; and FROM-POS are returned as-is, so the caller can stay on the current
@@ -1604,13 +1604,13 @@
 (define (%isearch-find ctx query hist-pos from-pos direction inclusive?)
   (define qlen (string-length query))
   ;; The history-index step for the search direction.
-  (define delta (ecase direction [(reverse) 1] [(forward) -1]))
+  (define delta (ecase direction [(backward) 1] [(forward) -1]))
   ;; Find the match offset within LINE closest to BOUND (start <= BOUND for
-  ;; reverse, >= for forward; #f means unbounded), or #f.
+  ;; backward, >= for forward; #f means unbounded), or #f.
   (define (scan line bound)
     (let1 len (string-length line)
       (ecase direction
-        [(reverse)
+        [(backward)
          (string-scan-right (substring line 0 (min len (+ (or bound len) qlen)))
                             query)]
         [(forward)
@@ -1627,8 +1627,8 @@
           (loop (+ hp delta) #f))
         (list hist-pos from-pos #f)))))
 
-;; Core modal sub-loop.  start-direction is 'reverse for backward (C-r),
-;; 'forward for forward (C-s).  The search state is threaded through the loop;
+;; Core modal sub-loop.  start-direction is either 'backward (C-r) or
+;; 'forward (C-s).  The search state is threaded through the loop;
 ;; only the shared context and buffer are mutated.
 (define (%isearch ctx buf start-direction)
   (define orig-pos (gap-buffer-pos buf))
@@ -1654,7 +1654,7 @@
         (set! (~ ctx'marker-pos) (+ match-pos (string-length query)))))
     (let1 p (string-append "(" (if found? "" "failed ")
                            (ecase direction
-                             [(reverse) "reverse-i-search"]
+                             [(backward) "i-search backward"]
                              [(forward) "i-search"])
                            ")`" query "': ")
       (set! (~ ctx'prompt) p)
@@ -1693,8 +1693,8 @@
         [(eqv? ch (ctrl #\r))
          (let* ([recall? (string=? query "")]
                 [q (if recall? (~ ctx'last-isearch-string) query)])
-           (apply loop q 'reverse (cons snap stack)
-                  (%isearch-find ctx q cur-hp match-pos 'reverse recall?)))]
+           (apply loop q 'backward (cons snap stack)
+                  (%isearch-find ctx q cur-hp match-pos 'backward recall?)))]
         [(eqv? ch (ctrl #\s))
          (let* ([recall? (string=? query "")]
                 [q (if recall? (~ ctx'last-isearch-string) query)])
@@ -1734,7 +1734,7 @@
    string.  C-r and C-s repeat the search backward and forward, DEL undoes \
    the last change, C-g cancels, RET accepts the match, and any other key \
    accepts it and is then processed normally."
-  (%isearch ctx buf 'reverse))
+  (%isearch ctx buf 'backward))
 
 (define-edit-command (isearch-forward ctx buf key)
   "Search the history incrementally for a newer line, like isearch-backward \

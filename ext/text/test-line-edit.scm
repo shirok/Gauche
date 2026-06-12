@@ -383,12 +383,12 @@
   (commit! "(define (foo) foo)")
   (commit! "(use foo.bar)")
 
-  ;; reverse (older)
-  (t "reverse from fresh line" "foo" -1 0 'reverse #t '(0 5 #t))
-  (t "reverse to next line, rightmost first" "foo" 0 5 'reverse #f '(1 14 #t))
-  (t "reverse within a line" "foo" 1 14 'reverse #f '(1 9 #t))
-  (t "reverse match exactly at bound" "foo" 1 9 'reverse #t '(1 9 #t))
-  (t "reverse exhausted keeps position" "foo" 1 9 'reverse #f '(1 9 #f))
+  ;; backward (older)
+  (t "backward from fresh line" "foo" -1 0 'backward #t '(0 5 #t))
+  (t "backward to next line, rightmost first" "foo" 0 5 'backward #f '(1 14 #t))
+  (t "backward within a line" "foo" 1 14 'backward #f '(1 9 #t))
+  (t "backward match exactly at bound" "foo" 1 9 'backward #t '(1 9 #t))
+  (t "backward exhausted keeps position" "foo" 1 9 'backward #f '(1 9 #f))
 
   ;; forward (newer)
   (t "forward within a line" "foo" 1 9 'forward #f '(1 14 #t))
@@ -397,8 +397,8 @@
   (t "forward exhausted keeps position" "zzz" 2 0 'forward #t '(2 0 #f))
 
   ;; edge cases
-  (t "empty query matches the current spot" "" 1 7 'reverse #t '(1 7 #t))
-  (t "query longer than any line" (make-string 40 #\a) -1 0 'reverse #t '(-1 0 #f))
+  (t "empty query matches the current spot" "" 1 7 'backward #t '(1 7 #t))
+  (t "query longer than any line" (make-string 40 #\a) -1 0 'backward #t '(-1 0 #f))
   )
 
 (test-end)
