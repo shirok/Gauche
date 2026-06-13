@@ -1955,8 +1955,8 @@
     (define M-C-x  (lookup 'commit-input))
     (define C-l    (lookup 'refresh-display))
 
-    (display/pager
-     #"\
+    (display
+     #"\n\
  Gauche input editing quick cheat sheet:
   ~Help-b                  for keymap
   ~Help-k <keystroke> ...  for help of specific keystroke
@@ -1969,7 +1969,7 @@
   ~|C-y|       yank                         ~|M-y|       yank pop
   ~|C-_|       undo                         ~|M-C-x|     commit input
   ~|C-l|       refresh disiplay
-  ~|C-s|~C-r    isearch history forward/backward
+  ~|C-s|/~C-r   isearch history forward/backward
 
   ~|M-C-f|/~M-C-b   forward/backward sexpr   ~|M-C-u|     backward up list
   ~|M-C-@|     mark sexpr                   ~|M-C-t|     transpose sexps
@@ -2147,10 +2147,9 @@
   (rec km '()))
 
 ;; M-h - help keymap
-(define *help-keymap* (make-keymap "Help keymap"))
+(define *help-keymap* (make-keymap "Help keymap" help-summary-command))
 
 (define-key *help-keymap* #\b help-binding-command)
-(define-key *help-keymap* #\h help-summary-command)
 (define-key *help-keymap* #\k help-keystroke-command)
 
 ;; C-x - general prefix
