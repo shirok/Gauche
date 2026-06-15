@@ -4839,63 +4839,76 @@ static ScmObj scale_exact(ScmObj exactnum, _Bool minusp, int scale)
 */
 static ScmObj read_exponent(const char **strp, /* in/out */
                             int *lenp,         /* in/out */
-                            int *exponent_base, /* out. 10 or 2 */
+                            char *exponent_char,    /* out.  \nul == no char */
                             int *exponent_overflow, /* out */
                             struct numread_packet *ctx)
 {
     int exponent = 0;
     int exp_minusp = FALSE;
-    *exponent_base = 10;
+    int max_exponent = MAX_EXPONENT;
+    *exponent_char = '0';
     *exponent_overflow = FALSE;
-    if (*lenp > 0 && strchr("eEsSfFdDlLpP", (int)**strp)) {
-        int max_exponent = MAX_EXPONENT;
-        if (**strp == 'p' || **strp == 'P') {
+    switch (ctx->radix) {
+    case 10:
+        if (*lenp > 0 && strchr("eEsSfFdDlL", (int)**strp)) {
+            *exponent_char = tolower(**strp);
+            (*lenp)--;
+            (*strp)++;
+            break;
+        } else {
+            return SCM_MAKE_INT(0);
+        }
+    case 16:
+        if (*lenp > 0 && (**strp == 'p' || **strp == 'P')) {
             /* It can be 'pi' suffix */
             if (*lenp > 1 && ((*strp)[1] == 'i' || (*strp)[1] == 'I')) {
                 return SCM_MAKE_INT(0);
             }
-            if (ctx->radix != 16) {
-                return numerr("(2's power exponent can only be used when radix is 16)", ctx);
-            }
             max_exponent = MAX_EXPONENT_TWOS_POWER;
-            *exponent_base = 2;
+            *exponent_char = tolower(**strp);
+            (*lenp)--;
+            (*strp)++;
+            break;
+        } else {
+            return SCM_MAKE_INT(0);
         }
+    default:
+        return numerr("(2's power exponent can only be used when radix is 16)", ctx);
+    }
 
+    if (*lenp <= 0) return SCM_FALSE;
+    switch (**strp) {
+    case '-': exp_minusp = TRUE;
+        /*FALLTHROUGH*/
+    case '+':
         (*strp)++;
         if (--(*lenp) <= 0) return SCM_FALSE;
-        switch (**strp) {
-        case '-': exp_minusp = TRUE;
-            /*FALLTHROUGH*/
-        case '+':
-            (*strp)++;
-            if (--(*lenp) <= 0) return SCM_FALSE;
-        }
-        int underscore = FALSE;
-        int overflow = FALSE;
-        const char *str = *strp;
-        for (; *lenp > 0; (*strp)++, (*lenp)--) {
-            int c = **strp;
-            if (c == '_') {
-                if (underscore || str == *strp || *lenp == 1) return SCM_FALSE;
-                underscore = TRUE;
-                continue;
-            }
-            if (!isdigit(c)) break;
-            underscore = FALSE;
-            if (!overflow) {
-                /* We limit the range of exponent, so this never overflow. */
-                exponent = exponent * 10 + (c - '0');
-                /* Check obviously wrong exponent range.  More subtle check
-                   will be done later. */
-                if ((ctx->exactness == EXACT && exponent >= MAX_EXACT_EXPONENT)
-                    || (ctx->exactness != EXACT && exponent >= max_exponent)) {
-                    overflow = TRUE;
-                }
-            }
-        }
-        if (exp_minusp) exponent = -exponent;
-        *exponent_overflow = overflow;
     }
+    int underscore = FALSE;
+    int overflow = FALSE;
+    const char *str = *strp;
+    for (; *lenp > 0; (*strp)++, (*lenp)--) {
+        int c = **strp;
+        if (c == '_') {
+            if (underscore || str == *strp || *lenp == 1) return SCM_FALSE;
+            underscore = TRUE;
+            continue;
+        }
+        if (!isdigit(c)) break;
+        underscore = FALSE;
+        if (!overflow) {
+            /* We limit the range of exponent, so this never overflow. */
+            exponent = exponent * 10 + (c - '0');
+            /* Check obviously wrong exponent range.  More subtle check
+               will be done later. */
+            if ((ctx->exactness == EXACT && exponent >= MAX_EXACT_EXPONENT)
+                || (ctx->exactness != EXACT && exponent >= max_exponent)) {
+                overflow = TRUE;
+            }
+        }
+    }
+    if (exp_minusp) exponent = -exponent;
+    *exponent_overflow = overflow;
     return SCM_MAKE_INT(exponent);
 }
 
@@ -5051,12 +5064,16 @@ static ScmObj read_real(const char **strp, int *lenp,
     if (mark == *strp) return SCM_FALSE;
 
     /* Read exponent.  */
-    int exponent_root;
-    int exp_overflow;
-    ScmObj s_exponent = read_exponent(strp, lenp, &exponent_root,
+    char exponent_char = 0;
+    int exp_overflow = FALSE;
+    ScmObj s_exponent = read_exponent(strp, lenp, &exponent_char,
                                       &exp_overflow, ctx);
     if (!SCM_INTP(s_exponent)) return SCM_FALSE;
     long exponent = SCM_INT_VALUE(s_exponent);
+
+    if (ctx->radix == 16 && exponent_char != 'p') {
+        return numerr("hexadecimal float requires 'p' exponent", ctx);
+    }
 
     if (exp_overflow) {
         if (ctx->exactness == EXACT) {
@@ -5080,9 +5097,9 @@ static ScmObj read_real(const char **strp, int *lenp,
         /* Explicit exact number.  We can continue exact arithmetic
            (it may end up ratnum) */
         ScmObj digs = Scm_MakeInteger(exponent-fracdigs);
-        ScmObj expo = (exponent_root == 10
-                       ? Scm_ExactIntegerExpt(SCM_MAKE_INT(10), digs)
-                       : Scm_ExactIntegerExpt(SCM_MAKE_INT(16), digs));
+        ScmObj expo = (exponent_char == 'p'
+                       ? Scm_ExactIntegerExpt(SCM_MAKE_INT(16), digs)
+                       : Scm_ExactIntegerExpt(SCM_MAKE_INT(10), digs));
         ScmObj e = Scm_Mul(fraction, expo);
         //Scm_Printf(SCM_CURERR, "digs=%S expo=%d\n", digs, expo);
         if (minusp) return Scm_Negate(e);
@@ -5096,9 +5113,11 @@ static ScmObj read_real(const char **strp, int *lenp,
     }
 
     /* Hex notation doesn't need approximation business. */
-    if (exponent_root == 2) {
+    if (exponent_char == 'p') {
         int digs = Scm_IntegerLength(fraction);
-        if (digs < 53) {
+        if (digs == 0) {
+            return Scm_MakeFlonum(minusp? -0.0 : 0.0);
+        } else if (digs < 53) {
             fraction = Scm_Ash(fraction, 53-digs);
             exponent -= 53-digs;
         } else if (digs > 53) {

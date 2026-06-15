@@ -600,12 +600,35 @@
 ;;------------------------------------------------------------------
 (test-section "hex flonum reader")
 
+(define (t-hexflonum src expect)
+  ;; We use custom comparator to distinguish 0.0 / -0.0
+  (test* #"hex flonum reader ~src" expect (read-from-string src)
+         (^[a b]
+           (if (or (number? a) (number? b))
+             (eqv? a b)
+             (test-check a b)))))
+
 ;; From SRFI-270 examples
-(test* "hex flonum reader" 4608.0 (read-from-string "#x9p9"))
-(test* "hex flonum reader" 9.0 (read-from-string "#x1.2p3"))
-(test* "hex flonum reader" #i65279/128 (read-from-string "#xFE.FFp1"))
-(test* "hex flonum reader" -0.15625 (read-from-string "#x-0.Ap-2"))
-(test* "hex flonum reader" 3.125+32.0i (read-from-string "#x1.9p1+10p1i"))
+(t-hexflonum "#x9p9" 4608.0)
+(t-hexflonum "#x1.2p3" 9.0)
+(t-hexflonum "#xFE.FFp1" #i65279/128)
+(t-hexflonum "#x-0.Ap-2" -0.15625)
+(t-hexflonum "#x1.9p1+10p1i" 3.125+32.0i)
+
+(t-hexflonum "#x0p0" 0.0)
+(t-hexflonum "#x0.p1" 0.0)
+(t-hexflonum "#x.0p2" 0.0)
+(t-hexflonum "#x0.0p-100000" 0.0)
+(t-hexflonum "#x-0p0" -0.0)
+(t-hexflonum "#x-0.p1" -0.0)
+(t-hexflonum "#x-.0p2" -0.0)
+(t-hexflonum "#x-0.0p-100000" -0.0)
+
+(t-hexflonum "#x1.23" (test-error <read-error> #/requires 'p' exponent/))
+(t-hexflonum "#x1.23l0" (test-error <read-error> #/requires 'p' exponent/))
+
+(t-hexflonum "#x100" 256)               ;exact integer, not flonum
+(t-hexflonum "#x100.p0" 256.0)          ;inexact
 
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")
