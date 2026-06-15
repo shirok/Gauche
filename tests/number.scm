@@ -598,6 +598,16 @@
 (test* "bad repeating decimal 3" #f (string->number "0#.#1"))
 
 ;;------------------------------------------------------------------
+(test-section "hex flonum reader")
+
+;; From SRFI-270 examples
+(test* "hex flonum reader" 4608.0 (read-from-string "#x9p9"))
+(test* "hex flonum reader" 9.0 (read-from-string "#x1.2p3"))
+(test* "hex flonum reader" #i65279/128 (read-from-string "#xFE.FFp1"))
+(test* "hex flonum reader" -0.15625 (read-from-string "#x-0.Ap-2"))
+(test* "hex flonum reader" 3.125+32.0i (read-from-string "#x1.9p1+10p1i"))
+
+;;------------------------------------------------------------------
 (test-section "integer writer syntax")
 
 (define (i-tester2 x)

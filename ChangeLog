@@ -1,3 +1,8 @@
+2026-06-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_real): Support hexadecimal floating-point
+	  number reader (SRFI-270).  We still need to verify corner cases.
+
 2026-06-11  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/line-edit: Incremental search added by @yutayamamoto

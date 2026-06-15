@@ -83,6 +83,11 @@ int Scm_IsInf(double x)
  */
 #define MAX_EXACT_EXPONENT  65535
 
+/* Similar as MAX_EXPONENT, but in case of hexadecimal notation
+   #xH.HHHHpEE.   The minimum is -1076, so we reject absolute value
+   greather than or equal to 1077. */
+#define MAX_EXPONENT_TWOS_POWER  1077
+
 /* Linux gcc have those, but the declarations aren't included unless
    __USE_ISOC9X is defined.  Just in case. */
 #ifdef HAVE_TRUNC
@@ -4824,16 +4829,85 @@ static ScmObj scale_exact(ScmObj exactnum, _Bool minusp, int scale)
     else return e;
 }
 
+/* Read exponent part, called from read_real.
+   Returns the read exponent in Scheme integer, while updating *strp and *lenp.
+   If there's no exponent marker, 0 is returned and *strp / *lenp are untouched.
+   If the string has invalid syntax, returns #f or throws an error, depending
+   on the ctx.
+   If exponent is outside of accepted range, *exponent_overflow is set to TRUE,
+   and only the sign of result matters.
+*/
+static ScmObj read_exponent(const char **strp, /* in/out */
+                            int *lenp,         /* in/out */
+                            int *exponent_base, /* out. 10 or 2 */
+                            int *exponent_overflow, /* out */
+                            struct numread_packet *ctx)
+{
+    int exponent = 0;
+    int exp_minusp = FALSE;
+    *exponent_base = 10;
+    *exponent_overflow = FALSE;
+    if (*lenp > 0 && strchr("eEsSfFdDlLpP", (int)**strp)) {
+        int max_exponent = MAX_EXPONENT;
+        if (**strp == 'p' || **strp == 'P') {
+            /* It can be 'pi' suffix */
+            if (*lenp > 1 && ((*strp)[1] == 'i' || (*strp)[1] == 'I')) {
+                return SCM_MAKE_INT(0);
+            }
+            if (ctx->radix != 16) {
+                return numerr("(2's power exponent can only be used when radix is 16)", ctx);
+            }
+            max_exponent = MAX_EXPONENT_TWOS_POWER;
+            *exponent_base = 2;
+        }
+
+        (*strp)++;
+        if (--(*lenp) <= 0) return SCM_FALSE;
+        switch (**strp) {
+        case '-': exp_minusp = TRUE;
+            /*FALLTHROUGH*/
+        case '+':
+            (*strp)++;
+            if (--(*lenp) <= 0) return SCM_FALSE;
+        }
+        int underscore = FALSE;
+        int overflow = FALSE;
+        const char *str = *strp;
+        for (; *lenp > 0; (*strp)++, (*lenp)--) {
+            int c = **strp;
+            if (c == '_') {
+                if (underscore || str == *strp || *lenp == 1) return SCM_FALSE;
+                underscore = TRUE;
+                continue;
+            }
+            if (!isdigit(c)) break;
+            underscore = FALSE;
+            if (!overflow) {
+                /* We limit the range of exponent, so this never overflow. */
+                exponent = exponent * 10 + (c - '0');
+                /* Check obviously wrong exponent range.  More subtle check
+                   will be done later. */
+                if ((ctx->exactness == EXACT && exponent >= MAX_EXACT_EXPONENT)
+                    || (ctx->exactness != EXACT && exponent >= max_exponent)) {
+                    overflow = TRUE;
+                }
+            }
+        }
+        if (exp_minusp) exponent = -exponent;
+        *exponent_overflow = overflow;
+    }
+    return SCM_MAKE_INT(exponent);
+}
+
 /* Read one real number, including sign.  Update *strp and *lenp.
    Stops at the end of word, or additional part of complex number.
    Returns a real number, or #f. */
 static ScmObj read_real(const char **strp, int *lenp,
                         struct numread_packet *ctx)
 {
-    int minusp = FALSE, exp_minusp = FALSE, exp_overflow = FALSE;
+    int minusp = FALSE;
     int sign_seen = FALSE;
     int fracdigs = 0;
-    long exponent = 0;
     ScmObj intpart, fraction;
     const char *mark;           /* will point (*strp)[1] if there's a sign,
                                    otherwise (*strp)[0], to check if the
@@ -4939,8 +5013,8 @@ static ScmObj read_real(const char **strp, int *lenp,
        Note: If the repeating decimal notation appeared in the intpart,
        the decimal point and subsequent digits are already taken care of. */
     if (**strp == '.') {
-        if (ctx->radix != 10) {
-            return numerr("(only 10-based fraction is supported)", ctx);
+        if (ctx->radix != 10 && ctx->radix != 16) {
+            return numerr("(only 10 or 16 based fraction is supported)", ctx);
         }
         if (*lenp == 1 && SCM_FALSEP(intpart)) {
             return SCM_FALSE;   /* input is '.' */
@@ -4977,40 +5051,13 @@ static ScmObj read_real(const char **strp, int *lenp,
     if (mark == *strp) return SCM_FALSE;
 
     /* Read exponent.  */
-    if (*lenp > 0 && strchr("eEsSfFdDlL", (int)**strp)) {
-        (*strp)++;
-        if (--(*lenp) <= 0) return SCM_FALSE;
-        switch (**strp) {
-        case '-': exp_minusp = TRUE;
-            /*FALLTHROUGH*/
-        case '+':
-            (*strp)++;
-            if (--(*lenp) <= 0) return SCM_FALSE;
-        }
-        int underscore = FALSE;
-        const char *str = *strp;
-        for (; *lenp > 0; (*strp)++, (*lenp)--) {
-            int c = **strp;
-            if (c == '_') {
-                if (underscore || str == *strp || *lenp == 1) return SCM_FALSE;
-                underscore = TRUE;
-                continue;
-            }
-            if (!isdigit(c)) break;
-            underscore = FALSE;
-            if (!exp_overflow) {
-                /* We limit the range of exponent, so this never overflow. */
-                exponent = exponent * 10 + (c - '0');
-                /* Check obviously wrong exponent range.  More subtle check
-                   will be done later. */
-                if ((ctx->exactness == EXACT && exponent >= MAX_EXACT_EXPONENT)
-                    || (ctx->exactness != EXACT && exponent >= MAX_EXPONENT)) {
-                    exp_overflow = TRUE;
-                }
-            }
-        }
-        if (exp_minusp) exponent = -exponent;
-    }
+    int exponent_root;
+    int exp_overflow;
+    ScmObj s_exponent = read_exponent(strp, lenp, &exponent_root,
+                                      &exp_overflow, ctx);
+    if (!SCM_INTP(s_exponent)) return SCM_FALSE;
+    long exponent = SCM_INT_VALUE(s_exponent);
+
     if (exp_overflow) {
         if (ctx->exactness == EXACT) {
             /* Although we can represent such a number using bignum and
@@ -5019,7 +5066,7 @@ static ScmObj read_real(const char **strp, int *lenp,
                violation. */
             return numerr("Exact number exponent is too big", ctx);
         }
-        if (exp_minusp || SCM_EQ(fraction, SCM_MAKE_INT(0))) {
+        if (exponent < 0 || SCM_EQ(fraction, SCM_MAKE_INT(0))) {
             return Scm_MakeFlonum(minusp? -0.0:0.0);
         } else {
             return minusp? SCM_NEGATIVE_INFINITY : SCM_POSITIVE_INFINITY;
@@ -5030,13 +5077,40 @@ static ScmObj read_real(const char **strp, int *lenp,
 
     /* Compose the number. */
     if (ctx->exactness == EXACT) {
-        return scale_exact(fraction, minusp, exponent-fracdigs);
+        /* Explicit exact number.  We can continue exact arithmetic
+           (it may end up ratnum) */
+        ScmObj digs = Scm_MakeInteger(exponent-fracdigs);
+        ScmObj expo = (exponent_root == 10
+                       ? Scm_ExactIntegerExpt(SCM_MAKE_INT(10), digs)
+                       : Scm_ExactIntegerExpt(SCM_MAKE_INT(16), digs));
+        ScmObj e = Scm_Mul(fraction, expo);
+        //Scm_Printf(SCM_CURERR, "digs=%S expo=%d\n", digs, expo);
+        if (minusp) return Scm_Negate(e);
+        else        return e;
     }
 
     if (SCM_RATNUMP(fraction)) {
         /* Repeating decimal case.
            Scale, then inexactify, to avoid rounding error (though slow) */
         return Scm_Inexact(scale_exact(fraction, minusp, exponent-fracdigs));
+    }
+
+    /* Hex notation doesn't need approximation business. */
+    if (exponent_root == 2) {
+        int digs = Scm_IntegerLength(fraction);
+        if (digs < 53) {
+            fraction = Scm_Ash(fraction, 53-digs);
+            exponent -= 53-digs;
+        } else if (digs > 53) {
+            /* TODO: we need to do rounding */
+            fraction = Scm_Ash(fraction, 53-digs);
+            exponent -= 53-digs;
+        }
+        exponent -= fracdigs * 4;
+        double realnum = Scm_EncodeFlonum(fraction,
+                                          exponent,
+                                          (minusp? -1 : 1));
+        return Scm_MakeFlonum(realnum);
     }
 
     /* Get double approximaiton of fraction.  If fraction >= 2^53 we'll
