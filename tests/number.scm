@@ -643,6 +643,16 @@
 (t-hexflonum "#x1.ffff_ffff_ffff_f8p1023" +inf.0)
 ;; 54bits, round down
 (t-hexflonum "#x1.ffff_ffff_ffff_e8p1023" 1.7976931348623155e308)
+;; too big exponent
+(t-hexflonum "#x-1p1024" -inf.0)
+(t-hexflonum "#x-1p1025" -inf.0)
+(t-hexflonum "#x-1p10000" -inf.0)
+
+;; underflow
+(t-hexflonum "#x1p-1074" 5.0e-324)
+(t-hexflonum "#x.fp-1074" 0.0)
+(t-hexflonum "#x-.fp-1074" -0.0)
+(t-hexflonum "#x-1p-1074" -5.0e-324)
 
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")
