@@ -5096,10 +5096,15 @@ static ScmObj read_real(const char **strp, int *lenp,
     if (ctx->exactness == EXACT) {
         /* Explicit exact number.  We can continue exact arithmetic
            (it may end up ratnum) */
-        ScmObj digs = Scm_MakeInteger(exponent-fracdigs);
-        ScmObj expo = (exponent_char == 'p'
-                       ? Scm_ExactIntegerExpt(SCM_MAKE_INT(16), digs)
-                       : Scm_ExactIntegerExpt(SCM_MAKE_INT(10), digs));
+        ScmObj expo;
+        if (ctx->radix == 16) {
+            /* exponent is power of 2.  one digit shift is 2^4 */
+            ScmObj digs = Scm_MakeInteger(exponent - fracdigs*4);
+            expo = Scm_ExactIntegerExpt(SCM_MAKE_INT(2), digs);
+        } else {
+            ScmObj digs = Scm_MakeInteger(exponent-fracdigs);
+            expo = Scm_ExactIntegerExpt(SCM_MAKE_INT(10), digs);
+        }
         ScmObj e = Scm_Mul(fraction, expo);
         //Scm_Printf(SCM_CURERR, "digs=%S expo=%d\n", digs, expo);
         if (minusp) return Scm_Negate(e);

@@ -630,6 +630,10 @@
 (t-hexflonum "#x100" 256)               ;exact integer, not flonum
 (t-hexflonum "#x100.p0" 256.0)          ;inexact
 
+;; Exact path
+(t-hexflonum "#e#x1.1p-1" 17/32)
+(t-hexflonum "#e#x0.11p4" 17/16)
+
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")
 
