@@ -5071,6 +5071,9 @@ static ScmObj read_real(const char **strp, int *lenp,
     if (!SCM_INTP(s_exponent)) return SCM_FALSE;
     long exponent = SCM_INT_VALUE(s_exponent);
 
+    if (ctx->strict && ctx->radix == 16) {
+        return numerr("hexadecimal float isn't allowed in R7RS strict mode", ctx);
+    }
     if (ctx->radix == 16 && exponent_char != 'p') {
         return numerr("hexadecimal float requires 'p' exponent", ctx);
     }
