@@ -505,9 +505,11 @@ Gaucheはまた、Common Lisp風の基数を明示した数値リテラルも認
 @c NODE #構文
 
 @c EN
-The table below lists hash-syntaxes.
+A token begins with @code{#} introduce various objects.
+The table below lists all hash-syntaxes Gauche recognizes.
 @c JP
-以下の表はハッシュ構文のリストです。
+@code{#}で始まるトークンは様々なオブジェクトを導入します。
+以下の表はGaucheが認識する全てのハッシュ構文のリストです。
 @c COMMON
 
 @table @asis
@@ -515,11 +517,11 @@ The table below lists hash-syntaxes.
 @c EN
 [R6RS][R7RS][SRFI-22] It is either a beginning of an interpreter line
 (shebang) of a script, or a special token that affects the mode
-of the reader.  See `hash-bang token' section below.
+of the reader.  @xref{Hash-bang token}, for the details.
 @c JP
 [R6RS][R7RS][SRFI-22] これは、スクリプトのインタプリタ指定行(shebang)の
 開始を示すか、リーダのモードに影響を与える特別なトークンとして読まれます。
-下の`hash-bang token'の節を参照してください。
+@ref{Hash-bang token}の節を参照してください。
 @c COMMON
 @item @code{#"}
 @c EN
@@ -593,10 +595,10 @@ Uninterned symbol.  @xref{Symbols}.
 @c COMMON
 @item @code{#;}
 @c EN
-[SRFI-62] S-expression comment.  Reads next one S-expression and
+[R7RS] S-expression comment.  Reads next one S-expression and
       discard it.
 @c JP
-[SRFI-62] S式コメント。続くS式をひとつ読んで捨てます。
+[R7RS] S式コメント。続くS式をひとつ読んで捨てます。
 @c COMMON
 @item @code{#<}
 @c EN
@@ -771,9 +773,9 @@ Unused.
 @c COMMON
 @item @code{#|}
 @c EN
-[SRFI-30] Introduces a block comment.  Comment ends by matching '@code{|#}'.
+[R7RS] Introduces a block comment.  Comment ends by matching '@code{|#}'.
 @c JP
-[SRFI-30] ブロックコメントを先導します。コメントは対応する '@code{|#}' で終ります。
+[R7RS] ブロックコメントを先導します。コメントは対応する '@code{|#}' で終ります。
 @c COMMON
 @item @code{#@}}, @code{#~}
 @c EN
