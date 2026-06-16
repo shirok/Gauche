@@ -634,6 +634,16 @@
 (t-hexflonum "#e#x1.1p-1" 17/32)
 (t-hexflonum "#e#x0.11p4" 17/16)
 
+;; overflow
+;; 53bits
+(t-hexflonum "#x1.ffff_ffff_ffff_ep1023" 1.7976931348623155e308)
+(t-hexflonum "#x1.ffff_ffff_ffff_fp1023" 1.7976931348623157e308)
+(t-hexflonum "#x2.p1023" +inf.0)
+;; 54bits, round up
+(t-hexflonum "#x1.ffff_ffff_ffff_f8p1023" +inf.0)
+;; 54bits, round down
+(t-hexflonum "#x1.ffff_ffff_ffff_e8p1023" 1.7976931348623155e308)
+
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")
 

@@ -5126,11 +5126,29 @@ static ScmObj read_real(const char **strp, int *lenp,
             fraction = Scm_Ash(fraction, 53-digs);
             exponent -= 53-digs;
         } else if (digs > 53) {
-            /* TODO: we need to do rounding */
-            fraction = Scm_Ash(fraction, 53-digs);
+            /* Round to even.  We can do better using bittest, if
+               performance becomes an issue. */
+            fraction = Scm_Ash(fraction, 53-digs+1);
+            ScmObj lobits = Scm_LogAnd(fraction, SCM_MAKE_INT(3));
+            if (SCM_INT_VALUE(lobits) == 3) {
+                /* we need to round up */
+                fraction = Scm_Add(fraction, SCM_MAKE_INT(1));
+                if (Scm_IntegerLength(fraction) > 54) {
+                    fraction = Scm_Ash(fraction, -2);
+                    digs++;
+                } else {
+                    fraction = Scm_Ash(fraction, -1);
+                }
+            } else {
+                /* round down */
+                fraction = Scm_Ash(fraction, -1);
+            }
             exponent -= 53-digs;
         }
         exponent -= fracdigs * 4;
+        if (exponent > 1024 - 53) {
+            return (minusp? SCM_NEGATIVE_INFINITY : SCM_POSITIVE_INFINITY);
+        }
         double realnum = Scm_EncodeFlonum(fraction,
                                           exponent,
                                           (minusp? -1 : 1));
