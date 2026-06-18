@@ -78,8 +78,14 @@
 
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
-(define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
-(define-cproc %reset (proc) (return (Scm_VMReset proc)))
+(define-cproc %call/pc (proc) Scm_VMCallPC)
+(define-cproc %reset (proc) Scm_VMReset)
+
+(select-module gauche.internal)
+(define-cproc %call-with-continuation-prompt (thunk
+                                              :optional (prompt-tag #f)
+                                                        (abort-handler #f))
+  Scm_VMCallWithContinuationPrompt)
 
 ;; Continuaton prompts
 (select-module gauche)
@@ -90,10 +96,23 @@
 (define-cproc continuation-prompt-tag? (obj) ::<boolean>
   SCM_PROMPT_TAG_P)
 
-(define-cproc call-with-continuation-prompt (thunk
-                                             :optional (prompt-tag #f)
+(define (call-with-continuation-prompt thunk :optional (prompt-tag #f)
                                                        (abort-handler #f))
-  Scm_VMCallWithContinuationPrompt)
+  (if abort-handler
+    ((with-module gauche.internal %call-with-continuation-prompt)
+     thunk
+     prompt-tag
+     abort-handler)
+    ((with-module gauche.internal %call-with-continuation-prompt)
+     thunk
+     prompt-tag
+     (lambda (continuation-thunk)
+       (unless (and (procedure? continuation-thunk)
+                    (eqv? (arity continuation-thunk) 0))
+         (errorf "default abort-handler requires exactly one argument, \
+                  which must be a thunk, but got: ~S"
+                 continuation-thunk))
+       (call-with-continuation-prompt continuation-thunk prompt-tag #f)))))
 (define-cproc abort-current-continuation (prompt-tag :rest objs)
   Scm_VMAbortCurrentContinuation)
 
