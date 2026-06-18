@@ -598,9 +598,9 @@
 (test* "bad repeating decimal 3" #f (string->number "0#.#1"))
 
 ;;------------------------------------------------------------------
-(test-section "hex flonum reader")
+(test-section "hex flonum reader/writer")
 
-(define (t-hexflonum src expect)
+(define (t-hexflonum-reader src expect)
   ;; We use custom comparator to distinguish 0.0 / -0.0
   (test* #"hex flonum reader ~src" expect (read-from-string src)
          (^[a b]
@@ -609,52 +609,71 @@
              (test-check a b)))))
 
 ;; From SRFI-270 examples
-(t-hexflonum "#x9p9" 4608.0)
-(t-hexflonum "#x1.2p3" 9.0)
-(t-hexflonum "#xFE.FFp1" #i65279/128)
-(t-hexflonum "#x-0.Ap-2" -0.15625)
-(t-hexflonum "#x1.9p1+10p1i" 3.125+32.0i)
+(t-hexflonum-reader "#x9p9" 4608.0)
+(t-hexflonum-reader "#x1.2p3" 9.0)
+(t-hexflonum-reader "#xFE.FFp1" #i65279/128)
+(t-hexflonum-reader "#x-0.Ap-2" -0.15625)
+(t-hexflonum-reader "#x1.9p1+10p1i" 3.125+32.0i)
 
-(t-hexflonum "#x0p0" 0.0)
-(t-hexflonum "#x0.p1" 0.0)
-(t-hexflonum "#x.0p2" 0.0)
-(t-hexflonum "#x0.0p-100000" 0.0)
-(t-hexflonum "#x-0p0" -0.0)
-(t-hexflonum "#x-0.p1" -0.0)
-(t-hexflonum "#x-.0p2" -0.0)
-(t-hexflonum "#x-0.0p-100000" -0.0)
+(t-hexflonum-reader "#x0p0" 0.0)
+(t-hexflonum-reader "#x0.p1" 0.0)
+(t-hexflonum-reader "#x.0p2" 0.0)
+(t-hexflonum-reader "#x0.0p-100000" 0.0)
+(t-hexflonum-reader "#x-0p0" -0.0)
+(t-hexflonum-reader "#x-0.p1" -0.0)
+(t-hexflonum-reader "#x-.0p2" -0.0)
+(t-hexflonum-reader "#x-0.0p-100000" -0.0)
 
-(t-hexflonum "#x1.23" (test-error <read-error> #/requires 'p' exponent/))
-(t-hexflonum "#x1.23l0" (test-error <read-error> #/requires 'p' exponent/))
+(t-hexflonum-reader "#x1.23" (test-error <read-error> #/requires 'p' exponent/))
+(t-hexflonum-reader "#x1.23l0" (test-error <read-error> #/requires 'p' exponent/))
 
-(t-hexflonum "#x100" 256)               ;exact integer, not flonum
-(t-hexflonum "#x100.p0" 256.0)          ;inexact
+(t-hexflonum-reader "#x100" 256)               ;exact integer, not flonum
+(t-hexflonum-reader "#x100.p0" 256.0)          ;inexact
 
-(t-hexflonum "#!r7rs #x1p0" (test-error <read-error> #/allowed in R7RS strict mode/))
+(t-hexflonum-reader "#!r7rs #x1p0" (test-error <read-error> #/allowed in R7RS strict mode/))
 
 ;; Exact path
-(t-hexflonum "#e#x1.1p-1" 17/32)
-(t-hexflonum "#e#x0.11p4" 17/16)
+(t-hexflonum-reader "#e#x1.1p-1" 17/32)
+(t-hexflonum-reader "#e#x0.11p4" 17/16)
 
 ;; overflow
 ;; 53bits
-(t-hexflonum "#x1.ffff_ffff_ffff_ep1023" 1.7976931348623155e308)
-(t-hexflonum "#x1.ffff_ffff_ffff_fp1023" 1.7976931348623157e308)
-(t-hexflonum "#x2.p1023" +inf.0)
+(t-hexflonum-reader "#x1.ffff_ffff_ffff_ep1023" 1.7976931348623155e308)
+(t-hexflonum-reader "#x1.ffff_ffff_ffff_fp1023" 1.7976931348623157e308)
+(t-hexflonum-reader "#x2.p1023" +inf.0)
 ;; 54bits, round up
-(t-hexflonum "#x1.ffff_ffff_ffff_f8p1023" +inf.0)
+(t-hexflonum-reader "#x1.ffff_ffff_ffff_f8p1023" +inf.0)
 ;; 54bits, round down
-(t-hexflonum "#x1.ffff_ffff_ffff_e8p1023" 1.7976931348623155e308)
+(t-hexflonum-reader "#x1.ffff_ffff_ffff_e8p1023" 1.7976931348623155e308)
 ;; too big exponent
-(t-hexflonum "#x-1p1024" -inf.0)
-(t-hexflonum "#x-1p1025" -inf.0)
-(t-hexflonum "#x-1p10000" -inf.0)
+(t-hexflonum-reader "#x-1p1024" -inf.0)
+(t-hexflonum-reader "#x-1p1025" -inf.0)
+(t-hexflonum-reader "#x-1p10000" -inf.0)
 
 ;; underflow
-(t-hexflonum "#x1p-1074" 5.0e-324)
-(t-hexflonum "#x.fp-1074" 0.0)
-(t-hexflonum "#x-.fp-1074" -0.0)
-(t-hexflonum "#x-1p-1074" -5.0e-324)
+(t-hexflonum-reader "#x1p-1074" 5.0e-324)
+(t-hexflonum-reader "#x.fp-1074" 0.0)
+(t-hexflonum-reader "#x-.fp-1074" -0.0)
+(t-hexflonum-reader "#x-1p-1074" -5.0e-324)
+
+(define (t-hexflonum-writer val expect)
+  (test* #"hex flonum writer ~val" expect
+         (number->string val (make-write-controls :hexadecimal-float #t))))
+
+(t-hexflonum-writer 1.0 "#x1.0p0")
+(t-hexflonum-writer -2.0 "#x-1.0p1")
+(t-hexflonum-writer 0.5 "#x1.0p-1")
+
+(t-hexflonum-writer 1.7976931348623157e308 "#x1.fffffffffffffp1023")
+(t-hexflonum-writer 1.7976931348623155e308 "#x1.ffffffffffffep1023")
+(t-hexflonum-writer 5.0e-324 "#x1.0p-1074" )
+
+;; special values are written as-is
+(t-hexflonum-writer 0.0 "0.0")
+(t-hexflonum-writer -0.0 "-0.0")
+(t-hexflonum-writer +inf.0 "+inf.0")
+(t-hexflonum-writer -inf.0 "-inf.0")
+(t-hexflonum-writer +nan.0 "+nan.0")
 
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")

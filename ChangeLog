@@ -1,3 +1,8 @@
+2026-06-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (print_double): Support hexadecimal floating-point
+	  output (SRFI-270).
+
 2026-06-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (read_real): Support hexadecimal floating-point

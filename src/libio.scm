@@ -1124,6 +1124,10 @@
      :type <boolean>
      :getter (wc-bit-get SCM_NUMBER_FORMAT_ROUND_NOTATIONAL obj)
      :setter (wc-bit-set SCM_NUMBER_FORMAT_ROUND_NOTATIONAL obj value))
+    (hexadecimal-float
+     :type <boolean>
+     :getter (wc-bit-get SCM_NUMBER_FORMAT_HEXADECIMAL_FLOAT obj)
+     :setter (wc-bit-set SCM_NUMBER_FORMAT_HEXADECIMAL_FLOAT obj value))
     (flonum-digits
      :type <int>
      :getter (return (SCM_MAKE_INT (ref (-> obj numberFormat) precision)))
@@ -1151,6 +1155,7 @@
                                   bytestring string-length exact-decimal
                                   array complex explicit-plus-sign
                                   notational-rounding flonum-digits
+                                  hexadecimal-float
                                   ;; For backward compatibility
                                   print-length print-level print-width
                                   print-base print-radix radix print-pretty)
@@ -1179,6 +1184,7 @@
     :explicit-plus-sign explicit-plus-sign
     :notational-rounding notational-rounding
     :flonum-digits flonum-digits
+    :hexadecimal-float hexadecimal-float
     ;; The following slots are "internal use" for now.  We may change the
     ;; interface in the furture.  Atm, we initialize them in the same values
     ;; as Scm_NumebrFormatInit() -- eventually we eliminate these magic numbers.
@@ -1196,6 +1202,7 @@
                                      bytestring string-length exact-decimal
                                      array complex explicit-plus-sign
                                      notational-rounding flonum-digits
+                                     hexadecimal-float
                                      ;; These two are "unofficial" for now
                                      flonum-exp-lo flonum-exp-hi
                                      flonum-exp-width flonum-exp-char
@@ -1241,6 +1248,7 @@
           [plus (select explicit-plus-sign)]
           [notational (select notational-rounding)]
           [digits (select flonum-digits)]
+          [hexfloat (select hexadecimal-float)]
           [exp-width (select flonum-exp-width)]
           [exp-hi (select flonum-exp-hi)]
           [exp-lo (select flonum-exp-lo)]
@@ -1263,6 +1271,7 @@
           :explicit-plus-sign plus
           :notational-rounding notational
           :flonum-digits digits
+          :hexadecimal-float hexfloat
           :flonum-exp-width exp-width
           :flonum-exp-hi exp-hi
           :flonum-exp-lo exp-lo

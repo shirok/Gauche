@@ -88,6 +88,10 @@ int Scm_IsInf(double x)
    greather than or equal to 1077. */
 #define MAX_EXPONENT_TWOS_POWER  1077
 
+/* Max buffer size to represent flonums and fixnums.
+   Note that fixnums may be in any base between 2 and 36. */
+#define FLT_BUF 65
+
 /* Linux gcc have those, but the declarations aren't included unless
    __USE_ISOC9X is defined.  Just in case. */
 #ifdef HAVE_TRUNC
@@ -3889,6 +3893,49 @@ static double raise_pow10(double x, int n)
  * Accurately", PLDI '96, pp.108--116, 1996).
  */
 
+/* print a hexadecimal floating-point number. We don't need conversion
+   business, so this is a quick path. Special values (0.0, inf, nan) are
+   already eliminated. */
+static void print_hexfloat(ScmDString *ds, double val, int plus_sign,
+                           const ScmNumberFormat *fmt SCM_UNUSED)
+{
+    int exp, sign;
+    ScmObj mant = Scm_DecodeFlonum(val, &exp, &sign);
+    Scm_DStringPutz(ds, "#x", -1);
+    if (sign < 0)       Scm_DStringPutc(ds, '-');
+    else if (plus_sign) Scm_DStringPutc(ds, '+');
+    uint64_t m = Scm_GetIntegerU64(mant);
+
+    /* We start digits with "#x1." for it's easier to understand. */
+    int bitlen = Scm_IntegerLength(mant);    /* 1 <= bitlen <= 53 */
+    exp += bitlen-1;
+    Scm_DStringPutz(ds, "1.", -1);
+
+    int bitpos = bitlen - 1;
+    while (bitpos >= 0 && m > 0) {
+        u_long k = (bitpos > 4)? (m >> (bitpos-4)) : (m << (4-bitpos));
+        Scm_DStringPutc(ds, Scm_IntToDigit(k & 0x0f, 16, 0, 0));
+        m &= ~(k << (bitpos-4));
+        bitpos -= 4;
+    }
+    Scm_DStringPutc(ds, 'p');
+    if (exp == 0) Scm_DStringPutc(ds, '0');
+    else {
+        if (exp < 0) {
+            Scm_DStringPutc(ds, '-');
+            exp = -exp;
+        }
+        char buf[FLT_BUF];
+        int i = FLT_BUF-1;
+        for (; i >= 0 && exp > 0; i--) {
+            int c = exp % 10;
+            buf[i] = c + '0';
+            exp /= 10;
+        }
+        Scm_DStringPutz(ds, buf+i+1, FLT_BUF-i-1);
+    }
+}
+
 /* compare x+d and y.  x, d, y are exact positive integers.
    this is called in inner loops so we need to be fast. */
 static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
@@ -3995,10 +4042,6 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
                          const ScmNumberFormat *fmt)
 {
     int precision = fmt->precision;
-    int notational = fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL;
-    int exp_lo = fmt->exp_lo;
-    int exp_hi = fmt->exp_hi;
-    int exp_width = fmt->exp_width;
 
     /* Handle a few special cases first. */
     if (val == 0.0) {
@@ -4023,6 +4066,18 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
         Scm_DStringPutz(ds, "+nan.0", 6);
         return;
     }
+
+    /* If hexadecimal float is requested, we can bypass binary->decimal
+       conversion. */
+    if (fmt->flags & SCM_NUMBER_FORMAT_HEXADECIMAL_FLOAT) {
+        print_hexfloat(ds, val, plus_sign, fmt);
+        return;
+    }
+
+    int notational = fmt->flags&SCM_NUMBER_FORMAT_ROUND_NOTATIONAL;
+    int exp_lo = fmt->exp_lo;
+    int exp_hi = fmt->exp_hi;
+    int exp_width = fmt->exp_width;
 
     if (val < 0.0) SCM_DSTRING_PUTC(ds, '-');
     else if (plus_sign) SCM_DSTRING_PUTC(ds, '+');
@@ -4286,8 +4341,6 @@ static void print_complex(ScmDString *ds, ScmCompnum *val,
         break;
     }
 }
-
-#define FLT_BUF 65  /* need to hold binary representation of the least fixnum */
 
 static size_t
 print_radix_prefix(ScmPort *port, u_long radix)
