@@ -658,11 +658,16 @@
 
 (define (t-hexflonum-writer val expect)
   (test* #"hex flonum writer ~val" expect
-         (number->string val (make-write-controls :hexadecimal-float #t))))
+         (number->string val (make-write-controls :hexadecimal-float #t
+                                                  :base 16
+                                                  :radix-prefix #t))))
 
 (t-hexflonum-writer 1.0 "#x1.0p0")
 (t-hexflonum-writer -2.0 "#x-1.0p1")
 (t-hexflonum-writer 0.5 "#x1.0p-1")
+
+(t-hexflonum-writer 1.0+2.0i "#x1.0p0+1.0p1i")
+(t-hexflonum-writer 1.0-2.0i "#x1.0p0-1.0p1i")
 
 (t-hexflonum-writer 1.7976931348623157e308 "#x1.fffffffffffffp1023")
 (t-hexflonum-writer 1.7976931348623155e308 "#x1.ffffffffffffep1023")

@@ -3901,7 +3901,6 @@ static void print_hexfloat(ScmDString *ds, double val, int plus_sign,
 {
     int exp, sign;
     ScmObj mant = Scm_DecodeFlonum(val, &exp, &sign);
-    Scm_DStringPutz(ds, "#x", -1);
     if (sign < 0)       Scm_DStringPutc(ds, '-');
     else if (plus_sign) Scm_DStringPutc(ds, '+');
     uint64_t m = Scm_GetIntegerU64(mant);
@@ -4380,8 +4379,15 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, const ScmNumberFormat *fmt
     int nchars = 0;
     char buf[FLT_BUF];
 
-    if ((flags & SCM_NUMBER_FORMAT_ALT_RADIX) && SCM_EXACTP(obj)) {
-        nchars += print_radix_prefix(port, base);
+    if (flags & SCM_NUMBER_FORMAT_ALT_RADIX) {
+        if (SCM_EXACTP(obj)) {
+            nchars += print_radix_prefix(port, base);
+        } else if ((flags & SCM_NUMBER_FORMAT_HEXADECIMAL_FLOAT)
+                   && Scm_FiniteP(obj)
+                   && (SCM_COMPNUMP(obj)
+                       || Scm_NumCmp(obj, SCM_MAKE_INT(0)) != 0)) {
+            nchars += print_radix_prefix(port, base);
+        }
     }
 
     if (SCM_INTP(obj)) {
