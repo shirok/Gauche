@@ -527,16 +527,9 @@ struct ScmVMRec {
 #endif
 
     /* Escape handling */
-    ScmObj floatingEscapePoints; /* List of escapePoints that point to
-                                    in-stack continuation frames.  We only need
-                                    it so that we can adjust pointers to cont
-                                    frames when they are moved to the heap.
-                                    The list is cleared once cont frames
-                                    are moved to the heap.
-                                 */
     int escapeReason;            /* temporary storage to pass data across
                                     longjmp(). */
-    void *escapeData[2];         /* ditto. */
+    void *escapeData[3];         /* ditto. */
     int errorHandlerContinuable; /* A transient flag, set by the error handler
                                     as a result of 'guard' expansion to tell
                                     that the control should return to 'raise'
@@ -576,15 +569,11 @@ struct ScmVMRec {
     ScmCallTrace *callTrace;
     ScmCodeCache *codeCache;
 
-    /* for reset/shift */
-    ScmContinuationPrompt *currentPrompt;
-    ScmObj resetChain;          /* list of reset information,
-                                   where reset information is
-                                   (delimited . <dynamic handlers chain>).
-                                   the delimited flag is set when 'shift'
-                                   appears in 'reset' and the end marker of
-                                   partial continuation is set. */
-
+    /* for partial continuation */
+    ScmObj partialChain;        /* list of partial continuation information,
+                                   where partial continuation information is
+                                   (promptTag . escapePoint).
+                                */
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);
