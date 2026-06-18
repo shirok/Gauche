@@ -83,7 +83,6 @@ struct ScmContinuationMarkSetRec {
 /* To obtain denv keys */
 typedef enum {
     SCM_DENV_KEY_EXCEPTION_HANDLER,
-    SCM_DENV_KEY_DYNAMIC_HANDLER,
     SCM_DENV_KEY_PARAMETERIZATION,
     SCM_DENV_KEY_EXPRESSION_NAME,
     SCM_DENV_KEY_INCLUDE_SOURCE,
@@ -131,7 +130,9 @@ typedef struct ScmMetaContRec {
     ScmContFrame *cont;              /* parent vm->cont when prompt installed
                                         (i.e. frame->prev at install time) */
     ScmObj denv;                     /* parent vm->denv */
-    ScmObj dynamicHandlers;          /* parent dynamic-wind chain */
+    ScmObj dynamicHandlers;          /* dynamic-wind handler segment just outside
+                                        this prompt (= vm->dynamicHandlers when
+                                        the prompt was installed) */
     ScmCStack *cstack;               /* vm->cstack when this prompt was
                                         installed. */
     struct ScmMetaContRec *prev;     /* outer meta-cont, NULL at bottom */
@@ -153,14 +154,14 @@ typedef struct ScmEscapePointRec {
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
     ScmObj denv;                /* saved denv */
-    ScmObj dynamicHandlers;     /* saved dynamic handler chain */
+    ScmObj dynamicHandlers;     /* saved dynamic-wind handler segment (the
+                                   current segment at capture time) */
     ScmCStack *cstack;          /* vm->cstack when escape point is created.
                                    this will be used to rewind cstack.
                                    this is NULL for partial continuations,
                                    for they can be executed on anywhere
                                    w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
-    ScmObj partHandlers;        /* for reset/shift */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control

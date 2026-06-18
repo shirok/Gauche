@@ -509,7 +509,10 @@ struct ScmVMRec {
 
     int    joinCount;           /* how many times this thread is join!-ed? */
 
-    ScmObj dynamicHandlers;     /* chain of active dynamic handlers          */
+    ScmObj dynamicHandlers;     /* dynamic-wind handler chain of the current
+                                   segment (handlers since the innermost prompt).
+                                   The full chain is gathered across the metacont
+                                   chain; see vm.c. */
 
     ScmObj *sp;                 /* stack pointer */
     ScmObj *stack;              /* bottom of allocated stack area */

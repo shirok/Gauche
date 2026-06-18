@@ -157,7 +157,6 @@ static ScmObj continuation_symbol = SCM_UNBOUND;
    this purpose, for it is easier while debugging.
    They're set during initialization. */
 static ScmObj denv_key_exception_handler = SCM_UNBOUND;
-static ScmObj denv_key_dynamic_handler = SCM_UNBOUND;
 static ScmObj denv_key_parameterization = SCM_UNBOUND;
 static ScmObj denv_key_expression_name = SCM_UNBOUND;
 static ScmObj denv_key_include_source = SCM_UNBOUND;
@@ -220,6 +219,7 @@ static ScmSubr default_exception_handler_rec;
 #define DEFAULT_EXCEPTION_HANDLER  SCM_OBJ(&default_exception_handler_rec)
 static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current);
 static ScmObj get_dynamic_handlers(ScmVM*);
+static ScmObj ep_dynamic_handlers(ScmEscapePoint*);
 static void   set_dynamic_handlers(ScmVM*, ScmObj);
 static ScmObj push_dynamic_handlers(ScmVM*, ScmObj, ScmObj, ScmObj);
 static ScmObj pop_dynamic_handlers(ScmVM*);
@@ -331,7 +331,6 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
        thread starts, so anything "below" the dynamic handler chain is
        irrelevant. */
     v->denv = get_inheriting_denv(proto);
-
     v->dynamicHandlers = SCM_NIL;
 
     v->floatingEscapePoints = SCM_NIL;
@@ -846,13 +845,16 @@ static void vm_unregister(ScmVM *vm)
                    && vm->currentMetaCont->frame == CONT) {\
             /* returning through a prompt boundary.  The continuation   \
                continues via the metacont's cont field, and the denv    \
-               is restored from the metacont's denv */                  \
+               and dynamic-wind handler segment are restored from the   \
+               metacont. */                                             \
             ScmContFrame *into__ = vm->currentMetaCont->cont;\
             ScmObj denv__ = vm->currentMetaCont->denv;  \
+            ScmObj dh__ = vm->currentMetaCont->dynamicHandlers; \
             pop_meta_cont(vm);                          \
             POP_CONT();                                 \
             vm->cont = into__;                          \
             DENV = denv__;                              \
+            vm->dynamicHandlers = dh__;                 \
         } else {                                        \
             POP_CONT();                                 \
         }                                               \
@@ -2061,10 +2063,9 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     ep->ehandler = errorHandler;
     ep->cont = proto? proto->cont : vm->cont;
     ep->denv = proto? proto->denv : vm->denv;
-    ep->dynamicHandlers = proto? proto->dynamicHandlers : get_dynamic_handlers(vm);
+    ep->dynamicHandlers = proto? proto->dynamicHandlers : vm->dynamicHandlers;
     ep->cstack = proto? proto->cstack : vm->cstack;
     ep->xhandler = proto? proto->xhandler : Scm_VMCurrentExceptionHandler();
-    ep->partHandlers = proto? proto->partHandlers : SCM_NIL;
     ep->errorReporting = proto
         ? proto->errorReporting
         : (int)(!!SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED));
@@ -2096,7 +2097,11 @@ static void push_meta_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
     m->frame = vm->cont;
     m->cont = vm->cont->prev;
     m->denv = vm->cont->denv;
-    m->dynamicHandlers = get_dynamic_handlers(vm);
+    /* Segment the handler chain: the current segment becomes this prompt's
+       below-segment, and the prompt body starts with an empty segment.
+       RETURN_OP restores m->dynamicHandlers when control returns through. */
+    m->dynamicHandlers = vm->dynamicHandlers;
+    vm->dynamicHandlers = SCM_NIL;
     m->cstack = vm->cstack;
     m->prev = vm->currentMetaCont;
     vm->currentMetaCont = m;
@@ -2119,7 +2124,8 @@ static void push_resume_boundary(ScmVM *vm, ScmContFrame *bottom,
     m->frame = bottom;                 /* partcont bottom */
     m->cont = into;                    /* caller's cont to restore */
     m->denv = vm->denv;                /* invocation-site mark segment */
-    m->dynamicHandlers = SCM_NIL;      /* unused for a resume boundary */
+    m->dynamicHandlers = vm->dynamicHandlers; /* caller's handler segment, to
+                                          restore when the slice returns */
     m->cstack = vm->cstack;
     m->prev = vm->currentMetaCont;
     vm->currentMetaCont = m;
@@ -2301,6 +2307,7 @@ static ScmObj user_eval_inner(ScmObj program,
             pop_meta_cont(vm);
             POP_CONT();
             vm->cont = boundaryMeta->cont;  /* parent; boundary prev is NULL */
+            vm->dynamicHandlers = boundaryMeta->dynamicHandlers;
             PC = prev_pc;
         } else if (vm->cont == NULL) {
             /* we're finished with executing partial continuation. */
@@ -2329,6 +2336,7 @@ static ScmObj user_eval_inner(ScmObj program,
             pop_meta_cont(vm);
             POP_CONT();
             vm->cont = boundaryMeta->cont;  /* parent; boundary prev is NULL */
+            vm->dynamicHandlers = boundaryMeta->dynamicHandlers;
             PC = prev_pc;
         } else {
             /* If we come here, we've been executing a ghost continuation.
@@ -2344,7 +2352,7 @@ static ScmObj user_eval_inner(ScmObj program,
             SCM_ASSERT(ep != NULL);
             if (ep->cstack == vm->cstack) {
                 ScmObj handlers =
-                    throw_cont_calculate_handlers(ep->dynamicHandlers,
+                    throw_cont_calculate_handlers(ep_dynamic_handlers(ep),
                                                   get_dynamic_handlers(vm));
                 /* force popping continuation when restarted */
                 vm->pc = PC_TO_RETURN;
@@ -2356,6 +2364,7 @@ static ScmObj user_eval_inner(ScmObj program,
                 pop_meta_cont(vm);
                 POP_CONT();
                 vm->cont = boundaryMeta->cont;  /* parent; boundary prev is NULL */
+                vm->dynamicHandlers = boundaryMeta->dynamicHandlers;
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
             }
@@ -2364,6 +2373,7 @@ static ScmObj user_eval_inner(ScmObj program,
             if (ep && ep->cstack == vm->cstack) {
                 vm->cont = ep->cont;
                 vm->denv = ep->denv;
+                vm->dynamicHandlers = ep->dynamicHandlers;
                 vm->currentMetaCont = ep->capturedMetaCont;
                 vm->pc = PC_TO_RETURN;
                 goto restart;
@@ -2383,6 +2393,7 @@ static ScmObj user_eval_inner(ScmObj program,
                 pop_meta_cont(vm);
                 POP_CONT();
                 vm->cont = boundaryMeta->cont;  /* parent; boundary prev is NULL */
+                vm->dynamicHandlers = boundaryMeta->dynamicHandlers;
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
             }
@@ -2402,6 +2413,7 @@ static ScmObj user_eval_inner(ScmObj program,
                 pop_meta_cont(vm);
                 POP_CONT();
                 vm->cont = boundaryMeta->cont;  /* parent; boundary prev is NULL */
+                vm->dynamicHandlers = boundaryMeta->dynamicHandlers;
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
             }
@@ -2781,10 +2793,66 @@ ScmObj make_dynamic_handler(ScmVM *vm, ScmObj before, ScmObj after, ScmObj args)
     return SCM_OBJ(e);
 }
 
-/* Handler-chain internal API */
+/* The dynamic-wind handler chain is stored segmented: vm->dynamicHandlers holds
+   the handlers pushed in the current segment (since the innermost prompt), and
+   each metacont's `dynamicHandlers` slot holds the segment just outside its
+   prompt.  The full chain is reconstructed by gather_dynamic_handlers, walking
+   the metacont chain.  The handler push/pop on the inline dynamic-wind hot path
+   is therefore a cheap cons/CDR on vm->dynamicHandlers (no denv ops). */
+
+/* Gather the full handler chain: the current-segment list `cur`, followed by
+   each metacont's segment list (mc->dynamicHandlers), up to (not including)
+   'stop'.  'stop' can be NULL to gather the entire chain.  Returns a fresh list
+   of the shared ScmDynamicHandler objects, so the Scm_Memq diffs in
+   throw_cont_calculate_handlers stay valid. */
+static ScmObj gather_dynamic_handlers(ScmObj cur, ScmMetaCont *mc,
+                                      ScmMetaCont *stop)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmObj seg = cur;
+    ScmMetaCont *m = mc;
+    for (;;) {
+        ScmObj p;
+        SCM_FOR_EACH(p, seg) SCM_APPEND1(h, t, SCM_CAR(p));
+        if (m == stop || m == NULL) break;
+        seg = m->dynamicHandlers;
+        m = m->prev;
+    }
+    return h;
+}
+
+/* The full handler chain visible at the current VM state. */
 static ScmObj get_dynamic_handlers(ScmVM *vm)
 {
-    return vm->dynamicHandlers;
+    return gather_dynamic_handlers(vm->dynamicHandlers, vm->currentMetaCont,
+                                   NULL);
+}
+
+/* The handlers pushed inside the captured prompt: the handlers in the segments
+   between the capture point and the bounding prompt (exclusive of the prompt's
+   own below-segment).  Computed on demand from the escape point's captured
+   segment + metacont slice.  Used by throw_continuation's splice branches to
+   wind up only the handlers added inside the captured prompt. */
+static ScmObj ep_part_handlers(ScmEscapePoint *ep)
+{
+    return gather_dynamic_handlers(ep->dynamicHandlers, ep->capturedMetaCont,
+                                   ep->boundingMetaCont);
+}
+
+/* The full handler chain visible at an escape point's capture.  (Only
+   meaningful for full continuations and error escape points; composable
+   continuation EPs use ep_part_handlers instead.) */
+static ScmObj ep_dynamic_handlers(ScmEscapePoint *ep)
+{
+    return gather_dynamic_handlers(ep->dynamicHandlers, ep->capturedMetaCont,
+                                   NULL);
+}
+
+/* The full handler chain at a meta-cont's prompt level (the handlers below the
+   prompt). */
+static ScmObj mc_dynamic_handlers(ScmMetaCont *mc)
+{
+    return gather_dynamic_handlers(mc->dynamicHandlers, mc->prev, NULL);
 }
 
 static void set_dynamic_handlers(ScmVM *vm, ScmObj handlers)
@@ -2796,16 +2864,16 @@ static ScmObj push_dynamic_handlers(ScmVM *vm,
                                     ScmObj before, ScmObj after, ScmObj args)
 {
     ScmObj entry = make_dynamic_handler(vm, before, after, args);
-    set_dynamic_handlers(vm, Scm_Cons(entry, get_dynamic_handlers(vm)));
+    vm->dynamicHandlers = Scm_Cons(entry, vm->dynamicHandlers);
     return entry;
 }
 
 static ScmObj pop_dynamic_handlers(ScmVM *vm)
 {
-    ScmObj handlers = get_dynamic_handlers(vm);
-    SCM_ASSERT(SCM_PAIRP(handlers));
-    set_dynamic_handlers(vm, SCM_CDR(handlers));
-    return SCM_CAR(handlers);
+    ScmObj seg = vm->dynamicHandlers;
+    SCM_ASSERT(SCM_PAIRP(seg));
+    vm->dynamicHandlers = SCM_CDR(seg);
+    return SCM_CAR(seg);
 }
 
 static void call_before_thunk(ScmVM *vm, ScmObj handler_entry)
@@ -3069,15 +3137,17 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
        If an error is raised within the dynamic handlers, it will be
        captured by the same error handler.
 
-       Note: calling dynamic handlers may change dynamic env, but
-       we need to call exception handler on the same denv when
-       handle_escape entered.  So we save and restore it.
-    */
-    ScmObj denv = vm->denv;
+       Note: we deliberately leave denv (parameterizations) at the unwound
+       level that call_dynamic_handlers' after-thunks leave it at (each runs on
+       its install denv), so the handler sees the rewound dynamic environment.
+       But those install denvs also carry the install-time exception handler,
+       which would re-instate the very handler we are running; so we restore the
+       exception-handler entry to xh -- the outer handler Scm_VMThrowException
+       popped to -- after each handler call. */
+    ScmObj xh = find_dynamic_env(vm, denv_key_exception_handler, SCM_NIL);
     if (ep->rewindBefore) {
-        call_dynamic_handlers(vm, ep->dynamicHandlers,
-                              get_dynamic_handlers(vm));
-        vm->denv = denv;
+        call_dynamic_handlers(vm, ep_dynamic_handlers(ep), vmhandlers);
+        push_dynamic_env(vm, denv_key_exception_handler, xh);
     }
 
     vm->errorHandlerContinuable = FALSE;
@@ -3093,9 +3163,8 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
 
     /* call dynamic handlers to rewind */
     if (!ep->rewindBefore) {
-        call_dynamic_handlers(vm, ep->dynamicHandlers,
-                              get_dynamic_handlers(vm));
-        vm->denv = denv;
+        call_dynamic_handlers(vm, ep_dynamic_handlers(ep), vmhandlers);
+        push_dynamic_env(vm, denv_key_exception_handler, xh);
     }
 
     /* If exception is reraised, the exception handler can return
@@ -3103,10 +3172,9 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
     if (vm->errorHandlerContinuable) {
         vm->errorHandlerContinuable = FALSE;
 
-        /* call dynamic handlers to reenter dynamic-winds */
-        call_dynamic_handlers(vm, vmhandlers,
-                              get_dynamic_handlers(vm));
-        vm->denv = denv;
+        /* re-enter the dynamic-winds (rewind from the unwound handler level
+           back up to the raise level). */
+        call_dynamic_handlers(vm, vmhandlers, ep_dynamic_handlers(ep));
 
         /* reraise and return */
         Scm_VMPushExceptionHandler(ep->xhandler);
@@ -3322,8 +3390,6 @@ ScmObj Scm__GetDenvKey(ScmDenvKeyName name)
     switch (name) {
     case SCM_DENV_KEY_EXCEPTION_HANDLER:
         return denv_key_exception_handler;
-    case SCM_DENV_KEY_DYNAMIC_HANDLER:
-        return denv_key_dynamic_handler;
     case SCM_DENV_KEY_PARAMETERIZATION:
         return denv_key_parameterization;
     case SCM_DENV_KEY_EXPRESSION_NAME:
@@ -3458,21 +3524,24 @@ static ScmObj vm_abort_body(ScmMetaCont *targetMeta, ScmObj args)
            in the prompt's outer continuation.  We need to pop targetMeta. */
         vm->cont = targetMeta->cont;
         vm->denv = targetMeta->denv;
+        vm->dynamicHandlers = targetMeta->dynamicHandlers;
         vm->currentMetaCont = targetMeta->prev;
         return Scm_VMApply(abortHandler, args);
     }
 }
 
+/* Unwind the dynamic handlers between the abort point and the target prompt.
+   data[2] is the exact list of inside-prompt handlers to unwind, gathered at
+   the abort point before the denv was moved to the target. */
 static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])
 {
     ScmMetaCont *targetMeta = data[0];
-    ScmObj targetHandlers = targetMeta->dynamicHandlers;
     ScmVM *vm = theVM;
-    ScmObj currentHandlers = get_dynamic_handlers(vm);
-    if (targetHandlers != currentHandlers && SCM_PAIRP(currentHandlers)) {
-        Scm_VMPushCC(vm_abort_cc, data, 2);
-        ScmObj handler_entry = pop_dynamic_handlers(vm);
-        return vm_call_after_thunk(vm, handler_entry);
+    ScmObj remaining = SCM_OBJ(data[2]);
+    if (SCM_PAIRP(remaining)) {
+        data[2] = (void*)SCM_CDR(remaining);
+        Scm_VMPushCC(vm_abort_cc, data, 3);
+        return vm_call_after_thunk(vm, SCM_CAR(remaining));
     } else {
         ScmObj args = SCM_OBJ(data[1]);
         return vm_abort_body(targetMeta, args);
@@ -3486,22 +3555,27 @@ static ScmObj abort_current_continuation(ScmMetaCont *targetMeta, ScmObj args)
 {
     ScmVM *vm = theVM;
     ScmContFrame *abortTo = targetMeta->frame;
-    ScmObj targetHandlers = targetMeta->dynamicHandlers;
 
     CONT = abortTo;
+    /* Gather the inside-prompt handlers to unwind, bounded by the target prompt
+       (handlers below the target are not unwound). */
+    ScmObj toUnwind = gather_dynamic_handlers(vm->dynamicHandlers,
+                                              vm->currentMetaCont, targetMeta);
     DENV = abortTo->denv;
+    /* The target prompt body restarts with a fresh (empty) handler segment,
+       just as when the prompt was first entered. */
+    vm->dynamicHandlers = SCM_NIL;
     vm->currentMetaCont = targetMeta;
 
-    ScmObj currentHandlers = get_dynamic_handlers(vm);
-    if (targetHandlers != currentHandlers && SCM_PAIRP(currentHandlers)) {
+    if (SCM_PAIRP(toUnwind)) {
         ENSURE_SAVE_CONT(abortTo);
 
-        void *data[2];
+        void *data[3];
         data[0] = targetMeta;
         data[1] = args;
-        Scm_VMPushCC(vm_abort_cc, data, 2);
-        ScmObj handler_entry = pop_dynamic_handlers(vm);
-        return vm_call_after_thunk(vm, handler_entry);
+        data[2] = (void*)SCM_CDR(toUnwind);
+        Scm_VMPushCC(vm_abort_cc, data, 3);
+        return vm_call_after_thunk(vm, SCM_CAR(toUnwind));
     } else {
         return vm_abort_body(targetMeta, args);
     }
@@ -3788,6 +3862,7 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
     vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
     vm->denv = ep->denv;
+    vm->dynamicHandlers = ep->dynamicHandlers;
 
     /* SRFI-226 call-in-continuation: ep->applyProc is called after
        the continuation is thrown.  It is set by Scm_VMCallInContinuation. */
@@ -3863,7 +3938,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
             ep->cont = vm->cont;
         }
         hdlist = throw_cont_calculate_handlers(
-            Scm_Append2(ep->partHandlers, currentHandlers),
+            Scm_Append2(ep_part_handlers(ep), currentHandlers),
             currentHandlers);
     } else {
         /* non-composable: We have a few cases.
@@ -3900,7 +3975,7 @@ static ScmObj throw_continuation(ScmObj *argframe,
         }
         if (cs == NULL) {       /* 1b */
             save_cont(vm);
-            hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
+            hdlist = throw_cont_calculate_handlers(ep_dynamic_handlers(ep),
                                                    currentHandlers);
             return throw_cont_body(hdlist, ep, args);
         } else if (vm->cstack != ep->cstack) { /* 1a */
@@ -3937,16 +4012,16 @@ static ScmObj throw_continuation(ScmObj *argframe,
                 ep->cont = install_partial_cont(vm, ep);
             }
             /* Wind down the current dynamic handlers to the abort target's
-               handler level (targetMeta->dynamicHandlers), then wind up the
+               handler level (mc_dynamic_handlers(targetMeta)), then wind up the
                handlers that live inside the captured continuation
-               (ep->partHandlers).  Handlers that were dynamically active when
-               the continuation was captured but have since exited (they are in
-               ep->dynamicHandlers but not ep->partHandlers) must NOT be
-               re-wound.  For the 2a case targetMeta == bottom, so this
-               coincides with the full ep->dynamicHandlers chain. */
+               (ep_part_handlers(ep)).  Handlers that were dynamically active
+               when the continuation was captured but have since exited (they
+               are in ep_dynamic_handlers(ep) but not ep_part_handlers(ep)) must
+               NOT be re-wound.  For the 2a case targetMeta == bottom, so this
+               coincides with the full ep_dynamic_handlers(ep) chain. */
             hdlist = throw_cont_calculate_handlers(
-                        Scm_Append2(ep->partHandlers,
-                                    targetMeta->dynamicHandlers),
+                        Scm_Append2(ep_part_handlers(ep),
+                                    mc_dynamic_handlers(targetMeta)),
                         currentHandlers);
         } else {
             save_cont(vm);
@@ -3965,11 +4040,11 @@ static ScmObj throw_continuation(ScmObj *argframe,
                handlers added between capture and invocation (e.g.
                a dynamic-wind body around the invocation site).
                Only wind up handlers that were added inside the
-               captured prompt (ep->partHandlers).  This matches
+               captured prompt (ep_part_handlers(ep)).  This matches
                SRFI-226 splice semantics and keeps the invocation
                site's body_cc / handler chain intact. */
             hdlist = throw_cont_calculate_handlers(
-                        Scm_Append2(ep->partHandlers, currentHandlers),
+                        Scm_Append2(ep_part_handlers(ep), currentHandlers),
                         currentHandlers);
         }
     }
@@ -4007,27 +4082,13 @@ ScmObj call_cc_common(ScmObj proc,
     ep->partContTop = ep->cont;
     ep->boundingMetaCont = bottom;
     if (composable) {
-        ep->dynamicHandlers = SCM_NIL; /* unused on partial cont */
         ep->cstack = NULL;
         delimit_composable_cont(ep);
     }
 
-    /* partHandlers = handlers pushed *inside* the prompt, i.e. the
-       prefix of the current handler chain that ends at
-       P->dynamicHandlers.  Used by throw_continuation's splice
-       branch (prompt-exited case) to wind up only the handlers
-       added inside the captured prompt, matching composable
-       semantics for cross-prompt invocation. */
-    ScmObj h = SCM_NIL, t = SCM_NIL, p;
-    SCM_FOR_EACH(p, get_dynamic_handlers(vm)) {
-        if (p == bottom->dynamicHandlers) break;
-        SCM_APPEND1(h, t, SCM_CAR(p));
-    }
-    ep->partHandlers = h;
-
     if (shift) {
         /* TRANSIENT - 'shift' behavior  */
-        call_dynamic_handlers(vm, bottom->dynamicHandlers,
+        call_dynamic_handlers(vm, mc_dynamic_handlers(bottom),
                               get_dynamic_handlers(vm));
     }
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
@@ -4038,6 +4099,9 @@ ScmObj call_cc_common(ScmObj proc,
         vm->cont = bottom->frame;
         vm->currentMetaCont = bottom;
         vm->denv = bottom->denv;
+        /* With currentMetaCont == bottom, the full handler chain is gathered
+           from bottom's slot downward; the current segment is empty. */
+        vm->dynamicHandlers = SCM_NIL;
     }
     return Scm_VMApply1(proc, contproc);
 }
@@ -4815,7 +4879,6 @@ void Scm__InitVM(void)
        require hashtables. */
 #define UNINTERNED(name) Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR(#name)), FALSE)
     denv_key_exception_handler = UNINTERNED(exception-handler);
-    denv_key_dynamic_handler   = UNINTERNED(dynamic-handler);
     denv_key_parameterization  = UNINTERNED(parameterization);
     denv_key_expression_name   = UNINTERNED(expression-name);
     denv_key_include_source    = UNINTERNED(include-source);
