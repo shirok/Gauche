@@ -3913,7 +3913,7 @@ static void print_hexfloat(ScmDString *ds, double val, int plus_sign,
 
     int bitpos = bitlen - 1;
     while (bitpos >= 0 && m > 0) {
-        u_long k = (bitpos > 4)? (m >> (bitpos-4)) : (m << (4-bitpos));
+        uint64_t k = (bitpos > 4)? (m >> (bitpos-4)) : (m << (4-bitpos));
         Scm_DStringPutc(ds, Scm_IntToDigit(k & 0x0f, 16, 0, 0));
         m &= ~(k << (bitpos-4));
         bitpos -= 4;
