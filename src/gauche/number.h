@@ -464,11 +464,6 @@ enum ScmNumberFormatFlags {
        [N] ignored.
        [S] returns error message instead of #f on error.*/
     SCM_NUMBER_FORMAT_ERROR_MESSAGE = (1L<<8),
-
-    /* Print hexadecimal floating-point number format.
-       [N] same.
-       [S] ignored. */
-    SCM_NUMBER_FORMAT_HEXADECIMAL_FLOAT = (1L<<9)
 };
 
 enum ScmNumberFormatComplex {

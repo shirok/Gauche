@@ -658,8 +658,7 @@
 
 (define (t-hexflonum-writer val expect)
   (test* #"hex flonum writer ~val" expect
-         (number->string val (make-write-controls :hexadecimal-float #t
-                                                  :base 16
+         (number->string val (make-write-controls :base 16
                                                   :radix-prefix #t))))
 
 (t-hexflonum-writer 1.0 "#x1.0p0")
@@ -674,11 +673,11 @@
 (t-hexflonum-writer 5.0e-324 "#x1.0p-1074" )
 
 ;; special values are written as-is
-(t-hexflonum-writer 0.0 "0.0")
-(t-hexflonum-writer -0.0 "-0.0")
-(t-hexflonum-writer +inf.0 "+inf.0")
-(t-hexflonum-writer -inf.0 "-inf.0")
-(t-hexflonum-writer +nan.0 "+nan.0")
+(t-hexflonum-writer 0.0 "#x0.0p0")
+(t-hexflonum-writer -0.0 "#x-0.0p0")
+(t-hexflonum-writer +inf.0 "#x+inf.0")
+(t-hexflonum-writer -inf.0 "#x-inf.0")
+(t-hexflonum-writer +nan.0 "#x+nan.0")
 
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")
@@ -742,7 +741,8 @@
          ("0" "0" "0" "+0" "#x0" "#x+0")
          ("-e" "-E" "-E" "-e" "#x-e" "#x-E")
          ("a/b" "A/B" "A/B" "+a/b" "#xa/b" "#x+A/B")
-         ("1.0+1.0i" "1.0+1.0i" "1.0+1.0i" "+1.0+1.0i" "1.0+1.0i" "+1.0+1.0i"))
+         ("1.0p0+1.0p0i" "1.0p0+1.0p0i" "1.0p0+1.0p0i"
+          "+1.0p0+1.0p0i" "#x1.0p0+1.0p0i" "#x+1.0p0+1.0p0i"))
        (map (^n (map (cut number->string n 16 <>)
                      '(#f #t (uppercase) (plus) (radix) (uppercase plus radix))))
             '(#xcafe #xcafebabedeadbeef 0 -14 10/11 1+i)))

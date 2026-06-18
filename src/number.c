@@ -4056,6 +4056,7 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
                 Scm_DStringPutc(ds, '0');
             }
         }
+        if (fmt->base == 16) Scm_DStringPutz(ds, "p0", 2); /* hexfloat */
         return;
     } else if (SCM_IS_INF(val)) {
         if (val < 0.0) Scm_DStringPutz(ds, "-inf.0", 6);
@@ -4068,7 +4069,7 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
 
     /* If hexadecimal float is requested, we can bypass binary->decimal
        conversion. */
-    if (fmt->flags & SCM_NUMBER_FORMAT_HEXADECIMAL_FLOAT) {
+    if (fmt->base == 16) {
         print_hexfloat(ds, val, plus_sign, fmt);
         return;
     }
@@ -4379,15 +4380,9 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, const ScmNumberFormat *fmt
     int nchars = 0;
     char buf[FLT_BUF];
 
-    if (flags & SCM_NUMBER_FORMAT_ALT_RADIX) {
-        if (SCM_EXACTP(obj)) {
-            nchars += print_radix_prefix(port, base);
-        } else if ((flags & SCM_NUMBER_FORMAT_HEXADECIMAL_FLOAT)
-                   && Scm_FiniteP(obj)
-                   && (SCM_COMPNUMP(obj)
-                       || Scm_NumCmp(obj, SCM_MAKE_INT(0)) != 0)) {
-            nchars += print_radix_prefix(port, base);
-        }
+    if ((flags & SCM_NUMBER_FORMAT_ALT_RADIX)
+        && (SCM_EXACTP(obj) || base == 10 || base == 16)) {
+        nchars += print_radix_prefix(port, base);
     }
 
     if (SCM_INTP(obj)) {
