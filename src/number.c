@@ -3905,12 +3905,20 @@ static void print_hexfloat(ScmDString *ds, double val, int plus_sign,
     else if (plus_sign) Scm_DStringPutc(ds, '+');
     uint64_t m = Scm_GetIntegerU64(mant);
 
-    /* We start digits with "#x1." for it's easier to understand. */
+    /* We start digits with "#x1." for normalized range, and #x0. for
+       denormalized range. */
     int bitlen = Scm_IntegerLength(mant);    /* 1 <= bitlen <= 53 */
-    exp += bitlen-1;
-    Scm_DStringPutz(ds, "1.", -1);
+    int bitpos;
+    if (bitlen == 53) {                      /* normalized */
+        exp += bitlen-1;
+        bitpos = bitlen - 1;
+        Scm_DStringPutz(ds, "1.", -1);
+    } else {
+        exp += bitlen;
+        bitpos = bitlen;
+        Scm_DStringPutz(ds, "0.", -1);
+    }
 
-    int bitpos = bitlen - 1;
     while (bitpos >= 0 && m > 0) {
         uint64_t k = (bitpos > 4)? (m >> (bitpos-4)) : (m << (4-bitpos));
         Scm_DStringPutc(ds, Scm_IntToDigit(k & 0x0f, 16, 0, 0));

@@ -670,7 +670,7 @@
 
 (t-hexflonum-writer 1.7976931348623157e308 "#x1.fffffffffffffp1023")
 (t-hexflonum-writer 1.7976931348623155e308 "#x1.ffffffffffffep1023")
-(t-hexflonum-writer 5.0e-324 "#x1.0p-1074" )
+(t-hexflonum-writer 5.0e-324 "#x0.8p-1073" )
 
 ;; special values are written as-is
 (t-hexflonum-writer 0.0 "#x0.0p0")
