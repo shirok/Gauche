@@ -655,6 +655,9 @@
 (t-hexflonum-reader "#x.fp-1074" 0.0)
 (t-hexflonum-reader "#x-.fp-1074" -0.0)
 (t-hexflonum-reader "#x-1p-1074" -5.0e-324)
+(t-hexflonum-reader "#x1.0p-1022" 2.2250738585072014e-308)
+(t-hexflonum-reader "#xf.ffffffffffffp-1026" 2.225073858507201e-308)
+(t-hexflonum-reader "#x1.ffffffffffffcp-1024" 1.1125369292536e-308)
 
 (define (t-hexflonum-writer val expect)
   (test* #"hex flonum writer ~val" expect
@@ -670,6 +673,9 @@
 
 (t-hexflonum-writer 1.7976931348623157e308 "#x1.fffffffffffffp1023")
 (t-hexflonum-writer 1.7976931348623155e308 "#x1.ffffffffffffep1023")
+(t-hexflonum-writer 2.2250738585072014e-308 "#x1.0p-1022")
+(t-hexflonum-writer 2.225073858507201e-308 "#x0.fffffffffffffp-1022")
+(t-hexflonum-writer 1.1125369292536e-308 "#x0.ffffffffffffep-1023")
 (t-hexflonum-writer 5.0e-324 "#x0.8p-1073" )
 
 ;; special values are written as-is
