@@ -36,6 +36,7 @@
   (use gauche.native-type)
   (use gauche.cgen.unit :only (cgen-safe-name-friendly))
   (export with-ffi
+          dlopen
           default-ffi-subsystem
           ffi-subsystem-available?
           define-c-function
@@ -44,6 +45,15 @@
           foreign-function-info)
   )
 (select-module gauche.ffi)
+
+;; API
+;;  dynamic-load provides necessary functionality, but this is
+;;  convenient for FFI use.
+(define (dlopen dsoname :key (paths (dynamic-load-paths))
+                             (versions '()))
+  (dynamic-load dsoname :paths paths :versions versions
+                :error-if-not-found #t
+                :init-function #f))
 
 ;; API
 (define (foreign-function-info proc)

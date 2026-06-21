@@ -1,3 +1,7 @@
+2026-06-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/ffi.scm (dlopen): Add for convenience.
+
 2026-06-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (print_double): Support hexadecimal floating-point
