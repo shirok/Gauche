@@ -87,7 +87,7 @@
 (define-constant UUID_STR_LEN        37)
 
 ;; C API
-(with-ffi (dynamic-load "libuuid" :init-function #f) ()
+(with-ffi (dlopen "libuuid") ()
   (define-c-function uuid-clear `(,uuid_t) 'void)
   (define-c-function uuid-compare `((const ,uuid_t) (const ,uuid_t)) 'int)
   (define-c-function uuid-copy `(,uuid_t (const ,uuid_t)) 'void)
