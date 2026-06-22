@@ -138,7 +138,26 @@
   (if (eq? type <c-char>) char->integer values))
 
 (define (native-type->return-coerce type)
-  (if (eq? type <c-char>) integer->char values))
+  (cond [(eq? type <c-char>) integer->char]
+        [(and (subtype? type <integer>)
+              (not (~ type 'unsigned?)))
+         (%sign-extender (~ type 'size))]
+        [else values]))
+
+(define (%sign-extender bytes)
+  (ecase bytes
+    [(1) (^v (if (< v 128)
+               v
+               (logior v (lognot #xff))))]
+    [(2) (^v (if (< v 32768)
+               v
+               (logior v (lognot #xffff))))]
+    [(4) (^v (if (< v #x8000_0000)
+               v
+               (logior v (lognot #xffff_ffff))))]
+    [(8) (^v (if (< v #x8000_0000_0000_0000)
+               v
+               (logior v (lognot #xffff_ffff_ffff_ffff))))]))
 
 ;;;
 ;;; Runtime procedure builder
