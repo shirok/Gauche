@@ -78,6 +78,7 @@
           tag->native-type
 
           native-handle-type
+          native-handle-owner
           native*
           native-aref
           native.
@@ -709,6 +710,17 @@
                             (-> base owner)
                             SCM_NIL
                             0))))
+
+;; If this handle is created by uvector->native-handle, the original uvector
+;; is returned.  Even if the handle is created with offset, the rturned
+;; object is the "whole" one.  Returns #f if the pointer came from
+;; elsewhere.  Note that it may return other than uvector or #f,
+;; if we ever allow handles points into other Gauche objects.
+(define-cproc native-handle-owner (handle::<native-handle>)
+  (let* ([r (-> handle owner)])
+    (if (SCM_UNDEFINEDP r)
+      (return SCM_FALSE)
+      (return r))))
 
 (define-cproc null-pointer-handle (:optional (type::<native-type>? #f))
   (let* ([t::ScmNativeType*
