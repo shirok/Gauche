@@ -56,6 +56,7 @@
 
           uvector->uuid_t/shared
           uuid_t->u8vector
+          make-empty-uuid
           ))
 (select-module ffi-libuuid)
 
@@ -120,6 +121,9 @@
   (assume (and (u8vector? uv) (= (u8vector-length uv) 16))
     "Argument must be a u8vector of length 16, but got:" uv)
   (uvector->native-handle uv uuid_t))
+
+(define (make-empty-uuid)
+  (uvector->uuid_t/shared (make-u8vector 16 0)))
 
 (define (uuid_t->u8vector uuid)
   (assume-type uuid uuid_t)

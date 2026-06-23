@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (use gauche.native-type)
+(use gauche.uvector)
 
 (test-start "ffi-libuuid")
 (use ffi-libuuid)
@@ -25,6 +26,41 @@
                 [b (uvector->native-handle sbuf (native-type 'uint8_t*))])
            (uuid-unparse h b)
            (u8vector->string sbuf)))
+
+  (test* "uuic-copy" uuid-u
+         (let1 r (make-empty-uuid)
+           (uuid-copy r (uvector->uuid_t/shared uuid-u))
+           (uuid_t->u8vector r)))
+
+  (let ([uuid-u= (uvector->uuid_t/shared uuid-u)]
+        [uuid-u< (let1 z (u8vector-copy uuid-u)
+                   (u8vector-set! z 15 41)
+                   (uvector->uuid_t/shared z))]
+        [uuid-u> (let1 z (u8vector-copy uuid-u)
+                   (u8vector-set! z 15 43)
+                   (uvector->uuid_t/shared z))])
+    (define (cmp a b)
+      (let1 r (uuid-compare a b)
+        (cond [(= r 0) 0]
+              [(< r 0) -1]
+              [(> r 0) 1])))
+    (test* "uuid-compare" 0 (cmp uuid-u= uuid-u=))
+    (test* "uuid-compare" -1 (cmp uuid-u< uuid-u=))
+    (test* "uuid-compare" 1 (cmp uuid-u= uuid-u<))
+    (test* "uuid-compare" 1 (cmp uuid-u> uuid-u<))
+    )
+
+  (let ()
+    (define (t-type expected-type generator)
+      (test* "uuid-type" expected-type
+         (let1 r (make-empty-uuid)
+           (generator r)
+           (uuid-type r))))
+
+    (t-type UUID_TYPE_DCE_RANDOM uuid-generate-random)
+    (t-type UUID_TYPE_DCE_TIME uuid-generate-time)
+    (t-type UUID_TYPE_DCE_TIME uuid-generate-time-safe)
+    )
   )
 
 (test-end :exit-on-failure #t)
