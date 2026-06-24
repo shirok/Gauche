@@ -687,6 +687,8 @@
   (assume (or (is-a? type <c-pointer>)
               (c-aggregate-type? type))
     "Type must be native pointer or aggregate type, but got:" type)
+  (assume (or uv (zero? offset))
+    "Non-zero offset is not allowed with uvector auto allocation:" offset)
   (%uvector->native-handle (or uv (make-u8vector (~ type'size)))
                            type offset))
 

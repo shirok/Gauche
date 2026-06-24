@@ -105,6 +105,18 @@
          (is-a? (uvector->native-handle '#u8(0) s*) <native-handle>))
   )
 
+(let* ([int16* (make-c-array-type <int16> '(8))]
+       [h (uvector->native-handle #f int16*)])
+  (test* "uvector->native-handle auto allocation" 16
+         (and-let* ([s (native-handle-owner h)]
+                    [ (u8vector? s) ])
+           (u8vector-length s)))
+
+  (test* "uvector->native-handle auto allocation (nonzero offset)"
+         (test-error <error> #/Non-zero offset is not allowed/)
+         (uvector->native-handle #f int16* 1))
+  )
+
 ;;;---------------------------------------------------
 (test-section "pointer dereference")
 
