@@ -15886,6 +15886,15 @@ inner-ptr @result{} #<native-handle <struct anonymous*>@@0x77a1b10f51f0>
 Returns the native type of the handle.
 @end defun
 
+@defun native-handle-owner handle
+@c MOD gauche.native-type
+If this handle is created from a Scheme object, returns it.  Otherwise,
+returns @code{#f}.
+
+This is useful, for example, to access to the underlying buffer
+implicitly created by @code{(uvector->native-handle #f @code{type})}.
+@end defun
+
 @defun c-pointer-handle? obj
 @c MOD gauche.native-type
 Returns @code{#t} if @var{obj} is a native handle of c-pointer type,
@@ -16114,6 +16123,8 @@ an aggregate native type.
 
 @var{uv} can also be @code{#f}, in which case a u8vector of size
 to contain object of @var{type} is allocated and used.
+The allocated u8vector can be obtained from the returned handle
+with @code{native-handle-owner}.
 
 If @var{offset} is given, it specifies a byte offset from
 the beginning of @var{uv} for the resulting handle to point to.
@@ -16122,6 +16133,7 @@ in the middle of larger binary data.  If it is omitted, 0 is assumed.
 
 The size of @var{uv} in bytes minus @var{offset} must be greater than
 or equal to the size of @var{type}, or an error is thrown.
+Also note that nonzero @var{offset} is not allowed when @var{uv} is @code{#f}.
 
 The returned native handle can be passed to a foreign function.
 Note that, however, if the foreign function retains the pointer,
