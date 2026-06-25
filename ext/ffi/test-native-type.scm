@@ -105,8 +105,9 @@
          (is-a? (uvector->native-handle '#u8(0) s*) <native-handle>))
   )
 
-(let* ([int16* (make-c-array-type <int16> '(8))]
-       [h (uvector->native-handle #f int16*)])
+(let* ([int16-array (make-c-array-type <int16> '(8))]
+       [int16* (make-c-pointer-type <int16>)]
+       [h (uvector->native-handle #f int16-array)])
   (test* "uvector->native-handle auto allocation" 16
          (and-let* ([s (native-handle-owner h)]
                     [ (u8vector? s) ])
@@ -114,7 +115,27 @@
 
   (test* "uvector->native-handle auto allocation (nonzero offset)"
          (test-error <error> #/Non-zero offset is not allowed/)
-         (uvector->native-handle #f int16* 1))
+         (uvector->native-handle #f int16-array 1))
+
+  (test* "native-handle-belongs? h h" #t
+         (native-handle-belongs? h h))
+  (test* "native-handle-belongs? h+3 h" #t
+         (let1 u (native-handle-owner h)
+           (native-handle-belongs? (uvector->native-handle u int16* 3)
+                                   h)))
+  (test* "native-handle-belongs? h h+3" #t
+         (let1 u (native-handle-owner h)
+           (native-handle-belongs? h
+                                   (uvector->native-handle u int16* 3))))
+  (test* "native-handle-belongs? new h" #f
+         (native-handle-belongs? (uvector->native-handle #f int16*)
+                                 h))
+  (test* "native-handle-belongs? NULL h" #f
+         (native-handle-belongs? (null-pointer-handle int16*)
+                                 h))
+  (test* "native-handle-belongs? h NULL" #f
+         (native-handle-belongs? h
+                                 (null-pointer-handle int16*)))
   )
 
 ;;;---------------------------------------------------

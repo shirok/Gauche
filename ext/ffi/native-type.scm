@@ -79,6 +79,7 @@
 
           native-handle-type
           native-handle-owner
+          native-handle-belongs?
           native*
           native-aref
           native.
@@ -658,6 +659,17 @@
 
 (define-inline (native-handle-type handle) (~ handle'type))
 
+;; for debugging
+(define-cproc native-handle-dump (handle::<native-handle>) ::<void>
+  (Scm_Printf SCM_CUROUT "Native handle @%p\n" (-> handle ptr))
+  (Scm_Printf SCM_CUROUT "    type: %S\n" (-> handle type))
+  (Scm_Printf SCM_CUROUT "  region: %p-%p\n"
+              (-> handle region-min) (-> handle region-max))
+  (Scm_Printf SCM_CUROUT "    name: %S\n" (-> handle name))
+  (Scm_Printf SCM_CUROUT "   atrts: %S\n" (-> handle attrs))
+  (Scm_Printf SCM_CUROUT "   flags: %16x\n" (-> handle flags))
+  (Scm_Printf SCM_CUROUT "   owner: %#65.1S\n" (-> handle owner)))
+
 (define-cproc %uvector->native-handle (uv::<uvector>
                                        handle-type::<native-type>
                                        offset::<fixnum>)
@@ -723,6 +735,17 @@
     (if (SCM_UNDEFINEDP r)
       (return SCM_FALSE)
       (return r))))
+
+(define-cproc native-handle-belongs? (pointer::<native-handle>
+                                      body::<native-handle>)
+  ::<boolean>
+  (cond
+   [(== (-> body region-min) NULL) (return FALSE)]
+   [(== (-> body region-max) NULL) (return FALSE)]
+   [(and (<= (-> body region-min) (-> pointer ptr))
+         (<  (-> pointer ptr) (-> body region-max)))
+    (return TRUE)]
+   [else (return FALSE)]))
 
 (define-cproc null-pointer-handle (:optional (type::<native-type>? #f))
   (let* ([t::ScmNativeType*
