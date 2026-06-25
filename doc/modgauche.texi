@@ -15895,6 +15895,26 @@ This is useful, for example, to access to the underlying buffer
 implicitly created by @code{(uvector->native-handle #f @code{type})}.
 @end defun
 
+@defun native-handle-belongs? pointer body
+@c MOD gauche.native-type
+Both arguments must be native handles.  If the @var{pointer} handle
+references to the same region the @var{body} handle referneces,
+returns @code{#t}; otherwise, returns @code{#f}.
+
+A native handle may keep a memory region into which it references.
+If a handle is created from Scheme uvector
+(with @code{uvector->native-handle}), for example, the handle
+keeps the begining and end addresses of the uvector.  Handles
+derived from the handle (e.g. via @code{native.}) inherits the
+region info.  The region info is used to detect out-of-bound access.
+
+A native handle may not have such info, e.g. it wraps a pointer
+returned from a foreign function.  You can use this function
+to determine if such a handle points to a known region from
+an existing @var{body} handle.
+@end defun
+
+
 @defun c-pointer-handle? obj
 @c MOD gauche.native-type
 Returns @code{#t} if @var{obj} is a native handle of c-pointer type,
