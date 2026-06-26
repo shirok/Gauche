@@ -14,18 +14,16 @@
        (uuid-is-null (uvector->uuid_t/shared (make-u8vector 16 0))))
 
 (let ([uuid-s "14625c67-fc54-427c-9421-26e7c9223f2a"]
-      [uuid-u '#u8(20 98 92 103 252 84 66 124 148 33 38 231 201 34 63 42)]
-      [ubuf (make-u8vector 16)]
-      [sbuf (make-u8vector UUID_STR_LEN)])
+      [uuid-u '#u8(20 98 92 103 252 84 66 124 148 33 38 231 201 34 63 42)])
   (test* "uuid-parse" (list 0 uuid-u)
-         (let* ([h (uvector->native-handle ubuf uuid_t)]
+         (let* ([h (uvector->native-handle #f uuid_t)]
                 [r (uuid-parse uuid-s h)])
            (list r (uuid_t->u8vector h))))
   (test* "uuid-unparse" (string-append uuid-s "\x0;")
          (let* ([h (uvector->native-handle uuid-u uuid_t)]
-                [b (uvector->native-handle sbuf (native-type 'uint8_t*))])
+                [b (uvector->native-handle #f (native-type `(.array char (,UUID_STR_LEN))))])
            (uuid-unparse h b)
-           (u8vector->string sbuf)))
+           (u8vector->string (native-handle-owner b))))
 
   (let* ([s (string-append "uuid={" uuid-s "}")]
          [start-index (string-size "uuid={")]
