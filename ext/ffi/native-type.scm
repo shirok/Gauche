@@ -736,16 +736,42 @@
       (return SCM_FALSE)
       (return r))))
 
-(define-cproc native-handle-belongs? (pointer::<native-handle>
-                                      body::<native-handle>)
-  ::<boolean>
+(define-cfn %native-handle-has-region? (h::ScmNativeHandle*) ::int
+  (return (not (or (== (-> h region-min) NULL)
+                   (== (-> h region-max) NULL)))))
+
+(define-cfn %native-handle-belongs? (pointer::ScmNativeHandle*
+                                     body::ScmNativeHandle*)
+  ::int
   (cond
-   [(== (-> body region-min) NULL) (return FALSE)]
-   [(== (-> body region-max) NULL) (return FALSE)]
+   [(not (%native-handle-has-region? body)) (return FALSE)]
    [(and (<= (-> body region-min) (-> pointer ptr))
          (<  (-> pointer ptr) (-> body region-max)))
     (return TRUE)]
    [else (return FALSE)]))
+
+(define-cproc native-handle-belongs? (pointer::<native-handle>
+                                      body::<native-handle>)
+  ::<boolean>
+  (return (%native-handle-belongs? pointer body)))
+
+(define-cproc native-handle-difference (a::<native-handle>
+                                        b::<native-handle>)
+  (cond
+   [(== (-> a ptr) NULL)
+    (return (?: (==  (-> b ptr) NULL) (SCM_MAKE_INT 0) SCM_FALSE))]
+   [(== (-> b ptr) NULL) (return SCM_FALSE)]
+   [(%native-handle-has-region? a)
+    (if (%native-handle-belongs? b a)
+      (return (Scm_PtrdiffToInteger (- (-> a ptr) (-> b ptr))))
+      (return SCM_FALSE))]
+   [(%native-handle-has-region? b)
+    (if (%native-handle-belongs? a b)
+      (return (Scm_PtrdiffToInteger (- (-> a ptr) (-> b ptr))))
+      (return SCM_FALSE))]
+   [else
+    ;; If both handle don't have region info, we compare bare pointer value.
+    (return (Scm_PtrdiffToInteger (- (-> a ptr) (-> b ptr))))]))
 
 (define-cproc null-pointer-handle (:optional (type::<native-type>? #f))
   (let* ([t::ScmNativeType*

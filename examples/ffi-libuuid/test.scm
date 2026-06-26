@@ -27,6 +27,19 @@
            (uuid-unparse h b)
            (u8vector->string sbuf)))
 
+  (let* ([s (string-append "uuid={" uuid-s "}")]
+         [start-index (string-size "uuid={")]
+         [end-index (+ start-index (string-size uuid-s))]
+         [buf (string->u8vector s)]
+         [start-handle (uvector->native-handle buf (native-type '(const char*))
+                                               start-index)]
+         [end-handle  (uvector->native-handle buf (native-type '(const char*))
+                                              end-index)])
+    (test* "uuid-parse-range" (list 0 uuid-u)
+           (let* ([m (make-empty-uuid)]
+                  [r (uuid-parse-range start-handle end-handle m)])
+             (list r (uuid_t->u8vector m)))))
+
   (test* "uuic-copy" uuid-u
          (let1 r (make-empty-uuid)
            (uuid-copy r (uvector->uuid_t/shared uuid-u))
