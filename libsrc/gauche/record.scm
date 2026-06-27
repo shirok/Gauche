@@ -481,10 +481,18 @@
                `((define-inline ,(sym+ 'make- typename)
                    (rtd-constructor ,typename))))]
          [((? identifier? ctor-name) field ...)
+          ;; Users from other functional language may name record type
+          ;; and constructor the same.  This is for friendly error message.
+          (when (eq? typename ctor-name)
+            (error "Record-type name and constructor name can't be the same:"
+                   typename))
           (quasirename r
             `((define-inline ,ctor-name
                 (rtd-constructor ,typename ',(list->vector field)))))]
          [(? identifier? ctor-name)
+          (when (eq? typename ctor-name)
+            (error "Record-type name and constructor name can't be the same:"
+                   typename))
           (quasirename r
             `((define-inline ,ctor-name (rtd-constructor ,typename))))]
          [x (error "invalid constructor spec" ctor-spec)]))
