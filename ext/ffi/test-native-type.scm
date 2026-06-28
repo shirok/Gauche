@@ -266,6 +266,31 @@
   )
 
 ;;;---------------------------------------------------
+(test-section "pointer arithmetic")
+
+(let ([h (make-native-handle (native-type 'char*) "abcde")])
+  (test* "native-pointer+ (char*)" #\c
+         (native* (native-pointer+ h 2)))
+  (test* "native-pointer+ (char*)" (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h 10)))
+  (test* "native-pointer+ (char*)" (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h -2)))
+  (test* "native-pointer+ (char*)" #\b
+         (native* (native-pointer+ (native-pointer+ h 4) -3)))
+  )
+
+(let ([h (make-native-handle (native-type 'int32_t*) #s32(0 -10 -20 -30))])
+  (test* "native-pointer+ (int32_t*)" -20
+         (native* (native-pointer+ h 2)))
+  (test* "native-pointer+ (int32_t)" (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h 5)))
+  (test* "native-pointer+ (int32_t)" (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h -1)))
+  (test* "native-pointer+ (int32_t)" -10
+         (native* (native-pointer+ (native-pointer+ h 3) -2)))
+  )
+
+;;;---------------------------------------------------
 (test-section "arrays")
 
 

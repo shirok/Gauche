@@ -80,6 +80,7 @@
           native-handle-type
           native-handle-owner
           native-handle-belongs?
+          native-pointer+
           native*
           native-aref
           native.
@@ -731,14 +732,14 @@
 ;; The handle pointing into a region originally pointed
 (define-cproc make-internal-handle (base::<native-handle>
                                     offset::<fixnum>
-                                    :optional (type::<native-type>? NULL))
+                                    :optional (type::<native-type>? #f))
   (let* ([p::void* (+ (-> base ptr) offset)]
          [t::ScmNativeType* (?: type type (-> base type))])
     (unless (and (!= (-> base region-min) NULL)
                  (!= (-> base region-max) NULL)
                  (<= (-> base region-min) p)
                  (<   p (-> base region-max)))
-      (Scm_Error "Offset out of range: %S" offset))
+      (Scm_Error "Offset out of range: %S %ld" base offset))
     (return
      (Scm__MakeNativeHandle p
                             t
@@ -1299,6 +1300,14 @@
       [else
        (error "native& requires c-array, c-struct or c-union handle, but got:"
               handle)])))
+
+(define (native-pointer+ handle element-offset)
+  (assume-type handle <native-handle>)
+  (let1 t (~ handle'type)
+    (assume-type t <c-pointer>
+      "c-pointer handle required, but got:" (cons handle t))
+    (let1 pt (~ t'pointee-type)
+      (make-internal-handle handle (* element-offset (~ pt'size)) (~ handle'type)))))
 
 ;;;
 ;;;  Convert type signatures to native-type instance
