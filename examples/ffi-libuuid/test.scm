@@ -28,11 +28,9 @@
   (let* ([s (string-append "uuid={" uuid-s "}")]
          [start-index (string-size "uuid={")]
          [end-index (+ start-index (string-size uuid-s))]
-         [buf (string->u8vector s)]
-         [start-handle (uvector->native-handle buf (native-type '(const char*))
-                                               start-index)]
-         [end-handle  (uvector->native-handle buf (native-type '(const char*))
-                                              end-index)])
+         [h (make-native-handle (native-type 'char*) s)]
+         [start-handle (native-pointer+ h start-index)]
+         [end-handle (native-pointer+ h end-index)])
     (test* "uuid-parse-range" (list 0 uuid-u)
            (let* ([m (make-empty-uuid)]
                   [r (uuid-parse-range start-handle end-handle m)])
