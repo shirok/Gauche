@@ -288,6 +288,10 @@
          (native* (native-pointer+ h -1)))
   (test* "native-pointer+ (int32_t)" -10
          (native* (native-pointer+ (native-pointer+ h 3) -2)))
+  (test* "native-pointer+ (past-end pointer)" #t
+         (native-handle-belongs? h (native-pointer+ h 4)))
+  (test* "native-pointer+ (past-end pointer)" (test-error <error> #/Past-end pointer cannot/)
+         (native* (native-pointer+ h 4)))
   )
 
 ;;;---------------------------------------------------

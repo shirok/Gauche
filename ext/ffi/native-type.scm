@@ -738,7 +738,7 @@
     (unless (and (!= (-> base region-min) NULL)
                  (!= (-> base region-max) NULL)
                  (<= (-> base region-min) p)
-                 (<   p (-> base region-max)))
+                 (<=  p (-> base region-max))) ;allows "past-end" pointer
       (Scm_Error "Offset out of range: %S %ld" base offset))
     (return
      (Scm__MakeNativeHandle p
@@ -771,7 +771,7 @@
   (cond
    [(not (%native-handle-has-region? body)) (return FALSE)]
    [(and (<= (-> body region-min) (-> pointer ptr))
-         (<  (-> pointer ptr) (-> body region-max)))
+         (<= (-> pointer ptr) (-> body region-max))) ;include one-past-end pointer
     (return TRUE)]
    [else (return FALSE)]))
 
@@ -996,6 +996,13 @@
     (when (== c-ref NULL)
       (Scm_Error "Cannot dereference type %S" element-type))
     (when (and (!= (-> handle region-max) NULL)
+               (== offset 0)
+               (== (-> handle ptr) (-> handle region-max)))
+      ;; We allow a pointer points right past the end of array.
+      ;; They are valid for pointer arithmetic, but cannot be dereferenced.
+      ;; We distinguish it from offset-out-of-bound error.
+      (Scm_Error "Past-end pointer cannot be dereferenced: %S" handle))
+    (when (and (!= (-> handle region-max) NULL)
                (!= (-> handle region-min) NULL)
                (not (and (<= (-> handle region-min) p)
                          (<  p (-> handle region-max)))))
@@ -1018,6 +1025,13 @@
                  handle element-type val))
     (when (== c-set NULL)
       (Scm_Error "Cannot set value of type %S" element-type))
+    (when (and (!= (-> handle region-max) NULL)
+               (== offset 0)
+               (== (-> handle ptr) (-> handle region-max)))
+      ;; We allow a pointer points right past the end of array.
+      ;; They are valid for pointer arithmetic, but cannot be dereferenced.
+      ;; We distinguish it from offset-out-of-bound error.
+      (Scm_Error "Past-end pointer cannot be used for setting: %S" handle))
     (when (and (!= (-> handle region-max) NULL)
                (!= (-> handle region-min) NULL)
                (not (and (<= (-> handle region-min) p)
