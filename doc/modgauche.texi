@@ -15914,7 +15914,6 @@ to determine if such a handle points to a known region from
 an existing @var{body} handle.
 @end defun
 
-
 @defun c-pointer-handle? obj
 @c MOD gauche.native-type
 Returns @code{#t} if @var{obj} is a native handle of c-pointer type,
@@ -15969,6 +15968,19 @@ a native handle representing that object is returned.
 You can use a generic setter to modify the value in the pointed location.
 @var{val} must be a value acceptable as the pointee type of
 the pointer.
+@end defun
+
+@defun native-pointer+ handle offset
+@c MOD gauche.native-type
+This corresponds to C pointer addition.  The @var{handle} argument
+must be a native handle of type @code{<c-pointer>} and @var{offset}
+must be a fixnum.  Returns a new c-pointer handle of the same pointer
+type, that points to @var{offset} elements away from @var{handle}.
+
+The offset is in the unit of pointee type, just like C pointer
+arithmetics.  If @var{handle} has region info, boundary check
+is performed and an error is signaled if the computation falls
+outside of valid region.
 @end defun
 
 @defun native-aref handle index
