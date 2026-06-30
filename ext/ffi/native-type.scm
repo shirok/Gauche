@@ -696,28 +696,18 @@
                             SCM_NIL
                             0))))
 
-(define (make-native-handle type :optional (init #f))
-  (assume (or (is-a? type <c-pointer>)
+(define (make-native-handle type :optional (init #f) (offset 0))
+  (assume (or (c-pointer-type? type)
               (c-aggregate-type? type))
     "Type must be native pointer or aggregate type, but got:" type)
   (assume-type init (<?> (</> <uvector> <string>))
     "Init argument must be a string or a uvector, but got:" init)
-  (if (c-aggregate-type? type)
-    (let1 buf (cond [(string? init) (string->u8vector init)]
-                    [(uvector? init) init]
-                    [else (make-u8vector (~ type'size))])
-      (when (< (uvector-size buf) (~ type'size))
-        (let1 zbuf (make-u8vector (~ type'size))
-          (u8vector-copy! zbuf 0 (uvector-alias <u8vector> buf))
-          (set! buf zbuf)))
-      (%uvector->native-handle buf type 0))
-    ;; type is a pointer type, so size is deduced from init.
-    (let* ([buf (cond [(string? init) (string->u8vector init)]
-                      [(uvector? init) init]
-                      [else (error "Can't create pointer handle without initial content of type:" type)])]
-           [body-type (make-c-array-type (c-pointer-type-pointee type) '(*))]
-           [body (%uvector->native-handle buf body-type 0)])
-      (cast-handle type body))))
+  (assume (or init (zero? offset))
+    "Non-zero offset is not allowed with uvector auto allocation:" offset)
+  (let1 buf (cond [(string? init) (string->u8vector init)]
+                  [(uvector? init) init]
+                  [else (make-u8vector (~ type'size))])
+    (%uvector->native-handle buf type offset)))
 
 (define (uvector->native-handle uv type :optional (offset 0))
   (assume-type uv (<?> <uvector>))
