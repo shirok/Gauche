@@ -11,17 +11,17 @@
 (test-module 'ffi-libuuid)
 
 (test* "uuid-is-null" 1
-       (uuid-is-null (uvector->uuid_t/shared (make-u8vector 16 0))))
+       (uuid-is-null (make-empty-uuid)))
 
 (let ([uuid-s "14625c67-fc54-427c-9421-26e7c9223f2a"]
       [uuid-u '#u8(20 98 92 103 252 84 66 124 148 33 38 231 201 34 63 42)])
   (test* "uuid-parse" (list 0 uuid-u)
-         (let* ([h (uvector->native-handle #f uuid_t)]
+         (let* ([h (make-native-handle uuid_t)]
                 [r (uuid-parse uuid-s h)])
            (list r (uuid_t->u8vector h))))
   (test* "uuid-unparse" (string-append uuid-s "\x0;")
-         (let* ([h (uvector->native-handle uuid-u uuid_t)]
-                [b (uvector->native-handle #f (native-type `(.array char (,UUID_STR_LEN))))])
+         (let* ([h (make-native-handle uuid_t uuid-u)]
+                [b (make-native-handle (native-type `(.array char (,UUID_STR_LEN))))])
            (uuid-unparse h b)
            (u8vector->string (native-handle-owner b))))
 

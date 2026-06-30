@@ -120,7 +120,7 @@
 (define (uvector->uuid_t/shared uv)
   (assume (and (u8vector? uv) (= (u8vector-length uv) 16))
     "Argument must be a u8vector of length 16, but got:" uv)
-  (uvector->native-handle uv uuid_t))
+  (make-native-handle uuid_t uv))
 
 (define (make-empty-uuid)
   (uvector->uuid_t/shared (make-u8vector 16 0)))
