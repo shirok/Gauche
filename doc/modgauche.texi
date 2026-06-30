@@ -15861,7 +15861,7 @@ the following example session shows it.
 (define inner (native-type '(.struct (a::int b::int))))
 (define outer (native-type `(.struct (ref::,inner ptr::(,inner *)))))
 
-(define handle (uvector->native-handle (make-u8vector (~ outer'size)) outer))
+(define handle (make-native-handle outer))
 
 (set! (native. (native. handle 'ref) 'a) 1)  ; handle.ref.a = 1
 (set! (native. (native. handle 'ref) 'b) 2)  ; handle.ref.b = 2
@@ -15892,7 +15892,7 @@ If this handle is created from a Scheme object, returns it.  Otherwise,
 returns @code{#f}.
 
 This is useful, for example, to access to the underlying buffer
-implicitly created by @code{(uvector->native-handle #f @code{type})}.
+implicitly created by @code{(make-native-handle @code{type})}.
 @end defun
 
 @defun native-handle-belongs? pointer body
@@ -15903,7 +15903,7 @@ returns @code{#t}; otherwise, returns @code{#f}.
 
 A native handle may keep a memory region into which it references.
 If a handle is created from Scheme uvector
-(with @code{uvector->native-handle}), for example, the handle
+(with @code{make-native-handle}), for example, the handle
 keeps the begining and end addresses of the uvector.  Handles
 derived from the handle (e.g. via @code{native.}) inherits the
 region info.  The region info is used to detect out-of-bound access.
@@ -16063,12 +16063,12 @@ returned.
 
 @example
 (define ts (native-type '(.struct (a::int))))
-(define hs (uvector->native-handle (make-u8vector (~ ts'size)) ts))
+(define hs (make-native-handle ts))
 
 (native& hs 'a) @result{} #<native-handle <int*>@@0x726ffcc1a060>
 
 (define ta (native-type '(.array int (10))))
-(define ha (uvector->native-handle (make-u8vector (~ ta'size)) ta))
+(define ha (make-native-handle ta))
 
 (native& ha 3) @result{} #<native-handle <int*>@@0x726ffcccd42c>
 @end example
@@ -16146,41 +16146,41 @@ of the type size are copied.
 
 @subsubheading Creating a native handle
 
-@defun uvector->native-handle uv type :optional offset
+@defun make-native-handle type :optional init offset
 @c MOD gauche.native-type
-This creates a native handle of native type @var{type}, using a uniform
-vector @var{uv} as the backing storage.  This is useful to prepare
-binary data in Scheme world.  @var{type} must be a pointer or
-an aggregate native type.
+This creates a native handle of native type @var{type}, using
+a uniform vector as a backing memory.
+@var{type} must be a pointer or an aggregate native type.
 
-@var{uv} can also be @code{#f}, in which case a u8vector of size
-to contain object of @var{type} is allocated and used.
-The allocated u8vector can be obtained from the returned handle
-with @code{native-handle-owner}.
+The @var{init} argument must be @code{#f}, a uniform vector,
+or a string.  If it is omitted or @code{#f}, a u8vector with the
+size indicated by @var{type} is allocated and used.  If it is
+a string, u8vector created from it with @code{string->u8vector}
+is used.  If it is a uniform vector, it is used as is.
 
 If @var{offset} is given, it specifies a byte offset from
-the beginning of @var{uv} for the resulting handle to point to.
+the beginning of @var{init} for the resulting handle to point to.
 Using @var{offset}, you can extract a native handle
 in the middle of larger binary data.  If it is omitted, 0 is assumed.
+To use non-zero offset, you must give a uvector or a string to @var{init}.
 
-The size of @var{uv} in bytes minus @var{offset} must be greater than
+The size of @var{init} in bytes minus @var{offset} must be greater than
 or equal to the size of @var{type}, or an error is thrown.
-Also note that nonzero @var{offset} is not allowed when @var{uv} is @code{#f}.
 
 The returned native handle can be passed to a foreign function.
 Note that, however, if the foreign function retains the pointer,
 it may not be visible from Gauche's GC.  You have to make sure to
-retain reference to @var{uv} or the resulting native handle
+retain reference to @var{init} or the resulting native handle
 in the Scheme world as far as the pointer is retained in the
 foreign world.
 
-You can use any type of uniform vector as @var{uv}, but other than
+You can use any type of uniform vector as @var{init}, but other than
 @code{u8vector} and @code{s8vector}, the machine's native endianness
 is exposed as the binary data.
 
 @example
-(define ip (uvector->native-handle '#u8(#xff #xff #xff #xff)
-                                   (native-type 'int32_t*)))
+(define ip (make-native-handle (native-type 'int32_t*)
+                               '#u8(#xff #xff #xff #xff)))
 
 ip @result{} #<native-handle <int32*>@@0x7d6fbf442ff0>
 
