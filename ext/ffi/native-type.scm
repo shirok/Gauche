@@ -706,18 +706,15 @@
     "Non-zero offset is not allowed with uvector auto allocation:" offset)
   (let1 buf (cond [(string? init) (string->u8vector init)]
                   [(uvector? init) init]
-                  [else (make-u8vector (~ type'size))])
+                  [else (make-u8vector
+                         (if (c-pointer-type? type)
+                           (~ (c-pointer-type-pointee type)'size)
+                           (~ type'size)))])
     (%uvector->native-handle buf type offset)))
 
+;; To be removed
 (define (uvector->native-handle uv type :optional (offset 0))
-  (assume-type uv (<?> <uvector>))
-  (assume (or (is-a? type <c-pointer>)
-              (c-aggregate-type? type))
-    "Type must be native pointer or aggregate type, but got:" type)
-  (assume (or uv (zero? offset))
-    "Non-zero offset is not allowed with uvector auto allocation:" offset)
-  (%uvector->native-handle (or uv (make-u8vector (~ type'size)))
-                           type offset))
+  (make-native-handle type uv offset))
 
 ;; The handle pointing into a region originally pointed
 (define-cproc make-internal-handle (base::<native-handle>
