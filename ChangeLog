@@ -1,3 +1,9 @@
+2026-07-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/arith_aarch64.h: Added
+	* src/bench-arith.c, src/bench-arith.scm: Benchmarking arch-specific asm for
+	  primitive arithmetics.
+
 2026-06-26  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/record.scm (define-record-type): Check if record
