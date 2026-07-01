@@ -159,16 +159,14 @@
          (t 1 (Fpnull-i (null-pointer-handle)))
          (t 1 (Fpnull-i (null-pointer-handle (native-type 'int*))))
          (t 0 (let1 data (make-u8vector (~ foo'size))
-                (Fpnull-i (uvector->native-handle data foo*))))
+                (Fpnull-i (make-native-handle foo* data))))
 
          ;; array pasing
          (t 0 (Fia-i 0 (null-pointer-handle (native-type 'int*))))
-         (t 6 (Fia-i 3 (uvector->native-handle '#s32(1 2 3 4) bar)))
-         (t 10 (Fia-i 4 (uvector->native-handle '#s32(1 2 3 4) bar)))
+         (t 6 (Fia-i 3 (make-native-handle bar '#s32(1 2 3 4))))
+         (t 10 (Fia-i 4 (make-native-handle bar '#s32(1 2 3 4))))
 
-         (let* ([p (uvector->native-handle
-                    (make-u8vector (~ foo'size))
-                    foo*)])
+         (let* ([p (make-native-handle foo*)])
            (set! (native-> p 'c) #\a)
            (t #\b (let ([r (F-pstruct-c-pstruct p #\b)])
                     (native-> r 'c)))
@@ -292,7 +290,7 @@
          ;; pointer arg test: pass int array, callback dereferences with
          ;; native-aref
          (let* ([uv (u32vector 10 20 30 40 50)]
-                [p (uvector->native-handle uv (native-type 'int*))])
+                [p (make-native-handle (native-type 'int*) uv)])
            (t 30 (Fcb-pi-i cb-pderef p 2))
            (t 50 (Fcb-pi-i cb-pderef p 4)))
 
