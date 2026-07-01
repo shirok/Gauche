@@ -462,6 +462,8 @@ AS_CASE([$host],
     AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations])],
   [x86_64-*], [
     AC_DEFINE(SCM_TARGET_X86_64,1,[Define to use x86_64 optimizations])],
+  [aarch64-*|arm64-*], [
+    AC_DEFINE(SCM_TARGET_AARCH64,1,[Define to use AArch64 optimizations])],
   [alpha*], [
     CFLAGS="$CFLAGS -mieee"],
   [arm*], [

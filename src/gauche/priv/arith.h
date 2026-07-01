@@ -71,6 +71,8 @@
 #include "arith_i386.h"
 #elif defined(SCM_TARGET_X86_64)
 #include "arith_x86_64.h"
+#elif defined(SCM_TARGET_AARCH64) && SIZEOF_LONG == 8
+#include "arith_aarch64.h"
 #endif
 
 /*-----------------------------------------------------------------
