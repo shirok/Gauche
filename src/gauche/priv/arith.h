@@ -114,16 +114,16 @@
 
 #ifndef SADDOV
 /* Portable version */
-#define SADDOV(r, v, x, y)                                      \
-  do {                                                          \
-    (r) = (long)((unsigned long)(x) + (unsigned long)(y));      \
-    if ((x) >= 0) {                                             \
-      if ((y) >= 0 && (r) < 0) (v) = 1;                         \
-      else (v) = 0;                                             \
-    } else {                                                    \
-      if ((y) < 0 && (r) >= 0) (v) = -1;                        \
-      else (v) = 0;                                             \
-    }                                                           \
+#define SADDOV(r, v, x, y)                      \
+  do {                                          \
+    (r) = (long)((u_long)(x) + (u_long)(y));    \
+    if ((x) >= 0) {                             \
+      if ((y) >= 0 && (r) < 0) (v) = 1;         \
+      else (v) = 0;                             \
+    } else {                                    \
+      if ((y) < 0 && (r) >= 0) (v) = -1;        \
+      else (v) = 0;                             \
+    }                                           \
   } while (0)
 #endif /*SADDOV*/
 
@@ -170,7 +170,7 @@
 /* Portable version */
 #define SSUBOV(r, v, x, y)                      \
   do {                                          \
-    (r) = (x) - (y);                            \
+    (r) = (long)((u_long)(x) - (u_long)(y));    \
     if ((x) >= 0) {                             \
       if ((y) < 0 && (r) <= 0) (v) = 1;         \
       else (v) = 0;                             \
