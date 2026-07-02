@@ -180,7 +180,7 @@
         : "r" (x), "r" (y)                      \
         : "cc")
 
-#else //SCM_ENABLE_ALL_ARITH_ASMS
+#endif //SCM_ENABLE_ALL_ARITH_ASMS
 
 /*-----------------------------------------------------------------
  * SMULOV(r, v, x, y)      signed word multiply with overflow check
