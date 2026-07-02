@@ -163,8 +163,7 @@
 
 /*-----------------------------------------------------------------
  * UMULOV(r, v, x, y)      unsigned word multiply with overflow check
- *  u_long : r, x, y
- *  int : v
+ *  u_long : r, x, y, v
  *  if x * y overflows, v = 1
  *  else r <- x * y, v = 0
  */
