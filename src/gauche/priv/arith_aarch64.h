@@ -203,7 +203,7 @@
         "0: mov %1, #0;"                        \
         "2:"                                    \
         : "=&r" (r), "=&r" (v)                  \
-        : "r" ((u_long)x), "r" ((u_long)y)      \
+        : "r" ((long)x), "r" ((long)y)          \
         : "cc")
 
 #endif //SCM_ENABLE_ALL_ARITH_ASMS
