@@ -2151,7 +2151,7 @@ static ScmObj scm_mul(ScmObj arg0, ScmObj arg1, int vmp)
             long v0 = SCM_INT_VALUE(arg0);
             long v1 = SCM_INT_VALUE(arg1);
             long k;
-            int ov;
+            long ov;
             /* Using SMULOV to detect overflow portably. */
             SMULOV(k, ov, v0, v1);
             if (ov || !SCM_SMALL_INT_FITS(k)) {
