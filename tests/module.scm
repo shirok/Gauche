@@ -278,7 +278,13 @@
   (define kyu (+ shi go))
   (export (rename kyu ku)))
 (define-module Oc-1
-  (import Oc))
+  (import Oc)
+  (export-all))
+(define-module Oc-2
+  (import Oc)
+  (export ichi))
+(define-module Oc-3
+  (extend Oc))
 
 (test "export-time renaming" '(1 4 5 9 #f #f)
       (lambda ()
@@ -303,6 +309,24 @@
       '((ichi #t #t) (ni #f #f) (shi #f #f) (yon #t #t) (go #t #t) (kyu #f #f) (ku #t #t))
       (lambda ()
         (let [(m (find-module 'Oc-1))]
+          (map (lambda (n)
+                 (list n
+                       (module-binds? m n)
+                       (module-exports? m n)))
+               '(ichi ni shi yon go kyu ku)))))
+(test "export-time renaming and defines?/exports? (0c-2)"
+      '((ichi #t #t) (ni #f #f) (shi #f #f) (yon #t #f) (go #t #f) (kyu #f #f) (ku #t #f))
+      (lambda ()
+        (let ([m (find-module 'Oc-2)])
+          (map (lambda (n)
+                 (list n
+                       (module-binds? m n)
+                       (module-exports? m n)))
+               '(ichi ni shi yon go kyu ku)))))
+(test "export-time renaming and defines?/exports? (0c-3)"
+      '((ichi #t #t) (ni #t #f) (shi #t #f) (yon #f #t) (go #t #t) (kyu #t #f) (ku #f #t))
+      (lambda ()
+        (let ([m (find-module 'Oc-3)])
           (map (lambda (n)
                  (list n
                        (module-binds? m n)
