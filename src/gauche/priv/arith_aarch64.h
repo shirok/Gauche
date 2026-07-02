@@ -99,12 +99,12 @@
    'cmp xzr, %2' computes 0 - c: C = 1 iff 0 >= c (unsigned), i.e., c=0.
    sbcs then does x - y - (1 - C) = x - y - c.
    cset %1, cc yields 1 iff borrow (C_out clear). */
-#define USUB(r, c, x, y)                        \
-    asm("cmp xzr, %2;"                          \
-        "sbcs %0, %3, %4;"                      \
-        "cset %1, cc;"                          \
-        : "=&r" (r), "=&r" (c)                  \
-        : "1" (c), "r" (x), "r" (y)             \
+#define USUB(r, c, x, y)                                \
+    asm("cmp xzr, %2;"                                  \
+        "sbcs %0, %3, %4;"                              \
+        "cset %1, cc;"                                  \
+        : "=&r" (r), "=&r" (c)                          \
+        : "1" (c), "r" ((u_long)x), "r" ((u_long)y)     \
         : "cc")
 
 /*-----------------------------------------------------------------
