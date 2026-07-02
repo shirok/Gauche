@@ -7,50 +7,11 @@ on:
   #  - cron: '0 */2 * * *'
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    env:
-      GAUCHE_TEST_PATH: ../Gauche-tmp-self-host-test/stage2
-      TESTLOG_NAME: testlog-linux
-      TESTLOG_PATH: testlog-linux
-    steps:
-    - uses: actions/checkout@v4
-    - uses: shirok/setup-gauche@v6
-    - name: Run release version of Gauche
-      run: |
-        gosh -V
-    - name: Install tools
-      run: |
-        sudo apt-get install libgdbm-dev libmbedtls-dev uuid-dev
-    - name: Self-host-test
-      run: |
-        gcc -v
-        ./DIST self-host-test
-    - name: Copy testlog
-      if: always()
-      run: |
-        cd $GAUCHE_TEST_PATH
-        mkdir -p $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME
-        cp src/test.log $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME
-        for d in ext/*; do
-          if test -f $d/test.log; then
-            mkdir -p $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME/$d
-            cp $d/test.log $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME/$d
-          fi
-        done
-    - name: Upload testlog
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.TESTLOG_NAME }}
-        path: ${{ env.TESTLOG_PATH }}
-
   build-osx:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, macos-14]
+        os: [macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
@@ -88,97 +49,3 @@ jobs:
       with:
         name: ${{ env.TESTLOG_NAME }}
         path: ${{ env.TESTLOG_PATH }}
-
-  build-windows:
-    runs-on: windows-latest
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        sys: [ucrt64, mingw64, mingw32]
-        include:
-        - sys: ucrt64
-          env: ucrt-x86_64
-          arch: x86_64
-          bit: 64
-          devtool_path: D:\devtool64
-        - sys: mingw64
-          env: x86_64
-          arch: x86_64
-          bit: 64
-          devtool_path: D:\devtool64
-        - sys: mingw32
-          env: i686
-          arch: i686
-          bit: 32
-          devtool_path: D:\devtool32
-    env:
-      GAUCHE_VERSION_URL: https://practical-scheme.net/gauche/releases/latest.txt
-      GAUCHE_INSTALLER_URL: https://practical-scheme.net/gauche/releases/latest.${{ matrix.bit }}bit.msi
-      GAUCHE_PATH: ${{ matrix.devtool_path }}\Gauche\bin
-      TESTLOG_NAME: testlog-windows-${{ matrix.sys }}
-      TESTLOG_PATH: testlog-windows-${{ matrix.sys }}
-    steps:
-    - run: git config --global core.autocrlf false
-    - uses: actions/checkout@v4
-    - uses: msys2/setup-msys2@v2
-      with:
-        msystem: ${{ matrix.sys }}
-        path-type: inherit
-        release: true
-        update: true
-        install: 'base-devel mingw-w64-${{ matrix.env }}-toolchain mingw-w64-${{ matrix.env }}-autotools'
-    - name: Run MSYS2 once
-      shell: msys2 {0}
-      run: |
-        pwd
-        echo $MSYSTEM
-        echo $MSYS2_PATH_TYPE
-        echo $PATH
-    - name: Install Gauche
-      shell: msys2 {0}
-      run: |
-        GAUCHE_INSTALLER_VERSION=`curl -f $GAUCHE_VERSION_URL`
-        echo $GAUCHE_INSTALLER_VERSION
-        GAUCHE_INSTALLER=Gauche-mingw-$GAUCHE_INSTALLER_VERSION-${{ matrix.bit }}bit.msi
-        echo $GAUCHE_INSTALLER
-        curl -f -L -o $GAUCHE_INSTALLER $GAUCHE_INSTALLER_URL
-        ls -l
-        cmd.exe //c "start /wait msiexec /a $GAUCHE_INSTALLER /quiet /qn /norestart TARGETDIR=${{ matrix.devtool_path }}"
-    - name: Add Gauche path
-      run: |
-        echo "PATH=$env:GAUCHE_PATH;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-    - name: Run Gauche once
-      shell: msys2 {0}
-      run: |
-        where gosh
-        gosh -V
-    - name: Build
-      shell: msys2 {0}
-      run: |
-        gcc -v
-        ./DIST gen
-        src/mingw-dist.sh
-    - name: Test
-      shell: msys2 {0}
-      run: |
-        make -s check
-    - name: Copy testlog
-      if: always()
-      shell: msys2 {0}
-      run: |
-        mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
-        cp src/test.log $TESTLOG_PATH/$TESTLOG_NAME
-        for d in ext/*; do if test -f $d/test.log; then mkdir -p $TESTLOG_PATH/$TESTLOG_NAME/$d; cp $d/test.log $TESTLOG_PATH/$TESTLOG_NAME/$d; fi; done
-    - name: Upload testlog
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.TESTLOG_NAME }}
-        path: ${{ env.TESTLOG_PATH }}
-    #- name: Upload result
-    #  if: always()
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: Gauche-${{ matrix.env }}
-    #    path: ../Gauche-mingw-dist/Gauche-${{ matrix.env }}
