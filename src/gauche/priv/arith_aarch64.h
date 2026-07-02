@@ -168,6 +168,8 @@
  *  else r <- x * y, v = 0
  */
 
+#ifdef SCM_ENABLE_ALL_ARITH_ASMS
+
 /* umulh yields the upper 64 bits of the 128-bit product; nonzero iff overflow. */
 #define UMULOV(r, v, x, y)                      \
     asm("umulh %1, %2, %3;"                     \
@@ -177,6 +179,8 @@
         : "=&r" (r), "=&r" (v)                  \
         : "r" (x), "r" (y)                      \
         : "cc")
+
+#else //SCM_ENABLE_ALL_ARITH_ASMS
 
 /*-----------------------------------------------------------------
  * SMULOV(r, v, x, y)      signed word multiply with overflow check
