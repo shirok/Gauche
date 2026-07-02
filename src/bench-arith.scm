@@ -17,7 +17,8 @@
   (flush (current-error-port)))
 
 (define (build cc cflags out extra-defs)
-  (let1 argv `(,cc "-I." ,@(string-split cflags #[\s]) ,@extra-defs
+  (let1 argv `(,cc "-I." "-DSCM_ENABLE_ALL_ARITH_ASMS" ,@(string-split cflags #[\s])
+                   ,@extra-defs
                    "bench-arith.c" "-o" ,out)
     (say ";; ~a~%" (string-join argv " "))
     (do-process! argv)))

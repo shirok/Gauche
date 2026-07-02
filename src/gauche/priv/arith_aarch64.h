@@ -6,6 +6,13 @@
  *   Absolutely No Warranty.  Public Domain.
  */
 
+/* Included by arith.h if SCM_TARGET_AARCH64 is defined.
+
+   SCM_ENABLE_ALL_ARITH_ASMS is not defined usually, so that we exclude macros
+   that didn't show performance improvements.  It is defined by bench-arith
+   only to compare performance.
+ */
+
 #ifdef __GNUC__
 
 /* AArch64 flag conventions (differ from x86):
@@ -28,6 +35,8 @@
  *  c <- 1 if carry, 0 otherwise
  */
 
+#ifdef SCM_ENABLE_ALL_ARITH_ASMS
+
 /* cmp %2, #1 sets C = (c >= 1); since c in {0,1}, this makes C = c.
    adcs computes x + y + C_in and updates NZCV.
    adc harvests the resulting carry into the new c. */
@@ -39,6 +48,8 @@
         : "1" (c), "r" (x), "r" (y)             \
         : "cc")
 
+#endif //SCM_ENABLE_ALL_ARITH_ASMS
+
 /*-----------------------------------------------------------------
  * UADDOV(r, v, x, y)    unsigned word add with overflow check
  *  u_long : r, v, x, y;
@@ -46,12 +57,16 @@
  *  else r <- x + y, v = 0
  */
 
+#ifdef SCM_ENABLE_ALL_ARITH_ASMS
+
 #define UADDOV(r, v, x, y)                      \
     asm("adds %0, %2, %3;"                      \
         "cset %1, cs;"                          \
         : "=&r" (r), "=&r" (v)                  \
         : "r" (x), "r" (y)                      \
         : "cc")
+
+#endif //SCM_ENABLE_ALL_ARITH_ASMS
 
 /*-----------------------------------------------------------------
  * SADDOV(r, v, x, y)     signed word addition with overflow check
@@ -99,6 +114,8 @@
  *  else r <- x - y, v = 0
  */
 
+#ifdef SCM_ENABLE_ALL_ARITH_ASMS
+
 #define USUBOV(r, v, x, y)                      \
     asm("subs %0, %2, %3;"                      \
         "cset %1, cc;"                          \
@@ -106,12 +123,16 @@
         : "r" (x), "r" (y)                      \
         : "cc")
 
+#endif // SCM_ENABLE_ALL_ARITH_ASMS
+
 /*-----------------------------------------------------------------
  * SSUBOV(r, v, x, y)     signed word subtract with overflow check
  *  long : r, v, x, y;
  *  if x - y overflows, v = 1 or -1 depending on the sign of the result
  *  else r <- x - y, v = 0
  */
+
+#ifdef SCM_ENABLE_ALL_ARITH_ASMS
 
 /* Same trick as SADDOV: v = (V?1:0), then negate if result non-negative. */
 #define SSUBOV(r, v, x, y)                      \
@@ -122,17 +143,23 @@
         : "r" (x), "r" (y)                      \
         : "cc")
 
+#endif //SCM_ENABLE_ALL_ARITH_ASMS
+
 /*-----------------------------------------------------------------
  * UMUL(hi, lo, x, y)       unsigned word multiply
  *  u_long : hi, lo, x, y;
  *  [hi, lo] <- x * y
  */
 
+#ifdef SCM_ENABLE_ALL_ARITH_ASMS
+
 #define UMUL(hi, lo, x, y)                      \
     asm("mul %1, %2, %3;"                       \
         "umulh %0, %2, %3;"                     \
         : "=&r" (hi), "=&r" (lo)                \
         : "r" (x), "r" (y))
+
+#endif //SCM_ENABLE_ALL_ARITH_ASMS
 
 /*-----------------------------------------------------------------
  * UMULOV(r, v, x, y)      unsigned word multiply with overflow check
@@ -160,6 +187,8 @@
  *  else r <- x * y, v = 0
  */
 
+#ifdef SCM_ENABLE_ALL_ARITH_ASMS
+
 /* Signed overflow iff smulh(x,y) != asr(mul(x,y), 63).
    If overflowed, the sign of the true (128-bit) product is sign(smulh):
      smulh >= 0 -> true product positive -> positive overflow, v = 1
@@ -178,5 +207,7 @@
         : "=&r" (r), "=&r" (v)                  \
         : "r" (x), "r" (y)                      \
         : "cc")
+
+#endif //SCM_ENABLE_ALL_ARITH_ASMS
 
 #endif /*__GNUC__*/
