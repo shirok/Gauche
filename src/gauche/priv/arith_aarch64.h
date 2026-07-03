@@ -42,9 +42,9 @@
    adc harvests the resulting carry into the new c.
    c is read then written in the same register via "+&r". */
 #define UADD(r, c, x, y)                                \
-    asm volatile("cmp %1, #1;"                          \
-                 "adcs %0, %2, %3;"                     \
-                 "adc %1, xzr, xzr;"                    \
+    asm volatile("cmp %1, #1\n\t"                       \
+                 "adcs %0, %2, %3\n\t"                  \
+                 "adc %1, xzr, xzr\n\t"                 \
                  : "=&r" (r), "+&r" (c)                 \
                  : "r" ((u_long)x), "r" ((u_long)y)     \
                  : "cc")
@@ -60,11 +60,11 @@
 
 #ifdef SCM_ENABLE_ALL_ARITH_ASMS
 
-#define UADDOV(r, v, x, y)                      \
-    asm volatile("adds %0, %2, %3;"             \
-                 "cset %1, cs;"                 \
-                 : "=&r" (r), "=&r" (v)         \
-                 : "r" ((u_long)x), "r" ((u_long)y) \
+#define UADDOV(r, v, x, y)                              \
+    asm volatile("adds %0, %2, %3\n\t"                  \
+                 "cset %1, cs\n\t"                      \
+                 : "=&r" (r), "=&r" (v)                 \
+                 : "r" ((u_long)x), "r" ((u_long)y)     \
                  : "cc")
 
 #endif //SCM_ENABLE_ALL_ARITH_ASMS
@@ -82,9 +82,9 @@
      V=1, N=1   : v=1, MI -> keep                           -> +1 (positive overflow)
      V=1, N=0   : v=1, PL -> negate                         -> -1 (negative overflow) */
 #define SADDOV(r, v, x, y)                      \
-    asm volatile("adds %0, %2, %3;"             \
-                 "cset %1, vs;"                 \
-                 "cneg %1, %1, pl;"             \
+    asm volatile("adds %0, %2, %3\n\t"          \
+                 "cset %1, vs\n\t"              \
+                 "cneg %1, %1, pl\n\t"          \
                  : "=&r" (r), "=&r" (v)         \
                  : "r" ((long)x), "r" ((long)y) \
                  : "cc")
@@ -102,9 +102,9 @@
    cset %1, cc yields 1 iff borrow (C_out clear).
    c is read then written in the same register via "+&r". */
 #define USUB(r, c, x, y)                                \
-    asm volatile("cmp xzr, %1;"                         \
-                 "sbcs %0, %2, %3;"                     \
-                 "cset %1, cc;"                         \
+    asm volatile("cmp xzr, %1\n\t"                      \
+                 "sbcs %0, %2, %3\n\t"                  \
+                 "cset %1, cc\n\t"                      \
                  : "=&r" (r), "+&r" (c)                 \
                  : "r" ((u_long)x), "r" ((u_long)y)     \
                  : "cc")
@@ -118,11 +118,11 @@
 
 #ifdef SCM_ENABLE_ALL_ARITH_ASMS
 
-#define USUBOV(r, v, x, y)                      \
-    asm volatile("subs %0, %2, %3;"             \
-                 "cset %1, cc;"                 \
-                 : "=&r" (r), "=&r" (v)         \
-                 : "r" ((u_long)x), "r" ((u_long)y) \
+#define USUBOV(r, v, x, y)                              \
+    asm volatile("subs %0, %2, %3\n\t"                  \
+                 "cset %1, cc\n\t"                      \
+                 : "=&r" (r), "=&r" (v)                 \
+                 : "r" ((u_long)x), "r" ((u_long)y)     \
                  : "cc")
 
 #endif // SCM_ENABLE_ALL_ARITH_ASMS
@@ -138,9 +138,9 @@
 
 /* Same trick as SADDOV: v = (V?1:0), then negate if result non-negative. */
 #define SSUBOV(r, v, x, y)                      \
-    asm volatile("subs %0, %2, %3;"             \
-                 "cset %1, vs;"                 \
-                 "cneg %1, %1, pl;"             \
+    asm volatile("subs %0, %2, %3\n\t"          \
+                 "cset %1, vs\n\t"              \
+                 "cneg %1, %1, pl\n\t"          \
                  : "=&r" (r), "=&r" (v)         \
                  : "r" ((long)x), "r" ((long)y) \
                  : "cc")
@@ -155,10 +155,10 @@
 
 #ifdef SCM_ENABLE_ALL_ARITH_ASMS
 
-#define UMUL(hi, lo, x, y)                          \
-    asm volatile("mul %1, %2, %3;"                  \
-                 "umulh %0, %2, %3;"                \
-                 : "=&r" (hi), "=&r" (lo)           \
+#define UMUL(hi, lo, x, y)                              \
+    asm volatile("mul %1, %2, %3\n\t"                   \
+                 "umulh %0, %2, %3\n\t"                 \
+                 : "=&r" (hi), "=&r" (lo)               \
                  : "r" ((u_long)x), "r" ((u_long)y))
 
 #endif //SCM_ENABLE_ALL_ARITH_ASMS
@@ -171,13 +171,13 @@
  */
 
 /* umulh yields the upper 64 bits of the 128-bit product; nonzero iff overflow. */
-#define UMULOV(r, v, x, y)                      \
-    asm volatile("umulh %1, %2, %3;"            \
-                 "mul %0, %2, %3;"              \
-                 "cmp %1, #0;"                  \
-                 "cset %1, ne;"                 \
-                 : "=&r" (r), "=&r" (v)         \
-                 : "r" ((u_long)x), "r" ((u_long)y) \
+#define UMULOV(r, v, x, y)                              \
+    asm volatile("umulh %1, %2, %3\n\t"                 \
+                 "mul %0, %2, %3\n\t"                   \
+                 "cmp %1, #0\n\t"                       \
+                 "cset %1, ne\n\t"                      \
+                 : "=&r" (r), "=&r" (v)                 \
+                 : "r" ((u_long)x), "r" ((u_long)y)     \
                  : "cc")
 
 /*-----------------------------------------------------------------
@@ -193,19 +193,21 @@
    If overflowed, the sign of the true (128-bit) product is sign(smulh):
      smulh >= 0 -> true product positive -> positive overflow, v = 1
      smulh <  0 -> true product negative -> negative overflow, v = -1 */
-#define SMULOV(r, v, x, y)                                              \
-    asm volatile("smulh %1, %2, %3;"                                    \
-                 "mul %0, %2, %3;"                                      \
-                 "cmp %1, %0, asr #63;"                                 \
-                 "b.eq .Lsm_nov_%=;"                                    \
-                 "cmp %1, #0;"                                          \
-                 "b.lt .Lsm_neg_%=;"                                    \
-                 "mov %1, #1; b .Lsm_end_%=;"                           \
-                 ".Lsm_neg_%=: mov %1, #-1; b .Lsm_end_%=;"             \
-                 ".Lsm_nov_%=: mov %1, #0;"                             \
-                 ".Lsm_end_%=:"                                         \
-                 : "=&r" (r), "=&r" (v)                                 \
-                 : "r" ((long)x), "r" ((long)y)                         \
+#define SMULOV(r, v, x, y)                      \
+    asm volatile("   smulh %1, %2, %3\n\t"      \
+                 "   mul %0, %2, %3\n\t"        \
+                 "   cmp %1, %0, asr #63\n\t"   \
+                 "   b.eq 3f\n\t"               \
+                 "   cmp %1, #0\n\t"            \
+                 "   b.lt 2f\n\t"               \
+                 "   mov %1, #1\n\t"            \
+                 "   b 4f\n\t"                  \
+                 "2: mov %1, #-1\n\t"           \
+                 "   b 4f\n\t"                  \
+                 "3: mov %1, #0\n\t"            \
+                 "4:"                           \
+                 : "=&r" (r), "=&r" (v)         \
+                 : "r" ((long)x), "r" ((long)y) \
                  : "cc")
 
 #endif //SCM_ENABLE_ALL_ARITH_ASMS
