@@ -1,3 +1,8 @@
+2026-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (<void>): Set size of <void> to 1, as void* counts
+	  by octets.
+
 2026-07-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/arith_aarch64.h: Added

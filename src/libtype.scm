@@ -1097,7 +1097,7 @@
 
   ;; <void> needs special care, as it doesn't have a real C type.
   (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"
-                              0 1 native_voidP NULL NULL
+                              1 1 native_voidP NULL NULL
                               "" "SCM_VOID_RETURN_VALUE" "" FALSE TRUE)])
     (set! Scm_NativeVoidType_ z)
     (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)

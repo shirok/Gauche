@@ -279,6 +279,16 @@
          (native* (native-pointer+ (native-pointer+ h 4) -3)))
   )
 
+
+(let ([h (make-native-handle (native-type 'void*) (make-u8vector 16))])
+  (test* "native-pointer+ (void*)"
+         '#u8(0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1)
+         (begin
+           (set! (native* (cast-handle (make-c-pointer-type <int64>)
+                                       (native-pointer+ h 8)))
+                 #x01010101_01010101)
+           (native-handle-owner h))))
+
 (let ([h (make-native-handle (native-type 'int32_t*) #s32(0 -10 -20 -30))])
   (test* "native-pointer+ (int32_t*)" -20
          (native* (native-pointer+ h 2)))
