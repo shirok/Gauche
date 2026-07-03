@@ -35,8 +35,6 @@
  *  c <- 1 if carry, 0 otherwise
  */
 
-#ifdef SCM_ENABLE_ALL_ARITH_ASMS
-
 /* cmp %1, #1 sets C = (c >= 1); since c in {0,1}, this makes C = c.
    adcs computes x + y + C_in and updates NZCV.
    adc harvests the resulting carry into the new c.
@@ -48,8 +46,6 @@
                  : "=&r" (r), "+&r" (c)                 \
                  : "r" ((u_long)x), "r" ((u_long)y)     \
                  : "cc")
-
-#endif //SCM_ENABLE_ALL_ARITH_ASMS
 
 /*-----------------------------------------------------------------
  * UADDOV(r, v, x, y)    unsigned word add with overflow check
@@ -134,8 +130,6 @@
  *  else r <- x - y, v = 0
  */
 
-#ifdef SCM_ENABLE_ALL_ARITH_ASMS
-
 /* Same trick as SADDOV: v = (V?1:0), then negate if result non-negative. */
 #define SSUBOV(r, v, x, y)                      \
     asm volatile("subs %0, %2, %3\n\t"          \
@@ -145,23 +139,17 @@
                  : "r" ((long)x), "r" ((long)y) \
                  : "cc")
 
-#endif //SCM_ENABLE_ALL_ARITH_ASMS
-
 /*-----------------------------------------------------------------
  * UMUL(hi, lo, x, y)       unsigned word multiply
  *  u_long : hi, lo, x, y;
  *  [hi, lo] <- x * y
  */
 
-#ifdef SCM_ENABLE_ALL_ARITH_ASMS
-
 #define UMUL(hi, lo, x, y)                              \
     asm volatile("mul %1, %2, %3\n\t"                   \
                  "umulh %0, %2, %3\n\t"                 \
                  : "=&r" (hi), "=&r" (lo)               \
                  : "r" ((u_long)x), "r" ((u_long)y))
-
-#endif //SCM_ENABLE_ALL_ARITH_ASMS
 
 /*-----------------------------------------------------------------
  * UMULOV(r, v, x, y)      unsigned word multiply with overflow check
