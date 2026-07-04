@@ -722,10 +722,11 @@
                                     :optional (type::<native-type>? #f))
   (let* ([p::void* (+ (-> base ptr) offset)]
          [t::ScmNativeType* (?: type type (-> base type))])
-    (unless (and (!= (-> base region-min) NULL)
-                 (!= (-> base region-max) NULL)
-                 (<= (-> base region-min) p)
-                 (<=  p (-> base region-max))) ;allows "past-end" pointer
+    (when (and (!= (-> base region-min) NULL)
+               (!= (-> base region-max) NULL)
+               (not (and
+                     (<= (-> base region-min) p)
+                     (<=  p (-> base region-max))))) ;allows "past-end" pointer
       (Scm_Error "Offset out of range: %S %ld" base offset))
     (return
      (Scm__MakeNativeHandle p
