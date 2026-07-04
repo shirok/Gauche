@@ -130,9 +130,7 @@ typedef struct ScmMetaContRec {
     ScmContFrame *cont;              /* parent vm->cont when prompt installed
                                         (i.e. frame->prev at install time) */
     ScmObj denv;                     /* parent vm->denv */
-    ScmObj dynamicHandlers;          /* dynamic-wind handler segment just outside
-                                        this prompt (= vm->dynamicHandlers when
-                                        the prompt was installed) */
+    ScmObj dynamicHandlers;          /* saved dynamic handler chain */
     ScmCStack *cstack;               /* vm->cstack when this prompt was
                                         installed. */
     struct ScmMetaContRec *prev;     /* outer meta-cont, NULL at bottom */

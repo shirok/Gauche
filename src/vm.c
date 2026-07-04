@@ -2097,11 +2097,8 @@ static void push_meta_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
     m->frame = vm->cont;
     m->cont = vm->cont->prev;
     m->denv = vm->cont->denv;
-    /* Segment the handler chain: the current segment becomes this prompt's
-       below-segment, and the prompt body starts with an empty segment.
-       RETURN_OP restores m->dynamicHandlers when control returns through. */
     m->dynamicHandlers = vm->dynamicHandlers;
-    vm->dynamicHandlers = SCM_NIL;
+    vm->dynamicHandlers = SCM_NIL; /* segment handler chain */
     m->cstack = vm->cstack;
     m->prev = vm->currentMetaCont;
     vm->currentMetaCont = m;
@@ -2793,13 +2790,6 @@ ScmObj make_dynamic_handler(ScmVM *vm, ScmObj before, ScmObj after, ScmObj args)
     return SCM_OBJ(e);
 }
 
-/* The dynamic-wind handler chain is stored segmented: vm->dynamicHandlers holds
-   the handlers pushed in the current segment (since the innermost prompt), and
-   each metacont's `dynamicHandlers` slot holds the segment just outside its
-   prompt.  The full chain is reconstructed by gather_dynamic_handlers, walking
-   the metacont chain.  The handler push/pop on the inline dynamic-wind hot path
-   is therefore a cheap cons/CDR on vm->dynamicHandlers (no denv ops). */
-
 /* Gather the full handler chain: the current-segment list `cur`, followed by
    each metacont's segment list (mc->dynamicHandlers), up to (not including)
    'stop'.  'stop' can be NULL to gather the entire chain.  Returns a fresh list
@@ -2830,9 +2820,7 @@ static ScmObj get_dynamic_handlers(ScmVM *vm)
 
 /* The handlers pushed inside the captured prompt: the handlers in the segments
    between the capture point and the bounding prompt (exclusive of the prompt's
-   own below-segment).  Computed on demand from the escape point's captured
-   segment + metacont slice.  Used by throw_continuation's splice branches to
-   wind up only the handlers added inside the captured prompt. */
+   own below-segment). */
 static ScmObj ep_part_handlers(ScmEscapePoint *ep)
 {
     return gather_dynamic_handlers(ep->dynamicHandlers, ep->capturedMetaCont,
@@ -3142,8 +3130,7 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
        its install denv), so the handler sees the rewound dynamic environment.
        But those install denvs also carry the install-time exception handler,
        which would re-instate the very handler we are running; so we restore the
-       exception-handler entry to xh -- the outer handler Scm_VMThrowException
-       popped to -- after each handler call. */
+       exception-handler entry to xh after each handler call. */
     ScmObj xh = find_dynamic_env(vm, denv_key_exception_handler, SCM_NIL);
     if (ep->rewindBefore) {
         call_dynamic_handlers(vm, ep_dynamic_handlers(ep), vmhandlers);
@@ -4019,10 +4006,9 @@ static ScmObj throw_continuation(ScmObj *argframe,
                are in ep_dynamic_handlers(ep) but not ep_part_handlers(ep)) must
                NOT be re-wound.  For the 2a case targetMeta == bottom, so this
                coincides with the full ep_dynamic_handlers(ep) chain. */
-            hdlist = throw_cont_calculate_handlers(
-                        Scm_Append2(ep_part_handlers(ep),
-                                    mc_dynamic_handlers(targetMeta)),
-                        currentHandlers);
+            hdlist = throw_cont_calculate_handlers(Scm_Append2(ep_part_handlers(ep),
+                                                               mc_dynamic_handlers(targetMeta)),
+                                                   currentHandlers);
         } else {
             save_cont(vm);
             if (ep->boundingMetaCont != NULL) { /* 3 */
