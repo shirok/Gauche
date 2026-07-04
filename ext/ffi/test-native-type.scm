@@ -284,8 +284,7 @@
   (test* "native-pointer+ (void*)"
          '#u8(0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1)
          (begin
-           (set! (native* (cast-handle (make-c-pointer-type <int64>)
-                                       (native-pointer+ h 8)))
+           (set! (native* (cast-handle 'int64_t* (native-pointer+ h 8)))
                  #x01010101_01010101)
            (native-handle-owner h))))
 

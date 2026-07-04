@@ -850,7 +850,19 @@
 ;; a known memory region, the region must cover the destination type's
 ;; size (starting at ptr+offset).
 
-(define (cast-handle type handle :optional (offset 0))
+(define-syntax cast-handle
+  (er-macro-transformer
+   (^[f r c]
+     (define (quote? x) (c (r'quote) x))
+     (match f
+       [(_ ((? quote?) signature) handle . opts)
+        (quasirename r
+          `(cast-handle-proc (native-type ',signature) ,handle ,@opts))]
+       [(_ type handle . opts)
+        (quasirename r
+          `(cast-handle-proc ,type ,handle ,@opts))]))))
+
+(define (cast-handle-proc type handle :optional (offset 0))
   (assume-type type <native-type>)
   (assume-type handle <native-handle>)
   (assume-type offset <fixnum>)

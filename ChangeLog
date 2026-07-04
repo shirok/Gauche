@@ -1,3 +1,9 @@
+2026-07-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/native-type.scm (cast-handle): Make it a macro, allowsing
+	  quoted native type signature in the first arg, implicitly converted
+	  to a native type instance.
+
 2026-07-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm (<void>): Set size of <void> to 1, as void* counts

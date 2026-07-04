@@ -16076,12 +16076,23 @@ returned.
 
 @subsubheading Handle operations
 
-@defun cast-handle type handle :optional offset
+@defmac cast-handle type handle :optional offset
 @c MOD gauche.native-type
 Returns a new native handle that points to the same memory region
 of @var{handle}, but with @var{type}.
 Optionally, you can specify a byte offset with @var{offset}
 from the @var{handle}.
+
+If @var{type} is a quoted object, it is regarded as a native type
+signature and implicitly converted to a native type
+(@pxref{Native type signature}).  Othewise,
+@var{type} must be an expression that evaluates to a native type.
+
+@example
+(cast-handle 'char* handle)
+ @equiv{} (cast-handle (native-type 'char*) handle)
+ @equiv{} (cast-handle (make-c-pointer-type <char>) handle)
+@end example
 
 You can cast a pointer to another pointer, an aggregate
 (struct, union, array) to another aggregate,
@@ -16092,7 +16103,7 @@ it checks if @var{type} falls within the region.  However,
 if the handle is obtained from an external C function call,
 the valid memory region isn't often explicit, and it's up to
 you to treat it safely.
-@end defun
+@end defmac
 
 @defun c-pointer-compare handle-a handle-b
 @c MOD gauche.native-type
