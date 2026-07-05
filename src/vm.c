@@ -84,15 +84,14 @@ static ScmPromptTag defaultPromptTag; /* initialized in initVM */
  *
  *  BOUNDARY - this is a user_eval_inner boundary; when RETURN_OP encounters
  *             this frame, run_loop returns control to the surrounding C
- *             stack.  Boundary frames are also PROMPT frames.
- *  PROMPT   - this is a prompt cont frame.  Both boundary frames and frames
- *             pushed by call-with-continuation-prompt (and reset) carry this.
- *             The abort handler and dynamic-wind chain captured at the prompt
- *             live in the ScmMetaCont pushed alongside the frame.
+ *             stack.  Boundary frames are also prompt frames.
+ *
+ * Note: All cont frames with cont->prev == NULL are prompt frames, and vice
+ * versa.  Only prompt frames created right after user_eval_inner are
+ * boundary frames.
  */
 enum {
       SCM_CONT_BOUNDARY_MARKER = (1L<<0),
-      SCM_CONT_PROMPT_MARKER   = (1L<<1),
 };
 
 static void push_prompt_cont(ScmVM*, ScmObj, ScmObj);
@@ -100,9 +99,6 @@ static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 
 /* return true if cont is a boundary continuation frame (C-stack boundary) */
 #define BOUNDARY_FRAME_P(cont) ((cont)->marker & SCM_CONT_BOUNDARY_MARKER)
-
-/* return true if cont is a prompt cont frame */
-#define PROMPT_FRAME_P(cont)   ((cont)->marker & SCM_CONT_PROMPT_MARKER)
 
 /* A "resume boundary" is a metacont pushed when a composable continuation is
    invoked.  It records where to resume (m->cont) once the partial cont has run
@@ -839,7 +835,7 @@ static void vm_unregister(ScmVM *vm)
 /* return operation. */
 #define RETURN_OP()                                     \
     do {                                                \
-        if (CONT == NULL || BOUNDARY_FRAME_P(CONT)) {   \
+        if (BOUNDARY_FRAME_P(CONT)) {                   \
             return; /* no more continuations */         \
         } else if (vm->currentMetaCont != NULL          \
                    && vm->currentMetaCont->frame == CONT) {\
@@ -2267,10 +2263,9 @@ static ScmObj user_eval_inner(ScmObj program,
     /* Save prev_pc, for the boundary continuation uses pc slot
        to mark the boundary. */
     ScmWord * volatile prev_pc = PC;
-    ScmObj vmhandlers = get_dynamic_handlers(vm);
 
     /* Push extra continuation.  This continuation frame is a 'boundary
-       frame', marked with both PROMPT_MARKER and BOUNDARY_MARKER.  VM loop
+       frame', marked with BOUNDARY_MARKER.  VM loop
        knows it should return to C frame when it sees a boundary frame.
        A boundary frame also keeps the unfinished argument frame at
        the point when Scm_Eval or Scm_Apply is called. */
@@ -2300,36 +2295,10 @@ static ScmObj user_eval_inner(ScmObj program,
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
     if (sigsetjmp(cstack.jbuf, FALSE) == 0) {
         run_loop();             /* VM loop */
+        /* vm->cont never becomes NULL, as cont frames with prev == NULL
+           (prompt frame) are never POP_CONTed.  See RETURN_OP. */
+        SCM_ASSERT(vm->cont != NULL);
         if (vm->cont == cstack.cont) {
-            pop_meta_cont(vm);
-            POP_CONT();
-            vm->cont = boundaryMeta->cont;  /* parent; boundary prev is NULL */
-            vm->dynamicHandlers = boundaryMeta->dynamicHandlers;
-            PC = prev_pc;
-        } else if (vm->cont == NULL) {
-            /* we're finished with executing partial continuation. */
-
-            /* save return values */
-            ScmObj val0 = vm->val0;
-            int nvals = vm->numVals;
-            ScmObj *vals = NULL;
-            if (nvals > 1) {
-                vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
-                memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
-            }
-
-            /* call dynamic handlers for returning to the caller */
-            call_dynamic_handlers(vm, vmhandlers,
-                                  get_dynamic_handlers(vm));
-
-            /* restore return values */
-            vm->val0 = val0;
-            vm->numVals = nvals;
-            if (vals != NULL) {
-                memcpy(vm->vals, vals, sizeof(ScmObj)*(nvals-1));
-            }
-
-            vm->cont = cstack.cont;
             pop_meta_cont(vm);
             POP_CONT();
             vm->cont = boundaryMeta->cont;  /* parent; boundary prev is NULL */
@@ -2429,7 +2398,6 @@ void push_prompt_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
 {
     CHECK_STACK(CONT_FRAME_SIZE + (SP - ARGP));
     PUSH_CONT(SCM_PROMPT_TAG_PC(promptTag));
-    CONT->marker |= SCM_CONT_PROMPT_MARKER;
     push_meta_cont(vm, promptTag, abortHandler);
     /* Segment the continuation at the prompt: CONT->prev is set to
        NULL, and the link to the previous activation record is kept in
@@ -4457,8 +4425,9 @@ ScmObj Scm_VMGetStackLite(ScmVM *vm)
     while (c) {
         info = Scm_VMGetSourceInfo(c->base, c->cpc);
         if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
-        if (PROMPT_FRAME_P(c) && m != NULL && m->frame == c) {
-            /* Cross into the parent segment recorded in the meta-cont */
+        if (m != NULL && m->frame == c) {
+            /* c is a prompt frame (segment bottom); cross into the parent
+               segment recorded in the meta-cont */
             c = m->cont;
             m = m->prev;
         } else {
@@ -4775,8 +4744,9 @@ void Scm_VMDump(ScmVM *vm_to_dump)
         } else {
             Scm_Printf(out, "               pc = {cproc %p}\n", cont->pc);
         }
-        if (PROMPT_FRAME_P(cont) && meta != NULL && meta->frame == cont) {
-            /* Cross into the parent segment recorded in the metacont. */
+        if (meta != NULL && meta->frame == cont) {
+            /* cont is a prompt frame (segment bottom); cross into the parent
+               segment recorded in the metacont. */
             cont = meta->cont;
             meta = meta->prev;
         } else {
