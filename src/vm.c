@@ -3308,6 +3308,16 @@ static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
 static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
                                  ScmObj thunk, int rewindBefore)
 {
+#ifdef GAUCHE_EP_EAGER_SAVECONT
+    /* If defined, save in-stack contr frames to heap before capturing it
+       in EP.  This effectively makes with-error-handler mostly equivalent
+       to the one built on top of call/cc and with-exception-handler
+       (see the comment of "Exception Handling" section below.).
+       We use this to benchmark performance impact of eagerly saving
+       continuation frames. See tests/error-handler-performace.scm.
+    */
+    save_cont(vm);
+#endif
     ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore, NULL);
 
     ScmObj ehandler = make_escape_handler(ep);
