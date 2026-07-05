@@ -1345,6 +1345,11 @@ static void save_cont(ScmVM *vm)
             if (FORWARDED_CONT_P(e->cont)) {
                 e->cont = FORWARDED_CONT(e->cont);
             }
+            /* Don't forget to update captured metacont chain */
+            for (ScmMetaCont *m = e->capturedMetaCont; m; m = m->prev) {
+                if (FORWARDED_CONT_P(m->frame)) m->frame = FORWARDED_CONT(m->frame);
+                if (FORWARDED_CONT_P(m->cont))  m->cont  = FORWARDED_CONT(m->cont);
+            }
         }
         vm->floatingEscapePoints = SCM_NIL;
     }
