@@ -93,7 +93,7 @@
                    ctx))))
           (quasirename r
             `(begin
-               ,@(map (^[s] (quasirename r `(define ,(car s)))) cdef-specs)
+               ,@(map (^s (quasirename r `(define ,(car s)))) cdef-specs)
                ,@forms
                (define ,ctx-var
                  (let ([,dlo-var ,dlo-expr])

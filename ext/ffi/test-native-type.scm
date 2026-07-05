@@ -105,17 +105,16 @@
          (is-a? (make-native-handle s* '#u8(0)) <native-handle>))
   )
 
-(let* ([int16-array (make-c-array-type <int16> '(8))]
-       [int16* (make-c-pointer-type <int16>)]
-       [h (make-native-handle int16-array)])
+(let* ([int16* (make-c-pointer-type <int16>)]
+       [h (make-c-array-handle <int16> 8)])
   (test* "make-native-handle auto allocation" 16
          (and-let* ([s (native-handle-owner h)]
                     [ (u8vector? s) ])
            (u8vector-length s)))
 
-  (test* "make-native-handle auto allocation (nonzero offset)"
+  (test* "make-c-array-handle auto allocation (nonzero offset)"
          (test-error <error> #/Non-zero offset is not allowed/)
-         (make-native-handle int16-array #f 1))
+         (make-c-array-handle <int16> 8 #f 1))
 
   (test* "native-handle-belongs? h h" #t
          (native-handle-belongs? h h))

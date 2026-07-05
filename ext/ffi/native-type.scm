@@ -88,6 +88,7 @@
           native&
 
           make-native-handle
+          make-c-array-handle
           uvector->native-handle
           null-pointer-handle
           null-pointer-handle?
@@ -202,8 +203,10 @@
      return-type arg-types variadic?)))
 
 (define (make-c-array-type element-type dimensions)
+  ;; allow single integer or '* for 1-dim array
+  (define dims (if (list? dimensions) dimensions (list dimensions)))
   (assume-type element-type <native-type>)
-  (let loop ([dims dimensions])
+  (let loop ([dims dims])
     (cond [(null? dims)]
           [(not (pair? dims))
            (error "Bad native array dimensions; must be a proper list, but got:"
@@ -218,15 +221,15 @@
            (error "Bad native array dimensions; must be a list of nonnegative \
                    integers, or '* at the last position, but got:"
                   dimensions)]))
-  (let ([name (format "~a~a" (~ element-type 'name) dimensions)]
-        [num-elts (if (eq? (car dimensions) '*)
+  (let ([name (format "~a~a" (~ element-type 'name) dims)]
+        [num-elts (if (eq? (car dims) '*)
                     0                   ; unknown sized array
-                    (fold * 1 dimensions))]
+                    (fold * 1 dims))]
         [elt-size (~ element-type'size)])
     (%make-c-array-type name element-type
                              (* elt-size num-elts)
                              (~ element-type'alignment)
-                             dimensions)))
+                             dims)))
 
 (define (struct-size-roundup size alignment)
   (* alignment (quotient (+ size alignment -1) alignment)))
@@ -715,6 +718,11 @@
 ;; To be removed
 (define (uvector->native-handle uv type :optional (offset 0))
   (make-native-handle type uv offset))
+
+(define (make-c-array-handle element-type dims
+                             :optional (init #f) (offset 0))
+  (assume element-type <native-type>)
+  (make-native-handle (make-c-array-type element-type dims) init offset))
 
 ;; The handle pointing into a region originally pointed
 (define-cproc make-internal-handle (base::<native-handle>
