@@ -833,27 +833,30 @@ static void vm_unregister(ScmVM *vm)
     } while (0)
 
 /* return operation. */
-#define RETURN_OP()                                     \
-    do {                                                \
-        if (BOUNDARY_FRAME_P(CONT)) {                   \
-            return; /* no more continuations */         \
-        } else if (vm->currentMetaCont != NULL          \
-                   && vm->currentMetaCont->frame == CONT) {\
+#define RETURN_OP()                                                     \
+    do {                                                                \
+        if (BOUNDARY_FRAME_P(CONT)) {                                   \
+            return; /* no more continuations */                         \
+        } else if (CONT->prev == NULL) {                                \
             /* returning through a prompt boundary.  The continuation   \
                continues via the metacont's cont field, and the denv    \
                and dynamic-wind handler segment are restored from the   \
                metacont. */                                             \
-            ScmContFrame *into__ = vm->currentMetaCont->cont;\
-            ScmObj denv__ = vm->currentMetaCont->denv;  \
-            ScmObj dh__ = vm->currentMetaCont->dynamicHandlers; \
-            pop_meta_cont(vm);                          \
-            POP_CONT();                                 \
-            vm->cont = into__;                          \
-            DENV = denv__;                              \
-            vm->dynamicHandlers = dh__;                 \
-        } else {                                        \
-            POP_CONT();                                 \
-        }                                               \
+            /* TRANSIENT: This assertion is to catch mistakes during    \
+               transition.  */                                          \
+            SCM_ASSERT(vm->currentMetaCont != NULL                      \
+                       && vm->currentMetaCont->frame == CONT);          \
+            ScmContFrame *into__ = vm->currentMetaCont->cont;           \
+            ScmObj denv__ = vm->currentMetaCont->denv;                  \
+            ScmObj dh__ = vm->currentMetaCont->dynamicHandlers;         \
+            pop_meta_cont(vm);                                          \
+            POP_CONT();                                                 \
+            vm->cont = into__;                                          \
+            DENV = denv__;                                              \
+            vm->dynamicHandlers = dh__;                                 \
+        } else {                                                        \
+            POP_CONT();                                                 \
+        }                                                               \
     } while (0)
 
 /* push environment header to finish the environment frame.
