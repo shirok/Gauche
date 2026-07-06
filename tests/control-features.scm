@@ -336,8 +336,7 @@
                   (set! x (* x 2))))])
         (list x y)))
 
-;; DIVERGE
-'(test '(in thread in out out)
+(test '(in thread in out out)
       (let [(l '())]
         (define out!
           (lambda (x)
@@ -476,8 +475,7 @@
             (parameterize ([p 735])
               (thread-join! (thread-start! t)))))
 
-;; DIVERGE
-'(test '(12 13) (let* ([k #f]
+(test '(12 13) (let* ([k #f]
                       [t (thread-start!
                           (make-thread
                            (lambda ()

@@ -126,6 +126,12 @@ typedef struct ScmMetaContRec {
     SCM_HEADER;
     ScmObj promptTag;                /* prompt tag delimiting this meta-cont */
     ScmObj abortHandler;             /* handler invoked on abort-to this tag */
+    int boundary;                    /* TRUE if this metacont is pushed upon
+                                        entering user_eval_inner().  Once
+                                        RETURN_OP hits this metacont,
+                                        it returns from run_loop() to
+                                        get back to user_eval_inner(), instead
+                                        if popping metacont. */
     ScmContFrame *frame;             /* the prompt cont frame on vm->cont */
     ScmContFrame *cont;              /* parent vm->cont when prompt installed
                                         (i.e. frame->prev at install time) */
@@ -188,6 +194,8 @@ typedef struct ScmEscapePointRec {
                                      If this is not #f, the procedure is
                                      invoked after the continuation is
                                      thrown. */
+    ScmVM *ownerVM;               /* The VM in which this escape point was
+                                     captured. */
 } ScmEscapePoint;
 
 SCM_CLASS_DECL(Scm_EscapePointClass);
