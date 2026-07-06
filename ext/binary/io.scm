@@ -58,6 +58,11 @@
           ))
 (select-module binary.io)
 
+;; Ensure endian symbol recognistion is in sync with C parts
+(define-cproc %is-be? (endian) ::<boolean>
+  (return (Scm_IsBE endian)))
+
+
 ;;;
 ;;; config
 ;;;
@@ -86,7 +91,7 @@
        (if (= cnt size)
          (fold (^[a b] (+ a (* b *byte-magnitude*)))
                0
-               (if (eq? endian 'big-endian) (reverse ls) ls))
+               (if (%is-be? endian) (reverse ls) ls))
          (let1 byte (read-byte port)
            (if (eof-object? byte)
              byte
@@ -134,7 +139,7 @@
          (push! ls (logand int *byte-mask*))
          (set! int (ash int *byte-right-shift*)))
        ;; reverse if big-endian
-       (unless (eq? endian 'big-endian)
+       (unless (%is-be? endian)
          (set! ls (reverse ls)))
        ;; write the list
        (for-each (cut write-byte <> port) ls))]))
@@ -464,17 +469,15 @@
     [(2) (get-u16 uv pos endian)]
     [(4) (get-u32 uv pos endian)]
     [(8) (get-u64 uv pos endian)]
-    [else (ecase endian
-            [(big-endian)
-             (do ([i 0 (+ i 1)]
-                  [r 0 (logior (ash r 8) (get-u8 uv (+ i pos)))])
-                 [(>= i size) r]
-               )]
-            [(little-endian arm-little-endian)
-             (do ([i (- size 1) (- i 1)]
-                  [r 0 (logior (ash r 8) (get-u8 uv (+ i pos)))])
-                 [(< i 0) r]
-               )])]))
+    [else (if (%is-be? endian)
+            (do ([i 0 (+ i 1)]
+                 [r 0 (logior (ash r 8) (get-u8 uv (+ i pos)))])
+                [(>= i size) r]
+              )
+            (do ([i (- size 1) (- i 1)]
+                 [r 0 (logior (ash r 8) (get-u8 uv (+ i pos)))])
+                [(< i 0) r]
+              ))]))
 
 (define (get-sint size uv pos :optional (endian (default-endian)))
   (case size
@@ -485,17 +488,15 @@
     [else (uint->sint (get-uint size uv pos endian) size)]))
 
 (define (%put-int! size uv pos val endian) ; val can be signed or unsigned
-  (ecase endian
-    [(big-endian)
-     (do ([i (- size 1) (- i 1)]
-          [v val (ash v -8)])
-         [(< i 0) (undefined)]
-       (put-u8! uv (+ i pos) (logand v #xff)))]
-    [(little-endian arm-little-endian)
-     (do ([i 0 (+ i 1)]
-          [v val (ash v -8)])
-         [(>= i size) (undefined)]
-       (put-u8! uv (+ i pos) (logand v #xff)))]))
+  (if (%is-be? endian)
+    (do ([i (- size 1) (- i 1)]
+         [v val (ash v -8)])
+        [(< i 0) (undefined)]
+      (put-u8! uv (+ i pos) (logand v #xff)))
+    (do ([i 0 (+ i 1)]
+         [v val (ash v -8)])
+        [(>= i size) (undefined)]
+      (put-u8! uv (+ i pos) (logand v #xff)))))
 
 (define (put-uint! size uv pos val :optional (endian (default-endian)))
   (case size
