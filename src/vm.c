@@ -2328,6 +2328,7 @@ static ScmObj user_eval_inner(ScmObj program,
                 /* force popping continuation when restarted */
                 vm->pc = PC_TO_RETURN;
                 vm->val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
+                vm->currentMetaCont = ep->capturedMetaCont;
                 goto restart;
             } else {
                 SCM_ASSERT(vm->cstack && vm->cstack->prev);
