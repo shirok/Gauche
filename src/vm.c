@@ -750,7 +750,6 @@ static void vm_unregister(ScmVM *vm)
         newcont->env = ENV;                             \
         newcont->denv = DENV;                           \
         newcont->size = (int)(SP - ARGP);               \
-        newcont->marker = 0;                            \
         newcont->cpc = PC;                              \
         newcont->pc = next_pc;                          \
         newcont->base = BASE;                           \
@@ -1961,7 +1960,6 @@ static ScmObj *new_ccont(ScmVM *vm, ScmPContinuationProc *after,
     cc->env = &ccEnvMark;
     cc->denv = DENV;
     cc->size = datasize;
-    cc->marker = 0;
     cc->cpc = cpcdata;
     cc->pc = (ScmWord*)after;
     cc->base = BASE;

@@ -146,7 +146,6 @@ SCM_EXTERN ScmObj Scm_ContinuationMarkSetFirst(const ScmContinuationMarkSet *,
  *   |  base  |
  *   |   pc   |
  *   |  cpc   |
- *   | marker |
  *   | size=N |
  *   |  denv  |
  *   |  env   |
@@ -164,7 +163,6 @@ SCM_EXTERN ScmObj Scm_ContinuationMarkSetFirst(const ScmContinuationMarkSet *,
  *   |  base   |
  *   |   pc    |  <-- PCont procedure
  *   |  cpc    |  <-- CCont procedure or NULL
- *   | marker  |
  *   | size=N  |
  *   |  denv   |
  *   |  env    |  <-- &ccEnvMark
@@ -206,13 +204,7 @@ typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
     ScmEnvFrame *env;             /* saved environment */
     ScmObj denv;                  /* dynamic environment links */
-#if SIZEOF_LONG == 4
-    long size : 30;               /* size of argument frame */
-    u_long marker : 2;            /* marker bits; see SCM_CONT_*_MARKER */
-#else
-    int size;                     /* size of argument frame */
-    int marker;                   /* marker bits; see SCM_CONT_*_MARKER */
-#endif
+    long size;                    /* size of argument frame */
     SCM_PCTYPE cpc;               /* current PC (for debugging info) */
     SCM_PCTYPE pc;                /* next PC */
     ScmCompiledCode *base;        /* base register value */
