@@ -2397,7 +2397,10 @@ static ScmObj user_eval_inner(ScmObj program,
 void push_prompt_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
 {
     CHECK_STACK(CONT_FRAME_SIZE + (SP - ARGP));
-    PUSH_CONT(SCM_PROMPT_TAG_PC(promptTag));
+    /* RETURN_OP detects prompt frame and restores continuation frame
+       segment from metacontinuation.  We still need a dummy RET insn
+       in this frame, as it it executed after RETURN_OP does its business. */
+    PUSH_CONT(PC_TO_RETURN);
     push_meta_cont(vm, promptTag, abortHandler);
     /* Segment the continuation at the prompt: CONT->prev is set to
        NULL, and the link to the previous activation record is kept in
@@ -3435,7 +3438,6 @@ static void init_prompt_tag(ScmPromptTag *tag, ScmObj name)
 {
     SCM_SET_CLASS(tag, SCM_CLASS_PROMPT_TAG);
     tag->name = name;
-    tag->insn = SCM_VM_INSN(SCM_VM_RET);
 }
 
 ScmObj Scm_MakePromptTag(ScmObj name)
@@ -4769,9 +4771,12 @@ void Scm_VMDump(ScmVM *vm_to_dump)
     while (cont) {
         Scm_Printf(out, "   %p", cont);
         if (PROMPT_FRAME_P(cont)) {
-            ScmPromptTag *t = SCM_PC_TO_PROMPT_TAG(cont->pc);
-            SCM_ASSERT(t->insn == SCM_VM_INSN(SCM_VM_RET));
-            Scm_Printf(out, "::%S", t);
+            if (meta != NULL && meta->frame == cont
+                && SCM_PROMPT_TAG_P(meta->promptTag)) {
+                Scm_Printf(out, "::%S", meta->promptTag);
+            } else {
+                Scm_Printf(out, "::(unknown)");
+            }
         }
         print_stack_offset(vm, (ScmObj*)cont, 2, TRUE, out);
         Scm_Printf(out, "              env = %p", cont->env);

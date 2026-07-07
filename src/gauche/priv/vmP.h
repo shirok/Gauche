@@ -39,29 +39,18 @@
 SCM_DECL_BEGIN
 
 /*
- * Tagged continuation frame
+ * Prompt tag
  *
- *   A continuation frame can be tagged with call-with-continuation-prompt,
- *   and it marks the bottom of a delimited continuation chain.
- *
- *   A prompt tag is an ScmObj to distinguish tagged continuation frame.
- *   ScmContFrame->pc points to &(ScmPromptTag->insn), which contains dummy
- *   RET instruction (so that it won't confuse codes that inspect VM state.)
+ *   A prompt tag is a first-class object that names a continuation prompt
+ *   (see call-with-continuation-prompt).  A tagged prompt is recorded in
+ *   the meta-continuation chain (ScmMetaCont->promptTag); the tag itself is
+ *   just an identity object carrying a name for debugging.
  */
 
 struct ScmPromptTagRec {
     SCM_HEADER;
     ScmObj name;                /* arbitrary object for debugging */
-    ScmWord insn;               /* a dummy field contains RET insn.
-                                   We make cont->pc point to here
-                                   for the prompt-tag marked continuation,
-                                   so that VM won't crash if it tries
-                                   to execute it accidentally. */
 };
-
-#define SCM_PROMPT_TAG_PC(ptag)   (&SCM_PROMPT_TAG(ptag)->insn)
-#define SCM_PC_TO_PROMPT_TAG(pc)  \
-    ((ScmPromptTag*)((char*)(pc) - offsetof(ScmPromptTag, insn)))
 
 /*
  * Continuation mark set
