@@ -15,6 +15,7 @@
 
 (use gauche.test :prefix t:)
 (use gauche.threads)
+(use srfi.226)  ; use srfi-226 compatible versions of some primitives
 
 ;; Compatibility stuff
 (define test-start t:test-start)
@@ -1044,8 +1045,7 @@
         (parameterize ([p 4]) (values))
         (p)))
 
-;; DIVERGE
-'(test 1
+(test 1
       (let ([p (make-parameter 1)])
         (define t
           (temporarily ([p 2])
