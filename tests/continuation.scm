@@ -1111,6 +1111,51 @@
          (with-continuation-mark 'key 'mark2
            (continuation-mark-set-first #f 'key2 'default))))
 
+;; continuation-mark-set->list*
+
+(test* "continuation-mark-set->list*" '(#(#f mark2) #(mark1 mark2))
+       (caar
+        (with-continuation-mark 'key1 'mark1
+          (with-continuation-mark 'key2 'mark2
+            (list
+             (with-continuation-mark 'key3 'mark3
+               (list
+                (with-continuation-mark 'key2 'mark2
+                  (continuation-mark-set->list* #f '(key1 key2))))))))))
+
+(test* "continuation-mark-set->list* disjoint frames"
+       '(#(#f inner) #(outer #f))
+       (car
+        (with-continuation-mark 'key1 'outer
+          (list
+           (with-continuation-mark 'key2 'inner
+             (continuation-mark-set->list* #f '(key1 key2)))))))
+
+(test* "continuation-mark-set->list* fallback" '(#(mark3 default) #(mark1 mark2))
+       (let ([tag (make-continuation-prompt-tag)]
+             [key1 (make-continuation-mark-key)]
+             [key2 (make-continuation-mark-key)])
+         (with-continuation-mark key1 'mark1
+           (with-continuation-mark key2 'mark2
+             (call-with-continuation-prompt
+              (^[]
+                (with-continuation-mark key1 'mark3
+                  (continuation-mark-set->list* #f (list key1 key2) 'default)))
+              tag)))))
+
+(test* "continuation-mark-set->list* w/tag" '(#(mark3 default))
+       (let ([tag (make-continuation-prompt-tag)]
+             [key1 (make-continuation-mark-key)]
+             [key2 (make-continuation-mark-key)])
+         (with-continuation-mark key1 'mark1
+           (with-continuation-mark key2 'mark2
+             (call-with-continuation-prompt
+              (^[]
+                (with-continuation-mark key1 'mark3
+                  (continuation-mark-set->list* #f (list key1 key2)
+                                                'default tag)))
+              tag)))))
+
 ;; See if parameterize body is evaluated in tail context
 ;; (SRFI-226)
 (test* "parameterize body in tail context" #t

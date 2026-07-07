@@ -189,6 +189,11 @@
                                                          (prompt-tag #f))
   (return (Scm_ContinuationMarkSetFirst cmset key fallback prompt-tag)))
 
+(define-cproc continuation-mark-set->list* (cmset::<continuation-mark-set>?
+                                            keys :optional (fallback #f)
+                                                           (prompt-tag #f))
+  (return (Scm_ContinuationMarkSetListStar cmset keys fallback prompt-tag)))
+
 ;; SRFI-226
 ;; We use uninterned symbols for unique continuation mark key.
 ;; Since we don't have specialized procedures for the keys specifically

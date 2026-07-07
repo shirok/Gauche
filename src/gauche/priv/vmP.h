@@ -64,6 +64,9 @@ struct ScmPromptTagRec {
 struct ScmContinuationMarkSetRec {
     SCM_HEADER;
     ScmObj denv;                /* current denv segment */
+    ScmContFrame *cont;         /* cont chain of the current segment; its
+                                   frames' captured denv delimit continuation
+                                   frame boundaries within `denv`. */
     ScmMetaCont *metaCont;      /* meta-cont chain head */
     ScmMetaCont *bottom;        /* bounding meta-cont.  we stop searching
                                    right before this metacont. */

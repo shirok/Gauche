@@ -3585,6 +3585,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_ContinuationMarkSetClass,
                          SCM_CLASS_OBJECT_CPL);
 
 static ScmObj make_continuation_mark_set(ScmObj denv0,
+                                         ScmContFrame *cont,
                                          ScmMetaCont *mc,
                                          ScmObj promptTag)
 {
@@ -3603,6 +3604,7 @@ static ScmObj make_continuation_mark_set(ScmObj denv0,
     ScmContinuationMarkSet *cm = SCM_NEW(ScmContinuationMarkSet);
     SCM_SET_CLASS(cm, SCM_CLASS_CONTINUATION_MARK_SET);
     cm->denv = denv0;
+    cm->cont = cont;
     cm->metaCont = mc;
     cm->bottom = bottom;
     return SCM_OBJ(cm);
@@ -3638,7 +3640,8 @@ ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag)
         SCM_TYPE_ERROR(contProc, "continuation");
     }
     ScmEscapePoint *ep = (ScmEscapePoint*)SCM_SUBR_DATA(contProc);
-    return make_continuation_mark_set(ep->denv, ep->capturedMetaCont, promptTag);
+    return make_continuation_mark_set(ep->denv, ep->cont,
+                                      ep->capturedMetaCont, promptTag);
 }
 
 
@@ -3646,7 +3649,8 @@ ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag)
 {
     ScmVM *vm = theVM;
     save_cont(vm);
-    return make_continuation_mark_set(DENV, vm->currentMetaCont, promptTag);
+    return make_continuation_mark_set(DENV, vm->cont, vm->currentMetaCont,
+                                      promptTag);
 }
 
 ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
@@ -3669,6 +3673,59 @@ ScmObj Scm_ContinuationMarkSetFirst(const ScmContinuationMarkSet *cmset,
     }
     return cmset_walk(cmset, key, TRUE, fallback);
 }
+
+ScmObj Scm_ContinuationMarkSetListStar(const ScmContinuationMarkSet *cmset,
+                                       ScmObj keys,
+                                       ScmObj fallback,
+                                       ScmObj promptTag)
+{
+    if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
+    if (cmset == NULL) {
+        cmset = SCM_CONTINUATION_MARK_SET(Scm_CurrentContinuationMarks(promptTag));
+    }
+    int nkeys = Scm_Length(keys);
+    if (nkeys < 0) SCM_TYPE_ERROR(keys, "proper list");
+    if (nkeys == 0) return SCM_NIL;
+
+    ScmObj p = cmset->denv;
+    ScmContFrame *cont = cmset->cont;
+    ScmMetaCont *m = cmset->metaCont;
+
+    ScmObj h = SCM_NIL, t = SCM_NIL; /* result: list of vectors */
+    ScmObj vec = SCM_FALSE;          /* current frame's vector, or #f */
+
+    for (;;) {
+        for (; SCM_PAIRP(p); p = SCM_CDR(p)) {
+            /* Reaching a cont frame's denv closes the current frame.  Several
+               cont frames may share a denv (frames that pushed no marks);
+               each closes a frame, but empty ones yield no vector. */
+            while (cont != NULL && SCM_EQ(p, cont->denv)) {
+                if (SCM_VECTORP(vec)) SCM_APPEND1(h, t, vec);
+                vec = SCM_FALSE;
+                cont = cont->prev;
+            }
+            ScmObj key = SCM_CAAR(p);
+            int idx = 0;
+            for (ScmObj kp = keys; SCM_PAIRP(kp); kp = SCM_CDR(kp), idx++) {
+                if (SCM_EQ(SCM_CAR(kp), key)) {
+                    if (!SCM_VECTORP(vec)) vec = Scm_MakeVector(nkeys, fallback);
+                    SCM_VECTOR_ELEMENT(vec, idx) = SCM_CDAR(p);
+                    break;
+                }
+            }
+        }
+        /* End of this denv segment is a frame boundary. */
+        if (SCM_VECTORP(vec)) SCM_APPEND1(h, t, vec);
+        vec = SCM_FALSE;
+
+        if (m == NULL || m == cmset->bottom) break;
+        p = m->denv;
+        cont = m->cont;
+        m = m->prev;
+    }
+    return h;
+}
+
 
 /*==============================================================
  * Call With Current Continuation

@@ -235,8 +235,7 @@
          (with-continuation-mark 'key 'mark2
            (continuation-mark-set-first #f 'key)))))
 
-;; Missing continuation-mark-set->list*
-'(test '(((#(#f mark2) #(mark1 mark2))))
+(test '(((#(#f mark2) #(mark1 mark2))))
       (with-continuation-mark 'key1 'mark1
         (with-continuation-mark 'key2 'mark2
           (list
@@ -784,8 +783,7 @@
                  (continuation-mark-set->list #f key)))
              tag)))))
 
-;; Missing continuation-mark-set->list*
-'(test '(#(mark3 default) #(mark1 mark2))
+(test '(#(mark3 default) #(mark1 mark2))
       (let ([tag (make-continuation-prompt-tag)]
             [key1 (make-continuation-mark-key)]
             [key2 (make-continuation-mark-key)])
