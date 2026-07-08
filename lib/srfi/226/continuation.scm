@@ -17,4 +17,4 @@
           call-with-continuation-barrier
           continuation-prompt-available?
           dynamic-wind
-          unwind-protect))
+          (rename unwind-protect/barrier unwind-protect)))

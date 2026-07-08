@@ -313,8 +313,7 @@
               (unwind-protect (+ x 42) (set! x 1) (set! x (* x 2)))])
         (list x y)))
 
-;; DIVERGE - Due to semantic difference of unwind-protect
-'(test '(2 42)
+(test '(2 42)
       (let* ([x 10]
              [y
               (call/cc
@@ -322,8 +321,7 @@
                  (unwind-protect (+ x (k 42)) (set! x 1) (set! x (* x 2)))))])
         (list x y)))
 
-;; DIVERGE - Due to semantic difference of unwind-protect
-'(test '(2 62)
+(test '(2 62)
       (let* ([x 10]
              [y
               (guard (c [(continuation-violation? c) 62])
@@ -904,8 +902,7 @@
             (lambda ()
               (raise 42))))))
 
-;; DIVERGE
-'(test '(1 2)
+(test '(1 2)
       (let ([p (make-parameter 0)])
         (parameterize ([p 1])
           (let ([y
