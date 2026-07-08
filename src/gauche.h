@@ -665,6 +665,7 @@ SCM_EXTERN int    Scm_ComposableContinuationP(ScmObj proc);
 SCM_EXTERN int    Scm_NonComposableContinuationP(ScmObj proc);
 
 SCM_EXTERN ScmObj Scm_VMCallWithContinuationPrompt(ScmObj, ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_VMCallWithContinuationBarrier(ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMAbortCurrentContinuation(ScmObj, ScmObj);
 SCM_EXTERN ScmObj Scm_VMCallInContinuation(ScmObj, ScmObj, ScmObj);
 SCM_EXTERN int    Scm_ContinuationPromptAvailableP(ScmObj promptTag,

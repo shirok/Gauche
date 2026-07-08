@@ -78,13 +78,20 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_PromptTagClass,
                          prompt_tag_print, NULL, NULL, NULL,
                          SCM_CLASS_DEFAULT_CPL);
 
-static ScmPromptTag defaultPromptTag; /* initialized in initVM */
+/* Prompt tags for system use.  initialized in initVM.
+   barrierPromptTag is never exposed to Scheme;
+   only call-with-continuation-barrier implicitly install the tag. */
+static ScmPromptTag defaultPromptTag;
+static ScmPromptTag barrierPromptTag;
 
 static void push_prompt_cont(ScmVM*, ScmObj, ScmObj);
 static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 
 /* A cont frame S is a prompt frame <=> S->prev == NULL  */
 #define PROMPT_FRAME_P(cont)   ((cont)->prev == NULL)
+
+/* A metacont S is a continuation barrier if it has barrierPromptTag */
+#define BARRIER_METACONT_P(mc) SCM_EQ((mc)->promptTag, &barrierPromptTag)
 
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_VM_INSN(SCM_VM_RET) };
@@ -2058,6 +2065,7 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     ep->boundingMetaCont = proto? proto->boundingMetaCont : NULL;
     ep->capturedMetaCont = proto? proto->capturedMetaCont : vm->currentMetaCont;
     ep->applyProc = proto? proto->applyProc : SCM_FALSE;
+    ep->crossesBarrier = proto? proto->crossesBarrier : FALSE;
     ep->ownerVM = proto? proto->ownerVM : vm;
     return ep;
 }
@@ -2135,6 +2143,39 @@ static ScmMetaCont *find_meta_cont_with_tag(ScmMetaCont *head, ScmObj promptTag)
         if (SCM_EQ(m->promptTag, promptTag)) return m;
     }
     return NULL;
+}
+
+/* Return TRUE if a continuation barrier lies in the captured slice, i.e. in
+   the metacont range FROM (inclusive) to TO (exclusive). */
+static _Bool meta_cont_range_has_barrier(ScmMetaCont *from, ScmMetaCont *to)
+{
+    for (ScmMetaCont *m = from; m != NULL && m != to; m = m->prev) {
+        if (BARRIER_METACONT_P(m)) return TRUE;
+    }
+    return FALSE;
+}
+
+/* Return TRUE if `m` is reachable from vm's current metacont through chain */
+static _Bool meta_cont_reachable_p(ScmVM *vm, ScmMetaCont *m)
+{
+    for (ScmMetaCont *c = vm->currentMetaCont; c != NULL; c = c->prev) {
+        if (c == m) return TRUE;
+    }
+    return FALSE;
+}
+
+/* Return TRUE if invoking the non-composable continuation `ep` would reinstate
+   a continuation barrier.  Even if the continuation contains a barrier,
+   as far as that metacont is reachable from the currentMetaCont, it won't
+   be reinstated and it's ok. */
+static _Bool reinstates_barrier_p(ScmVM *vm, ScmEscapePoint *ep)
+{
+    for (ScmMetaCont *m = ep->capturedMetaCont;
+         m != NULL && m != ep->boundingMetaCont;
+         m = m->prev) {
+        if (BARRIER_METACONT_P(m) && !meta_cont_reachable_p(vm, m)) return TRUE;
+    }
+    return FALSE;
 }
 
 /* Install a captured (possibly multi-segment) partial continuation by pushing
@@ -3432,6 +3473,12 @@ static ScmString defaultPromptTagName =
                                  sizeof(DEFAULT_PROMPT_TAG_NAME)-1,
                                  sizeof(DEFAULT_PROMPT_TAG_NAME)-1);
 
+#define BARRIER_PROMPT_TAG_NAME "continuation-barrier"
+static ScmString barrierPromptTagName =
+    SCM_STRING_CONST_INITIALIZER(BARRIER_PROMPT_TAG_NAME,
+                                 sizeof(BARRIER_PROMPT_TAG_NAME)-1,
+                                 sizeof(BARRIER_PROMPT_TAG_NAME)-1);
+
 static void init_prompt_tag(ScmPromptTag *tag, ScmObj name)
 {
     SCM_SET_CLASS(tag, SCM_CLASS_PROMPT_TAG);
@@ -3464,6 +3511,13 @@ ScmObj Scm_VMCallWithContinuationPrompt(ScmObj thunk,
     }
 
     push_prompt_cont(Scm_VM(), promptTag, abortHandler);
+    return Scm_VMApply0(thunk);
+}
+
+ScmObj Scm_VMCallWithContinuationBarrier(ScmObj thunk)
+{
+    /* Install a prompt carrying the dedicated barrierPromptTag. */
+    push_prompt_cont(Scm_VM(), SCM_OBJ(&barrierPromptTag), SCM_FALSE);
     return Scm_VMApply0(thunk);
 }
 
@@ -3964,6 +4018,16 @@ static ScmObj throw_continuation(ScmObj *argframe,
             Scm_Append2(ep_part_handlers(ep), currentHandlers),
             currentHandlers);
     } else {
+        /* SRFI-226: applying a non-composable continuation that would
+           reinstate a continuation barrier is an error.  */
+        if (ep->crossesBarrier && reinstates_barrier_p(vm, ep)) {
+            Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                               "prompt-tag", SCM_OBJ(&barrierPromptTag),
+                               SCM_RAISE_CONDITION_MESSAGE,
+                               "Attempt to reinstate a continuation barrier by "
+                               "invoking a non-composable continuation");
+        }
+
         /* non-composable: We have a few cases.
 
            1. We're not on the same cstack as captured continuation's
@@ -4134,10 +4198,25 @@ ScmObj call_cc_common(ScmObj proc,
                            promptTag);
     }
 
+    /* SRFI-226 continuation barrier: the captured slice is the metacont range
+       [vm->currentMetaCont .. bottom).  If it includes a barrier, capturing a
+       composable continuation is an error right away; for a non-composable
+       continuation we remember it and signal at invocation (reinstatement). */
+    _Bool crossesBarrier =
+        meta_cont_range_has_barrier(vm->currentMetaCont, bottom);
+    if (composable && crossesBarrier) {
+        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                           "prompt-tag", SCM_OBJ(&barrierPromptTag),
+                           SCM_RAISE_CONDITION_MESSAGE,
+                           "Attempt to capture a composable continuation "
+                           "across a continuation barrier");
+    }
+
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, NULL);
     ep->cont = vm->cont;
     ep->partContTop = ep->cont;
     ep->boundingMetaCont = bottom;
+    ep->crossesBarrier = crossesBarrier;
     if (composable) {
         ep->cstack = NULL;
         delimit_composable_cont(ep);
@@ -4956,6 +5035,7 @@ void Scm__InitVM(void)
        Again, be aware that most modules are not initialized yet.
     */
     init_prompt_tag(&defaultPromptTag, SCM_OBJ(&defaultPromptTagName));
+    init_prompt_tag(&barrierPromptTag, SCM_OBJ(&barrierPromptTagName));
 
     /* Create root VM */
     rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));

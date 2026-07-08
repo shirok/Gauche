@@ -117,6 +117,8 @@
                                              :optional (prompt-tag #f)
                                                        (abort-handler #f))
   Scm_VMCallWithContinuationPrompt)
+(define-cproc call-with-continuation-barrier (thunk)
+  Scm_VMCallWithContinuationBarrier)
 (define-cproc abort-current-continuation (prompt-tag :rest objs)
   Scm_VMAbortCurrentContinuation)
 

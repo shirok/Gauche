@@ -14,7 +14,7 @@
           call-in-continuation
           call-in
           return-to
-          ;;call-with-continuation-barrier
+          call-with-continuation-barrier
           continuation-prompt-available?
           dynamic-wind
           unwind-protect))

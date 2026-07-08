@@ -165,22 +165,19 @@
 
 ;;; Continuation barriers
 
-;; Missing call-with-continuation-barrier
-'(test 103 (call-with-continuation-barrier
+(test 103 (call-with-continuation-barrier
            (lambda ()
              (call/cc
               (lambda (k)
                 (+ 100 (k 103)))))))
 
-;; Missing call-with-continuation-barrier
-'(test 104 (call/cc
+(test 104 (call/cc
            (lambda (k)
              (call-with-continuation-barrier
               (lambda ()
                 (+ 100 (k 104)))))))
 
-;; Missing call-with-continuation-barrier
-'(test 112 (call-with-current-continuation
+(test 112 (call-with-current-continuation
            (lambda (k)
              (call-with-continuation-barrier
               (lambda ()
@@ -715,15 +712,14 @@
 (test #t (non-composable-continuation? (call/cc values)))
 (test #f (non-composable-continuation? (call-with-composable-continuation values)))
 
-;; Missing call-with-continuation-barrier
-'(test 'exception
+(test 'exception
       (guard (c
               [(continuation-violation? c) 'exception])
         ((call-with-continuation-barrier
           (lambda ()
             (call/cc values))))))
-;; Missing call-with-continuation-barrier
-'(test 'ok
+
+(test 'ok
       (call/cc
        (lambda (k)
          (call-with-continuation-barrier
@@ -984,8 +980,7 @@
 
 ;;; See <https://srfi-email.schemers.org/srfi-226/msg/20946964/>.
 
-;; Missing - call-with-continuation-barrier
-'(test '((1 3 5) . 11)
+(test '((1 3 5) . 11)
       (let ([res '()])
         (define put!
           (lambda (obj)

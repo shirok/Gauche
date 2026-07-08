@@ -186,6 +186,12 @@ typedef struct ScmEscapePointRec {
                                      If this is not #f, the procedure is
                                      invoked after the continuation is
                                      thrown. */
+    int crossesBarrier;           /* TRUE if the captured continuation slice
+                                     includes a continuation barrier.  Note:
+                                     this is only used for non-composable
+                                     continuation.  Composable continuation
+                                     can't include a barrier; checked at
+                                     creation time. */
     ScmVM *ownerVM;               /* The VM in which this escape point was
                                      captured. */
 } ScmEscapePoint;

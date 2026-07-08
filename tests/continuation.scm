@@ -624,6 +624,96 @@
               (return-to k1))))))
 
 ;;-----------------------------------------------------------------------
+;; Continuation barriers
+;;
+
+(test-section "continuation barriers")
+
+;; A barrier that returns normally yields the thunk's value.
+(test* "barrier returns thunk value" 42
+       (call-with-continuation-barrier (lambda () 42)))
+
+;; A barrier passes multiple values through.
+(test* "barrier passes values" '(1 2 3)
+       (values->list
+        (call-with-continuation-barrier (lambda () (values 1 2 3)))))
+
+;; Escaping out of a barrier is permitted: k is captured outside the barrier,
+;; so its reinstated continuation contains no barrier.
+(test* "escape out of barrier by call/cc" 'ok
+       (call/cc
+        (lambda (k)
+          (call-with-continuation-barrier
+           (lambda () (k 'ok))))))
+
+;; Even through a prompt installed inside the barrier, escaping is fine.
+(test* "escape out of barrier through inner prompt" 'ok
+       (call-with-current-continuation
+        (lambda (k)
+          (call-with-continuation-barrier
+           (lambda ()
+             (call-with-continuation-prompt
+              (lambda () (k 'ok))))))))
+
+;; Invoking a continuation captured inside a barrier, while still inside the
+;; barrier, is an escaping jump (the barrier is still active), so it is
+;; permitted.
+(test* "invoke cont within active barrier" 103
+       (call-with-continuation-barrier
+        (lambda ()
+          (call/cc (lambda (k) (+ 100 (k 103)))))))
+
+;; But once control has left the barrier, invoking such a continuation would
+;; reinstate the barrier, which is prohibited.
+(test* "reinstate barrier via non-composable cont"
+       (test-error <continuation-violation>)
+       ((call-with-continuation-barrier
+         (lambda () (call/cc values)))))
+
+;; ... and the raised condition is a continuation violation.
+(test* "reinstate barrier raises &continuation" #t
+       (guard (e [(continuation-violation? e) #t])
+         ((call-with-continuation-barrier
+           (lambda () (call/cc values))))))
+
+;; Capturing a composable continuation across a barrier is an error at the
+;; time of capture.
+(test* "capture composable across barrier"
+       (test-error <continuation-violation>)
+       (let ([tag (make-continuation-prompt-tag)])
+         (call-with-continuation-prompt
+          (lambda ()
+            (call-with-continuation-barrier
+             (lambda ()
+               (call-with-composable-continuation values tag))))
+          tag)))
+
+;; A composable continuation whose capture stays within the barrier body is
+;; fine (the barrier is not in the captured slice).
+(test* "capture composable within barrier" 6
+       (call-with-continuation-barrier
+        (lambda ()
+          (let ([tag (make-continuation-prompt-tag)])
+            (call-with-continuation-prompt
+             (lambda ()
+               (+ 1 (call-with-composable-continuation
+                     (lambda (k) (k 4)) tag)))
+             tag)))))
+
+;; dynamic-wind after-handlers run when escaping out through a barrier.
+(test* "dynamic-wind unwinds through barrier" '(before during after)
+       (let ([log '()])
+         (call/cc
+          (lambda (k)
+            (call-with-continuation-barrier
+             (lambda ()
+               (dynamic-wind
+                (lambda () (push! log 'before))
+                (lambda () (push! log 'during) (k #f))
+                (lambda () (push! log 'after)))))))
+         (reverse log)))
+
+;;-----------------------------------------------------------------------
 ;; Parameterizations
 ;;
 
