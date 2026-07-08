@@ -48,6 +48,11 @@
 (define-syntax with-stubgen-ffi
   (er-macro-transformer
    (^[f r c]
+     ;; Kludge.  We need to ensure gauche.ffi.native is loaded
+     ;; when precompiled ffi code is run.
+     ;; https://github.com/shirok/Gauche/issues/1293
+     (define %require. ((with-module gauche.internal make-identifier)
+                        '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs forms)
         (let1 cdef-list-expr
@@ -55,6 +60,7 @@
               `(list ,@(map cdr cdef-specs)))
           (quasirename r
             `(begin
+               (,%require. "gauche/ffi/stubgen")
                ,@forms
                ;; We insert dummy binding so that expansion contanis
                ;; only definitions.

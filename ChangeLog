@@ -1,3 +1,10 @@
+2026-07-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/ffi/native.scm, ext/ffi/ffi/stubgen.scm: Ensure macroexpanded
+	  form loads the submodule.  This is needed when the code using
+	  with-ffi is precompiled.  A kludge, though---we need a better
+	  way.  See https://github.com/shirok/Gauche/issues/1293
+
 2026-07-03  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/native-type.scm (cast-handle): Make it a macro, allowsing

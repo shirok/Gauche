@@ -62,6 +62,11 @@
 (define-syntax with-native-ffi
   (er-macro-transformer
    (^[f r c]
+     ;; Kludge.  We need to ensure gauche.ffi.native is loaded
+     ;; when precompiled ffi code is run.
+     ;; https://github.com/shirok/Gauche/issues/1293
+     (define %require. ((with-module gauche.internal make-identifier)
+                        '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs ccb-info forms)
         (let* ([ccb-name-set (map car ccb-info)]
@@ -93,6 +98,7 @@
                    ctx))))
           (quasirename r
             `(begin
+               (,%require. "gauche/ffi/native")
                ,@(map (^s (quasirename r `(define ,(car s)))) cdef-specs)
                ,@forms
                (define ,ctx-var
