@@ -489,18 +489,49 @@ void Scm__MutexCleanup(void *mutex_)
 
 
 /* Scm_Cleanup and Scm_Exit
+
    Usually calling Scm_Exit is the easiest way to terminate Gauche
    application safely.  If the application wants to continue operation
    after shutting down the Scheme part, however, it can call Scm_Cleanup().
+
+   Scm_ExitWithMessage is compatible to Scheme's `exit`, which can take
+   optional message format string and arguments.  In fact, Scheme's 'exit'
+   simply calls Scm_ExitWithMessage.  We implement the feature here so that
+   C-level exit and Scheme-level exit behave the same way.
 */
 
 /* To avoid complication in supporting different platforms */
 #define EXIT_CODE(code) ((code)&0xff)
 
-void Scm_Exit(int code)
+void Scm_ExitWithMessage(int code, ScmObj fmt, ScmObj args)
 {
+    static ScmObj exit_handler = SCM_UNDEFINED;
+
+    if (SCM_UNDEFINEDP(exit_handler)) {
+        exit_handler =
+            Scm_GlobalVariableRef(Scm_GaucheInternalModule(),
+                                  SCM_SYMBOL(SCM_INTERN("exit-handler")),
+                                  0);
+    }
+    if (SCM_SUBRP(exit_handler)) {
+        /* We discard errors */
+        ScmEvalPacket epak;
+        if (Scm_Apply(exit_handler, SCM_NIL, &epak) == 1) {
+            ScmObj handler = epak.results[0];
+            if (SCM_PROCEDUREP(handler)) {
+                Scm_Apply(handler,
+                          SCM_LIST3(SCM_MAKE_INT(code), fmt, args),
+                          NULL);
+            }
+        }
+    }
     Scm_Cleanup();
     exit(EXIT_CODE(code));
+}
+
+void Scm_Exit(int code)
+{
+    Scm_ExitWithMessage(code, SCM_FALSE, SCM_NIL);
 }
 
 void Scm_Cleanup(void)

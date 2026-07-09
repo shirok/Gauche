@@ -78,12 +78,17 @@
           tag->native-type
 
           native-handle-type
+          native-handle-owner
+          native-handle-belongs?
+          native-pointer+
           native*
           native-aref
           native.
           native->
           native&
 
+          make-native-handle
+          make-c-array-handle
           uvector->native-handle
           null-pointer-handle
           null-pointer-handle?
@@ -198,8 +203,10 @@
      return-type arg-types variadic?)))
 
 (define (make-c-array-type element-type dimensions)
+  ;; allow single integer or '* for 1-dim array
+  (define dims (if (list? dimensions) dimensions (list dimensions)))
   (assume-type element-type <native-type>)
-  (let loop ([dims dimensions])
+  (let loop ([dims dims])
     (cond [(null? dims)]
           [(not (pair? dims))
            (error "Bad native array dimensions; must be a proper list, but got:"
@@ -214,15 +221,15 @@
            (error "Bad native array dimensions; must be a list of nonnegative \
                    integers, or '* at the last position, but got:"
                   dimensions)]))
-  (let ([name (format "~a~a" (~ element-type 'name) dimensions)]
-        [num-elts (if (eq? (car dimensions) '*)
+  (let ([name (format "~a~a" (~ element-type 'name) dims)]
+        [num-elts (if (eq? (car dims) '*)
                     0                   ; unknown sized array
-                    (fold * 1 dimensions))]
+                    (fold * 1 dims))]
         [elt-size (~ element-type'size)])
     (%make-c-array-type name element-type
                              (* elt-size num-elts)
                              (~ element-type'alignment)
-                             dimensions)))
+                             dims)))
 
 (define (struct-size-roundup size alignment)
   (* alignment (quotient (+ size alignment -1) alignment)))
@@ -657,6 +664,17 @@
 
 (define-inline (native-handle-type handle) (~ handle'type))
 
+;; for debugging
+(define-cproc native-handle-dump (handle::<native-handle>) ::<void>
+  (Scm_Printf SCM_CUROUT "Native handle @%p\n" (-> handle ptr))
+  (Scm_Printf SCM_CUROUT "    type: %S\n" (-> handle type))
+  (Scm_Printf SCM_CUROUT "  region: %p-%p\n"
+              (-> handle region-min) (-> handle region-max))
+  (Scm_Printf SCM_CUROUT "    name: %S\n" (-> handle name))
+  (Scm_Printf SCM_CUROUT "   atrts: %S\n" (-> handle attrs))
+  (Scm_Printf SCM_CUROUT "   flags: %16x\n" (-> handle flags))
+  (Scm_Printf SCM_CUROUT "   owner: %#65.1S\n" (-> handle owner)))
+
 (define-cproc %uvector->native-handle (uv::<uvector>
                                        handle-type::<native-type>
                                        offset::<fixnum>)
@@ -681,25 +699,43 @@
                             SCM_NIL
                             0))))
 
-(define (uvector->native-handle uv type :optional (offset 0))
-  (assume-type uv (<?> <uvector>))
-  (assume (or (is-a? type <c-pointer>)
+(define (make-native-handle type :optional (init #f) (offset 0))
+  (assume (or (c-pointer-type? type)
               (c-aggregate-type? type))
     "Type must be native pointer or aggregate type, but got:" type)
-  (%uvector->native-handle (or uv (make-u8vector (~ type'size)))
-                           type offset))
+  (assume-type init (<?> (</> <uvector> <string>))
+    "Init argument must be a string or a uvector, but got:" init)
+  (assume (or init (zero? offset))
+    "Non-zero offset is not allowed with uvector auto allocation:" offset)
+  (let1 buf (cond [(string? init) (string->u8vector init)]
+                  [(uvector? init) init]
+                  [else (make-u8vector
+                         (if (c-pointer-type? type)
+                           (~ (c-pointer-type-pointee type)'size)
+                           (~ type'size)))])
+    (%uvector->native-handle buf type offset)))
+
+;; To be removed
+(define (uvector->native-handle uv type :optional (offset 0))
+  (make-native-handle type uv offset))
+
+(define (make-c-array-handle element-type dims
+                             :optional (init #f) (offset 0))
+  (assume element-type <native-type>)
+  (make-native-handle (make-c-array-type element-type dims) init offset))
 
 ;; The handle pointing into a region originally pointed
 (define-cproc make-internal-handle (base::<native-handle>
                                     offset::<fixnum>
-                                    :optional (type::<native-type>? NULL))
+                                    :optional (type::<native-type>? #f))
   (let* ([p::void* (+ (-> base ptr) offset)]
          [t::ScmNativeType* (?: type type (-> base type))])
-    (unless (and (!= (-> base region-min) NULL)
-                 (!= (-> base region-max) NULL)
-                 (<= (-> base region-min) p)
-                 (<   p (-> base region-max)))
-      (Scm_Error "Offset out of range: %S" offset))
+    (when (and (!= (-> base region-min) NULL)
+               (!= (-> base region-max) NULL)
+               (not (and
+                     (<= (-> base region-min) p)
+                     (<=  p (-> base region-max))))) ;allows "past-end" pointer
+      (Scm_Error "Offset out of range: %S %ld" base offset))
     (return
      (Scm__MakeNativeHandle p
                             t
@@ -709,6 +745,54 @@
                             (-> base owner)
                             SCM_NIL
                             0))))
+
+;; If this handle is created by uvector->native-handle, the original uvector
+;; is returned.  Even if the handle is created with offset, the rturned
+;; object is the "whole" one.  Returns #f if the pointer came from
+;; elsewhere.  Note that it may return other than uvector or #f,
+;; if we ever allow handles points into other Gauche objects.
+(define-cproc native-handle-owner (handle::<native-handle>)
+  (let* ([r (-> handle owner)])
+    (if (SCM_UNDEFINEDP r)
+      (return SCM_FALSE)
+      (return r))))
+
+(define-cfn %native-handle-has-region? (h::ScmNativeHandle*) ::int
+  (return (not (or (== (-> h region-min) NULL)
+                   (== (-> h region-max) NULL)))))
+
+(define-cfn %native-handle-belongs? (pointer::ScmNativeHandle*
+                                     body::ScmNativeHandle*)
+  ::int
+  (cond
+   [(not (%native-handle-has-region? body)) (return FALSE)]
+   [(and (<= (-> body region-min) (-> pointer ptr))
+         (<= (-> pointer ptr) (-> body region-max))) ;include one-past-end pointer
+    (return TRUE)]
+   [else (return FALSE)]))
+
+(define-cproc native-handle-belongs? (pointer::<native-handle>
+                                      body::<native-handle>)
+  ::<boolean>
+  (return (%native-handle-belongs? pointer body)))
+
+(define-cproc native-handle-difference (a::<native-handle>
+                                        b::<native-handle>)
+  (cond
+   [(== (-> a ptr) NULL)
+    (return (?: (==  (-> b ptr) NULL) (SCM_MAKE_INT 0) SCM_FALSE))]
+   [(== (-> b ptr) NULL) (return SCM_FALSE)]
+   [(%native-handle-has-region? a)
+    (if (%native-handle-belongs? b a)
+      (return (Scm_PtrdiffToInteger (- (-> a ptr) (-> b ptr))))
+      (return SCM_FALSE))]
+   [(%native-handle-has-region? b)
+    (if (%native-handle-belongs? a b)
+      (return (Scm_PtrdiffToInteger (- (-> a ptr) (-> b ptr))))
+      (return SCM_FALSE))]
+   [else
+    ;; If both handle don't have region info, we compare bare pointer value.
+    (return (Scm_PtrdiffToInteger (- (-> a ptr) (-> b ptr))))]))
 
 (define-cproc null-pointer-handle (:optional (type::<native-type>? #f))
   (let* ([t::ScmNativeType*
@@ -775,7 +859,19 @@
 ;; a known memory region, the region must cover the destination type's
 ;; size (starting at ptr+offset).
 
-(define (cast-handle type handle :optional (offset 0))
+(define-syntax cast-handle
+  (er-macro-transformer
+   (^[f r c]
+     (define (quote? x) (c (r'quote) x))
+     (match f
+       [(_ ((? quote?) signature) handle . opts)
+        (quasirename r
+          `(cast-handle-proc (native-type ',signature) ,handle ,@opts))]
+       [(_ type handle . opts)
+        (quasirename r
+          `(cast-handle-proc ,type ,handle ,@opts))]))))
+
+(define (cast-handle-proc type handle :optional (offset 0))
   (assume-type type <native-type>)
   (assume-type handle <native-handle>)
   (assume-type offset <fixnum>)
@@ -908,6 +1004,13 @@
     (when (== c-ref NULL)
       (Scm_Error "Cannot dereference type %S" element-type))
     (when (and (!= (-> handle region-max) NULL)
+               (== offset 0)
+               (== (-> handle ptr) (-> handle region-max)))
+      ;; We allow a pointer points right past the end of array.
+      ;; They are valid for pointer arithmetic, but cannot be dereferenced.
+      ;; We distinguish it from offset-out-of-bound error.
+      (Scm_Error "Past-end pointer cannot be dereferenced: %S" handle))
+    (when (and (!= (-> handle region-max) NULL)
                (!= (-> handle region-min) NULL)
                (not (and (<= (-> handle region-min) p)
                          (<  p (-> handle region-max)))))
@@ -930,6 +1033,13 @@
                  handle element-type val))
     (when (== c-set NULL)
       (Scm_Error "Cannot set value of type %S" element-type))
+    (when (and (!= (-> handle region-max) NULL)
+               (== offset 0)
+               (== (-> handle ptr) (-> handle region-max)))
+      ;; We allow a pointer points right past the end of array.
+      ;; They are valid for pointer arithmetic, but cannot be dereferenced.
+      ;; We distinguish it from offset-out-of-bound error.
+      (Scm_Error "Past-end pointer cannot be used for setting: %S" handle))
     (when (and (!= (-> handle region-max) NULL)
                (!= (-> handle region-min) NULL)
                (not (and (<= (-> handle region-min) p)
@@ -1212,6 +1322,14 @@
       [else
        (error "native& requires c-array, c-struct or c-union handle, but got:"
               handle)])))
+
+(define (native-pointer+ handle element-offset)
+  (assume-type handle <native-handle>)
+  (let1 t (~ handle'type)
+    (assume-type t <c-pointer>
+      "c-pointer handle required, but got:" (cons handle t))
+    (let1 pt (~ t'pointee-type)
+      (make-internal-handle handle (* element-offset (~ pt'size)) (~ handle'type)))))
 
 ;;;
 ;;;  Convert type signatures to native-type instance

@@ -62,6 +62,11 @@
 (define-syntax with-native-ffi
   (er-macro-transformer
    (^[f r c]
+     ;; Kludge.  We need to ensure gauche.ffi.native is loaded
+     ;; when precompiled ffi code is run.
+     ;; https://github.com/shirok/Gauche/issues/1293
+     (define %require. ((with-module gauche.internal make-identifier)
+                        '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs ccb-info forms)
         (let* ([ccb-name-set (map car ccb-info)]
@@ -93,7 +98,8 @@
                    ctx))))
           (quasirename r
             `(begin
-               ,@(map (^[s] (quasirename r `(define ,(car s)))) cdef-specs)
+               (,%require. "gauche/ffi/native")
+               ,@(map (^s (quasirename r `(define ,(car s)))) cdef-specs)
                ,@forms
                (define ,ctx-var
                  (let ([,dlo-var ,dlo-expr])
@@ -115,8 +121,10 @@
 (define (native-type->call-canon type)
   (cond
     [(or (is-a? type <c-pointer>)
-         (is-a? type <c-array>)
          (is-a? type <c-function>)) type]
+    ;; An array argument is treated the same way as a pointer.
+    [(is-a? type <c-array>)
+     (make-c-pointer-type (~ type 'element-type))]
     [(or (is-a? type <c-struct>)
          (is-a? type <c-union>))
      (error "Directly passing struct or union isn't supported yet")]
@@ -136,7 +144,26 @@
   (if (eq? type <c-char>) char->integer values))
 
 (define (native-type->return-coerce type)
-  (if (eq? type <c-char>) integer->char values))
+  (cond [(eq? type <c-char>) integer->char]
+        [(and (subtype? type <integer>)
+              (not (~ type 'unsigned?)))
+         (%sign-extender (~ type 'size))]
+        [else values]))
+
+(define (%sign-extender bytes)
+  (ecase bytes
+    [(1) (^v (if (< v 128)
+               v
+               (logior v (lognot #xff))))]
+    [(2) (^v (if (< v 32768)
+               v
+               (logior v (lognot #xffff))))]
+    [(4) (^v (if (< v #x8000_0000)
+               v
+               (logior v (lognot #xffff_ffff))))]
+    [(8) (^v (if (< v #x8000_0000_0000_0000)
+               v
+               (logior v (lognot #xffff_ffff_ffff_ffff))))]))
 
 ;;;
 ;;; Runtime procedure builder

@@ -515,6 +515,7 @@
 (define %make-er-transformer.          (global-id% '%make-er-transformer))
 (define %make-er-transformer/toplevel. (global-id% '%make-er-transformer/toplevel))
 (define %make-id-transformer.          (global-id% '%make-id-transformer))
+(define %make-id-macro-dispatcher.     (global-id% '%make-id-macro-dispatcher))
 (define %with-inline-transformer.      (global-id% '%with-inline-transformer))
 
 (define =>.               (global-id '=>))
@@ -987,7 +988,14 @@
   (match form
     [(_ macro-expr)
      (pass1 `(,%make-id-transformer. ,macro-expr ',(cenv-exp-name cenv)) cenv)]
-    [_ (error "syntax-error: malformed eri-id-macro-transformer:" form)]))
+    [_ (error "syntax-error: malformed make-id-transformer:" form)]))
+
+;; EXPERIMENTAL.  See https://github.com/shirok/Gauche/issues/1295
+(define-pass1-syntax (make-id-macro-dispatcher form cenv) :gauche
+  (match form
+    [(_)
+     (pass1 `(,%make-id-macro-dispatcher. ',(cenv-exp-name cenv)) cenv)]
+    [_ (error "syntax-error: malformed make-id-macro-dispatcher:" form)]))
 
 ;; Build an expression to construct er macro at runtime, and run pass 1
 ;; on it.
@@ -1064,6 +1072,25 @@
         (if (eq? e2 expr)
           expr
           (loop e2))))))
+
+;; If form is (_ <id-macro> arg ...), invoke id-macro expander,
+;; and returns expanded form wrapped in a list (poor man's Maybe).
+;; If theform isn't expanded returns #f.
+;; The common use case is (set! id-macro expr).
+(define (try-expand-id-macro-dispatch form cenv)
+  (match form
+    [(_ (? identifier? name) . _)
+     (let1 var (cenv-lookup cenv name)
+       (or (and-let* ([ (wrapped-identifier? var) ]
+                      [gbind (global-ref-type var)]
+                      [ (macro? gbind) ]
+                      [(identifier-macro? gbind) ])
+             (list (call-id-macro-expander gbind form cenv)))
+           (and (macro? var)            ;local id macro
+                (if (identifier-macro? var)
+                  (list (call-id-macro-expander var form cenv))
+                  (error "Local macro can't be used here:" form)))))]
+    [_ #f]))
 
 (define-pass1-syntax (... form cenv) :null
   (error "invalid syntax:" form))
@@ -1824,22 +1851,16 @@
      ;; have a chance of optimization.
      (pass1 (with-original-source `((,setter. ,op) ,@args ,expr) form) cenv)]
     [(_ name expr)
-     (unless (identifier? name)
-       (error "syntax-error: malformed set!:" form))
-     (let1 var (cenv-lookup cenv name)
-       (or (and-let* ([ (wrapped-identifier? var) ]
-                      [gbind (global-ref-type var)]
-                      [ (macro? gbind) ]
-                      [(identifier-macro? gbind) ])
-             (pass1 (call-id-macro-expander gbind form cenv) cenv))
-           (and (macro? var)            ;local id macro
-                (if (identifier-macro? var)
-                  (pass1 (call-id-macro-expander var form cenv) cenv)
-                  (error "Local macro can't be used here:" form)))
-           (let1 val (pass1 expr cenv)
+     ;; NB: This flow calls cenv-lookup on `name` twice, but simpler.
+     (if-let1 expanded (try-expand-id-macro-dispatch form cenv)
+       (pass1 (car expanded) cenv)
+       (or (and-let* ([ (identifier? name) ]
+                      [var (cenv-lookup cenv name)]
+                      [val (pass1 expr cenv)])
              (if (lvar? var)
                ($lset var val)
-               ($gset (ensure-identifier var cenv) val)))))]
+               ($gset (ensure-identifier var cenv) val)))
+           (error "syntax-error: malformed set!:" form)))]
     [_ (error "syntax-error: malformed set!:" form)]))
 
 ;; Begin .....................................................

@@ -15201,17 +15201,35 @@ only a couple of dozen lines of code.
 
 @deftp {Module} gauche.native-type
 @mdindex gauche.native-type
+@c EN
 This module provides a type infrastructure to communicate with the
 ``native'', or ``close to the metal'' layer.  Examples include
 foreign function interface (FFI) and structured binary data access.
+@c JP
+このモジュールは、「ネイティブ」つまり「よりメタルに近い」層とやりとりする
+ためのインフラを提供します。例えばFFIやバイナリデータ構造体へのアクセス
+に必要な基礎部分です。
+@c COMMON
 
+@c EN
 Basic native types are built-in (@pxref{Native types}).  This module
 adds constructors for derived or aggregate types (such as arrays
 and structs), endian-specified types, conversions between
 native type objects and compact signatures, and so on.
+@c JP
+基本的なネイティブタイプは組み込みになっています(@ref{Native types}参照)。
+このモジュールはそれに加え、導出型や集合型(配列や構造体)、
+バイトオーダーを特定した型、
+ネイテイブタイプオブジェクトとその簡潔な表記(シグネチャ)の相互変換などを提供します。
+@c COMMON
 
+@c EN
 This module also provides @emph{native handles}, via which
 you access native data from Scheme world (@pxref{Native handles}).
+@c JP
+また、ネイティブデータをSchemeからアクセスするための
+@emph{ネイティブハンドル}も提供されます(@ref{Native handles}参照)。
+@c COMMON
 @end deftp
 
 @menu
@@ -15223,6 +15241,7 @@ you access native data from Scheme world (@pxref{Native handles}).
 
 @node Derived and aggregate native types, Representation-specific types, Native type utilities, Native type utilities
 @subsection Derived and aggregate native types
+@c NODE 導出および集合ネイティブタイプ
 
 We have subclasses of @code{<native-type>}, which are classes
 of individual derived or aggregate native types.
@@ -15555,6 +15574,7 @@ a C struct type, or a C union type.
 
 @node Representation-specific types, Native type signature, Derived and aggregate native types, Native type utilities
 @subsection Representation-specific types
+@c NODE レイアウトを特定した型
 
 Primitive native types such as @code{<int16>} read/write memory
 with the system's native endianness.  For FFI it is fine.  However,
@@ -15609,6 +15629,7 @@ within derived or aggregate types.
 
 @node Native type signature, Native handles, Representation-specific types, Native type utilities
 @subsection Native type signature
+@c NODE ネイティブタイプシグネチャ
 
 A @dfn{native type signature} is a compact S-expression description of
 a native type.  It lets you specify pointer, array, struct, union, and
@@ -15811,6 +15832,7 @@ Returns a native type signature that denotes the given native type.
 
 @node Native handles,  , Native type signature, Native type utilities
 @subsection Native handles
+@c NODE ネイティブハンドル
 
 A native handle is a handle through which you can access native data.
 Native handles may be returned from a foreign function call, or you can
@@ -15839,7 +15861,7 @@ the following example session shows it.
 (define inner (native-type '(.struct (a::int b::int))))
 (define outer (native-type `(.struct (ref::,inner ptr::(,inner *)))))
 
-(define handle (uvector->native-handle (make-u8vector (~ outer'size)) outer))
+(define handle (make-native-handle outer))
 
 (set! (native. (native. handle 'ref) 'a) 1)  ; handle.ref.a = 1
 (set! (native. (native. handle 'ref) 'b) 2)  ; handle.ref.b = 2
@@ -15862,6 +15884,34 @@ inner-ptr @result{} #<native-handle <struct anonymous*>@@0x77a1b10f51f0>
 @defun native-handle-type handle
 @c MOD gauche.native-type
 Returns the native type of the handle.
+@end defun
+
+@defun native-handle-owner handle
+@c MOD gauche.native-type
+If this handle is created from a Scheme object, returns it.  Otherwise,
+returns @code{#f}.
+
+This is useful, for example, to access to the underlying buffer
+implicitly created by @code{(make-native-handle @code{type})}.
+@end defun
+
+@defun native-handle-belongs? pointer body
+@c MOD gauche.native-type
+Both arguments must be native handles.  If the @var{pointer} handle
+references to the same region the @var{body} handle referneces,
+returns @code{#t}; otherwise, returns @code{#f}.
+
+A native handle may keep a memory region into which it references.
+If a handle is created from Scheme uvector
+(with @code{make-native-handle}), for example, the handle
+keeps the begining and end addresses of the uvector.  Handles
+derived from the handle (e.g. via @code{native.}) inherits the
+region info.  The region info is used to detect out-of-bound access.
+
+A native handle may not have such info, e.g. it wraps a pointer
+returned from a foreign function.  You can use this function
+to determine if such a handle points to a known region from
+an existing @var{body} handle.
 @end defun
 
 @defun c-pointer-handle? obj
@@ -15918,6 +15968,19 @@ a native handle representing that object is returned.
 You can use a generic setter to modify the value in the pointed location.
 @var{val} must be a value acceptable as the pointee type of
 the pointer.
+@end defun
+
+@defun native-pointer+ handle offset
+@c MOD gauche.native-type
+This corresponds to C pointer addition.  The @var{handle} argument
+must be a native handle of type @code{<c-pointer>} and @var{offset}
+must be a fixnum.  Returns a new c-pointer handle of the same pointer
+type, that points to @var{offset} elements away from @var{handle}.
+
+The offset is in the unit of pointee type, just like C pointer
+arithmetics.  If @var{handle} has region info, boundary check
+is performed and an error is signaled if the computation falls
+outside of valid region.
 @end defun
 
 @defun native-aref handle index
@@ -16000,12 +16063,12 @@ returned.
 
 @example
 (define ts (native-type '(.struct (a::int))))
-(define hs (uvector->native-handle (make-u8vector (~ ts'size)) ts))
+(define hs (make-native-handle ts))
 
 (native& hs 'a) @result{} #<native-handle <int*>@@0x726ffcc1a060>
 
 (define ta (native-type '(.array int (10))))
-(define ha (uvector->native-handle (make-u8vector (~ ta'size)) ta))
+(define ha (make-native-handle ta))
 
 (native& ha 3) @result{} #<native-handle <int*>@@0x726ffcccd42c>
 @end example
@@ -16013,12 +16076,23 @@ returned.
 
 @subsubheading Handle operations
 
-@defun cast-handle type handle :optional offset
+@defmac cast-handle type handle :optional offset
 @c MOD gauche.native-type
 Returns a new native handle that points to the same memory region
 of @var{handle}, but with @var{type}.
 Optionally, you can specify a byte offset with @var{offset}
 from the @var{handle}.
+
+If @var{type} is a quoted object, it is regarded as a native type
+signature and implicitly converted to a native type
+(@pxref{Native type signature}).  Othewise,
+@var{type} must be an expression that evaluates to a native type.
+
+@example
+(cast-handle 'char* handle)
+ @equiv{} (cast-handle (native-type 'char*) handle)
+ @equiv{} (cast-handle (make-c-pointer-type <char>) handle)
+@end example
 
 You can cast a pointer to another pointer, an aggregate
 (struct, union, array) to another aggregate,
@@ -16029,7 +16103,7 @@ it checks if @var{type} falls within the region.  However,
 if the handle is obtained from an external C function call,
 the valid memory region isn't often explicit, and it's up to
 you to treat it safely.
-@end defun
+@end defmac
 
 @defun c-pointer-compare handle-a handle-b
 @c MOD gauche.native-type
@@ -16083,38 +16157,41 @@ of the type size are copied.
 
 @subsubheading Creating a native handle
 
-@defun uvector->native-handle uv type :optional offset
+@defun make-native-handle type :optional init offset
 @c MOD gauche.native-type
-This creates a native handle of native type @var{type}, using a uniform
-vector @var{uv} as the backing storage.  This is useful to prepare
-binary data in Scheme world.  @var{type} must be a pointer or
-an aggregate native type.
+This creates a native handle of native type @var{type}, using
+a uniform vector as a backing memory.
+@var{type} must be a pointer or an aggregate native type.
 
-@var{uv} can also be @code{#f}, in which case a u8vector of size
-to contain object of @var{type} is allocated and used.
+The @var{init} argument must be @code{#f}, a uniform vector,
+or a string.  If it is omitted or @code{#f}, a u8vector with the
+size indicated by @var{type} is allocated and used.  If it is
+a string, u8vector created from it with @code{string->u8vector}
+is used.  If it is a uniform vector, it is used as is.
 
 If @var{offset} is given, it specifies a byte offset from
-the beginning of @var{uv} for the resulting handle to point to.
+the beginning of @var{init} for the resulting handle to point to.
 Using @var{offset}, you can extract a native handle
 in the middle of larger binary data.  If it is omitted, 0 is assumed.
+To use non-zero offset, you must give a uvector or a string to @var{init}.
 
-The size of @var{uv} in bytes minus @var{offset} must be greater than
+The size of @var{init} in bytes minus @var{offset} must be greater than
 or equal to the size of @var{type}, or an error is thrown.
 
 The returned native handle can be passed to a foreign function.
 Note that, however, if the foreign function retains the pointer,
 it may not be visible from Gauche's GC.  You have to make sure to
-retain reference to @var{uv} or the resulting native handle
+retain reference to @var{init} or the resulting native handle
 in the Scheme world as far as the pointer is retained in the
 foreign world.
 
-You can use any type of uniform vector as @var{uv}, but other than
+You can use any type of uniform vector as @var{init}, but other than
 @code{u8vector} and @code{s8vector}, the machine's native endianness
 is exposed as the binary data.
 
 @example
-(define ip (uvector->native-handle '#u8(#xff #xff #xff #xff)
-                                   (native-type 'int32_t*)))
+(define ip (make-native-handle (native-type 'int32_t*)
+                               '#u8(#xff #xff #xff #xff)))
 
 ip @result{} #<native-handle <int32*>@@0x7d6fbf442ff0>
 

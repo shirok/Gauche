@@ -270,6 +270,7 @@
       ;; If we're in REPL, notify the user about switching the mode.
       ;; (We may need better way to detect if we're on REPL).
       (when (and (not (current-load-path))
+                 (find-module 'gauche.interactive)
                  (module-binds? 'gauche.interactive 'setup-r7rs-repl)
                  (not (module-binding-ref 'user '*batch-mode* #f)))
         (%setup-r7rs-repl))

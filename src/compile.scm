@@ -1906,6 +1906,15 @@
                            (~ macro'info-alist)
                            (cons 'identifier-macro (~ macro'flags))))
 
+(define (%make-id-macro-dispatcher name)
+  (%make-macro-transformer name
+                           (^[form use-env]
+                             (if-let1 expanded
+                                 (try-expand-id-macro-dispatch form use-env)
+                               (car expanded)
+                               (error "Invalud macro invocation:" form)))
+                           '() '()))
+
 ;; Turn a macro to a parameterizable macro.
 (define (%make-parameterizable-transformer macro name)
   (assume-type macro <macro>)

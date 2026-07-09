@@ -4848,7 +4848,9 @@ The first form is specified in R7RS;
 @var{radix} must be an exact integer between 2 and 36 inclusive,
 the number is rendere with that radix.
 If it is omitted, 10 is assumed.
-If @var{z} is not an exact number, @var{radix} must be 10.
+If @var{z} is not an exact number, @var{base} must be 10 or 16; if
+it's 16, hexadecimal floating-point number representation is
+used (@pxref{Numeric literal syntax}).
 
 The second form is a Gauche extension, which allows more control
 over the output format.  The optional argument is an instance of
@@ -4859,7 +4861,9 @@ over the output format.  The optional argument is an instance of
 最初の形式では、@var{radix}は2から36の間の正確な整数でなければなりません。
 出力は@var{radix}進法で表現されます。
 省略された場合は10とみなします。
-@var{z}が正確数でない場合、@var{radix}は10でなければなりません。
+@var{z}が正確数でない場合、@var{base}は10か16でなければなりません。
+16の場合は十六進浮動小数点数構文で出力されます
+(@ref{Numeric literal syntax}参照)。
 
 二番目の形式はGaucheの拡張で、より細かい出力の制御を可能にします。
 @var{write-controls}は@code{<write-controls>}のインスタンスです。
@@ -4875,6 +4879,11 @@ over the output format.  The optional argument is an instance of
 
 (number->string 1234/1000 (make-write-controls :exact-decimal #t))
   @result{} "#e1.234"
+
+(number->string 6.02214076e23 16)
+  @result{} "1.fe185ca57c517p78"
+(number->string 6.02214076e23 (make-write-controls :base 16 :radix-prefix #t))
+  @result{} "#x1.fe185ca57c517p78"
 @end example
 @end defun
 
@@ -4882,7 +4891,7 @@ over the output format.  The optional argument is an instance of
 @c EN
 @code{String->number} takes a string @var{string} and parses it
 as a number in radix @var{radix} system.  If the number contains
-a decimal point, only radix 10 is allowed.  If the given string
+a decimal point, only radix 10 or 16 is allowed.  If the given string
 can't be a number, @code{#f} is returned.
 
 The @var{default-exactness} optional argument of @code{string->number}
@@ -4894,7 +4903,7 @@ If @var{string} has an exactness prefix, @var{default-exactness}
 is irrelevant.
 @c JP
 @code{string->number}は文字列@var{string}を取り数値を返します。
-入力が小数点を含んでいる場合は10進数表記しか認識されません。
+入力が小数点を含んでいる場合は十または十六進数表記しか認識されません。
 与えられた文字列が数値を構成しない場合は@code{#f}が返されます。
 
 @code{string->number}の省略可能引数@var{default-exactness}はGaucheの拡張で、
@@ -4915,6 +4924,9 @@ is irrelevant.
   @result{} 0.3333333333333333
 (string->number "#e1/3" 10 'inexact)
   @result{} 1/3
+
+(string->number "1.0p-5" 16)
+  @result{} 0.03125
 @end example
 @end defun
 

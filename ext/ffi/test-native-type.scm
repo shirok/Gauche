@@ -81,28 +81,60 @@
 
 
 ;;;---------------------------------------------------
-(test-section "uvector->native-handle")
+(test-section "make-native-handle")
 
-;; uvector->native-handle & basic check
+;; make-native-handle & basic check
 (let* ([int8* (make-c-pointer-type <int8>)]
        [int8** (make-c-pointer-type int8*)]
        [s (native-type '(.struct (a::int8_t b::int8_t)))]
        [s* (make-c-pointer-type s)])
-  (test* "uvector->native-handle int8*" #t
-         (is-a? (uvector->native-handle '#u8(0) int8*) <native-handle>))
-  (test* "uvector->native-handle s" #t
-         (is-a? (uvector->native-handle '#u8(0 0) s) <native-handle>))
-  (test* "uvector->native-handle s*" #t
-         (is-a? (uvector->native-handle '#u8(0 0) s*) <native-handle>))
-  (test* "uvector->native-handle int8** (error)"
+  (test* "make-native-handle int8*" #t
+         (is-a? (make-native-handle int8* '#u8(0)) <native-handle>))
+  (test* "make-native-handle s" #t
+         (is-a? (make-native-handle s '#u8(0 0)) <native-handle>))
+  (test* "make-native-handle s*" #t
+         (is-a? (make-native-handle s* '#u8(0 0)) <native-handle>))
+  (test* "make-native-handle int8** (error)"
          (test-error <error> #/type size \d too big/)
-         (is-a? (uvector->native-handle '#u8(0) int8**) <native-handle>))
-  (test* "uvector->native-handle s (error)"
+         (is-a? (make-native-handle int8** '#u8(0)) <native-handle>))
+  (test* "make-native-handle s (error)"
          (test-error <error> #/type size 2 too big/)
-         (is-a? (uvector->native-handle '#u8(0) s) <native-handle>))
-  (test* "uvector->native-handle s* (error)"
+         (is-a? (make-native-handle s '#u8(0)) <native-handle>))
+  (test* "make-native-handle s* (error)"
          (test-error <error> #/type size 2 too big/)
-         (is-a? (uvector->native-handle '#u8(0) s*) <native-handle>))
+         (is-a? (make-native-handle s* '#u8(0)) <native-handle>))
+  )
+
+(let* ([int16* (make-c-pointer-type <int16>)]
+       [h (make-c-array-handle <int16> 8)])
+  (test* "make-native-handle auto allocation" 16
+         (and-let* ([s (native-handle-owner h)]
+                    [ (u8vector? s) ])
+           (u8vector-length s)))
+
+  (test* "make-c-array-handle auto allocation (nonzero offset)"
+         (test-error <error> #/Non-zero offset is not allowed/)
+         (make-c-array-handle <int16> 8 #f 1))
+
+  (test* "native-handle-belongs? h h" #t
+         (native-handle-belongs? h h))
+  (test* "native-handle-belongs? h+3 h" #t
+         (let1 u (native-handle-owner h)
+           (native-handle-belongs? (make-native-handle int16* u 3)
+                                   h)))
+  (test* "native-handle-belongs? h h+3" #t
+         (let1 u (native-handle-owner h)
+           (native-handle-belongs? h
+                                   (make-native-handle int16* u 3))))
+  (test* "native-handle-belongs? new h" #f
+         (native-handle-belongs? (make-native-handle int16*)
+                                 h))
+  (test* "native-handle-belongs? NULL h" #f
+         (native-handle-belongs? (null-pointer-handle int16*)
+                                 h))
+  (test* "native-handle-belongs? h NULL" #f
+         (native-handle-belongs? h
+                                 (null-pointer-handle int16*)))
   )
 
 ;;;---------------------------------------------------
@@ -118,7 +150,7 @@
       [int64* (make-c-pointer-type <int64>)]
       [uint64* (make-c-pointer-type <uint64>)]
       [char* (make-c-pointer-type <c-char>)])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
 
   (test* "uint8* deref" '(#x80 #x09 #x3f)
          (list (native* (bc 0 uint8*))
@@ -216,8 +248,8 @@
        [int** (make-c-pointer-type int*)]
        [data (make-u8vector (+ (~ int*'size)
                                (~ <int>'size)))]
-       [h1 (uvector->native-handle data int**)]
-       [h2 (uvector->native-handle data int* (~ int*'size))])
+       [h1 (make-native-handle int** data)]
+       [h2 (make-native-handle int* data (~ int*'size))])
   (test* "null pointer on stoage" #t
          (begin
            (set! (native* h1) (null-pointer-handle))
@@ -233,6 +265,44 @@
   )
 
 ;;;---------------------------------------------------
+(test-section "pointer arithmetic")
+
+(let ([h (make-native-handle (native-type 'char*) "abcde")])
+  (test* "native-pointer+ (char*)" #\c
+         (native* (native-pointer+ h 2)))
+  (test* "native-pointer+ (char*)" (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h 10)))
+  (test* "native-pointer+ (char*)" (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h -2)))
+  (test* "native-pointer+ (char*)" #\b
+         (native* (native-pointer+ (native-pointer+ h 4) -3)))
+  )
+
+
+(let ([h (make-native-handle (native-type 'void*) (make-u8vector 16))])
+  (test* "native-pointer+ (void*)"
+         '#u8(0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1)
+         (begin
+           (set! (native* (cast-handle 'int64_t* (native-pointer+ h 8)))
+                 #x01010101_01010101)
+           (native-handle-owner h))))
+
+(let ([h (make-native-handle (native-type 'int32_t*) #s32(0 -10 -20 -30))])
+  (test* "native-pointer+ (int32_t*)" -20
+         (native* (native-pointer+ h 2)))
+  (test* "native-pointer+ (int32_t)" (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h 5)))
+  (test* "native-pointer+ (int32_t)" (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h -1)))
+  (test* "native-pointer+ (int32_t)" -10
+         (native* (native-pointer+ (native-pointer+ h 3) -2)))
+  (test* "native-pointer+ (past-end pointer)" #t
+         (native-handle-belongs? h (native-pointer+ h 4)))
+  (test* "native-pointer+ (past-end pointer)" (test-error <error> #/Past-end pointer cannot/)
+         (native* (native-pointer+ h 4)))
+  )
+
+;;;---------------------------------------------------
 (test-section "arrays")
 
 
@@ -245,7 +315,7 @@
       [uint32a (make-c-array-type <uint32> '(2 3 2))]
       [int64a (make-c-array-type <int64> '(* 2))]
       [uint64a (make-c-array-type <uint64> '(2 2))])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
   (define (tsa type expect)
     (test* #"~|type| size&alignment" expect
            (list (~ type'size) (~ type'alignment))))
@@ -429,7 +499,7 @@
       [double* (make-c-pointer-type <double>)]
       [floata (make-c-array-type <float> '(3))]
       [doublea (make-c-array-type <double> '(3))])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
   (define (tsa type expect)
     (test* #"~|type| size&alignment" expect
            (list (~ type'size) (~ type'alignment))))
@@ -487,7 +557,7 @@
                                 (b ,<uint64>)
                                 (c ,<int16>)))]
       [s0 (make-c-struct-type 's0 '())])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
   (define (tsa type expect)
     (test* #"~|type| size&alignment" expect
            (list (~ type'size) (~ type'alignment))))
@@ -546,7 +616,7 @@
        [s3 (make-c-struct-type 's3
                                `((arr ,u16x2)
                                  (b ,<uint8>)))])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
   (define (offsets type fields)
     (map (cut c-struct/union-type-field-offset type <>) fields))
 
@@ -583,7 +653,7 @@
                                (y ,<uint64>)
                                (z ,<int16>)))]
       [u0 (make-c-union-type 'u0 '())])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
   (define (tsa type expect)
     (test* #"~|type| size&alignment" expect
            (list (~ type'size) (~ type'alignment))))
@@ -660,8 +730,8 @@
 (let* ([ts (make-c-struct-type 's1 `((a ,<c-char>) (b ,<int>)))]
        [tp (make-c-pointer-type ts)]
        [data (make-u8vector (~ ts'size))]
-       [data-s (uvector->native-handle data ts)]
-       [data-p (uvector->native-handle data tp)])
+       [data-s (make-native-handle ts data)]
+       [data-p (make-native-handle tp data)])
   (test* "native-ref via pointer" '(#\A 1234)
          (begin
            (set! (native. data-s 'a) #\A)
@@ -680,9 +750,8 @@
 (let* ([double* (make-c-pointer-type <double>)]
        [double** (make-c-pointer-type double*)]
        [s (make-c-struct-type #f `((a ,double*)))]
-       [h (uvector->native-handle (make-u8vector (~ s'size)) s)]
-       [d (uvector->native-handle (make-u8vector (~ <double>'size))
-                                  (make-c-pointer-type <double>))])
+       [h (make-native-handle s)]
+       [d (make-native-handle (make-c-pointer-type <double>))])
   (test* "c-pointer in a struct" #t
          (begin
            (set! (native. h 'a) (null-pointer-handle))
@@ -697,10 +766,8 @@
 ;; Nested struct
 (let* ([inner (make-c-struct-type 'inner `((a ,<c-char>) (b ,<int8>)))]
        [outer (make-c-struct-type 'outer `((c ,inner)))]
-       [data (make-u8vector (~ outer'size))]
-       [data2 (make-u8vector (~ inner'size))]
-       [h (uvector->native-handle data outer)]
-       [h2 (uvector->native-handle data2 inner)])
+       [h (make-native-handle outer)]
+       [h2 (make-native-handle inner)])
   (set! (native. (native. h 'c) 'a) #\a)
   (set! (native. (native. h 'c) 'b) 99)
   (set! (native. h2 'a) #\b)
@@ -719,9 +786,8 @@
 (let* ([inner (make-c-struct-type 'inner `((a ,<c-char>) (b ,<int>)))]
        [inner* (make-c-pointer-type inner)]
        [outer (make-c-struct-type 'outer `((c ,inner) (d ,inner*)))]
-       [data (make-u8vector (~ outer'size))]
-       [h (uvector->native-handle data outer)]
-       [h2 (uvector->native-handle data inner*)])
+       [h (make-native-handle outer)]
+       [h2 (make-native-handle inner* (native-handle-owner h))])
   (test* "exteract inner struct" #t
          (c-struct-handle? (native. h 'c)))
   (test* "exteract inner struct pointer" #t
@@ -740,8 +806,7 @@
 ;; Array of structs, element address
 (let* ([point (make-c-struct-type 'point `((x ,<int>) (y ,<int>)))]
        [points (make-c-array-type point '(4))]
-       [data (make-u8vector (~ points'size))]
-       [arr (uvector->native-handle data points)])
+       [arr (make-native-handle points)])
   ;; Initialize: native-aref on an array of structs returns a struct handle.
   (dotimes [i 4]
     (let1 elt (native-aref arr (list i))
@@ -769,8 +834,7 @@
 ;; Struct with an array field, member reference
 (let* ([buf (make-c-array-type <uint16> '(4))]
        [frame (make-c-struct-type 'frame `((tag ,<int>) (data ,buf)))]
-       [data (make-u8vector (~ frame'size))]
-       [h (uvector->native-handle data frame)])
+       [h (make-native-handle frame)])
   (set! (native. h 'tag) 42)
   (let1 a (native. h 'data)
     (set! (native-aref a '(0)) #x1111)
@@ -934,7 +998,7 @@
        [u8  (make-c-enum-type 'U8 <uint8> '(a))]
        [e8* (make-c-pointer-type e8)]
        [u8* (make-c-pointer-type u8)])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
   (test* "enum read (signed int8 underlying)"  #x-80 (native* (bc 0 e8*)))
   (test* "enum read (unsigned uint8 underlying)" #x80 (native* (bc 0 u8*)))
   (test* "enum write through memory" 42
@@ -958,8 +1022,7 @@
                                    (b ,<uint32>)
                                    (c ,<uint16>)
                                    (d ,<uint8>)))]
-       [data (make-u8vector (~ s'size))]
-       [h (uvector->native-handle data s)])
+       [h (make-native-handle s)])
   (set! (native. h 'a) -1)
   (set! (native. h 'b) #x11223344)
   (set! (native. h 'c) #xabcd)
@@ -1007,8 +1070,7 @@
 (let* ([u (make-c-union-type 'u `((a ,<int8>)
                                   (b ,<uint32>)
                                   (c ,<uint16>)))]
-       [data (make-u8vector (~ u'size))]
-       [h (uvector->native-handle data u)])
+       [h (make-native-handle u)])
   (test* "native& on union returns c-pointer handle" #t
          (c-pointer-handle? (native& h 'a)))
   (test* "native& on union field 'a pointee type" #t
@@ -1034,8 +1096,7 @@
 
 ;; native& on 1-D c-array: extract pointer to an element
 (let* ([a (make-c-array-type <uint16> '(4))]
-       [data (make-u8vector (~ a'size))]
-       [h (uvector->native-handle data a)])
+       [h (make-native-handle a)])
   (set! (native-aref h '(0)) #x1111)
   (set! (native-aref h '(1)) #x2222)
   (set! (native-aref h '(2)) #x3333)
@@ -1086,8 +1147,7 @@
 
 ;; native& on multi-dimensional c-array
 (let* ([a (make-c-array-type <int32> '(2 3))]
-       [data (make-u8vector (~ a'size))]
-       [h (uvector->native-handle data a)])
+       [h (make-native-handle a)])
   (set! (native-aref h '(0 0))  10)
   (set! (native-aref h '(0 1))  11)
   (set! (native-aref h '(0 2))  12)
@@ -1116,8 +1176,7 @@
 
 ;; native& errors on inappropriate handle types
 (let* ([int* (make-c-pointer-type <int>)]
-       [data (make-u8vector (~ int*'size))]
-       [ph (uvector->native-handle data int*)])
+       [ph (make-native-handle int*)])
   (test* "native& on c-pointer handle is an error"
          (test-error <error> #/native&/)
          (native& ph 0)))
@@ -1137,11 +1196,11 @@
         (null-pointer-handle? (null-pointer-handle))
         (null-pointer-handle? (null-pointer-handle
                                (native-type '(.array char (16)))))
-        (null-pointer-handle? (uvector->native-handle (make-u8vector 16)
-                                                      <void*>))
-        (null-pointer-handle? (uvector->native-handle
-                               (make-u8vector 16)
-                               (native-type '(.array char (16)))))))
+        (null-pointer-handle? (make-native-handle <void*>
+                                                  (make-u8vector 16)))
+        (null-pointer-handle? (make-native-handle
+                               (native-type '(.array char (16)))
+                               (make-u8vector 16)))))
 
 ;;;----------------------------------------------------------
 (test-section "type size bounded flag")
@@ -1223,10 +1282,10 @@
        [s1    (make-c-struct-type 's1 `((a ,<int8>) (b ,<uint32>)))]
        [u1    (make-c-union-type  'u1 `((a ,<int8>) (b ,<uint32>)))]
        [fn1   (make-c-function-type <int> `(,<int>))]
-       [ph    (uvector->native-handle data int*)]
-       [ah    (uvector->native-handle data int8a)]
-       [sh    (uvector->native-handle data s1)]
-       [uh    (uvector->native-handle data u1)]
+       [ph    (make-native-handle int* data)]
+       [ah    (make-native-handle int8a data)]
+       [sh    (make-native-handle s1 data)]
+       [uh    (make-native-handle u1 data)]
        [fh    (null-pointer-handle fn1)])
 
   ;; c-pointer-handle?
@@ -1272,10 +1331,10 @@
 
   ;; equal? on pointer handles: same underlying address => equal
   (test* "equal? pointer same address" #t
-         (equal? ph (uvector->native-handle data int*)))
+         (equal? ph (make-native-handle int* data)))
   ;; equal? on pointer handles: different storage => not equal
   (test* "equal? pointer different address" #f
-         (equal? ph (uvector->native-handle (u8vector-copy data) int*)))
+         (equal? ph (make-native-handle int* (u8vector-copy data))))
   ;; equal? across handle kinds => always #f
   (test* "equal? pointer vs array"    #f (equal? ph ah))
   (test* "equal? pointer vs struct"   #f (equal? ph sh))
@@ -1287,22 +1346,22 @@
 
   ;; equal? on array handles: same content => equal
   (test* "equal? array same content" #t
-         (equal? ah (uvector->native-handle (u8vector-copy data) int8a)))
+         (equal? ah (make-native-handle int8a (u8vector-copy data))))
   ;; equal? on array handles: different content => not equal
   (test* "equal? array different content" #f
-         (equal? ah (uvector->native-handle
-                     (make-u8vector (u8vector-length data) 0) int8a)))
+         (equal? ah (make-native-handle
+                     int8a (make-u8vector (u8vector-length data) 0))))
 
   ;; equal? on struct handles: same content => equal
   (test* "equal? struct same content" #t
-         (equal? sh (uvector->native-handle (u8vector-copy data) s1)))
+         (equal? sh (make-native-handle s1 (u8vector-copy data))))
   ;; equal? on struct handles: different content => not equal
   (test* "equal? struct different content" #f
-         (equal? sh (uvector->native-handle
-                     (make-u8vector (u8vector-length data) 0) s1)))
+         (equal? sh (make-native-handle
+                     s1 (make-u8vector (u8vector-length data) 0))))
   ;; equal? on union handles: same content => equal
   (test* "equal? union same content" #t
-         (equal? uh (uvector->native-handle (u8vector-copy data) u1)))
+         (equal? uh (make-native-handle u1 (u8vector-copy data))))
   ;; equal? struct vs union => #f
   (test* "equal? struct vs union" #f (equal? sh uh))
   )
@@ -1312,7 +1371,7 @@
        (equal? (null-pointer-handle) (null-pointer-handle)))
 (test* "equal? null vs non-null pointer" #f
        (equal? (null-pointer-handle)
-               (uvector->native-handle (make-u8vector 8) <void*>)))
+               (make-native-handle <void*> (make-u8vector 8))))
 
 (let* ([int*  (make-c-pointer-type <int>)]
        [int8a (make-c-array-type <int8> '(4))]
@@ -1345,7 +1404,7 @@
        [s1     (make-c-struct-type 's1 `((a ,<int8>) (b ,<uint32>)))]
        [s1*    (make-c-pointer-type
                 (make-c-struct-type 's1 `((a ,<int8>) (b ,<uint32>))))]
-       [ph     (uvector->native-handle data int*)])
+       [ph     (make-native-handle int* data)])
 
   ;; Basic cast: reinterpret int* as uint8*, same underlying address
   (test* "cast-handle int* to uint8* yields pointer handle" #t
@@ -1376,12 +1435,12 @@
 
   ;; Cast array handle to pointer type
   (test* "cast-handle array to pointer type yields pointer handle" #t
-         (let1 ah (uvector->native-handle data int8a)
+         (let1 ah (make-native-handle int8a data)
            (c-pointer-handle? (cast-handle int8* ah))))
 
   ;; Cast array handle with offset then dereference
   (test* "cast-handle array to uint8* with offset 4" #x04
-         (let1 ah (uvector->native-handle data int8a)
+         (let1 ah (make-native-handle int8a data)
            (native* (cast-handle uint8* ah 4))))
 
   ;; Cast null pointer handle to different pointer type
@@ -1394,7 +1453,7 @@
 
   ;; Error: source handle is not pointer-like (struct handle)
   (test* "cast-handle from struct handle errors" (test-error <error> #/pointer-like/)
-         (let1 sh (uvector->native-handle data s1)
+         (let1 sh (make-native-handle s1 data)
            (cast-handle uint8* sh)))
 
   ;; Cast int* to pointer-to-struct, then dereference fields via native->
@@ -1419,8 +1478,8 @@
   (let* ([s2     (make-c-struct-type 's2 `((x ,<int8>) (y ,<int8>)
                                            (z ,<int8>) (w ,<int8>)))]
          [u1     (make-c-union-type 'u1 `((i ,<int32>) (b ,<int8>)))]
-         [ah     (uvector->native-handle data int8a)]
-         [sh     (uvector->native-handle data s1)])
+         [ah     (make-native-handle int8a data)]
+         [sh     (make-native-handle s1 data)])
     (test* "cast-handle array to struct (aggregate->aggregate)" #t
            (c-struct-handle? (cast-handle s2 ah)))
     (test* "cast-handle struct to union (aggregate->aggregate)" #t
@@ -1431,7 +1490,7 @@
   ;; Region size check: dest type larger than region must error.
   (let* ([tiny   (make-u8vector 2 0)]
          [int8a8 (make-c-array-type <int8> '(8))]
-         [tah    (uvector->native-handle tiny (make-c-array-type <int8> '(2)))])
+         [tah    (make-native-handle (make-c-array-type <int8> '(2)) tiny)])
     (test* "cast-handle errors when region too small for dest aggregate"
            (test-error <error> #/does not fit/)
            (cast-handle int8a8 tah))
@@ -1445,10 +1504,8 @@
 ;; Basic copy between handles of the same type.  Without size, the entire
 ;; struct is copied.
 (let* ([s1      (make-c-struct-type 's1 `((a ,<int32>) (b ,<int32>)))]
-       [src-buf (make-u8vector (~ s1'size) 0)]
-       [src-h   (uvector->native-handle src-buf s1)]
-       [dst-buf (make-u8vector (~ s1'size) 0)]
-       [dst-h   (uvector->native-handle dst-buf s1)])
+       [src-h   (make-native-handle s1)]
+       [dst-h   (make-native-handle s1)])
   (set! (native. src-h 'a) #x12345678)
   (set! (native. src-h 'b) #x55aa55aa)
   (copy-handle-memory! dst-h src-h)
@@ -1465,8 +1522,7 @@
 (let* ([inner   (make-c-struct-type 'inner `((x ,<uint32>) (y ,<uint32>)))]
        [outer   (make-c-struct-type 'outer `((a ,<uint32>) (mid ,inner)
                                              (b ,<uint32>)))]
-       [outer-buf (make-u8vector (~ outer'size) 0)]
-       [outer-h   (uvector->native-handle outer-buf outer)])
+       [outer-h   (make-native-handle outer)])
   (set! (native. outer-h 'a) #x11111111)
   (let1 mid-h (native. outer-h 'mid)
     (set! (native. mid-h 'x) #xaabbccdd)
@@ -1475,7 +1531,7 @@
 
   (let* ([trailing 4]
          [dst-buf (make-u8vector (+ (~ inner'size) trailing) #xff)]
-         [dst-h   (uvector->native-handle dst-buf inner)]
+         [dst-h   (make-native-handle inner dst-buf)]
          [src-h   (native. outer-h 'mid)])
     (copy-handle-memory! dst-h src-h)
     (test* "copy-handle-memory! inner struct (no size): field x"
@@ -1487,8 +1543,7 @@
            (uvector-alias <u8vector> dst-buf (~ inner'size))))
 
   ;; Same copy with explicit size matching inner struct size: works.
-  (let* ([dst-buf (make-u8vector (~ inner'size) 0)]
-         [dst-h   (uvector->native-handle dst-buf inner)]
+  (let* ([dst-h   (make-native-handle inner)]
          [src-h   (native. outer-h 'mid)])
     (copy-handle-memory! dst-h src-h (~ inner'size))
     (test* "copy-handle-memory! inner struct (size = inner.size): field x"
@@ -1497,8 +1552,7 @@
            #x77665544 (native. dst-h 'y)))
 
   ;; Size larger than destination is error
-  (let* ([dst-buf (make-u8vector (~ inner'size) 0)]
-         [dst-h   (uvector->native-handle dst-buf inner)]
+  (let* ([dst-h   (make-native-handle inner)]
          [src-h   (native. outer-h 'mid)])
     (test* "copy-handle-memory! errors when size > inner struct size"
            (test-error <error> #/out of range/)
@@ -1509,10 +1563,8 @@
 (let* ([s1      (make-c-struct-type 's1 `((a ,<int32>) (b ,<int32>)))]
        [b-off   (c-struct/union-type-field-offset s1 'b)]
        [i32*    (make-c-pointer-type <int32>)]
-       [src-buf (make-u8vector (~ s1'size) 0)]
-       [src-h   (uvector->native-handle src-buf s1)]
-       [dst-buf (make-u8vector (~ <int32>'size) 0)]
-       [dst-h   (uvector->native-handle dst-buf i32*)])
+       [src-h   (make-native-handle s1)]
+       [dst-h   (make-native-handle i32*)])
   (set! (native. src-h 'a) #x12345678)
   (set! (native. src-h 'b) #x5a5a5a5a)
   (copy-handle-memory! dst-h src-h #f b-off)
@@ -1521,8 +1573,7 @@
 
 ;; Argument validation.
 (let* ([s1   (make-c-struct-type 's1 `((a ,<int32>)))]
-       [buf  (make-u8vector (~ s1'size) 0)]
-       [h    (uvector->native-handle buf s1)])
+       [h    (make-native-handle s1)])
   (test* "copy-handle-memory! errors on negative size"
          (test-error <error> #/size must be a nonnegative/)
          (copy-handle-memory! h h -1))
@@ -1533,8 +1584,7 @@
 ;; NULL handle errors.
 (let* ([s1    (make-c-struct-type 's1 `((a ,<int32>)))]
        [s1*   (make-c-pointer-type s1)]
-       [buf   (make-u8vector (~ s1'size) 0)]
-       [h     (uvector->native-handle buf s1)]
+       [h     (make-native-handle s1)]
        [nullh (null-pointer-handle s1*)])
   (test* "copy-handle-memory! errors on NULL src"
          (test-error <error> #/NULL/)
@@ -1552,11 +1602,11 @@
        [int*  (make-c-pointer-type <int>)]
        [int8a (make-c-array-type <int8> '(4))]
        [fn1   (make-c-function-type <int> `(,<int>))]
-       [p0    (uvector->native-handle data int* 0)]   ; offset 0
-       [p0b   (uvector->native-handle data int* 0)]   ; same address as p0
-       [p8    (uvector->native-handle data int* 8)]   ; offset 8, known to be > p0
-       [a0    (uvector->native-handle data int8a 0)]
-       [a8    (uvector->native-handle data int8a 8)]
+       [p0    (make-native-handle int* data 0)]   ; offset 0
+       [p0b   (make-native-handle int* data 0)]   ; same address as p0
+       [p8    (make-native-handle int* data 8)]   ; offset 8, known to be > p0
+       [a0    (make-native-handle int8a data 0)]
+       [a8    (make-native-handle int8a data 8)]
        [fnull (null-pointer-handle fn1)])
 
   ;; c-pointer-compare
@@ -1564,13 +1614,13 @@
   (test* "c-pointer-compare lower < higher" -1 (c-pointer-compare p0 p8))
   (test* "c-pointer-compare higher > lower"  1 (c-pointer-compare p8 p0))
   ;; array handles are also valid
-  (test* "c-pointer-compare array same address" 0  (c-pointer-compare a0 (uvector->native-handle data int8a 0)))
+  (test* "c-pointer-compare array same address" 0  (c-pointer-compare a0 (make-native-handle int8a data 0)))
   (test* "c-pointer-compare array lower < higher" -1 (c-pointer-compare a0 a8))
   ;; null function pointer
   (test* "c-pointer-compare null function handles" 0
          (c-pointer-compare fnull (null-pointer-handle fn1)))
   ;; error on non-pointer-like handle
-  (let ([sh (uvector->native-handle data (make-c-struct-type 'ps `((x ,<int>))))])
+  (let ([sh (make-native-handle (make-c-struct-type 'ps `((x ,<int>))) data)])
     (test* "c-pointer-compare error on struct" (test-error)
            (c-pointer-compare sh sh)))
 
@@ -1600,24 +1650,24 @@
        [int8a (make-c-array-type <int8> '(5))]
        [same  (make-u8vector 8 42)]
        [other (make-u8vector 8  0)]
-       [sa  (uvector->native-handle same  s1)]
-       [sa2 (uvector->native-handle (u8vector-copy same) s1)]
-       [sb  (uvector->native-handle other s1)]
-       [ua  (uvector->native-handle same  u1)]
-       [aa  (uvector->native-handle (make-u8vector 5 7) int8a)]
-       [aa2 (uvector->native-handle (make-u8vector 5 7) int8a)]
-       [ab  (uvector->native-handle (make-u8vector 5 0) int8a)])
+       [sa  (make-native-handle s1  same)]
+       [sa2 (make-native-handle s1 (u8vector-copy same))]
+       [sb  (make-native-handle s1 other)]
+       [ua  (make-native-handle u1  same)]
+       [aa  (make-native-handle int8a (make-u8vector 5 7))]
+       [aa2 (make-native-handle int8a (make-u8vector 5 7))]
+       [ab  (make-native-handle int8a (make-u8vector 5 0))])
 
   (test* "c-memwise-compare struct same content"      0  (c-memwise-compare sa sa2))
   (test* "c-memwise-compare struct different content" -1 (sign (c-memwise-compare sb sa)))
   (test* "c-memwise-compare struct antisymmetric"
          (- (sign (c-memwise-compare sa sb)))
          (sign (c-memwise-compare sb sa)))
-  (test* "c-memwise-compare union same content"  0 (c-memwise-compare ua (uvector->native-handle (u8vector-copy same) u1)))
+  (test* "c-memwise-compare union same content"  0 (c-memwise-compare ua (make-native-handle u1 (u8vector-copy same))))
   (test* "c-memwise-compare array same content"  0 (c-memwise-compare aa aa2))
   (test* "c-memwise-compare array different content" -1 (sign (c-memwise-compare ab aa)))
   ;; error on pointer handle
-  (let ([ph (uvector->native-handle same (make-c-pointer-type <int>))])
+  (let ([ph (make-native-handle (make-c-pointer-type <int>) same)])
     (test* "c-memwise-compare error on pointer" (test-error)
            (c-memwise-compare ph ph))))
 
@@ -1654,7 +1704,7 @@
       [int64le*  (make-c-pointer-type <int64-le>)]
       [uint64be* (make-c-pointer-type <uint64-be>)]
       [uint64le* (make-c-pointer-type <uint64-le>)])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
 
   ;; 16-bit dereference at offset 8 (bytes #x08 #x09)
   (test* "int16be deref"  #x0809 (native* (bc 8 int16be*)))
@@ -1721,7 +1771,7 @@
       [int32le*  (make-c-pointer-type <int32-le>)]
       [int64be*  (make-c-pointer-type <int64-be>)]
       [int64le*  (make-c-pointer-type <int64-le>)])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
 
   ;; 16-bit BE round-trip, then cross-endian read
   (test* "int16be write/read round-trip" #x1234
@@ -1758,7 +1808,7 @@
       [floatle*  (make-c-pointer-type <float-le>)]
       [doublebe* (make-c-pointer-type <double-be>)]
       [doublele* (make-c-pointer-type <double-le>)])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
 
   (test* "floatbe write/read round-trip" 1.5
          (begin (set! (native* (bc 0 floatbe*)) 1.5)
@@ -2113,7 +2163,7 @@
                                       d::uint8_t)))]
        [s1-manual (make-c-struct-type 's1
                     `((a ,<int8>) (b ,<uint32>) (c ,<uint16>) (d ,<uint8>)))])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
 
   (test* "native-type struct equals manual struct" #t
          (equal? s1 s1-manual))
@@ -2136,7 +2186,7 @@
 (let* ([data (u8vector-copy *fobject-storage*)]
        [int32* (native-type 'int32_t*)]
        [int32*-manual (make-c-pointer-type <int32>)])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
 
   (test* "native-type pointer equals manual" #t
          (equal? int32* int32*-manual))
@@ -2148,7 +2198,7 @@
 (let* ([data (u8vector-copy *fobject-storage*)]
        [u8a (native-type '(.array uint8_t (4 4)))]
        [u8a-manual (make-c-array-type <uint8> '(4 4))])
-  (define (bc pos type) (uvector->native-handle data type pos))
+  (define (bc pos type) (make-native-handle type data pos))
 
   (test* "native-type array equals manual" #t
          (equal? u8a u8a-manual))

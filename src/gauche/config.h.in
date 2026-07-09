@@ -485,7 +485,13 @@
 /* Define to use x86_64 optimizations */
 #undef SCM_TARGET_X86_64
 
-/* Shared library file suffix */
+/* Define to use AArch64 optimizations */
+#undef SCM_TARGET_AARCH64
+
+/* Shared dynamic library (linkable) file suffix */
+#undef SHLIB_DYLIB_SUFFIX
+
+/* Shared dynamic library (loadine) file suffix */
 #undef SHLIB_SO_SUFFIX
 
 /* The size of `double', as computed by sizeof. */

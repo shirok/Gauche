@@ -462,6 +462,8 @@ AS_CASE([$host],
     AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations])],
   [x86_64-*], [
     AC_DEFINE(SCM_TARGET_X86_64,1,[Define to use x86_64 optimizations])],
+  [aarch64-*|arm64-*], [
+    AC_DEFINE(SCM_TARGET_AARCH64,1,[Define to use AArch64 optimizations])],
   [alpha*], [
     CFLAGS="$CFLAGS -mieee"],
   [arm*], [
@@ -845,7 +847,8 @@ AC_SUBST(EXT_LIBGAUCHE)
 AC_SUBST(EXT_UVECTOR)
 AC_SUBST(LIBGAUCHE_SO)
 AC_SUBST(GOSH_USE_SHLIB)
-AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX", [Shared library file suffix])
+AC_DEFINE_UNQUOTED(SHLIB_DYLIB_SUFFIX, "$SHLIB_DYLIB_SUFFIX", [Shared library (linkable) file suffix])
+AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX", [Shared library (lodable) file suffix])
 AC_SUBST(LINK_HELPER)
 AC_SUBST(MAKEVERSLINK)
 AC_SUBST(INSTALL_COMMON_COMMANDS)

@@ -72,7 +72,7 @@
 (let ()
   (define s1 (native-type '(.struct (a::int b::char))))
   (define s2 (native-type `(.struct (c::int s::,s1 t::(,s1 *)))))
-  (define h (uvector->native-handle #f s2))
+  (define h (make-native-handle s2))
   (define w)
 
   (set! (native. h 't) (native& h 's))
@@ -94,7 +94,7 @@
 ;; arrays
 (let ()
   (define a1 (native-type '(.array int (10))))
-  (define h (uvector->native-handle #f a1))
+  (define h (make-native-handle a1))
   (define w)
 
   (dotimes [i 10]
@@ -114,7 +114,7 @@
 
 (let ()
   (define a1 (native-type '(.array int8_t (10 5))))
-  (define h (uvector->native-handle #f a1))
+  (define h (make-native-handle a1))
   (define w)
 
   (dotimes [i 10]
@@ -140,8 +140,8 @@
   (test* "wrapped array subarray set" '(-1 -2 -3 -4 -5)
          (begin
            (set! (~ w 3)
-                 (uvector->native-handle '#s8(-1 -2 -3 -4 -5)
-                                         (native-type '(.array int8_t (5)))))
+                 (make-native-handle (native-type '(.array int8_t (5)))
+                                     '#s8(-1 -2 -3 -4 -5)))
            (coerce-to <list> (~ w 3))))
   )
 

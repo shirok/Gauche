@@ -1,3 +1,81 @@
+2026-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (make-id-macro-dispatcher), src/compile.scm:
+	  Experimentally add id-macro-dispatcher, to invoke id-macro
+	  in a different pattern than (set! id expr).  This has unexpected
+	  side effects (see https://github.com/shirok/Gauche/issues/1295),
+	  so we'll mull over the exact specification for a while.
+
+2026-07-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/ffi/native.scm, ext/ffi/ffi/stubgen.scm: Ensure macroexpanded
+	  form loads the submodule.  This is needed when the code using
+	  with-ffi is precompiled.  A kludge, though---we need a better
+	  way.  See https://github.com/shirok/Gauche/issues/1293
+
+2026-07-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/native-type.scm (cast-handle): Make it a macro, allowsing
+	  quoted native type signature in the first arg, implicitly converted
+	  to a native type instance.
+
+2026-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (<void>): Set size of <void> to 1, as void* counts
+	  by octets.
+
+2026-07-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/arith_aarch64.h: Added
+	* src/bench-arith.c, src/bench-arith.scm: Benchmarking arch-specific asm for
+	  primitive arithmetics.
+
+2026-06-26  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/record.scm (define-record-type): Check if record
+	  type name and constructor name don't crash.
+
+2026-06-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/ffi.scm (dlopen): Add for convenience.
+
+2026-06-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (print_double): Support hexadecimal floating-point
+	  output (SRFI-270).
+
+2026-06-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_real): Support hexadecimal floating-point
+	  number reader (SRFI-270).  We still need to verify corner cases.
+
+2026-06-11  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/line-edit: Incremental search added by @yutayamamoto
+	  https://github.com/shirok/Gauche/pull/1283
+
+2026-06-08  Shiro Kawai  <shiro@acm.org>
+
+	* examples/ffi-libuuid: Example for FFI
+
+	* src/libtype.scm (<type_t>): Add a native type corresponding to
+	  type_t.  (It is debatable whether those system-specific types
+	  should go---do they need to be in the core, or gauche.native-type?)
+
+2026-06-07  Shiro Kawai  <shiro@acm.org>
+
+	* tests/standalone.scm: Ensure test failure propagates to
+	  exit status.
+	* src/libmod.scm (%expand-user-import): Fix misdetection of
+	  REPL environment, caused self-host-test standalone check fail.
+	  Cf. https://github.com/shirok/Gauche/issues/1281
+
+2026-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_ExitWithMessage), src/libeval.scm (exit):
+	  Ensure calling exit-handler both from Scheme's exit and
+	  C's Scm_Exit.  https://github.com/shirok/Gauche/issues/1278
+
 2026-06-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c etc. Each continuation prompt 'segments' the slice of

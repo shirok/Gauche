@@ -48,6 +48,11 @@
 (define-syntax with-stubgen-ffi
   (er-macro-transformer
    (^[f r c]
+     ;; Kludge.  We need to ensure gauche.ffi.native is loaded
+     ;; when precompiled ffi code is run.
+     ;; https://github.com/shirok/Gauche/issues/1293
+     (define %require. ((with-module gauche.internal make-identifier)
+                        '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs forms)
         (let1 cdef-list-expr
@@ -55,6 +60,7 @@
               `(list ,@(map cdr cdef-specs)))
           (quasirename r
             `(begin
+               (,%require. "gauche/ffi/stubgen")
                ,@forms
                ;; We insert dummy binding so that expansion contanis
                ;; only definitions.
@@ -72,7 +78,7 @@
         ;; the per-function static type variables used in boxing.
         [pointer-ret-types
          (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
-                                   (pointer-type? (~ cdef'return-type))
+                                   (c-pointer-like-type? (~ cdef'return-type))
                                    (~ cdef'return-type)))
                      cdef-instances)]
         ;; Collect (fixed-arg-types . ret-type) pairs for variadic functions,
@@ -104,8 +110,8 @@
                  (let ([atypes (~ cdef'arg-types)]
                        [rtype  (~ cdef'return-type)])
                    `(,(make-c-function-type rtype atypes)
-                     ,(and (pointer-type? rtype) rtype)
-                     ,@(map (^t (and (pointer-type? t) t)) atypes)))))
+                     ,(and (c-pointer-like-type? rtype) rtype)
+                     ,@(map (^t (and (c-pointer-like-type? t) t)) atypes)))))
           cdef-instances)])
     (cgen-dynamic-load unit (sys-tmpdir))
     ((module-binding-ref mod 'ffisetup) dlobj pointer-ret-types
@@ -154,7 +160,7 @@
          [setup-sym  (string->symbol (format "substub-setup-~a-~x" c-name key))])
     (cgen-dynamic-load unit (sys-tmpdir))
     (let1 setup (module-binding-ref (find-module 'gauche.ffi.stubgen) setup-sym)
-      (if (pointer-type? ret-type)
+      (if (c-pointer-like-type? ret-type)
         (setup fn-ptr-scm ret-type)
         (setup fn-ptr-scm)))))
 
@@ -172,7 +178,7 @@
 (define (build-substub-unit fixed-arg-types ret-type nvargs
                             float-mask key c-name)
   (let* ([nfixed     (length fixed-arg-types)]
-         [ptr-ret?   (pointer-type? ret-type)]
+         [ptr-ret?   (c-pointer-like-type? ret-type)]
          [ret-typevar (and ptr-ret? "ss_rettype_")]
          ;; C type of the variadic function pointer, used for the cast in the call
          [ret-c      (%type->c-type ret-type)]
@@ -265,11 +271,6 @@
       (is-a? type <c-union>)
       (is-a? type <c-function>)))
 
-;; True if the type is a C pointer type (<c-pointer>).  These require
-;; special boxing/unboxing via Scm_NativeHandlePtr / Scm_MakeNativeHandleSimple.
-(define (pointer-type? type)
-  (is-a? type <c-pointer>))
-
 ;; Name of the static ScmObj variable that holds the return type for boxing
 ;; for a function that returns a <c-pointer>.
 (define (ffi-rettype-varname cfn)
@@ -346,7 +347,7 @@
 (define (%type->unbox-expr type arg-expr)
   (cond
    [(eq? type <top>) arg-expr]
-   [(pointer-type? type)
+   [(c-pointer-like-type? type)
     ;; Extract void* from the native handle and cast to the C pointer type.
     ;; Scm_NativeHandlePtr is the public accessor for the pointer field.
     (format "(~a)Scm_NativeHandlePtr(SCM_NATIVE_HANDLE(~a))"
@@ -364,7 +365,7 @@
 (define (%type->box-expr type val-expr :optional (type-var #f))
   (cond
    [(eq? type <top>) (format "SCM_OBJ(~a)" val-expr)]
-   [(pointer-type? type)
+   [(c-pointer-like-type? type)
     (unless type-var
       (errorf "type-var required for boxing <c-pointer> return type: ~s" type))
     ;; Wrap the raw C pointer in a native handle using the stored type object.
@@ -411,7 +412,8 @@
          [ret-type  (~ cfn'return-type)]
          ;; For <c-pointer> return types we use a per-function static ScmObj
          ;; variable (populated during ffisetup) to hold the type for boxing.
-         [ret-typevar (and (pointer-type? ret-type) (ffi-rettype-varname cfn))])
+         [ret-typevar (and (c-pointer-like-type? ret-type)
+                           (ffi-rettype-varname cfn))])
     (cgen-body
      (format "static ScmObj ffi_subr_~a(ScmObj *args, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
              c-name))
@@ -463,7 +465,8 @@
          [arg-types   (~ cfn'arg-types)]
          [ret-type    (~ cfn'return-type)]
          [nfixed      (length arg-types)]
-         [ret-typevar (and (pointer-type? ret-type) (ffi-rettype-varname cfn))]
+         [ret-typevar (and (c-pointer-like-type? ret-type)
+                           (ffi-rettype-varname cfn))]
          [va-unbox    (%type->unbox-expr <intptr_t> "SCM_CAR(lst_)")]
          [table-var   (ffi-substub-table-varname cfn)]
          [mutex-var   (ffi-substub-mutex-varname cfn)]
@@ -589,11 +592,11 @@
                      (ccb-mod-varname ccb)))
   (for-each-with-index
    (^[i atype]
-     (when (pointer-type? atype)
+     (when (c-pointer-like-type? atype)
        (cgen-decl (format "static ScmObj ~a = SCM_FALSE;"
                           (ccb-argtype-varname ccb i)))))
    (~ ccb'arg-types))
-  (when (pointer-type? (~ ccb'return-type))
+  (when (c-pointer-like-type? (~ ccb'return-type))
     (cgen-decl (format "static ScmObj ~a = SCM_FALSE;"
                        (ccb-rettype-varname ccb)))))
 
@@ -631,7 +634,7 @@
     (for-each-with-index
      (^[i atype aname]
        (let1 box-expr
-           (if (pointer-type? atype)
+           (if (c-pointer-like-type? atype)
              (%type->box-expr atype aname (ccb-argtype-varname ccb i))
              (%type->box-expr atype aname))
          (cgen-body (format "    ScmObj _scm_arg_~a = ~a;" i box-expr))))
@@ -686,7 +689,7 @@
         (format #t "      ScmObj ~a_rest = SCM_CDR(~a);\n"
                 info-var info-var)
         ;; Return pointee type (always present, may be #f).
-        (when (pointer-type? ret-type)
+        (when (c-pointer-like-type? ret-type)
           (format #t "      ~a = SCM_CAR(~a_rest);\n"
                   (ccb-rettype-varname ccb) info-var))
         (format #t "      ScmObj ~a = SCM_CDR(~a_rest);\n"
@@ -695,7 +698,7 @@
         ;; non-pointer args, so that ordering stays parallel.
         (for-each-with-index
          (^[i atype]
-           (when (pointer-type? atype)
+           (when (c-pointer-like-type? atype)
              (format #t "      ~a = SCM_CAR(~a);\n"
                      (ccb-argtype-varname ccb i) arg-pts-var))
            (format #t "      ~a = SCM_CDR(~a);\n"
@@ -762,7 +765,7 @@
   ;; Collect functions that return a <c-pointer> — they need a static ScmObj
   ;; variable to hold the type object for use in boxing the return value.
   (define pointer-return-cfns
-    (filter (^[cfn] (pointer-type? (~ cfn'return-type))) cfn-instances))
+    (filter (^[cfn] (c-pointer-like-type? (~ cfn'return-type))) cfn-instances))
   ;; Collect variadic functions — they need extra static ScmObj variables for
   ;; the sub-stub generation machinery.
   (define variadic-cfns

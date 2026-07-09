@@ -135,142 +135,11 @@ it with '|', e.g. '@code{|this is a symbol|}'.
 @c EN
 @item Numeric literals
 Gauche supports some optional R7RS number syntax and some Gauche-specific
-extensions.
-
-Either integral part or fraction part of inexact real numbers can be omitted
-if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as
-real numbers.
-
-You can include a hash sign '@code{#}' in numeric literals.  It can have
-two separate meanings.
-@enumerate
-@item
-If the fractional part of the numbe ends with consecutive '@code{#}'s,
-it indicates insiginificant digits (as supported in R5RS).
-Gauche replaces them with 0.  The consecutive '@code{#}' can start
-from before the decimal point.
-Literals with insignificat digits are inexact without the explicit
-exact prefix, even without a decimal point or exponential part.
-For example, @code{12##.##} is read as @code{1200.00},
-@code{0.123##e5} is read as @code{0.12300e5},
-and @code{1##+2##i} is read as @code{100.0+200.0i}.
-@item
-If the literal has a decimal point, and one '@code{#}' followed by at
-least one digit in the fractional part,
-it denotes @emph{repeating decimal}.  The digits following @code{#} are
-repeated indefinitely.  For example,
-@code{0.#3} means @code{0.33333333@dots{}}.  More interestingly,
-you can write an exact number in this notation.
-@code{#e0.1#142857} yields @code{4/35} (i.e. 1/10 + 1/70).
-@end enumerate
-
-Complex numbers can be written both in the rectangular format
-(e.g. @code{1+0.3i}) and in the polar format (e.g. @code{3.0@@1.57}).
-For the polar notation of complex numbers, Gauche allows the suffix @code{pi}
-to denote the phase by multiples of pi.  The Scheme syntax use radians for
-the phase, but you can only approximate pi with the floating point numbers,
-so it can't represent round numbers except zero angle.
-@example
-gosh> 2@@3.141592653589793
--2.0+2.4492935982947064e-16i
-@end example
-With the @code{pi} suffix, you can get a round numbers.
-@example
-gosh> 2@@1pi
--2.0
-gosh> 2@@0.5pi
-0.0+2.0i
-gosh> 2@@-0.5pi
-0.0-2.0i
-@end example
-
-For the rectangular complex notation, Gauche also recognizes Common Lisp
-style syntax, e.g. @code{#c(1.0 2.0)} as @code{1.0+2.0i}.  It is convenient
-to exchange data to/from Common Lisp programs.
-
-Inexact real numbers include
-the positive infinity, the negative infinity, and NaN,
-which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
-respectively.  (@code{-nan.0} is also read as NaN.)
-
-Gauche supports SRFI-169 (underscores in numbers) notation; you can
-insert a character @code{_} between digits in numeric literals
-to improve readability, e.g. @code{#b1100_1010_1111_1110}.
-A valid underscore must be surrounded by digits; @code{1_2_3} is ok,
-but @code{_123}, @code{123_}, and @code{12__3} are not.
-
-Gauche also adopts Common-Lisp style radix prefixed numeric literals,
-e.g. @code{#3r120} (@code{120} in base-3, 15 in decimal).  Radix between
-2 and 36 are recognized; alphabetic letters @code{a-zA-Z}
-are used beyond decimal.
+extensions.  @xref{Numeric literal syntax}, for the details.
 @c JP
 @item 数値リテラル
 GaucheはR7RSのオプショナルな数値構文と、Gauche特有の拡張をサポートしています。
-
-非正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
-できます。例：@code{30.}, @code{.25}, @code{-.4}。
-
-数値リテラル中に '@code{#}' を含めることができます。これは使われ方によって
-次の二つの異なる意味を持ちます。
-@enumerate
-@item
-数値の小数部がひと続きの@code{#}で終わっている場合、それは「重要でない
-(有効数字外の)桁」を意味します(この構文はR5RSに含まれていました)。
-Gaucheはそれらの桁を0で置き換えます。
-@code{#}の連続は整数部から始まって小数点を
-またいでも構いません。この表記がある数値リテラルは、小数点や指数部を
-持たなくても、明示的な正確数プレフィクスがない限りは非正確数となります。
-例: @code{12##.##} @equiv{} @code{1200.00}、
-@code{0.123##e5} @equiv{} @code{0.12300e5}、
-@code{1##+2##i} @equiv{} @code{100.0+200.0i}。
-@item
-リテラルの小数部にひとつ@code{#}がありその後にひとつ以上の数字が続いている
-場合、それは@emph{循環小数}を表します。
-@code{#}の後に続く桁が無限に繰り返されていると解釈されます。
-例えば@code{0.#3}は@code{0.33333333@dots{}}の意味です。
-おもしろいのは、正確数を指定した場合です。
-@code{#e0.1#142857}は@code{4/35}になります (つまり、1/10 + 1/70)。
-@end enumerate
-
-
-複素数表記は直交座標形 (例：@code{1+0.3i}) でも
-極座標形 (例：@code{3.0@@1.57}) でも認識されます。
-極座標記法において、Gaucheではサフィックス@code{pi}をつけることにより
-偏角をπの係数で表すことができます。Schemeの構文では偏角はラジアンですが、
-πは浮動小数点数では近似値でしか扱えないので、偏角ゼロ以外で切りの良い数値を
-表現することができません。
-@example
-gosh> 2@@3.141592653589793
--2.0+2.4492935982947064e-16i
-@end example
-@code{pi}サフィックスを使うと切りの良い数値が書けます。
-@example
-gosh> 2@@1pi
--2.0
-gosh> 2@@0.5pi
-0.0+2.0i
-gosh> 2@@-0.5pi
-0.0-2.0i
-@end example
-
-複素数の直交座標表記として、GaucheはCommon Lisp形式
-(例: @code{#c(1.0 2.0)}、@code{1.0+2.0i}と同じ)も認識します。
-これはCommon Lispプログラムとデータ交換をする場合に便利です。
-
-非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
-それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
-表記されます。(@code{-nan.0}も非数(NaN)として読まれます)。
-
-Gaucheはまた、SRFI-169 (数値中のアンダースコア)構文をサポートしています。
-読みやすくするために、数値中に@code{_}を挿入することができます
-(例: @code{#b1100_1010_1111_1110})。
-ただし、各アンダースコアは数字に囲まれていなければなりません。
-@code{1_2_3}はokですが、@code{_123}、@code{123_}、@code{12__3}は
-有効な数値リテラルではありません。
-
-Gaucheはまた、Common Lisp風の基数を明示した数値リテラルも認識します。
-例えば3進数の120は@code{#3r120}と書けます(10進数で15)。2進数から36進数まで
-認識されます。10進数より上では@code{a-zA-Z}のアルファベットを使えます。
+詳しくは@xref{Numeric literal syntax}を参照してください。
 @c COMMON
 
 @c EN
@@ -331,27 +200,316 @@ Gaucheは歴史的に2種類のエスケープを使ってきました。
 @c EN
 @item Extended hash syntax
 Many more special tokens begins with '@code{#}' are defined.
-See the table below.
+@xref{Hash syntax}, for the full list.
 @c JP
 @item 拡張された#構文
 '@code{#}' で始まる特殊構文がたくさん定義されています。
-下の表を参照して下さい。
+完全なリストは@ref{Hash syntax}を参照してください。
 @c COMMON
 @end table
 
 @menu
-* Hash syntax::
 * Hash-bang token::
+* Numeric literal syntax::
+* Hash syntax::
 @end menu
 
-@node Hash syntax, Hash-bang token, Lexical structure, Lexical structure
+@node Hash-bang token, Numeric literal syntax, Lexical structure, Lexical structure
+@subsection Hash-bang token
+@c NODE Hash-bangトークン
+@lxindex #!
+
+@c EN
+A character sequence @code{#!} has two completely different
+semantics, depending on how and where it occurs.
+
+If a file begins with @code{#!/} or @code{#! } (hash, bang, and a
+space), then the reader assumes it is an interpreter line (shebang) of
+a script and ignores the rest of characters until the end of line.
+(Actually the source doesn't need to be a file.  The reader checks
+whether it is the beginning of a port.)
+
+Other than the above case, @code{#!@var{identifier}} is read as
+a token with special meanings.  This kind token can be a special
+directive for the reader, instead of read as a datum.
+
+By default, the following tokens are recognized.
+@c JP
+文字シーケンス@code{#!}は、どこでどのように現れるかによって2つの全く異なる
+意味を持ちます。
+
+ファイルが@code{#!/}もしくは@code{#! } (ハッシュ、バング、空白) から始
+まっている場合、読み込みルーチンはそれをスクリプトのインタプリタ指定行
+(shebang) とみなし、最初の行末までを無視します。
+(実際は、ソースはファイルでなくても構いません。リーダはポートの先頭かどうかで
+判断します。)
+
+その場合以外では、@code{#!@var{identifier}}がひとつのトークンとして読ま
+れ、特別な意味を持ちます。この種のトークンはデータとして読まれるのでは
+なく、リーダに対して特別な指定を与えることもあります。
+
+デフォルトでは、以下のトークンが認識されます。
+@c COMMON
+
+@table @code
+@item #!fold-case
+@itemx #!no-fold-case
+@c EN
+Switches the reader's case sensitivity;
+@code{#!fold-case} makes the reader case insensitive, and
+@code{#!no-fold-case} makes it case sensitive.  (Also see
+@ref{Case-sensitivity}).
+@c JP
+リーダが大文字小文字を区別するかどうかを切り替えます。
+@code{#!fold-case}に出会うとリーダは大文字小
+文字を区別しないモードになり、@code{#!no-fold-case}に出会うとその逆にな
+ります。(@ref{Case-sensitivity}も参照してください。)
+@c COMMON
+@item #!r6rs
+@c EN
+This token is introduced in R6RS and used to indicate the
+program strictly conforms R6RS.  Gauche doesn't conform R6RS, but
+currently it just issues warning when it sees @code{#!r6rs} token, and
+it keeps reading on.
+@c JP
+このトークンはR6RSで導入され、プログラムがR6RSに準拠しているこ
+とを示します。GaucheはR6RSに準拠していませんが、今のところこのトー
+クンに出会っても警告を出すだけで読み込みは継続します。
+@c COMMON
+@item #!r7rs
+@c EN
+Make the reader @code{strict-r7} mode, that complies R7RS.
+@xref{Reader lexical mode}, for the details.
+@c JP
+リーダをR7RSに準拠した@code{strict-r7}モードにします。
+詳細は@ref{Reader lexical mode}を参照してください。
+@c COMMON
+@c TODO: Describe concrete details
+@item #!gauche-legacy
+@c EN
+Make the reader @code{legacy} mode, that is
+compatible to Gauche 0.9.3 and before.
+@xref{Reader lexical mode}, for the details.
+@c JP
+リーダをGauche 0.9.3およびそれ以前のものと互換な@code{legacy}モードにします。
+詳細は@ref{Reader lexical mode}を参照してください。
+@c COMMON
+@end table
+
+@node Numeric literal syntax, Hash syntax, Hash-bang token, Lexical structure
+@subsection Numeric literal syntax
+@c NODE 数値リテラル構文
+
+@c EN
+@subsubheading Omitting digits before or after the decimal point
+
+Either integral part or fraction part of inexact real numbers can
+be omitted if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as
+real numbers (R7RS).
+
+If you're from Common Lisp, be aware that @code{10.} is an inexact flonum
+in Scheme, while in CL it's an exact integer and often used to indicate
+it is a decimal.
+@c JP
+@subsubheading 小数点の前もしくは後の数値桁の省略
+
+非正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
+できます。例：@code{30.}, @code{.25}, @code{-.4} (R7RS)。
+
+Common Lispから来た方は、@code{10.}がSchemeでは不正確な浮動小数点数である
+ことに注意してください。(Common Lispでは@code{10.}は正確な整数で、
+しばしば十進数であることを明示するために使われます)。
+@c COMMON
+
+@c EN
+@subsubheading Hash sign in place of digits
+
+You can include a hash sign '@code{#}' in numeric literals.  It can have
+two separate meanings.
+@enumerate
+@item
+If the fractional part of the numbe ends with consecutive '@code{#}'s,
+it indicates insiginificant digits (as supported in R5RS).
+Gauche replaces them with 0.  The consecutive '@code{#}' can start
+from before the decimal point.
+Literals with insignificat digits are inexact without the explicit
+exact prefix, even without a decimal point or exponential part.
+For example, @code{12##.##} is read as @code{1200.00},
+@code{0.123##e5} is read as @code{0.12300e5},
+and @code{1##+2##i} is read as @code{100.0+200.0i}.
+@item
+If the literal has a decimal point, and one '@code{#}' followed by at
+least one digit in the fractional part,
+it denotes @emph{repeating decimal}.  The digits following @code{#} are
+repeated indefinitely.  For example,
+@code{0.#3} means @code{0.33333333@dots{}}.  More interestingly,
+you can write an exact number in this notation.
+@code{#e0.1#142857} yields @code{4/35} (i.e. 1/10 + 1/70).
+@end enumerate
+@c JP
+@subsubheading 数値桁に置かれる@code{#}
+
+数値リテラル中に '@code{#}' を含めることができます。これは使われ方によって
+次の二つの異なる意味を持ちます。
+@enumerate
+@item
+数値の小数部がひと続きの@code{#}で終わっている場合、それは「重要でない
+(有効数字外の)桁」を意味します(この構文はR5RSに含まれていました)。
+Gaucheはそれらの桁を0で置き換えます。
+@code{#}の連続は整数部から始まって小数点を
+またいでも構いません。この表記がある数値リテラルは、小数点や指数部を
+持たなくても、明示的な正確数プレフィクスがない限りは非正確数となります。
+例: @code{12##.##} @equiv{} @code{1200.00}、
+@code{0.123##e5} @equiv{} @code{0.12300e5}、
+@code{1##+2##i} @equiv{} @code{100.0+200.0i}。
+@item
+リテラルの小数部にひとつ@code{#}がありその後にひとつ以上の数字が続いている
+場合、それは@emph{循環小数}を表します。
+@code{#}の後に続く桁が無限に繰り返されていると解釈されます。
+例えば@code{0.#3}は@code{0.33333333@dots{}}の意味です。
+おもしろいのは、正確数を指定した場合です。
+@code{#e0.1#142857}は@code{4/35}になります (つまり、1/10 + 1/70)。
+@end enumerate
+@c COMMON
+
+@c EN
+@subsubheading Hexadecimal floating-point literals
+
+A floating-point number can be noted in hexadecimal
+using @code{#x} prefix and @code{p}/@code{P} exponential notation
+(SRFI-270).  The exponent shows power of 2 instead of 10.
+For example, @code{#x1A.Bp5} is (1 * 16^1 + 10 * 16^0 + 11 * 16^-1) * 2^5,
+which equals to 854.0.
+
+This notation does not require decimal <-> binary conversion, and
+can represent the floating-point number exactly (as far as the mantissa
+fits in 53 bits).
+@c JP
+@subsubheading 十六進浮動小数点数リテラル
+
+@code{#x}プレフィクスをつけ、指数表記に@code{p}/@code{P}を使うことで
+浮動小数点数を十六進数で表記することができます(SRFI-270)。@code{p}の後の指数は
+2の累乗を表します。例えば
+@code{#x1A.Bp5} は (1 * 16^1 + 10 * 16^0 + 11 * 16^-1) * 2^5、
+すなわち854.0です。
+
+この表記は二進⇔十進変換を必要とせず、また仮数部が53bitに収まる限りは
+正確に浮動小数点数を表記できます。
+@c COMMON
+
+@c EN
+@subsubheading Alternative complex number literals
+
+Complex numbers can be written both in the rectangular format
+(e.g. @code{1+0.3i}) and in the polar format (e.g. @code{3.0@@1.57}).
+For the polar notation of complex numbers, Gauche allows the suffix @code{pi}
+to denote the phase by multiples of pi.  The Scheme syntax use radians for
+the phase, but you can only approximate pi with the floating point numbers,
+so it can't represent round numbers except zero angle.
+@example
+gosh> 2@@3.141592653589793
+-2.0+2.4492935982947064e-16i
+@end example
+With the @code{pi} suffix, you can get a round numbers.
+@example
+gosh> 2@@1pi
+-2.0
+gosh> 2@@0.5pi
+0.0+2.0i
+gosh> 2@@-0.5pi
+0.0-2.0i
+@end example
+
+For the rectangular complex notation, Gauche also recognizes Common Lisp
+style syntax, e.g. @code{#c(1.0 2.0)} as @code{1.0+2.0i}.  It is convenient
+to exchange data to/from Common Lisp programs.
+@c JP
+@subsubheading 複素数の別表記
+
+複素数表記は直交座標形 (例：@code{1+0.3i}) でも
+極座標形 (例：@code{3.0@@1.57}) でも認識されます。
+極座標記法において、Gaucheではサフィックス@code{pi}をつけることにより
+偏角をπの係数で表すことができます。Schemeの構文では偏角はラジアンですが、
+πは浮動小数点数では近似値でしか扱えないので、偏角ゼロ以外で切りの良い数値を
+表現することができません。
+@example
+gosh> 2@@3.141592653589793
+-2.0+2.4492935982947064e-16i
+@end example
+@code{pi}サフィックスを使うと切りの良い数値が書けます。
+@example
+gosh> 2@@1pi
+-2.0
+gosh> 2@@0.5pi
+0.0+2.0i
+gosh> 2@@-0.5pi
+0.0-2.0i
+@end example
+
+複素数の直交座標表記として、GaucheはCommon Lisp形式
+(例: @code{#c(1.0 2.0)}、@code{1.0+2.0i}と同じ)も認識します。
+これはCommon Lispプログラムとデータ交換をする場合に便利です。
+@c COMMON
+
+@c EN
+@subsubheading Infinities and NaNs
+
+Inexact real numbers include
+the positive infinity, the negative infinity, and NaN,
+which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
+respectively.  (@code{-nan.0} is also read as NaN.)
+@c JP
+@subsubheading 無限大と非数(NaN)
+
+非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
+それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
+表記されます。(@code{-nan.0}も非数(NaN)として読まれます)。
+@c COMMON
+
+@c EN
+@subsubheading Underscores in numbers
+
+Gauche supports SRFI-169 (underscores in numbers) notation; you can
+insert a character @code{_} between digits in numeric literals
+to improve readability, e.g. @code{#b1100_1010_1111_1110}.
+A valid underscore must be surrounded by digits; @code{1_2_3} is ok,
+but @code{_123}, @code{123_}, and @code{12__3} are not.
+@c JP
+@subsubheading 数値中のアンダースコア
+
+Gaucheはまた、SRFI-169 (数値中のアンダースコア)構文をサポートしています。
+読みやすくするために、数値中に@code{_}を挿入することができます
+(例: @code{#b1100_1010_1111_1110})。
+ただし、各アンダースコアは数字に囲まれていなければなりません。
+@code{1_2_3}はokですが、@code{_123}、@code{123_}、@code{12__3}は
+有効な数値リテラルではありません。
+@c COMMON
+
+@c EN
+@subsubheading Radix prefix
+
+Gauche also adopts Common-Lisp style radix prefixed numeric literals,
+e.g. @code{#3r120} (@code{120} in base-3, 15 in decimal).  Radix between
+2 and 36 are recognized; alphabetic letters @code{a-zA-Z}
+are used beyond decimal.
+@c JP
+@subsubheading 基数プレフィクス
+
+Gaucheはまた、Common Lisp風の基数を明示した数値リテラルも認識します。
+例えば3進数の120は@code{#3r120}と書けます(10進数で15)。2進数から36進数まで
+認識されます。10進数より上では@code{a-zA-Z}のアルファベットを使えます。
+@c COMMON
+
+@node Hash syntax,  , Numeric literal syntax, Lexical structure
 @subsection Hash syntax
 @c NODE #構文
 
 @c EN
-The table below lists hash-syntaxes.
+A token begins with @code{#} introduce various objects.
+The table below lists all hash-syntaxes Gauche recognizes.
 @c JP
-以下の表はハッシュ構文のリストです。
+@code{#}で始まるトークンは様々なオブジェクトを導入します。
+以下の表はGaucheが認識する全てのハッシュ構文のリストです。
 @c COMMON
 
 @table @asis
@@ -359,11 +517,11 @@ The table below lists hash-syntaxes.
 @c EN
 [R6RS][R7RS][SRFI-22] It is either a beginning of an interpreter line
 (shebang) of a script, or a special token that affects the mode
-of the reader.  See `hash-bang token' section below.
+of the reader.  @xref{Hash-bang token}, for the details.
 @c JP
 [R6RS][R7RS][SRFI-22] これは、スクリプトのインタプリタ指定行(shebang)の
 開始を示すか、リーダのモードに影響を与える特別なトークンとして読まれます。
-下の`hash-bang token'の節を参照してください。
+@ref{Hash-bang token}の節を参照してください。
 @c COMMON
 @item @code{#"}
 @c EN
@@ -437,10 +595,10 @@ Uninterned symbol.  @xref{Symbols}.
 @c COMMON
 @item @code{#;}
 @c EN
-[SRFI-62] S-expression comment.  Reads next one S-expression and
+[R7RS] S-expression comment.  Reads next one S-expression and
       discard it.
 @c JP
-[SRFI-62] S式コメント。続くS式をひとつ読んで捨てます。
+[R7RS] S式コメント。続くS式をひとつ読んで捨てます。
 @c COMMON
 @item @code{#<}
 @c EN
@@ -615,9 +773,9 @@ Unused.
 @c COMMON
 @item @code{#|}
 @c EN
-[SRFI-30] Introduces a block comment.  Comment ends by matching '@code{|#}'.
+[R7RS] Introduces a block comment.  Comment ends by matching '@code{|#}'.
 @c JP
-[SRFI-30] ブロックコメントを先導します。コメントは対応する '@code{|#}' で終ります。
+[R7RS] ブロックコメントを先導します。コメントは対応する '@code{|#}' で終ります。
 @c COMMON
 @item @code{#@}}, @code{#~}
 @c EN
@@ -627,87 +785,7 @@ Unused.
 @c COMMON
 @end table
 
-@node Hash-bang token,  , Hash syntax, Lexical structure
-@subsection Hash-bang token
-@c NODE Hash-bangトークン
-@lxindex #!
 
-@c EN
-A character sequence @code{#!} has two completely different
-semantics, depending on how and where it occurs.
-
-If a file begins with @code{#!/} or @code{#! } (hash, bang, and a
-space), then the reader assumes it is an interpreter line (shebang) of
-a script and ignores the rest of characters until the end of line.
-(Actually the source doesn't need to be a file.  The reader checks
-whether it is the beginning of a port.)
-
-Other than the above case, @code{#!@var{identifier}} is read as
-a token with special meanings.  This kind token can be a special
-directive for the reader, instead of read as a datum.
-
-By default, the following tokens are recognized.
-@c JP
-文字シーケンス@code{#!}は、どこでどのように現れるかによって2つの全く異なる
-意味を持ちます。
-
-ファイルが@code{#!/}もしくは@code{#! } (ハッシュ、バング、空白) から始
-まっている場合、読み込みルーチンはそれをスクリプトのインタプリタ指定行
-(shebang) とみなし、最初の行末までを無視します。
-(実際は、ソースはファイルでなくても構いません。リーダはポートの先頭かどうかで
-判断します。)
-
-その場合以外では、@code{#!@var{identifier}}がひとつのトークンとして読ま
-れ、特別な意味を持ちます。この種のトークンはデータとして読まれるのでは
-なく、リーダに対して特別な指定を与えることもあります。
-
-デフォルトでは、以下のトークンが認識されます。
-@c COMMON
-
-@table @code
-@item #!fold-case
-@itemx #!no-fold-case
-@c EN
-Switches the reader's case sensitivity;
-@code{#!fold-case} makes the reader case insensitive, and
-@code{#!no-fold-case} makes it case sensitive.  (Also see
-@ref{Case-sensitivity}).
-@c JP
-リーダが大文字小文字を区別するかどうかを切り替えます。
-@code{#!fold-case}に出会うとリーダは大文字小
-文字を区別しないモードになり、@code{#!no-fold-case}に出会うとその逆にな
-ります。(@ref{Case-sensitivity}も参照してください。)
-@c COMMON
-@item #!r6rs
-@c EN
-This token is introduced in R6RS and used to indicate the
-program strictly conforms R6RS.  Gauche doesn't conform R6RS, but
-currently it just issues warning when it sees @code{#!r6rs} token, and
-it keeps reading on.
-@c JP
-このトークンはR6RSで導入され、プログラムがR6RSに準拠しているこ
-とを示します。GaucheはR6RSに準拠していませんが、今のところこのトー
-クンに出会っても警告を出すだけで読み込みは継続します。
-@c COMMON
-@item #!r7rs
-@c EN
-Make the reader @code{strict-r7} mode, that complies R7RS.
-@xref{Reader lexical mode}, for the details.
-@c JP
-リーダをR7RSに準拠した@code{strict-r7}モードにします。
-詳細は@ref{Reader lexical mode}を参照してください。
-@c COMMON
-@c TODO: Describe concrete details
-@item #!gauche-legacy
-@c EN
-Make the reader @code{legacy} mode, that is
-compatible to Gauche 0.9.3 and before.
-@xref{Reader lexical mode}, for the details.
-@c JP
-リーダをGauche 0.9.3およびそれ以前のものと互換な@code{legacy}モードにします。
-詳細は@ref{Reader lexical mode}を参照してください。
-@c COMMON
-@end table
 
 @c ----------------------------------------------------------------------
 @node Literals, Making procedures, Lexical structure, Core syntax

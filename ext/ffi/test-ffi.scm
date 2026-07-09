@@ -24,6 +24,8 @@
                               l::long f::float d::double))))
   (define foo* (make-c-pointer-type foo))
 
+  (define bar (native-type `(.array int32_t (4))))
+
   (define-syntax do-test-f
     (syntax-rules ::: ()
       [(_ opts)
@@ -33,58 +35,69 @@
          (test* #"with-ffi f ~'opts" 'ok
                 (begin
                   (eval
-                   `(with-ffi
-                     (dynamic-load "./f" :init-function #f)
-                     opts
-                     ;; Primitive interface
-                     (define-c-function F-c () 'char)
-                     (define-c-function F-i () 'int)
-                     (define-c-function F-ul () 'u_long)
-                     (define-c-function F-f () 'float)
-                     (define-c-function F-d () 'double)
-                     (define-c-function F-v () 'void)
-                     ;(define-c-function F-o () <top>)
-                     (define-c-function Fi-i '(int) 'int)
-                     (define-c-function Ff-f '(float) 'float)
-                     ;(define-c-function Foo-o `(,<top> ,<top>) <top>)
-                     (define-c-function Ffff-f '(float float float) 'float)
-                     (define-c-function Fd-d '(double) 'double)
-                     (define-c-function Fddd-d '(double double double) 'double)
-                     (define-c-function Fifd-d'(int float double) 'double)
-                     (define-c-function Fifd-f'(int float double) 'float)
-                     (define-c-function Fidf-d '(int double float) 'double)
-                     (define-c-function Fidf-f '(int double float) 'float)
-                     ;; mixing normal form
-                     (define (Fiii) (Fi-i (F-i)))
+                   `(with-ffi (dlopen "./f") opts
+                      ;; Primitive interface
+                      (define-c-function F-c () 'char)
+                      (define-c-function F-i () 'int)
+                      (define-c-function F-ul () 'u_long)
+                      (define-c-function F-f () 'float)
+                      (define-c-function F-d () 'double)
+                      (define-c-function F-v () 'void)
+                                        ;(define-c-function F-o () <top>)
+                      (define-c-function Fi-i '(int) 'int)
+                      (define-c-function Ff-f '(float) 'float)
+                                        ;(define-c-function Foo-o `(,<top> ,<top>) <top>)
 
-                     ;; using native-type instance
-                     (define-c-function Gd-d `(,<double>) <double>)
+                      (define-c-function Fi_i8 '(int) 'int8_t)
+                      (define-c-function Fi_i16 '(int) 'int16_t)
+                      (define-c-function Fi_i32 '(int) 'int32_t)
+                      (define-c-function Fi_i64 '(int) 'int64_t)
+                      (define-c-function Fu_u8 '(u_int) 'uint8_t)
+                      (define-c-function Fu_u16 '(u_int) 'uint16_t)
+                      (define-c-function Fu_u32 '(u_int) 'uint32_t)
+                      (define-c-function Fu_u64 '(u_int) 'uint64_t)
 
-                     ;; varargs
-                     (define-c-function Fivar '(int ...) 'int)
-                     (define-c-function Fdvar '(int ...) 'double)
-                     (define-c-function Fidfvar '(int ...) 'double)
+                      (define-c-function Ffff-f '(float float float) 'float)
+                      (define-c-function Fd-d '(double) 'double)
+                      (define-c-function Fddd-d '(double double double) 'double)
+                      (define-c-function Fifd-d'(int float double) 'double)
+                      (define-c-function Fifd-f'(int float double) 'float)
+                      (define-c-function Fidf-d '(int double float) 'double)
+                      (define-c-function Fidf-f '(int double float) 'float)
+                      ;; mixing normal form
+                      (define (Fiii) (Fi-i (F-i)))
 
-                     ;; spill tests
-                     (define-c-function Fiiiiiii-i '(int int int int int int int) 'int)
-                     (define-c-function Fddddddddd-d '(double double double double double double double double double) 'double)
-                     (define-c-function Fiiiiiiidddd-d '(int int int int int int int double double double double) 'double)
+                      ;; using native-type instance
+                      (define-c-function Gd-d `(,<double>) <double>)
 
-                     ;; c-string
-                     (define-c-function Fs-i '(c-string) 'int)
-                     (define-c-function Fi-s '(int) 'c-string)
+                      ;; varargs
+                      (define-c-function Fivar '(int ...) 'int)
+                      (define-c-function Fdvar '(int ...) 'double)
+                      (define-c-function Fidfvar '(int ...) 'double)
 
-                     ;; null pointer passing
-                     (define-c-function Fpnull-i '(void*) 'int)
+                      ;; spill tests
+                      (define-c-function Fiiiiiii-i '(int int int int int int int) 'int)
+                      (define-c-function Fddddddddd-d '(double double double double double double double double double) 'double)
+                      (define-c-function Fiiiiiiidddd-d '(int int int int int int int double double double double) 'double)
 
-                     ;; struct pointer passing
-                     (define-c-function F-pstruct-c-pstruct `(,foo* char) foo*)
-                     (define-c-function F-pstruct-s-pstruct `(,foo* short) foo*)
-                     (define-c-function F-pstruct-i-pstruct `(,foo* int) foo*)
-                     (define-c-function F-pstruct-l-pstruct `(,foo* long) foo*)
-                     (define-c-function F-pstruct-f-pstruct `(,foo* float) foo*)
-                     (define-c-function F-pstruct-d-pstruct `(,foo* double) foo*)
-                     )
+                      ;; c-string
+                      (define-c-function Fs-i '(c-string) 'int)
+                      (define-c-function Fi-s '(int) 'c-string)
+
+                      ;; null pointer passing
+                      (define-c-function Fpnull-i '(void*) 'int)
+
+                      ;; struct pointer passing
+                      (define-c-function F-pstruct-c-pstruct `(,foo* char) foo*)
+                      (define-c-function F-pstruct-s-pstruct `(,foo* short) foo*)
+                      (define-c-function F-pstruct-i-pstruct `(,foo* int) foo*)
+                      (define-c-function F-pstruct-l-pstruct `(,foo* long) foo*)
+                      (define-c-function F-pstruct-f-pstruct `(,foo* float) foo*)
+                      (define-c-function F-pstruct-d-pstruct `(,foo* double) foo*)
+
+                      ;; array
+                      (define-c-function Fia-i `(int ,bar) 'int)
+                      )
                    (current-module))
                   'ok))
 
@@ -96,7 +109,22 @@
          (t (undefined) (F-v))
          ;(test* "F_o" 'foo (F-o))
          (t 101 (Fi-i 100))
+         (t -99 (Fi-i -100))
          (t 0.125 (Ff-f 0.25))
+
+         (t 23 (Fi_i8 23))
+         (t -45 (Fi_i8 -45))
+         (t 2345 (Fi_i16 2345))
+         (t -4567 (Fi_i16 -4567))
+         (t 234567 (Fi_i32 234567))
+         (t -456789 (Fi_i32 -456789))
+         (t 234562345 (Fi_i64 234562345))
+         (t -256784567 (Fi_i64 -256784567))
+         (t 234 (Fu_u8 234))
+         (t 40000 (Fu_u16 40000))
+         (t #x7fff_ffff (Fu_u32 #x7FFF_FFFF))
+         (t #x7fff_ffff (Fu_u64 #x7FFF_FFFF))
+
          ;(test* "Foo_o" '(a . b) (Foo-o 'a 'b))
          (t 0.875 (Ffff-f 0.5 0.25 0.125))
          (t 1.2 (Fd-d 0.6))
@@ -131,11 +159,14 @@
          (t 1 (Fpnull-i (null-pointer-handle)))
          (t 1 (Fpnull-i (null-pointer-handle (native-type 'int*))))
          (t 0 (let1 data (make-u8vector (~ foo'size))
-                (Fpnull-i (uvector->native-handle data foo*))))
+                (Fpnull-i (make-native-handle foo* data))))
 
-         (let* ([p (uvector->native-handle
-                    (make-u8vector (~ foo'size))
-                    foo*)])
+         ;; array pasing
+         (t 0 (Fia-i 0 (null-pointer-handle (native-type 'int*))))
+         (t 6 (Fia-i 3 (make-native-handle bar '#s32(1 2 3 4))))
+         (t 10 (Fia-i 4 (make-native-handle bar '#s32(1 2 3 4))))
+
+         (let* ([p (make-native-handle foo*)])
            (set! (native-> p 'c) #\a)
            (t #\b (let ([r (F-pstruct-c-pstruct p #\b)])
                     (native-> r 'c)))
@@ -175,25 +206,23 @@
          (test* #"with-ffi g ~'opts" 'ok
                 (begin
                   (eval
-                   `(with-ffi
-                     (dynamic-load "./g" :init-function #f)
-                     opts
-                     (define-c-function F-o '() <top>)
-                     (define-c-function Foo-o `(,<top> ,<top>) <top>)
-                     (define-c-function Foooooooooo-o
-                       '(,<top> ,<top> ,<top> ,<top> ,<top>
-                         ,<top> ,<top> ,<top> ,<top> ,<top>)
-                       <top>)
-                     (define-c-function Fcb `(,<top>) <top>)
-                     (define-c-function Fcb-spill9
-                       '(,<top> ,<top> ,<top> ,<top> ,<top>
-                         ,<top> ,<top> ,<top> ,<top> ,<top>)
-                       <top>)
-                     (define-c-function Fcb-spill10
-                       '(,<top> ,<top> ,<top> ,<top> ,<top>
-                         ,<top> ,<top> ,<top> ,<top> ,<top> ,<top>)
-                       <top>)
-                     )
+                   `(with-ffi (dlopen "./g") opts
+                      (define-c-function F-o '() <top>)
+                      (define-c-function Foo-o `(,<top> ,<top>) <top>)
+                      (define-c-function Foooooooooo-o
+                        '(,<top> ,<top> ,<top> ,<top> ,<top>
+                                 ,<top> ,<top> ,<top> ,<top> ,<top>)
+                        <top>)
+                      (define-c-function Fcb `(,<top>) <top>)
+                      (define-c-function Fcb-spill9
+                        '(,<top> ,<top> ,<top> ,<top> ,<top>
+                                 ,<top> ,<top> ,<top> ,<top> ,<top>)
+                        <top>)
+                      (define-c-function Fcb-spill10
+                        '(,<top> ,<top> ,<top> ,<top> ,<top>
+                                 ,<top> ,<top> ,<top> ,<top> ,<top> ,<top>)
+                        <top>)
+                      )
                    (current-module))
                   'ok))
 
@@ -233,24 +262,22 @@
          (test* #"with-ffi cb ~'opts" 'ok
                 (begin
                   (eval
-                   `(with-ffi
-                     (dynamic-load "./f" :init-function #f)
-                     opts
-                     (define-c-function Fcb2-i '(void* int int) 'int)
-                     (define-c-function Fcb2-d '(void* double double) 'double)
-                     (define-c-function Fcb-v-count '(void* int) 'int)
-                     (define-c-function Fcb-pi-i '(void* int* int) 'int)
+                   `(with-ffi (dlopen "./f") opts
+                      (define-c-function Fcb2-i '(void* int int) 'int)
+                      (define-c-function Fcb2-d '(void* double double) 'double)
+                      (define-c-function Fcb-v-count '(void* int) 'int)
+                      (define-c-function Fcb-pi-i '(void* int* int) 'int)
 
-                     (define-c-callback cb-add ((x 'int) (y 'int)) 'int
-                       (+ x y))
-                     (define-c-callback cb-mul-d ((x 'double) (y 'double)) 'double
-                       (* x y))
-                     (define-c-callback cb-noop () 'void
-                       (set! cb-noop-counter (+ cb-noop-counter 1)))
-                     (define-c-callback cb-pderef ((p 'int*) (i 'int)) 'int
-                       (native-aref p i))
-                     (define-c-callback cb-bad ((x 'int) (y 'int)) 'int
-                       (error "callback-failure")))
+                      (define-c-callback cb-add ((x 'int) (y 'int)) 'int
+                        (+ x y))
+                      (define-c-callback cb-mul-d ((x 'double) (y 'double)) 'double
+                        (* x y))
+                      (define-c-callback cb-noop () 'void
+                        (set! cb-noop-counter (+ cb-noop-counter 1)))
+                      (define-c-callback cb-pderef ((p 'int*) (i 'int)) 'int
+                        (native-aref p i))
+                      (define-c-callback cb-bad ((x 'int) (y 'int)) 'int
+                        (error "callback-failure")))
                    (current-module))
                   'ok))
 
@@ -263,7 +290,7 @@
          ;; pointer arg test: pass int array, callback dereferences with
          ;; native-aref
          (let* ([uv (u32vector 10 20 30 40 50)]
-                [p (uvector->native-handle uv (native-type 'int*))])
+                [p (make-native-handle (native-type 'int*) uv)])
            (t 30 (Fcb-pi-i cb-pderef p 2))
            (t 50 (Fcb-pi-i cb-pderef p 4)))
 
@@ -313,15 +340,15 @@
 
     (parameterize ([default-ffi-subsystem :stubgen])
       (eval
-       `(with-ffi (dynamic-load "./f" :init-function #f) ()
-                  (define-c-function Fi-i '(int) 'int))
+       `(with-ffi (dlopen "./f") ()
+          (define-c-function Fi-i '(int) 'int))
        (current-module))
       (check-info Fi-i #/^\.\/f/ :stubgen '(int) 'int))
 
     (when (ffi-subsystem-available? :native)
       (eval
-       `(with-ffi (dynamic-load "./f" :init-function #f) (:subsystem :native)
-                  (define-c-function Fi-i '(int) 'int))
+       `(with-ffi (dlopen "./f") (:subsystem :native)
+          (define-c-function Fi-i '(int) 'int))
        (current-module))
       (check-info Fi-i #/^\.\/f/ :native '(int) 'int))
 

@@ -31,6 +31,18 @@
            (bytevector-s8-set! v 2 (+ (bytevector-s8-ref v 1) 1))))
   (test* "bytevector->u8-list" '(0 255 1 254 2 253)
          (bytevector->u8-list '#u8(0 255 1 254 2 253)))
+
+  ;; https://github.com/shirok/Gauche/issues/1290
+  (let ([uv '#u8(#x01 #x02 #x03 #x04 #x05)])
+    (test* "bytevector-uint-ref big" #x0102030405
+           (bytevector-uint-ref uv 0 (endianness big) 5))
+    (test* "bytevector-uint-ref little" #x0504030201
+           (bytevector-uint-ref uv 0 (endianness little) 5)))
+  (let ([uv '#u8(#xff #xfe #xfd #xfc #xfb)])
+    (test* "bytevector-sint-ref big" #x-0001020305
+           (bytevector-sint-ref uv 0 (endianness big) 5))
+    (test* "bytevector-sint-ref little" #x-0403020101
+           (bytevector-sint-ref uv 0 (endianness little) 5)))
   )
 
 (test-end)

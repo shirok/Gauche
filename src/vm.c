@@ -91,7 +91,7 @@ static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 #define PROMPT_FRAME_P(cont)   ((cont)->prev == NULL)
 
 /* A metacont S is a continuation barrier if it has barrierPromptTag */
-#define BARRIER_METACONT_P(mc) SCM_EQ((mc)->promptTag, &barrierPromptTag)
+#define BARRIER_METACONT_P(mc) SCM_EQ((mc)->promptTag, SCM_OBJ(&barrierPromptTag))
 
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_VM_INSN(SCM_VM_RET) };

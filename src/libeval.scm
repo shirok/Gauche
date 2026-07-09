@@ -602,15 +602,16 @@
   (Scm_BindPrimitiveParameter (Scm_GaucheModule) "exit-handler"
                               SCM_FALSE 0)))
 (exit-handler (^[code fmt args]
-                (when fmt
+                (when (string? fmt)
                   (apply format (standard-error-port) fmt args)
                   (newline (standard-error-port)))))
 
+(select-module gauche)
 ;; API
-(define-in-module gauche (exit :optional (code 0) (fmt #f) :rest args)
-  (cond [(exit-handler)
-         => (^h (guard (e [(<error> e) #f]) (h code fmt args)))])
-    (%exit code))
+(define-cproc exit (:optional (code::<fixnum> 0)
+                              (fmt #f)
+                    :rest args)
+  (Scm_ExitWithMessage code fmt args))
 
 ;;;
 ;;; GC control

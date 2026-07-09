@@ -259,6 +259,18 @@
        (let1 r (make-r1 5 4)
          (list (r1-a r) (r1-b r))))
 
+(test* "typename/constructor name crash"
+       (test-error <error> #/can't be the same: X/)
+       (eval
+        '(define-record-type X X X?)
+        (interaction-environment)))
+
+(test* "typename/constructor name crash"
+       (test-error <error> #/can't be the same: Y/)
+       (eval
+        '(define-record-type Y (Y z) Y? z)
+        (interaction-environment)))
+
 ;;--------------------------------------------------------------------
 (test-section "pseudo record")
 

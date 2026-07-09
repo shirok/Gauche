@@ -598,6 +598,94 @@
 (test* "bad repeating decimal 3" #f (string->number "0#.#1"))
 
 ;;------------------------------------------------------------------
+(test-section "hex flonum reader/writer")
+
+(define (t-hexflonum-reader src expect)
+  ;; We use custom comparator to distinguish 0.0 / -0.0
+  (test* #"hex flonum reader ~src" expect (read-from-string src)
+         (^[a b]
+           (if (or (number? a) (number? b))
+             (eqv? a b)
+             (test-check a b)))))
+
+;; From SRFI-270 examples
+(t-hexflonum-reader "#x9p9" 4608.0)
+(t-hexflonum-reader "#x1.2p3" 9.0)
+(t-hexflonum-reader "#xFE.FFp1" #i65279/128)
+(t-hexflonum-reader "#x-0.Ap-2" -0.15625)
+(t-hexflonum-reader "#x1.9p1+10p1i" 3.125+32.0i)
+
+(t-hexflonum-reader "#x0p0" 0.0)
+(t-hexflonum-reader "#x0.p1" 0.0)
+(t-hexflonum-reader "#x.0p2" 0.0)
+(t-hexflonum-reader "#x0.0p-100000" 0.0)
+(t-hexflonum-reader "#x-0p0" -0.0)
+(t-hexflonum-reader "#x-0.p1" -0.0)
+(t-hexflonum-reader "#x-.0p2" -0.0)
+(t-hexflonum-reader "#x-0.0p-100000" -0.0)
+
+(t-hexflonum-reader "#x1.23" (test-error <read-error> #/requires 'p' exponent/))
+(t-hexflonum-reader "#x1.23l0" (test-error <read-error> #/requires 'p' exponent/))
+
+(t-hexflonum-reader "#x100" 256)               ;exact integer, not flonum
+(t-hexflonum-reader "#x100.p0" 256.0)          ;inexact
+
+(t-hexflonum-reader "#!r7rs #x1p0" (test-error <read-error> #/allowed in R7RS strict mode/))
+
+;; Exact path
+(t-hexflonum-reader "#e#x1.1p-1" 17/32)
+(t-hexflonum-reader "#e#x0.11p4" 17/16)
+
+;; overflow
+;; 53bits
+(t-hexflonum-reader "#x1.ffff_ffff_ffff_ep1023" 1.7976931348623155e308)
+(t-hexflonum-reader "#x1.ffff_ffff_ffff_fp1023" 1.7976931348623157e308)
+(t-hexflonum-reader "#x2.p1023" +inf.0)
+;; 54bits, round up
+(t-hexflonum-reader "#x1.ffff_ffff_ffff_f8p1023" +inf.0)
+;; 54bits, round down
+(t-hexflonum-reader "#x1.ffff_ffff_ffff_e8p1023" 1.7976931348623155e308)
+;; too big exponent
+(t-hexflonum-reader "#x-1p1024" -inf.0)
+(t-hexflonum-reader "#x-1p1025" -inf.0)
+(t-hexflonum-reader "#x-1p10000" -inf.0)
+
+;; underflow
+(t-hexflonum-reader "#x1p-1074" 5.0e-324)
+(t-hexflonum-reader "#x.fp-1074" 0.0)
+(t-hexflonum-reader "#x-.fp-1074" -0.0)
+(t-hexflonum-reader "#x-1p-1074" -5.0e-324)
+(t-hexflonum-reader "#x1.0p-1022" 2.2250738585072014e-308)
+(t-hexflonum-reader "#xf.ffffffffffffp-1026" 2.225073858507201e-308)
+(t-hexflonum-reader "#x1.ffffffffffffcp-1024" 1.1125369292536e-308)
+
+(define (t-hexflonum-writer val expect)
+  (test* #"hex flonum writer ~val" expect
+         (number->string val (make-write-controls :base 16
+                                                  :radix-prefix #t))))
+
+(t-hexflonum-writer 1.0 "#x1.0p0")
+(t-hexflonum-writer -2.0 "#x-1.0p1")
+(t-hexflonum-writer 0.5 "#x1.0p-1")
+
+(t-hexflonum-writer 1.0+2.0i "#x1.0p0+1.0p1i")
+(t-hexflonum-writer 1.0-2.0i "#x1.0p0-1.0p1i")
+
+(t-hexflonum-writer 1.7976931348623157e308 "#x1.fffffffffffffp1023")
+(t-hexflonum-writer 1.7976931348623155e308 "#x1.ffffffffffffep1023")
+(t-hexflonum-writer 2.2250738585072014e-308 "#x1.0p-1022")
+(t-hexflonum-writer 2.225073858507201e-308 "#x0.fffffffffffffp-1022")
+(t-hexflonum-writer 1.1125369292536e-308 "#x0.ffffffffffffep-1023")
+(t-hexflonum-writer 5.0e-324 "#x0.8p-1073" )
+
+;; special values are written as-is
+(t-hexflonum-writer 0.0 "#x0.0p0")
+(t-hexflonum-writer -0.0 "#x-0.0p0")
+(t-hexflonum-writer +inf.0 "#x+inf.0")
+(t-hexflonum-writer -inf.0 "#x-inf.0")
+(t-hexflonum-writer +nan.0 "#x+nan.0")
+
+;;------------------------------------------------------------------
 (test-section "integer writer syntax")
 
 (define (i-tester2 x)
@@ -659,7 +747,8 @@
          ("0" "0" "0" "+0" "#x0" "#x+0")
          ("-e" "-E" "-E" "-e" "#x-e" "#x-E")
          ("a/b" "A/B" "A/B" "+a/b" "#xa/b" "#x+A/B")
-         ("1.0+1.0i" "1.0+1.0i" "1.0+1.0i" "+1.0+1.0i" "1.0+1.0i" "+1.0+1.0i"))
+         ("1.0p0+1.0p0i" "1.0p0+1.0p0i" "1.0p0+1.0p0i"
+          "+1.0p0+1.0p0i" "#x1.0p0+1.0p0i" "#x+1.0p0+1.0p0i"))
        (map (^n (map (cut number->string n 16 <>)
                      '(#f #t (uppercase) (plus) (radix) (uppercase plus radix))))
             '(#xcafe #xcafebabedeadbeef 0 -14 10/11 1+i)))

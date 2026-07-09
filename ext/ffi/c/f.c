@@ -187,6 +187,17 @@ const char *Fi_s(int n)
     return "";
 }
 
+/* array */
+int Fia_i(int n, int32_t *a)
+{
+    int r = 0;
+    for (int i = 0; i < n; i++) {
+        r += a[i];
+    }
+    return r;
+}
+
+
 /* Returns 1 if pointer is NULL, 0 otherwise */
 int Fpnull_i(void *p)
 {
@@ -228,4 +239,45 @@ double Fidfvar(int cnt, ...)
     }
     va_end(ap);
     return r;
+}
+
+/* Integer return value variations  */
+int8_t Fi_i8(int v)
+{
+    return v;
+}
+
+int16_t Fi_i16(int v)
+{
+    return v;
+}
+
+int32_t Fi_i32(int v)
+{
+    return v;
+}
+
+int64_t Fi_i64(int v)
+{
+    return v;
+}
+
+uint8_t Fu_u8(unsigned int v)
+{
+    return v;
+}
+
+uint16_t Fu_u16(unsigned int v)
+{
+    return v;
+}
+
+uint32_t Fu_u32(unsigned int v)
+{
+    return v;
+}
+
+uint64_t Fu_u64(unsigned int v)
+{
+    return v;
 }

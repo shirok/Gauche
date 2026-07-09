@@ -201,7 +201,7 @@
        #t
        (let* ([ptype  (make-c-pointer-type <int>)]
               [u      (u32vector 7 8 9)]
-              [handle (uvector->native-handle u ptype)]
+              [handle (make-native-handle ptype u)]
               [result (run-callback (^[h] h)
                                     (list ptype)
                                     `((,ptype ,handle))
@@ -296,7 +296,7 @@
        #t
        (let* ([ptype  (make-c-pointer-type <int>)]
               [u      (u32vector 11 22 33)]
-              [handle (uvector->native-handle u ptype)]
+              [handle (make-native-handle ptype u)]
               [result (run-callback (^[] handle) '() '() ptype)])
          (and (c-pointer-handle? result)
               (c-pointer=? result handle))))

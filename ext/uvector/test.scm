@@ -740,9 +740,9 @@
         (gen-tester add v0 (- big64)))
 
   ;; Sub
-  (test (format #f "~avector-sub (v-v)" tag) (result-normal v1-v0)
+  (test (format #f "~avector-sub (v1-v0)" tag) (result-normal v1-v0)
         (gen-tester sub v1 v0))
-  (test (format #f "~avector-sub (v-v)" tag) (result-lo-ok  v3-v0)
+  (test (format #f "~avector-sub (v3-v0) ~s ~s" tag v3 v0) (result-lo-ok  v3-v0)
         (gen-tester sub v3 v0))
   (test (format #f "~avector-sub (v-l)" tag) (result-normal v1-v0)
         (gen-tester sub v1 (coerce-to <list> v0)))
