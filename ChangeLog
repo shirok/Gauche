@@ -1,3 +1,11 @@
+2026-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (make-id-macro-dispatcher), src/compile.scm:
+	  Experimentally add id-macro-dispatcher, to invoke id-macro
+	  in a different pattern than (set! id expr).  This has unexpected
+	  side effects (see https://github.com/shirok/Gauche/issues/1295),
+	  so we'll mull over the exact specification for a while.
+
 2026-07-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/ffi/native.scm, ext/ffi/ffi/stubgen.scm: Ensure macroexpanded
