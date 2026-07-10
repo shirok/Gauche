@@ -1051,23 +1051,20 @@
 
 ;;; Fluids
 
-;; Missing fluids
-'(test '(1 2)
+(test '(1 2)
       (letrec* ()
         (define-fluid x1 1)
         (define-fluid x2 2)
         (list x1 x2)))
 
-;; Missing fluids
-'(test '(3 2)
+(test '(3 2)
       (letrec* ()
         (define-fluid x1 1)
         (define-fluid x2 2)
         (set! x1 3)
         (list x1 x2)))
 
-;; Missing fluids
-'(test '(3 2 4 5 6)
+(test '(3 2 4 5 6)
       (letrec* ()
         (define-fluid x1 3)
         (define-fluid x2 2)
@@ -1079,16 +1076,14 @@
               (list a b x1))))
         (cons* x1 x2 y)))
 
-;; Missing fluids
-'(test 8
+(test 8
       (letrec* ()
         (define-fluid x1 3)
         (fluid-let* ([x1 7]
                      [x1 (+ x1 1)])
           x1)))
 
-;; Missing fluids
-'(test '(0 20 10)
+(test '(0 20 10)
       (letrec* ()
         (define-thread-fluid a 0)
         (define x
@@ -1103,14 +1098,12 @@
                       t)))))
         (cons a x)))
 
-;; Missing fluids
-'(test '10
+(test '10
       (let ([p (make-parameter 10)])
         (define-fluidified x p)
         x))
 
-;; Missing fluids
-'(test '12
+(test '12
       (letrec* ()
         (define-fluid x 11)
         ((fluid-parameter x) 12)
