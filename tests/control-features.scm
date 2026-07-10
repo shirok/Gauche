@@ -376,7 +376,7 @@
 
 (test 144 (param))
 
-'(test #t (call-with-tail-test
+(test #t (call-with-tail-test
           (lambda (tail?)
             (parameterize ([param 13])
               (tail?)))))
@@ -601,7 +601,7 @@
 (test #t (continuation-prompt-tag? (default-continuation-prompt-tag)))
 (test #t (eq? (default-continuation-prompt-tag) (default-continuation-prompt-tag)))
 (test #t (continuation-prompt-tag? (make-continuation-prompt-tag)))
-'(test #f (equal? (make-continuation-prompt-tag) (default-continuation-prompt-tag)))
+(test #f (equal? (make-continuation-prompt-tag) (default-continuation-prompt-tag)))
 (test #f (equal? (make-continuation-prompt-tag) (make-continuation-prompt-tag)))
 
 (test '(foo bar)
