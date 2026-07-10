@@ -79,10 +79,16 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_PromptTagClass,
                          SCM_CLASS_DEFAULT_CPL);
 
 /* Prompt tags for system use.  initialized in initVM.
-   barrierPromptTag is never exposed to Scheme;
-   only call-with-continuation-barrier implicitly install the tag. */
+
+   - barrierPromptTag is never exposed to Scheme;
+     only call-with-continuation-barrier implicitly install the tag.
+
+   - exhBoundaryPromptTag is used in place of defaultPromptTag
+     when an exception handler is invoked via Scm_ApplyExceptionHandler.
+*/
 static ScmPromptTag defaultPromptTag;
 static ScmPromptTag barrierPromptTag;
+static ScmPromptTag exhBoundaryPromptTag;
 
 static void push_prompt_cont(ScmVM*, ScmObj, ScmObj);
 static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
@@ -213,6 +219,8 @@ static void   pop_meta_cont(ScmVM*);
 static ScmMetaCont *find_meta_cont_with_tag(ScmMetaCont *, ScmObj);
 static ScmContFrame *install_partial_cont(ScmVM*, ScmEscapePoint*, int) SCM_UNUSED;
 static ScmObj abort_current_continuation(ScmMetaCont*, ScmObj);
+static void   call_after_thunk(ScmVM*, ScmObj);
+static ScmObj pop_dynamic_handlers(ScmVM*);
 
 static void   process_queued_requests(ScmVM *vm);
 static void   vm_finalize(ScmObj vm, void *data);
@@ -2291,10 +2299,24 @@ static void delimit_composable_cont(ScmEscapePoint *ep)
  *   The current C stack information is saved in cstack.  The
  *   current VM stack information is saved (as a continuation
  *   frame pointer) in cstack.cont.
+ *
+ *   By default, entering user_eval_inner consists of a natural
+ *   'reset' boundary---or you can think that the 'program' is
+ *   run as if
+ *      (call-with-continuation-prompt <program>
+ *        (default-prompt-tag))
+ *   However, we sometimes need to enter user_eval_inner recursively.
+ *   One of such instance is calling exception handler (through
+ *   Scm_VMThrowException)---an exception can be thrown deep in the C
+ *   routine, so we can't use VM trampoline.  This implicit tagging
+ *   can get in way of advanced uses of delimited continuations.
+ *   You can use a prompt tag other than the default one by passing
+ *   it to boundaryTag argument.  If it is #f, the default one is used.
+ *   For the exception handler calling, we use exhBoundaryTag.
  */
-
 static ScmObj user_eval_inner(ScmObj program,
-                              ScmWord *codevec)
+                              ScmWord *codevec,
+                              ScmObj boundaryTag)
 {
     ScmCStack cstack;
     ScmVM * volatile vm = theVM;
@@ -2307,7 +2329,8 @@ static ScmObj user_eval_inner(ScmObj program,
        being TRUE.  RETURN_OP recognizes this frame to return to C frame.
        A boundary frame also keeps the unfinished argument frame at
        the point when Scm_Eval or Scm_Apply is called. */
-    push_boundary_cont(vm, SCM_OBJ(&defaultPromptTag), SCM_FALSE);
+    if (SCM_FALSEP(boundaryTag)) boundaryTag = SCM_OBJ(&defaultPromptTag);
+    push_boundary_cont(vm, boundaryTag, SCM_FALSE);
     /* The boundary's metacont records the parent continuation (its `cont`).
        The cont chain is severed at the boundary frame (prev == NULL), so we
        recover the parent from here when popping the boundary below. */
@@ -2414,6 +2437,22 @@ static ScmObj user_eval_inner(ScmObj program,
                 goto restart;
             } else {
                 SCM_ASSERT(vm->cstack && vm->cstack->prev);
+                /* The target prompt is on an outer cstack.  Run the
+                   dynamic-wind 'after' thunks for the handlers established in
+                   the segment we're unwinding on this cstack before we discard
+                   it and cross out. */
+                if (SCM_PAIRP(vm->dynamicHandlers)) {
+                    ScmObj abortArgs = SCM_OBJ(vm->escapeData[1]);
+                    while (SCM_PAIRP(vm->dynamicHandlers)) {
+                        call_after_thunk(vm, pop_dynamic_handlers(vm));
+                    }
+                    /* call_after_thunk re-enters the VM (Scm_ApplyRec), which
+                       clobbers escapeReason/escapeData; restore them before we
+                       re-longjmp to the outer cstack. */
+                    vm->escapeReason = SCM_VM_ESCAPE_ABORT;
+                    vm->escapeData[0] = targetMeta;
+                    vm->escapeData[1] = abortArgs;
+                }
                 vm->cont = cstack.cont;
                 pop_meta_cont(vm);
                 POP_CONT();
@@ -2480,7 +2519,7 @@ ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
         Scm_CompiledCodeDump(SCM_COMPILED_CODE(v));
     }
-    return user_eval_inner(v, NULL);
+    return user_eval_inner(v, NULL, SCM_FALSE);
 }
 
 /* NB: The ApplyRec family can be called in an inner loop (e.g. the display
@@ -2489,7 +2528,7 @@ ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
    user_eval_inner returns it would never be reused.   However, tools
    that want to keep a pointer to a code vector would need to be aware
    of this case. */
-static ScmObj apply_rec(ScmVM *vm, ScmObj proc, int nargs)
+static ScmObj apply_rec_1(ScmVM *vm, ScmObj proc, int nargs, ScmObj boundaryTag)
 {
     ScmWord code[2];
     code[0] = SCM_WORD(SCM_VM_INSN1(SCM_VM_VALUES_APPLY, nargs));
@@ -2498,10 +2537,10 @@ static ScmObj apply_rec(ScmVM *vm, ScmObj proc, int nargs)
     vm->val0 = proc;
     ScmObj program = vm->base?
             SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
-    return user_eval_inner(program, code);
+    return user_eval_inner(program, code, boundaryTag);
 }
 
-ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
+static ScmObj apply_rec(ScmObj proc, ScmObj args, ScmObj tag)
 {
     int nargs = Scm_Length(args);
     ScmVM *vm = theVM;
@@ -2518,19 +2557,32 @@ ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
         vm->vals[i] = SCM_CAR(args);
         args = SCM_CDR(args);
     }
-    return apply_rec(vm, proc, nargs);
+    return apply_rec_1(vm, proc, nargs, tag);
+}
+
+ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
+{
+    return apply_rec(proc, args, SCM_FALSE);
+}
+
+/* Like Scm_ApplyRec, but tags the C-stack boundary with exhBoundaryPromptTag.
+   Used by Scm_VMThrowException to dispatch a user exception handler.
+   See also the description of user_eval_inner. */
+ScmObj Scm_ApplyExceptionHandler(ScmObj proc, ScmObj args)
+{
+    return apply_rec(proc, args, SCM_OBJ(&exhBoundaryPromptTag));
 }
 
 ScmObj Scm_ApplyRec0(ScmObj proc)
 {
-    return apply_rec(theVM, proc, 0);
+    return apply_rec_1(theVM, proc, 0, SCM_FALSE);
 }
 
 ScmObj Scm_ApplyRec1(ScmObj proc, ScmObj arg0)
 {
     ScmVM *vm = theVM;
     vm->vals[0] = arg0;
-    return apply_rec(vm, proc, 1);
+    return apply_rec_1(vm, proc, 1, SCM_FALSE);
 }
 
 ScmObj Scm_ApplyRec2(ScmObj proc, ScmObj arg0, ScmObj arg1)
@@ -2538,7 +2590,7 @@ ScmObj Scm_ApplyRec2(ScmObj proc, ScmObj arg0, ScmObj arg1)
     ScmVM *vm = theVM;
     vm->vals[0] = arg0;
     vm->vals[1] = arg1;
-    return apply_rec(vm, proc, 2);
+    return apply_rec_1(vm, proc, 2, SCM_FALSE);
 }
 
 ScmObj Scm_ApplyRec3(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2)
@@ -2547,7 +2599,7 @@ ScmObj Scm_ApplyRec3(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2)
     vm->vals[0] = arg0;
     vm->vals[1] = arg1;
     vm->vals[2] = arg2;
-    return apply_rec(vm, proc, 3);
+    return apply_rec_1(vm, proc, 3, SCM_FALSE);
 }
 
 ScmObj Scm_ApplyRec4(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2,
@@ -2558,7 +2610,7 @@ ScmObj Scm_ApplyRec4(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2,
     vm->vals[1] = arg1;
     vm->vals[2] = arg2;
     vm->vals[3] = arg3;
-    return apply_rec(vm, proc, 4);
+    return apply_rec_1(vm, proc, 4, SCM_FALSE);
 }
 
 ScmObj Scm_ApplyRec5(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2,
@@ -2570,7 +2622,7 @@ ScmObj Scm_ApplyRec5(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2,
     vm->vals[2] = arg2;
     vm->vals[3] = arg3;
     vm->vals[4] = arg4;
-    return apply_rec(vm, proc, 5);
+    return apply_rec_1(vm, proc, 5, SCM_FALSE);
 }
 
 /*
@@ -3315,7 +3367,12 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
     ScmObj eh = Scm_VMPopExceptionHandler();
 
     if (eh != DEFAULT_EXCEPTION_HANDLER) {
-        vm->val0 = Scm_ApplyRec(eh, SCM_LIST1(exception));
+        /* Dispatch the handler through a boundary tagged with
+           exhBoundaryPromptTag (see Scm_ApplyExceptionHandler) so that an abort
+           to the default prompt tag from inside the handler escapes past this
+           dispatch boundary to the prompt enclosing the raise, rather than being
+           trapped here (which would make the handler appear to 'return'). */
+        vm->val0 = Scm_ApplyExceptionHandler(eh, SCM_LIST1(exception));
         if (SCM_SERIOUS_CONDITION_P(exception)
             || raise_flags&SCM_RAISE_NON_CONTINUABLE) {
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
@@ -3478,6 +3535,12 @@ static ScmString barrierPromptTagName =
     SCM_STRING_CONST_INITIALIZER(BARRIER_PROMPT_TAG_NAME,
                                  sizeof(BARRIER_PROMPT_TAG_NAME)-1,
                                  sizeof(BARRIER_PROMPT_TAG_NAME)-1);
+
+#define EXH_BOUNDARY_PROMPT_TAG_NAME "exception-handler-boundary"
+static ScmString exhBoundaryPromptTagName =
+    SCM_STRING_CONST_INITIALIZER(EXH_BOUNDARY_PROMPT_TAG_NAME,
+                                 sizeof(EXH_BOUNDARY_PROMPT_TAG_NAME)-1,
+                                 sizeof(EXH_BOUNDARY_PROMPT_TAG_NAME)-1);
 
 static void init_prompt_tag(ScmPromptTag *tag, ScmObj name)
 {
@@ -5036,6 +5099,7 @@ void Scm__InitVM(void)
     */
     init_prompt_tag(&defaultPromptTag, SCM_OBJ(&defaultPromptTagName));
     init_prompt_tag(&barrierPromptTag, SCM_OBJ(&barrierPromptTagName));
+    init_prompt_tag(&exhBoundaryPromptTag, SCM_OBJ(&exhBoundaryPromptTagName));
 
     /* Create root VM */
     rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));

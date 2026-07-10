@@ -544,6 +544,129 @@
               tag2)
              (display "[p05]")))))
 
+;; Aborting from nested exception handlers.  Sanity check for
+;; crossing C stack boundary in exception handler invocation won't interfere
+;; with abort-current-continuation.
+(test* "abort-current-continuation in nested exception handler"
+       '("[outer][inner][abort]" (aborted e1 e2))
+       (let ([out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (with-exception-handler
+               (lambda (oc)
+                 (display "[outer]" out)
+                 (with-exception-handler
+                  (lambda (ic)
+                    (display "[inner]" out)
+                    (abort-current-continuation (default-continuation-prompt-tag)
+                      (lambda ()
+                        (display "[abort]" out)
+                        (list 'aborted oc ic))))
+                  (lambda () (raise 'e2)))
+                 (display "[outer-fallthrough]" out)) ; must not run
+               (lambda () (raise 'e1))))
+            (default-continuation-prompt-tag)
+            (lambda (thunk) (thunk))))
+         (list (get-output-string out) val)))
+
+;; Same settings as above, but also the dynamic handler's after thunk
+;; is called in recursive user_eval_inner.
+(test* "abort-current-continuation in nested exception handler w/ dynamic-wind"
+       '("[before][after]" (aborted e1 e2))
+       (let ([out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (with-exception-handler
+               (lambda (oc)
+                 (with-exception-handler
+                  (lambda (ic)
+                    (dynamic-wind
+                      (lambda () (display "[before]" out))
+                      (lambda ()
+                        (abort-current-continuation (default-continuation-prompt-tag)
+                          (lambda () (list 'aborted oc ic))))
+                      (lambda () (display "[after]" out))))
+                  (lambda () (raise 'e2)))
+                 (display "[fallthrough]" out)) ; must not run
+               (lambda () (raise 'e1))))
+            (default-continuation-prompt-tag)
+            (lambda (thunk) (thunk))))
+         (list (get-output-string out) val)))
+
+;; Calling abort-current-continuation from within a dynamic-wind 'after' thunk.
+(test* "abort-current-continuation in dynamic-wind after"
+       '("[before][body][after]" aborted)
+       (let ([tag (default-continuation-prompt-tag)]
+             [out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (dynamic-wind
+                (lambda () (display "[before]" out))
+                (lambda () (display "[body]" out) 'body)
+                (lambda ()
+                  (display "[after]" out)
+                  (abort-current-continuation tag (lambda () 'aborted))))
+              (display "[past-dw]" out)) ; must not run
+            tag
+            (lambda (thunk) (thunk))))
+         (list (get-output-string out) val)))
+
+;; An abort to an inner prompt unwinds through a dynamic-wind whose after thunk
+;; itself aborts, to an outer prompt.
+(test* "abort-current-continuation in dynamic-wind after supersedes in-flight abort"
+       '("[after]" (O outer))
+       (let ([tag-o (make-continuation-prompt-tag 'o)]
+             [tag-i (make-continuation-prompt-tag 'i)]
+             [out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (call-with-continuation-prompt
+               (lambda ()
+                 (dynamic-wind
+                   (lambda () #f)
+                   (lambda ()
+                     (abort-current-continuation tag-i
+                       (lambda () 'inner)))
+                   (lambda ()
+                     (display "[after]" out)
+                     (abort-current-continuation tag-o (lambda () 'outer)))))
+               tag-i
+               (lambda (thunk) (list 'I (thunk)))))
+            tag-o
+            (lambda (thunk) (list 'O (thunk)))))
+         (list (get-output-string out) val)))
+
+;; Same nested abort, but from an exception handler.
+(test* "abort-current-continuation in dynamic-wind after during handler abort"
+       '("[after]" (O outer))
+       (let ([tag-o (make-continuation-prompt-tag 'o)]
+             [out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (call-with-continuation-prompt
+               (lambda ()
+                 (with-exception-handler
+                  (lambda (c)
+                    (dynamic-wind
+                      (lambda () #f)
+                      (lambda ()
+                        (abort-current-continuation (default-continuation-prompt-tag)
+                          (lambda () 'inner)))
+                      (lambda ()
+                        (display "[after]" out)
+                        (abort-current-continuation tag-o (lambda () 'outer)))))
+                  (lambda () (raise 'e))))
+               (default-continuation-prompt-tag)
+               (lambda (thunk) (list 'DEF (thunk)))))
+            tag-o
+            (lambda (thunk) (list 'O (thunk)))))
+         (list (get-output-string out) val)))
+
 ;; from SRFI-226 document
 (let ([tag (make-continuation-prompt-tag)])
   (test* "call-with-composable-continuation 1"

@@ -594,6 +594,7 @@ SCM_EXTERN void   Scm_VMPushExceptionHandler(ScmObj eh);
 SCM_EXTERN ScmObj Scm_VMPopExceptionHandler();
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj eh, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exc, u_long flags);
+SCM_EXTERN ScmObj Scm_ApplyExceptionHandler(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN void   Scm_VMSetResult(ScmObj obj);

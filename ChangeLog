@@ -1,3 +1,9 @@
+2026-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_ApplyExceptionHandler, user_eval_inner): Allow
+	  prompt tags other than default tag when entering user_eval_inner.
+	  https://github.com/shirok/Gauche/issues/1297
+
 2026-07-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (make-id-macro-dispatcher), src/compile.scm:

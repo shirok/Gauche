@@ -397,10 +397,7 @@
 
 ;;; Exception handlers
 
-;; Using r7rs raise uncovered a bug in exception handler invocation and
-;; abort-current-continuation interaction.  Temporarily skip this test
-;; until it is fixed.
-'(test 45 (with-exception-handler
+(test 45 (with-exception-handler
              (lambda (con)
                (abort-current-continuation (default-continuation-prompt-tag)
                  (lambda () con)))
