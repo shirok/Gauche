@@ -97,6 +97,9 @@
 ;;
 ;;   (define-c-function mylib-init `(,<c-int> ,(make-c-array-type <c-string>)) <c-int>)
 ;;
+;;  If <name> is prefixed with '%', it is removed to derive C function name.
+;;  It allows to define a Scheme "wrapper" function on top of FFI C function
+;;  with the sanem name (the wrapper function calls %-named FFI function).
 ;;
 ;;  You can also define a C function that can be called back from C
 ;;  program to evaluate Scheme expressions.
@@ -247,6 +250,9 @@
         (define (make-cfn-expr cfn-form)
           (match cfn-form
             [(_ name arg-types-expr rettype-expr)
+             (define c-name
+               (cgen-safe-name-friendly
+                (regexp-replace #/^%/ (x->string name) "")))
              (quasirename r
                `(receive (arg-types* variadic?*)
                     (%parse-ffi-arg-types ,arg-types-expr)
@@ -254,7 +260,7 @@
                         [rtype (%resolve-typespec ,rettype-expr)])
                     (make <foreign-c-function>
                       :scheme-name ',name
-                      :c-name ,(cgen-safe-name-friendly (x->string name))
+                      :c-name ',c-name
                       :arg-types atypes
                       :return-type rtype
                       :variadic? variadic?*

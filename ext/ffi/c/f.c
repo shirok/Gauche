@@ -281,3 +281,9 @@ uint64_t Fu_u64(unsigned int v)
 {
     return v;
 }
+
+/* Used to test '%' prefixing */
+const char *say_ok()
+{
+    return "ok";
+}

@@ -1,5 +1,8 @@
 2026-07-10  Shiro Kawai  <shiro@acm.org>
 
+	* ext/ffi/ffi.scm (define-c-function): Support Scheme-only prefixing
+	  with '%'.  https://github.com/shirok/Gauche/issues/1298
+
 	* ext/ffi/native-type.scm (native-aref): Change API to take indices
 	  as vararg arguments.  It is simpler, and also consistent for
 	  pointer and array handles.
