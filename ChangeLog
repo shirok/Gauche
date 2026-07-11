@@ -1,3 +1,13 @@
+2026-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/arith.h (SMULOV): Fix UB when negating LONG_MIN.
+	  The problem only surfaces when the compiler can deduce the
+	  argument is LONG_MIN after constant folding. Once deduced, however,
+	  the compiler can assume that branch is never taken and optimize
+	  away.  Note that negating u_long never be UB.
+	* src/test-arith.c: Reflect test failures to the exit code.
+	  This failure has been missed in CI for several commits.
+
 2026-07-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (make-id-macro-dispatcher), src/compile.scm:

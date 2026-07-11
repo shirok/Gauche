@@ -246,13 +246,13 @@
             } else {                                            \
                 UMULOV(t6_, v, x, -y);                          \
                 if ((v) || t6_ > LONG_MAX+1UL) (v) = -1;        \
-                else (r) = -(long)t6_;                          \
+                else (r) = (long)(-t6_);                        \
             }                                                   \
         } else {                                                \
             if ((y) >= 0) {                                     \
                 UMULOV(t6_, v, -x, y);                          \
                 if ((v) || t6_ > LONG_MAX+1UL) (v) = -1;        \
-                else (r) = -(long)t6_;                          \
+                else (r) = (long)(-t6_);                        \
             } else {                                            \
                 UMULOV(t6_, v, -x, -y);                         \
                 if ((v) || t6_ > LONG_MAX) (v) = 1;             \

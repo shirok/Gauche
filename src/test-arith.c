@@ -71,7 +71,8 @@ void message(FILE *out, const char *m, int filler)
             if (r == rexp) printf("ok\n");                      \
             else {                                              \
                 errcount++;                                     \
-                printf("ERROR: got r=" numfmt "\n", r);         \
+                printf("ERROR: unexpected carry. "              \
+                       "r=" numfmt "\n", r);                    \
             }                                                   \
         }                                                       \
     } while (0)
@@ -825,5 +826,5 @@ int main(int argc SCM_UNUSED, char **argv SCM_UNUSED)
         fprintf(stderr, "passed.\n");
         fprintf(stdout, "passed.\n");
     }
-    return 0;
+    return (errcount > 0? 1 : 0);
 }
