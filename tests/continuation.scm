@@ -1079,6 +1079,105 @@
 (test* "Oleg's leak test 2" 'ok
        (oleg-leak-test (lambda () (reset (values (shift k k))))))
 
+;; https://gist.github.com/nkoguro/bcb23f9a1913cfced2817680d3fcfb46
+(define-module pcdemo8
+  (use data.queue)
+  (use gauche.partcont)
+  (use gauche.test)
+
+  (define queue (make-queue))
+
+  (define (make-worker)
+    (make-thread (lambda ()
+                   (while (dequeue! queue #f)
+                     => next
+                     (print "==> call next")
+                     (reset
+                      (dynamic-wind
+                        (lambda ()
+                          (print "start"))
+                        next
+                        (lambda ()
+                          (print "end"))))))))
+
+  (define (yield)
+    (shift cont
+           (enqueue! queue cont)))
+
+  (define (run)
+    (enqueue! queue (lambda ()
+                      (guard (e (else (print "catch error!!")))
+                        (yield)
+                        (error "err"))))
+
+    (while (dequeue! queue #f)
+      => next
+      (print "==> call next")
+      (reset
+       (dynamic-wind
+         (lambda ()
+           (print "start"))
+         next
+         (lambda ()
+           (print "end")))))
+    0)
+
+  (test* "pcdemo8"
+         "==> call next\n\
+          start\n\
+          end\n\
+          ==> call next\n\
+          start\n\
+          start\n\
+          catch error!!\n\
+          end\n"
+         (with-output-to-string run))
+  )
+
+;; from https://gist.github.com/nkoguro/13ba5257847507e637416aa92a2e889c
+(define-module pcdemo10
+  (use data.queue)
+  (use gauche.partcont)
+  (use gauche.test)
+
+  (define queue (make-queue))
+
+  (define (yield)
+    (shift cont
+           (enqueue! queue cont)))
+
+  (define (run)
+    (enqueue! queue (lambda ()
+                      (guard (e (else (print "catch error!!")))
+                        (yield)
+                        (error "err"))))
+
+    (while (dequeue! queue #f)
+      => next
+      (print "==> call next")
+      (dynamic-wind
+        (lambda ()
+          (print "start"))
+        (lambda ()
+          (reset
+           (next)))
+        (lambda ()
+          (print "end"))))
+    0)
+
+  (test* "pcdemo10"
+         "==> call next\n\
+          start\n\
+          end\n\
+          ==> call next\n\
+          start\n\
+          end\n\
+          start\n\
+          catch error!!\n\
+          end\n"
+         (with-output-to-string run))
+  )
+
 ;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
 (let ()
   (define (eta x) (list (x)))                    ; unit
