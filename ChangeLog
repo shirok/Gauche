@@ -1,5 +1,20 @@
 2026-07-10  Shiro Kawai  <shiro@acm.org>
 
+	* ext/ffi/ffi.scm (define-c-function): Support Scheme-only prefixing
+	  with '%'.  https://github.com/shirok/Gauche/issues/1298
+
+	* ext/ffi/native-type.scm (native-aref): Change API to take indices
+	  as vararg arguments.  It is simpler, and also consistent for
+	  pointer and array handles.
+
+	* src/gauche/priv/arith.h (SMULOV): Fix UB when negating LONG_MIN.
+	  The problem only surfaces when the compiler can deduce the
+	  argument is LONG_MIN after constant folding. Once deduced, however,
+	  the compiler can assume that branch is never taken and optimize
+	  away.  Note that negating u_long never be UB.
+	* src/test-arith.c: Reflect test failures to the exit code.
+	  This failure has been missed in CI for several commits.
+
 	* src/vm.c (Scm_ApplyExceptionHandler, user_eval_inner): Allow
 	  prompt tags other than default tag when entering user_eval_inner.
 	  https://github.com/shirok/Gauche/issues/1297

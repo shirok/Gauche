@@ -98,7 +98,7 @@
   (define w)
 
   (dotimes [i 10]
-    (set! (native-aref h (list i)) (* i i)))
+    (set! (native-aref h i) (* i i)))
   (test* "wrapped array" #t
          (begin
            (set! w (wrap-native-handle h))
@@ -119,7 +119,7 @@
 
   (dotimes [i 10]
     (dotimes [j 5]
-      (set! (native-aref h (list i j)) (* i j))))
+      (set! (native-aref h i j) (* i j))))
   (test* "wrapped array 2d" #t
          (begin
            (set! w (wrap-native-handle h))

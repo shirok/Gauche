@@ -43,10 +43,8 @@
                       (define-c-function F-f () 'float)
                       (define-c-function F-d () 'double)
                       (define-c-function F-v () 'void)
-                                        ;(define-c-function F-o () <top>)
                       (define-c-function Fi-i '(int) 'int)
                       (define-c-function Ff-f '(float) 'float)
-                                        ;(define-c-function Foo-o `(,<top> ,<top>) <top>)
 
                       (define-c-function Fi_i8 '(int) 'int8_t)
                       (define-c-function Fi_i16 '(int) 'int16_t)
@@ -97,6 +95,9 @@
 
                       ;; array
                       (define-c-function Fia-i `(int ,bar) 'int)
+
+                      ;; '%' prefix
+                      (define-c-function %say-ok '() <c-string>)
                       )
                    (current-module))
                   'ok))
@@ -165,6 +166,9 @@
          (t 0 (Fia-i 0 (null-pointer-handle (native-type 'int*))))
          (t 6 (Fia-i 3 (make-native-handle bar '#s32(1 2 3 4))))
          (t 10 (Fia-i 4 (make-native-handle bar '#s32(1 2 3 4))))
+
+         ;; '%' prefix
+         (t "ok" (%say-ok))
 
          (let* ([p (make-native-handle foo*)])
            (set! (native-> p 'c) #\a)

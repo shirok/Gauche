@@ -15983,13 +15983,14 @@ is performed and an error is signaled if the computation falls
 outside of valid region.
 @end defun
 
-@defun native-aref handle index
+@defun native-aref handle index index2 @dots{}
 @c MOD gauche.native-type
 Array reference.  @var{handle} must be a c-array handle or c-pointer
-handle (Allowing c-pointer here reflects the C semantics).
+handle.  A c-pointer handle is effectively treated as one-dimensional array.
+(Allowing c-pointer here reflects the C semantics).
 
-@var{index} must be a nonnegative integer or a list of nonnagative
-integers.  If the element type is a primitive type,
+Each @var{index} must be a fixnum.
+If the element type is a primitive type,
 the value is returned as a Scheme value.  If the element type is
 a pointer type or an aggregate type, the value is wrapped as a
 native handle.
@@ -16003,13 +16004,13 @@ no boundary check is done with @var{index}.  It is caller's
 responsibility to ensure @var{index} falls in a valid range.
 @end defun
 
-@defun (setter native-aref) handle index val
+@defun (setter native-aref) handle index index2 @dots{} val
 @c MOD gauche.native-type
 @var{handle} must be a c-array or c-pointer handle, and
-@var{index} must be a nonnegative integer or a list of nonnagative
-integers.
+Each @var{index} must be a fixnum.
 
-Sets @var{val} to the array at the position specified by @var{index}.
+Sets @var{val} to the array at the position specified by
+@var{index} @var{index2} @dots{}.
 
 If the handle points to an unbounded c-array or a c-pointer,
 no boundary check is done with @var{index}.  It is caller's
