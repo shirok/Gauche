@@ -1,5 +1,9 @@
 2026-07-10  Shiro Kawai  <shiro@acm.org>
 
+	* ext/ffi/native-type.scm (native-aref): Change API to take indices
+	  as vararg arguments.  It is simpler, and also consistent for
+	  pointer and array handles.
+
 	* src/gauche/priv/arith.h (SMULOV): Fix UB when negating LONG_MIN.
 	  The problem only surfaces when the compiler can deduce the
 	  argument is LONG_MIN after constant folding. Once deduced, however,

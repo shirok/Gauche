@@ -129,4 +129,4 @@
   (assume-type uuid uuid_t)
   (rlet1 uv (make-u8vector 16)
     (dotimes [i 16]
-      (u8vector-set! uv i (native-aref uuid (list i))))))
+      (u8vector-set! uv i (native-aref uuid i)))))

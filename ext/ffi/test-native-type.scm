@@ -331,30 +331,30 @@
 
   (test* "uint8 array ref" '(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                                   #x08 #x09)
-         (list (native-aref (bc 0 uint8a) '(0 0 0))
-               (native-aref (bc 0 uint8a) '(0 0 1))
-               (native-aref (bc 0 uint8a) '(0 1 0))
-               (native-aref (bc 0 uint8a) '(0 1 1))
-               (native-aref (bc 0 uint8a) '(0 2 0))
-               (native-aref (bc 0 uint8a) '(0 2 1))
-               (native-aref (bc 0 uint8a) '(0 3 0))
-               (native-aref (bc 0 uint8a) '(0 3 1))
-               (native-aref (bc 0 uint8a) '(1 0 0))
-               (native-aref (bc 0 uint8a) '(1 0 1))))
+         (list (native-aref (bc 0 uint8a) 0 0 0)
+               (native-aref (bc 0 uint8a) 0 0 1)
+               (native-aref (bc 0 uint8a) 0 1 0)
+               (native-aref (bc 0 uint8a) 0 1 1)
+               (native-aref (bc 0 uint8a) 0 2 0)
+               (native-aref (bc 0 uint8a) 0 2 1)
+               (native-aref (bc 0 uint8a) 0 3 0)
+               (native-aref (bc 0 uint8a) 0 3 1)
+               (native-aref (bc 0 uint8a) 1 0 0)
+               (native-aref (bc 0 uint8a) 1 0 1)))
 
   (test* "int8 array ref" '(#x-80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                                   #x08 #x09 #x18)
-         (list (native-aref (bc 0 int8a) '(0 0 0))
-               (native-aref (bc 0 int8a) '(0 0 1))
-               (native-aref (bc 0 int8a) '(0 1 0))
-               (native-aref (bc 0 int8a) '(0 1 1))
-               (native-aref (bc 0 int8a) '(0 2 0))
-               (native-aref (bc 0 int8a) '(0 2 1))
-               (native-aref (bc 0 int8a) '(0 3 0))
-               (native-aref (bc 0 int8a) '(0 3 1))
-               (native-aref (bc 0 int8a) '(1 0 0))
-               (native-aref (bc 0 int8a) '(1 0 1))
-               (native-aref (bc 0 int8a) '(3 0 0))))
+         (list (native-aref (bc 0 int8a) 0 0 0)
+               (native-aref (bc 0 int8a) 0 0 1)
+               (native-aref (bc 0 int8a) 0 1 0)
+               (native-aref (bc 0 int8a) 0 1 1)
+               (native-aref (bc 0 int8a) 0 2 0)
+               (native-aref (bc 0 int8a) 0 2 1)
+               (native-aref (bc 0 int8a) 0 3 0)
+               (native-aref (bc 0 int8a) 0 3 1)
+               (native-aref (bc 0 int8a) 1 0 0)
+               (native-aref (bc 0 int8a) 1 0 1)
+               (native-aref (bc 0 int8a) 3 0 0)))
 
   (test* "uint16 array ref"
          (case (native-endian)
@@ -362,24 +362,24 @@
                            #x1011 #x1e1f)]
            [else         '(#x0180 #x0302 #x0504 #x0f0e
                            #x1110 #x1f1e)])
-         (list (native-aref (bc 0 uint16a) '(0 0 0))
-               (native-aref (bc 0 uint16a) '(0 0 1))
-               (native-aref (bc 0 uint16a) '(0 1 0))
-               (native-aref (bc 0 uint16a) '(0 3 1))
-               (native-aref (bc 0 uint16a) '(1 0 0))
-               (native-aref (bc 0 uint16a) '(1 3 1))))
+         (list (native-aref (bc 0 uint16a) 0 0 0)
+               (native-aref (bc 0 uint16a) 0 0 1)
+               (native-aref (bc 0 uint16a) 0 1 0)
+               (native-aref (bc 0 uint16a) 0 3 1)
+               (native-aref (bc 0 uint16a) 1 0 0)
+               (native-aref (bc 0 uint16a) 1 3 1)))
   (test* "int16 array ref"
          (case (native-endian)
            [(big-endian) '(#x0203 #x0405 #x0e0f
                            #x1011 #x1e1f #xfeff)]
            [else         '(#x0302 #x0504 #x0f0e
                            #x1110 #x1f1e #x-0002)])
-         (list (native-aref (bc 0 int16a) '(0 0 1))
-               (native-aref (bc 0 int16a) '(0 1 0))
-               (native-aref (bc 0 int16a) '(0 3 1))
-               (native-aref (bc 0 int16a) '(1 0 0))
-               (native-aref (bc 0 int16a) '(1 3 1))
-               (native-aref (bc 0 int16a) '(4 3 1))))
+         (list (native-aref (bc 0 int16a) 0 0 1)
+               (native-aref (bc 0 int16a) 0 1 0)
+               (native-aref (bc 0 int16a) 0 3 1)
+               (native-aref (bc 0 int16a) 1 0 0)
+               (native-aref (bc 0 int16a) 1 3 1)
+               (native-aref (bc 0 int16a) 4 3 1)))
 
   (test* "uint32 array ref"
          (case (native-endian)
@@ -387,20 +387,20 @@
                            #x10111213 #x2c2d2e2f)]
            [else         '(#x03020180 #x07060504
                            #x13121110 #x2f2e2d2c)])
-         (list (native-aref (bc 0 uint32a) '(0 0 0))
-               (native-aref (bc 0 uint32a) '(0 0 1))
-               (native-aref (bc 0 uint32a) '(0 2 0))
-               (native-aref (bc 0 uint32a) '(1 2 1))))
+         (list (native-aref (bc 0 uint32a) 0 0 0)
+               (native-aref (bc 0 uint32a) 0 0 1)
+               (native-aref (bc 0 uint32a) 0 2 0)
+               (native-aref (bc 0 uint32a) 1 2 1)))
   (test* "int32 array ref"
          (case (native-endian)
            [(big-endian) '(#x80010203 #x04050607
                            #x10111213 #x-03020101)]
            [else         '(#x03020180 #x07060504
                            #x13121110 #x-00010204)])
-         (list (native-aref (bc 0 int32a) '(0 0 0))
-               (native-aref (bc 0 int32a) '(0 0 1))
-               (native-aref (bc 0 int32a) '(0 2 0))
-               (native-aref (bc 0 int32a) '(3 0 1))))
+         (list (native-aref (bc 0 int32a) 0 0 0)
+               (native-aref (bc 0 int32a) 0 0 1)
+               (native-aref (bc 0 int32a) 0 2 0)
+               (native-aref (bc 0 int32a) 3 0 1)))
 
   (test* "uint64 array ref"
          (case (native-endian)
@@ -408,57 +408,57 @@
                            #x18191a1b1c1d1e1f)]
            [else         '(#x0706050403020180
                            #x1f1e1d1c1b1a1918)])
-         (list (native-aref (bc 0 uint64a) '(0 0))
-               (native-aref (bc 0 uint64a) '(1 1))))
+         (list (native-aref (bc 0 uint64a) 0 0)
+               (native-aref (bc 0 uint64a) 1 1)))
   (test* "int64 array ref"
          (case (native-endian)
            [(big-endian) '(#x8001020304050607
                            #x-0706050403020101)]
            [else         '(#x0706050403020180
                            #x-0001020304050608)])
-         (list (native-aref (bc 0 int64a) '(0 0))
-               (native-aref (bc 0 int64a) '(4 1))))
+         (list (native-aref (bc 0 int64a) 0 0)
+               (native-aref (bc 0 int64a) 4 1)))
 
   (test* "uint8 array modify" #xff
          (begin
-           (set! (native-aref (bc 0 uint8a) '(0 0 1)) #xff)
-           (native-aref (bc 0 uint8a) '(0 0 1))))
+           (set! (native-aref (bc 0 uint8a) 0 0 1) #xff)
+           (native-aref (bc 0 uint8a) 0 0 1)))
   (test* "int8 array modify" -2
          (begin
-           (set! (native-aref (bc 0 int8a) '(0 0 1)) -2)
-           (native-aref (bc 0 int8a) '(0 0 1))))
+           (set! (native-aref (bc 0 int8a) 0 0 1) -2)
+           (native-aref (bc 0 int8a) 0 0 1)))
 
   (test* "uint16 array modify" #xabcd
          (begin
-           (set! (native-aref (bc 0 uint16a) '(0 0 1)) #xabcd)
-           (native-aref (bc 0 uint16a) '(0 0 1))))
+           (set! (native-aref (bc 0 uint16a) 0 0 1) #xabcd)
+           (native-aref (bc 0 uint16a) 0 0 1)))
   (test* "int16 array modify" #x-1234
          (begin
-           (set! (native-aref (bc 0 int16a) '(0 0 1)) #x-1234)
-           (native-aref (bc 0 int16a) '(0 0 1))))
+           (set! (native-aref (bc 0 int16a) 0 0 1) #x-1234)
+           (native-aref (bc 0 int16a) 0 0 1)))
 
   (test* "uint32 array modify" #x89abcdef
          (begin
-           (set! (native-aref (bc 0 uint32a) '(0 2 0)) #x89abcdef)
-           (native-aref (bc 0 uint32a) '(0 2 0))))
+           (set! (native-aref (bc 0 uint32a) 0 2 0) #x89abcdef)
+           (native-aref (bc 0 uint32a) 0 2 0)))
   (test* "int32 array modify" #x-789abcde
          (begin
-           (set! (native-aref (bc 0 int32a) '(0 2 0)) #x-789abcde)
-           (native-aref (bc 0 int32a) '(0 2 0))))
+           (set! (native-aref (bc 0 int32a) 0 2 0) #x-789abcde)
+           (native-aref (bc 0 int32a) 0 2 0)))
 
   (test* "uint64 array modify" #x0123456789abcdef
          (begin
-           (set! (native-aref (bc 0 uint64a) '(0 0)) #x0123456789abcdef)
-           (native-aref (bc 0 uint64a) '(0 0))))
+           (set! (native-aref (bc 0 uint64a) 0 0) #x0123456789abcdef)
+           (native-aref (bc 0 uint64a) 0 0)))
   (test* "int64 array modify" #x-0123456789abcdef
          (begin
-           (set! (native-aref (bc 0 int64a) '(0 0)) #x-0123456789abcdef)
-           (native-aref (bc 0 int64a) '(0 0))))
+           (set! (native-aref (bc 0 int64a) 0 0) #x-0123456789abcdef)
+           (native-aref (bc 0 int64a) 0 0)))
 
   ;; partial index
   (test* "int8 array partial dereference" #x17
-         (let1 a (native-aref (bc 0 int8a) '(2 3))
-           (native-aref a '(1))))
+         (let1 a (native-aref (bc 0 int8a) 2 3)
+           (native-aref a 1)))
   )
 
 (let ([data (case (native-endian)
@@ -516,13 +516,13 @@
                (native-aref (bc 12 double*) 1)
                (native-aref (bc 12 double*) 2)))
   (test* "float array ref" '(1.0 -1.0 3.5)
-         (list (native-aref (bc 0 floata) '(0))
-               (native-aref (bc 0 floata) '(1))
-               (native-aref (bc 0 floata) '(2))))
+         (list (native-aref (bc 0 floata) 0)
+               (native-aref (bc 0 floata) 1)
+               (native-aref (bc 0 floata) 2)))
   (test* "double array ref" '(1.0 -1.0 2.5)
-         (list (native-aref (bc 12 doublea) '(0))
-               (native-aref (bc 12 doublea) '(1))
-               (native-aref (bc 12 doublea) '(2))))
+         (list (native-aref (bc 12 doublea) 0)
+               (native-aref (bc 12 doublea) 1)
+               (native-aref (bc 12 doublea) 2)))
 
   (test* "float* modify" -2.0
          (begin
@@ -530,8 +530,8 @@
            (native-aref (bc 0 float*) 1)))
   (test* "float array modify" -2.0
          (begin
-           (set! (native-aref (bc 0 floata) '(1)) -2.0)
-           (native-aref (bc 0 floata) '(1))))
+           (set! (native-aref (bc 0 floata) 1) -2.0)
+           (native-aref (bc 0 floata) 1)))
 
   (test* "double* modify" -4.5
          (begin
@@ -539,8 +539,8 @@
            (native-aref (bc 12 double*) 1)))
   (test* "double array modify" -4.5
          (begin
-           (set! (native-aref (bc 12 doublea) '(1)) -4.5)
-           (native-aref (bc 12 doublea) '(1))))
+           (set! (native-aref (bc 12 doublea) 1) -4.5)
+           (native-aref (bc 12 doublea) 1)))
   )
 
 ;;;---------------------------------------------------
@@ -630,16 +630,16 @@
            [(big-endian) '(#x8001 #x0203 #x04)]
            [else         '(#x0180 #x0302 #x04)])
          (let1 arr (native. (bc 0 s3) 'arr)
-           (list (native-aref arr '(0))
-                 (native-aref arr '(1))
+           (list (native-aref arr 0)
+                 (native-aref arr 1)
                  (native. (bc 0 s3) 'b))))
 
   (test* "native struct array member modify"
          '(#xabcd #xfe)
          (let1 arr (native. (bc 0 s3) 'arr)
-           (set! (native-aref arr '(1)) #xabcd)
+           (set! (native-aref arr 1) #xabcd)
            (set! (native. (bc 0 s3) 'b) #xfe)
-           (list (native-aref arr '(1))
+           (list (native-aref arr 1)
                  (native. (bc 0 s3) 'b)))))
 
 ;; c-union tests
@@ -809,7 +809,7 @@
        [arr (make-native-handle points)])
   ;; Initialize: native-aref on an array of structs returns a struct handle.
   (dotimes [i 4]
-    (let1 elt (native-aref arr (list i))
+    (let1 elt (native-aref arr i)
       (set! (native. elt 'x) (* i 10))
       (set! (native. elt 'y) (* i 100))))
 
@@ -828,8 +828,8 @@
          (let1 s (native* (native& arr 1))
            (set! (native. s 'x) -1)
            (set! (native. s 'y) -2)
-           (list (native. (native-aref arr '(1)) 'x)
-                 (native. (native-aref arr '(1)) 'y)))))
+           (list (native. (native-aref arr 1) 'x)
+                 (native. (native-aref arr 1) 'y)))))
 
 ;; Struct with an array field, member reference
 (let* ([buf (make-c-array-type <uint16> '(4))]
@@ -837,10 +837,10 @@
        [h (make-native-handle frame)])
   (set! (native. h 'tag) 42)
   (let1 a (native. h 'data)
-    (set! (native-aref a '(0)) #x1111)
-    (set! (native-aref a '(1)) #x2222)
-    (set! (native-aref a '(2)) #x3333)
-    (set! (native-aref a '(3)) #x4444))
+    (set! (native-aref a 0) #x1111)
+    (set! (native-aref a 1) #x2222)
+    (set! (native-aref a 2) #x3333)
+    (set! (native-aref a 3) #x4444))
 
   (test* "native& on struct array field returns c-pointer to array" #t
          (let1 p (native& h 'data)
@@ -850,18 +850,18 @@
   (test* "native& on struct array field: deref then native-aref reads"
          '(#x1111 #x2222 #x3333 #x4444)
          (let1 a (native* (native& h 'data))
-           (list (native-aref a '(0))
-                 (native-aref a '(1))
-                 (native-aref a '(2))
-                 (native-aref a '(3)))))
+           (list (native-aref a 0)
+                 (native-aref a 1)
+                 (native-aref a 2)
+                 (native-aref a 3))))
 
   (test* "native& on struct array field: deref then native-aref writes back"
          '(#xaaaa #xbbbb)
          (let1 a (native* (native& h 'data))
-           (set! (native-aref a '(0)) #xaaaa)
-           (set! (native-aref a '(3)) #xbbbb)
-           (list (native-aref (native. h 'data) '(0))
-                 (native-aref (native. h 'data) '(3))))))
+           (set! (native-aref a 0) #xaaaa)
+           (set! (native-aref a 3) #xbbbb)
+           (list (native-aref (native. h 'data) 0)
+                 (native-aref (native. h 'data) 3)))))
 
 ;; native tag registry
 (parameterize ([current-native-tag-namespace
@@ -1097,10 +1097,10 @@
 ;; native& on 1-D c-array: extract pointer to an element
 (let* ([a (make-c-array-type <uint16> '(4))]
        [h (make-native-handle a)])
-  (set! (native-aref h '(0)) #x1111)
-  (set! (native-aref h '(1)) #x2222)
-  (set! (native-aref h '(2)) #x3333)
-  (set! (native-aref h '(3)) #x4444)
+  (set! (native-aref h 0) #x1111)
+  (set! (native-aref h 1) #x2222)
+  (set! (native-aref h 2) #x3333)
+  (set! (native-aref h 3) #x4444)
 
   (test* "native& on array returns c-pointer handle" #t
          (c-pointer-handle? (native& h 0)))
@@ -1129,10 +1129,10 @@
            (set! (native* (native& h 1)) #xbbbb)
            (set! (native* (native& h 2)) #xcccc)
            (set! (native* (native& h 3)) #xdddd)
-           (list (native-aref h '(0))
-                 (native-aref h '(1))
-                 (native-aref h '(2))
-                 (native-aref h '(3)))))
+           (list (native-aref h 0)
+                 (native-aref h 1)
+                 (native-aref h 2)
+                 (native-aref h 3))))
 
   ;; The pointer can be offset using native-aref
   (test* "native& on array: native-aref on returned pointer"
@@ -1148,12 +1148,12 @@
 ;; native& on multi-dimensional c-array
 (let* ([a (make-c-array-type <int32> '(2 3))]
        [h (make-native-handle a)])
-  (set! (native-aref h '(0 0))  10)
-  (set! (native-aref h '(0 1))  11)
-  (set! (native-aref h '(0 2))  12)
-  (set! (native-aref h '(1 0))  20)
-  (set! (native-aref h '(1 1))  21)
-  (set! (native-aref h '(1 2))  22)
+  (set! (native-aref h 0 0)  10)
+  (set! (native-aref h 0 1)  11)
+  (set! (native-aref h 0 2)  12)
+  (set! (native-aref h 1 0)  20)
+  (set! (native-aref h 1 1)  21)
+  (set! (native-aref h 1 2)  22)
 
   (test* "native& on 2D array: pointee type is element type" #t
          (equal? (~ (native-handle-type (native& h '(1 2))) 'pointee-type)
@@ -1172,7 +1172,7 @@
          99
          (begin
            (set! (native* (native& h '(1 1))) 99)
-           (native-aref h '(1 1)))))
+           (native-aref h 1 1))))
 
 ;; native& errors on inappropriate handle types
 (let* ([int* (make-c-pointer-type <int>)]
@@ -2203,11 +2203,11 @@
   (test* "native-type array equals manual" #t
          (equal? u8a u8a-manual))
   (test* "native-type array ref works"
-         (native-aref (bc 0 u8a-manual) '(0 0))
-         (native-aref (bc 0 u8a) '(0 0)))
+         (native-aref (bc 0 u8a-manual) 0 0)
+         (native-aref (bc 0 u8a) 0 0))
   (test* "native-type array ref (1 2)"
-         (native-aref (bc 0 u8a-manual) '(1 2))
-         (native-aref (bc 0 u8a) '(1 2))))
+         (native-aref (bc 0 u8a-manual) 1 2)
+         (native-aref (bc 0 u8a) 1 2)))
 
 (test* "native-type unknown symbol" (test-error)
        (native-type 'nonexistent_type_xyz))

@@ -1128,9 +1128,12 @@
   (assume-type type <native-type>)
   (typecase type
     [<c-pointer>
-     ;; Selector is an element index
-     (assume-type selector <fixnum>)
-     (* selector (~ type'pointee-type'size))]
+     ;; Selector is a single element index, passed as a one-element list.
+     (match selector
+       [((? fixnum? i)) (* i (~ type'pointee-type'size))]
+       [_
+        (error "Pointer dereference requires a single integer index, but got:"
+               selector)])]
     [<c-array>
      (unless (every (every-pred fixnum? (complement negative?)) selector)
        (error "Invalid native array selector:" selector))
@@ -1216,10 +1219,10 @@
 
 ;; Array reference
 ;; (Pointer reference with offset, e.g. *(p+i), can be handled with this, too)
-(define (native-aref handle indices :optional (type #f))
+(define (native-aref handle . indices)
   (assume-type handle <native-handle>)
-  (assume-type indices (</> <fixnum> (<List> <fixnum>)))
-  (let* ([t (%handle-type handle type)]
+  (assume-type indices (<List> <fixnum> 1))
+  (let* ([t (%handle-type handle #f)]
          [offset (native-type-offset t indices)])
     (etypecase t
       [<c-array>
@@ -1227,10 +1230,10 @@
       [<c-pointer>
        (%handle-ref (~ t 'pointee-type) handle offset)])))
 
-(define (%native-aref-set! handle indices type val)
+(define (%native-aref-set! handle indices val)
   (assume-type handle <native-handle>)
-  (assume-type indices (</> <fixnum> (<List> <fixnum>)))
-  (let* ([t (%handle-type handle type)]
+  (assume-type indices (<List> <fixnum> 1))
+  (let* ([t (%handle-type handle #f)]
          [offset (native-type-offset t indices)])
     (etypecase t
       [<c-array>
@@ -1238,9 +1241,10 @@
       [<c-pointer>
        (%handle-set! (~ t'pointee-type) handle offset val)])))
 (set! (setter native-aref)
-      (case-lambda
-        [(handle indices type val) (%native-aref-set! handle indices type val)]
-        [(handle indices val) (%native-aref-set! handle indices #f val)]))
+      (^[handle . args]
+        (when (null? args)
+          (error "native-aref setter requires at least one index and a value"))
+        (%native-aref-set! handle (drop-right args 1) (last args))))
 
 
 ;; Struct/union direct field access
@@ -1712,16 +1716,17 @@
     (proc (^[] (>= i len)) (^[] (begin0 (ref coll i) (inc! i))))))
 
 (define-method ref ((coll <wrapped-c-array>) (index <integer>))
-  (%wrap (native-aref (%wh coll) (list index))))
+  (%wrap (native-aref (%wh coll) index)))
 
 (define-method (setter ref) ((coll <wrapped-c-array>) (index <integer>) val)
-  (set! (native-aref (%wh coll) (list index)) (%unwrap val)))
+  (set! (native-aref (%wh coll) index) (%unwrap val)))
 
 (define-method ref ((coll <wrapped-c-array>) (indices <list>))
-  (%wrap (native-aref (%wh coll) indices)))
+  (%wrap (apply native-aref (%wh coll) indices)))
 
 (define-method (setter ref) ((coll <wrapped-c-array>) (indices <list>) val)
-  (set! (native-aref (%wh coll) indices) (%unwrap val)))
+  (apply (setter native-aref) (%wh coll)
+         (append indices (list (%unwrap val)))))
 
 (define-method referencer ((coll <wrapped-c-array>))
   (^[index] (ref coll index)))
