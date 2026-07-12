@@ -4104,12 +4104,11 @@ static ScmObj throw_continuation(ScmObj *argframe,
                 tries to return to the now-gone frame, an error
                 will be raised.
            2. Captured frame is still alive---'upward escape'.
-            2a. No inner metacont's prompt-tag shadows the captured
-                prompt-tag.  We can simply discard current (meta-)continuation
-                and put the ep's (meta-)continuation.
-            2b. Inner metacont has the same prompt-tag as the captured
-                metacont.  SRFI-226 requires to abort to the closest
-                prompt tag.  After aborting to targetMeta, we need to
+            2a. Captured continuation is still preset in the current
+                continuation, and targetMeta (to which we abort) is
+                on or below the catured cont, we can simply discard
+                current cont up to the targetMeta and continue.
+            2b. Otherwise, after aborting to targetMeta, we need to
                 reinstall the tagged frame so that the tag is preserved.
            3. Capturef frame is gone---we abort to the very bottom
               (cstack bottom).
@@ -4181,8 +4180,16 @@ static ScmObj throw_continuation(ScmObj *argframe,
                                     ep->boundingMetaCont->promptTag);
 
         if (targetMeta != NULL) { /* Case 2 */
-            if (targetMeta == ep->capturedMetaCont) { /* 2a */
+            _Bool capturedOnChain = FALSE;
+            if (meta_cont_reachable_p(vm, ep->capturedMetaCont)) {
+                for (ScmMetaCont *m = ep->capturedMetaCont;
+                     m != NULL; m = m->prev) {
+                    if (m == targetMeta) { capturedOnChain = TRUE; break; }
+                }
+            }
+            if (capturedOnChain) { /* 2a: resume at capturedMetaCont in place */
                 vm->currentMetaCont = ep->capturedMetaCont;
+                targetMeta = ep->capturedMetaCont; /* handler level below */
             } else {            /* 2b */
                 save_cont(vm);
                 /* Abort up to targetMeta, but keep the prompt in place as the
@@ -4194,7 +4201,23 @@ static ScmObj throw_continuation(ScmObj *argframe,
                    find a prompt of this tag to abort to. */
                 vm->cont = targetMeta->frame;
                 vm->currentMetaCont = targetMeta;
-                ep->cont = install_partial_cont(vm, ep, ep->boundingMetaCont->boundary);
+                if (ep->boundingMetaCont->boundary
+                    && ep->capturedMetaCont == ep->boundingMetaCont) {
+                    /* The captured continuation is delimited by a boundary
+                       metacont (a cstack/thread root) with an empty captured
+                       slice: it is the identity up to that boundary and its
+                       captured frame chain returns to C, not into the VM.  Per
+                       SRFI-226 a non-composable continuation replaces the
+                       then-current continuation only up to the nearest tagged
+                       prompt (targetMeta); the portion above the boundary is
+                       empty.  Reinstate the identity at targetMeta: deliver the
+                       value to targetMeta's continuation and continue in-VM. */
+                    ep->cont = targetMeta->frame;
+                    ep->denv = targetMeta->frame->denv;
+                    ep->dynamicHandlers = SCM_NIL;
+                } else {
+                    ep->cont = install_partial_cont(vm, ep, ep->boundingMetaCont->boundary);
+                }
             }
             /* Wind down the current dynamic handlers to the abort target's
                handler level (mc_dynamic_handlers(targetMeta)), then wind up the

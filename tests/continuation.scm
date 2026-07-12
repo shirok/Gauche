@@ -746,6 +746,30 @@
             (lambda ()
               (return-to k1))))))
 
+;; A non-composable continuation captured outside an inner prompt of the same
+;; tag, when invoked inside that prompt.
+(let ()
+  (define (run outer?)
+    (with-output-to-string
+      (lambda ()
+        (define (body)
+          (call-with-non-composable-continuation
+           (lambda (k)
+             (display 0)
+             (dynamic-wind
+               (lambda () (display 'before))
+               (lambda ()
+                 (display 1)
+                 (call-with-continuation-prompt (lambda () (k 'ok)))
+                 (display 2))
+               (lambda () (display 'after)))
+             (display 3))))
+        (if outer? (call-with-continuation-prompt body) (body)))))
+  (test* "reinstate through inner default prompt (explicit outer)"
+         "0before12after3" (run #t))
+  (test* "reinstate through inner default prompt (implicit boundary)"
+         "0before12after3" (run #f)))
+
 ;;-----------------------------------------------------------------------
 ;; Continuation barriers
 ;;
