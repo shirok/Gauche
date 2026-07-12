@@ -1327,13 +1327,24 @@
        (error "native& requires c-array, c-struct or c-union handle, but got:"
               handle)])))
 
+;; handle can be c-pointer handle or c-array handle.  For the latter, it is
+;; cast to the pointer handle, like C.
 (define (native-pointer+ handle element-offset)
   (assume-type handle <native-handle>)
   (let1 t (~ handle'type)
-    (assume-type t <c-pointer>
-      "c-pointer handle required, but got:" (cons handle t))
-    (let1 pt (~ t'pointee-type)
-      (make-internal-handle handle (* element-offset (~ pt'size)) (~ handle'type)))))
+    (etypecase t
+      [<c-pointer>
+       (let1 pt (~ t'pointee-type)
+         (make-internal-handle handle
+                               (* element-offset (~ pt'size))
+                               (~ handle'type)))]
+      [<c-array>
+       (let* ([et (~ t'element-type)]
+              [dims (~ t'dimensions)]
+              [pt (if (length=? dims 1)
+                    (make-c-pointer-type et)
+                    (make-c-pointer-type (make-c-array-type et (cdr dims))))])
+         (native-pointer+ (cast-handle pt handle) element-offset))])))
 
 ;;;
 ;;;  Convert type signatures to native-type instance

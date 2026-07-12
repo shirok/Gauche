@@ -302,6 +302,45 @@
          (native* (native-pointer+ h 4)))
   )
 
+(let ([h (make-c-array-handle <int32> '(4) #s32(10 20 30 40))])
+  (test* "native-pointer+ (int[] auto-cast to int*)" #t
+         (c-pointer-handle? (native-pointer+ h 0)))
+  (test* "native-pointer+ (int[] auto-cast to int*) pointee" #t
+         (equal? <int32>
+                 (c-pointer-type-pointee
+                  (native-handle-type (native-pointer+ h 0)))))
+  (test* "native-pointer+ (int[] auto-cast to int*) deref" 30
+         (native* (native-pointer+ h 2)))
+  (test* "native-pointer+ (int[] auto-cast to int*) past-end" #t
+         (native-handle-belongs? h (native-pointer+ h 4)))
+  (test* "native-pointer+ (int[] auto-cast int*) past-end deref"
+         (test-error <error> #/Past-end pointer cannot/)
+         (native* (native-pointer+ h 4)))
+  (test* "native-pointer+ (int[] auto-cast to int*) out of range"
+         (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h 5)))
+  )
+
+(let ([h (make-c-array-handle <int32> '(3 2) #s32(10 20 30 40 50 60))])
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*)" #t
+         (c-pointer-handle? (native-pointer+ h 0)))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) pointee" '(2)
+         (c-array-type-dimensions
+          (c-pointer-type-pointee
+           (native-handle-type (native-pointer+ h 0)))))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) deref row 0" '(10 20)
+         (let1 row (native* (native-pointer+ h 0))
+           (list (native-aref row 0) (native-aref row 1))))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) deref row 1" '(30 40)
+         (let1 row (native* (native-pointer+ h 1))
+           (list (native-aref row 0) (native-aref row 1))))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) deref row 2" '(50 60)
+         (let1 row (native* (native-pointer+ (native-pointer+ h 3) -1))
+           (list (native-aref row 0) (native-aref row 1))))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) past-end" #t
+         (native-handle-belongs? h (native-pointer+ h 3)))
+  )
+
 ;;;---------------------------------------------------
 (test-section "arrays")
 
