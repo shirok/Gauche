@@ -1492,6 +1492,70 @@
                                                 'default tag)))
               tag)))))
 
+;; continuation-mark-set->iterator
+
+;; Drain an iterator into the list of its elements.
+(define (drain-iterator iter)
+  (receive (elt next) (iter)
+    (if elt
+      (cons elt (drain-iterator next))
+      '())))
+
+(test* "continuation-mark-set->iterator" '(#(#f mark2) #(mark1 mark2))
+       (drain-iterator
+        (caar
+         (with-continuation-mark 'key1 'mark1
+           (with-continuation-mark 'key2 'mark2
+             (list
+              (with-continuation-mark 'key3 'mark3
+                (list
+                 (with-continuation-mark 'key2 'mark2
+                   (continuation-mark-set->iterator #f '(key1 key2)))))))))))
+
+(test* "continuation-mark-set->iterator disjoint frames"
+       '(#(#f inner) #(outer #f))
+       (drain-iterator
+        (car
+         (with-continuation-mark 'key1 'outer
+           (list
+            (with-continuation-mark 'key2 'inner
+              (continuation-mark-set->iterator #f '(key1 key2))))))))
+
+(test* "continuation-mark-set->iterator fallback"
+       '(#(mark3 default) #(mark1 mark2))
+       (let ([tag (make-continuation-prompt-tag)]
+             [key1 (make-continuation-mark-key)]
+             [key2 (make-continuation-mark-key)])
+         (drain-iterator
+          (with-continuation-mark key1 'mark1
+            (with-continuation-mark key2 'mark2
+              (call-with-continuation-prompt
+               (^[]
+                 (with-continuation-mark key1 'mark3
+                   (continuation-mark-set->iterator #f (list key1 key2) 'default)))
+               tag))))))
+
+(test* "continuation-mark-set->iterator w/tag" '(#(mark3 default))
+       (let ([tag (make-continuation-prompt-tag)]
+             [key1 (make-continuation-mark-key)]
+             [key2 (make-continuation-mark-key)])
+         (drain-iterator
+          (with-continuation-mark key1 'mark1
+            (with-continuation-mark key2 'mark2
+              (call-with-continuation-prompt
+               (^[]
+                 (with-continuation-mark key1 'mark3
+                   (continuation-mark-set->iterator #f (list key1 key2)
+                                                    'default tag)))
+               tag))))))
+
+;; The iterator returned alongside the terminating #f raises when applied.
+(test* "continuation-mark-set->iterator end" (test-error)
+       (let loop ([iter (with-continuation-mark 'key 'val
+                          (continuation-mark-set->iterator #f '(key)))])
+         (receive (elt next) (iter)
+           (if elt (loop next) (next)))))
+
 ;; See if parameterize body is evaluated in tail context
 ;; (SRFI-226)
 (test* "parameterize body in tail context" #t

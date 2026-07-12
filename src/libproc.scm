@@ -196,6 +196,17 @@
                                                            (prompt-tag #f))
   (return (Scm_ContinuationMarkSetListStar cmset keys fallback prompt-tag)))
 
+(define (continuation-mark-set->iterator mset key-list
+                                         :optional (fallback #f)
+                                                   (prompt-tag (default-continuation-prompt-tag)))
+  ;; This eagerly build the result list, potentially waste CPU cycles and
+  ;; memory. We'll replace it with lazy one once performance becomes an issue.
+  (let recur ([r (continuation-mark-set->list* mset key-list fallback prompt-tag)])
+    (^[]
+      (if (null? r)
+        (values #f (^[] (error "continuation-mark-set->iterator has ended")))
+        (values (car r) (recur (cdr r)))))))
+
 ;; SRFI-226
 ;; We use uninterned symbols for unique continuation mark key.
 ;; Since we don't have specialized procedures for the keys specifically
