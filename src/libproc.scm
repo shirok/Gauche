@@ -64,7 +64,25 @@
                   (SCM_APPEND1 head tail (SCM_CAR cp)))
                 (return (Scm_VMApply proc head))])))
 
-(define-cproc call-with-current-continuation (proc) Scm_VMCallCC)
+(define-cproc call-with-non-composable-continuation (proc
+                                                     :optional (prompt-tag '#f))
+  Scm_VMCallCCWithTag)
+(define-cproc call-with-current-continuation (proc)
+  (return (Scm_VMCallCCWithTag proc SCM_FALSE)))
+(define-cproc call-with-composable-continuation (proc
+                                                 :optional (prompt-tag '#f))
+  Scm_VMCallPCWithTag)
+(define-cproc call-in-continuation (cont proc :rest objs)
+  Scm_VMCallInContinuation)
+(define (call-in cont proc :rest args)
+  (unless (non-composable-continuation? cont)
+    (errorf "cont must be a non-composable continuation, but got: ~S" cont))
+  (apply call-in-continuation cont proc args))
+(define (return-to cont :rest args)
+  (unless (non-composable-continuation? cont)
+    (errorf "cont must be a non-composable continuation, but got: ~S" cont))
+  (apply call-in-continuation cont values args))
+
 (define-cproc values (:rest args) :constant (inliner VALUES) Scm_Values)
 (define-cproc dynamic-wind (pre body post) Scm_VMDynamicWind)
 
@@ -75,10 +93,15 @@
 
 ;; SRFI-226
 (define-cproc continuation? (obj) ::<boolean> Scm_ContinuationP)
+(define-cproc composable-continuation? (obj) ::<boolean>
+  Scm_ComposableContinuationP)
+(define-cproc non-composable-continuation? (obj) ::<boolean>
+  Scm_NonComposableContinuationP)
+
 
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
-(define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
+(define-cproc %call/pc (proc :optional (prompt-tag #f)) Scm_VMCallPCWithTag)
 (define-cproc %reset (proc) (return (Scm_VMReset proc)))
 
 ;; Continuaton prompts
@@ -94,8 +117,36 @@
                                              :optional (prompt-tag #f)
                                                        (abort-handler #f))
   Scm_VMCallWithContinuationPrompt)
+(define-cproc call-with-continuation-barrier (thunk)
+  Scm_VMCallWithContinuationBarrier)
 (define-cproc abort-current-continuation (prompt-tag :rest objs)
   Scm_VMAbortCurrentContinuation)
+
+(define (call-in-initial-continuation thunk)
+  (define make-uncaught
+    (with-module gauche.threads make-uncaught-exception-condition))
+  (let1 thunk2
+      (let/cc return
+        (^[]
+          (call-with-continuation-prompt
+           (^[]
+             (with-exception-handler
+              (^[exc]
+                (if (and (condition? exc) (not (serious-condition? exc)))
+                  (undefined)             ;non-serious: resume the raise site
+                  (return (^[] (raise-continuable (make-uncaught exc))))))
+              thunk))
+           (default-continuation-prompt-tag))))
+    (thunk2)))
+
+(select-module gauche.internal)
+(define-cproc %continuation-prompt-available? (prompt-tag cont)
+  ::<boolean>
+  Scm_ContinuationPromptAvailableP)
+(define-in-module gauche (continuation-prompt-available? prompt-tag
+                                                         :optional (cont #f))
+  (%continuation-prompt-available? prompt-tag
+                                   (or cont (call-with-non-composable-continuation values))))
 
 ;; Continuation marks
 (select-module gauche)
@@ -138,14 +189,23 @@
 (define-cproc continuation-mark-set-first (cmset::<continuation-mark-set>?
                                            key :optional (fallback #f)
                                                          (prompt-tag #f))
-  (let* ([cms::ScmContinuationMarkSet*
-          (?: cmset cmset
-              (SCM_CONTINUATION_MARK_SET (Scm_CurrentContinuationMarks prompt-tag)))]
-         [p (-> cms denv)])
-    (for [() (SCM_PAIRP p) (set! p (SCM_CDR p))]
-      (when (SCM_EQ (SCM_CAAR p) key)
-        (return (SCM_CDAR p))))
-    (return fallback)))
+  (return (Scm_ContinuationMarkSetFirst cmset key fallback prompt-tag)))
+
+(define-cproc continuation-mark-set->list* (cmset::<continuation-mark-set>?
+                                            keys :optional (fallback #f)
+                                                           (prompt-tag #f))
+  (return (Scm_ContinuationMarkSetListStar cmset keys fallback prompt-tag)))
+
+(define (continuation-mark-set->iterator mset key-list
+                                         :optional (fallback #f)
+                                                   (prompt-tag (default-continuation-prompt-tag)))
+  ;; This eagerly build the result list, potentially waste CPU cycles and
+  ;; memory. We'll replace it with lazy one once performance becomes an issue.
+  (let recur ([r (continuation-mark-set->list* mset key-list fallback prompt-tag)])
+    (^[]
+      (if (null? r)
+        (values #f (^[] (error "continuation-mark-set->iterator has ended")))
+        (values (car r) (recur (cdr r)))))))
 
 ;; SRFI-226
 ;; We use uninterned symbols for unique continuation mark key.

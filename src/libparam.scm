@@ -231,8 +231,8 @@
         (find-module 'gauche.internal)
         '()))
      (match f
-       [(_ () . body) (quasirename r `(let () ,@body))]
-       ;; TODO: shortcut for single-parameter case
+       ;; We need to call %parameterize even there's no bindings, as
+       ;; it needs to capture the current parameterization.
        [(_ ((param val) ...) . body)
         (quasirename r
           `(,%parameterize (list ,@param) (list ,@val) (^[] ,@body) #t))]

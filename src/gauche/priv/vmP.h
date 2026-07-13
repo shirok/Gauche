@@ -39,66 +39,42 @@
 SCM_DECL_BEGIN
 
 /*
- * Tagged continuation frame
+ * Prompt tag
  *
- *   A continuation frame can be tagged with call-with-continuation-prompt,
- *   and it marks the bottom of a delimited continuation chain.
- *
- *   A prompt tag is an ScmObj to distinguish tagged continuation frame.
- *   ScmContFrame->pc points to &(ScmPromptTag->insn), which contains dummy
- *   RET instruction (so that it won't confuse codes that inspect VM state.)
- *
- *   A tagged continuation frame also points ScmPromptData from
- *   ScmContFrame->cpc.  ScmPromptData is not an ScmObj.  It is a struct
- *   to hold abort handler and some dynamic states.  The first word of
- *   ScmPromptData contains a dummy RET instruction, so that it won't confuse
- *   codes that inspect VM state.
+ *   A prompt tag is a first-class object that names a continuation prompt
+ *   (see call-with-continuation-prompt).  A tagged prompt is recorded in
+ *   the meta-continuation chain (ScmMetaCont->promptTag); the tag itself is
+ *   just an identity object carrying a name for debugging.
  */
 
 struct ScmPromptTagRec {
     SCM_HEADER;
     ScmObj name;                /* arbitrary object for debugging */
-    ScmWord insn;               /* a dummy field contains RET insn.
-                                   We make cont->pc point to here
-                                   for the prompt-tag marked continuation,
-                                   so that VM won't crash if it tries
-                                   to execute it accidentally. */
 };
-
-#define SCM_PROMPT_TAG_PC(ptag)   (&SCM_PROMPT_TAG(ptag)->insn)
-#define SCM_PC_TO_PROMPT_TAG(pc)  \
-    ((ScmPromptTag*)((char*)(pc) - offsetof(ScmPromptTag, insn)))
-
-/* ScmPromptData is allocated on the VM stack.  The size must be
-   multiple of ScmWord. */
-typedef struct ScmPromptDataRec {
-    ScmWord dummy;              /* RET insn */
-    ScmObj abortHandler;        /* abort handler */
-    ScmObj dynamicHandlers;     /* dynamic-wind handler chain */
-} ScmPromptData;
-
-#define PROMPT_DATA_SIZE       sizeof(ScmPromptData)/sizeof(ScmWord)
 
 /*
  * Continuation mark set
  *
  *   Continuation mark set is an opaque object to extract a set of continuation
  *   marks.  In Gauche, it is just a wrapper of the dynamic environment
- *   and continuation chain; continuation-mark-set->list will do the actual
+ *   and meta-continuation chain; continuation-mark-set->list will do the actual
  *   extraction work.
  */
 
 struct ScmContinuationMarkSetRec {
     SCM_HEADER;
-    ScmContFrame *cont;         /* current cont frame */
-    ScmObj denv;                /* vm->denv */
-    ScmObj bottomDenv;          /* limit of denv to look for */
+    ScmObj denv;                /* current denv segment */
+    ScmContFrame *cont;         /* cont chain of the current segment; its
+                                   frames' captured denv delimit continuation
+                                   frame boundaries within `denv`. */
+    ScmMetaCont *metaCont;      /* meta-cont chain head */
+    ScmMetaCont *bottom;        /* bounding meta-cont.  we stop searching
+                                   right before this metacont. */
 };
 
 /* To obtain denv keys */
 typedef enum {
     SCM_DENV_KEY_EXCEPTION_HANDLER,
-    SCM_DENV_KEY_DYNAMIC_HANDLER,
     SCM_DENV_KEY_PARAMETERIZATION,
     SCM_DENV_KEY_EXPRESSION_NAME,
     SCM_DENV_KEY_INCLUDE_SOURCE,
@@ -127,6 +103,43 @@ SCM_CLASS_DECL(Scm_DynamicHandlerClass);
 #define SCM_DYNAMIC_HANDLER_P(obj) SCM_ISA(obj,SCM_CLASS_DYNAMIC_HANDLER)
 
 /*
+ * Meta-continuation
+ *
+ *  An ScmMetaCont is a heap-allocated record mirroring the state at a
+ *  continuation prompt boundary.  At the moment its prompt is installed it
+ *  snapshots the parent segment's continuation chain, dynamic env, and
+ *  dynamic-wind chain, along with the prompt tag and abort handler.
+ *
+ *  Meta-conts form a chain via `prev`: vm->currentMetaCont is the innermost
+ *  (current) prompt; walking `prev` reaches the outermost (the initial thread
+ *  prompt at the bottom of the chain).
+ */
+typedef struct ScmMetaContRec {
+    SCM_HEADER;
+    ScmObj promptTag;                /* prompt tag delimiting this meta-cont */
+    ScmObj abortHandler;             /* handler invoked on abort-to this tag */
+    int boundary;                    /* TRUE if this metacont is pushed upon
+                                        entering user_eval_inner().  Once
+                                        RETURN_OP hits this metacont,
+                                        it returns from run_loop() to
+                                        get back to user_eval_inner(), instead
+                                        if popping metacont. */
+    ScmContFrame *frame;             /* the prompt cont frame on vm->cont */
+    ScmContFrame *cont;              /* parent vm->cont when prompt installed
+                                        (i.e. frame->prev at install time) */
+    ScmObj denv;                     /* parent vm->denv */
+    ScmObj dynamicHandlers;          /* saved dynamic handler chain */
+    ScmCStack *cstack;               /* vm->cstack when this prompt was
+                                        installed. */
+    struct ScmMetaContRec *prev;     /* outer meta-cont, NULL at bottom */
+} ScmMetaCont;
+
+SCM_CLASS_DECL(Scm_MetaContClass);
+#define SCM_CLASS_META_CONT     (&Scm_MetaContClass)
+#define SCM_META_CONT(obj)      ((ScmMetaCont*)obj)
+#define SCM_META_CONT_P(obj)    SCM_ISA(obj, SCM_CLASS_META_CONT)
+
+/*
  * Escape point
  *
  *  EscapePoint (EP) structure is a saved continuation.  It grabs
@@ -137,15 +150,14 @@ typedef struct ScmEscapePointRec {
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
     ScmObj denv;                /* saved denv */
-    ScmObj dynamicHandlers;     /* saved dynamic handler chain */
+    ScmObj dynamicHandlers;     /* saved dynamic-wind handler segment (the
+                                   current segment at capture time) */
     ScmCStack *cstack;          /* vm->cstack when escape point is created.
                                    this will be used to rewind cstack.
                                    this is NULL for partial continuations,
                                    for they can be executed on anywhere
                                    w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
-    ScmObj resetChain;          /* for reset/shift */
-    ScmObj partHandlers;        /* for reset/shift */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status
                                    should be restored when the control
@@ -159,17 +171,38 @@ typedef struct ScmEscapePointRec {
                                    with-error-handler uses the latter model,
                                    but SRFI-34's guard needs the former model.
                                 */
-
     /* The following fields are used for new implementation of partial cont. */
-    ScmObj promptTag;
-    ScmObj abortHandler;
-    struct ScmEscapePointRec *bottom;
+    ScmContFrame *partContTop;    /* top frame of the captured chain
+                                     (== ep->cont at capture); installed as
+                                     vm->cont on invocation. */
+    ScmMetaCont *boundingMetaCont; /* The prompt the continuation was
+                                     captured with (the "bottom" of the
+                                     meta-cont chain). */
+    ScmMetaCont *capturedMetaCont; /* vm->currentMetaCont at capture.
+                                     Identifies the innermost real prompt
+                                     bounding the captured continuation. */
+    ScmObj applyProc;             /* A procedure to be called by
+                                     call-in-continuation.   Usually #f.
+                                     If this is not #f, the procedure is
+                                     invoked after the continuation is
+                                     thrown. */
+    int crossesBarrier;           /* TRUE if the captured continuation slice
+                                     includes a continuation barrier.  Note:
+                                     this is only used for non-composable
+                                     continuation.  Composable continuation
+                                     can't include a barrier; checked at
+                                     creation time. */
+    ScmVM *ownerVM;               /* The VM in which this escape point was
+                                     captured. */
 } ScmEscapePoint;
 
 SCM_CLASS_DECL(Scm_EscapePointClass);
 #define SCM_CLASS_ESCAPE_POINT  (&Scm_EscapePointClass)
 #define SCM_ESCAPE_POINT(obj)   ((ScmEscapePoint*)obj)
 #define SCM_ESCAPE_POINT_P(obj) SCM_ISA(obj, SCM_CLASS_ESCAPE_POINT)
+
+#define SCM_ESCAPE_POINT_COMPOSABLE_P(obj) \
+    (SCM_ESCAPE_POINT_P(obj) && SCM_ESCAPE_POINT(obj)->cstack == NULL)
 
 /* Escape types */
 #define SCM_VM_ESCAPE_NONE   0

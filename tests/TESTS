@@ -39,6 +39,7 @@ selector.scm
 listener.scm
 net.scm
 thread.scm
+control-features.scm
 dict.scm
 dbidbd.scm
 www.scm

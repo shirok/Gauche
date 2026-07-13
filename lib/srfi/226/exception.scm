@@ -3,9 +3,10 @@
 ;;;
 
 (define-module srfi.226.exception
+  (use scheme.base :only (raise) :prefix r7rs:)
   (export with-exception-handler
           exception-handler-stack
-          raise
+          (rename r7rs:raise raise)
           raise-continuable
           guard
           =>

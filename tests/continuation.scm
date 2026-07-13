@@ -497,7 +497,7 @@
             (lambda ()
               (abort-current-continuation tag1 'foo))))))
 
-'(let ([tag (make-continuation-prompt-tag 'tag)])
+(let ([tag (make-continuation-prompt-tag 'tag)])
   (test* "abort-current-continuation crosses cstack boundary"
          '(a)
          (call-with-continuation-prompt
@@ -521,6 +521,344 @@
                 (^[] (push! r 'after))))
             tag1
             (^[x] (push! r x))))))
+
+(let ([tag1 (make-continuation-prompt-tag 'tag1)]
+      [tag2 (make-continuation-prompt-tag 'tag2)])
+  (test* "abort-current-continuation (two tags)"
+         "[p01][p02][a01][p05]"
+         (with-output-to-string
+           (lambda ()
+             (call-with-continuation-prompt
+              (lambda ()
+                (display "[p01]")
+                (call-with-continuation-prompt
+                 (lambda ()
+                   (display "[p02]")
+                   (abort-current-continuation
+                    tag2
+                    (lambda ()
+                      (display "[a01]")))
+                   (display "[p03]"))
+                 tag1)
+                (display "[p04]"))
+              tag2)
+             (display "[p05]")))))
+
+;; Aborting from nested exception handlers.  Sanity check for
+;; crossing C stack boundary in exception handler invocation won't interfere
+;; with abort-current-continuation.
+(test* "abort-current-continuation in nested exception handler"
+       '("[outer][inner][abort]" (aborted e1 e2))
+       (let ([out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (with-exception-handler
+               (lambda (oc)
+                 (display "[outer]" out)
+                 (with-exception-handler
+                  (lambda (ic)
+                    (display "[inner]" out)
+                    (abort-current-continuation (default-continuation-prompt-tag)
+                      (lambda ()
+                        (display "[abort]" out)
+                        (list 'aborted oc ic))))
+                  (lambda () (raise 'e2)))
+                 (display "[outer-fallthrough]" out)) ; must not run
+               (lambda () (raise 'e1))))
+            (default-continuation-prompt-tag)
+            (lambda (thunk) (thunk))))
+         (list (get-output-string out) val)))
+
+;; Same settings as above, but also the dynamic handler's after thunk
+;; is called in recursive user_eval_inner.
+(test* "abort-current-continuation in nested exception handler w/ dynamic-wind"
+       '("[before][after]" (aborted e1 e2))
+       (let ([out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (with-exception-handler
+               (lambda (oc)
+                 (with-exception-handler
+                  (lambda (ic)
+                    (dynamic-wind
+                      (lambda () (display "[before]" out))
+                      (lambda ()
+                        (abort-current-continuation (default-continuation-prompt-tag)
+                          (lambda () (list 'aborted oc ic))))
+                      (lambda () (display "[after]" out))))
+                  (lambda () (raise 'e2)))
+                 (display "[fallthrough]" out)) ; must not run
+               (lambda () (raise 'e1))))
+            (default-continuation-prompt-tag)
+            (lambda (thunk) (thunk))))
+         (list (get-output-string out) val)))
+
+;; Calling abort-current-continuation from within a dynamic-wind 'after' thunk.
+(test* "abort-current-continuation in dynamic-wind after"
+       '("[before][body][after]" aborted)
+       (let ([tag (default-continuation-prompt-tag)]
+             [out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (dynamic-wind
+                (lambda () (display "[before]" out))
+                (lambda () (display "[body]" out) 'body)
+                (lambda ()
+                  (display "[after]" out)
+                  (abort-current-continuation tag (lambda () 'aborted))))
+              (display "[past-dw]" out)) ; must not run
+            tag
+            (lambda (thunk) (thunk))))
+         (list (get-output-string out) val)))
+
+;; An abort to an inner prompt unwinds through a dynamic-wind whose after thunk
+;; itself aborts, to an outer prompt.
+(test* "abort-current-continuation in dynamic-wind after supersedes in-flight abort"
+       '("[after]" (O outer))
+       (let ([tag-o (make-continuation-prompt-tag 'o)]
+             [tag-i (make-continuation-prompt-tag 'i)]
+             [out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (call-with-continuation-prompt
+               (lambda ()
+                 (dynamic-wind
+                   (lambda () #f)
+                   (lambda ()
+                     (abort-current-continuation tag-i
+                       (lambda () 'inner)))
+                   (lambda ()
+                     (display "[after]" out)
+                     (abort-current-continuation tag-o (lambda () 'outer)))))
+               tag-i
+               (lambda (thunk) (list 'I (thunk)))))
+            tag-o
+            (lambda (thunk) (list 'O (thunk)))))
+         (list (get-output-string out) val)))
+
+;; Same nested abort, but from an exception handler.
+(test* "abort-current-continuation in dynamic-wind after during handler abort"
+       '("[after]" (O outer))
+       (let ([tag-o (make-continuation-prompt-tag 'o)]
+             [out (open-output-string)])
+         (define val
+           (call-with-continuation-prompt
+            (lambda ()
+              (call-with-continuation-prompt
+               (lambda ()
+                 (with-exception-handler
+                  (lambda (c)
+                    (dynamic-wind
+                      (lambda () #f)
+                      (lambda ()
+                        (abort-current-continuation (default-continuation-prompt-tag)
+                          (lambda () 'inner)))
+                      (lambda ()
+                        (display "[after]" out)
+                        (abort-current-continuation tag-o (lambda () 'outer)))))
+                  (lambda () (raise 'e))))
+               (default-continuation-prompt-tag)
+               (lambda (thunk) (list 'DEF (thunk)))))
+            tag-o
+            (lambda (thunk) (list 'O (thunk)))))
+         (list (get-output-string out) val)))
+
+;; from SRFI-226 document
+(let ([tag (make-continuation-prompt-tag)])
+  (test* "call-with-composable-continuation 1"
+         6930 ; = 11 * 3 * 7 * 5 * 3 * 2
+         (* 2
+            (call-with-continuation-prompt
+             (lambda ()
+               (* 3
+                  (call-with-composable-continuation
+                   (lambda (k)
+                     (* 5
+                        (call-with-continuation-prompt
+                         (lambda ()
+                           (* 7 (k 11)))
+                         tag)))
+                   tag)))
+             tag))))
+
+;; from SRFI-226 document
+(let ([tag (make-continuation-prompt-tag)])
+  (test* "call-with-non-composable-continuation 1"
+         990 ; = 11 * 3 * 5 * 3 * 2
+         (* 2
+            (call-with-continuation-prompt
+             (lambda ()
+               (* 3
+                  (call-with-non-composable-continuation
+                   (lambda (k)
+                     (* 5
+                        (call-with-continuation-prompt
+                         (lambda ()
+                           (* 7 (k 11)))
+                         tag)))
+                   tag)))
+             tag))))
+
+(test* "call-in-continuation 1"
+       "[r01][r02][i01][r02]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (call-with-continuation-prompt
+            (lambda ()
+              (display "[r01]")
+              (call-with-composable-continuation
+               (lambda (k) (set! k1 k)))
+              (display "[r02]")))
+           (call-in-continuation k1 (lambda () (display"[i01]"))))))
+
+(test* "call-in 1"
+       "[r01][r02][i01][r02]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (call-with-continuation-prompt
+            (lambda ()
+              (display "[r01]")
+              (call-with-non-composable-continuation
+               (lambda (k) (set! k1 k)))
+              (display "[r02]")))
+           (call-with-continuation-prompt
+            (lambda ()
+              (call-in k1 (lambda () (display"[i01]"))))))))
+
+(test* "return-to 1"
+       "[r01][r02][r02]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (call-with-continuation-prompt
+            (lambda ()
+              (display "[r01]")
+              (call-with-non-composable-continuation
+               (lambda (k) (set! k1 k)))
+              (display "[r02]")))
+           (call-with-continuation-prompt
+            (lambda ()
+              (return-to k1))))))
+
+;; A non-composable continuation captured outside an inner prompt of the same
+;; tag, when invoked inside that prompt.
+(let ()
+  (define (run outer?)
+    (with-output-to-string
+      (lambda ()
+        (define (body)
+          (call-with-non-composable-continuation
+           (lambda (k)
+             (display 0)
+             (dynamic-wind
+               (lambda () (display 'before))
+               (lambda ()
+                 (display 1)
+                 (call-with-continuation-prompt (lambda () (k 'ok)))
+                 (display 2))
+               (lambda () (display 'after)))
+             (display 3))))
+        (if outer? (call-with-continuation-prompt body) (body)))))
+  (test* "reinstate through inner default prompt (explicit outer)"
+         "0before12after3" (run #t))
+  (test* "reinstate through inner default prompt (implicit boundary)"
+         "0before12after3" (run #f)))
+
+;;-----------------------------------------------------------------------
+;; Continuation barriers
+;;
+
+(test-section "continuation barriers")
+
+;; A barrier that returns normally yields the thunk's value.
+(test* "barrier returns thunk value" 42
+       (call-with-continuation-barrier (lambda () 42)))
+
+;; A barrier passes multiple values through.
+(test* "barrier passes values" '(1 2 3)
+       (values->list
+        (call-with-continuation-barrier (lambda () (values 1 2 3)))))
+
+;; Escaping out of a barrier is permitted: k is captured outside the barrier,
+;; so its reinstated continuation contains no barrier.
+(test* "escape out of barrier by call/cc" 'ok
+       (call/cc
+        (lambda (k)
+          (call-with-continuation-barrier
+           (lambda () (k 'ok))))))
+
+;; Even through a prompt installed inside the barrier, escaping is fine.
+(test* "escape out of barrier through inner prompt" 'ok
+       (call-with-current-continuation
+        (lambda (k)
+          (call-with-continuation-barrier
+           (lambda ()
+             (call-with-continuation-prompt
+              (lambda () (k 'ok))))))))
+
+;; Invoking a continuation captured inside a barrier, while still inside the
+;; barrier, is an escaping jump (the barrier is still active), so it is
+;; permitted.
+(test* "invoke cont within active barrier" 103
+       (call-with-continuation-barrier
+        (lambda ()
+          (call/cc (lambda (k) (+ 100 (k 103)))))))
+
+;; But once control has left the barrier, invoking such a continuation would
+;; reinstate the barrier, which is prohibited.
+(test* "reinstate barrier via non-composable cont"
+       (test-error <continuation-violation>)
+       ((call-with-continuation-barrier
+         (lambda () (call/cc values)))))
+
+;; ... and the raised condition is a continuation violation.
+(test* "reinstate barrier raises &continuation" #t
+       (guard (e [(continuation-violation? e) #t])
+         ((call-with-continuation-barrier
+           (lambda () (call/cc values))))))
+
+;; Capturing a composable continuation across a barrier is an error at the
+;; time of capture.
+(test* "capture composable across barrier"
+       (test-error <continuation-violation>)
+       (let ([tag (make-continuation-prompt-tag)])
+         (call-with-continuation-prompt
+          (lambda ()
+            (call-with-continuation-barrier
+             (lambda ()
+               (call-with-composable-continuation values tag))))
+          tag)))
+
+;; A composable continuation whose capture stays within the barrier body is
+;; fine (the barrier is not in the captured slice).
+(test* "capture composable within barrier" 6
+       (call-with-continuation-barrier
+        (lambda ()
+          (let ([tag (make-continuation-prompt-tag)])
+            (call-with-continuation-prompt
+             (lambda ()
+               (+ 1 (call-with-composable-continuation
+                     (lambda (k) (k 4)) tag)))
+             tag)))))
+
+;; dynamic-wind after-handlers run when escaping out through a barrier.
+(test* "dynamic-wind unwinds through barrier" '(before during after)
+       (let ([log '()])
+         (call/cc
+          (lambda (k)
+            (call-with-continuation-barrier
+             (lambda ()
+               (dynamic-wind
+                (lambda () (push! log 'before))
+                (lambda () (push! log 'during) (k #f))
+                (lambda () (push! log 'after)))))))
+         (reverse log)))
 
 ;;-----------------------------------------------------------------------
 ;; Parameterizations
@@ -580,6 +918,289 @@
       (^[] (+ 1 (reset (+ 2 (shift k (+ 3 (k 5) (k 1))))))))
 (test "calling pc multi" '(1 3 2 2 4)
       (^[] (cons 1 (reset (cons 2 (shift k (cons 3 (k (k (cons 4 '()))))))))))
+
+(test* "reset-at / shift-at 1"
+       "[r01][r02][r03][r04][s01][s02][r05]"
+       (with-output-to-string
+         (lambda ()
+           (define tag1 (make-continuation-prompt-tag 'tag1))
+           (define tag2 (make-continuation-prompt-tag 'tag2))
+           (define k1 #f)
+           (define k2 #f)
+           (reset-at tag1
+            (display "[r01]")
+            (reset-at tag2
+             (display "[r02]")
+             (shift-at tag2 k
+              (set! k1 k))
+             (display "[s01]")
+             (shift-at tag1 k
+              (set! k2 k))
+             (display "[s02]"))
+            (display "[r03]"))
+           (reset-at tag1
+            (display "[r04]")
+            (k1)
+            (display "[r05]"))
+           (k2))))
+
+(test* "prompt-at / control-at 1"
+       "[p01][p02][p03][p04][c01][c02][p05]"
+       (with-output-to-string
+         (lambda ()
+           (define tag1 (make-continuation-prompt-tag 'tag1))
+           (define tag2 (make-continuation-prompt-tag 'tag2))
+           (define k1 #f)
+           (define k2 #f)
+           (prompt-at tag1
+            (display "[p01]")
+            (prompt-at tag2
+             (display "[p02]")
+             (control-at tag2 k
+              (set! k1 k))
+             (display "[c01]")
+             (control-at tag1 k
+              (set! k2 k))
+             (display "[c02]"))
+            (display "[p03]"))
+           (prompt-at tag1
+            (display "[p04]")
+            (k1)
+            (display "[p05]"))
+           (k2))))
+
+;; Cf. https://reinyannyan.hatenadiary.org/entry/20090623/p1
+(test* "reset / shift (for-each)"
+       '(1 2 3)
+       (reset
+        (for-each
+         (lambda (x) (shift k (cons x (k 'next))))
+         '(1 2 3))
+        '()))
+;; This diverges from original Hamayama's PR https://github.com/shirok/Gauche/pull/1263
+;; but agrees with srfi-226 reference implementation
+(test* "prompt / control (for-each)"
+       '(1)
+       (prompt
+        (for-each
+         (lambda (x) (control k (cons x (k 'next))))
+         '(1 2 3))
+        '()))
+
+;; from SRFI-226 document
+(test* "reset / shift 1" 4  (+ 1 (reset 3)))
+(test* "reset / shift 2" 5  (+ 1 (reset (* 2 (shift k 4)))))
+(test* "reset / shift 3" 9  (+ 1 (reset (* 2 (shift k (k 4))))))
+(test* "reset / shift 4" 17 (+ 1 (reset (* 2 (shift k (k (k 4)))))))
+(test* "reset / shift 5" 25 (+ 1 (reset (* 2 (shift k1 (* 3 (shift k2 (k1 (k2 4)))))))))
+
+;; from SRFI-226 document
+(test* "prompt / control 1" 7  (prompt (+ 2 (control k (k 5)))))
+(test* "prompt / control 2" 5  (prompt (+ 2 (control k 5))))
+(test* "prompt / control 3" 12 (prompt (+ 5 (prompt (+ 2 (control k1 (+ 1 (control k2 (k2 6)))))))))
+(test* "prompt / control 4" 8  (prompt (+ 5 (prompt (+ 2 (control k1 (+ 1 (control k2 (k1 6)))))))))
+(test* "prompt / control 5" 18 (prompt (+ 12 (prompt (+ 5 (prompt (+ 2 (control k1 (control k2 (control k3 (k3 6)))))))))))
+
+;; Cf. https://gengar.hatenadiary.org/entry/20140406/1396795808
+(let ()
+  (define call/comp call-with-composable-continuation)
+  (define call/cc call-with-non-composable-continuation)
+  (define-syntax let/cc
+    (syntax-rules ()
+      ((_ c body ...)
+       (call/cc (lambda (c) body ...)))))
+  (define d display)
+  (define (d$ x) (lambda () (d x)))
+  (define (%dw x thunk) (dynamic-wind (d$ `(,x before)) thunk (d$ `(,x after))))
+  (define-syntax dw (syntax-rules () ((_ x body ...) (%dw x (lambda () body ...)))))
+  (define abort/cc abort-current-continuation)
+  (define (abort . args)
+    (abort/cc (default-continuation-prompt-tag)
+              (lambda () (apply values args))))
+  (define t1 (make-continuation-prompt-tag 't1))
+  (define t2 (make-continuation-prompt-tag 't2))
+
+  (test* "call/comp 1" '(a b c b) (cons 'a (reset (cons 'b (call/comp (lambda (k) (cons 'c (k '()))))))))
+  (test* "call/cc 1"   '(a b)     (cons 'a (reset (cons 'b (call/cc (lambda (k) (cons 'c (k '()))))))))
+  ;; Racket result is '(a b c b) instead of '(a b)
+  ;(test* "call/cc 2"   '(a b)     (cons 'a (reset (cons 'b (call/cc (lambda (k) (cons 'c (reset (k '())))))))))
+  (test* "call/cc 2"   '(a b c b) (cons 'a (reset (cons 'b (call/cc (lambda (k) (cons 'c (reset (k '())))))))))
+  (test* "call/cc 3"   '(c b)
+         (let ((k #f))
+           (cons 'a (reset (cons 'b (call/cc (lambda (k1) (set! k k1) '())))))
+           (cons 'c (reset (cons 'd (k '()))))))
+  (test* "dw"
+         "(0 before)body(0 after)"
+         (with-output-to-string
+           (lambda ()
+             (dw 0 (d 'body)))))
+  (test* "dw + let/cc"
+         "(0 before)(0 after)42"
+         (with-output-to-string
+           (lambda ()
+             (d (let/cc return (dw 0 (return 42)))))))
+  (test* "dw + abort"
+         "(0 before)foo(0 after)"
+         (with-output-to-string
+           (lambda ()
+             (reset (dw 0 (abort (d 'foo)))))))
+  (test* "dw + abort/cc"
+         "(0 before)(0 after)foo"
+         (with-output-to-string
+           (lambda ()
+             (reset (dw 0 (abort/cc (default-continuation-prompt-tag)
+                                    (lambda () (d 'foo))))))))
+  (test* "dw + call/comp"
+         "(0 before)a(0 after)(1 before)b(1 after)"
+         (with-output-to-string
+           (lambda ()
+             (let ((k #f))
+               (dw 0 (reset (d (call/comp (lambda (k1) (set! k k1) 'a)))))
+               (dw 1 (k 'b))))))
+  (test* "dw + call/cc"
+         "(0 before)a(0 after)(1 before)(1 after)b"
+         (with-output-to-string
+           (lambda ()
+             (let ((k #f))
+               (dw 0 (reset (d (call/cc (lambda (k1) (set! k k1) 'a)))))
+               (reset (dw 1 (k 'b)))))))
+  (test* "reset-at + call/comp 1"
+         '(a b a b)
+         (reset-at t1 (cons 'a (reset-at t2 (cons 'b (call/comp (lambda (k) (k '()))
+                                                                t1))))))
+  (test* "reset-at + call/comp 2"
+         '(a b b)
+         (reset-at t1 (cons 'a (reset-at t2 (cons 'b (call/comp (lambda (k) (k '()))
+                                                                t2))))))
+  (test* "reset-at + call/cc 1"
+         '(a b)
+         (let ((k #f))
+           (reset-at t1 (cons 'a (reset-at t2 (cons 'b (call/cc (lambda (k1) (set! k k1) '())
+                                                                t1)))))
+           (reset-at t1 (cons 'c (reset-at t2 (cons 'd (k '())))))))
+  (test* "reset-at + call/cc 2"
+         '(c b)
+         (let ((k #f))
+           (reset-at t1 (cons 'a (reset-at t2 (cons 'b (call/cc (lambda (k1) (set! k k1) '())
+                                                                t2)))))
+           (reset-at t1 (cons 'c (reset-at t2 (cons 'd (k '())))))))
+  )
+
+;; partial continuation leak test
+;; http://okmij.org/ftp/continuations/against-callcc.html#memory-leak
+(define (oleg-leak-test identity-thunk)
+  (define (total-heap) (cadr (assq :total-heap-size (gc-stat))))
+  (define initial-heap (total-heap))
+  (let loop ([id (lambda (x) x)]
+             [n 0])
+    (cond [(= n 1_000_000) 'ok]
+          [(> (total-heap) (* 10 initial-heap))
+           (error "Leaking")]
+          [else (loop (id (identity-thunk)) (+ n 1))])))
+
+(test* "Oleg's leak test 1" 'ok
+       (oleg-leak-test (lambda () (reset (shift k k)))))
+(test* "Oleg's leak test 2" 'ok
+       (oleg-leak-test (lambda () (reset (values (shift k k))))))
+
+;; https://gist.github.com/nkoguro/bcb23f9a1913cfced2817680d3fcfb46
+(define-module pcdemo8
+  (use data.queue)
+  (use gauche.partcont)
+  (use gauche.test)
+
+  (define queue (make-queue))
+
+  (define (make-worker)
+    (make-thread (lambda ()
+                   (while (dequeue! queue #f)
+                     => next
+                     (print "==> call next")
+                     (reset
+                      (dynamic-wind
+                        (lambda ()
+                          (print "start"))
+                        next
+                        (lambda ()
+                          (print "end"))))))))
+
+  (define (yield)
+    (shift cont
+           (enqueue! queue cont)))
+
+  (define (run)
+    (enqueue! queue (lambda ()
+                      (guard (e (else (print "catch error!!")))
+                        (yield)
+                        (error "err"))))
+
+    (while (dequeue! queue #f)
+      => next
+      (print "==> call next")
+      (reset
+       (dynamic-wind
+         (lambda ()
+           (print "start"))
+         next
+         (lambda ()
+           (print "end")))))
+    0)
+
+  (test* "pcdemo8"
+         "==> call next\n\
+          start\n\
+          end\n\
+          ==> call next\n\
+          start\n\
+          start\n\
+          catch error!!\n\
+          end\n"
+         (with-output-to-string run))
+  )
+
+;; from https://gist.github.com/nkoguro/13ba5257847507e637416aa92a2e889c
+(define-module pcdemo10
+  (use data.queue)
+  (use gauche.partcont)
+  (use gauche.test)
+
+  (define queue (make-queue))
+
+  (define (yield)
+    (shift cont
+           (enqueue! queue cont)))
+
+  (define (run)
+    (enqueue! queue (lambda ()
+                      (guard (e (else (print "catch error!!")))
+                        (yield)
+                        (error "err"))))
+
+    (while (dequeue! queue #f)
+      => next
+      (print "==> call next")
+      (dynamic-wind
+        (lambda ()
+          (print "start"))
+        (lambda ()
+          (reset
+           (next)))
+        (lambda ()
+          (print "end"))))
+    0)
+
+  (test* "pcdemo10"
+         "==> call next\n\
+          start\n\
+          end\n\
+          ==> call next\n\
+          start\n\
+          end\n\
+          start\n\
+          catch error!!\n\
+          end\n"
+         (with-output-to-string run))
+  )
 
 ;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
 (let ()
@@ -706,6 +1327,30 @@
                          'a))])
          (continuation-mark-set->list (car p) key)))
 
+(test* "continuation marks with two tags"
+       '(200)
+       (let ()
+         (define tag1 (make-continuation-prompt-tag 'tag1))
+         (define tag2 (make-continuation-prompt-tag 'tag2))
+         (define k1 #f)
+         (define k2 #f)
+         (define mark-set-1 #f)
+         (reset-at tag1 ;; --- (A)
+          (with-continuation-mark 'key1 100
+           (begin
+            (reset-at tag2
+             (shift-at tag2 k
+              (set! k1 k))
+             (shift-at tag1 k
+              (set! k2 k))
+             (set! mark-set-1 (current-continuation-marks tag1))))))
+         (reset-at tag1 ;; --- (B)
+          (with-continuation-mark 'key1 200
+           (begin
+            (k1))))
+         (k2)
+         (continuation-mark-set->list mark-set-1 'key1)))
+
 (define-module ccm-fact
   (use gauche.test)
 
@@ -801,6 +1446,115 @@
        (with-continuation-mark 'key 'mark1
          (with-continuation-mark 'key 'mark2
            (continuation-mark-set-first #f 'key2 'default))))
+
+;; continuation-mark-set->list*
+
+(test* "continuation-mark-set->list*" '(#(#f mark2) #(mark1 mark2))
+       (caar
+        (with-continuation-mark 'key1 'mark1
+          (with-continuation-mark 'key2 'mark2
+            (list
+             (with-continuation-mark 'key3 'mark3
+               (list
+                (with-continuation-mark 'key2 'mark2
+                  (continuation-mark-set->list* #f '(key1 key2))))))))))
+
+(test* "continuation-mark-set->list* disjoint frames"
+       '(#(#f inner) #(outer #f))
+       (car
+        (with-continuation-mark 'key1 'outer
+          (list
+           (with-continuation-mark 'key2 'inner
+             (continuation-mark-set->list* #f '(key1 key2)))))))
+
+(test* "continuation-mark-set->list* fallback" '(#(mark3 default) #(mark1 mark2))
+       (let ([tag (make-continuation-prompt-tag)]
+             [key1 (make-continuation-mark-key)]
+             [key2 (make-continuation-mark-key)])
+         (with-continuation-mark key1 'mark1
+           (with-continuation-mark key2 'mark2
+             (call-with-continuation-prompt
+              (^[]
+                (with-continuation-mark key1 'mark3
+                  (continuation-mark-set->list* #f (list key1 key2) 'default)))
+              tag)))))
+
+(test* "continuation-mark-set->list* w/tag" '(#(mark3 default))
+       (let ([tag (make-continuation-prompt-tag)]
+             [key1 (make-continuation-mark-key)]
+             [key2 (make-continuation-mark-key)])
+         (with-continuation-mark key1 'mark1
+           (with-continuation-mark key2 'mark2
+             (call-with-continuation-prompt
+              (^[]
+                (with-continuation-mark key1 'mark3
+                  (continuation-mark-set->list* #f (list key1 key2)
+                                                'default tag)))
+              tag)))))
+
+;; continuation-mark-set->iterator
+
+;; Drain an iterator into the list of its elements.
+(define (drain-iterator iter)
+  (receive (elt next) (iter)
+    (if elt
+      (cons elt (drain-iterator next))
+      '())))
+
+(test* "continuation-mark-set->iterator" '(#(#f mark2) #(mark1 mark2))
+       (drain-iterator
+        (caar
+         (with-continuation-mark 'key1 'mark1
+           (with-continuation-mark 'key2 'mark2
+             (list
+              (with-continuation-mark 'key3 'mark3
+                (list
+                 (with-continuation-mark 'key2 'mark2
+                   (continuation-mark-set->iterator #f '(key1 key2)))))))))))
+
+(test* "continuation-mark-set->iterator disjoint frames"
+       '(#(#f inner) #(outer #f))
+       (drain-iterator
+        (car
+         (with-continuation-mark 'key1 'outer
+           (list
+            (with-continuation-mark 'key2 'inner
+              (continuation-mark-set->iterator #f '(key1 key2))))))))
+
+(test* "continuation-mark-set->iterator fallback"
+       '(#(mark3 default) #(mark1 mark2))
+       (let ([tag (make-continuation-prompt-tag)]
+             [key1 (make-continuation-mark-key)]
+             [key2 (make-continuation-mark-key)])
+         (drain-iterator
+          (with-continuation-mark key1 'mark1
+            (with-continuation-mark key2 'mark2
+              (call-with-continuation-prompt
+               (^[]
+                 (with-continuation-mark key1 'mark3
+                   (continuation-mark-set->iterator #f (list key1 key2) 'default)))
+               tag))))))
+
+(test* "continuation-mark-set->iterator w/tag" '(#(mark3 default))
+       (let ([tag (make-continuation-prompt-tag)]
+             [key1 (make-continuation-mark-key)]
+             [key2 (make-continuation-mark-key)])
+         (drain-iterator
+          (with-continuation-mark key1 'mark1
+            (with-continuation-mark key2 'mark2
+              (call-with-continuation-prompt
+               (^[]
+                 (with-continuation-mark key1 'mark3
+                   (continuation-mark-set->iterator #f (list key1 key2)
+                                                    'default tag)))
+               tag))))))
+
+;; The iterator returned alongside the terminating #f raises when applied.
+(test* "continuation-mark-set->iterator end" (test-error)
+       (let loop ([iter (with-continuation-mark 'key 'val
+                          (continuation-mark-set->iterator #f '(key)))])
+         (receive (elt next) (iter)
+           (if elt (loop next) (next)))))
 
 ;; See if parameterize body is evaluated in tail context
 ;; (SRFI-226)

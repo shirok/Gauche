@@ -119,6 +119,9 @@ typedef struct ScmEnvFrameRec {
 SCM_EXTERN void   Scm_VMPushDynamicEnv(ScmObj key, ScmObj val);
 SCM_EXTERN ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback);
 
+SCM_EXTERN ScmObj Scm_VMParameterCell(ScmObj param); /* (param . val) or #f */
+SCM_EXTERN ScmObj Scm_VMParameterization(void);      /* flat alist */
+
 typedef struct ScmContinuationMarkSetRec ScmContinuationMarkSet;
 
 SCM_CLASS_DECL(Scm_ContinuationMarkSetClass);
@@ -130,6 +133,11 @@ SCM_EXTERN ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
                                                 ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_ContinuationMarkSetFirst(const ScmContinuationMarkSet *,
+                                               ScmObj, ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_ContinuationMarkSetListStar(const ScmContinuationMarkSet *,
+                                                  ScmObj keys, ScmObj fallback,
+                                                  ScmObj promptTag);
 
 /*
  * Continuation frame
@@ -141,7 +149,6 @@ SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
  *   |  base  |
  *   |   pc   |
  *   |  cpc   |
- *   | marker |
  *   | size=N |
  *   |  denv  |
  *   |  env   |
@@ -159,7 +166,6 @@ SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
  *   |  base   |
  *   |   pc    |  <-- PCont procedure
  *   |  cpc    |  <-- CCont procedure or NULL
- *   | marker  |
  *   | size=N  |
  *   |  denv   |
  *   |  env    |  <-- &ccEnvMark
@@ -201,13 +207,7 @@ typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
     ScmEnvFrame *env;             /* saved environment */
     ScmObj denv;                  /* dynamic environment links */
-#if SIZEOF_LONG == 4
-    long size : 30;               /* size of argument frame */
-    u_long marker : 2;            /* end marker of partial continuation */
-#else
-    int size;                     /* size of argument frame */
-    int marker;                   /* end marker of partial continuation */
-#endif
+    long size;                    /* size of argument frame */
     SCM_PCTYPE cpc;               /* current PC (for debugging info) */
     SCM_PCTYPE pc;                /* next PC */
     ScmCompiledCode *base;        /* base register value */
@@ -260,8 +260,6 @@ SCM_CLASS_DECL(Scm_PromptTagClass);
 
 SCM_EXTERN ScmObj Scm_MakePromptTag(ScmObj name);
 SCM_EXTERN ScmObj Scm_DefaultPromptTag();
-
-typedef struct ScmContinuationPromptRec ScmContinuationPrompt;
 
 /*
  * Identifier
@@ -329,6 +327,9 @@ typedef struct ScmCStackRec {
 
 /* ScmEscapePoint definition is in vmP.h */
 typedef struct ScmEscapePointRec ScmEscapePoint;
+
+/* ScmMetaCont definition is in vmP.h */
+typedef struct ScmMetaContRec ScmMetaCont;
 
 /*
  * Signal queue
@@ -503,7 +504,8 @@ struct ScmVMRec {
 
     int    joinCount;           /* how many times this thread is join!-ed? */
 
-    ScmObj dynamicHandlers;     /* chain of active dynamic handlers          */
+    ScmObj dynamicHandlers;     /* dynamic-wind handler chain segment
+                                   (handlers since the last prompt). */
 
     ScmObj *sp;                 /* stack pointer */
     ScmObj *stack;              /* bottom of allocated stack area */
@@ -576,14 +578,8 @@ struct ScmVMRec {
     ScmCallTrace *callTrace;
     ScmCodeCache *codeCache;
 
-    /* for reset/shift */
-    ScmContinuationPrompt *currentPrompt;
-    ScmObj resetChain;          /* list of reset information,
-                                   where reset information is
-                                   (delimited . <dynamic handlers chain>).
-                                   the delimited flag is set when 'shift'
-                                   appears in 'reset' and the end marker of
-                                   partial continuation is set. */
+    /* Innermost meta-continuation; chain via prev reaches the outermost. */
+    ScmMetaCont *currentMetaCont;
 
 };
 
@@ -598,6 +594,7 @@ SCM_EXTERN void   Scm_VMPushExceptionHandler(ScmObj eh);
 SCM_EXTERN ScmObj Scm_VMPopExceptionHandler();
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj eh, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exc, u_long flags);
+SCM_EXTERN ScmObj Scm_ApplyExceptionHandler(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN void   Scm_VMSetResult(ScmObj obj);
