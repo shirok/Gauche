@@ -1360,11 +1360,17 @@
 ;; (char const*), (int **), (int* *).  Strip 'const' and concatenate
 ;; the remaining parts into a single symbol.
 (define (%normalize-c-type-list syms)
-  ($ string->symbol $ apply string-append
-     (filter-map (^s (rxmatch-case (symbol->string s)
-                       [#/^const(\**)$/ (#f ptrs) ptrs]
-                       [else => values]))
-                 syms)))
+  (match syms
+    [((or 'signed 'unsigned) . rest)
+     `(,(car syms) ,(%normalize-c-type-list rest))]
+    [('const . rest)
+     (%normalize-c-type-list rest)]
+    [_
+     ($ string->symbol $ apply string-append
+        (filter-map (^s (rxmatch-case (symbol->string s)
+                          [#/^const(\**)$/ (#f ptrs) ptrs]
+                          [else => values]))
+                    syms))]))
 
 ;; Wrap a native type in N layers of pointer type.
 (define (%wrap-pointer-type base-type depth)
@@ -1380,6 +1386,32 @@
                (list member (native-type type))
                (error "missing type for field:" member))))
        (cgen-canonical-typed-var-list specs #f)))
+
+;; Handle signed/unsigned qualifier
+(define (%attach-signedness natype signedness)
+  (define (%s orig-type signed-type unsigned-type)
+    (and (eqv? natype orig-type)
+         (ecase signedness
+           [(signed) signed-type]
+           [(unsigned) unsigned-type])))
+  (cond
+   [(not signedness) natype]
+   [(%native-type-integral? natype)
+    (or (%s <c-char> <int8> <uint8>) ; map signed/unsigned char to [u]int8
+        (%s <short> <short> <ushort>)
+        (%s <int> <int> <uint>)
+        (%s <long> <long> <ulong>)
+        (%s <int8> <int8> <uint8>)
+        (%s <int16> <int16> <uint16>)
+        (%s <int32> <int32> <uint32>)
+        (%s <int64> <int64> <uint64>)
+        (%s <size_t> <ssize_t> <size_t>)
+        ;; Shall we allow `(signed ,<uint>) etc.?
+        natype)]
+   [(c-pointer-type? natype)
+    (make-c-pointer-type (%attach-signedness (c-pointer-type-pointee natype)
+                                             signedness))]
+   [else (errorf "~a can't be attached to ~s" signedness natype)]))
 
 ;; (native-type signature) => <native-type> instance
 ;;
@@ -1421,85 +1453,105 @@
     [_ (error "Invalid .enum signature:" (cons '.enum rest))]))
 
 (define (native-type signature)
-  (match signature
-    ;; Pass-through if already a native type instance
-    [(? (cut is-a? <> <native-type>)) signature]
+  (let rec ((signature signature)
+            (signedness #f))
+    (define (no-signedness)
+      (when signedness
+        (errorf "~a can't be used with ~s" signature signedness)))
+    (match signature
+      ;; Pass-through if already a native type instance
+      [(? (cut is-a? <> <native-type>))
+       (%attach-signedness signature signedness)]
 
-    ;; Compound types
+      ;; Compound types
 
-    ;; (.array element-type (dim ...))
-    [('.array etype (dims ...))
-     (make-c-array-type (native-type etype) dims)]
+      ;; (.array element-type (dim ...))
+      [('.array etype (dims ...))
+       (no-signedness)
+       (make-c-array-type (native-type etype) dims)]
 
-    ;; (.struct tag (field-specs ...))
-    [('.struct (? symbol? tag) (field-specs ...))
-     (make-c-struct-type tag (%parse-field-specs field-specs))]
-    ;; (.struct (field-specs ...))  -- anonymous
-    [('.struct (field-specs ...))
-     (make-c-struct-type #f (%parse-field-specs field-specs))]
+      ;; (.struct tag (field-specs ...))
+      [('.struct (? symbol? tag) (field-specs ...))
+       (no-signedness)
+       (make-c-struct-type tag (%parse-field-specs field-specs))]
+      ;; (.struct (field-specs ...))  -- anonymous
+      [('.struct (field-specs ...))
+       (no-signedness)
+       (make-c-struct-type #f (%parse-field-specs field-specs))]
 
-    ;; (.union tag (field-specs ...))
-    [('.union (? symbol? tag) (field-specs ...))
-     (make-c-union-type tag (%parse-field-specs field-specs))]
-    ;; (.union (field-specs ...))  -- anonymous
-    [('.union (field-specs ...))
-     (make-c-union-type #f (%parse-field-specs field-specs))]
+      ;; (.union tag (field-specs ...))
+      [('.union (? symbol? tag) (field-specs ...))
+       (no-signedness)
+       (make-c-union-type tag (%parse-field-specs field-specs))]
+      ;; (.union (field-specs ...))  -- anonymous
+      [('.union (field-specs ...))
+       (no-signedness)
+       (make-c-union-type #f (%parse-field-specs field-specs))]
 
-    ;; (.enum [tag] [: signature] (enumerator ...))
-    [('.enum . rest)
-     (receive (tag typespec enumerators) (%parse-enum-spec rest)
-       (make-c-enum-type tag typespec enumerators))]
+      ;; (.enum [tag] [: signature] (enumerator ...))
+      [('.enum . rest)
+       (no-signedness)
+       (receive (tag typespec enumerators) (%parse-enum-spec rest)
+         (make-c-enum-type tag typespec enumerators))]
 
-    ;; (.function (arg-types ...) return-type)
-    [('.function (arg-types ...) ret-type)
-     (make-c-function-type
-      (native-type ret-type)
-      (map (^[a] (if (eq? a '...) '... (native-type a)))
-           arg-types))]
+      ;; (.function (arg-types ...) return-type)
+      [('.function (arg-types ...) ret-type)
+       (no-signedness)
+       (make-c-function-type
+        (native-type ret-type)
+        (map (^[a] (if (eq? a '...) '... (native-type a)))
+             arg-types))]
 
-    ;; We ignore 'const' for now
-    [('const type)
-     (native-type type)]
+      ;; We ignore 'const' for now
+      [('const type)
+       (rec type signedness)]
 
-    ;; List with an inserted <native-type> instance, e.g. (,foo *),
-    ;; (const ,foo *), (,foo **).  The remaining elements must be
-    ;; modifier symbols (const, *, **, etc.).
-    [(? (^l (and (list? l)
-                 (any (cut is-a? <> <native-type>) l)
-                 (every (^x (or (symbol? x) (is-a? x <native-type>))) l))))
-     (let ([instances (filter (cut is-a? <> <native-type>) signature)]
-           [modifiers (filter symbol? signature)])
-       (unless (null? (cdr instances))
-         (error "Native type signature can only contain one type instance:"
-                signature))
-       (let1 normalized (symbol->string (%normalize-c-type-list modifiers))
-         (unless (#/^\**$/ normalized)
-           (error "Invalid native type signature:" signature))
-         (%wrap-pointer-type (car instances) (string-length normalized))))]
+      ;; Signedness
+      [((and (or 'signed 'unsigned) s) type)
+       (no-signedness)
+       (rec type s)]
 
-    ;; C-style list type form, e.g. (char*), (char *), (char const*),
-    ;; (int **), (int* *).  Strip const and concatenate into a single
-    ;; symbol, then re-parse.
-    [((? symbol?) . (? (^r (every symbol? r))))
-     (native-type (%normalize-c-type-list signature))]
+      ;; List with an inserted <native-type> instance, e.g. (,foo *),
+      ;; (const ,foo *), (,foo **).  The remaining elements must be
+      ;; modifier symbols (const, *, **, etc.).
+      [(? (^l (and (list? l)
+                   (any (cut is-a? <> <native-type>) l)
+                   (every (^x (or (symbol? x) (is-a? x <native-type>))) l))))
+       (let ([instances (filter (cut is-a? <> <native-type>) signature)]
+             [modifiers (filter symbol? signature)])
+         (unless (null? (cdr instances))
+           (error "Native type signature can only contain one type instance:"
+                  signature))
+         (let1 normalized (symbol->string (%normalize-c-type-list modifiers))
+           (unless (#/^\**$/ normalized)
+             (error "Invalid native type signature:" signature))
+           (%wrap-pointer-type (car instances) (string-length normalized))))]
 
-    ;; Simple symbol types
-    [(? symbol?)
-     (or
-      ;; Primitive types
-      (hash-table-get (%builtin-native-type-table) signature #f)
-      (hash-table-get (%extended-native-type-table) signature #f)
-      ;; Pointer type (trailing *)
-      (and-let* ([decomp (%pointer-type-decompose signature)])
-        (%wrap-pointer-type (native-type (car decomp)) (cdr decomp)))
-      ;; c-string is a pseudo type name for <c-string> (NUL-terminated
-      ;; C string).  It's not registered in the builtin table because
-      ;; its C type name is "const char*".
-      (and (eq? signature 'c-string) <c-string>)
-      ;; Error
-      (error "Unknown native type:" signature))]
+      ;; C-style list type form, e.g. (char*), (char *), (char const*),
+      ;; (int **), (int* *).  Strip const and concatenate into a single
+      ;; symbol, then re-parse.
+      [((? symbol?) . (? (^r (every symbol? r))))
+       (native-type (%normalize-c-type-list signature))]
 
-    [_ (error "Invalid native type signature:" signature)]))
+      ;; Simple symbol types
+      [(? symbol?)
+       (%attach-signedness
+        (or
+         ;; Primitive types
+         (hash-table-get (%builtin-native-type-table) signature #f)
+         (hash-table-get (%extended-native-type-table) signature #f)
+         ;; Pointer type (trailing *)
+         (and-let* ([decomp (%pointer-type-decompose signature)])
+           (%wrap-pointer-type (native-type (car decomp)) (cdr decomp)))
+         ;; c-string is a pseudo type name for <c-string> (NUL-terminated
+         ;; C string).  It's not registered in the builtin table because
+         ;; its C type name is "const char*".
+         (and (eq? signature 'c-string) <c-string>)
+         ;; Error
+         (error "Unknown native type:" signature))
+        signedness)]
+
+      [_ (error "Invalid native type signature:" signature)])))
 
 ;; Reverse table: native-type instance -> C type name symbol
 (define %native-type->cname

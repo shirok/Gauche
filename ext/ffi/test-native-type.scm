@@ -1908,6 +1908,56 @@
 (test* "native-type (const int)" <int>
        (native-type '(const int)))
 
+;; Signed/unsigned qualifiers on integral types
+;; NB: signed/unsigned char maps to <int8>/<uint8>, not <c-char>.
+(test* "native-type signed char" <int8> (native-type '(signed char)))
+(test* "native-type unsigned char" <uint8> (native-type '(unsigned char)))
+(test* "native-type signed short" <short> (native-type '(signed short)))
+(test* "native-type unsigned short" <ushort> (native-type '(unsigned short)))
+(test* "native-type signed int" <int> (native-type '(signed int)))
+(test* "native-type unsigned int" <uint> (native-type '(unsigned int)))
+(test* "native-type signed long" <long> (native-type '(signed long)))
+(test* "native-type unsigned long" <ulong> (native-type '(unsigned long)))
+(test* "native-type signed int8_t" <int8> (native-type '(signed int8_t)))
+(test* "native-type unsigned int8_t" <uint8> (native-type '(unsigned int8_t)))
+(test* "native-type signed int16_t" <int16> (native-type '(signed int16_t)))
+(test* "native-type unsigned int16_t" <uint16> (native-type '(unsigned int16_t)))
+(test* "native-type signed int32_t" <int32> (native-type '(signed int32_t)))
+(test* "native-type unsigned int32_t" <uint32> (native-type '(unsigned int32_t)))
+(test* "native-type signed int64_t" <int64> (native-type '(signed int64_t)))
+(test* "native-type unsigned int64_t" <uint64> (native-type '(unsigned int64_t)))
+;; Signed/unsigned pushes through pointer types down to the pointee.
+(test* "native-type signed int *"
+       (make-c-pointer-type <int>)
+       (native-type '(signed int *)))
+(test* "native-type unsigned int *"
+       (make-c-pointer-type <uint>)
+       (native-type '(unsigned int *)))
+(test* "native-type unsigned char**"
+       (make-c-pointer-type (make-c-pointer-type <uint8>))
+       (native-type '(unsigned char**)))
+;; Mixed with const
+(test* "native-type unsigned const int*"
+       (make-c-pointer-type <uint>)
+       (native-type '(unsigned const int*)))
+(test* "native-type const unsigned int*"
+       (make-c-pointer-type <uint>)
+       (native-type '(const unsigned int*)))
+
+;; signed/unsigned on a signless type is an error.
+(test* "native-type signed float error"
+       (test-error <error> #/signed can't be attached to/)
+       (native-type '(signed float)))
+(test* "native-type unsigned double error"
+       (test-error <error> #/unsigned can't be attached to/)
+       (native-type '(unsigned double)))
+(test* "native-type signed void error"
+       (test-error <error> #/signed can't be attached to/)
+       (native-type '(signed void)))
+(test* "native-type unsigned c-string error"
+       (test-error <error> #/unsigned can't be attached to/)
+       (native-type '(unsigned c-string)))
+
 ;; Pointer types
 (test* "native-type int*" #t
        (equal? (native-type 'int*) (make-c-pointer-type <int>)))
