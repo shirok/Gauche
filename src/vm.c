@@ -1693,7 +1693,7 @@ ScmObj Scm_VMParameterization(void)
    continuation marks added outside the prompt do not bleed into it.
    Selected system marks are 'inherited' (copied into the base) to allow a
    simple linear search for them.  */
-#define NUM_SYSTEM_DENV_KEYS 3
+#define NUM_SYSTEM_DENV_KEYS 2
 static ScmObj system_denv_keys[NUM_SYSTEM_DENV_KEYS]; /* initialized by initVM */
 
 static ScmObj make_seeded_denv_base(ScmVM *vm)
@@ -5113,7 +5113,6 @@ void Scm__InitVM(void)
 
     int keys = 0;
     system_denv_keys[keys++] = denv_key_exception_handler;
-    system_denv_keys[keys++] = denv_key_expression_name;
     system_denv_keys[keys++] = denv_key_include_source;
     SCM_ASSERT(keys == NUM_SYSTEM_DENV_KEYS);
 
