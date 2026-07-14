@@ -841,10 +841,13 @@
       (let ([tag (make-continuation-prompt-tag)]
             [p (make-parameter 0)])
         (parameterize ([p 1])
-          (call-in-initial-continuation
+          (call-with-continuation-prompt
            (lambda ()
-             (list (continuation-prompt-available? tag (call/cc values))
-                   (p)))))))
+             (call-in-initial-continuation
+              (lambda ()
+                (list (continuation-prompt-available? tag (call/cc values))
+                      (p)))))
+           tag))))
 (test 42
       (guard (c
               [(uncaught-exception-condition? c) (uncaught-exception-condition-reason c)])
