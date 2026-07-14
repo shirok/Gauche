@@ -287,13 +287,17 @@
                 (reset (error "[E02]"))
                 (display "[E03]")))))))
 
-;; native : [W01][D01][D02][W01][D01][D01][E01][D02]
-;; native*: [W01][D01][D02][W01][D01][D01][E01][D02][D02]  ;; using guard-r7
+;; native : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
 ;; meta   : [W01][D01][D02][W01][D01][D02][D01][E01][D02][D01][D02]
 ;; srfi226: [W01][D01][D02][W01][D01][D01][D02][D01][E01][D02][D02]
 ;; racket : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
+;;
+;; The second iteration re-instates the composable continuation captured in the
+;; first, so the guard body runs inside the *re-entered* dynamic-wind, which now
+;; sits inside this iteration's fresh dynamic-wind.  The guard handler returns
+;; into that continuation, so both after thunks ("[D02]") run on the way out.
 (test* "reset/shift + guard 1"
-       "[W01][D01][D02][W01][D01][D01][E01][D02]"
+       "[W01][D01][D02][W01][D01][D01][E01][D02][D02]"
        (with-output-to-string
          (lambda ()
            (define queue '())

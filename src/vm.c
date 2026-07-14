@@ -2172,6 +2172,25 @@ static _Bool meta_cont_reachable_p(ScmVM *vm, ScmMetaCont *m)
     return FALSE;
 }
 
+/* Reinstate the metacont chain of the continuation we're escaping to,
+   after longjmping to ep->cstack.
+
+   If ep->capturedMetaCont is reachable from currnet vm's metacont,
+   this is upward jump; we reset vm->currentMetacont, discarding
+   metaconts inbetween, and associated dynamic handlers (dynamic handlers'
+   after thunk has already been called).
+
+   If not, we're seeing composable continuations has been installed since
+   ep is captured.  We need to return through those metaconts, so
+   we leave vm->currentMetaCont intact.  Again, necessary dynamic handlers
+   are already fired. */
+static void restore_captured_meta_cont(ScmVM *vm, ScmEscapePoint *ep)
+{
+    if (meta_cont_reachable_p(vm, ep->capturedMetaCont)) {
+        vm->currentMetaCont = ep->capturedMetaCont;
+    }
+}
+
 /* Return TRUE if invoking the non-composable continuation `ep` would reinstate
    a continuation barrier.  Even if the continuation contains a barrier,
    as far as that metacont is reachable from the currentMetaCont, it won't
@@ -2384,7 +2403,7 @@ static ScmObj user_eval_inner(ScmObj program,
                 /* force popping continuation when restarted */
                 vm->pc = PC_TO_RETURN;
                 vm->val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
-                vm->currentMetaCont = ep->capturedMetaCont;
+                restore_captured_meta_cont(vm, ep);
                 goto restart;
             } else {
                 SCM_ASSERT(vm->cstack && vm->cstack->prev);
@@ -2402,7 +2421,7 @@ static ScmObj user_eval_inner(ScmObj program,
                 vm->cont = ep->cont;
                 vm->denv = ep->denv;
                 vm->dynamicHandlers = ep->dynamicHandlers;
-                vm->currentMetaCont = ep->capturedMetaCont;
+                restore_captured_meta_cont(vm, ep);
                 vm->pc = PC_TO_RETURN;
                 goto restart;
             } else if (vm->cstack->prev == NULL) {

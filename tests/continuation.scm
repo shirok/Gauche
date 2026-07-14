@@ -1154,6 +1154,7 @@
           start\n\
           start\n\
           catch error!!\n\
+          end\n\
           end\n"
          (with-output-to-string run))
   )
