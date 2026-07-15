@@ -15672,6 +15672,11 @@ The pseudo-name @code{c-string} denotes the @code{<c-string>} type
 C type @code{const char *} may simply mean a pointer to byte-sized
 numeric data, thus ambiguous.
 
+You can attach @code{unsigned} or @code{signed} to an integral
+primitive types.  It flips signedness of the type, e.g. @code{(unsigned int)}
+for @code{<uint>}.  Unlike C, you need the primary type specifier,
+i.e. you can't just say @code{unsigned} to mean unsigned int.
+
 The endian-specified types listed in @ref{Representation-specific types}
 are also accepted, by their underscore-separated names: @code{int16_le},
 @code{int16_be}, @code{uint16_le}, @code{uint16_be}, and likewise for
@@ -15791,6 +15796,9 @@ to a variable, and inserting it in another type signature:
 
 (native-type '(char const *))
   @result{} #<c-pointer <c-char*>>
+
+(native-type '(const unsigned int64_t*))
+  @result{} #<c-pointer <uint64*>>
 
 (native-type 'c-string)
   @result{} #<native-type <c-string>>
