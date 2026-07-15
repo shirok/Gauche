@@ -1,3 +1,10 @@
+2026-07-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMThrowException): If the exception is thrown
+	  with r7rs#raise, we add a continuation mark %non-continuable
+	  before calling the exception handler, so that the handler can
+	  dicern if they can safely return.
+
 2026-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/ffi.scm (define-c-function): Support Scheme-only prefixing

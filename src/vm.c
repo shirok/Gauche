@@ -148,6 +148,7 @@ static ScmObj denv_key_exception_handler = SCM_UNBOUND;
 static ScmObj denv_key_parameterization = SCM_UNBOUND;
 static ScmObj denv_key_expression_name = SCM_UNBOUND;
 static ScmObj denv_key_include_source = SCM_UNBOUND;
+static ScmObj denv_key_non_continuable = SCM_UNBOUND;
 
 /* A dummy compiled code structure used as 'fill-in', when Scm_Apply
    is called without any VM code running.  See Scm_Apply below. */
@@ -3379,12 +3380,16 @@ static SCM_DEFINE_SUBR(default_exception_handler_rec, 1, 0,
  */
 ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
 {
+    _Bool noncontinuable = raise_flags & SCM_RAISE_NON_CONTINUABLE;
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_HANDLED);
 
     /* SRFI-34/R7RS semantics - we invoke exception handler while the handler
        chain is popped. */
     ScmObj eh = Scm_VMPopExceptionHandler();
 
+    if (noncontinuable) {
+        Scm_VMPushDynamicEnv(denv_key_non_continuable, SCM_TRUE);
+    }
     if (eh != DEFAULT_EXCEPTION_HANDLER) {
         /* Dispatch the handler through a boundary tagged with
            exhBoundaryPromptTag (see Scm_ApplyExceptionHandler) so that an abort
@@ -3392,8 +3397,7 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
            dispatch boundary to the prompt enclosing the raise, rather than being
            trapped here (which would make the handler appear to 'return'). */
         vm->val0 = Scm_ApplyExceptionHandler(eh, SCM_LIST1(exception));
-        if (SCM_SERIOUS_CONDITION_P(exception)
-            || raise_flags&SCM_RAISE_NON_CONTINUABLE) {
+        if (SCM_SERIOUS_CONDITION_P(exception) || noncontinuable) {
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
         /* Continuable exception. Recover exception handler settings. */
@@ -3480,6 +3484,8 @@ ScmObj Scm__GetDenvKey(ScmDenvKeyName name)
         return denv_key_expression_name;
     case SCM_DENV_KEY_INCLUDE_SOURCE:
         return denv_key_include_source;
+    case SCM_DENV_KEY_NON_CONTINUABLE:
+        return denv_key_non_continuable;
     }
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -5128,6 +5134,7 @@ void Scm__InitVM(void)
     denv_key_parameterization  = UNINTERNED(parameterization);
     denv_key_expression_name   = UNINTERNED(expression-name);
     denv_key_include_source    = UNINTERNED(include-source);
+    denv_key_non_continuable   = UNINTERNED(non_continuable);
     continuation_symbol        = UNINTERNED(continuation);
 
     int keys = 0;
