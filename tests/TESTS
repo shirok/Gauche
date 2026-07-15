@@ -14,6 +14,7 @@ compare.scm
 treemap.scm
 io.scm
 procedure.scm
+control-flow.scm
 continuation.scm
 load.scm
 srfi.scm

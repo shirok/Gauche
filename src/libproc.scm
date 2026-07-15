@@ -122,22 +122,36 @@
 (define-cproc abort-current-continuation (prompt-tag :rest objs)
   Scm_VMAbortCurrentContinuation)
 
+(define-cproc %with-initial-continuation (thunk) Scm_VMWithInitialContinuation)
+
+;; SRFI-226 call-in-initial-continuation.
+
+;; Unique value to mark uncaught exception from the thunk
+(define initial-continuation-escaped '#:initial-continuation-escaped)
+
 (define (call-in-initial-continuation thunk)
   (define make-uncaught
     (with-module gauche.threads make-uncaught-exception-condition))
-  (let1 thunk2
-      (let/cc return
-        (^[]
-          (call-with-continuation-prompt
-           (^[]
-             (with-exception-handler
-              (^[exc]
-                (if (and (condition? exc) (not (serious-condition? exc)))
-                  (undefined)             ;non-serious: resume the raise site
-                  (return (^[] (raise-continuable (make-uncaught exc))))))
-              thunk))
-           (default-continuation-prompt-tag))))
-    (thunk2)))
+  (define esc-tag (make-continuation-prompt-tag 'initial-continuation))
+  (define (initial-handler exc)
+    (if (or (serious-condition? exc)
+            (continuation-mark-set-first
+             (current-continuation-marks)
+             ((with-module gauche.internal %non-continuable-mark-key))))
+      (abort-current-continuation esc-tag exc)
+      (undefined)))                     ;allow to continue
+  ;; %with-initial-continuation returns either THUNK's delivered values or, on
+  ;; escape, the marker followed by the raised object.
+  (receive vals
+      (%with-initial-continuation
+       (^[]
+         (call-with-continuation-prompt
+          (^[] (with-exception-handler initial-handler thunk))
+          esc-tag
+          (^[exc] (values initial-continuation-escaped exc)))))
+    (if (and (pair? vals) (eq? (car vals) initial-continuation-escaped))
+      (raise-continuable (make-uncaught (cadr vals)))
+      (apply values vals))))
 
 (select-module gauche.internal)
 (define-cproc %continuation-prompt-available? (prompt-tag cont)

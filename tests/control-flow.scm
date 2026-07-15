@@ -10,6 +10,7 @@
 
 (use gauche.test)
 (use gauche.partcont)
+(use gauche.threads)
 
 (test-start "control-flow")
 
@@ -931,5 +932,80 @@
 (test* "VM still works after alarm escape" 7 (+ 3 4))
 (test* "continuations still work after alarm escape" 10
        (reset (+ 1 (shift c (c 9)))))
+
+;;-----------------------------------------------------------------------
+;; SRFI-226 call-in-initial-continuation.
+;;
+
+(test* "call-in-initial-continuation delivers a value" 5
+       (call-in-initial-continuation (lambda () (+ 2 3))))
+
+(test* "call-in-initial-continuation delivers multiple values" '(1 2 3)
+       (call-with-values
+           (lambda () (call-in-initial-continuation (lambda () (values 1 2 3))))
+         list))
+
+;; The parameterization is inherited from the caller...
+(test* "call-in-initial-continuation inherits parameterization" 7
+       (let ((p (make-parameter 0)))
+         (parameterize ((p 7))
+           (call-in-initial-continuation (lambda () (p))))))
+
+;; ...but continuation marks are reset (the initial continuation is fresh).
+(test* "call-in-initial-continuation resets continuation marks" 'none
+       (with-continuation-mark 'k 'outer
+         (call-in-initial-continuation
+          (lambda ()
+            (continuation-mark-set-first (current-continuation-marks) 'k 'none)))))
+
+;; The thunk sees a single prompt with the default tag; aborting to it
+;; reaches that initial prompt (default abort handler applies the thunk).
+(test* "call-in-initial-continuation: abort to the initial prompt" 'reached
+       (call-in-initial-continuation
+        (lambda ()
+          (abort-current-continuation (default-continuation-prompt-tag)
+            (lambda () 'reached)))))
+
+;; A prompt installed outside call-in-initial-continuation is NOT
+;; reachable from the thunk (the continuation is detached).  Aborting to
+;; it raises a continuation-violation, which the initial exception handler
+;; turns into a continuable &uncaught-exception in the caller's continuation.
+(test* "call-in-initial-continuation detaches from enclosing prompts" 'unreachable
+       (let ((tag (make-continuation-prompt-tag 'outer)))
+         (call-with-continuation-prompt
+          (lambda ()
+            (guard (c ((uncaught-exception-condition? c) 'unreachable))
+              (call-in-initial-continuation
+               (lambda () (abort-current-continuation tag 'never)))))
+          tag)))
+
+;; Detachment also means the surrounding dynamic-wind is not part of the
+;; thunk's continuation: the escape unwinds it (before/after run) and the
+;; outer prompt's abort handler never runs.
+(test* "call-in-initial-continuation detaches from enclosing dynamic-wind"
+       '(before after (error uncaught))
+       (let ((tag (make-continuation-prompt-tag 'outer))
+             (log '()))
+         (define (push! x) (set! log (cons x log)))
+         (guard (c ((uncaught-exception-condition? c) (push! '(error uncaught))))
+           (call-with-continuation-prompt
+            (lambda ()
+              (dynamic-wind
+                (lambda () (push! 'before))
+                (lambda ()
+                  (call-in-initial-continuation
+                   (lambda () (abort-current-continuation tag 'never))))
+                (lambda () (push! 'after))))
+            tag
+            (lambda (v) (push! (list 'handler v)))))
+         (reverse log)))
+
+;; A non-serious condition resumes the raise site (the initial exception
+;; handler returns unspecified).
+(test* "call-in-initial-continuation resumes a non-serious condition" 'resumed
+       (call-in-initial-continuation
+        (lambda ()
+          (raise-continuable 1)
+          'resumed)))
 
 (test-end)

@@ -3609,6 +3609,42 @@ ScmObj Scm_VMCallWithContinuationBarrier(ScmObj thunk)
     return Scm_VMApply0(thunk);
 }
 
+/* Initial continuation (SRFI-226) must show a single default
+   prompt tag, hiding all other prompts.  So we save the current
+   continuation in EP, and sever the vm->currentMetaCont chain.
+   We set up C-continuation to restore the previous state.
+   (Escaping out from thunk will restore metacont from its EP) */
+static ScmObj with_initial_cont_cc(ScmObj v, void **data)
+{
+    ScmVM *vm = theVM;
+    ScmEscapePoint *ep = SCM_ESCAPE_POINT(SCM_OBJ(data[0]));
+    /* vm->cont is already the caller's frame (this CC frame's prev); we only
+       need to undo the sever of the metacontinuation, winders, and marks. */
+    vm->currentMetaCont = ep->capturedMetaCont;
+    vm->denv = ep->denv;
+    vm->dynamicHandlers = ep->dynamicHandlers;
+    return v;
+}
+
+ScmObj Scm_VMWithInitialContinuation(ScmObj body)
+{
+    ScmVM *vm = theVM;
+    save_cont(vm);
+
+    ScmObj freshDenv = get_inheriting_denv(vm); /* capture before servering */
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, NULL);
+    void *data[1];
+    data[0] = ep;
+    Scm_VMPushCC(with_initial_cont_cc, data, 1);
+
+    vm->currentMetaCont = NULL;
+    vm->denv = freshDenv;
+    vm->dynamicHandlers = SCM_NIL;
+
+    push_prompt_cont(vm, SCM_OBJ(&defaultPromptTag), SCM_FALSE);
+    return Scm_VMApply0(body);
+}
+
 static ScmObj vm_abort_cc(ScmObj val0, void *data[]);
 
 static ScmObj vm_abort_body(ScmMetaCont *targetMeta, ScmObj args)
