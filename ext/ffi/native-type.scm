@@ -1396,18 +1396,38 @@
            [(unsigned) unsigned-type])))
   (cond
    [(not signedness) natype]
-   [(%native-type-integral? natype)
-    (or (%s <c-char> <int8> <uint8>) ; map signed/unsigned char to [u]int8
-        (%s <short> <short> <ushort>)
-        (%s <int> <int> <uint>)
-        (%s <long> <long> <ulong>)
-        (%s <int8> <int8> <uint8>)
-        (%s <int16> <int16> <uint16>)
-        (%s <int32> <int32> <uint32>)
-        (%s <int64> <int64> <uint64>)
-        (%s <size_t> <ssize_t> <size_t>)
-        ;; Shall we allow `(signed ,<uint>) etc.?
-        natype)]
+   [(and (%native-type-integral? natype)
+         (or (%s <c-char> <int8> <uint8>) ; map signed/unsigned char to [u]int8
+             (%s <short> <short> <ushort>)
+             (%s <ushort> <short> <ushort>)
+             (%s <int> <int> <uint>)
+             (%s <uint> <int> <uint>)
+             (%s <long> <long> <ulong>)
+             (%s <ulong> <long> <ulong>)
+             (%s <int8> <int8> <uint8>)
+             (%s <uint8> <int8> <uint8>)
+             (%s <int16> <int16> <uint16>)
+             (%s <uint16> <int16> <uint16>)
+             (%s <int32> <int32> <uint32>)
+             (%s <uint32> <int32> <uint32>)
+             (%s <int64> <int64> <uint64>)
+             (%s <uint64> <int64> <uint64>)
+             (%s <size_t> <ssize_t> <size_t>)
+             (%s <ssize_t> <ssize_t> <size_t>)
+             (%s <int16-be> <int16-be> <uint16-be>)
+             (%s <uint16-be> <int16-be> <uint16-be>)
+             (%s <int32-be> <int32-be> <uint32-be>)
+             (%s <uint32-be> <int32-be> <uint32-be>)
+             (%s <int64-be> <int64-be> <uint64-be>)
+             (%s <uint64-be> <int64-be> <uint64-be>)
+             (%s <int16-le> <int16-le> <uint16-le>)
+             (%s <uint16-le> <int16-le> <uint16-le>)
+             (%s <int32-le> <int32-le> <uint32-le>)
+             (%s <uint32-le> <int32-le> <uint32-le>)
+             (%s <int64-le> <int64-le> <uint64-le>)
+             (%s <uint64-le> <int64-le> <uint64-le>)))
+    ;; let unrecognized base type case handled by else clause
+    ]
    [(c-pointer-type? natype)
     (make-c-pointer-type (%attach-signedness (c-pointer-type-pointee natype)
                                              signedness))]
