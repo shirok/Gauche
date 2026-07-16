@@ -899,8 +899,7 @@
           (set! x (+ x 4)))
         x))
 
-;; DIVERGE - Returuning from guard clause to reinstate continuation
-'(test 43
+(test 43
       (guard (c [(eqv? c 42) c])
         (+ 1
            (call-with-continuation-prompt

@@ -1190,13 +1190,15 @@
           (print "end"))))
     0)
 
+  ;; The guard clause reinstates a continuation delimited by the default
+  ;; prompt tag; when its body is resumed inside a fresh (reset ...) prompt,
+  ;; raising there aborts to that prompt, so the handler runs one dynamic-wind
+  ;; cycle earlier.
   (test* "pcdemo10"
          "==> call next\n\
           start\n\
           end\n\
           ==> call next\n\
-          start\n\
-          end\n\
           start\n\
           catch error!!\n\
           end\n"
