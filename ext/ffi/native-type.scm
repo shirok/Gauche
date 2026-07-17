@@ -1743,22 +1743,30 @@
                                c)))))))
 
 (define (%make-native-wrapper-class type name)
-  (etypecase type
-    [<c-struct>
-     (make <native-wrapper-meta>
-       :name name :supers (list <wrapped-c-struct>)
-       :native-type type
-       :slots (map (cut %build-slot type <>) (~ type'fields)))]
-    [<c-union>
-     (make <native-wrapper-meta>
-       :name name :supers (list <wrapped-c-union>)
-       :native-type type
-       :slots (map (cut %build-slot type <>) (~ type'fields)))]
-    [<c-array>
-     (make <native-wrapper-meta>
-       :name name :supers (list <wrapped-c-array>)
-       :native-type type)]
-    ))
+  (define (make-class type)
+    (typecase type
+      [<c-struct>
+       (make <native-wrapper-meta>
+         :name name :supers (list <wrapped-c-struct>)
+         :native-type type
+         :slots (map (cut %build-slot type <>) (~ type'fields)))]
+      [<c-union>
+       (make <native-wrapper-meta>
+         :name name :supers (list <wrapped-c-union>)
+         :native-type type
+         :slots (map (cut %build-slot type <>) (~ type'fields)))]
+      [<c-array>
+       (make <native-wrapper-meta>
+         :name name :supers (list <wrapped-c-array>)
+         :native-type type)]
+      [else #f]))
+  (or (cond
+       [(c-pointer-type? type)
+        (make-class (c-pointer-type-pointee type))]
+       [(c-aggregate-type? type)
+        (make-class type)]
+       [else #f])
+      (error "Cannot wrap a native handle with type" type)))
 
 (define (%build-slot type slot)
   (let ([slot-name (car slot)]
@@ -1772,12 +1780,7 @@
 
 (define (%wrap value)
   (if (is-a? value <native-handle>)
-    (cond [(null-pointer-handle? value) #f]
-          [(and-let* ([ (c-pointer-handle? value) ]
-                      [pt (c-pointer-type-pointee (native-handle-type value))]
-                      [ (c-aggregate-type? pt) ])
-             (wrap-native-handle (native* value)))]
-          [else (wrap-native-handle value)])
+    (wrap-native-handle value)
     value))
 
 (define (%unwrap value)
@@ -1794,8 +1797,16 @@
 
 ;; API
 (define (wrap-native-handle handle)
-  (let* ([type (~ handle'type)])
-    (%wrap-native-handle (make-native-wrapper-class type) handle)))
+  (assume-type handle <native-handle>)
+  (cond [(null-pointer-handle? handle) #f]
+        [(and-let* ([ (c-pointer-handle? handle) ]
+                    [pt (c-pointer-type-pointee (native-handle-type handle))]
+                    [ (c-aggregate-type? pt) ])
+           (%wrap-native-handle (make-native-wrapper-class pt)
+                                (native* handle)))]
+        [else (%wrap-native-handle (make-native-wrapper-class
+                                    (native-handle-type handle))
+                                   handle)]))
 
 (define (%wrap-native-handle class handle)
   (rlet1 instance (allocate-instance class '())

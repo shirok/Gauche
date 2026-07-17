@@ -68,6 +68,35 @@
            (~ iut 'b)))
   )
 
+(let ()
+  (define st (native-type '(.struct st (a::int b::int))))
+  (define h (make-native-handle st))
+  (define w)
+
+  (test* "wrapping pointer to struct" #t
+         (begin
+           (set! w (wrap-native-handle h))
+           (is-a? w <wrapped-c-struct>)))
+
+  (set! (native. h 'a) 1)
+  (set! (native. h 'b) 2)
+  (test* "accessing through wrapped pointer" '(1 2)
+         (list (~ w'a) (~ w'b)))
+
+  (test* "modifyhing through wrapperd pointer" '(3 4)
+         (begin
+           (set! (~ w'a) 3)
+           (set! (~ w'b) 4)
+           (list (native. h 'a) (native. h 'b))))
+  )
+
+(let ()
+  (define st (native-type '(.struct st (a::int b::int))))
+  (define h (null-pointer-handle (make-c-pointer-type st)))
+
+  (test* "wrapping null pointer yields #f" #f
+         (wrap-native-handle h)))
+
 ;; Nested structures
 (let ()
   (define s1 (native-type '(.struct (a::int b::char))))
