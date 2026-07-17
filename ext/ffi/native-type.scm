@@ -1496,6 +1496,7 @@
     (define (no-signedness)
       (when signedness
         (errorf "~a can't be used with ~s" signature signedness)))
+
     (match signature
       ;; Pass-through if already a native type instance
       [(? (cut is-a? <> <native-type>))
@@ -1564,6 +1565,17 @@
            (unless (#/^\**$/ normalized)
              (error "Invalid native type signature:" signature))
            (%wrap-pointer-type (car instances) (string-length normalized))))]
+
+      [((? list? main-t) suffix ...) (=> fail)
+       (no-signedness)
+       (let* ([suff (apply string-append (map x->string suffix))]
+              [ptrs (regexp-replace-all* suff #/const/ "")]
+              [m (#/^\**$/ ptrs)])
+         (if m
+           (let add-pointer ([t (rec main-t #f)]
+                             [n (string-length (m 0))])
+             (if (zero? n) t (add-pointer (make-c-pointer-type t) (- n 1))))
+           (fail)))]
 
       ;; C-style list type form, e.g. (char*), (char *), (char const*),
       ;; (int **), (int* *).  Strip const and concatenate into a single

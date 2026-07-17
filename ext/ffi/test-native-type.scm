@@ -2151,6 +2151,35 @@
            (and (c-union-type? u)
                 (eq? (c-struct/union-type-field-type u 'x) foo)))))
 
+;; Pointer to structs
+(let* ([s (native-type '(.struct (x::int)))]
+       [ps (make-c-pointer-type s)]
+       [pps (make-c-pointer-type ps)]
+       [ppps (make-c-pointer-type pps)])
+  (test* "native-type pointer to struct" ps
+         (native-type '((.struct (x::int))*)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int))**)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int))* *)))
+  (test* "native-type pointer to struct" ppps
+         (native-type '((.struct (x::int))***)))
+  (test* "native-type pointer to struct" ps
+         (native-type '((.struct (x::int)) const*)))
+  (test* "native-type pointer to struct" ps
+         (native-type '((.struct (x::int)) const *)))
+  (test* "native-type pointer to struct" ps
+         (native-type '((.struct (x::int)) *const)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int)) **const)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int)) *const*)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int)) const**)))
+  (test* "native-type pointer to struct" ppps
+         (native-type '((.struct (x::int)) const*const*const*)))
+  )
+
 ;; Union type properties
 (let1 u (native-type '(.union val (i::int f::float)))
   (test* "native-type union is <c-union>" #t
