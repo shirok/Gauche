@@ -1246,7 +1246,6 @@
           (error "native-aref setter requires at least one index and a value"))
         (%native-aref-set! handle (drop-right args 1) (last args))))
 
-
 ;; Struct/union direct field access
 (define (native. handle slot :optional (type #f))
   (assume-type handle <native-handle>)
@@ -1303,29 +1302,48 @@
         [(handle slot val) (%native->-set! handle slot #f val)]))
 
 ;; Take an address of struct/union member or array element
-(define (native& handle selector)
+(define (native& handle :optional (selector #f))
+  (define (struct-field& type)
+    (assume-type selector <symbol>
+      "native& on c-struct or c-union requires a symbol selector, but got;"
+      selector)
+    (let ([off (native-type-offset type selector)]
+          [etype (c-struct/union-type-field-type type selector)])
+      (make-internal-handle handle off (make-c-pointer-type etype))))
+  (define (array& type)
+    (assume-type selector (</> <fixnum> (<List> <fixnum>))
+      "native& on c-struct or c-union requires a symbol selector, but got;"
+      selector)
+    (let ([off (native-type-offset type (if (list? selector)
+                                          selector
+                                          (list selector)))])
+      (make-internal-handle handle off
+                            (make-c-pointer-type (~ type'element-type)))))
+
+  (define (bad)
+    (error "native& requires aggregate type ahndle, or \
+            a pointer handle to aggregate type, but got:"
+           handle))
   (assume-type handle <native-handle>)
   (let1 type (~ handle'type)
     (typecase type
       [(</> <c-struct> <c-union>)
-       (assume-type selector <symbol>
-         "native& on c-struct or c-union requires a symbol selector, but got;"
-         selector)
-       (let ([off (native-type-offset type selector)]
-             [etype (c-struct/union-type-field-type type selector)])
-         (make-internal-handle handle off (make-c-pointer-type etype)))]
+       (if selector
+         (struct-field& type)
+         (make-internal-handle handle 0 (make-c-pointer-type type)))]
       [<c-array>
-       (assume-type selector (</> <fixnum> (<List> <fixnum>))
-         "native& on c-struct or c-union requires a symbol selector, but got;"
-         selector)
-       (let ([off (native-type-offset type (if (list? selector)
-                                             selector
-                                             (list selector)))])
-         (make-internal-handle handle off
-                               (make-c-pointer-type (~ type'element-type))))]
-      [else
-       (error "native& requires c-array, c-struct or c-union handle, but got:"
-              handle)])))
+       (if selector
+         (array& type)
+         (make-internal-handle handle 0 (make-c-pointer-type type)))]
+      [<c-pointer>
+       (if selector
+         ;; We let native& handle both &(foo.field) and &(foo->field)
+         (typecase (c-pointer-type-pointee type)
+           [(</> <c-struct> <c-union>) => struct-field&]
+           [<c-array> => array&]
+           [else (bad)])
+         (error "native& on c-pointer type needs a selector:" handle))]
+      [else (bad)])))
 
 ;; handle can be c-pointer handle or c-array handle.  For the latter, it is
 ;; cast to the pointer handle, like C.

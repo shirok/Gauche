@@ -1061,49 +1061,53 @@
                                    (b ,<uint32>)
                                    (c ,<uint16>)
                                    (d ,<uint8>)))]
-       [h (make-native-handle s)])
-  (set! (native. h 'a) -1)
-  (set! (native. h 'b) #x11223344)
-  (set! (native. h 'c) #xabcd)
-  (set! (native. h 'd) #xfe)
+       [h (make-native-handle s)]
+       [ph (native& h)])
+  (dolist [h (list h ph)]
+    (define nref (if (c-pointer-handle? h) native-> native.))
 
-  (test* "native& on struct returns c-pointer handle" #t
-         (c-pointer-handle? (native& h 'a)))
-  (test* "native& on struct field 'a pointee type" #t
-         (equal? (~ (native-handle-type (native& h 'a)) 'pointee-type)
-                 <int8>))
-  (test* "native& on struct field 'b pointee type" #t
-         (equal? (~ (native-handle-type (native& h 'b)) 'pointee-type)
-                 <uint32>))
-  (test* "native& on struct field 'c pointee type" #t
-         (equal? (~ (native-handle-type (native& h 'c)) 'pointee-type)
-                 <uint16>))
+    (set! (nref h 'a) -1)
+    (set! (nref h 'b) #x11223344)
+    (set! (nref h 'c) #xabcd)
+    (set! (nref h 'd) #xfe)
 
-  (test* "native& on struct: deref reads field value"
-         '(-1 #x11223344 #xabcd #xfe)
-         (list (native* (native& h 'a))
-               (native* (native& h 'b))
-               (native* (native& h 'c))
-               (native* (native& h 'd))))
+    (test* #"native& ~h returns c-pointer handle" #t
+           (c-pointer-handle? (native& h 'a)))
+    (test* #"native& ~h 'a" #t
+           (equal? (~ (native-handle-type (native& h 'a)) 'pointee-type)
+                   <int8>))
+    (test* #"native& ~h 'b" #t
+           (equal? (~ (native-handle-type (native& h 'b)) 'pointee-type)
+                   <uint32>))
+    (test* #"native& ~h 'c" #t
+           (equal? (~ (native-handle-type (native& h 'c)) 'pointee-type)
+                   <uint16>))
 
-  (test* "native& on struct: write through pointer modifies field"
-         '(127 #x55667788 #x1234 #x80)
-         (begin
-           (set! (native* (native& h 'a)) 127)
-           (set! (native* (native& h 'b)) #x55667788)
-           (set! (native* (native& h 'c)) #x1234)
-           (set! (native* (native& h 'd)) #x80)
-           (list (native. h 'a)
-                 (native. h 'b)
-                 (native. h 'c)
-                 (native. h 'd))))
+    (test* #"native& ~h deref reads field value"
+           '(-1 #x11223344 #xabcd #xfe)
+           (list (native* (native& h 'a))
+                 (native* (native& h 'b))
+                 (native* (native& h 'c))
+                 (native* (native& h 'd))))
 
-  (test* "native& on struct: error on non-symbol selector"
-         (test-error <error>)
-         (native& h 0))
-  (test* "native& on struct: error on unknown field"
-         (test-error <error>)
-         (native& h 'zzz)))
+    (test* #"native& ~h write through pointer modifies field"
+           '(127 #x55667788 #x1234 #x80)
+           (begin
+             (set! (native* (native& h 'a)) 127)
+             (set! (native* (native& h 'b)) #x55667788)
+             (set! (native* (native& h 'c)) #x1234)
+             (set! (native* (native& h 'd)) #x80)
+             (list (nref h 'a)
+                   (nref h 'b)
+                   (nref h 'c)
+                   (nref h 'd))))
+
+    (test* #"native& ~h error on non-symbol selector"
+           (test-error <error>)
+           (native& h 0))
+    (test* #"native& ~h error on unknown field"
+           (test-error <error>)
+           (native& h 'zzz))))
 
 ;; native& on c-union: extract pointer to a field
 (let* ([u (make-c-union-type 'u `((a ,<int8>)
