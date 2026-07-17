@@ -16053,22 +16053,25 @@ Sets @var{val} to the field @var{slot} of c-struct or c-union
 pointed by a c-pointer handle @code{handle}.
 @end defun
 
-@defun native& handle selector
+@defun native& handle :optional selector
 @c MOD gauche.native-type
 This takes the pointer to an element inside an aggregate data
 referenced by @var{handle}.  The @var{handle} must be a
-native handle fo type c-array, c-struct, or c-union.  An error
+native handle of an aggregate type (c-struct, c-union, or c-array),
+or of a poitner to an aggregate type.
 is signaled if other type of native handle is given.
 
 If @var{handle} is a c-struct or c-union, @var{selector} must
 be a symbol naming its field.  A c-poitner handle points to
-the field is returned.
+the field is returned.  If @var{selector} is omitted, a c-pointer
+handle to the struct/union itself is returned.
 
 If @var{handle} is a c-array, @var{selector} must be a fixnum,
 or a list of fixnums, as the index to the array.  If the array
 is 1-dimensional, a fixnum or a list of signle fixnum is
 accepted.  A c-pointer handle points to the element is
-returned.
+returned.  If @var{selector} is omitted, a c-pointer handle
+to the array itself is returned.
 
 @example
 (define ts (native-type '(.struct (a::int))))
