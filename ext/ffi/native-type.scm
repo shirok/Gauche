@@ -1247,53 +1247,58 @@
         (%native-aref-set! handle (drop-right args 1) (last args))))
 
 ;; Struct/union direct field access
-(define (native. handle slot :optional (type #f))
-  (define (bad)
-    (error "native. requires a handle of struct/union or pointer to \
+(define native.
+  (case-lambda
+    [(handle slot)
+     (define (bad)
+       (error "native. requires a handle of struct/union or pointer to \
             struct/union, but got" handle))
-  (assume-type handle <native-handle>)
-  (assume-type slot <symbol>)
-  (let* ([t (%handle-type handle type)])
-    (typecase t
-      [(</> <c-struct> <c-union>)
-       (let* ([field (c-struct-field t slot)]
-              [ctype (cadr field)]
-              [offset (caddr field)])
-         (%handle-ref ctype handle offset))]
-      [<c-pointer>
-       (let* ([pt (~ t'pointee-type)])
-         (unless (of-type? pt (</> <c-struct> <c-union>)) (bad))
-         (let* ([field (c-struct-field pt slot)]
-                [ctype (cadr field)]
-                [offset (caddr field)])
-           (%handle-ref ctype handle offset)))]
-      [else (bad)])))
+     (assume-type handle <native-handle>)
+     (assume-type slot <symbol>)
+     (let* ([t (native-handle-type handle)])
+       (typecase t
+         [(</> <c-struct> <c-union>)
+          (let* ([field (c-struct-field t slot)]
+                 [ctype (cadr field)]
+                 [offset (caddr field)])
+            (%handle-ref ctype handle offset))]
+         [<c-pointer>
+          (let* ([pt (~ t'pointee-type)])
+            (unless (of-type? pt (</> <c-struct> <c-union>)) (bad))
+            (let* ([field (c-struct-field pt slot)]
+                   [ctype (cadr field)]
+                   [offset (caddr field)])
+              (%handle-ref ctype handle offset)))]
+         [else (bad)]))]
+    [(handle slot . more-slots)
+     (apply native. (native. handle slot) more-slots)]))
 
-(define (%native.-set! handle slot type val)
-  (define (bad)
-    (error "(setter native.) requires a handle of struct/union or pointer to \
+(define %native.-set!
+  (case-lambda
+    [(handle slot val)
+     (define (bad)
+       (error "(setter native.) requires a handle of struct/union or pointer to \
             struct/union, but got" handle))
-  (assume-type handle <native-handle>)
-  (assume-type slot <symbol>)
-  (let* ([t (%handle-type handle type)])
-    (typecase t
-      [(</> <c-struct> <c-union>)
-       (let* ([field (c-struct-field t slot)]
-              [ctype (cadr field)]
-              [offset (caddr field)])
-         (%handle-set! ctype handle offset val))]
-      [<c-pointer>
-       (let* ([pt (~ t'pointee-type)])
-         (unless (of-type? pt (</> <c-struct> <c-union>)) (bad))
-         (let* ([field (c-struct-field pt slot)]
-                [ctype (cadr field)]
-                [offset (caddr field)])
-           (%handle-set! ctype handle offset val)))]
-      [else (bad)])))
-(set! (setter native.)
-      (case-lambda
-        [(handle slot type val) (%native.-set! handle slot type val)]
-        [(handle slot val) (%native.-set! handle slot #f val)]))
+     (assume-type handle <native-handle>)
+     (assume-type slot <symbol>)
+     (let* ([t (native-handle-type handle)])
+       (typecase t
+         [(</> <c-struct> <c-union>)
+          (let* ([field (c-struct-field t slot)]
+                 [ctype (cadr field)]
+                 [offset (caddr field)])
+            (%handle-set! ctype handle offset val))]
+         [<c-pointer>
+          (let* ([pt (~ t'pointee-type)])
+            (unless (of-type? pt (</> <c-struct> <c-union>)) (bad))
+            (let* ([field (c-struct-field pt slot)]
+                   [ctype (cadr field)]
+                   [offset (caddr field)])
+              (%handle-set! ctype handle offset val)))]
+         [else (bad)]))]
+    [(handle slot slot2 . rest)
+     (apply %native.-set! (native. handle slot) slot2 rest)]))
+(set! (setter native.) %native.-set!)
 
 ;; Struct/union indirect field access
 (define (native-> handle slot :optional (type #f))

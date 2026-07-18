@@ -650,6 +650,15 @@
                  (native. (bc 0 s2) 'b)
                  (native. (bc 0 s2) 'c)))))
 
+(let* ([h (make-native-handle
+           (native-type '(.struct (x::(.struct (y::int8_t)))))
+           '#u8(11))])
+  (test* "cascading native." 11 (native. h 'x 'y))
+  (test* "cascading native.-set!" 22
+         (begin
+           (set! (native. h 'x 'y) 22)
+           (native. h 'x 'y))))
+
 (let* ([data (u8vector-copy *fobject-storage*)]
        [u16x2 (make-c-array-type <uint16> '(2))]
        [s3 (make-c-struct-type 's3
