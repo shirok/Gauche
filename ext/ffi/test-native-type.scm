@@ -775,12 +775,12 @@
          (begin
            (set! (native. data-s 'a) #\A)
            (set! (native. data-s 'b) 1234)
-           (list (native-> data-p 'a)
-                 (native-> data-p 'b))))
+           (list (native. data-p 'a)
+                 (native. data-p 'b))))
   (test* "native-set! via pointer" '(#\B -5678)
          (begin
-           (set! (native-> data-p 'a) #\B)
-           (set! (native-> data-p 'b) -5678)
+           (set! (native. data-p 'a) #\B)
+           (set! (native. data-p 'b) -5678)
            (list (native. data-s 'a)
                  (native. data-s 'b))))
   )
@@ -836,8 +836,8 @@
            (set! (native. h 'd) (native& h 'c))
            (set! (native. (native. h 'c) 'a) #\@)
            (set! (native. (native. h 'c) 'b) 999)
-           (list (native-> (native. h 'd) 'a)
-                 (native-> (native. h 'd) 'b))))
+           (list (native. (native. h 'd) 'a)
+                 (native. (native. h 'd) 'b))))
   (test* "dereferencing pointer to a struct" #t
          (c-struct-handle? (native* (native. h 'd))))
   )
@@ -1064,12 +1064,10 @@
        [h (make-native-handle s)]
        [ph (native& h)])
   (dolist [h (list h ph)]
-    (define nref (if (c-pointer-handle? h) native-> native.))
-
-    (set! (nref h 'a) -1)
-    (set! (nref h 'b) #x11223344)
-    (set! (nref h 'c) #xabcd)
-    (set! (nref h 'd) #xfe)
+    (set! (native. h 'a) -1)
+    (set! (native. h 'b) #x11223344)
+    (set! (native. h 'c) #xabcd)
+    (set! (native. h 'd) #xfe)
 
     (test* #"native& ~h returns c-pointer handle" #t
            (c-pointer-handle? (native& h 'a)))
@@ -1097,10 +1095,10 @@
              (set! (native* (native& h 'b)) #x55667788)
              (set! (native* (native& h 'c)) #x1234)
              (set! (native* (native& h 'd)) #x80)
-             (list (nref h 'a)
-                   (nref h 'b)
-                   (nref h 'c)
-                   (nref h 'd))))
+             (list (native. h 'a)
+                   (native. h 'b)
+                   (native. h 'c)
+                   (native. h 'd))))
 
     (test* #"native& ~h error on non-symbol selector"
            (test-error <error>)
@@ -1499,22 +1497,22 @@
          (let1 sh (make-native-handle s1 data)
            (cast-handle uint8* sh)))
 
-  ;; Cast int* to pointer-to-struct, then dereference fields via native->
+  ;; Cast int* to pointer-to-struct, then dereference fields via native.
   (let1 psh (cast-handle s1* ph)
     (test* "cast-handle int* to s1* yields pointer handle" #t
            (c-pointer-handle? psh))
     (test* "cast-handle int* to s1*, deref field a" #x-80
-           (native-> psh 'a))
+           (native. psh 'a))
     (test* "cast-handle int* to s1*, deref field b"
            (case (native-endian)
              [(big-endian) #x04050607]
              [else         #x07060504])
-           (native-> psh 'b))
+           (native. psh 'b))
     ;; Modify through the cast pointer and read back via the original data
     (test* "cast-handle int* to s1*, set! field a"
            #x42
            (begin
-             (set! (native-> psh 'a) #x42)
+             (set! (native. psh 'a) #x42)
              (native* (cast-handle uint8* ph)))))
 
   ;; Aggregate-to-aggregate casts

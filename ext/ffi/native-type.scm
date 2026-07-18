@@ -1248,24 +1248,48 @@
 
 ;; Struct/union direct field access
 (define (native. handle slot :optional (type #f))
+  (define (bad)
+    (error "native. requires a handle of struct/union or pointer to \
+            struct/union, but got" handle))
   (assume-type handle <native-handle>)
   (assume-type slot <symbol>)
   (let* ([t (%handle-type handle type)])
-    (assume-type t (</> <c-struct> <c-union>))
-    (let* ([field (c-struct-field t slot)]
-           [ctype (cadr field)]
-           [offset (caddr field)])
-      (%handle-ref ctype handle offset))))
+    (typecase t
+      [(</> <c-struct> <c-union>)
+       (let* ([field (c-struct-field t slot)]
+              [ctype (cadr field)]
+              [offset (caddr field)])
+         (%handle-ref ctype handle offset))]
+      [<c-pointer>
+       (let* ([pt (~ t'pointee-type)])
+         (unless (of-type? pt (</> <c-struct> <c-union>)) (bad))
+         (let* ([field (c-struct-field pt slot)]
+                [ctype (cadr field)]
+                [offset (caddr field)])
+           (%handle-ref ctype handle offset)))]
+      [else (bad)])))
 
 (define (%native.-set! handle slot type val)
+  (define (bad)
+    (error "(setter native.) requires a handle of struct/union or pointer to \
+            struct/union, but got" handle))
   (assume-type handle <native-handle>)
   (assume-type slot <symbol>)
   (let* ([t (%handle-type handle type)])
-    (assume-type t (</> <c-struct> <c-union>))
-    (let* ([field (c-struct-field t slot)]
-           [ctype (cadr field)]
-           [offset (caddr field)])
-      (%handle-set! ctype handle offset val))))
+    (typecase t
+      [(</> <c-struct> <c-union>)
+       (let* ([field (c-struct-field t slot)]
+              [ctype (cadr field)]
+              [offset (caddr field)])
+         (%handle-set! ctype handle offset val))]
+      [<c-pointer>
+       (let* ([pt (~ t'pointee-type)])
+         (unless (of-type? pt (</> <c-struct> <c-union>)) (bad))
+         (let* ([field (c-struct-field pt slot)]
+                [ctype (cadr field)]
+                [offset (caddr field)])
+           (%handle-set! ctype handle offset val)))]
+      [else (bad)])))
 (set! (setter native.)
       (case-lambda
         [(handle slot type val) (%native.-set! handle slot type val)]

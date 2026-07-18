@@ -171,34 +171,34 @@
          (t "ok" (%say-ok))
 
          (let* ([p (make-native-handle foo*)])
-           (set! (native-> p 'c) #\a)
+           (set! (native. p 'c) #\a)
            (t #\b (let ([r (F-pstruct-c-pstruct p #\b)])
-                    (native-> r 'c)))
-           (set! (native-> p 's) 12345)
+                    (native. r 'c)))
+           (set! (native. p 's) 12345)
            (t -23456 (let ([r (F-pstruct-s-pstruct p -23456)])
-                       (native-> r 's)))
-           (set! (native-> p 'i) 123456789)
+                       (native. r 's)))
+           (set! (native. p 'i) 123456789)
            (t -987654321 (let ([r (F-pstruct-i-pstruct p -987654321)])
-                           (native-> r 'i)))
+                           (native. r 'i)))
            (cond
             [(>= (~ <long>'size) 8)
-             (set! (native-> p 'l) 123456789012)
+             (set! (native. p 'l) 123456789012)
              (t -987654321098
                 (let ([r (F-pstruct-l-pstruct p -987654321098)])
-                  (native-> r 'l)))]
+                  (native. r 'l)))]
             [else
-             (set! (native-> p 'l) 123456789)
+             (set! (native. p 'l) 123456789)
              (t -987654321
                 (let ([r (F-pstruct-l-pstruct p -987654321)])
-                  (native-> r 'l)))])
-           (set! (native-> p 'f) 0.5)
+                  (native. r 'l)))])
+           (set! (native. p 'f) 0.5)
            (t -0.25
               (let ([r (F-pstruct-f-pstruct p -0.25)])
-                (native-> r 'f)))
-           (set! (native-> p 'd) 0.5)
+                (native. r 'f)))
+           (set! (native. p 'd) 0.5)
            (t -0.25
               (let ([r (F-pstruct-d-pstruct p -0.25)])
-                (native-> r 'd))))
+                (native. r 'd))))
          )]))
 
   (define-syntax do-test-g

@@ -15882,8 +15882,8 @@ inner-ref @result{} #<native-handle struct anonymous@@0x77a1b10f51f0>
 (define inner-ptr (native. handle 'ptr)) ; inner* inner_ptr = handle.ptr
 inner-ptr @result{} #<native-handle <struct anonymous*>@@0x77a1b10f51f0>
 
-(native. inner-ref 'a)  @result{} 1           ; inner_ref.a
-(native-> inner-ptr 'a)  @result{} 1          ; inner_ptr->a
+(native. inner-ref 'a)  @result{} 1          ; inner_ref.a
+(native. inner-ptr 'a)  @result{} 1          ; inner_ptr->a
 
 (native. (native* inner-ptr) 'b) @result{} 2 ; (*inner_ptr).b
 @end example
@@ -16028,29 +16028,19 @@ responsibility to ensure @var{index} falls in a valid range.
 @defun native. handle slot
 @c MOD gauche.native-type
 Struct/union field reference.  @var{handle} must be a native handle
-of c-struct or c-union type, and @var{slot} must be a symbol
+of c-struct or c-union type, or a pointer type to a c-struct or c-union,
+and @var{slot} must be a symbol
 naming its slot.  An error is thrown if the struct/union doesn't
 have the named slot.
+
+Note: C distinguish direct field reference of a struct
+(@code{s.f}) and indirect field reference through a pointer to a struct
+(@code{ps->f}, e.g. @code{(*pf).f}).  @code{native.} can handle both.
 @end defun
 
 @defun (setter native.) handle slot val
 @c MOD gauche.native-type
 Sets @var{val} to the field @var{slot} of c-struct or c-union @var{handle}.
-@end defun
-
-@defun native-> handle slot
-@c MOD gauche.native-type
-Indirect struct/union field reference.  @var{handle} must be
-a native handle of c-pointer to a c-struct or c-union.
-@code{(native-> handle slot)} is the same as
-@code{(native. (native* handle) slot)}, just like
-@code{s->a} and @code{(*s).a} are the same in C.
-@end defun
-
-@defun (setter native->) handle slot :optional type
-@c MOD gauche.native-type
-Sets @var{val} to the field @var{slot} of c-struct or c-union
-pointed by a c-pointer handle @code{handle}.
 @end defun
 
 @defun native& handle :optional selector
