@@ -93,6 +93,9 @@
           null-pointer-handle
           null-pointer-handle?
 
+          c-int->boolean
+          boolean->c-int
+
           c-pointer-handle?
           c-function-handle?
           c-array-handle?
@@ -1392,6 +1395,13 @@
                     (make-c-pointer-type et)
                     (make-c-pointer-type (make-c-array-type et (cdr dims))))])
          (native-pointer+ (cast-handle pt handle) element-offset))])))
+
+;;;
+;;; Convenience converters
+;;;
+
+(define (c-int->boolean value) (not (zero? value)))
+(define (boolean->c-int value) (if value 1 0))
 
 ;;;
 ;;;  Convert type signatures to native-type instance
