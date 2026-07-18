@@ -19961,7 +19961,7 @@ continuations you can't get away from those names.  If these names
 conflict to other names in your program, you can use @code{:prefix}
 import specifier (@pxref{Using modules}), for example as follows:
 @c JP
-註: 部分継続はふたつのオペレータ、@code{reset}と@code{shift}を使います。
+注意: 部分継続はふたつのオペレータ、@code{reset}と@code{shift}を使います。
 これらは元の論文で導入された名前ですが、既に用語として定着した感があります。
 ライブラリ関数名としては一般的に過ぎる名前なので、よりわかりやすい名前を
 つけようかとも考えたのですが、部分継続を話題にする際にはこれらの用語が
@@ -19977,6 +19977,16 @@ import specifier (@pxref{Using modules}), for example as follows:
 
 (pc:reset ... (pc:shift k ....) )
 @end example
+
+@c EN
+Note: This module replaces @code{call/cc} and @code{guard}
+with their partial continuation versions.
+For now, this might causes low performance of them.
+@c JP
+注意: 本モジュールは、@code{call/cc}と@code{guard}を、
+部分継続バージョンに差し替えます。
+現状では、これらのパフォーマンスが低下する可能性があります。
+@c COMMON
 
 @defmac reset expr @dots{}
 @c MOD gauche.partcont
@@ -20091,6 +20101,49 @@ Sometimes this similarity of @code{call/cc} comes handy.
 用意しました。
 @c COMMON
 @end defun
+
+@defmac reset-at prompt-tag expr @dots{}
+@c MOD gauche.partcont
+@end defmac
+
+@defmac shift-at prompt-tag var expr @dots{}
+@c MOD gauche.partcont
+@end defmac
+
+@defmac prompt expr @dots{}
+@c MOD gauche.partcont
+@end defmac
+
+@defmac control var expr @dots{}
+@c MOD gauche.partcont
+@end defmac
+
+@defmac prompt-at prompt-tag expr @dots{}
+@c MOD gauche.partcont
+@end defmac
+
+@defmac control-at prompt-tag var expr @dots{}
+@c MOD gauche.partcont
+@end defmac
+
+@defun call-with-current-continuation proc
+@defunx call/cc proc
+@c MOD gauche.partcont
+@c EN
+This is a partial continuation version of call/cc.
+@c JP
+部分継続バージョンのcall/ccです。
+@c COMMON
+@end defun
+
+@defmac guard (var clause @dots{}) body @dots{}
+@c MOD gauche.partcont
+@c EN
+This is a partial continuation version of guard.
+@c JP
+部分継続バージョンのguardです。
+@c COMMON
+@end defmac
 
 @c EN
 Well, @dots{} I bet you feel like your brain is twisted hard
