@@ -1836,8 +1836,10 @@
 ;; API
 ;;  Creates a class that wraps a native type TYPE.
 ;;  We keep 1-to-1 correspondence between the class and the type.
-;; TODO: We may be able to do a better job to synthesize the default name.
-(define (make-native-wrapper-class type :optional (name (gensym)))
+(define (make-native-wrapper-class type :key (name #f))
+  (assume-type type <native-type>)
+  (unless name
+    (set! name (symbol-append '|wrapped | (~ type'name))))
   (or (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
               (^t (hash-table-get t type #f)))
       (let1 c (%make-native-wrapper-class type name)
