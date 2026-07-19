@@ -928,6 +928,44 @@
     ))
 
 ;;;----------------------------------------------------------
+(test-section "string handling")
+
+(let* ([data '#u8(#x41 #x42 #x43 #x44 #x00)]
+       [p-uint (make-native-handle (native-type 'uint8_t*) data)]
+       [p-int  (make-native-handle (native-type 'int8_t*) data)]
+       [p-char (make-native-handle (native-type 'char*) data)]
+       [a-uint-unb (make-native-handle (native-type '(.array uint8_t (*))) data)]
+       [a-int-unb  (make-native-handle (native-type '(.array int8_t (*))) data)]
+       [a-char-unb (make-native-handle (native-type '(.array char (*))) data)]
+       [a-uint (make-native-handle (native-type '(.array uint8_t (5))) data)]
+       [a-int  (make-native-handle (native-type '(.array int8_t (5))) data)]
+       [a-char (make-native-handle (native-type '(.array char (5))) data)]
+       [a-uint-less (make-native-handle (native-type '(.array uint8_t (2))) data)]
+       [a-int-less  (make-native-handle (native-type '(.array int8_t (2))) data)]
+       [a-char-less (make-native-handle (native-type '(.array char (2))) data)])
+  (define-syntax t*
+    (syntax-rules ()
+      [(_ expect size src ...)
+       (begin
+         (test* '(c-char*->string size src) expect
+                (c-char*->string src size))
+         ...
+         (test* '(c-char*->string/shared size src) expect
+                (c-char*->string/shared src size))
+         ...)]))
+
+  (t* "ABCD" #f p-uint p-int p-char)
+  (t* "ABCD\0" 5 p-uint p-int p-char)
+  (t* "ABCD" #f a-uint-unb a-int-unb a-char-unb)
+  (t* "ABCD\0" 5 a-uint-unb a-int-unb a-char-unb)
+  (t* "ABCD\0" #f a-uint a-int a-char)
+  (t* "ABCD\0" 5 a-uint a-int a-char)
+  (t* (test-error <error> #/exceeds array size/) 7 a-uint a-int a-char)
+  (t* "AB" #f a-uint-less a-int-less a-char-less)
+  (t* (test-error <error> #/exceeds array size/) 4 a-uint-less a-int-less a-char-less)
+  )
+
+;;;----------------------------------------------------------
 (test-section "enums")
 
 (define %implicit-enum-size (with-module gauche.typeutil implicit-enum-size))

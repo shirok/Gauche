@@ -143,7 +143,7 @@ SCM_CLASS_DECL(Scm_CFunctionClass);
 typedef struct ScmCArrayRec {
     ScmNativeType common;
     ScmNativeType *element_type;
-    ScmObj dimensions;           /* list of fixnums */
+    ScmObj dimensions;           /* list of fixnums, first elt can be '* */
 } ScmCArray;
 
 SCM_CLASS_DECL(Scm_CArrayClass);

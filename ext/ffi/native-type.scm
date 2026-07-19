@@ -95,6 +95,8 @@
 
           c-int->boolean
           boolean->c-int
+          c-char*->string
+          c-char*->string/shared
 
           c-pointer-handle?
           c-function-handle?
@@ -1402,6 +1404,57 @@
 
 (define (c-int->boolean value) (not (zero? value)))
 (define (boolean->c-int value) (if value 1 0))
+
+(define-cfn handle->string (handle::ScmNativeHandle*
+                            size::ScmSmallInt
+                            shared?::_Bool)
+  :static
+  (let* ([t::ScmNativeType* (-> handle type)])
+    (cond [(SCM_C_POINTER_P t)
+           (let* ([pt::ScmNativeType* (-> (SCM_C_POINTER t) pointee_type)])
+             (unless (or (SCM_EQ (SCM_OBJ pt) (Scm_NativeCCharType))
+                         (SCM_EQ (SCM_OBJ pt) (Scm_NativeInt8Type))
+                         (SCM_EQ (SCM_OBJ pt) (Scm_NativeUint8Type)))
+               (goto bad)))]
+          [(SCM_C_ARRAY_P t)
+           (let* ([et::ScmNativeType* (-> (SCM_C_ARRAY t) element_type)])
+             (unless (and (== 1 (Scm_Length (-> (SCM_C_ARRAY t) dimensions)))
+                          (or (SCM_EQ (SCM_OBJ et) (Scm_NativeCCharType))
+                              (SCM_EQ (SCM_OBJ et) (Scm_NativeInt8Type))
+                              (SCM_EQ (SCM_OBJ et) (Scm_NativeUint8Type))))
+               (goto bad))
+             (let* ([dim (SCM_CAR (-> (SCM_C_ARRAY t) dimensions))])
+               (when (and (SCM_INTP dim)
+                          (< (SCM_INT_VALUE dim) size))
+                 (Scm_Error "Given size %ld exceeds array size of %S"
+                            size handle))
+               (when (and (< size 0) (SCM_INTP dim))
+                 (set! size (SCM_INT_VALUE dim)))))]
+          [else (goto bad)])
+    (return (Scm_MakeString (-> handle ptr) size -1
+                            (?: shared?
+                                SCM_STRING_IMMUTABLE
+                                SCM_STRING_COPYING)))
+    (label bad)
+    (Scm_Error "Can't convert to string from handle: %S"  handle)))
+
+(define-cproc c-char*->string/shared (handle::<native-handle>
+                                      :optional (size #f))
+  (let* ([csize::ScmSmallInt 0])
+    (cond [(SCM_FALSEP size) (set! csize -1)]
+          [(SCM_INTP size) (set! csize (SCM_INT_VALUE size))]
+          [else (SCM_TYPE_ERROR size "fixnum or #f")])
+    (return (handle->string handle csize TRUE))))
+
+(define-cproc c-char*->string (handle::<native-handle>
+                               :optional (size #f))
+  (let* ([csize::ScmSmallInt 0])
+    (cond [(SCM_FALSEP size) (set! csize -1)]
+          [(SCM_INTP size) (set! csize (SCM_INT_VALUE size))]
+          [else (SCM_TYPE_ERROR size "fixnum or #f")])
+    (return (handle->string handle csize FALSE))))
+
+;; TODO: we want string->c-char*, but need to think about ownership handling
 
 ;;;
 ;;;  Convert type signatures to native-type instance
