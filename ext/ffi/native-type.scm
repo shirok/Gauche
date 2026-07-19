@@ -137,6 +137,7 @@
           <wrapped-c-union>
           make-native-wrapper-class
           wrap-native-handle
+          wrapped-handle
           ))
 (select-module gauche.native-type)
 
@@ -1836,36 +1837,56 @@
 ;; API
 ;;  Creates a class that wraps a native type TYPE.
 ;;  We keep 1-to-1 correspondence between the class and the type.
-(define (make-native-wrapper-class type :key (name #f))
+(define (make-native-wrapper-class type
+                                   :key (name #f)
+                                        (slot-overrides '()))
   (assume-type type <native-type>)
+  (assume-type slot-overrides
+               (<List> (</> (<Tuple> <symbol> <top>)
+                            (<Tuple> <symbol> <top> <top>))))
   (unless name
     (set! name (symbol-append '|wrapped | (~ type'name))))
   (or (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
               (^t (hash-table-get t type #f)))
-      (let1 c (%make-native-wrapper-class type name)
+      (let1 c (%make-native-wrapper-class type name slot-overrides)
         (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
                 (^t (or (hash-table-get t type #f)
                         (begin (hash-table-put! t type c)
                                c)))))))
 
-(define (%make-native-wrapper-class type name)
+(define (%make-native-wrapper-class type name slot-overrides)
   (define (make-class type)
     (typecase type
       [<c-struct>
        (make <native-wrapper-meta>
          :name name :supers (list <wrapped-c-struct>)
          :native-type type
-         :slots (map (cut %build-slot type <>) (~ type'fields)))]
+         :slots (map build-slot (~ type'fields)))]
       [<c-union>
        (make <native-wrapper-meta>
          :name name :supers (list <wrapped-c-union>)
          :native-type type
-         :slots (map (cut %build-slot type <>) (~ type'fields)))]
+         :slots (map build-slot (~ type'fields)))]
       [<c-array>
        (make <native-wrapper-meta>
          :name name :supers (list <wrapped-c-array>)
          :native-type type)]
       [else #f]))
+  (define (build-slot slot)
+    (let* ([slot-name (car slot)]
+           [slot-type (cadr slot)]
+           [ref (or (and-let1 ovr (alist-ref slot-overrides slot-name)
+                      (car ovr))
+                    (^o (%wrap (native. (%wh o) slot-name))))]
+           [set (or (and-let* ([ovr (alist-ref slot-overrides slot-name)]
+                               [ (>= (length ovr) 2) ])
+                      (cadr ovr))
+                    (^[o v] (set! (native. (%wh o) slot-name) (%unwrap v))))])
+      `(,slot-name :init-keyword ,(make-keyword slot-name)
+                   :allocation :virtual
+                   :slot-ref ,ref
+                   :slot-set! ,set
+                   :type ,slot-type)))
   (or (cond
        [(c-pointer-type? type)
         (make-class (c-pointer-type-pointee type))]
@@ -1873,16 +1894,6 @@
         (make-class type)]
        [else #f])
       (error "Cannot wrap a native handle with type" type)))
-
-(define (%build-slot type slot)
-  (let ([slot-name (car slot)]
-        [slot-type (cadr slot)])
-    `(,slot-name :init-keyword ,(make-keyword slot-name)
-                 :allocation :virtual
-                 :slot-ref ,(^o (%wrap (native. (%wh o) slot-name)))
-                 :slot-set! ,(^[o v] (set! (native. (%wh o) slot-name)
-                                           (%unwrap v)))
-                 :type ,slot-type)))
 
 (define (%wrap value)
   (if (is-a? value <native-handle>)
@@ -1917,6 +1928,8 @@
 (define (%wrap-native-handle class handle)
   (rlet1 instance (allocate-instance class '())
     (set! (%wh instance) handle)))
+
+(define-method wrapped-handle ((obj <native-wrapper-mixin>)) (%wh obj))
 
 ;; wrapped-c-array implements sequence protocol.
 ;; As a sequence, we only consider the first dimension.

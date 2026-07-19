@@ -120,6 +120,41 @@
               (list (~ w't'a) (~ w't'b))))
   )
 
+;; slot overrides
+(let ()
+  (define s (native-type '(.struct
+                           test_struct
+                           (name::(.array (const char) (8))
+                            flag::int8_t))))
+  (define h0 (make-native-handle s (u8vector-copy '#u8"abcdefgh\0")))
+  (define h1 (make-native-handle s '#u8"ABCDEFGH\x01;"))
+
+  (define c
+    ($ make-native-wrapper-class s
+       :slot-overrides `((flag ,(^o
+                                 (c-int->boolean
+                                  (native. (wrapped-handle o) 'flag)))
+                               ,(^[o v]
+                                  (set! (native. (wrapped-handle o) 'flag)
+                                        (boolean->c-int v))))
+                         (name ,(^o
+                                 (c-char*->string
+                                  (native. (wrapped-handle o) 'name)
+                                  #f))))))
+
+  (test* "wrapper slot overrides h0" '(#f "abcdefgh")
+         (let1 obj (wrap-native-handle h0)
+           (list (~ obj'flag) (~ obj'name))))
+  (test* "wrapper slot overrides h0 set!" '(#t 1)
+         (let1 obj (wrap-native-handle h0)
+           (set! (~ obj'flag) #t)
+           (list (~ obj'flag)
+                 (native. (wrapped-handle obj) 'flag))))
+  (test* "wrapper slot overrides h1" '(#t "ABCDEFGH")
+         (let1 obj (wrap-native-handle h1)
+           (list (~ obj'flag) (~ obj'name))))
+  )
+
 ;; arrays
 (let ()
   (define a1 (native-type '(.array int (10))))
