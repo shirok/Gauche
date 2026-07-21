@@ -3829,7 +3829,7 @@ static double dexpt2_minus_53  = 0.0;  /* 2.0^-53 */
 
 /* max N where 10.0^N can be representable exactly in double.
    it is max N where N * log2(5) < 53. */
-#define MAX_EXACT_10_EXP  23
+#define MAX_EXACT_10_EXP  22
 
 /* fast 10^n for limited cases */
 static inline ScmObj iexpt10(int e)
@@ -3860,26 +3860,26 @@ static inline u_long ipow(int r, int n)
 
 /* X * 10.0^N by double.
    10.0^N can be represented _exactly_ in double-precision floating point
-   number in the range 0 <= N <= 23.
+   number in the range 0 <= N <= MAX_EXACT_10_EXP.
    If N is out of this range, a rounding error occurs, which will be
    corrected in the algorithmR routine below. */
 static double raise_pow10(double x, int n)
 {
-    static double dpow10[] = { 1.0, 1.0e1, 1.0e2, 1.0e3, 1.0e4,
-                               1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9,
-                               1.0e10, 1.0e11, 1.0e12, 1.0e13, 1.0e14,
-                               1.0e15, 1.0e16, 1.0e17, 1.0e18, 1.0e19,
-                               1.0e20, 1.0e21, 1.0e22, 1.0e23 };
+    static const double dpow10[MAX_EXACT_10_EXP + 1] = {
+        1.0,    1.0e1,  1.0e2,  1.0e3,  1.0e4,  1.0e5,  1.0e6,  1.0e7,  1.0e8,
+        1.0e9,  1.0e10, 1.0e11, 1.0e12, 1.0e13, 1.0e14, 1.0e15, 1.0e16, 1.0e17,
+        1.0e18, 1.0e19, 1.0e20, 1.0e21, 1.0e22,
+    };
     if (n >= 0) {
-        while (n > 23) {
-            x *= 1.0e24;
-            n -= 24;
+        while (n > MAX_EXACT_10_EXP) {
+            x *= dpow10[MAX_EXACT_10_EXP];
+            n -= MAX_EXACT_10_EXP;
         }
         return x*dpow10[n];
     } else {
-        while (n < -23) {
-            x /= 1.0e24;
-            n += 24;
+        while (n < -MAX_EXACT_10_EXP) {
+            x /= dpow10[MAX_EXACT_10_EXP];
+            n += MAX_EXACT_10_EXP;
         }
         return x/dpow10[-n];
     }

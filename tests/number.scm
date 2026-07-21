@@ -400,6 +400,38 @@
        (list (= 0.0 (string->number "0e324"))
              (= 0.0 (string->number "0e325"))))
 
+;; The reader must return the double *nearest* the exact decimal value.
+;; See https://github.com/shirok/Gauche/pull/1302
+(define (correctly-rounded? s)
+  (let* ([got (string->number s)]
+         [ex  (string->number (string-append "#e" s))] ; exact, unrounded
+         [v   (decode-float got)]
+         [m   (vector-ref v 0)]
+         [k   (expt 2 (vector-ref v 1))]
+         [sgn (vector-ref v 2)]
+         ;; distance from the exact value to the double with significand mm
+         [d   (^[mm] (abs (- (* sgn mm k) ex)))])
+    (and (<= (d m) (d (+ m 1)))
+         (<= (d m) (d (- m 1))))))
+
+;; Three witnesses per exponent sign: raise_pow10 multiplies for e = +23 and
+;; divides for e = -23, and roughly half of all exact mantissas misround, so
+;; a single literal per branch is a thin net.
+(dolist [s '("1e-23"                    ; minimal case: one significant digit
+             "1.658087549245532e-08"
+             "-3.031704146171012e-08"
+             "1.375848893331631e+38"
+             "2.293669867200266e+38"
+             "-4.487259214067599e+38")]
+  (test* (format "flonum reader correctly rounded ~s" s) #t
+         (correctly-rounded? s)))
+
+;; Same defect seen from the other side: these name adjacent, distinct
+;; doubles, and used to collapse onto one value.
+(test* "flonum reader (adjacent doubles stay distinct)" #f
+       (= (string->number "1.658087549245532e-8")
+          (string->number "1.6580875492455322e-8")))
+
 ;; We used to allow 1#1 to be read as a symbol.  As of 0.9.4, it is an error.
 (test* "padding" '(10.0 #t) (flonum-test "1#"))
 (test* "padding" '(10.0 #t) (flonum-test "1#."))
