@@ -135,6 +135,7 @@
           <wrapped-c-array>
           <wrapped-c-struct>
           <wrapped-c-union>
+          define-native-wrapper-class
           make-native-wrapper-class
           wrap-native-handle
           wrapped-handle
@@ -1930,6 +1931,18 @@
     (set! (%wh instance) handle)))
 
 (define-method wrapped-handle ((obj <native-wrapper-mixin>)) (%wh obj))
+
+(define-syntax define-native-wrapper-class
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ id native-type . opts)
+        (let-keywords opts ([slot-overrides '()])
+          (quasirename r
+            `(define ,id (make-native-wrapper-class
+                          ,native-type
+                          :name ',id
+                          :slot-overrides ,slot-overrides))))]))))
 
 ;; wrapped-c-array implements sequence protocol.
 ;; As a sequence, we only consider the first dimension.
