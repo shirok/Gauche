@@ -575,7 +575,8 @@
   (if (and (null? params) (no-flag? flags))
     (^[argptr port ctrl]
       (let1 arg (fr-next-arg! fmtstr argptr)
-        (if (exact? arg)
+        (if (or (exact? arg)
+                (and (number? arg) (= radix 16))) ;hexadecimal FP notation
           (display (number->string arg radix upcase) port)
           (display arg port))))
     ($ with-format-params ([mincol 0]
