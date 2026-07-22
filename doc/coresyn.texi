@@ -139,7 +139,7 @@ extensions.  @xref{Numeric literal syntax}, for the details.
 @c JP
 @item 数値リテラル
 GaucheはR7RSのオプショナルな数値構文と、Gauche特有の拡張をサポートしています。
-詳しくは@xref{Numeric literal syntax}を参照してください。
+詳しくは@ref{Numeric literal syntax}を参照してください。
 @c COMMON
 
 @c EN

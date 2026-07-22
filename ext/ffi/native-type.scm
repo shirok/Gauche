@@ -1837,7 +1837,7 @@
 
 ;; API
 ;;  Creates a class that wraps a native type TYPE.
-;;  We keep 1-to-1 correspondence between the class and the type.
+
 (define (make-native-wrapper-class type
                                    :key (name #f)
                                         (slot-overrides '()))

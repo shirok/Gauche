@@ -1850,3 +1850,19 @@ Supported by the module @code{srfi.259}
 型安全な手続きタグ
 @code{srfi.259}でサポートされます
 (@ref{型安全な手続きタグ}参照)。
+
+
+srfi-270, srfi-270
+()
+
+Hexadecimal Floating-Point Constants
+Reader and writer are supported by built-in procedures
+(@pxref{Numeric literal syntax}).  One auxiliary procedure,
+@code{write-hexadecimal-float}, is provided with the module @code{srfi.270}
+(@pxref{Hexadecimal floating-point constants}).
+
+十六進浮動小数点定数
+組み込み手続きがこのフォーマットを読み書きできます
+(@ref{Numeric literal syntax}参照)。
+補助手続き@code{write-hexadecimal-float}はモジュール@code{srfi.270}で
+提供されます(@ref{Hexadecimal floating-point constants}参照)。

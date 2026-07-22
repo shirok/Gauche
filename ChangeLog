@@ -1,3 +1,7 @@
+2026-07-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm: Officially support srfi.270.
+
 2026-07-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/native-type.scm (native-type): Recognize signed/unsigned
