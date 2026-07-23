@@ -19867,8 +19867,12 @@ tag type name.
 
 @deftp {Module} srfi.270
 @mdindex srfi.270
+@c EN
 Gauche's built-in procedures understand hexadecimal floating-point
 consntants:
+@c JP
+Gaucheの組み込み手続きは十六進浮動小数点数を扱えます。
+@c COMMON
 
 @example
 (string->number "#x1.fp-1")  @result{} 0.96875
@@ -19877,35 +19881,75 @@ consntants:
 (number->string 3.14 16) @result{} "1.91eb851eb851fp1"
 @end example
 
+@c EN
 @xref{Numeric literal syntax}, for the details.
+@c JP
+詳しくは@ref{Numeric literal syntax}を参照してください。
+@c COMMON
 
-This module exports one auxiliary procedure defined in srfi.270.
+@c EN
+This module exports one auxiliary procedure defined in srfi-270.
+@c JP
+このモジュールは、srfi-270で定義されているひとつの補助手続きをエクスポートします。
+@c COMMON
 @end deftp
 
 @defun write-hexadecimal-float z :optional port
 [SRFI-270]
 @c MOD srfi.270
+@c EN
 First, @var{z} is converted to an inexact number, then
 it is written out using hexadecimal floating-poit number notation
 to the given port, or the current output port is @var{port} is omitted.
+@c JP
+@var{z}がまず非正確数に変換され、そして十六進浮動小数点表記でもって
+@var{port}に書き出されます。@var{port}が省略された場合は現在の出力ポートが
+使われます。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 No prefix (@code{#x} or @code{#e}) is written
+@c JP
+プレフィクス (@code{#x}や@code{#e}など) は書き出されません。
+@c COMMON
 @item
+@c EN
 If the number is @code{0.0} or @code{-0.0}, it is printed with
 a zero exponent, e.g. @code{0.0p0} or @code{-0.0p0}.
+@c JP
+数値が@code{0.0}もしくは@code{-0.0}の場合、指数部を0として
+@code{0.0p0}および@code{-0.0p0}と書き出されます。
+@c COMMON
 @item
+@c EN
 If the floating-point number is in normalized range, the mantissa
 part begins with ``@code{1.}''.
+@c JP
+浮動小数点数が正規化されている領域であれば、仮数部は ``@code{1.}'' で始まります。
+@c COMMON
 @item
+@c EN
 If the floating-point number is in denormalized range, the mantissa
 part begins with ``@code{0.}''.
+@c JP
+浮動小数点数が非正規化数の場合は、仮数部は ``@code{0.}'' で始まります。
+@c COMMON
 @item
+@c EN
 NaN and infinities are written normally, i.e. @code{+nan.0} etc.
+@c JP
+NaNおよび無限大は通常の表記 (@code{+nan.0}など) になります。
+@c COMMON
 @item
+@c EN
 If @var{z} is a complex number with an imaginary part, both real part
 and imaginary part are written in hexadecimal floating-point format.
+@c JP
+@var{z}が虚部を持つ複素数の場合は、実部虚部それぞれが十六進浮動小数点数で
+出力されます。
+@c COMMON
 @end itemize
 
 @example
