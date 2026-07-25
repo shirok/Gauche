@@ -107,7 +107,10 @@
 (select-module scheme)
 (define-cproc string->list (str::<string> :optional start end)
   (return (Scm_StringToList (SCM_STRING (Scm_MaybeSubstring str start end)))))
-(define-cproc list->string (list::<list>) Scm_ListToString)
+(define-cproc list->string (list::<list>
+                            :optional (start::<fixnum> 0)
+                                      (end::<fixnum> -1))
+  Scm_ListToStringFull)
 
 ;;
 ;; Accessors

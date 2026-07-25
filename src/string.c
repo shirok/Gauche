@@ -281,9 +281,28 @@ ScmObj Scm_MakeFillString(ScmSmallInt len, ScmChar fill)
     return SCM_OBJ(make_str(len, csize*len, ptr, SCM_STRING_TERMINATED, NULL));
 }
 
+/* TRANSIENT: At next major API revision, make 3-argument version
+   Scm_ListToString(). */
 ScmObj Scm_ListToString(ScmObj chars)
 {
-    ScmSmallInt size = 0, len = 0;
+    return Scm_ListToStringFull(chars, 0, -1);
+}
+
+ScmObj  Scm_ListToStringFull(ScmObj chars,
+                             ScmSmallInt start,
+                             ScmSmallInt end)
+{
+    ScmSmallInt size = 0, len = 0, maxlen = -1;
+
+    if (start < 0 || (end >= 0 && end < start)) {
+        goto out_of_range;
+    }
+    if (start != 0) {
+        /* skip to start character */
+        chars = Scm_ListTail(chars, start, SCM_FALSE);
+        if (SCM_FALSEP(chars)) goto out_of_range;
+        maxlen = end - start;
+    }
 
     ScmObj cp;
     SCM_FOR_EACH(cp, chars) {
@@ -293,16 +312,29 @@ ScmObj Scm_ListToString(ScmObj chars)
         size += SCM_CHAR_NBYTES(ch);
         len++;
         CHECK_SIZE(size);
+        if (maxlen >= 0 && len >= maxlen) {
+            break;
+        }
     }
     char *buf = SCM_NEW_ATOMIC2(char *, size+1);
     char *bufp = buf;
+    len = 0;
     SCM_FOR_EACH(cp, chars) {
         ScmChar ch = SCM_CHAR_VALUE(SCM_CAR(cp));
         SCM_CHAR_PUT(bufp, ch);
         bufp += SCM_CHAR_NBYTES(ch);
+        len++;
+        if (maxlen >= 0 && len >= maxlen) {
+            break;
+        }
     }
     *bufp = '\0';
     return Scm_MakeString(buf, size, len, 0);
+
+ out_of_range:
+    Scm_Error("list->string: start/end index out of range: (%ld %ld)",
+              start, end);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /* Extract string as C-string.  This one guarantees to return

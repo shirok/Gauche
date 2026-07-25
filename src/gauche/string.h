@@ -248,6 +248,9 @@ SCM_EXTERN char **Scm_ListToCStringArray(ScmObj lis, int errp,
                                          void *(*alloc)(size_t));
 SCM_EXTERN ScmObj  Scm_StringToList(ScmString *str);
 SCM_EXTERN ScmObj  Scm_ListToString(ScmObj chars);
+SCM_EXTERN ScmObj  Scm_ListToStringFull(ScmObj chars,
+                                        ScmSmallInt start,
+                                        ScmSmallInt end);
 
 SCM_EXTERN ScmObj  Scm_ReadStringLiteral(ScmPort*, ScmReadContext*,
                                          u_long, ScmChar);

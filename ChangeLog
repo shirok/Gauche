@@ -1,3 +1,8 @@
+2026-07-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/libstr.scm (list->string), src/string.c (Scm_ListToStringFull):
+	  Extended to take optional start/end argument (SRFI-274).
+
 2026-07-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (list-copy): Add start/end argument per SRFI-274
