@@ -11371,8 +11371,8 @@ See also @code{string-concatenate} in @ref{SRFI-13 String reverse & append}.
 @end defun
 
 @defun string->list string :optional start end
-@defunx list->string list
-[R7RS base]
+@defunx list->string list :optional start end
+[R7RS base+]
 @c EN
 Converts a string to a list of characters or vice versa.
 @c JP
@@ -11380,10 +11380,11 @@ Converts a string to a list of characters or vice versa.
 @c COMMON
 
 @c EN
-You can give an optional start/end indexes to @code{string->list}.
+You can give an optional start/end indexes.
+(R7RS's @code{list->string} does not take start/end arguments.)
 @c JP
-@code{string->list}にはオプショナル引数として開始、終了位置のインデッ
-クスを渡せます。
+オプショナルのstart、end引数として開始、終了位置のインデックスを渡すこともできます。
+(但し、R7RSの@code{list->string}はstart、end引数を取りません。)
 @c COMMON
 
 @c EN
