@@ -1835,25 +1835,22 @@
 (define-class <wrapped-c-union> (<native-wrapper-mixin>)
   ())
 
-;; API
-;;  Creates a class that wraps a native type TYPE.
-
-(define (make-native-wrapper-class type
-                                   :key (name #f)
-                                        (slot-overrides '()))
-  (assume-type type <native-type>)
-  (assume-type slot-overrides
-               (<List> (</> (<Tuple> <symbol> <top>)
-                            (<Tuple> <symbol> <top> <top>))))
-  (unless name
-    (set! name (symbol-append '|wrapped | (~ type'name))))
-  (or (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
-              (^t (hash-table-get t type #f)))
-      (let1 c (%make-native-wrapper-class type name slot-overrides)
-        (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
-                (^t (or (hash-table-get t type #f)
-                        (begin (hash-table-put! t type c)
-                               c)))))))
+;; Slot-override qualifies
+;;
+;;  slot-override : (override-spec ...)
+;;  override-spec : (slot-name :field-name field-name
+;;                             :ref-converter expr
+;;                             :set!-converter expr
+;;                             :ref expr
+;;                             :set! expr)
+;;
+;;  All keyword parameters are optional.
+;;   :field-name specifies the original field name of struct/union.
+;;       Can be used to expose it with different slot name.
+;;   :ref-converter / :set!-converter specifies conversion procedure
+;;       from/to the stored value.
+;;   :ref / :set! is to completely override the virtual slot's
+;;       slot-ref and slot-set! handler.
 
 (define (%make-native-wrapper-class type name slot-overrides)
   (define (make-class type)
@@ -1873,21 +1870,43 @@
          :name name :supers (list <wrapped-c-array>)
          :native-type type)]
       [else #f]))
-  (define (build-slot slot)
-    (let* ([slot-name (car slot)]
-           [slot-type (cadr slot)]
-           [ref (or (and-let1 ovr (alist-ref slot-overrides slot-name)
-                      (car ovr))
-                    (^o (%wrap (native. (%wh o) slot-name))))]
-           [set (or (and-let* ([ovr (alist-ref slot-overrides slot-name)]
-                               [ (>= (length ovr) 2) ])
-                      (cadr ovr))
-                    (^[o v] (set! (native. (%wh o) slot-name) (%unwrap v))))])
+  ;; overrides : ((field-name slot-name kv-list ...) ...)
+  (define overrides
+    (map (^[spec]
+           (let* ([slot-name (car spec)]
+                  [kv-list (cdr spec)]
+                  [field-name (get-keyword :field-name kv-list slot-name)])
+             `(,field-name ,slot-name ,@kv-list)))
+         slot-overrides))
+  (define (get-slot-name field-name)
+    (if-let1 ovr (alist-ref overrides field-name)
+      (car ovr)
+      field-name))
+  (define (get-ref-proc field-name)
+    (or (and-let1 ovr (alist-ref overrides field-name)
+          (or (and-let1 cv (get-keyword :ref-converter (cdr ovr) #f)
+                (^o (%wrap (cv (native. (%wh o) field-name)))))
+              (get-keyword :ref (cdr ovr) #f)))
+        (^o (%wrap (native. (%wh o) field-name)))))
+  (define (make-set-proc field-name cv)
+    (^[o v] (set! (native. (%wh o) field-name) (cv v))))
+  (define (get-set-proc field-name)
+    (if-let1 ovr (alist-ref overrides field-name)
+      (or (and-let1 cv (get-keyword :set!-converter (cdr ovr) #f)
+            (make-set-proc field-name cv))
+          (let1 p (get-keyword :set! (cdr ovr) (undefined))
+            (cond [(eqv? p #f) #f]  ; expicit #f: make it read-only
+                  [(undefined? p) (make-set-proc field-name values)]
+                  [else p])))
+      (make-set-proc field-name values)))
+  ;; field : (field-name <type> <offset>)
+  (define (build-slot field)
+    (let* ([field-name (car field)]
+           [slot-name (get-slot-name field-name)])
       `(,slot-name :init-keyword ,(make-keyword slot-name)
                    :allocation :virtual
-                   :slot-ref ,ref
-                   :slot-set! ,set
-                   :type ,slot-type)))
+                   :slot-ref ,(get-ref-proc field-name)
+                   :slot-set! ,(get-set-proc field-name))))
   (or (cond
        [(c-pointer-type? type)
         (make-class (c-pointer-type-pointee type))]
@@ -1905,6 +1924,24 @@
   (if (is-a? value <native-wrapper-mixin>)
     (%wh value)
     value))
+
+
+;; API
+;;  Creates a class that wraps a native type TYPE.
+(define (make-native-wrapper-class type
+                                   :key (name #f)
+                                        (slot-overrides '()))
+  (assume-type type <native-type>)
+  (assume-type slot-overrides <list>)
+  (unless name
+    (set! name (symbol-append '|wrapped | (~ type'name))))
+  (or (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
+              (^t (hash-table-get t type #f)))
+      (let1 c (%make-native-wrapper-class type name slot-overrides)
+        (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
+                (^t (or (hash-table-get t type #f)
+                        (begin (hash-table-put! t type c)
+                               c)))))))
 
 (define-method make ((class <native-wrapper-meta>) . initargs)
   (let* ([storage (make-u8vector (~ class'native-type'size))]

@@ -131,16 +131,17 @@
 
   (define c
     ($ make-native-wrapper-class s
-       :slot-overrides `((flag ,(^o
-                                 (c-int->boolean
-                                  (native. (wrapped-handle o) 'flag)))
-                               ,(^[o v]
-                                  (set! (native. (wrapped-handle o) 'flag)
-                                        (boolean->c-int v))))
-                         (name ,(^o
-                                 (c-char*->string
-                                  (native. (wrapped-handle o) 'name)
-                                  #f))))))
+       :slot-overrides `((flag :ref ,(^o
+                                      (c-int->boolean
+                                       (native. (wrapped-handle o) 'flag)))
+                               :set! ,(^[o v]
+                                        (set! (native. (wrapped-handle o) 'flag)
+                                              (boolean->c-int v))))
+                         (name :ref ,(^o
+                                      (c-char*->string
+                                       (native. (wrapped-handle o) 'name)
+                                       #f))
+                               :set! #f))))
 
   (test* "wrapper slot overrides h0" '(#f "abcdefgh")
          (let1 obj (wrap-native-handle h0)
@@ -153,6 +154,23 @@
   (test* "wrapper slot overrides h1" '(#t "ABCDEFGH")
          (let1 obj (wrap-native-handle h1)
            (list (~ obj'flag) (~ obj'name))))
+  )
+
+(let ()
+  (define s (native-type '(.struct (f::int8_t))))
+  (define h0 (make-native-handle s '#u8(0)))
+  (define-native-wrapper-class <s> s
+    :slot-overrides `((flag :field-name f
+                            :ref-converter ,c-int->boolean
+                            :set!-converter ,boolean->c-int)))
+
+  (test* "wrapper slot overrides (rename, converter) ref" #f
+         (~ (wrap-native-handle h0)'flag))
+  (test* "wrapper slot overrides (rename, converter) set!" '(#t 1)
+         (begin
+           (set! (~ (wrap-native-handle h0)'flag) #t)
+           (list (~ (wrap-native-handle h0)'flag)
+                 (native. h0 'f))))
   )
 
 ;; arrays
