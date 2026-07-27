@@ -184,7 +184,9 @@ static void synrule_print(ScmObj obj, ScmPort *port,
 {
     ScmSyntaxRules *r = SCM_SYNTAX_RULES(obj);
 
-    Scm_Printf(port, "#<syntax-rules(%d)\n", r->numRules);
+    Scm_Printf(port, "#<syntax-rules%s(%d)\n",
+               (r->flags & SCM_SYNTAX_RULES_HEAD_MATCH)? "+" : "",
+               r->numRules);
     for (int i = 0; i < r->numRules; i++) {
         Scm_Printf(port, "%2d: (numPvars=%d, maxLevel=%d)\n",
                    i, r->rules[i].numPvars, r->rules[i].maxLevel);
@@ -196,12 +198,13 @@ static void synrule_print(ScmObj obj, ScmPort *port,
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxRulesClass, synrule_print);
 
-ScmSyntaxRules *make_syntax_rules(int nr)
+ScmSyntaxRules *make_syntax_rules(int nr, u_long flags)
 {
     ScmSyntaxRules *r = SCM_NEW2(ScmSyntaxRules *,
                                  sizeof(ScmSyntaxRules)+(nr-1)*sizeof(ScmSyntaxRuleBranch));
     SCM_SET_CLASS(r, SCM_CLASS_SYNTAX_RULES);
     r->numRules = nr;
+    r->flags = flags;
     return r;
 }
 
@@ -609,7 +612,8 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
                                      ScmObj literals,
                                      ScmObj rules,
                                      ScmModule *mod,
-                                     ScmObj env) /* compiler env */
+                                     ScmObj env, /* compiler env */
+                                     u_long flags)
 {
     PatternContext ctx;
     int numRules = Scm_Length(rules);
@@ -637,7 +641,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
         }
     }
 
-    ScmSyntaxRules *sr = make_syntax_rules(numRules);
+    ScmSyntaxRules *sr = make_syntax_rules(numRules, flags);
     sr->name = name;
     sr->numRules = numRules;
     sr->maxNumPvars = 0;
@@ -1090,12 +1094,12 @@ static ScmObj synrule_transform(ScmObj *argv, int argc, void *data)
 /* NB: a stub for the new compiler (TEMPORARY) */
 ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src, ScmObj ellipsis,
                               ScmObj literals, ScmObj rules,
-                              ScmObj mod, ScmObj env)
+                              ScmObj mod, ScmObj env, u_long flags)
 {
     if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
     if (!SCM_MODULEP(mod)) Scm_Error("module required, but got %S", mod);
     ScmSyntaxRules *sr = compile_rules(name, ellipsis, literals, rules,
-                                       SCM_MODULE(mod), env);
+                                       SCM_MODULE(mod), env, flags);
     ScmObj sr_xform = Scm_MakeSubr(synrule_transform, sr,
                                    2, 0, SCM_FALSE);
 

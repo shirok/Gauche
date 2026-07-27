@@ -103,11 +103,19 @@ typedef struct ScmSyntaxRuleBranchRec {
     int maxLevel;               /* maximum # of nested subpatterns */
 } ScmSyntaxRuleBranch;
 
+enum {
+    SCM_SYNTAX_RULES_HEAD_MATCH = 1L<<0
+    /* Enhanced pattern match.
+       The head of each pattern is also matched against the head of the input
+       form, and the entire pattern may consist of a single identifier.*/
+};
+
 typedef struct ScmSyntaxRules {
     SCM_HEADER;
     ScmObj name;                  /* name of the macro (for debug) */
     int numRules;                 /* # of rules */
     int maxNumPvars;              /* max # of pattern variables */
+    u_long flags;                 /* SCM_SYNTAX_RULES_* */
     ScmModule *mod;               /* macro definition module */
     ScmObj env;                   /* macro definition env (in fact, it is
                                      list of frames passed to Scm_MakeIdentifier,
@@ -125,7 +133,8 @@ SCM_CLASS_DECL(Scm_SyntaxRulesClass);
 SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src,
                                          ScmObj ellipsis,
                                          ScmObj lietrals,
-                                         ScmObj rules, ScmObj mod, ScmObj env);
+                                         ScmObj rules, ScmObj mod, ScmObj env,
+                                         u_long flags); /* SCM_SYNTAX_RULES_* */
 
 /*
  * Pattern variable reference object

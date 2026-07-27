@@ -152,7 +152,10 @@
 
 (select-module gauche.internal)
 
-(define-cproc compile-syntax-rules (name src ellipsis literals rules mod env)
+;; FLAGS is a bitmask of SCM_SYNTAX_RULES_*; it is optional for the backward
+;; compatibility, for this procedure can be called from precompiled code.
+(define-cproc compile-syntax-rules (name src ellipsis literals rules mod env
+                                    :optional (flags::<ulong> 0))
   Scm_CompileSyntaxRules)
 
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
