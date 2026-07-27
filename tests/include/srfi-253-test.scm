@@ -59,6 +59,13 @@
 (test-assert (check-arg-true string? ""))
 (test-assert (check-arg-true string? "hello"))
 (test-assert (check-arg-true symbol? 'hello))
+;; Checks with check-impl? types
+(test-assert (check-arg-true (check-impl? <number>) 3))
+(test-assert (check-arg-true (check-impl? <number>) 3+2i))
+(test-assert (check-arg-true (check-impl? <number>) 3.8))
+(test-assert (check-arg-true (check-impl? <pair>) '(1 2 3)))
+(test-assert (check-arg-true (check-impl? <string>) "hello"))
+(test-assert (check-arg-true (check-impl? <symbol>) 'hello))
 ;; Only enable on implementations supporting symbol->keyword
 ;; (test-assert (check-arg-true keyword? (symbol->keyword 'hello)))
 (test-assert (check-arg-true vector? #(1 2 3)))
