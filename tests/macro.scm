@@ -338,7 +338,7 @@
   (define p (cons 4 5))
   (define-syntax p.car
     (make-id-transformer
-     (syntax-rules (set!)
+     (syntax-rules+ (set!)
        [(set! _ expr) (set-car! p expr)]
        [_ (car p)])))
 
@@ -352,6 +352,23 @@
     (set! p.car 99)
     (test "synrule global identifier macro hygiene" 99 (lambda () p.car))
     (test "synrule global identifier macro hygiene" '(6 . 7) (lambda () p)))
+  )
+
+;; Ensure syntax-rules+ looks at the head of the pattern
+(define-module id-macro-test-sr2
+  (use gauche.test)
+  (define q (cons 4 5))
+  (define-syntax q.car
+    (make-id-transformer
+     (syntax-rules+ (zzz)
+       [(zzz _ expr) (set-car! q expr)]
+       [_ (car q)])))
+
+  (test "synrule identifier macro, head not matched" 4 (lambda () q.car))
+  (test "synrule identifier macro, head not matched"
+        (test-error <error> #/malformed/)
+        (lambda () (eval '(set! q.car 15) (current-module))))
+  (test "synrule identifier macro, head not matched" '(4 . 5) (lambda () q))
   )
 
 ;; local

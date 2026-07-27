@@ -1122,15 +1122,27 @@
   (match form
     [(_ (literal ...) rule ...)
      ($const (compile-syntax-rules (cenv-exp-name cenv) form #t literal rule
-                                   (cenv-module cenv)
-                                   (cenv-frames cenv)))]
+                                   (cenv-module cenv) (cenv-frames cenv) #f))]
     [(_ (? identifier? elli) (literal ...) rule ...)
      ;; NB: We allow keyword for ellipsis, so that something like ::: can be
      ;; used.
      ($const (compile-syntax-rules (cenv-exp-name cenv) form elli literal rule
-                                   (cenv-module cenv)
-                                   (cenv-frames cenv)))]
+                                   (cenv-module cenv) (cenv-frames cenv) #f))]
     [_ (error "syntax-error: malformed syntax-rules:" form)]))
+
+;; Like syntax-rules but enable enhanced matching.
+;;  - The first element of pattern participates in matching
+;;  - A pattern can be a single identifier, matching identifier.
+;; This is useful to write identifier macro.
+(define-pass1-syntax (syntax-rules+ form cenv) :gauche
+  (match form
+    [(_ (literal ...) rule ...)
+     ($const (compile-syntax-rules (cenv-exp-name cenv) form #t literal rule
+                                   (cenv-module cenv) (cenv-frames cenv) #t))]
+    [(_ (? identifier? elli) (literal ...) rule ...)
+     ($const (compile-syntax-rules (cenv-exp-name cenv) form elli literal rule
+                                   (cenv-module cenv) (cenv-frames cenv) #t))]
+    [_ (error "syntax-error: malformed syntax-rules+:" form)]))
 
 (define-pass1-syntax (syntax-parameterize form cenv) :gauche
   (match form
