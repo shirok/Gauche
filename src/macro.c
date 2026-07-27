@@ -604,6 +604,29 @@ static ScmObj compile_rule1(ScmObj form,
     return form;
 }
 
+/* In the head-match mode, pattern's head can participate in matching
+   rather than ignored.  We do limit patterns that cah appear at the
+   head---it must be an identifier, not followed by ellipsis. */
+static void check_head_pattern(PatternContext *ctx, ScmObj pat)
+{
+    ScmObj head = SCM_CAR(pat);
+    if (!SCM_SYMBOLP(head) && !SCM_IDENTIFIERP(head)) {
+        Scm_Error("in definition of macro %S: "
+                  "the head of a pattern must be an identifier, "
+                  "but got %S: %S", ctx->name, head, ctx->form);
+    }
+    if (isEllipsis(ctx, head)) {
+        Scm_Error("in definition of macro %S: "
+                  "<ellipsis> can't appear at the head of a pattern: %S",
+                  ctx->name, ctx->form);
+    }
+    if (ELLIPSIS_FOLLOWING(pat, ctx)) {
+        Scm_Error("in definition of macro %S: "
+                  "the head of a pattern can't be followed by <ellipsis>: %S",
+                  ctx->name, ctx->form);
+    }
+}
+
 /* compile rules into ScmSyntaxRules structure
    NB: We use ScmSyntaxPattern for the toplevel node of pattern and template;
    they are just a placeholders and they don't represent repetition. */
@@ -659,7 +682,19 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
         ctx.maxlev = 0;
 
         ctx.form = SCM_CAR(rule);
-        if (SCM_PAIRP(ctx.form)) {
+        if (flags & SCM_SYNTAX_RULES_HEAD_MATCH) {
+            /* In enhanced match, the head of the patetrn is included
+               in the match. Also, a sole identifier can consist
+               a match. */
+            if (SCM_PAIRP(ctx.form)) {
+                check_head_pattern(&ctx, ctx.form);
+            } else if (!SCM_SYMBOLP(ctx.form) && !SCM_IDENTIFIERP(ctx.form)) {
+                goto badform;
+            }
+            pat->pattern = compile_rule1(ctx.form, pat, &ctx, TRUE);
+        } else if (SCM_PAIRP(ctx.form)) {
+            /* R7RS: The head of the pattern is just a placeholder, and
+               never matched. */
             pat->pattern = compile_rule1(SCM_CDR(ctx.form), pat, &ctx, TRUE);
         } else {
             if (!SCM_SYMBOLP(ctx.form) && !SCM_IDENTIFIERP(ctx.form)) goto badform;
@@ -1057,11 +1092,25 @@ static ScmObj synrule_expand(ScmObj form, ScmObj mod, ScmObj env, ScmSyntaxRules
 #endif
         init_matchvec(mvec, sr->rules[i].numPvars);
 
+        ScmObj pattern = sr->rules[i].pattern;
         int matched = FALSE;
-        if (sr->rules[i].pattern == SCM_SYM_UNDERBAR) {
+        if (sr->flags & SCM_SYNTAX_RULES_HEAD_MATCH) {
+            /* The entire form, including its head, is matched against the
+               pattern.  Note that a pattern that consists of a single
+               identifier (a literal, a pattern variable, or an underscore)
+               would match any form, so we require the input to be a single
+               identifier as well. */
+            if (SCM_PAIRP(pattern)
+                || SCM_SYMBOLP(form) || SCM_IDENTIFIERP(form)) {
+                matched = match_synrule(form, pattern, mod, env, mvec);
+            }
+        } else if (pattern == SCM_SYM_UNDERBAR) {
             matched = TRUE;     /* unconditionally match */
-        } else {
-            matched = match_synrule(SCM_CDR(form), sr->rules[i].pattern, mod, env, mvec);
+        } else if (SCM_PAIRP(form)) {
+            /* NB: FORM can be a bare identifier, when this macro is an
+               identifier macro.  In that case only the unconditional match
+               above can match. */
+            matched = match_synrule(SCM_CDR(form), pattern, mod, env, mvec);
         }
         if (matched) {
 #ifdef DEBUG_SYNRULE
@@ -1075,7 +1124,8 @@ static ScmObj synrule_expand(ScmObj form, ScmObj mod, ScmObj env, ScmSyntaxRules
             return expanded;
         }
     }
-    Scm_Error("malformed %S: %S", SCM_CAR(form), form);
+    Scm_Error("malformed %S: %S",
+              SCM_PAIRP(form)? SCM_CAR(form) : sr->name, form);
     return SCM_NIL;
 }
 
