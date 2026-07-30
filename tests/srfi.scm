@@ -3474,4 +3474,7 @@
   (test-include-r7 "include/srfi-259-tests")
   )
 
+;;-----------------------------------------------------------------------
+;; srfi-277 depends on gauche.vport, and tested in ext/vport.
+
 (test-end)

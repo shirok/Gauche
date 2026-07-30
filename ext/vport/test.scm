@@ -750,5 +750,24 @@
        (base64-decode-bytevector "__79+_z6"
                                  :digits #(#\+ #\_)))
 
+;;-----------------------------------------------------------
+(test-section "SRFI-277")
+
+(use srfi.277)
+(test-module 'srfi.277)
+
+
+(define-module srfi-277-tests
+  (use gauche.test)
+  (use gauche.uvector)
+  (use srfi.277)
+  (use srfi.64)
+  (use scheme.base :only (binary-port? textual-port?))
+
+  (define (get-bytevector-n port n)
+    (read-bytevector n port))
+  (define (get-string-n port n)
+    (read-string n port))
+  (test-include-r7  "../../tests/include/srfi-277-tests.scm"))
 
 (test-end)
