@@ -290,7 +290,7 @@
 
 (select-module gauche)
 (define-cproc length+ (list) ::<integer>? :constant ;; SRFI-1
-  (let* ([i::int (Scm_Length list)])
+  (let* ([i::int (Scm_Length2 list SCM_LENGTH_ALLOW_DOTTED)])
     (if (< i 0) (return SCM_FALSE) (return (Scm_MakeInteger i)))))
 
 ;; Like length, but works on dotted and circular lists.

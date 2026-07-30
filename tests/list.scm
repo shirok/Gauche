@@ -90,6 +90,11 @@
   (t "lis + circular" '(a b c d e) circ1 '(#t #t #f #f #f))
   )
 
+(test* "length+ (proper)" 5 (length+ '(a b c d e)))
+(test* "length+ (dotted)" 5 (length+ '(a b c d e . f)))
+(test* "length+ (dotted)" 0 (length+ 'a))
+(test* "length+ (circular)" #f (length+ '#1=(a b c d e . #1#)))
+
 (test* "num-pairs (proper)" 5
        (num-pairs '(a b c d e)))
 (test* "num-pairs (proper)" 0

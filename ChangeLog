@@ -1,3 +1,10 @@
+2026-07-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_Length2), src/liblist.scm (length+): Let length+
+	  returns the # of pairs in the spine, instead of #f.
+	  It is UB in srfi-1 but may be useful to follow convention.
+	  https://github.com/shirok/Gauche/issues/1304
+
 2026-07-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (syntax-rules+): EXPERIMENTAL: Added an enhanced

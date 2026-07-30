@@ -6169,17 +6169,28 @@ If @var{list} is a circular list, this function diverges.
 [R7RS list]
 @c EN
 If @var{x} is a proper list, returns its length.
-For all other @var{x}, including a circular list,
-it returns @code{#f}.
+If it is a circular list, returns @code{#f}.
+Otherwise, i.e. if @var{x} is the dotted list,
+returns the number of pairs in the spine of the list.  Note that
+non-pair object is a dotted list with no pairs, hence 0 is returued.
 
-If you want a length of dotted list in terms of the number of pairs,
+Note: SRFI-1 and R7RS list do not specify what should be returned for
+the dotted list argument.  In 0.9.15 and before, we returned @code{#f},
+but returning the number of pairs seems more useful.
+
+If you want to count the distinct pairs in the circular list,
 use @var{num-pairs} below.
 @c JP
-@var{x} が真性リストなら、その長さを返します。
-@var{x} がそうでなければ(たとえ循環リストであっても)
-@code{#f} を返します。
+@var{x} が真性リストなら、その長さを返し、
+循環リストなら@code{#f}を返します。
+そうでなければ、つまりドットリストなら、リスト中のペアの数を返します。
+非リストオブジェクトは長さ0のドットリストなので0が返されることに注意してください。
 
-ドットリストの「長さ」を、構成するペアの数で知りたい場合は、
+註：SRFI-1とR7RS listは、引数がドットリストだった場合の振る舞いを指定していません。
+0.9.15までは@code{#f}を返していましたが、ペアの数を変えす方が有用なので
+0.9.16から動作が変わっています。
+
+循環リスト「長さ」を、構成するペアの数で知りたい場合は、
 下の@code{num-pairs}が使えます。
 @c COMMON
 @end defun

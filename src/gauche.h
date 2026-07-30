@@ -829,7 +829,8 @@ SCM_CLASS_DECL(Scm_NullClass);
 
 /* flag bit for Scm_Length2 */
 enum {
-    SCM_LENGTH_LAZY = 1L<<0     /* don't realize lazy pairs */
+    SCM_LENGTH_LAZY = 1L<<0,          /* don't realize lazy pairs */
+    SCM_LENGTH_ALLOW_DOTTED = 1L<<1   /* ignore non-nil last CDR  */
 };
 
 /* special return value of Scm_Length */
