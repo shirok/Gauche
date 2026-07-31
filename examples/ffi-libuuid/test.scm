@@ -5,6 +5,7 @@
 (use gauche.test)
 (use gauche.native-type)
 (use gauche.uvector)
+(use srfi.13)
 
 (test-start "ffi-libuuid")
 (use ffi-libuuid)
@@ -19,11 +20,12 @@
          (let* ([h (make-native-handle uuid_t)]
                 [r (uuid-parse uuid-s h)])
            (list r (uuid_t->u8vector h))))
-  (test* "uuid-unparse" (string-append uuid-s "\x0;")
-         (let* ([h (make-native-handle uuid_t uuid-u)]
-                [b (make-native-handle (native-type `(.array char (,UUID_STR_LEN))))])
-           (uuid-unparse h b)
-           (u8vector->string (native-handle-owner b))))
+  (test* "uuid-unparse" uuid-s
+         (uuid-unparse (make-native-handle uuid_t uuid-u)))
+  (test* "uuid-unparse-lower" (string-downcase uuid-s)
+         (uuid-unparse-lower (make-native-handle uuid_t uuid-u)))
+  (test* "uuid-unparse-upper" (string-upcase uuid-s)
+         (uuid-unparse-upper (make-native-handle uuid_t uuid-u)))
 
   (let* ([s (string-append "uuid={" uuid-s "}")]
          [start-index (string-size "uuid={")]

@@ -104,9 +104,9 @@
 
   (define-c-function uuid-parse `(c-string ,uuid_t) 'int)
   (define-c-function uuid-parse-range `((const char*) (const char*) ,uuid_t) 'int)
-  (define-c-function uuid-unparse `((const ,uuid_t) char*) 'void)
-  (define-c-function uuid-unparse-lower `((const ,uuid_t) char*) 'void)
-  (define-c-function uuid-unparse-upper `((const ,uuid_t) char*) 'void)
+  (define-c-function %uuid-unparse `((const ,uuid_t) char*) 'void)
+  (define-c-function %uuid-unparse-lower `((const ,uuid_t) char*) 'void)
+  (define-c-function %uuid-unparse-upper `((const ,uuid_t) char*) 'void)
 
   ; uuid-time
   (define-c-function uuid-type `((const ,uuid_t)) 'int)
@@ -114,6 +114,16 @@
 
   (define-c-function uuid-get-template `(c-string) uuid_t)
   )
+
+(define (%uuid-unparse-wrapper proc)
+  (let1 buf (make-native-handle (native-type `(.array char (,UUID_STR_LEN))))
+    (^[uuid]
+      (proc uuid buf)
+      (c-char*->string buf))))
+
+(define uuid-unparse (%uuid-unparse-wrapper %uuid-unparse))
+(define uuid-unparse-lower (%uuid-unparse-wrapper %uuid-unparse-lower))
+(define uuid-unparse-upper (%uuid-unparse-wrapper %uuid-unparse-upper))
 
 ;; Some support routines
 
