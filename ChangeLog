@@ -1,3 +1,8 @@
+2026-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (Scm_MakeString): New flag SCM_STRING_LIMIT_SIZE to
+	  set uppoer bound when auto-counting string size.
+
 2026-07-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/277.scm: Added.

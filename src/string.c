@@ -123,8 +123,11 @@ char *Scm_StrdupPartial(const char *src, size_t size)
 /* We have multiple similar functions, due to performance reasons. */
 
 /* Calculate both length and size of C-string str.
-   If str is incomplete, *plen gets -1. */
+   If str is incomplete, *plen gets -1.
+   maxsize limits the maximum size.
+ */
 static inline ScmSmallInt count_size_and_length(const char *str,
+                                                ScmSmallInt maxsize,
                                                 ScmSmallInt *psize, /* out */
                                                 ScmSmallInt *plen)  /* out */
 {
@@ -134,6 +137,9 @@ static inline ScmSmallInt count_size_and_length(const char *str,
     ScmSmallInt size = 0, len = 0;
     while ((c = *p++) != 0) {
         int i = SCM_CHAR_NFOLLOWS(c);
+        if (size + i + 1 > maxsize) {
+            break;
+        }
         len++;
         size += i+1;
 
@@ -250,8 +256,14 @@ ScmObj Scm_MakeString(const char *str, ScmSmallInt size, ScmSmallInt len,
     flags &= ~SCM_STRING_TERMINATED;
 
     if (size < 0) {
-        count_size_and_length(str, &size, &len);
+        count_size_and_length(str, SCM_STRING_MAX_SIZE, &size, &len);
         flags |= SCM_STRING_TERMINATED;
+    } else if (flags & SCM_STRING_LIMIT_SIZE) {
+        ScmSmallInt maxsize = size;
+        count_size_and_length(str, maxsize, &size, &len);
+        if (size < maxsize && str[size] == 0) {
+            flags |= SCM_STRING_TERMINATED;
+        }
     } else {
         if (len < 0) len = count_length(str, size);
     }
@@ -735,7 +747,9 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str,
     ScmSmallInt lenx = SCM_STRING_BODY_LENGTH(xb);
     u_long flags = 0;
 
-    if (sizey < 0) count_size_and_length(str, &sizey, &leny);
+    if (sizey < 0) {
+        count_size_and_length(str, SCM_STRING_MAX_SIZE, &sizey, &leny);
+    }
     else if (leny < 0) leny = count_length(str, sizey);
     CHECK_SIZE(sizex+sizey);
 

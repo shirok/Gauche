@@ -110,6 +110,10 @@ enum ScmStringFlags {
                                             internally. */
     SCM_STRING_COPYING = (1L<<16),       /* [C]   Need to copy the content
                                             given to the constructor. */
+    SCM_STRING_LIMIT_SIZE = (1L<<17),    /* [C]   The size argument specifies
+                                            maximum length of string; if NUL
+                                            appears before it, string is
+                                            truncated there. */
 };
 #define SCM_STRING_FLAG_MASK  (0xffff)
 
