@@ -1407,16 +1407,22 @@
 (define (c-int->boolean value) (not (zero? value)))
 (define (boolean->c-int value) (if value 1 0))
 
+;; size: >= 0 for explicit size
+;;       == -1 for NUL-terminated string
+;;       == -2 for array size
 (define-cfn handle->string (handle::ScmNativeHandle*
                             size::ScmSmallInt
                             shared?::_Bool)
   :static
-  (let* ([t::ScmNativeType* (-> handle type)])
+  (let* ([t::ScmNativeType* (-> handle type)]
+         [size-explicit?::_Bool (>= size 0)])
     (cond [(SCM_C_POINTER_P t)
            (let* ([pt::ScmNativeType* (-> (SCM_C_POINTER t) pointee_type)])
              (unless (or (SCM_EQ (SCM_OBJ pt) (Scm_NativeCCharType))
                          (SCM_EQ (SCM_OBJ pt) (Scm_NativeInt8Type))
                          (SCM_EQ (SCM_OBJ pt) (Scm_NativeUint8Type)))
+               (goto bad))
+             (when (== size -2)
                (goto bad)))]
           [(SCM_C_ARRAY_P t)
            (let* ([et::ScmNativeType* (-> (SCM_C_ARRAY t) element_type)])
@@ -1426,34 +1432,48 @@
                               (SCM_EQ (SCM_OBJ et) (Scm_NativeUint8Type))))
                (goto bad))
              (let* ([dim (SCM_CAR (-> (SCM_C_ARRAY t) dimensions))])
-               (when (and (SCM_INTP dim)
-                          (< (SCM_INT_VALUE dim) size))
-                 (Scm_Error "Given size %ld exceeds array size of %S"
-                            size handle))
-               (when (and (< size 0) (SCM_INTP dim))
-                 (set! size (SCM_INT_VALUE dim)))))]
+               (cond
+                [(== size -1)
+                 (when (SCM_INTP dim)
+                   (set! size (SCM_INT_VALUE dim)))] ;implcit bound
+                [(== size -2)
+                 (unless (SCM_INTP dim) (goto bad))
+                 (set! size (SCM_INT_VALUE dim))
+                 (set! size-explicit? TRUE)]
+                [else
+                 (when (and (SCM_INTP dim)
+                            (< (SCM_INT_VALUE dim) size))
+                   (Scm_Error "Given size %ld exceeds array size of %S"
+                              size handle))])))]
           [else (goto bad)])
     (return (Scm_MakeString (-> handle ptr) size -1
-                            (?: shared?
-                                SCM_STRING_IMMUTABLE
-                                SCM_STRING_COPYING)))
+                            (logior (?: shared?
+                                        SCM_STRING_IMMUTABLE
+                                        SCM_STRING_COPYING)
+                                    (?: size-explicit?
+                                        0
+                                        SCM_STRING_LIMIT_SIZE))))
     (label bad)
     (Scm_Error "Can't convert to string from handle: %S"  handle)))
 
+;; size can be a fixnum, #f for NUL-terminated string, #t to use
+;; array size.
 (define-cproc c-char*->string/shared (handle::<native-handle>
                                       :optional (size #f))
   (let* ([csize::ScmSmallInt 0])
     (cond [(SCM_FALSEP size) (set! csize -1)]
+          [(SCM_EQ size SCM_TRUE) (set! csize -2)]
           [(SCM_INTP size) (set! csize (SCM_INT_VALUE size))]
-          [else (SCM_TYPE_ERROR size "fixnum or #f")])
+          [else (SCM_TYPE_ERROR size "fixnum or boolean")])
     (return (handle->string handle csize TRUE))))
 
 (define-cproc c-char*->string (handle::<native-handle>
                                :optional (size #f))
   (let* ([csize::ScmSmallInt 0])
     (cond [(SCM_FALSEP size) (set! csize -1)]
+          [(SCM_EQ size SCM_TRUE) (set! csize -2)]
           [(SCM_INTP size) (set! csize (SCM_INT_VALUE size))]
-          [else (SCM_TYPE_ERROR size "fixnum or #f")])
+          [else (SCM_TYPE_ERROR size "fixnum or boolean")])
     (return (handle->string handle csize FALSE))))
 
 ;; TODO: we want string->c-char*, but need to think about ownership handling

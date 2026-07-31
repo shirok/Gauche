@@ -1,5 +1,9 @@
 2026-07-30  Shiro Kawai  <shiro@acm.org>
 
+	* ext/ffi/native-type.scm (c-char*->string, c-char*->String/shared):
+	  Allow #f and #t for size arg.  #f to auto-count length of c-string,
+	  #t to use array size.  Note that #f is still bound to the size of
+	  array, if known.
 	* src/string.c (Scm_MakeString): New flag SCM_STRING_LIMIT_SIZE to
 	  set uppoer bound when auto-counting string size.
 
