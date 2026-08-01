@@ -568,7 +568,8 @@ clean :
 	       gauche/config_threads.h gauche-config.in.c \
 	       staticinit.c staticinit_gdbm.c staticinit_mbed.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
-	       bench-pushcc$(EXEEXT) bench-pushcc.c
+	       bench-pushcc$(EXEEXT) bench-pushcc.c \
+	       bench-arith-native$(EXEEXT) bench-arith-portable$(EXEEXT)
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)
