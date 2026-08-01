@@ -16217,6 +16217,44 @@ Returns @code{#t} if @code{obj} is a native handle representing
 NULL pointer (of any c-pointer type), @code{#f} otherwise.
 @end defun
 
+@defun c-char*->string handle :optional size
+@defunx c-char*->string/shared handle :optional size
+@c MOD gauche.native-type
+As C doesn't provide a dedicated string type, it's up to the user
+to ``interpret'' an octet arrays as a string.  These procedures
+do the interpretation.
+
+``Octet type'' is one of native type @code{<c-char>}, @code{<int8>},
+or @code{<uint8>}.  The @var{handle} argument must be either a pointer
+to an octet type, or a 1-dimensional array of an octet type.
+
+The @var{size} argument may be a nonnegative exact integer, or
+a boolean value.  When omitted, @code{#f} is assumed.
+
+@table @asis
+@item @code{#f} (default)
+It is regarded as @var{handle} points to a NUL-terminated octet string.
+If @var{handle} is an array of known length, it limits the maximum length
+of the string, even if there's no NUL characters in it.   Note that
+the returned string never contains NUL character.
+@item @code{#t}
+The @var{handle} must be an array of known length, and a string of
+that length is returned, regardless of whether it contains NUL characters
+or not.  Note that if the original array contains NUL-terminated string,
+the resulting string contains that terminating NUL character.
+@item non-negative integer
+A string of the given size is returned.  The returned string may contain
+NUL character in it.  It is an error if @var{handle} is an array and
+the given size is greater than its length.
+@end table
+
+@code{c-char*->string} copies the content of @var{handle} to Gauche-managed
+memory, while @code{c-char*->string/string} makes returned string directly
+refers to the memory of @var{handle}.  The latter should be used only if
+you know @var{handle}'s memory is managed by Gauche.
+@end defun
+
+
 @c ----------------------------------------------------------------------
 @node Networking, Package metainformation, Native type utilities, Library modules - Gauche extensions
 @section @code{gauche.net} - Networking
