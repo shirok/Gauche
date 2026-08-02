@@ -1255,6 +1255,61 @@
 (test* "stream-last" '()
        (stream->list (stream-last-n (stream) 3)))
 
+;; SRFI-41 semantics: the car and the cdr are delayed independently.
+(test* "lazy car (stream-cons)" #t
+       (stream-pair? (stream-cons (error "car is evaluated")
+                                  (error "cdr is evaluated"))))
+
+(test* "lazy car (spine walk)" 0
+       (let* ([n 0]
+              [s (stream+ (begin (inc! n) 'a) (begin (inc! n) 'b))])
+         (stream-cdr s)
+         n))
+
+(test* "lazy car (forcing order)" '(2 1)
+       (let* ([n 0]
+              [p (^[] (inc! n) n)]
+              [s (stream+ (p) (p))])
+         (stream-car (stream-cdr s))  ; force the second element first
+         (stream-car s)
+         (stream->list s)))
+
+(test* "lazy car (memoized)" 1
+       (let* ([n 0]
+              [s (stream+ (begin (inc! n) 'a))])
+         (stream-car s)
+         (stream-car s)
+         n))
+
+(test* "lazy car (stream-length)" 0
+       (let* ([n 0]
+              [s (stream+ (begin (inc! n) 'a) (begin (inc! n) 'b))])
+         (stream-length s)
+         n))
+
+(test* "lazy car (stream-map)" 0
+       (let* ([n 0]
+              [s (stream+ (begin (inc! n) 'a) (begin (inc! n) 'b))])
+         (stream-length (stream-map list s))
+         n))
+
+(test* "lazy car (stream-reverse)" '(0 (b a))
+       (let* ([n 0]
+              [s (stream+ (begin (inc! n) 'a) (begin (inc! n) 'b))]
+              [r (stream-reverse s)]
+              [_ (stream-length r)])
+         (list n (stream->list r))))
+
+;; An element may be a promise or a stream itself; stream-car must not
+;; force it any further.
+(test* "element being a promise" 1
+       (force (stream-car (stream+ (delay 1)))))
+(test* "element being a stream" '(1 2)
+       (stream->list (stream-car (stream+ (stream 1 2)))))
+
+(test* "stream-cons onto non-stream" (test-error)
+       (stream->list (stream-cons 1 2)))
+
 ;;-----------------------------------------------
 (test-section "util.temporal-relation")
 (use util.temporal-relation)

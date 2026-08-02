@@ -1,3 +1,13 @@
+2026-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/stream.scm (stream-cons, stream-car): Adopt SRFI-41
+	  semantics, i.e. the car and the cdr of a stream are now delayed
+	  independently.  https://github.com/shirok/Gauche/issues/1305
+	* lib/util/stream.scm (stream-reverse): Do not force the elements
+	  while reversing the spine.
+	* lib/scheme/stream/derived.scm (stream-drop): Fix a typo that made
+	  it refer to an undefined procedure.
+
 2026-07-30  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/native-type.scm (c-char*->string, c-char*->String/shared):

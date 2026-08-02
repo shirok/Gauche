@@ -89,6 +89,11 @@
 ;;;
 ;;; <stream> type is a promise with 'stream in its kind.
 ;;;
+;;; Forcing a stream yields either '() (the null stream) or a pair
+;;; whose car is a promise of the element and whose cdr is a stream.
+;;; (srfi-41 semantics).   Originall this module is based on srfi-40,
+;;; which forced car once the stream itself is forced.
+;;;
 
 (define-inline (stream? s)
   (and (promise? s) (eq? (promise-kind s) 'stream)))
@@ -96,6 +101,17 @@
 (define-inline (%make-stream promise)
   (set! (promise-kind promise) 'stream)
   promise)
+
+;; Like (delay expr), but only for a single value.  A stream element is
+;; always a single value, and this avoids the overhead of delay, which
+;; has to deal with multiple values.
+(define-syntax %delay-value
+  (syntax-rules ()
+    [(_ expr) (lazy (eager expr))]))
+
+;; Used to check the cdr part of stream-cons when it is forced.
+(define-inline (%check-stream s)
+  (if (stream? s) s (error "stream required, but got:" s)))
 
 ;;;
 ;;; Primitives
@@ -106,17 +122,21 @@
 (define stream-null (%make-stream (delay '())))
 
 ;; SRFI-40, 41
+;; Both obj and strm are delayed; neither is evaluated until it is
+;; accessed by stream-car/stream-cdr.  The pair itself is eager, so
+;; stream-pair? never triggers evaluation of the arguments.
 (define-syntax stream-cons
   (syntax-rules ()
     [(stream-cons obj strm)
-     (%make-stream (delay (cons obj strm)))]))
+     (%make-stream (eager (cons (%delay-value obj)
+                                (%make-stream (lazy (%check-stream strm))))))]))
 
 ;; SRFI-40, 41
 (define-inline (stream-null? obj)
   (and (stream? obj) (null? (force obj))))
 (define-inline (stream-pair? obj)
   (and (stream? obj) (pair? (force obj))))
-(define-inline (stream-car s) (car (force s)))
+(define-inline (stream-car s) (force (car (force s))))
 (define-inline (stream-cdr s) (cdr (force s)))
 
 ;; SRFI-40
@@ -356,8 +376,14 @@
     (stream-ref (stream-cdr s) (- n 1))))
 
 ;; SRFI-41
+;; NB: We don't use stream-fold, for it forces each element while
+;; reversing the spine.
 (define (stream-reverse s)
-  (stream-fold stream-xcons stream-null s))
+  (stream-delay
+   (let loop ([s s] [r stream-null])
+     (if (stream-null? s)
+       r
+       (loop (stream-cdr s) (stream-cons (stream-car s) r))))))
 
 ;; SRFI-41
 (define-stream (stream-scan f seed s)
