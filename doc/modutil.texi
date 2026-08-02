@@ -36927,6 +36927,10 @@ on it.  Lazy streams provided in this module are somewhat heavier than
 lazy sequences and you need to use special procedures,
 but it is strictly lazy (while a lazy sequence evaluates one element ahead)
 and portable.
+
+The semantics of the streams follow SRFI-41; that is, the car and the cdr
+of a stream are delayed independently, so that traversing a stream does
+not evaluate its elements.
 @c JP
 このモジュールは遅延ストリームのライブラリを提供します。このモジュール
 にはSRFI-40とSRFI-41で定義されている関数および構文が含まれています。
@@ -36937,6 +36941,9 @@ Gaucheには遅延ストリームとリストを統合したような、組み�
 このモジュールで提供される遅延ストームは、遅延シーケンスより重く、
 扱うために専用の手続きが必要です。ただ、要素の評価は必要になるぎりぎりまで遅延され
 (遅延シーケンスでは必要な要素のひとつ先まで評価されます)、またポータブルです。
+
+ストリームの動作はSRFI-41に従います。すなわち、ストリームのcarとcdrは
+それぞれ独立に遅延され、ストリームを辿るだけでは要素は評価されません。
 @c COMMON
 @end deftp
 
@@ -36979,10 +36986,34 @@ NULLストリームのシングルトンインスタンス。
 @c EN
 A fundamental constructor of a stream.  Adds @var{object} to the
 head of a @var{stream}, and returns a new stream.
+
+Neither @var{object} nor @var{stream} is evaluated at the time
+the new stream is created; they are delayed independently from
+each other, and each of them is evaluated (at most once) when it is
+accessed by @code{stream-car} and @code{stream-cdr}, respectively.
+In particular, walking the spine of a stream does not evaluate
+its elements.
 @c JP
 ストリームの基本構成子。@var{object}を@var{stream}の先頭に追加し、新し
 いストリームを返します。
+
+新しいストリームが作られる時点では@var{object}も@var{stream}も評価されません。
+両者は独立に遅延され、それぞれ@code{stream-car}および@code{stream-cdr}で
+アクセスされた時点で(高々一度だけ)評価されます。
+特に、ストリームの背骨を辿るだけでは要素は評価されません。
 @c COMMON
+
+@example
+(define n 0)
+(define s (stream-cons (begin (inc! n) 'a)
+                       (stream-cons (begin (inc! n) 'b) stream-null)))
+
+(stream-cdr s)      ; @r{walking the spine doesn't evaluate elements}
+n @result{} 0
+
+(stream-car (stream-cdr s)) @result{} b
+n @result{} 1
+@end example
 @end defmac
 
 @defun stream-null? obj
