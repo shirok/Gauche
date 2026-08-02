@@ -60,7 +60,7 @@
      (values (values-checked (predicate) value) ...))))
 
 (define-syntax %check-case
-  (syntax-rules (else)
+  (syntax-rules (else check-impl?)
     ((_ val (clause ...) (else body ...))
      (cond
       clause ...
