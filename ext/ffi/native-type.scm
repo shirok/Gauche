@@ -97,6 +97,7 @@
           boolean->c-int
           c-char*->string
           c-char*->string/shared
+          string->c-char*/shared
 
           c-pointer-handle?
           c-function-handle?
@@ -1476,7 +1477,25 @@
           [else (SCM_TYPE_ERROR size "fixnum or boolean")])
     (return (handle->string handle csize FALSE))))
 
-;; TODO: we want string->c-char*, but need to think about ownership handling
+(define-cproc %string->c-char*/shared (str::<string> type::<native-type>)
+  (let* ([size::ScmSmallInt 0]
+         [p::(const char *) (Scm_GetStringContent str (& size) NULL NULL)])
+    (return
+     (Scm__MakeNativeHandle (cast void* p)
+                            type
+                            (-> type name)
+                            (cast void* p)
+                            (cast void* (+ p size 1)) ; including terminating NUL
+                            SCM_FALSE
+                            SCM_NIL
+                            0))))
+
+(define (string->c-char*/shared str :optional (type #f))
+  (assume-type str <string>)
+  (assume-type type (<?> <native-type>))
+  ($ %string->c-char*/shared str
+     (or type
+         (make-c-array-type <c-char> `(,(+ 1 (string-size str)))))))
 
 ;;;
 ;;;  Convert type signatures to native-type instance

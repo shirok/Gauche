@@ -964,6 +964,21 @@
   (t* (test-error <error> #/exceeds array size/) 7 a-uint a-int a-char)
   (t* "AB" #f a-uint-less a-int-less a-char-less)
   (t* (test-error <error> #/exceeds array size/) 4 a-uint-less a-int-less a-char-less)
+
+  (let1 c (string->c-char*/shared "abcde")
+    (test* "string->c-char*/shared default type"
+           (native-type `(.array ,<c-char> (6)))
+           (native-handle-type c))
+    (test* "string->c-char*/shared round trip" "abcde"
+           (c-char*->string c))
+    (test* "string->c-char*/shared round trip (including terminator" "abcde\0"
+           (c-char*->string c #t)))
+  (let1 c (string->c-char*/shared "" (native-type 'uint8_t*))
+    (test* "string->c-char*/shared custom type"
+           (native-type 'uint8_t*)
+           (native-handle-type c))
+    (test* "string->c-char*/shared round trip" ""
+           (c-char*->string c)))
   )
 
 ;;;----------------------------------------------------------
