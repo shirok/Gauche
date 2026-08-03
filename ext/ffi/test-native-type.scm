@@ -981,6 +981,75 @@
            (c-char*->string c)))
   )
 
+(let-syntax ([t* (syntax-rules ()
+                   [(_ msg expect type str)
+                    (test* msg expect
+                           (let* ([v (make-u8vector 6 #xff)]
+                                  [h (make-native-handle (native-type 'type) v)])
+                             (string->c-char*! h str)
+                             v))])])
+  (t* "string->c-char*! (char array)" '#u8(65 66 67 0 255 255)
+      (.array char (6)) "ABC")
+  (t* "string->c-char*! (uint8_t array)" '#u8(65 66 67 0 255 255)
+      (.array uint8_t (6)) "ABC")
+  (t* "string->c-char*! (int8_t array)" '#u8(65 66 67 0 255 255)
+      (.array int8_t (6)) "ABC")
+  (t* "string->c-char*! (unbounded array)" '#u8(65 66 67 0 255 255)
+      (.array char (*)) "ABC")
+  (t* "string->c-char*! (pointer)" '#u8(65 66 67 0 255 255)
+      char* "ABC")
+  (t* "string->c-char*! (exact fit)" '#u8(65 66 67 68 69 0)
+      (.array char (6)) "ABCDE")
+  (t* "string->c-char*! (empty string)" '#u8(0 255 255 255 255 255)
+      (.array char (6)) "")
+  (t* "string->c-char*! (embedded NUL)" '#u8(65 0 66 0 255 255)
+      (.array char (6)) "A\0B")
+  (t* "string->c-char*! (multibyte)" '#u8(227 129 130 0 255 255)
+      (.array char (6)) "あ")
+
+  (t* "string->c-char*! (array too small)"
+      (test-error <error> #/room for 6 octets/)
+      (.array char (6)) "ABCDEF")
+  (t* "string->c-char*! (region too small)"
+      (test-error <error> #/room for 6 octets/)
+      char* "ABCDEF")
+  (t* "string->c-char*! (non-octet array)"
+      (test-error <error> #/Can't store a string/)
+      (.array int16_t (3)) "A")
+  (t* "string->c-char*! (non-octet pointer)"
+      (test-error <error> #/Can't store a string/)
+      int16_t* "A")
+  (t* "string->c-char*! (multi-dimensional array)"
+      (test-error <error> #/Can't store a string/)
+      (.array char (2 3)) "A"))
+
+;; The array dimension bounds the copy, even when the handle's memory
+;; region covers the enclosing struct.
+(let* ([type (make-c-struct-type 'strbuf `((s ,(native-type '(.array char (4))))
+                                           (n ,<int>)))]
+       [h (make-native-handle type)])
+  (test* "string->c-char*! into a struct field" "abc"
+         (begin (string->c-char*! (native. h 's) "abc")
+                (c-char*->string (native. h 's))))
+  (test* "string->c-char*! into a struct field (overflow)"
+         (test-error <error> #/room for 4 octets/)
+         (string->c-char*! (native. h 's) "abcd")))
+
+(test* "string->c-char*! into NULL pointer" (test-error <error> #/NULL pointer/)
+       (string->c-char*! (null-pointer-handle (native-type 'char*)) "A"))
+
+;; To store into the middle of a buffer, the caller adjusts the pointer.
+(let* ([v (make-u8vector 6 #xff)]
+       [h (make-native-handle (native-type 'char*) v)])
+  (test* "string->c-char*! with adjusted pointer" '#u8(255 255 65 66 67 0)
+         (begin (string->c-char*! (native-pointer+ h 2) "ABC") v))
+  (test* "string->c-char*! with adjusted pointer (overflow)"
+         (test-error <error> #/room for 4 octets/)
+         (string->c-char*! (native-pointer+ h 2) "ABCD"))
+  (test* "string->c-char*! into past-end pointer"
+         (test-error <error> #/room for 0 octets/)
+         (string->c-char*! (native-pointer+ h 6) "")))
+
 ;;;----------------------------------------------------------
 (test-section "enums")
 

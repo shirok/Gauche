@@ -98,6 +98,7 @@
           c-char*->string
           c-char*->string/shared
           string->c-char*/shared
+          string->c-char*!
 
           c-pointer-handle?
           c-function-handle?
@@ -1408,6 +1409,12 @@
 (define (c-int->boolean value) (not (zero? value)))
 (define (boolean->c-int value) (if value 1 0))
 
+;; "Octet type", which can be interpreted as a character of a string.
+(define-cfn octet-native-type? (t::ScmNativeType*) ::_Bool :static
+  (return (or (SCM_EQ (SCM_OBJ t) (Scm_NativeCCharType))
+              (SCM_EQ (SCM_OBJ t) (Scm_NativeInt8Type))
+              (SCM_EQ (SCM_OBJ t) (Scm_NativeUint8Type)))))
+
 ;; size: >= 0 for explicit size
 ;;       == -1 for NUL-terminated string
 ;;       == -2 for array size
@@ -1419,18 +1426,14 @@
          [size-explicit?::_Bool (>= size 0)])
     (cond [(SCM_C_POINTER_P t)
            (let* ([pt::ScmNativeType* (-> (SCM_C_POINTER t) pointee_type)])
-             (unless (or (SCM_EQ (SCM_OBJ pt) (Scm_NativeCCharType))
-                         (SCM_EQ (SCM_OBJ pt) (Scm_NativeInt8Type))
-                         (SCM_EQ (SCM_OBJ pt) (Scm_NativeUint8Type)))
+             (unless (octet-native-type? pt)
                (goto bad))
              (when (== size -2)
                (goto bad)))]
           [(SCM_C_ARRAY_P t)
            (let* ([et::ScmNativeType* (-> (SCM_C_ARRAY t) element_type)])
              (unless (and (== 1 (Scm_Length (-> (SCM_C_ARRAY t) dimensions)))
-                          (or (SCM_EQ (SCM_OBJ et) (Scm_NativeCCharType))
-                              (SCM_EQ (SCM_OBJ et) (Scm_NativeInt8Type))
-                              (SCM_EQ (SCM_OBJ et) (Scm_NativeUint8Type))))
+                          (octet-native-type? et))
                (goto bad))
              (let* ([dim (SCM_CAR (-> (SCM_C_ARRAY t) dimensions))])
                (cond
@@ -1496,6 +1499,55 @@
   ($ %string->c-char*/shared str
      (or type
          (make-c-array-type <c-char> `(,(+ 1 (string-size str)))))))
+
+(define-cproc string->c-char*! (dst-handle::<native-handle>
+                                str::<string>)
+  ::<void>
+  (let* ([t::ScmNativeType* (-> dst-handle type)]
+         [size::ScmSmallInt 0]
+         [src::(const char *) (Scm_GetStringContent str (& size) NULL NULL)]
+         [required::ScmSmallInt (+ size 1)] ;including the terminating NUL
+         [limit::ScmSmallInt 0]
+         [limit-known?::_Bool FALSE])
+    (when (== (-> dst-handle ptr) NULL)
+      (Scm_Error "Attempt to store a string into NULL pointer: %S"
+                 (SCM_OBJ dst-handle)))
+    ;; Type check.  An array of a known dimension also bounds the destination.
+    (cond
+     [(SCM_C_POINTER_P t)
+      (unless (octet-native-type? (-> (SCM_C_POINTER t) pointee_type))
+        (goto bad))]
+     [(SCM_C_ARRAY_P t)
+      (let* ([ca::ScmCArray* (SCM_C_ARRAY t)])
+        (unless (and (== 1 (Scm_Length (-> ca dimensions)))
+                     (octet-native-type? (-> ca element_type)))
+          (goto bad))
+        (let* ([dim (SCM_CAR (-> ca dimensions))])
+          (when (SCM_INTP dim)
+            (set! limit (SCM_INT_VALUE dim))
+            (set! limit-known? TRUE))))]
+     [else (goto bad)])
+    ;; Boundary check, if possible.
+    (when (and (!= (-> dst-handle region-min) NULL)
+               (!= (-> dst-handle region-max) NULL))
+      (let* ([room::ScmSmallInt
+              (cast ScmSmallInt
+                    (- (cast (const char*) (-> dst-handle region-max))
+                       (cast (const char*) (-> dst-handle ptr))))])
+        (when (or (not limit-known?) (< room limit))
+          (set! limit room)
+          (set! limit-known? TRUE))))
+    (when (and limit-known? (> required limit))
+      (Scm_Error "Can't store %ld octets into %S, which only has room \
+                  for %ld octets"
+                 required (SCM_OBJ dst-handle) (?: (> limit 0) limit 0)))
+    (let* ([dst::char* (cast char* (-> dst-handle ptr))])
+      (memcpy dst src size)
+      (set! (aref dst size) 0))         ;terminating NUL
+    (return)
+    (label bad)
+    (Scm_Error "Can't store a string into handle of type %S: %S"
+               (SCM_OBJ (-> dst-handle type)) (SCM_OBJ dst-handle))))
 
 ;;;
 ;;;  Convert type signatures to native-type instance
