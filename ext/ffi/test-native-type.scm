@@ -1038,6 +1038,58 @@
 (test* "string->c-char*! into NULL pointer" (test-error <error> #/NULL pointer/)
        (string->c-char*! (null-pointer-handle (native-type 'char*)) "A"))
 
+(let-syntax ([t* (syntax-rules ()
+                   [(_ msg size str)
+                    (let1 c (string->c-char* str)
+                      (test* `("string->c-char*" msg "type")
+                             (native-type `(.array ,<c-char> (size)))
+                             (native-handle-type c))
+                      (test* `("string->c-char*" msg "content")
+                             (string-append str "\0")
+                             (c-char*->string c #t))
+                      (test* `("string->c-char*" msg "storage")
+                             size
+                             (u8vector-length (native-handle-owner c))))])])
+  (t* "simple" 6 "abcde")
+  (t* "empty string" 1 "")
+  (t* "multibyte" 4 "あ")
+  (t* "embedded NUL" 4 "a\0b"))
+
+(test* "string->c-char* (NUL terminates the result)" "a"
+       (c-char*->string (string->c-char* "a\0b")))
+
+;; The allocator receives the required octet count, including the
+;; terminating NUL, and returns a handle to store the string into.
+(let* ([requested #f]
+       [alloc (^[size]
+                (set! requested size)
+                (make-native-handle (native-type 'char*)
+                                    (make-u8vector (* size 2) #xff)))]
+       [c (string->c-char* "abc" alloc)])
+  (test* "string->c-char* (allocator's request)" 4 requested)
+  (test* "string->c-char* (allocator's handle is used as is)"
+         (native-type 'char*)
+         (native-handle-type c))
+  (test* "string->c-char* (allocator's storage)" '#u8(97 98 99 0 255 255 255 255)
+         (native-handle-owner c))
+  (test* "string->c-char* (allocator round trip)" "abc"
+         (c-char*->string c)))
+
+(test* "string->c-char* (allocator returns too small a buffer)"
+       (test-error <error> #/room for 2 octets/)
+       (string->c-char* "abc"
+                        (^[size]
+                          (make-native-handle
+                           (native-type '(.array char (2)))))))
+(test* "string->c-char* (allocator returns non-handle)" (test-error <error>)
+       (string->c-char* "abc" (^[size] <int>)))
+(test* "string->c-char* (bad allocator)" (test-error <error>)
+       (string->c-char* "abc" 42))
+(test* "string->c-char* (allocator of wrong arity)" (test-error <error>)
+       (string->c-char* "abc" (^[size extra] size)))
+(test* "string->c-char* (non-string)" (test-error <error>)
+       (string->c-char* 'abc))
+
 ;; To store into the middle of a buffer, the caller adjusts the pointer.
 (let* ([v (make-u8vector 6 #xff)]
        [h (make-native-handle (native-type 'char*) v)])

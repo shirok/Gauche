@@ -97,6 +97,7 @@
           boolean->c-int
           c-char*->string
           c-char*->string/shared
+          string->c-char*
           string->c-char*/shared
           string->c-char*!
 
@@ -1548,6 +1549,16 @@
     (label bad)
     (Scm_Error "Can't store a string into handle of type %S: %S"
                (SCM_OBJ (-> dst-handle type)) (SCM_OBJ dst-handle))))
+
+(define (string->c-char* str :optional (allocator #f))
+  (assume-type str <string>)
+  (assume-type allocator (<?> (<^> <integer> -> <native-type>)))
+  (let* ([size (+ (string-size str) 1)]
+         [buf (if allocator
+                (allocator size)
+                (make-native-handle (make-c-array-type <c-char> `(,size))))])
+    (string->c-char*! buf str)
+    buf))
 
 ;;;
 ;;;  Convert type signatures to native-type instance
