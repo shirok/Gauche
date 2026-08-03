@@ -35,12 +35,18 @@
 (define-module srfi.253
   (use gauche.record)
   (export check-arg                     ;builtin
+          check-impl?
           values-checked check-case
           lambda-checked define-checked
           case-lambda-checked
           define-record-type-checked))
 
 (select-module srfi.253)
+
+(define-syntax check-impl?
+  (syntax-rules ()
+    ((_ type)
+     type)))
 
 ;; Below this line are the helpers from the generic sample implementation.
 
@@ -54,7 +60,7 @@
      (values (values-checked (predicate) value) ...))))
 
 (define-syntax %check-case
-  (syntax-rules (else)
+  (syntax-rules (else check-impl?)
     ((_ val (clause ...) (else body ...))
      (cond
       clause ...
@@ -66,6 +72,11 @@
       (else (assume (or clause-check ...)
                     "at least one branch of check-case should be true"
                     'clause-check ...))))
+    ((_ val (clause ...) ((check-impl? type) body ...) rest ...)
+     (%check-case
+      val
+      (clause ... ((of-type? val type) body ...))
+      rest ...))
     ((_ val (clause ...) (pred body ...) rest ...)
      (%check-case
       val
