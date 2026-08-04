@@ -40,6 +40,7 @@
           default-ffi-subsystem
           ffi-subsystem-available?
           define-c-function
+          define-c-callback
           <foreign-c-function>
           <foreign-c-callback>
           foreign-function-info)
@@ -202,6 +203,11 @@
   (syntax-rules ()
     [(_ . _)
      (syntax-error "define-c-function used outside with-ffi")]))
+
+(define-syntax define-c-callback
+  (syntax-rules ()
+    [(_ . _)
+     (syntax-error "define-c-callback used outside with-ffi")]))
 
 (autoload gauche.ffi.stubgen (:macro with-stubgen-ffi))
 (autoload gauche.ffi.native  (:macro with-native-ffi))

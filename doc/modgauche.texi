@@ -10517,7 +10517,7 @@ The code that uses FFI looks like the following:
 (use gauche.ffi)
 (use gauche.native-type)
 
-(with-ffi (dynamic-load "/path/to/library") ()
+(with-ffi (dlopen "/path/to/library") ()
   ;; Define C functions and callbacks
   (define-c-function foo '(int c-string) 'int)
   ...
@@ -10533,8 +10533,53 @@ The defined C functions are visible from the rest of the code,
 and you can call it as a Scheme function.
 @end deftp
 
+@menu
+* With-ffi form::
+* FFI support procedures::
+@end menu
+
+@node With-ffi form, FFI support procedures, Foreign function interface, Foreign function interface
+@subsection @code{with-ffi} form
+@c NODE @code{with-ffi}フォーム
+
+@defmac with-ffi dso options form @dots{}
+@c MOD gauche.ffi
+@end defmac
 
 
+@defmac define-c-function name arg-types return-type
+@c MOD gauche.ffi
+@end defmac
+
+
+@defmac define-c-callback name ((var type) @dots{}) return-type body @dots{}
+@c MOD gauche.ffi
+@end defmac
+
+
+@node FFI support procedures,  , With-ffi form, Foreign function interface
+@subsection FFI support procedures
+@c NODE FFIサポート手続き
+
+@defun dlopen dsoname
+@c MOD gauche.ffi
+@end defun
+
+@defun default-ffi-subsystem
+@c MOD gauche.ffi
+@end defun
+
+@defun ffi-subsystem-available? name
+@c MOD gauche.ffi
+@end defun
+
+@defun native-alloc size-or-type
+@c MOD gauche.ffi
+@end defun
+
+@defun native-free handle
+@c MOD gauche.ffi
+@end defun
 
 
 @c ----------------------------------------------------------------------
