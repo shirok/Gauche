@@ -16254,6 +16254,50 @@ refers to the memory of @var{handle}.  The latter should be used only if
 you know @var{handle}'s memory is managed by Gauche.
 @end defun
 
+@defun string->c-char*! handle string
+@c MOD gauche.native-type
+Copy the @var{string} contents as a byte array, including the terminating
+NUL byte, to the memory referred by @var{handle}.  The type of @var{handle}
+must be an array of octets or a pointer ot octets, with large enough to
+hold the byte array including NUL byte.
+@end defun
+
+@defun string->c-char* string :optional allocator
+@c MOD gauche.native-type
+Returns a native handle to a copy of the contents of @var{string}, including
+the terinating NUL byte.
+
+The resulting handle is allocated by @var{allocator}, which takes a
+required size of memory (including the terminating NUL byte) as nonnegative
+exact integer, and returns a native handle.  When omitted, an array
+of C character is allocated.
+
+Note that the default allocator
+allocates memory from Gauche-managed space---it will be GCed when
+all references from Gauche world are dropped.  If you pass the resulting
+C char array to a foreign function that requires malloc-ed memory,
+you can pass @code{native-alloc} as @var{allocator}.
+@end defun
+
+@defun string->c-char*/shared string :optional type
+@c MOD gauche.native-type
+Returns a native handle containing @code{<c-char>} array from the
+Scheme string @var{string}.  The handle directly refers to the
+memory of the string body, so (1) the memory is owned by Gauche,
+and (2) caller shouldn't modify the returned memory.
+
+By default, the handle's type is an array of @code{<c-char>}
+with the size to hold @var{string}'s content, including the terminating
+NUL byte.  You can give alternative type with the optional @var{type}
+argument.  The alternatie type must be one of the types
+@code{c-char*->string} accepts---that is, an array of an octet type
+or a pointer to an octet type.
+
+If you need to pass the ownership of a C char array, or the
+passed C char array can be modified, you can't use this procedure;
+use @code{string->c-char*!} or @code{string->c-char*} above.
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Networking, Package metainformation, Native type utilities, Library modules - Gauche extensions
