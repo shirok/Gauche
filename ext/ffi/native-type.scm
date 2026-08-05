@@ -84,7 +84,6 @@
           native*
           native-aref
           native.
-          native->
           native&
 
           make-native-handle
@@ -1309,36 +1308,6 @@
     [(handle slot slot2 . rest)
      (apply %native.-set! (native. handle slot) slot2 rest)]))
 (set! (setter native.) %native.-set!)
-
-;; Struct/union indirect field access
-(define (native-> handle slot :optional (type #f))
-  (assume-type handle <native-handle>)
-  (assume-type slot <symbol>)
-  (let* ([t (%handle-type handle type)])
-    (assume-type t <c-pointer>)
-    (let* ([pt (~ t'pointee-type)])
-      (assume-type pt (</> <c-struct> <c-union>))
-      (let* ([field (c-struct-field pt slot)]
-             [ctype (cadr field)]
-             [offset (caddr field)])
-        (%handle-ref ctype handle offset)))))
-
-(define (%native->-set! handle slot type val)
-  (assume-type handle <native-handle>)
-  (assume-type slot <symbol>)
-  (let* ([t (%handle-type handle type)])
-    (assume-type t <c-pointer>)
-    (let* ([pt (~ t'pointee-type)])
-      (assume-type pt (</> <c-struct> <c-union>))
-      (let* ([field (c-struct-field pt slot)]
-             [ctype (cadr field)]
-             [offset (caddr field)])
-        (%handle-set! ctype handle offset val)))))
-
-(set! (setter native->)
-      (case-lambda
-        [(handle slot type val) (%native->-set! handle slot type val)]
-        [(handle slot val) (%native->-set! handle slot #f val)]))
 
 ;; Take an address of struct/union member or array element
 (define (native& handle :optional (selector #f))
