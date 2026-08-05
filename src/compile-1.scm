@@ -520,6 +520,7 @@
 
 (define =>.               (global-id '=>))
 (define apply.            (global-id 'apply))
+(define assume-type.      (global-id 'assume-type))
 (define begin.            (global-id 'begin))
 (define current-module.   (global-id 'current-module))
 (define define-inline.    (global-id 'define-inline))
@@ -548,6 +549,7 @@
 (define unquote.          (global-id 'unquote))
 (define values.           (global-id 'values))
 (define with-module.      (global-id 'with-module))
+(define <type>.           (global-id '<type>))
 
 ;; Returns an IForm for (values) - useful for define-pass1-syntax that does
 ;; compile-time things and returns nothing.  The delay trick is to create
@@ -841,6 +843,18 @@
              (%rename-toplevel-identifier! name)
              (make-identifier name (cenv-module cenv) '()))
     ($define form '(inlinable) id iform)))
+
+;; define-type, in Gauche, is define-inline specialized for type values.
+;; TODO: We may allow parameterized types
+(define-pass1-syntax (define-type form cenv) :gauche
+  (check-toplevel form cenv)
+  (match form
+    [(_ name expr)
+     (unless (identifier? name) (error "syntax-error:" form))
+     (pass1/define-inline form name
+                          `(,assume-type. ,expr ,<type>.)
+                          cenv)]
+    [_ (error "syntax-error: malformed define-type:" form)]))
 
 ;; Toplevel macro definitions
 

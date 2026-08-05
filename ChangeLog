@@ -1,3 +1,8 @@
+2026-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (define-type): EXPERIMENTAL: New form to
+	  ensure user-defined type expression is computable at compile-time.
+
 2026-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/stream.scm (stream-cons, stream-car): Adopt SRFI-41
