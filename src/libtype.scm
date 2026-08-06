@@ -216,6 +216,7 @@
  ;; CPA for native type subclasses
  (define-cvar native-type-cpa::(.array ScmClass* (*)) :static
    #((SCM_CLASS_STATIC_PTR Scm_NativeTypeClass)
+     (SCM_CLASS_STATIC_PTR Scm_TypeClass)
      (SCM_CLASS_STATIC_PTR Scm_TopClass)
      NULL))
 

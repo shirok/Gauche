@@ -1,3 +1,8 @@
+2026-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm: Ensure derived native types (e.g. c-pointer of
+	  something) is an instance of <type>.
+
 2026-08-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (define-type): EXPERIMENTAL: New form to
