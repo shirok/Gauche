@@ -63,7 +63,7 @@
 ;; typedef unsigned char uuid_t[16];
 ;; NB: If we use (.array char (16)), it maps to Scheme character array.
 ;; For uuid raw representation, it is really a uint8_t array.
-(define uuid_t (native-type '(.array uint8_t (16))))
+(define-type uuid_t (native-type '(.array uint8_t (16))))
 
 ;; UUID Variant definitions
 (define-constant UUID_VARIANT_NCS       0)

@@ -19,12 +19,12 @@
   (use gauche.native-type)
   (use gauche.uvector)
 
-  (define foo (native-type
-               '(.struct foo (c::char i::int s::short
-                              l::long f::float d::double))))
-  (define foo* (make-c-pointer-type foo))
+  (define-type foo (native-type
+                    '(.struct foo (c::char i::int s::short
+                                           l::long f::float d::double))))
+  (define-type foo* (make-c-pointer-type foo))
 
-  (define bar (native-type `(.array int32_t (4))))
+  (define-type bar (native-type `(.array int32_t (4))))
 
   (define-syntax do-test-f
     (syntax-rules ::: ()
