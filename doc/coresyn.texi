@@ -4326,6 +4326,38 @@ there's no point to define it inlinable.
 @end defspec
 
 
+@defspec define-type variable type-expression
+This form can be used to name a constructed type.  @var{variable}
+must be an identifier, and @var{type-expression} is an expression
+that yields a type.  @xref{Type expressions and type constructors},
+for the details of type expressions.
+
+@example
+(define-type <int-list> (<List> <int>))
+@end example
+
+In Gauche, types are first class values that can be constructed
+at runtime.  In order to take advantage of type information,
+however, it is critical that they are available at compile time.
+This form marks the binding of @var{variable} ``inlinable'',
+telling the compiler that it can assume the binding won't change.
+
+The distinction is important when you try to use @var{variable}
+as an argument for other type expressions.  Type expressions are
+computed at compile time, so mutable bindings can't be used in it.
+
+@example
+gosh> (define <int-list> (<List> <int>))
+<int-list>
+gosh> (<List> <int-list>)
+*** ERROR: Can't use non-inlinable global variable `#<identifier user#<int-list>.266ebc20>'
+in type constructor expression: (<List> <int-list>)
+@end example
+
+Using @code{define-type} avoid this error.
+@end defspec
+
+
 @defspec define-in-module module variable expression
 @defspecx define-in-module module (variable . formals) body @dots{}
 @c EN

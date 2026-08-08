@@ -461,6 +461,22 @@ global variables bount to types.  Classes defined with @code{define-class} and
 @c COMMON
 
 @c EN
+If you want to bind the constructed type to an identifier,
+you need to use @code{define-type} instead of @code{define}
+(@pxref{Definitions}).  It ensures the binding is inlinable,
+hence it can be used as arguments for other type constructors.
+@c JP
+構築された型を識別子に束縛したい場合は、
+@code{define}ではなく@code{define-type}を使う必要があります
+(@ref{Definitions}参照)。このフォームはインライン可能な束縛を作り、
+束縛された識別子を他の型コンストラクタの引数として使えるようにします。
+@c COMMON
+
+@example
+(define-type <int-list> (<List> <int>))
+@end example
+
+@c EN
 Type constructors are special classes whose instances are
 descriptive types.  Type constructors can be invoked as if they are
 a procedure, but <type-constructor-call> above is recognized by
@@ -911,7 +927,6 @@ and structs.
 @ref{Native type utilities}を参照してください。
 @c COMMON
 @end deftp
-
 
 @node Equality and comparison, Numbers, Types and classes, Core library
 @section Equality and comparison
