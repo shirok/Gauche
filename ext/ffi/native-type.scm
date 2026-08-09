@@ -716,7 +716,10 @@
     "Init argument must be a string or a uvector, but got:" init)
   (assume (or init (zero? offset))
     "Non-zero offset is not allowed with uvector auto allocation:" offset)
-  (let1 buf (cond [(string? init) (string->u8vector init)]
+  (let1 buf (cond [(string? init)
+                   ;; We include terminating NUL byte
+                   (rlet1 buf (make-u8vector (+ (string-size init) 1) 0)
+                     (string->u8vector! buf 0 init))]
                   [(uvector? init) init]
                   [else (make-u8vector
                          (if (c-pointer-type? type)
