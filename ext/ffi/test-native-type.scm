@@ -85,7 +85,7 @@
 
 ;; make-native-handle & basic check
 (let* ([int8* (make-c-pointer-type <int8>)]
-       [int8** (make-c-pointer-type int8*)]
+       [int8*a (make-c-array-type int8* '(1))]
        [s (native-type '(.struct (a::int8_t b::int8_t)))]
        [s* (make-c-pointer-type s)])
   (test* "make-native-handle int8*" #t
@@ -94,14 +94,13 @@
          (is-a? (make-native-handle s '#u8(0 0)) <native-handle>))
   (test* "make-native-handle s*" #t
          (is-a? (make-native-handle s* '#u8(0 0)) <native-handle>))
-  (test* "make-native-handle int8** (error)"
-         (test-error <error> #/type size \d too big/)
-         (is-a? (make-native-handle int8** '#u8(0)) <native-handle>))
+  (test* "make-native-handle int8*a (error)"
+         (test-error <error> #/Backing storage .* is too small/)
+         (is-a? (make-native-handle int8*a '#u8(0)) <native-handle>))
   (test* "make-native-handle s (error)"
-         (test-error <error> #/type size 2 too big/)
+         (test-error <error> #/Backing storage .* is too small/)
          (is-a? (make-native-handle s '#u8(0)) <native-handle>))
-  (test* "make-native-handle s* (error)"
-         (test-error <error> #/type size 2 too big/)
+  (test* "make-native-handle s* (error)" #t
          (is-a? (make-native-handle s* '#u8(0)) <native-handle>))
   )
 

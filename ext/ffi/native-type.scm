@@ -695,9 +695,15 @@
                                         handle-type)]
          [datasize::ScmSmallInt (-> data-type size)]
          [max::void* (+ p (Scm_UVectorSizeInBytes uv))])
-    (unless (and (<= 0 offset) (<= (+ offset datasize) vecsize))
-      (Scm_Error "Offset %ld out of range, or type size %ld too big."
-                 offset datasize))
+    (if (SCM_C_POINTER_P handle-type)
+      ;; NB: Pointer can point to zero-length array (or one element past
+      ;; the last one), so offset==vecsize can happen.  Dereferencing
+      ;; it triggers an error by the region boundary check.
+      (unless (and (<= 0 offset) (<= offset vecsize))
+        (Scm_Error "Offset %ld out of range for %S" offset uv))
+      (unless (and (<= 0 offset) (<= (+ offset datasize) vecsize))
+        (Scm_Error "Backing storage %S is too small for a nahdle of \
+                    an aggregate type %S" uv handle-type)))
     (return
      (Scm__MakeNativeHandle (+ p offset)
                             handle-type
