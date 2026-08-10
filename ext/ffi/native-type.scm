@@ -1023,7 +1023,8 @@
       (Scm_Error "Cannot dereference type %S" element-type))
     (when (and (!= (-> handle region-max) NULL)
                (== offset 0)
-               (== (-> handle ptr) (-> handle region-max)))
+               (> (+ (-> handle ptr) (-> element-type size))
+                  (-> handle region-max)))
       ;; We allow a pointer points right past the end of array.
       ;; They are valid for pointer arithmetic, but cannot be dereferenced.
       ;; We distinguish it from offset-out-of-bound error.

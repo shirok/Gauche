@@ -86,6 +86,7 @@
 ;; make-native-handle & basic check
 (let* ([int8* (make-c-pointer-type <int8>)]
        [int8*a (make-c-array-type int8* '(1))]
+       [int32* (make-c-pointer-type <int32>)]
        [s (native-type '(.struct (a::int8_t b::int8_t)))]
        [s* (make-c-pointer-type s)])
   (test* "make-native-handle int8*" #t
@@ -102,6 +103,22 @@
          (is-a? (make-native-handle s '#u8(0)) <native-handle>))
   (test* "make-native-handle s* (error)" #t
          (is-a? (make-native-handle s* '#u8(0)) <native-handle>))
+  (test* "make-native-handle past-end poitner ref"
+         (test-error <error> #/Past-end pointer/)
+         (let1 h (make-native-handle int32* '#u8(0))
+           (native* h)))
+  (test* "make-native-handle past-end poitner ref"
+         (test-error <error> #/Past-end pointer/)
+         (let1 h (make-native-handle int32* '#u8(0 0))
+           (native* h)))
+  (test* "make-native-handle past-end poitner ref"
+         (test-error <error> #/Past-end pointer/)
+         (let1 h (make-native-handle int32* '#u8(0 0 0))
+           (native* h)))
+  (test* "make-native-handle past-end poitner ref"
+         0
+         (let1 h (make-native-handle int32* '#u8(0 0 0 0))
+           (native* h)))
   )
 
 (let* ([int16* (make-c-pointer-type <int16>)]
