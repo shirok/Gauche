@@ -11,6 +11,7 @@
   (use file.util)
   (use gauche.uvector)  ;; Used to implement 'byte' API
   (use gauche.threads)  ;; For make-exchanger
+  (use slib.aux)        ;; slib-library-path
   (export-all))
 (select-module slib)
 
@@ -45,20 +46,7 @@
 ;;@ (library-vicinity) should be defined to be the pathname of the
 ;;; directory where files of Scheme library functions reside.
 (define library-vicinity
-  (let ((library-path
-         (or
-          ;; Use this getenv if your implementation supports it.
-          (and-let1 p (sys-getenv "SCHEME_LIBRARY_PATH")
-            (string-append p "/"))
-          ;; Use this path if your scheme does not support GETENV
-          ;; or if SCHEME_LIBRARY_PATH is not set.
-          (case (software-type)
-            ((unix) (regexp-replace "[^\/]$"
-                                    (with-module gauche.internal SLIB_DIR)
-                                    (^m #"~(m 0)/")))
-            ((vms) "lib$scheme:")
-            ((ms-dos) "C:\\SLIB\\")
-            (else "")))))
+  (let ((library-path (slib-library-path)))
     (lambda () library-path)))
 
 ;;@ (home-vicinity) should return the vicinity of the user's HOME
