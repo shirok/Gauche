@@ -5967,12 +5967,13 @@ R7RS @code{(scheme ilist)} defines @code{ipair*}.
 [R7RS base]
 @c EN
 Shallow copies @var{list}.
-If @var{list} is circular, an error is thrown.
+If @var{list} is circular and no @var{end} is specified, an error is thrown.
 (Detecting circular list is Gauche's extension; R7RS allows
 the procedure to diverge.)
 @c JP
 @var{list}の浅いコピーを行います。
-@var{list}が循環リストの場合、エラーが投げられます。
+@var{list}が循環リストの場合、
+@var{end}引数が指定されていなければエラーが投げられます。
 (循環リストを検出するのはGaucheの拡張です。
 R7RSではこの手続きは停止しなくても良いことになっています。)
 @c COMMON
