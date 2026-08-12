@@ -37434,7 +37434,7 @@ Creates a new stream which appends @var{elt} @dots{} before @var{stream}.
 @c COMMON
 @end defun
 
-@defun list->stream list
+@defun list->stream list :optional start end
 [R7RS stream]
 @c MOD util.stream
 @c EN
@@ -37442,6 +37442,19 @@ Returns a new stream whose elements are the elements in @var{list}.
 @c JP
 @var{list}の要素を要素とする新たなストリームを作って返します。
 @c COMMON
+
+@c EN
+The optional start/end indexes can limit the range of @var{list} to be
+used.  It is an extension defined in SRFI-274.
+@c JP
+省略可能な@var{start}/@var{end}インデックスは、@var{list}の使われる範囲を
+指定します。これはSRFI-274で定義される拡張です。
+@c COMMON
+
+@example
+(stream->list (list->stream '#1=(a b . #1#) 3 8))
+  @result{} (b a b a b)
+@end example
 @end defun
 
 @defun string->stream string :optional tail-stream

@@ -5963,7 +5963,7 @@ R7RS @code{(scheme ilist)} defines @code{ipair*}.
 @end example
 @end defun
 
-@defun list-copy list
+@defun list-copy list :optional start end
 [R7RS base]
 @c EN
 Shallow copies @var{list}.
@@ -5975,6 +5975,16 @@ the procedure to diverge.)
 @var{list}が循環リストの場合、エラーが投げられます。
 (循環リストを検出するのはGaucheの拡張です。
 R7RSではこの手続きは停止しなくても良いことになっています。)
+@c COMMON
+
+@c EN
+The optional @var{start} and @var{end} are indexes to limit
+the region to be copied; @var{start} is inclusive, and @var{end}
+is exclusive.  This is an extension defined in SRFI-274.
+@c JP
+省略可能な@var{start}と@var{end}引数は、コピーされる範囲を指定する
+インデックスです。@var{start}はそのインデックスの要素を含み、
+@var{end}は含みません。この拡張はSRFI-274で定義されています。
 @c COMMON
 @end defun
 
@@ -11407,10 +11417,12 @@ Converts a string to a list of characters or vice versa.
 
 @c EN
 You can give an optional start/end indexes.
-(R7RS's @code{list->string} does not take start/end arguments.)
+(R7RS's @code{list->string} does not take start/end arguments,
+but SRFI-274 extended it.)
 @c JP
 オプショナルのstart、end引数として開始、終了位置のインデックスを渡すこともできます。
-(但し、R7RSの@code{list->string}はstart、end引数を取りません。)
+(但し、R7RSの@code{list->string}はstart、end引数を取りません。SRFI-274が
+その拡張を定義しています。)
 @c COMMON
 
 @c EN
@@ -13956,13 +13968,14 @@ Converts a vector to a list, or vice versa.
 The optional @var{start} and @var{end} arguments
 limit the range of the source.
 (R7RS don't define @var{start} and @var{end} arguments
-for @code{list->vector}.)
+for @code{list->vector}; SRFI-274 defines that extension.)
 @c JP
 ベクタをリストに変換したり、その逆を行う手続きです。
 
 省略可能な引数@var{start}と@var{end}を与えることにより、
 値を取り出す範囲を制限することができます。
-(R7RSの@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
+(R7RSの@code{list->vector}は@var{start}と@var{end}引数を規定していません。
+SRFI-274がその拡張を定義しています。)
 @c COMMON
 @example
 (vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
