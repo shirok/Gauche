@@ -375,6 +375,12 @@
 (test* "flonum reader (exp)" '(314.0 #t) (flonum-test ".314d3"))
 (test* "flonum reader (exp)" '(314.0 #t) (flonum-test ".314D3"))
 
+;; NB: "3.14p3" parses as a symbol |3.14p3|, b/c without an explicit
+;; number prefix, we allow it to be a symbol.
+(test* "flonum reader (decimal ^ p-exponent)"
+       (test-error <read-error> #/invalid exponent/)
+       (read-from-string "#i3.14p3"))
+
 (test* "flonum reader (minimum denormalized number 5.0e-324)" #t
        (let1 x (expt 2.0 -1074)
          (= x (string->number (number->string x)))))
@@ -656,8 +662,9 @@
 (t-hexflonum-reader "#x-.0p2" -0.0)
 (t-hexflonum-reader "#x-0.0p-100000" -0.0)
 
-(t-hexflonum-reader "#x1.23" (test-error <read-error> #/requires 'p' exponent/))
-(t-hexflonum-reader "#x1.23l0" (test-error <read-error> #/requires 'p' exponent/))
+(t-hexflonum-reader "#x1.23" 1.13671875)
+(t-hexflonum-reader "#x.1" 0.0625)
+(t-hexflonum-reader "#x1.23s1" (test-error <read-error> #/invalid exponent/))
 
 (t-hexflonum-reader "#x100" 256)               ;exact integer, not flonum
 (t-hexflonum-reader "#x100.p0" 256.0)          ;inexact

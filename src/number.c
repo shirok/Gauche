@@ -4908,37 +4908,28 @@ static ScmObj read_exponent(const char **strp, /* in/out */
     int exponent = 0;
     int exp_minusp = FALSE;
     int max_exponent = MAX_EXPONENT;
-    *exponent_char = '0';
     *exponent_overflow = FALSE;
-    switch (ctx->radix) {
-    case 10:
-        if (*lenp > 0 && strchr("eEsSfFdDlL", (int)**strp)) {
-            *exponent_char = tolower(**strp);
-            (*lenp)--;
-            (*strp)++;
-            break;
-        } else {
-            return SCM_MAKE_INT(0);
-        }
-    case 16:
-        if (*lenp > 0 && (**strp == 'p' || **strp == 'P')) {
-            /* It can be 'pi' suffix */
-            if (*lenp > 1 && ((*strp)[1] == 'i' || (*strp)[1] == 'I')) {
-                return SCM_MAKE_INT(0);
-            }
-            max_exponent = MAX_EXPONENT_TWOS_POWER;
-            *exponent_char = tolower(**strp);
-            (*lenp)--;
-            (*strp)++;
-            break;
-        } else {
-            return SCM_MAKE_INT(0);
-        }
-    default:
-        return numerr("(2's power exponent can only be used when radix is 16)", ctx);
-    }
 
+    if (*lenp <= 0) return SCM_MAKE_INT(0);
+
+    if (strchr("eEsSfFdDlL", (int)**strp)) {
+        *exponent_char = tolower(**strp);
+        (*lenp)--;
+        (*strp)++;
+    } else if (**strp == 'p' || **strp == 'P') {
+        /* It can be 'pi' suffix */
+        if (*lenp > 1 && ((*strp)[1] == 'i' || (*strp)[1] == 'I')) {
+            return SCM_MAKE_INT(0);
+        }
+        max_exponent = MAX_EXPONENT_TWOS_POWER;
+        *exponent_char = 'p';
+        (*lenp)--;
+        (*strp)++;
+    } else {
+        return SCM_MAKE_INT(0);
+    }
     if (*lenp <= 0) return SCM_FALSE;
+
     switch (**strp) {
     case '-': exp_minusp = TRUE;
         /*FALLTHROUGH*/
@@ -5136,8 +5127,19 @@ static ScmObj read_real(const char **strp, int *lenp,
     if (ctx->strict && ctx->radix == 16) {
         return numerr("hexadecimal float isn't allowed in R7RS strict mode", ctx);
     }
-    if (ctx->radix == 16 && exponent_char != 'p') {
-        return numerr("hexadecimal float requires 'p' exponent", ctx);
+
+    if (exponent_char != 0) {
+        switch (ctx->radix) {
+        case 10:
+            if (exponent_char == 'p') {
+                return  numerr("invalid exponent for decimal float", ctx);
+            }
+            break;
+        case 16:
+            if (exponent_char != 'p') {
+                return numerr("invalid exponent for hexadecimal float", ctx);
+            }
+        }
     }
 
     if (exp_overflow) {
@@ -5183,7 +5185,7 @@ static ScmObj read_real(const char **strp, int *lenp,
     }
 
     /* Hex notation doesn't need approximation business. */
-    if (exponent_char == 'p') {
+    if (ctx->radix == 16) {
         int digs = Scm_IntegerLength(fraction);
         if (digs == 0) {
             return Scm_MakeFlonum(minusp? -0.0 : 0.0);

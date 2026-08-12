@@ -1,3 +1,8 @@
+2026-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_real): Allow hexadecimal flonum without
+	  explicit exponent.  https://github.com/shirok/Gauche/issues/1307
+
 2026-08-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/slib/aux.scm: Split slib availabity check to this small module,
