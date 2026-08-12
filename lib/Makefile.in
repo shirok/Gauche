@@ -57,7 +57,7 @@ SCMFILES = \
        srfi/194/*.scm \
        srfi/226/*.scm \
        srfi/227/*.scm \
-       slib.scm slib/aux.scm \
+       slib.scm slib/path.scm \
        check-script \
        gauche/test.scm gauche/test/script.scm \
        gauche/test/diff.scm gauche/test/include.scm \

@@ -11,7 +11,7 @@
   (use file.util)
   (use gauche.uvector)  ;; Used to implement 'byte' API
   (use gauche.threads)  ;; For make-exchanger
-  (use slib.aux)        ;; slib-library-path
+  (use slib.path)       ;; slib-library-path
   (export-all))
 (select-module slib)
 

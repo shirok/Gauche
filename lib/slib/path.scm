@@ -5,10 +5,10 @@
 ;; This is included from slib.scm.   Also used to check slib availability
 ;; at runtime.
 
-(define-module slib.aux
+(define-module slib.path
   (export slib-library-path
           slib-available?))
-(select-module slib.aux)
+(select-module slib.path)
 
 (define (slib-library-path)
   (or
