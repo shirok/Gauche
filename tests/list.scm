@@ -113,26 +113,70 @@
 ;;--------------------------------------------------------------------------
 (test-section "copy, append and reverse")
 
-(test* "copy" '((a b c d e) #f)
-       (let* ([x '(a b c d e)]
-              [y (list-copy x)])
-         (list x (eq? x y))))
-(test* "copy" '((a b c d . e) #f)
-       (let* ([x '(a b c d . e)]
-              [y (list-copy x)])
-         (list x (eq? x y))))
-(test* "copy" '(x #t)
-       (let* ([x 'x]
-              [y (list-copy x)])
-         (list x (eq? x y))))
-(test* "copy" '(() #t)
-       (let* ([x '()]
-              [y (list-copy x)])
-         (list x (eq? x y))))
-(test* "copy" (test-error)              ;detect circular list
-       (let* ([x '#0=(a b c . #0#)]
-              [y (list-copy x)])
-         (list x (eq? x y))))
+(let ()
+  ;; Test list-copy and sbulist.
+  (define (t lis args expected shared?)
+    (define (result proc)
+      (let1 r (apply proc lis args)
+        (list r (eq? r (list-tail lis (get-optional args 0))))))
+    (test* `(list-copy ,lis ,@args)
+           (list expected (and shared? (not (pair? expected))))
+           (result list-copy))
+    (test* `(sublist ,lis ,@args)
+           (list expected shared?)
+           (result sublist)))
+  (define (terr lis args)
+    (test* `(list-copy ,lis ,@args) (test-error)
+           (apply list-copy lis args))
+    (test* `(sublist ,lis ,@args) (test-error)
+           (apply sublist lis args)))
+
+  (t '(a b c d e) '()    '(a b c d e) #t)
+  (t '(a b c d e) '(0)   '(a b c d e) #t)
+  (t '(a b c d e) '(2)   '(c d e) #t)
+  (t '(a b c d e) '(4)   '(e) #t)
+  (t '(a b c d e) '(5)   '() #t)
+  (t '(a b c d e) '(0 5) '(a b c d e) #f)
+  (t '(a b c d e) '(0 0) '() #f)
+  (t '(a b c d e) '(1 4) '(b c d) #f)
+  (t '(a b c d e) '(2 2) '() #f)
+  (t '(a b c d e) '(5 5) '() #t)
+  (terr '(a b c d e) '(6))
+  (terr '(a b c d e) '(-1))
+  (terr '(a b c d e) '(0 6))
+  (terr '(a b c d e) '(3 2))
+
+  ;; dotted list
+  (t '(a b c . d) '()    '(a b c . d) #t)
+  (t '(a b c . d) '(2)   '(c . d) #t)
+  (t '(a b c . d) '(3)   'd #t)
+  (t '(a b c . d) '(1 3) '(b c) #f)
+  (terr '(a b c . d) '(1 4))
+  (terr '(a b c . d) '(4))
+
+  ;; degenerate cases
+  (t '() '()    '() #t)
+  (t '() '(0)   '() #t)
+  (t '() '(0 0) '() #t)
+  (terr '() '(1))
+  (t 'x '()  'x #t)
+  (t 'x '(0) 'x #t)
+
+  ;; sublist doesn't need to traverse the whole list, so it can deal with
+  ;; a circular list as far as the range is bounded.
+  (test* "(sublist circular)" #t
+         (let1 x '#0=(a b c . #0#)
+           (eq? x (sublist x))))
+  (test* "(sublist circular 2)" #t
+         (let1 x '#1=(a b c . #1#)
+           (eq? (list-tail x 2) (sublist x 2))))
+  (test* "(sublist circular 2 5)" '(c a b)
+         (sublist '#2=(a b c . #2#) 2 5))
+  (test* "(list-copy circular 2 5)" '(c a b)
+         (list-copy '#3=(a b c . #3#) 2 5))
+  (test* "(list-copy circular)" (test-error)
+         (list-copy '#4=(a b c . #4#)))
+  )
 
 (test* "append (inlined)" '()           (append))
 (test* "append (inlined)" 1             (append 1))

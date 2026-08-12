@@ -321,23 +321,34 @@
 (define-cproc acons (caa cda cd) ::<pair>
   (return (SCM_PAIR (Scm_Acons caa cda cd))))
 (define-cproc last-pair (list) :constant Scm_LastPair)
+
+(define-cfn %list-range-copy (list start::ScmSmallInt end::ScmSmallInt)
+  :static
+  (let* ([k::ScmSmallInt (- end start)]
+         [xs (Scm_ListTail list start SCM_UNBOUND)]
+         [h SCM_NIL] [t SCM_NIL])
+    (when (< k 0)
+      (Scm_Error "end index %ld is smaller than start index %ld" end start))
+    (while (> k 0)
+      (unless (SCM_PAIRP xs)
+        (Scm_Error "end index %ld is out of range" end))
+      (SCM_APPEND1 h t (SCM_CAR xs))
+      (set! xs (SCM_CDR xs))
+      (set! k (- k 1)))
+    (return h)))
+
 (define-cproc list-copy (list :optional (start::<fixnum> 0) (end::<fixnum> -1))
   (if (== end -1)
     (if (== start 0)
       (return (Scm_CopyList list))
       (return (Scm_CopyList (Scm_ListTail list start SCM_UNBOUND))))
-    (let* ([k::ScmSmallInt (- end start)]
-           [xs (Scm_ListTail list start SCM_UNBOUND)]
-           [h SCM_NIL] [t SCM_NIL])
-      (when (< k 0)
-        (Scm_Error "end index %ld is smaller than start index %ld" end start))
-      (while (> k 0)
-        (SCM_APPEND1 h t (SCM_CAR xs))
-        (unless (SCM_PAIRP (SCM_CDR xs))
-          (Scm_Error "end index %ld is out of range" end))
-        (set! xs (SCM_CDR xs))
-        (set! k (- k 1)))
-      (return h))))
+    (return (%list-range-copy list start end))))
+
+;; like list-copy, but shares pairs whenever possible
+(define-cproc sublist (list :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (if (== end -1)
+    (return (Scm_ListTail list start SCM_UNBOUND))
+    (return (%list-range-copy list start end))))
 
 (define-cproc list* (arg :rest args)
   (inliner LIST-STAR)

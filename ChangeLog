@@ -1,3 +1,9 @@
+2026-08-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (sublist): Added.  This can be used like
+	  Scm_MaybeSubstring for strings---limiting the input list range but
+	  avoiding unnecessary copying.
+
 2026-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/stream.scm (list->stream): Add optional start/end args
