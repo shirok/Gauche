@@ -436,7 +436,10 @@
 (define (ideque->list dq) (append (dq-f dq) (reverse (dq-r dq))))
 
 ;; API [SRFI-134]
-(define (list->ideque lis) (check (length lis) lis 0 '()))
+;;  optional start/end argument is srfi-274.
+(define (list->ideque lis . args)
+  (let1 lis (apply sublist lis args)
+    (check (length lis) lis 0 '())))
 
 ;; API [SRFI-134]
 (define (ideque->generator dq)
