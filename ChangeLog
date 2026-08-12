@@ -1,5 +1,8 @@
 2026-08-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/util/stream.scm (list->stream): Add optional start/end args
+	  (SRFI-274).
+
 	* src/number.c (read_real): Allow hexadecimal flonum without
 	  explicit exponent.  https://github.com/shirok/Gauche/issues/1307
 

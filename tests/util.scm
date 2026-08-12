@@ -1017,6 +1017,13 @@
                       (stream-fourth s)))
               (list s0 s1))))
 
+(test* "list->stream" '(0 1 2 3 4)
+       (stream->list (list->stream (iota 5))))
+(test* "list->stream (start)" '(2 3 4)
+       (stream->list (list->stream (iota 5) 2)))
+(test* "list->stream (start/end)" '(1 2 3)
+       (stream->list (list->stream (iota 5) 1 4)))
+
 (test* "stream-map/stream-ref" '(2 4 6 8)
        (let1 s
            (stream-map (cut * 2 <>)

@@ -240,9 +240,17 @@
                                          (stream-filter p (stream-cdr s)))]
         [else (stream-filter p (stream-cdr s))]))
 
-;; SRFI-41
-(define (list->stream lis)
-  (stream-unfold car pair? cdr lis))
+;; SRFI-41  (start/end is SRFI-274)
+(define (list->stream lis :optional start end)
+  (if (undefined? end)
+    (let1 lis (if (undefined? start) lis (drop lis start))
+      (stream-unfold car pair? cdr lis)) ; fast path
+    ;; We can avoid list-copy by counting pairs as the stream unfolds, but
+    ;; (1) we need to ensure list's length eagerly, and (2) carry around
+    ;; the list and count requires cons for each iteration anyway, so
+    ;; we take a naive approach for now.
+    (stream-unfold car pair? cdr
+                   (list-copy lis (if (undefined? start) 0 start) end))))
 
 (define (generator->stream gen :optional (fini #f))
   ((rec (next)
