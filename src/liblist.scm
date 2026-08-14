@@ -337,7 +337,7 @@
       (set! k (- k 1)))
     (return h)))
 
-(define-cproc list-copy (list :optional (start::<fixnum> 0) (end::<fixnum> -1))
+(define-cproc list-copy (list :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   (if (== end -1)
     (if (== start 0)
       (return (Scm_CopyList list))
@@ -345,7 +345,7 @@
     (return (%list-range-copy list start end))))
 
 ;; like list-copy, but shares pairs whenever possible
-(define-cproc sublist (list :optional (start::<fixnum> 0) (end::<fixnum> -1))
+(define-cproc sublist (list :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   (if (== end -1)
     (return (Scm_ListTail list start SCM_UNBOUND))
     (return (%list-range-copy list start end))))

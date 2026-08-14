@@ -78,24 +78,24 @@
       (set! (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)) obj))))
 
 (define-cproc vector->list
-  (vec::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (vec::<vector> :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   Scm_VectorToList)
 
 (define-cproc list->vector
-  (list::<list> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (list::<list> :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   Scm_ListToVector)
 
 (define-cproc vector-fill!
-  (vec::<vector> fill :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (vec::<vector> fill :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   ::<void> Scm_VectorFill)
 
 (define-cproc vector-copy
-  (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) fill)
+  (v::<vector> :optional (start::<fixnum>? 0) (end::<fixnum>? -1) fill)
   Scm_VectorCopy)
 
 (define-cproc vector-copy!
   (t::<vector> tstart::<fixnum> s::<vector>
-               :optional (sstart::<fixnum> 0) (send::<fixnum> -1)) ::<void>
+               :optional (sstart::<fixnum>? 0) (send::<fixnum>? -1)) ::<void>
   (let* ([tsize::long (SCM_VECTOR_SIZE t)])
     (SCM_VECTOR_CHECK_MUTABLE t)
     (when (< send 0) (set! send (SCM_VECTOR_SIZE s)))
@@ -453,12 +453,12 @@
 
  (define-cproc string->s8vector
    (s::<string>
-    :optional (start::<fixnum> 0) (end::<fixnum> -1) (immutable?::<boolean> #f))
+    :optional (start::<fixnum>? 0) (end::<fixnum>? -1) (immutable?::<boolean> #f))
    (return (string->bytevector SCM_CLASS_S8VECTOR s start end immutable?)))
 
  (define-cproc string->u8vector
    (s::<string>
-    :optional (start::<fixnum> 0) (end::<fixnum> -1) (immutable?::<boolean> #f))
+    :optional (start::<fixnum>? 0) (end::<fixnum>? -1) (immutable?::<boolean> #f))
    (return (string->bytevector SCM_CLASS_U8VECTOR s start end immutable?)))
 
  (define-cfn string->bytevector! (v::ScmUVector*
@@ -480,15 +480,15 @@
  (define-cproc string->s8vector! (v::<s8vector>
                                   tstart::<fixnum>
                                   s::<string>
-                                  :optional (start::<fixnum> 0)
-                                  (end::<fixnum> -1))
+                                  :optional (start::<fixnum>? 0)
+                                            (end::<fixnum>? -1))
    (return (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
  (define-cproc string->u8vector! (v::<u8vector>
                                   tstart::<fixnum>
                                   s::<string>
-                                  :optional (start::<fixnum> 0)
-                                  (end::<fixnum> -1))
+                                  :optional (start::<fixnum>? 0)
+                                            (end::<fixnum>? -1))
    (return (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
  (define-cfn bytevector->string (v::ScmUVector*
@@ -530,14 +530,14 @@
                                (- end start) -1 flags)))))
 
  (define-cproc s8vector->string (v::<s8vector>
-                                 :optional (start::<fixnum> 0)
-                                           (end::<fixnum> -1)
+                                 :optional (start::<fixnum>? 0)
+                                           (end::<fixnum>? -1)
                                            (terminator #f))
    (return (bytevector->string (SCM_UVECTOR v) start end terminator)))
 
  (define-cproc u8vector->string (v::<u8vector>
-                                 :optional (start::<fixnum> 0)
-                                           (end::<fixnum> -1)
+                                 :optional (start::<fixnum>? 0)
+                                           (end::<fixnum>? -1)
                                            (terminator #f))
    (return (bytevector->string (SCM_UVECTOR v) start end terminator)))
 
@@ -565,14 +565,14 @@
        (return v))))
 
  (define-cproc string->s32vector (s::<string>
-                                  :optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1)
+                                  :optional (start::<fixnum>? 0)
+                                            (end::<fixnum>? -1)
                                             endian)
    (return (string->wordvector SCM_CLASS_S32VECTOR s start end endian)))
 
  (define-cproc string->u32vector (s::<string>
-                                  :optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1)
+                                  :optional (start::<fixnum>? 0)
+                                            (end::<fixnum>? -1)
                                             endian)
    (return (string->wordvector SCM_CLASS_U32VECTOR s start end endian)))
 
@@ -607,16 +607,16 @@
  (define-cproc string->s32vector! (v::<s32vector>
                                    tstart::<fixnum>
                                    s::<string>
-                                   :optional (start::<fixnum> 0)
-                                             (end::<fixnum> -1)
+                                   :optional (start::<fixnum>? 0)
+                                             (end::<fixnum>? -1)
                                              endian)
    (return (string->wordvector! (SCM_UVECTOR v) tstart s start end endian)))
 
  (define-cproc string->u32vector! (v::<u32vector>
                                    tstart::<fixnum>
                                    s::<string>
-                                   :optional (start::<fixnum> 0)
-                                             (end::<fixnum> -1)
+                                   :optional (start::<fixnum>? 0)
+                                             (end::<fixnum>? -1)
                                              endian)
    (return (string->wordvector! (SCM_UVECTOR v) tstart s start end endian)))
 
@@ -649,15 +649,15 @@
      (return (Scm_GetOutputStringUnsafe (SCM_PORT s) 0))))
 
  (define-cproc s32vector->string (v::<s32vector>
-                                  :optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1)
+                                  :optional (start::<fixnum>? 0)
+                                            (end::<fixnum>? -1)
                                             (terminator #f)
                                             endian)
    (return (wordvector->string (SCM_UVECTOR v) start end terminator endian)))
 
  (define-cproc u32vector->string (v::<u32vector>
-                                  :optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1)
+                                  :optional (start::<fixnum>? 0)
+                                            (end::<fixnum>? -1)
                                             (terminator #f)
                                             endian)
    (return (wordvector->string (SCM_UVECTOR v) start end terminator endian)))
@@ -672,8 +672,8 @@
   SCM_BITVECTOR_SIZE)
 
 (define-cproc bitvector-any-value? (v::<bitvector> bit
-                                    :optional (start::<fixnum> 0)
-                                              (end::<fixnum> -1))
+                                    :optional (start::<fixnum>? 0)
+                                              (end::<fixnum>? -1))
   ::<boolean>
   (let* ([b::int (Scm_Bit2Int bit)])
     (SCM_CHECK_START_END start end (SCM_BITVECTOR_SIZE v))
@@ -682,8 +682,8 @@
       (return (not (Scm_BitsEvery (SCM_BITVECTOR_BITS v) start end))))))
 
 (define-cproc bitvector-every-value? (v::<bitvector> bit
-                                      :optional (start::<fixnum> 0)
-                                                (end::<fixnum> -1))
+                                      :optional (start::<fixnum>? 0)
+                                                (end::<fixnum>? -1))
   ::<boolean>
   (let* ([b::int (Scm_Bit2Int bit)])
     (SCM_CHECK_START_END start end (SCM_BITVECTOR_SIZE v))
@@ -733,15 +733,15 @@
   (return (?: (SCM_BITS_TEST (SCM_BITVECTOR_BITS v) i) SCM_TRUE SCM_FALSE)))
 
 (define-cproc bitvector-copy (v::<bitvector>
-                              :optional (start::<fixnum> 0)
-                                        (end::<fixnum> -1)) ;SRFI-178
+                              :optional (start::<fixnum>? 0)
+                                        (end::<fixnum>? -1)) ;SRFI-178
   Scm_BitvectorCopy)
 
 (define-cproc bitvector-copy! (dest::<bitvector>
                                dstart::<fixnum>
                                src::<bitvector>
-                               :optional (start::<fixnum> 0)
-                                         (end::<fixnum> -1)) ;SRFI-178
+                               :optional (start::<fixnum>? 0)
+                                         (end::<fixnum>? -1)) ;SRFI-178
   Scm_BitvectorCopyX)
 
 (define-cproc bitvector-word-bits () ::<fixnum>
@@ -753,8 +753,8 @@
     (return (Scm_BitvectorToUVectorShared bv k))))
 
 (define-cproc uvector->bitvector/shared (uv::<uvector>
-                                         :optional (start::<fixnum> 0)
-                                                   (end::<fixnum> -1))
+                                         :optional (start::<fixnum>? 0)
+                                                   (end::<fixnum>? -1))
   (return (Scm_UVectorToBitvectorShared uv start end)))
 
 ;;;
