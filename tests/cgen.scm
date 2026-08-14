@@ -561,6 +561,41 @@ some_trick();
         (metaclass <class>)))
   )
 
+;; A maybe type whose C type can't represent #f is only allowed where we
+;; have a default value to fall back to.  Make sure the invalid uses are
+;; rejected at stub compilation time, instead of emitting bogus C code.
+(let ()
+  (define (test-stub-error name form)
+    ($ test-with-temporary-directory "test.o"
+       (^[]
+         ($ test* #"stub-error ~name" (test-error <error>)
+            (let1 out.stub (build-path "test.o" "err.stub")
+              (with-output-to-file out.stub (^[] (write form) (newline)))
+              (cgen-genstub out.stub :output-directory "test.o"))))))
+
+  (test-stub-error "required arg"
+                   '(define-cproc foo (x::<fixnum>?) (return (SCM_MAKE_INT x))))
+  (test-stub-error "optional arg w/o default"
+                   '(define-cproc foo (:optional x::<fixnum>?)
+                      (return (SCM_MAKE_INT x))))
+  (test-stub-error "optional arg w/ #f default"
+                   '(define-cproc foo (:optional (x::<fixnum>? #f))
+                      (return (SCM_MAKE_INT x))))
+  (test-stub-error "keyword arg w/o default"
+                   '(define-cproc foo (:key x::<double>?)
+                      (return (Scm_MakeFlonum x))))
+  (test-stub-error "return type"
+                   '(define-cproc foo () ::<fixnum>? (return 1)))
+  (test-stub-error "cclass slot type"
+                   '(define-cclass foo :base :private :no-meta
+                      "Foo*" "FooClass"
+                      (c "SCM_CLASS_TOP_CPL")
+                      ((x :type <fixnum>?))))
+  (test-stub-error "maybe boolean"
+                   '(define-cproc foo (:optional (x::<boolean>? #t))
+                      (return (SCM_MAKE_BOOL x))))
+  )
+
 ;;====================================================================
 (test-section "gauche.cgen")
 (use gauche.cgen)

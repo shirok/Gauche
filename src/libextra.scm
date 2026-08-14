@@ -63,6 +63,19 @@
    (cast void get_libgauche_path)  ; ditto
    (return (substitute_all input mark subst))))
 
+;; Maybe-typed arguments.
+(inline-stub
+ (define-cproc maybe-arg-fixnum (a::<fixnum>
+                                 :optional (b::<fixnum>? -1)
+                                           (c::<double>? 3.0))
+   (return (Scm_List (SCM_MAKE_INT a) (SCM_MAKE_INT b) (Scm_MakeFlonum c)
+                     NULL)))
+ (define-cproc maybe-arg-key (:key (c::<char>? #\a) (n::<int>? 10))
+   (return (Scm_Cons (SCM_MAKE_CHAR c) (Scm_MakeInteger n))))
+ (define-cproc maybe-arg-ptr (:optional (s::<string>? "abc"))
+   (return (?: (== s NULL) SCM_FALSE (SCM_OBJ s))))
+ )
+
 ;; Busy loop to test thread termination.
 ;;   thread-terminate! first flags target VM with a termination request,
 ;;   but if thread doesn't terminate with it (either busy executing a subr

@@ -48,6 +48,29 @@
 
   )
 
+(test-section "maybe-typed arguments")
+
+;; #f selects the default value, for the maybe types that can't represent
+;; #f in C.
+(test* "maybe arg, omitted" '(1 -1 3.0) (maybe-arg-fixnum 1))
+(test* "maybe arg, given" '(1 2 4.0) (maybe-arg-fixnum 1 2 4.0))
+(test* "maybe arg, #f" '(1 -1 4.0) (maybe-arg-fixnum 1 #f 4.0))
+(test* "maybe arg, #f #f" '(1 -1 3.0) (maybe-arg-fixnum 1 #f #f))
+(test* "maybe arg, type error" (test-error <error> #/supposed to be of type .*or #f/)
+       (maybe-arg-fixnum 1 'a))
+;; Required arg isn't maybe-typed
+(test* "maybe arg, required arg" (test-error) (maybe-arg-fixnum #f))
+
+(test* "maybe key arg, omitted" '(#\a . 10) (maybe-arg-key))
+(test* "maybe key arg, given" '(#\b . 20) (maybe-arg-key :c #\b :n 20))
+(test* "maybe key arg, #f" '(#\a . 20) (maybe-arg-key :c #f :n 20))
+
+;; Pointer maybe type isn't affected---#f is passed as NULL, regardless
+;; of the default value.
+(test* "maybe ptr arg, omitted" "abc" (maybe-arg-ptr))
+(test* "maybe ptr arg, given" "def" (maybe-arg-ptr "def"))
+(test* "maybe ptr arg, #f" #f (maybe-arg-ptr #f))
+
 (test-section "path substitution")
 
 (test* "substitute_all" "abcXYZdefXYZ@XYZghi"

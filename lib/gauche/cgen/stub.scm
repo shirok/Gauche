@@ -1060,8 +1060,25 @@
                s))
          ss))
 
+  ;; A maybe type that can't represent #f in C needs the arg's default value
+  ;; to fall back to, so reject such arg unless it has a usable default.
+  (define (check-maybe-args args keyargs)
+    (dolist [arg (append args keyargs)]
+      (let1 type (~ arg'type)
+        (when (and (cgen-type-maybe? type)
+                   (not (cgen-type-nullable-maybe? type))
+                   (not (and-let1 default (~ arg'default)
+                          (~ default'value))))
+          (errorf <cgen-stub-error>
+                  "argument ~a of ~a is typed ~a, which requires a default \
+                   value other than #f"
+                  (~ arg'name) name (~ type'name))))))
+
   ;; Main body
-  (required (filter-argspecs argspecs) '() 0)
+  (receive (args keyargs nreqs nopts rest? other-keys?)
+      (required (filter-argspecs argspecs) '() 0)
+    (check-maybe-args args keyargs)
+    (values args keyargs nreqs nopts rest? other-keys?))
   )
 
 ;; returns two values, body stmts and return-type.  return-type can be #f
@@ -1453,12 +1470,24 @@
   (p "  int "(get-c-name "" (~ arg'count-var))";"))
 
 (define (emit-arg-unbox-rec arg)
-  (f "  if (!~a) Scm_TypeError(~a, ~a, ~a);"
-     (cgen-pred-expr (~ arg'type) (~ arg'scm-name))
-     (cgen-safe-string (x->string (~ arg'name)))
-     (cgen-safe-string (x->string (~ arg'type'description)))
-     (~ arg'scm-name))
-  (p "  "(~ arg'c-name)" = "(cgen-unbox-expr (~ arg'type) (~ arg'scm-name))";"))
+  ;; If the arg is a maybe type that can't represent #f in C, we substitute
+  ;; the arg's default value for #f, then typecheck and unbox the result
+  ;; with the base type.  (See "Maybe types" in gauche.cgen.type.)
+  ;; The error message still uses the maybe type's description, for #f is
+  ;; an acceptable input.
+  (let* ([type (~ arg'type)]
+         [fallback? (and (cgen-type-maybe? type)
+                         (not (cgen-type-nullable-maybe? type)))]
+         [etype (if fallback? (cgen-type-maybe-base type) type)])
+    (when fallback?
+      (f "  if (SCM_FALSEP(~a)) ~a = ~a;"
+         (~ arg'scm-name) (~ arg'scm-name) (get-arg-default arg)))
+    (f "  if (!~a) Scm_TypeError(~a, ~a, ~a);"
+       (cgen-pred-expr etype (~ arg'scm-name))
+       (cgen-safe-string (x->string (~ arg'name)))
+       (cgen-safe-string (x->string (~ type'description)))
+       (~ arg'scm-name))
+    (p "  "(~ arg'c-name)" = "(cgen-unbox-expr etype (~ arg'scm-name))";")))
 
 (define-method emit-arg-unbox ((arg <required-arg>))
   (p "  "(~ arg'scm-name)" = SCM_SUBRARGS["(~ arg'count)"];")

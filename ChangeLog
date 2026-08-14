@@ -1,3 +1,11 @@
+2026-08-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/type.scm, lib/gauche/cgen/stub.scm: Allow
+	  'maybe' qualifications to a cproc arugment of non-pointer types,
+	  as far as the default value is provided.  Passing #f to such
+	  argument means using the default value.
+	  https://github.com/shirok/Gauche/issues/270
+
 2026-08-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (sublist): Added.  This can be used like
