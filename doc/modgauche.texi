@@ -3773,13 +3773,29 @@ objects, or an object that can take multiple representations
 so the stub generator passes through it,
 and the C routine handles the internals.)
 @item
-Maybe stub types.  It is noted by a question mark suffix.
-In stub context, we only concern maybe type
-that can be unboxed into a C pointer type.  In addition to the objects
-of the origial type, it maps Scheme's @code{#f} to C's @code{NULL}
-and vice versa.  For example, @code{<port>?} maps Scheme's @code{<port>}
-instance to C's @code{ScmPort*},
-@emph{and} Scheme's @code{#f} to C's @code{NULL}.
+@emph{Maybe} stub types.  It is noted by a question mark suffix.
+In Scheme, this is a union of the base type and a singleton type of
+@code{#f}.  For example, an argument typed with @code{<string>?}
+can take a string or @code{#f}.
+From the C side, maybe stub type behaves differently depending on
+whether the type is indirect reference type (pointer) or
+immediate type.
+@itemize @bullet
+@item
+If it's a pointer type, @code{#f} is translated
+to @code{NULL}.   For example, Scheme strings are @code{ScmString*}
+in C, so when @code{#f} is passed to an argument with
+@code{<string>?} stub type, C side gets @code{NULL}.
+@item
+If it's an immediate type, e.g. @code{<fixnum>},
+maybe type is only appear in optional or keyword arguments,
+and must be accompanied with the default value.
+When @code{#f} is passed to @code{<fixnum>?} argument,
+it works as if the argument is not given at all---so the default
+value is used.  The stub generator raises an error if
+a maybe type of immediate stub type appears without
+a default value.
+@end itemize
 @end itemize
 
 @deftp {Class} <cgen-type>
