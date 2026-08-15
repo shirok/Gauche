@@ -1,3 +1,7 @@
+2026-08-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/ffi.scm: Add :c-headers option to with-ffi.
+
 2026-08-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/type.scm, lib/gauche/cgen/stub.scm: Allow

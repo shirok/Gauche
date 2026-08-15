@@ -69,6 +69,9 @@
                         '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs ccb-info forms)
+        (unless (null? (get-keyword :c-headers options '()))
+          (error "c-headers option cannot be used with native ffi subsystem yet.\
+                  use stubgen ffi subsystem instead."))
         (let* ([ccb-name-set (map car ccb-info)]
                [cfn-specs (filter (^s (not (memq (car s) ccb-name-set)))
                                   cdef-specs)]

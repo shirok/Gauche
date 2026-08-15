@@ -68,11 +68,12 @@
                (define _dummy
                  (compile-and-link-ffi-stub ,dlo-var
                                             ,cdef-list-expr
+                                            ,(get-keyword :c-headers options '())
                                             (current-module)))
                )))]))))
 
-(define (compile-and-link-ffi-stub dlobj cdef-instances mod)
-  (let ([unit (generate-ffi-c-code-unit cdef-instances)]
+(define (compile-and-link-ffi-stub dlobj cdef-instances c-headers mod)
+  (let ([unit (generate-ffi-c-code-unit cdef-instances c-headers)]
         ;; Collect return types for pointer-returning functions, in order.
         ;; These are passed as extra args to ffisetup so it can populate
         ;; the per-function static type variables used in boxing.
@@ -750,7 +751,7 @@
 ;;; Generate C code from a list of <foreign-c-function> instances.
 ;;;
 
-(define (generate-ffi-c-code-unit cdef-instances)
+(define (generate-ffi-c-code-unit cdef-instances c-headers)
   (define unit-name (symbol->string (gensym "ffi")))
   (define cfn-instances
     (filter (cut is-a? <> <foreign-c-function>) cdef-instances))
@@ -772,7 +773,10 @@
     (filter (^[cfn] (~ cfn'variadic?)) cfn-instances))
   (parameterize ([cgen-current-unit unit])
     (cgen-decl "#include <gauche.h>")
-    (cgen-decl (format "#define SCM_STUBGEN_MAX_VARIADIC_ARGS ~a" *max-variadic-args*))
+    (cgen-decl #"#define SCM_STUBGEN_MAX_VARIADIC_ARGS ~*max-variadic-args*")
+    #?=c-headers
+    (dolist [hdr c-headers]
+      (cgen-decl #"#include <~|hdr|>"))
 
     (for-each emit-fn-ptr-decl cfn-instances)
 

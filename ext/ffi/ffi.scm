@@ -329,7 +329,7 @@
         ;; load (the stub looks them up lazily via SCM_BIND_PROC).
         (define final-forms (reverse ccb-defines extra-forms))
 
-        ;; NB: with-stubgen-ffi should expand into definitions, so that
+        ;; NB: with-*-ffi should expand into definitions, so that
         ;; defined C functions (and other definitions) are visible
         ;; from the following expressions.  Be careful not to wrap
         ;; the expansion with let etc.
