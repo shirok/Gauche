@@ -774,7 +774,6 @@
   (parameterize ([cgen-current-unit unit])
     (cgen-decl "#include <gauche.h>")
     (cgen-decl #"#define SCM_STUBGEN_MAX_VARIADIC_ARGS ~*max-variadic-args*")
-    #?=c-headers
     (dolist [hdr c-headers]
       (cgen-decl #"#include <~|hdr|>"))
 
