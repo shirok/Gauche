@@ -43,32 +43,42 @@
   (use lang.c.lexer)
   (use lang.c.type)
   (use srfi.13)
-  (use lang.c.parameter)
 
-  (export c-tokenize-file
+  (export <c-parser>
+          c-tokenize-file
           c-tokenize-string
           c-parse-file
           c-parse-string
-          cpp-include-paths             ;re-export from lang.c.parameter
           )
   )
 (select-module lang.c.parser)
 
+;; We use a functional PEG paresr, but a class is convenient to put
+;; customizable values.  While PEG parser is running, its intance
+;; is accessible via a parameter.
+(define-class <c-parser> ()
+  ((peg-parser :init-form %translation-unit)
+   ;;  peg-parser : PEG parser to use.
+   ;;    For the time being, we don't export internal PEG parsers,
+   ;;    but we may provide alternative parsers or partial parsers (e.g. just
+   ;;    for expressions).
+   (cpp-include-paths :init-form '())
+   ;;  cpp-include-paths : A list of strings to be considered for include file
+   ;;    search.
+   (cpp-definitions :init-form '())
+   ;;  cpp-definitions : (def ...)
+   ;;    where each def may be VAR or (VAR VAL ...)
+   ;;    Single VAR becomes -DVAR, and the list becomes -DVAR=VAL ...
+   ;;    to be passed to cpp.
+   (use-concurrent-lexer :init-form (> (sys-available-processors) 1))
+   ;;  A boolean value to specify whether we run lexer concurrently.
+   (typedefs :init-form (make-hash-table eq-comparator))
+   ;;  typedefs : symbol -> c-type
+   ;;    C syntax is ambiguous that identifier can also be a type name.  We need
+   ;;    to track previously declared type names.
+   ))
 
-;;
-;; Typename catalog.
-;;    symbol -> c-type
-;;
-;; C syntax is ambiguous that identifier can also be a type name.  We need
-;; to track previously declared type names.
-;;
-(define *default-typedef-table*
-  (make-hash-table eq-comparator))
-
-(define (default-typedefs) (hash-table-copy *default-typedef-table*))
-
-(define typedef-names
-  (make-parameter (make-stacked-map (default-typedefs))))
+(define typedef-names (make-parameter #f))
 
 (define-syntax $with-scope
   (syntax-rules ()
@@ -79,7 +89,7 @@
                     parser)]))
 
 ;;;
-;;; Parser
+;;; PEG Parser
 ;;;
 
 ;; Token recognition
@@ -765,16 +775,16 @@
   (unless (file-is-readable? file)
     (error "file does not exist or unreadable:" file)))
 
-(define (c-tokenize-file file)
+(define (c-tokenize-file c-parser file)
   (file-check file)
   (call-with-cpp file
      (^p ($ lseq->list $ c-tokenize
             $ port->char-lseq/position p
             :source-name file :line-adjusters `((#\# . ,cc1-line-adjuster))))
-     :includes (cpp-include-paths)
-     :defs (cpp-definitions)))
+     :includes (~ c-parser'cpp-include-paths)
+     :defs (~ c-parser'cpp-definitions)))
 
-(define (c-tokenize-file-coroutine file)
+(define (c-tokenize-file-coroutine c-parser file)
   (^[yield]
     ($ call-with-cpp file
        (^p
@@ -786,15 +796,17 @@
             (yield (car tokens)
                    (pair-attributes tokens))
             (loop (cdr tokens)))))
-       :includes (cpp-include-paths)
-       :defs (cpp-definitions))))
+       :includes (~ c-parser'cpp-include-paths)
+       :defs (~ c-parser'cpp-definitions))))
 
-(define (c-parse-file file :optional (parser %translation-unit))
+(define (c-parse-file c-parser file)
   (file-check file)
-  (parameterize ((typedef-names (default-typedefs)))
-    (if (use-concurrent-lexer)
-      (peg-run-parser parser (coroutine->cseq (c-tokenize-file-coroutine file)))
-      (peg-run-parser parser (c-tokenize-file file)))))
+  (let ([peg (~ c-parser'peg-parser)])
+    (parameterize ((typedef-names (~ c-parser'typedefs)))
+      (if (~ c-parser'use-concurrent-lexer)
+        ($ peg-run-parser peg
+           (coroutine->cseq (c-tokenize-file-coroutine c-parser file)))
+        ($ peg-run-parser peg (c-tokenize-file c-parser file))))))
 
 (define (%operate-on-string string proc)
   (let1 f (format "x~8,'0x.c" (receive (s us) (sys-gettimeofday)
@@ -804,8 +816,8 @@
         (proc f)
       (sys-remove f))))
 
-(define (c-tokenize-string string)
-  (%operate-on-string string c-tokenize-file))
+(define (c-tokenize-string c-parser string)
+  (%operate-on-string string (cut c-tokenize-file c-parser <>)))
 
-(define (c-parse-string string :optional (parser %translation-unit))
-  (%operate-on-string string (^f (c-parse-file f parser))))
+(define (c-parse-string c-parser string)
+  (%operate-on-string string (cut c-parse-file c-parser <>)))

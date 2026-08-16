@@ -7,7 +7,10 @@
 (use gauche.time)
 (use util.match)
 (use lang.c.parser)
-(cpp-include-paths '("." "../gc/include" "../gc/libatomic_ops/src"))
+
+(define *c-parser*
+  (make <c-parser>
+    :cpp-include-paths '("." "../gc/include" "../gc/libatomic_ops/src")))
 
 (define *sources*
   '(autoloads.c
@@ -97,7 +100,7 @@
 
 (define (do-parse file)
   (print "parsing " file " ...")
-  (print (time-this 1 (^[] (c-parse-file file)))))
+  (print (time-this 1 (^[] (c-parse-file *c-parser* file)))))
 
 (define (main args)
   (if (null? (cdr args))

@@ -1,3 +1,10 @@
+2026-08-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/lang/c/parser.scm: Introduced <c-parser> to consolidate
+	  parser settings.  It will be easier to add more customization
+	  later.  This replaces lang.c.parameter.  NB: lang.c.parser public
+	  API is changed.
+
 2026-08-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/ffi.scm: Add :c-headers option to with-ffi.

@@ -248,9 +248,10 @@
 
 ;; grokking type
 (let ()
+  (define c-parser (make <c-parser>))
   (define (t-type expect code)
     (test* code expect
-           (let loop ((decls (c-parse-string code)))
+           (let loop ((decls (c-parse-string c-parser code)))
              (match decls
                [(('decl ('x _ type _)) . _) type]
                [(_ . r) (loop r)]))))
@@ -368,8 +369,9 @@
 ;; We haven't fixed the format of the semantic value, so for now we just
 ;; see if it parses.
 (let ()
+  (define c-parser (make <c-parser>))
   (define (t-succ expect code)
-    (test* code expect (boolean (c-parse-string code))))
+    (test* code expect (boolean (c-parse-string c-parser code))))
 
   ;; simple declaration
   (t-succ #t "int x;")

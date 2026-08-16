@@ -116,8 +116,7 @@ SCMFILES = \
        data/ideque.scm data/imap.scm data/priority-map.scm data/random.scm \
        data/range.scm data/skew-list.scm data/ulid.scm \
        lang/asm/fragment.scm lang/asm/linker.scm lang/asm/regset.scm \
-       lang/c/parameter.scm lang/c/lexer.scm lang/c/parser.scm \
-       lang/c/type.scm \
+       lang/c/lexer.scm lang/c/parser.scm lang/c/type.scm \
        math/const.scm math/prime.scm math/simplex.scm \
        util/identifier-syntax.scm util/isomorph.scm \
        util/toposort.scm util/tree.scm util/queue.scm \
