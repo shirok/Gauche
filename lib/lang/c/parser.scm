@@ -76,8 +76,13 @@
    ;;  typedefs : symbol -> c-type
    ;;    C syntax is ambiguous that identifier can also be a type name.  We need
    ;;    to track previously declared type names.
+   (hooks :init-form (make-hash-table eq-comparator))
    ))
 
+(define current-c-parser (make-parameter #f))
+
+;; Internal.  Typedef names may be nested during parsing, so we have a
+;; separate parameter.
 (define typedef-names (make-parameter #f))
 
 (define-syntax $with-scope
@@ -87,6 +92,13 @@
                                      (make-hash-table eq-comparator)
                                      (typedef-names))))
                     parser)]))
+
+(define ($with-hook name parser)
+  (if-let1 hook (hash-table-get (~ (current-c-parser)'hooks) name #f)
+    (^s (receive (r v s1) (parser s)
+          (if (parse-success? r)
+            (values r (hook v) s1)
+            (values r v s1))))))
 
 ;;;
 ;;; PEG Parser
@@ -802,7 +814,8 @@
 (define (c-parse-file c-parser file)
   (file-check file)
   (let ([peg (~ c-parser'peg-parser)])
-    (parameterize ((typedef-names (~ c-parser'typedefs)))
+    (parameterize ([current-c-parser c-parser]
+                   [typedef-names (~ c-parser'typedefs)])
       (if (~ c-parser'use-concurrent-lexer)
         ($ peg-run-parser peg
            (coroutine->cseq (c-tokenize-file-coroutine c-parser file)))
