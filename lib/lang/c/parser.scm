@@ -94,8 +94,8 @@
                     parser)]))
 
 (define ($with-hook name parser)
-  (if-let1 hook (hash-table-get (~ (current-c-parser)'hooks) name #f)
-    (^s (receive (r v s1) (parser s)
+  (^s (receive (r v s1) (parser s)
+        (let1 hook (hash-table-get (~ (current-c-parser)'hooks) name identity)
           (if (parse-success? r)
             (values r (hook v) s1)
             (values r v s1))))))
@@ -406,22 +406,23 @@
   ($between %LC ($end-by %struct-declaration ($. '|\;|)) %RC))
 
 (define %struct-or-union-specifier
-  ($binding ($: key ($one-of '(struct union)))
-            ($or ($seq ($: tag %identifier)
-                       ($optional ($: mem %struct-members)))
-                 ($: mem %struct-members))
-            (=> fail)
-            ;; need to catch error from grok-c-type
-            (guard (e [else (fail 'error (~ e'message))])
-              ;; mem := (quals&spec decl ...)
-              (let* ([tdict (typedef-names)]
-                     [member-decls
-                      (append-map
-                       (^m (map (cut grok-member-declaration (car m) <>)
-                                (cdr m)))
-                       (if (undefined? mem) '() mem))])
-                `(,key ,(if (undefined? tag) #f tag)
-                       ,@member-decls)))))
+  ($ $with-hook 'struct-or-union-specifier
+     ($binding ($: key ($one-of '(struct union)))
+               ($or ($seq ($: tag %identifier)
+                          ($optional ($: mem %struct-members)))
+                    ($: mem %struct-members))
+               (=> fail)
+               ;; need to catch error from grok-c-type
+               (guard (e [else (fail 'error (~ e'message))])
+                 ;; mem := (quals&spec decl ...)
+                 (let* ([tdict (typedef-names)]
+                        [member-decls
+                         (append-map
+                          (^m (map (cut grok-member-declaration (car m) <>)
+                                   (cdr m)))
+                          (if (undefined? mem) '() mem))])
+                   `(,key ,(if (undefined? tag) #f tag)
+                          ,@member-decls))))))
 
 (define (grok-member-declaration specs decl)
   (match decl
@@ -444,12 +445,13 @@
 
 ;; returns (enum <tag> ((<symbol> <init-expr>) ...))
 (define %enum-specifier
-  ($binding ($. 'enum)
-            ($or ($seq ($: tag %identifier)
-                       ($optional ($: lis %enumerators)))
-                 ($: lis %enumerators))
-            `(enum ,(if (undefined? tag) #f tag)
-                   ,@(if (undefined? lis) '() lis))))
+  ($ $with-hook 'enum-specifier
+     ($binding ($. 'enum)
+               ($or ($seq ($: tag %identifier)
+                          ($optional ($: lis %enumerators)))
+                    ($: lis %enumerators))
+               `(enum ,(if (undefined? tag) #f tag)
+                      ,@(if (undefined? lis) '() lis)))))
 
 ;; 6.7.4 Function specifiers
 (define %function-specifier ($. 'inline))
