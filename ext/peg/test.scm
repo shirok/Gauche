@@ -696,7 +696,7 @@
 
 (test* "peg-memoizer-show-statistics - no statistics" #t
        (boolean
-        (#/doesn't take statistics/
+        (#/statistics gathering was off/
          (with-output-to-string
            (cut peg-memoizer-show-statistics (make-peg-memoizer))))))
 
