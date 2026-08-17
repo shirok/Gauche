@@ -94,11 +94,12 @@
                     parser)]))
 
 (define ($with-hook name parser)
-  (^s (receive (r v s1) (parser s)
-        (let1 hook (hash-table-get (~ (current-c-parser)'hooks) name identity)
-          (if (parse-success? r)
-            (values r (hook v) s1)
-            (values r v s1))))))
+  ($memo
+   (^s (receive (r v s1) (parser s)
+         (let1 hook (hash-table-get (~ (current-c-parser)'hooks) name identity)
+           (if (parse-success? r)
+             (values r (hook v) s1)
+             (values r v s1)))))))
 
 ;;;
 ;;; PEG Parser
@@ -815,9 +816,12 @@
 
 (define (c-parse-file c-parser file)
   (file-check file)
-  (let ([peg (~ c-parser'peg-parser)])
+  (let ([peg (~ c-parser'peg-parser)]
+        [memoizer (make-peg-memoizer
+                   :keyed-parameters `(,typedef-names))])
     (parameterize ([current-c-parser c-parser]
-                   [typedef-names (~ c-parser'typedefs)])
+                   [typedef-names (~ c-parser'typedefs)]
+                   [current-peg-memoizer memoizer])
       (if (~ c-parser'use-concurrent-lexer)
         ($ peg-run-parser peg
            (coroutine->cseq (c-tokenize-file-coroutine c-parser file)))
