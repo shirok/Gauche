@@ -39,6 +39,7 @@
   (use gauche.collection)
   (use gauche.generator)
   (use gauche.lazy)
+  (use gauche.record)
   (use text.tree)
   (use util.match)
   (export <parse-error>
@@ -65,6 +66,11 @@
           $lazy $parameterize
 
           $cut $raise
+
+          $memo
+          <peg-memoizer> make-peg-memoizer peg-memoizer?
+          peg-memoizer-table peg-memoizer-keyed-parameters
+          current-peg-memoizer
 
           $any $eos $.
 
@@ -1125,6 +1131,91 @@
               (build-parser parsers. vars body #f)))]
          [(parser . rest) (loop rest (cons parser ps))]
          [() (bad)])))))
+
+;;;============================================================
+;;; Memoization
+;;;
+
+;;   Using $memo allows memoization like Parsec, avoids a parser
+;;   called on the same input repeatedly due to backtrack.
+;;   We don't choose automatic memoization, for memoization overhead
+;;   is too much for simple parsers.
+;;
+;;   In order for memoization to work, a PEG memoizer needs to be set
+;;   in the parameter current-peg-memoizer:
+;;
+;;     (parameterize ([current-peg-memoizer (make-peg-memoizer)])
+;;       (peg-parse-string parser input))
+;;
+;;   If the memoizer isn't active, $memoed parsers just work as the
+;;   original ones.
+;;
+;;   In a pure form, the memoized result only depends on the parser and
+;;   the input stream, both compared by eq?.  However, some applications
+;;   alter the behavior of parsers by its own parameters (cf. $parameterize).
+;;   In such ases, the values of such parameters must be a part of the key,
+;;   too; pass the list of those parameters as KEYED-PARAMETERS of
+;;   make-peg-memoizer.  Those parameter values are compared with eqv?.
+;;
+;;   NB: If a parser relies on side-effects, memoization may interfere with
+;;   it.
+
+;; A memoization key is (parser stream keyed-parameter-value ...).
+;; PARSER and STREAM are compared with eq?, and the parameter values
+;; with eqv?.
+(define (%memo-key=? ka kb)
+  (and (eq? (car ka) (car kb))
+       (eq? (cadr ka) (cadr kb))
+       (let loop ([a (cddr ka)] [b (cddr kb)])
+         (cond [(null? a) (null? b)]
+               [(null? b) #f]
+               [(eqv? (car a) (car b)) (loop (cdr a) (cdr b))]
+               [else #f]))))
+
+(define (%memo-key-hash k)
+  (let loop ([h (combine-hash-value (eq-hash (car k)) (eq-hash (cadr k)))]
+             [vs (cddr k)])
+    (if (null? vs)
+      h
+      (loop (combine-hash-value h (eqv-hash (car vs))) (cdr vs)))))
+
+;; NB: We pass #t as the type test, for the keys are always constructed
+;; by $memo below.
+(define %memo-comparator
+  (make-comparator #t %memo-key=? #f %memo-key-hash 'peg-memo-comparator))
+
+;; API
+(define-record-type <peg-memoizer> %make-peg-memoizer peg-memoizer?
+  (table peg-memoizer-table)                 ;hashtable of key -> #(r v s)
+  (keyed-parameters peg-memoizer-keyed-parameters))
+
+;; API
+(define (make-peg-memoizer :key (keyed-parameters '()))
+  (assume (every applicable? keyed-parameters)
+          "list of parameters required, but got:" keyed-parameters)
+  (%make-peg-memoizer (make-hash-table %memo-comparator)
+                      (list-copy keyed-parameters)))
+
+;; API
+;;   Holds a <peg-memoizer> instance while memoization is active.
+(define current-peg-memoizer (make-parameter #f))
+
+;; API
+;; $memo parser
+;;   Returns a parser that behaves the same as PARSER, except that it
+;;   consults the active memoizer, if any.
+(define ($memo parser)
+  (^s (if-let1 memo (current-peg-memoizer)
+        (let* ([tab (peg-memoizer-table memo)]
+               [key (list* parser s
+                           (map (^p (p)) (peg-memoizer-keyed-parameters memo)))]
+               [hit (hash-table-get tab key #f)])
+          (if hit
+            (values (vector-ref hit 0) (vector-ref hit 1) (vector-ref hit 2))
+            (receive (r v s1) (parser s)
+              (hash-table-put! tab key (vector r v s1))
+              (values r v s1))))
+        (parser s))))
 
 ;;;============================================================
 ;;; String parsers

@@ -530,6 +530,115 @@
 
 
 ;;;============================================================
+;;; Memoization
+;;;
+(test-section "memoization")
+
+;; Returns a parser that behaves as P, and a thunk to see how many times
+;; it is actually called.
+(define (counting-parser p)
+  (let1 count 0
+    (values (^s (inc! count) (p s))
+            (^[] count))))
+
+(test* "peg-memoizer?" '(#t #f)
+       (list (peg-memoizer? (make-peg-memoizer))
+             (peg-memoizer? '())))
+(test* "make-peg-memoizer - bad keyed-parameters" (test-error)
+       (make-peg-memoizer :keyed-parameters '(1 2)))
+
+(let1 memo (make-peg-memoizer :keyed-parameters `(,param1))
+  (test* "peg-memoizer-keyed-parameters" (list param1)
+         (peg-memoizer-keyed-parameters memo))
+  (test* "peg-memoizer-table" 0
+         (hash-table-num-entries (peg-memoizer-table memo))))
+
+;; Without an active memoizer, $memo'd parser is just transparent.
+(receive (counted count) (counting-parser ($string "ab"))
+  (let1 parser (let1 p ($memo counted)
+                 ($or ($try ($list p ($string "x")))
+                      ($list p ($string "y"))))
+    (test-succ "$memo (inactive)" '("ab" "y") parser "aby")
+    (test* "$memo (inactive) - call count" 2 (count))))
+
+;; With an active memoizer, the second visit of the same position reuses
+;; the result of the first one.
+(receive (counted count) (counting-parser ($string "ab"))
+  (let ([parser (let1 p ($memo counted)
+                  ($or ($try ($list p ($string "x")))
+                       ($list p ($string "y"))))]
+        [memo (make-peg-memoizer)])
+    (test* "$memo (active)" '("ab" "y")
+           (parameterize ([current-peg-memoizer memo])
+             (peg-parse-string parser "aby")))
+    (test* "$memo (active) - call count" 1 (count))
+    (test* "$memo (active) - table entries" 1
+           (hash-table-num-entries (peg-memoizer-table memo)))))
+
+;; Failures are memoized as well.
+(receive (counted count) (counting-parser ($string "ab"))
+  (let1 parser (let1 p ($memo counted)
+                 ($or p p ($string "zz")))
+    (test* "$memo - failure (inactive)" "zz"
+           (peg-parse-string parser "zz"))
+    (test* "$memo - failure (inactive) - call count" 2 (count))
+    (test* "$memo - failure (active)" "zz"
+           (parameterize ([current-peg-memoizer (make-peg-memoizer)])
+             (peg-parse-string parser "zz")))
+    (test* "$memo - failure (active) - call count" 3 (count))))
+
+;; Memoized entries are keyed by the input stream, so different runs
+;; don't share the results even if the input is equal?.
+(receive (counted count) (counting-parser ($string "ab"))
+  (let ([parser ($memo counted)]
+        [memo (make-peg-memoizer)])
+    (parameterize ([current-peg-memoizer memo])
+      (peg-parse-string parser "ab")
+      (peg-parse-string parser "ab"))
+    (test* "$memo - different streams" 2 (count))
+    (test* "$memo - different streams - table entries" 2
+           (hash-table-num-entries (peg-memoizer-table memo)))))
+
+;; Keyed parameters.  The parser below yields a different value according
+;; to the value of KPARAM.  We run it twice on the same position, with
+;; different KPARAM values; the memoizer must not reuse the first result
+;; if KPARAM is registered as a keyed parameter.
+(define kparam (make-parameter 'z))
+
+(define kparser ($memo ($lift (^c (cons (kparam) c)) ($any))))
+
+(define kparser2 ($list ($assert ($parameterize ([kparam 'x]) kparser))
+                        ($parameterize ([kparam 'y]) kparser)))
+
+(test* "$memo - keyed parameters" '((x . #\a) (y . #\a))
+       (parameterize ([current-peg-memoizer
+                       (make-peg-memoizer :keyed-parameters `(,kparam))])
+         (peg-parse-string kparser2 "a")))
+(test* "$memo - unkeyed parameters are not considered"
+       '((x . #\a) (x . #\a))
+       (parameterize ([current-peg-memoizer (make-peg-memoizer)])
+         (peg-parse-string kparser2 "a")))
+
+;; Keyed parameter values are compared with eqv?.
+(receive (counted count) (counting-parser ($any))
+  (let* ([p ($memo counted)]
+         [parser ($list ($assert ($parameterize ([kparam (* 1 1)]) p))
+                        ($parameterize ([kparam (+ 0 1)]) p))])
+    (parameterize ([current-peg-memoizer
+                    (make-peg-memoizer :keyed-parameters `(,kparam))])
+      (peg-parse-string parser "a"))
+    (test* "$memo - eqv? keyed values" 1 (count))))
+
+(receive (counted count) (counting-parser ($any))
+  (let* ([p ($memo counted)]
+         [parser ($list ($assert ($parameterize ([kparam (list 1)]) p))
+                        ($parameterize ([kparam (list 1)]) p))])
+    (parameterize ([current-peg-memoizer
+                    (make-peg-memoizer :keyed-parameters `(,kparam))])
+      (peg-parse-string parser "a"))
+    (test* "$memo - equal? but not eqv? keyed values" 2 (count))))
+
+;;;============================================================
 ;;; Error handling
 ;;;
 
