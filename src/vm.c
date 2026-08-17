@@ -41,6 +41,7 @@
 #include "gauche/priv/glocP.h"
 #include "gauche/priv/identifierP.h"
 #include "gauche/priv/parameterP.h"
+#include "gauche/priv/procP.h"
 #include "gauche/priv/promiseP.h"
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
@@ -1077,6 +1078,20 @@ static void local_env_shift(ScmVM *vm, int env_depth)
     SP = to + nargs;
     if (nargs > 0) { FINISH_ENV(SCM_FALSE, tenv); }
     else           { ENV = tenv; }
+}
+
+/* Called from the CLOSURE instruction when the closure is created in the
+   tail position.  If that tail position is to produce a value to be
+   bound toplevel define, we can extract the name to be bound
+   from DENV and attach it as the name of the closure. */
+static ScmObj make_tail_closure(ScmVM *vm, ScmObj code, ScmEnvFrame *env)
+{
+    ScmObj name =
+        Scm__FindImmediateDynamicEnv(vm,
+                                     Scm__GetDenvKey(SCM_DENV_KEY_EXPRESSION_NAME),
+                                     SCM_FALSE);
+    if (SCM_FALSEP(name)) return Scm_MakeClosure(code, env);
+    return Scm__MakeNamedClosure(code, env, name, SCM_NIL);
 }
 
 

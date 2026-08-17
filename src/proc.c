@@ -114,7 +114,10 @@ void Scm__ProcedureInit(ScmProcedure *proc,
  * Closure
  */
 
-ScmObj Scm_MakeClosureWithTags(ScmObj code, ScmEnvFrame *env, ScmObj tags)
+/* NAME, if not #f, is used to name the created closure.  If it's #f,
+   the name si derived from CODE. */
+static ScmObj make_closure(ScmObj code, ScmEnvFrame *env, ScmObj tags,
+                           ScmObj name)
 {
     ScmClosure *c = SCM_NEW(ScmClosure);
 
@@ -124,11 +127,24 @@ ScmObj Scm_MakeClosureWithTags(ScmObj code, ScmEnvFrame *env, ScmObj tags)
     ScmObj info;
     if (!SCM_PAIRP(sig)) {
         /* No info available. */
-        info = Scm_Cons(Scm_CompiledCodeFullName(SCM_COMPILED_CODE(code)),
+        info = Scm_Cons(SCM_FALSEP(name)
+                        ? Scm_CompiledCodeFullName(SCM_COMPILED_CODE(code))
+                        : name,
                         SCM_FALSE);
-    } else {
+    } else if (SCM_FALSEP(name)) {
         /* We can just use signature info. */
         info = SCM_CAR(sig);
+    } else if (SCM_PAIRP(SCM_CAR(sig))) {
+        /* Replace the name in the signature, keeping other info intact. */
+        ScmObj s = SCM_CAR(sig);
+        if (SCM_EXTENDED_PAIR_P(s)) {
+            info = Scm_MakeExtendedPair(name, SCM_CDR(s),
+                                        Scm_PairAttr(SCM_PAIR(s)));
+        } else {
+            info = Scm_Cons(name, SCM_CDR(s));
+        }
+    } else {
+        info = Scm_Cons(name, SCM_FALSE);
     }
     int req = SCM_COMPILED_CODE_REQUIRED_ARGS(code);
     int opt = SCM_COMPILED_CODE_OPTIONAL_ARGS(code);
@@ -143,9 +159,22 @@ ScmObj Scm_MakeClosureWithTags(ScmObj code, ScmEnvFrame *env, ScmObj tags)
     return SCM_OBJ(c);
 }
 
+ScmObj Scm_MakeClosureWithTags(ScmObj code, ScmEnvFrame *env, ScmObj tags)
+{
+    return make_closure(code, env, tags, SCM_FALSE);
+}
+
 ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
 {
-    return Scm_MakeClosureWithTags(code, env, SCM_NIL);
+    return make_closure(code, env, SCM_NIL, SCM_FALSE);
+}
+
+/* Used by the CLOSURE instruction, which picks up the name of the
+   definition the closure is about to be returned to.  NAME shouldn't be #f. */
+ScmObj Scm__MakeNamedClosure(ScmObj code, ScmEnvFrame *env,
+                             ScmObj name, ScmObj tags)
+{
+    return make_closure(code, env, tags, name);
 }
 
 /*=================================================================

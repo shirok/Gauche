@@ -1,5 +1,12 @@
 2026-08-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/vminsn.scm (CLOSURE): If a closure is created at the tail
+	  position and its value is eventually bound to a toplevel
+	  identifier, use the identifier as the name of the closure.
+	  This helps to give a name to a procedure created by
+	  other procedure, e.g. (define (make-foo x) (lambda () x))
+	  then (define foo (make-foo 2)).
+
 	* src/vm.c (Scm__FindImmediateDynamicEnv): Factored out
 	  the function to find an immediate dynamic env with the key.
 
