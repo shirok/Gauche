@@ -1601,6 +1601,18 @@ static ScmObj find_dynamic_env(ScmVM *vm, ScmObj key, ScmObj fallback)
     else return fallback;
 }
 
+/* Like find_dynamic_env, but only looks into the extent of the current
+   continuation frame; that is, KEY must have been pushed after the current
+   cont frame was established.  This is the "immediate" continuation mark. */
+ScmObj Scm__FindImmediateDynamicEnv(ScmVM *vm, ScmObj key, ScmObj fallback)
+{
+    for (ScmObj p = vm->denv; SCM_PAIRP(p); p = SCM_CDR(p)) {
+        if (vm->cont != NULL && SCM_EQ(p, vm->cont->denv)) break;
+        if (SCM_EQ(SCM_CAAR(p), key)) return SCM_CDAR(p);
+    }
+    return fallback;
+}
+
 /* Public API */
 ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback)
 {

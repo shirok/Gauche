@@ -106,6 +106,11 @@ typedef enum {
 
 SCM_EXTERN ScmObj Scm__GetDenvKey(ScmDenvKeyName name);
 
+/* Look for KEY in the dynamic env, but only within the extent of the current
+   continuation frame---that is, the "immediate" continuation mark.  */
+SCM_EXTERN ScmObj Scm__FindImmediateDynamicEnv(ScmVM *vm, ScmObj key,
+                                               ScmObj fallback);
+
 /*
  * Dynamic handler entry
  *

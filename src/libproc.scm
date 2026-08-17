@@ -107,22 +107,13 @@
 (define-cproc continuation-marks? (obj) ::<boolean>
   (return (SCM_CONTINUATION_MARK_SET_P obj)))
 
-(define-cfn find-immediate-continuation-mark (vm::ScmVM* key fallback) :static
-  (let* ([p (-> vm denv)])
-    (for [() (SCM_PAIRP p) (set! p (SCM_CDR p))]
-      (cond [(and (-> vm cont) (SCM_EQ p (-> vm cont denv)))
-             (return fallback)]
-            [(SCM_EQ (SCM_CAAR p) key)
-             (return (SCM_CDAR p))]))
-    (return fallback)))
-
 (define-cproc call-with-immediate-continuation-mark (key proc
                                                      :optional (fallback #f))
-  (let* ([val (find-immediate-continuation-mark (Scm_VM) key fallback)])
+  (let* ([val (Scm__FindImmediateDynamicEnv (Scm_VM) key fallback)])
     (return (Scm_VMApply1 proc val))))
 
 (define-cproc call-with-current-expression-name (proc)
-  (let* ([name (find-immediate-continuation-mark
+  (let* ([name (Scm__FindImmediateDynamicEnv
                 (Scm_VM)
                 (Scm__GetDenvKey SCM_DENV_KEY_EXPRESSION_NAME)
                 SCM_FALSE)])

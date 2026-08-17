@@ -1,5 +1,8 @@
 2026-08-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (Scm__FindImmediateDynamicEnv): Factored out
+	  the function to find an immediate dynamic env with the key.
+
 	* ext/peg/peg.scm ($memo): Add memoization feature.
 
 2026-08-15  Shiro Kawai  <shiro@acm.org>
