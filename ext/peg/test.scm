@@ -638,6 +638,72 @@
       (peg-parse-string parser "a"))
     (test* "$memo - equal? but not eqv? keyed values" 2 (count))))
 
+;; Statistics
+(test* "peg-memoizer-statistics - default" #f
+       (peg-memoizer-statistics (make-peg-memoizer)))
+(test* "peg-memoizer-statistics - enabled" 0
+       (hash-table-num-entries
+        (peg-memoizer-statistics (make-peg-memoizer :statistics #t))))
+
+(receive (counted count) (counting-parser ($string "ab"))
+  (let ([p ($memo counted)]
+        [q ($memo ($string "cd"))]
+        [memo (make-peg-memoizer :statistics #t)])
+    ;; P is tried at the same position three times; the latter two are
+    ;; served by the memoized result.  Q is never memo-hit.
+    (let1 parser ($or ($try ($list p ($string "x")))
+                      ($try ($list p ($string "y")))
+                      ($list p q))
+      (test* "$memo - statistics" '("ab" "cd")
+             (parameterize ([current-peg-memoizer memo])
+               (peg-parse-string parser "abcd")))
+      (test* "$memo - statistics - call count" 1 (count))
+      (test* "$memo - statistics - hit count" 2
+             (hash-table-get (peg-memoizer-statistics memo) counted #f))
+      (test* "$memo - statistics - no hit isn't recorded" #f
+             (hash-table-get (peg-memoizer-statistics memo) q #f)))
+    ;; The report shows the number of calls (= hits + entries in the
+    ;; memoization table) and the hits, for each memoized parser.
+    (let1 out (with-output-to-string
+                (cut peg-memoizer-show-statistics memo))
+      (test* "peg-memoizer-show-statistics - header" #t
+             (boolean (#/2 memoized parsers/ out)))
+      (test* "peg-memoizer-show-statistics - hit parser" #t
+             (boolean (#/\n.* 3 +2 +67%\n/ out)))
+      (test* "peg-memoizer-show-statistics - unhit parser" #t
+             (boolean (#/\n.* 1 +0 +0%\n/ out)))
+      (test* "peg-memoizer-show-statistics - total" #t
+             (boolean (#/\nTotal +4 +2 +50%\n/ out))))
+    ;; :max-rows limits the parser rows; the total row is always shown.
+    (test* "peg-memoizer-show-statistics - max-rows" 2
+           (let1 out (with-output-to-string
+                       (cut peg-memoizer-show-statistics memo :max-rows 1))
+             (length (filter #/%$/ (string-split out #\newline)))))))
+
+;; $memo picks up the name it is bound to, so that the report can show it
+;; even though the memoized parser itself is anonymous.
+(define %memoized-ab ($memo ($string "ab")))
+
+(let1 memo (make-peg-memoizer :statistics #t)
+  (parameterize ([current-peg-memoizer memo])
+    (peg-parse-string ($or ($try ($list %memoized-ab ($string "x")))
+                           %memoized-ab)
+                      "ab"))
+  (test* "peg-memoizer-show-statistics - parser name" #t
+         (boolean (#/\n%memoized-ab +2 +1 +50%\n/
+                   (with-output-to-string
+                     (cut peg-memoizer-show-statistics memo))))))
+
+(test* "peg-memoizer-show-statistics - no statistics" #t
+       (boolean
+        (#/doesn't take statistics/
+         (with-output-to-string
+           (cut peg-memoizer-show-statistics (make-peg-memoizer))))))
+
+(test* "peg-memoizer-show-statistics - bad sort-by" (test-error)
+       (peg-memoizer-show-statistics (make-peg-memoizer :statistics #t)
+                                     :sort-by 'bad))
+
 ;;;============================================================
 ;;; Error handling
 ;;;

@@ -1,3 +1,8 @@
+2026-08-17  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm (make-peg-memoizer): Add :statistics keyword
+	  argument to record memoization statistics.
+
 2026-08-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (CLOSURE): If a closure is created at the tail
