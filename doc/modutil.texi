@@ -15449,6 +15449,7 @@ However, you have to watch out some traps; see
 * PEG sequencing combinators::
 * PEG repetition combinators::
 * PEG miscellaneous combinators::
+* PEG memoization::
 * PEG performance tips::
 @end menu
 
@@ -15743,9 +15744,9 @@ pattern, so we can extract the pattern to name it:
 @c COMMON
 
 @example
-(define (sep-by stuff separator)
+(define (sep-by stuff sep)
   ($or ($let ([n  stuff]
-              [ns ($many ($seq separator stuff))])
+              [ns ($many ($seq sep stuff))])
          ($return (cons n ns)))
        ($return '())))
 @end example
@@ -15888,6 +15889,18 @@ parser to accept the corresponding closing bracket.
 @c JP
 閉じ括弧は開き括弧と対応しないとならないので、@code{end-list}は
 開き括弧を取って適切な閉じ括弧のパーザを返す手続きになっています。
+@c COMMON
+
+@c EN
+We don't use the result of the paresr @code{(end-list opener)},
+just need to know whether the match succeeds.
+In such case, you can omit the variabl.  It is also similar to
+@code{ant-let*}.
+@c JP
+パーザー@code{(end-list opener)}は閉じカッコがマッチするかどうかを
+見るためだけに使われていて、その結果の値は必要ありません。
+この場合は変数を省略することができます。その点でも@code{and-let*}に
+似ています。
 @c COMMON
 
 @c EN
@@ -17404,7 +17417,7 @@ The term of expression is parsed by a parser @var{p}, and the
 operator is parsed by @var{op}.
 @end defun
 
-@node PEG miscellaneous combinators, PEG performance tips, PEG repetition combinators, PEG parser combinators
+@node PEG miscellaneous combinators, PEG memoization, PEG repetition combinators, PEG parser combinators
 @subsection Miscellaneous combinators
 
 @defmac $parameterize ((param expr) @dots{}) parser @dots{}
@@ -17436,9 +17449,69 @@ of @var{p} until needed.  It is useful when you define mutually
 recursive parsers.
 @end defmac
 
+@node PEG memoization, PEG performance tips, PEG miscellaneous combinators, PEG parser combinators
+@subsection Memoization
+@c NODE PEGメモ化, メモ化
+
+When a parser tries more than one choices and those branches have shared
+prefix, the prefix parser can be called on the exact input multiple times.
+It is not much an issue if those common prefix parser is a simple
+match like a string, but can be a waste of time when the prefix parser
+itself has a compound parsers with internal backtracks.
+
+One way to mitigate it is to factor out the common prefix, but it may
+sometimes complecate and obscure the grammer which is simple and clean
+otherwise.
+
+Some parser combinator libraries, such as Haskell's Parsec, implicitly
+memoize parser result so it would called just once for a particular
+parser position.
+
+Our @code{parser.peg} does not provide automatic memoization, for
+memoizing overhead may not negligible if the grammar is not complicated.
+However, you can explicitly and selectively add memoization;
+that is, you can mark specific parsers to memoize.
+
+In order to enable memoization, you need to bind a parameter
+@code{current-peg-memoizer} to an instance of @code{<peg-memoizer>},
+and also wrap the parsers you want to memoize with @code{$memo}.
+Typical code would look like this:
+
+@example
+(define some-parser
+  ($memo (parser-expression ...)))
+
+(parameterize ([current-peg-memoizer (make-peg-memoizer)])
+  (peg-run-parser top-parser input))
+@end example
 
 
-@node PEG performance tips,  , PEG miscellaneous combinators, PEG parser combinators
+@deffn {Parameter} current-peg-memoizer
+@c MOD parser.peg
+@end deffn
+
+@deftp {Class} <peg-memoizer>
+@c MOD parser.peg
+@end deftp
+
+@defun make-peg-memoizer :key keyed-parameters statistics
+@c MOD parser.peg
+@end defun
+
+@defun peg-memoizer? obj
+@c MOD parser.peg
+@end defun
+
+@defun $memo parser
+@c MOD parser.peg
+@end defun
+
+@defun peg-memoizer-show-statistics memoizer
+@c MOD parser.peg
+@end defun
+
+
+@node PEG performance tips,  , PEG memoization, PEG parser combinators
 @subsection Performance
 
 
