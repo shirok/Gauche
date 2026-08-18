@@ -1205,7 +1205,12 @@
 
 ;; API
 ;;   Holds a <peg-memoizer> instance while memoization is active.
-(define current-peg-memoizer (make-parameter #f))
+(define current-peg-memoizer
+  ($ make-parameter #f
+     (^v (unless (or (not v) (peg-memoizer? v))
+           (error "The value of current-peg-memozier muse be either \
+                   a <peg-memoizer> or #f, but got:" v))
+         v)))
 
 ;; API
 ;; $memo parser
