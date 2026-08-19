@@ -137,9 +137,9 @@
       [(eq? type <double>)           <double>]
       [(eq? type <float>)            <float>]
       [(eq? type <c-string>)         <c-string>]
+      [(eq? type <ScmObj>)           <top>]
       [(~ type 'unsigned?)           <uintptr_t>]
       [else                          <intptr_t>])]
-    [(eq? type <top>)                <top>]
     [else (error "Invalid type for native call:" type)]))
 
 ;; <c-char> object needs to be passed as integer

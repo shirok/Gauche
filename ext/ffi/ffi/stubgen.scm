@@ -327,27 +327,24 @@
 
 ;; Convert a <native-type> to a C type string.
 (define (%type->c-type type)
-  (if (eq? type <top>)
-    "ScmObj"
-    (etypecase type
-      [<c-pointer>
-       (string-append (%type->c-type (~ type'pointee-type)) "*")]
-      [<c-array>
-       (string-append (%type->c-type (~ type'element-type)) "*")]
-      [<c-struct>
-       (if (~ type'tag) (format "struct ~a" (~ type'tag)) "struct /*anon*/")]
-      [<c-union>
-       (if (~ type'tag) (format "union ~a" (~ type'tag)) "union /*anon*/")]
-      [<c-function>
-       "void*"]                         ; function pointers used as opaque void*
-      [<native-type> (~ type'c-type-name)])))
+  (etypecase type
+    [<c-pointer>
+     (string-append (%type->c-type (~ type'pointee-type)) "*")]
+    [<c-array>
+     (string-append (%type->c-type (~ type'element-type)) "*")]
+    [<c-struct>
+     (if (~ type'tag) (format "struct ~a" (~ type'tag)) "struct /*anon*/")]
+    [<c-union>
+     (if (~ type'tag) (format "union ~a" (~ type'tag)) "union /*anon*/")]
+    [<c-function>
+     "void*"]                           ; function pointers used as opaque void*
+    [<native-type> (~ type'c-type-name)]))
 
 ;; Generate a C expression that unboxes a Scheme value to a C value.
 ;; arg-expr: C string expression yielding ScmObj.
 ;; For <c-pointer> types, extracts the raw pointer from the native handle.
 (define (%type->unbox-expr type arg-expr)
   (cond
-   [(eq? type <top>) arg-expr]
    [(c-pointer-like-type? type)
     ;; Extract void* from the native handle and cast to the C pointer type.
     ;; Scm_NativeHandlePtr is the public accessor for the pointer field.
@@ -365,7 +362,6 @@
 ;; variable that holds the native type object (populated during ffisetup).
 (define (%type->box-expr type val-expr :optional (type-var #f))
   (cond
-   [(eq? type <top>) (format "SCM_OBJ(~a)" val-expr)]
    [(c-pointer-like-type? type)
     (unless type-var
       (errorf "type-var required for boxing <c-pointer> return type: ~s" type))

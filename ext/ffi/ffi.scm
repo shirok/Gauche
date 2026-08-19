@@ -127,8 +127,7 @@
 
 ;; Created by parse-define-c-function at macro-expansion time.
 ;; Backend macros receive a list of its instances.
-;; 'Type' in arg-types and return-type should be either an instance
-;; of <native-type> or <top>.
+;; 'Type' in arg-types and return-type is an instance of <native-type>.
 
 (define-class <foreign-c-function> ()
   ((scheme-name  :init-keyword :scheme-name)  ; symbol
@@ -149,13 +148,13 @@
    (return-type  :init-keyword :return-type)  ; native-type
    ))
 
-;; Resolve a typespec to a <native-type> instance or <top> at runtime.
+;; Resolve a typespec to a <native-type> instance at runtime.
 ;; Reference to this procedure is inserted by macro expander.
-;; A typespec is either a <native-type> instance (returned as-is), <top>,
-;;  or a native-type signature.
+;; A typespec is either a <native-type> instance (returned as-is), <top>
+;;  (a synonym of <ScmObj>), or a native-type signature.
 (define (%resolve-typespec spec)
   (cond [(is-a? spec <native-type>) spec]
-        [(eq? spec <top>) spec]
+        [(eq? spec <top>) <ScmObj>]
         [else (native-type spec)]))
 
 ;; Parse a define-c-function arg-types list.  The list may end with the
@@ -167,15 +166,6 @@
   (if (and (pair? specs) (eq? (last specs) '...))
     (values (drop-right specs 1) #t)
     (values specs #f)))
-
-;; This is to convert FFI type info to S-expr for documentation purpose
-;; (attached to foreign-function-info).  We convert <top> to ScmObj
-;; for the time being.  It is kludge, as it can't be converted back
-;; to <native-type>.
-(define (%signature-type type)
-  (if (eq? type <top>)
-    'ScmObj
-    (native-type->signature type)))
 
 ;;;
 ;;; Susbsystem selection
@@ -273,8 +263,8 @@
                       :tag-info `((foreign-function-tag
                                    :dlobj ,(~ ,dlo-var'path)
                                    :subsystem ,',subsystem
-                                   :argtypes ,(map %signature-type atypes)
-                                   :rettype ,(%signature-type rtype)))))))]))
+                                   :argtypes ,(map native-type->signature atypes)
+                                   :rettype ,(native-type->signature rtype)))))))]))
         ;; For each define-c-callback form, build a runtime
         ;; (make <foreign-c-callback> ...) expression.
         ;; We also generate a definition of Scheme-side procedure

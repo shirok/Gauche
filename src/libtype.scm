@@ -1084,6 +1084,12 @@
   (define-native-type <double>  Scm_NativeDoubleType  SCM_CLASS_REAL double
     SCM_REALP Scm_MakeFlonum Scm_GetDouble FALSE)
 
+  ;; <ScmObj> is a reference to ScmObj---it is basically <top>, but
+  ;; we provide a dedicate natiev type so that ScmObj is passed to and from
+  ;; foreign functions.
+  (define-native-type <ScmObj>  Scm_NativeScmObjType  SCM_CLASS_TOP ScmObj
+    SCM_OBJP SCM_OBJ SCM_OBJ FALSE)
+
   ;; Technically, time_t can be a real numebr.
   (define-native-type <time_t>  Scm_UnixTimeType      SCM_CLASS_NUMBER time_t
     SCM_REALP Scm_MakeSysTime Scm_GetSysTime FALSE)

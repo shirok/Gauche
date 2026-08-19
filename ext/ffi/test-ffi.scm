@@ -285,6 +285,19 @@
                    (current-module))
                   'ok))
 
+         (test* #"with-ffi cb - passing ScmObj as void*" 'ok
+                (begin
+                  (eval
+                   `(with-ffi (dlopen "./g") opts
+                      (define-c-function Fopaque_data
+                        `((.function (ScmObj) ScmObj)
+                          ScmObj)
+                        <top>)
+                      (define-c-callback cb-opaque ((obj 'ScmObj)) 'ScmObj
+                        (list obj obj)))
+                   (current-module))
+                  'ok))
+
          (t 7  (Fcb2-i cb-add 3 4))
          (t 12.5 (Fcb2-d cb-mul-d 2.5 5.0))
          (t 5  (begin (set! cb-noop-counter 0)
@@ -300,6 +313,9 @@
 
          ;; <name> is bound to a c-function native handle
          (t #t (c-function-handle? cb-add))
+
+         ;; Passing ScmObj through opaque pointer
+         (t '(can can) (Fopaque_data cb-opaque 'can))
 
          ;; exception propagates from callback through C and back
          (test* #"cb ~'opts exception propagation" 'caught

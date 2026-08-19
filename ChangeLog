@@ -1,3 +1,14 @@
+2026-08-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm, ext/ffi/native-type.scm: Introduce <ScmObj>
+	  native type to be used when Scheme object is passed as is
+	  from/to the foreign functions.  (native-type 'ScmObj) yields
+	  <ScmObj>.  We still allow <top> native type appear in
+	  the foreign signatures, which works as a synonym to <ScmObj>.
+	  Now that types associated to foreign function signatures are
+	  solely consist of <native-types>, so type handling gets
+	  simplified as special casing of <top> is dropped.
+
 2026-08-17  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm (make-peg-memoizer): Add :statistics keyword

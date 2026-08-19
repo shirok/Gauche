@@ -36,3 +36,9 @@ ScmObj Fcb_spill10(ScmObj a, ScmObj b, ScmObj c, ScmObj d, ScmObj e,
     ScmObj lis = Scm_List(a, b, c, d, e, f, g, h, i, j, NULL);
     return Scm_ApplyRec1(proc, lis);
 }
+
+void *Fopaque_data(void* (*cb)(void*),
+                   void* data)
+{
+    return cb(data);
+}

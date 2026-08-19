@@ -114,6 +114,7 @@ SCM_EXTERN ScmObj Scm_NativeCCharType(void);
 SCM_EXTERN ScmObj Scm_NativeCStringType(void);
 SCM_EXTERN ScmObj Scm_NativeVoidType(void);
 SCM_EXTERN ScmObj Scm_NativeVoidPointerType(void);
+SCM_EXTERN ScmObj Scm_NativeScmObjType(void);
 
 /* <c-pointer> - a pointer to another native type */
 typedef struct ScmCPointerRec {
