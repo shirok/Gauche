@@ -167,8 +167,21 @@
       (pre-- end))
     (return h)))
 
-(define-cproc list->${t}vector (l::<list> :optional clamp)
+(define-cproc %list->${t}vector (l::<list> clamp)
   (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (Scm_ClampMode clamp))))
+
+;; Originally the signature was (list->@vector lis clamp)
+;; To support srfi-274, we also acept (list->@vector lis start end clamp)
+;; When single argument is passed, we dispatch dynamically at runtime.
+(define (list->${t}vector lis :optional start end clamp)
+  (if (undefined? clamp)
+    (if (undefined? end)
+      (cond [(undefined? start) (%list->${t}vector lis #f)]
+            [(or (symbol? start) (not start))
+             (%list->${t}vector lis start)] ;1st arg is clamp
+            [else (%list->${t}vector (sublist lis start) #f)])
+      (%list->${t}vector (sublist lis start end) #f))
+    (%list->${t}vector (sublist lis start end) clamp)))
 
 (define (reverse-list->${t}vector l :optional (clamp #f))
   (let* ([len (length l)]

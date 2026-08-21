@@ -1,3 +1,8 @@
+2026-08-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvlib.scm.tmpl (list->@vector): Add SRFI-274
+	  compatibility mode, (list->@vector lis start end clamp).
+
 2026-08-20  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/ffi.scm (define-c-constant): Add ffi form to

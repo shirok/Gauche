@@ -279,6 +279,15 @@
 (uvconv-test-c64 '#c64(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
 (uvconv-test-c128 '#c128(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
 
+(test* "list->u8vector (start)" '#u8(1 2 3 4)
+       (list->u8vector '(0 1 2 3 4) 1))
+(test* "list->u8vector (start, end)" '#u8(1 2 3)
+       (list->u8vector '(0 1 2 3 4) 1 4))
+(test* "list->u8vector (start, end, clamp)" '#u8(0 255)
+       (list->u8vector '(-1 256) #f #f 'both))
+(test* "list->u8vector (start, end, clamp)" '#u8(2 0 255 3)
+       (list->u8vector '(1 2 -1 256 3 4) 1 5 'both))
+
 (test* "list->uvector" '#u8(0 1 2 3)
        (list->uvector <u8vector> '(0 1 2 3)))
 (test* "list->uvector" '#s64(0 1 2 3)
