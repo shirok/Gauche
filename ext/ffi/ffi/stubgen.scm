@@ -68,11 +68,14 @@
                (define _dummy
                  (compile-and-link-ffi-stub ,dlo-var
                                             ,cdef-list-expr
-                                            ,(get-keyword :c-headers options '())
+                                            ',(get-keyword :c-headers options '())
+                                            ',(get-keyword :c-include-paths
+                                                           options '())
                                             (current-module)))
                )))]))))
 
-(define (compile-and-link-ffi-stub dlobj cdef-instances c-headers mod)
+(define (compile-and-link-ffi-stub dlobj cdef-instances c-headers
+                                  c-include-paths mod)
   (let ([unit (generate-ffi-c-code-unit cdef-instances c-headers)]
         ;; Collect return types for pointer-returning functions, in order.
         ;; These are passed as extra args to ffisetup so it can populate
@@ -114,7 +117,7 @@
                      ,(and (c-pointer-like-type? rtype) rtype)
                      ,@(map (^t (and (c-pointer-like-type? t) t)) atypes)))))
           cdef-instances)])
-    (cgen-dynamic-load unit)
+    (cgen-dynamic-load unit :include-paths c-include-paths)
     ((module-binding-ref mod 'ffisetup) dlobj pointer-ret-types
      variadic-type-infos callback-infos mod)))
 
@@ -743,6 +746,23 @@
              (cgen-safe-string (symbol->string scm-name))
              (cgen-cexpr tags)))))
 
+;; Emit the line that reifies one C constant as a Scheme constant
+;; (ffisetup body section), e.g.:
+;;   Scm_DefineConst(target_mod_, SCM_SYMBOL(sym), SCM_MAKE_INT(MAX_VALUE));
+;; The C name is emitted verbatim, so it may be a macro, an enum member,
+;; or any other constant expression the included headers make visible.
+;; This is also used to define each enumerator of a define-c-enum form.
+(define (emit-const-define scheme-name c-name type)
+  (when (c-pointer-like-type? type)
+    (errorf "define-c-constant: ~a: pointer, array and function types \
+             are not supported" scheme-name))
+  (format "    Scm_DefineConst(target_mod_, SCM_SYMBOL(~a), ~a);"
+          (cgen-cexpr (cgen-literal scheme-name))
+          (%type->box-expr type c-name)))
+
+(define (setup-code-for-const ccst)
+  (emit-const-define (~ ccst'scheme-name) (~ ccst'c-name) (~ ccst'type)))
+
 ;;;
 ;;; Generate C code from a list of <foreign-c-function> instances.
 ;;;
@@ -753,6 +773,8 @@
     (filter (cut is-a? <> <foreign-c-function>) cdef-instances))
   (define ccb-instances
     (filter (cut is-a? <> <foreign-c-callback>) cdef-instances))
+  (define ccst-instances
+    (filter (cut is-a? <> <foreign-c-constant>) cdef-instances))
   (define unit
     (make <cgen-unit>
       :name unit-name
@@ -811,8 +833,9 @@
                "    SCM_ASSERT(argc == 5);"
                "    ScmObj dlobj = argv[0];"
                "    SCM_ASSERT(SCM_FALSEP(dlobj) || SCM_DLOBJP(dlobj));"
-               "    ScmDLObj *dlo = SCM_FALSEP(dlobj)? NULL : SCM_DLOBJ(dlobj);"
-               "    ScmObj fptr;"
+               "    ScmDLObj *dlo SCM_UNUSED ="
+               "        SCM_FALSEP(dlobj)? NULL : SCM_DLOBJ(dlobj);"
+               "    ScmObj fptr SCM_UNUSED;"
                "    ScmModule *target_mod_ = SCM_MODULE(argv[4]);")
     (when (pair? pointer-return-cfns)
       (cgen-body "    ScmObj types = argv[1];"))
@@ -837,6 +860,9 @@
     ;; Populate per-callback statics and bind <name> in the target module.
     (dolist [ccb ccb-instances]
       (cgen-body (setup-code-for-ccb ccb)))
+    ;; Bind each C constant in the target module.
+    (dolist [ccst ccst-instances]
+      (cgen-body (setup-code-for-const ccst)))
     (cgen-body "    return SCM_UNDEFINED;"
                "}")
 

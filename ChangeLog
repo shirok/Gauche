@@ -1,5 +1,10 @@
 2026-08-20  Shiro Kawai  <shiro@acm.org>
 
+	* ext/ffi/ffi.scm (define-c-constant): Add ffi form to
+	  reify C constants (e.g. #defined values) into Scheme.
+	  Currently only available via stubgen backend.
+	  (with-ffi): Support :c-include-paths option.
+
 	* lib/gauche/cgen/dyncomp.scm (cgen-dynamic-load): Add
 	  :include-paths keyword arg.  Turn tmpdir arg from optional
 	  to keyword.

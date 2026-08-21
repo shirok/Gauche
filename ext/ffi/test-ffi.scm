@@ -336,6 +336,63 @@
   )
 
 ;;;----------------------------------------------------------
+(test-section "define-c-constant")
+
+(define-module ffi-const-sandbox
+  (use gauche.test)
+  (use gauche.ffi)
+  (use gauche.native-type)
+  (use file.util)
+
+  ;; Directory holding c/ffi-const.h.  Derived from the test file location
+  ;; so that it works with out-of-tree builds as well.
+  (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
+
+  (parameterize ([default-ffi-subsystem :stubgen])
+    ;; Constants from the system headers; no include path needed.
+    (eval '(with-ffi #f (:c-headers ("limits.h" "stdio.h"))
+             (define-c-constant CHAR-BIT)
+             (define-c-constant SEEK-END 'int)
+             (define-c-constant EOF 'int))
+          (current-module))
+    ;; Constants from our own header, reached via :c-include-paths.
+    (eval `(with-ffi #f (:c-headers ("ffi-const.h")
+                         :c-include-paths (,c-dir))
+             (define-c-constant FFI-TEST-MAX-VALUE)
+             (define-c-constant FFI-TEST-NEG)
+             (define-c-constant FFI-TEST-GREETING 'c-string)
+             (define-c-constant FFI-TEST-BLUE 'int))
+          (current-module)))
+
+  (test* "define-c-constant, type omitted" 8 CHAR-BIT)
+  (test* "define-c-constant, name translation" 2 SEEK-END)
+  (test* "define-c-constant, negative value" -1 EOF)
+  (test* "define-c-constant, user header" 65535 FFI-TEST-MAX-VALUE)
+  (test* "define-c-constant, parenthesized macro" -3 FFI-TEST-NEG)
+  (test* "define-c-constant, c-string" "hello, ffi" FFI-TEST-GREETING)
+  (test* "define-c-constant, enum member" 2 FFI-TEST-BLUE)
+
+  (test* "define-c-constant binds a constant" (test-error <error>)
+         (eval '(set! EOF 0) (current-module)))
+
+  (test* "define-c-constant rejects pointer type"
+         (test-error <error> #/pointer, array and function types/)
+         (eval '(with-ffi #f (:subsystem :stubgen :c-headers ("stdio.h"))
+                  (define-c-constant EOF 'int*))
+               (current-module)))
+
+  (test* "define-c-constant outside with-ffi" (test-error <error>)
+         (eval '(define-c-constant EOF) (current-module)))
+
+  (when (ffi-subsystem-available? :native)
+    (test* "define-c-constant is not supported in native subsystem yet"
+           (test-error <error> #/not supported in the native ffi subsystem/)
+           (eval '(with-ffi #f (:subsystem :native)
+                    (define-c-constant EOF 'int))
+                 (current-module))))
+  )
+
+;;;----------------------------------------------------------
 (test-section "foreign-function-info")
 
 (with-module ffi-test-sandbox

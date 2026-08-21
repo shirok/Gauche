@@ -41,8 +41,10 @@
           ffi-subsystem-available?
           define-c-function
           define-c-callback
+          define-c-constant
           <foreign-c-function>
           <foreign-c-callback>
+          <foreign-c-constant>
           foreign-function-info)
   )
 (select-module gauche.ffi)
@@ -120,6 +122,18 @@
 ;;  handle can be passed to a foreign function expecting a function
 ;;  pointer.
 ;;
+;;  A C constant---typically a #define'd value, but an enum member works
+;;  as well---can be reified as a Scheme constant:
+;;
+;;    (define-c-constant <name> [<type>])
+;;
+;;  <name> is translated to the C identifier by the same rule as
+;;  define-c-function.  The header that defines it must be listed in the
+;;  :c-headers option of with-ffi.
+;;
+;;  <type> is an evaluated expression yielding a typespec, and tells how
+;;  the C value is boxed.  It defaults to <fixnum>.
+;;
 
 ;;;
 ;;; <foreign-c-function> - parsed representation of a define-c-function form
@@ -148,6 +162,12 @@
    (return-type  :init-keyword :return-type)  ; native-type
    ))
 
+(define-class <foreign-c-constant> ()
+  ((scheme-name  :init-keyword :scheme-name)  ; symbol
+   (c-name       :init-keyword :c-name)       ; string, C-safe name
+   (type         :init-keyword :type)         ; <native-type>
+   ))
+
 ;; Resolve a typespec to a <native-type> instance at runtime.
 ;; Reference to this procedure is inserted by macro expander.
 ;; A typespec is either a <native-type> instance (returned as-is), <top>
@@ -156,6 +176,11 @@
   (cond [(is-a? spec <native-type>) spec]
         [(eq? spec <top>) <ScmObj>]
         [else (native-type spec)]))
+
+;; Derive the C identifier from the Scheme name.  A leading '%' is
+;; dropped, so that a Scheme wrapper can bear the unprefixed name.
+(define (%ffi-c-name name)
+  (cgen-safe-name-friendly (regexp-replace #/^%/ (x->string name) "")))
 
 ;; Parse a define-c-function arg-types list.  The list may end with the
 ;; symbol '... to designate a variadic C function (the same convention as
@@ -199,6 +224,11 @@
     [(_ . _)
      (syntax-error "define-c-callback used outside with-ffi")]))
 
+(define-syntax define-c-constant
+  (syntax-rules ()
+    [(_ . _)
+     (syntax-error "define-c-constant used outside with-ffi")]))
+
 (autoload gauche.ffi.stubgen (:macro with-stubgen-ffi))
 (autoload gauche.ffi.native  (:macro with-native-ffi))
 (autoload gauche.ffi.ffiaux  native-alloc native-free)
@@ -225,8 +255,9 @@
           (get-keyword :subsystem (unwrap-syntax options)
                        (default-ffi-subsystem)))
         (define ids (list (r'define-c-function)
-                          (r'define-c-callback)))
-        ;; Forms other than C FFIs or callbacks
+                          (r'define-c-callback)
+                          (r'define-c-constant)))
+        ;; Forms other than C FFIs, callbacks or constants
         (define extra-forms
           (filter-map
            (^[form]
@@ -246,9 +277,7 @@
         (define (make-cfn-expr cfn-form)
           (match cfn-form
             [(_ name arg-types-expr rettype-expr)
-             (define c-name
-               (cgen-safe-name-friendly
-                (regexp-replace #/^%/ (x->string name) "")))
+             (define c-name (%ffi-c-name name))
              (quasirename r
                `(receive (arg-types* variadic?*)
                     (%parse-ffi-arg-types ,arg-types-expr)
@@ -298,10 +327,31 @@
                       :return-type rtype))))]
             [_ (error "Malformed define-c-callback form:" ccb-form)]))
 
+        ;; For each define-c-constant form, build a runtime
+        ;; (make <foreign-c-constant> ...) expression.  The type is
+        ;; optional and defaults to <fixnum>.
+        ;; Example: (define-c-constant MAX-VALUE)
+        (define (make-ccst-expr ccst-form)
+          (match ccst-form
+            [(_ name . type-expr?)
+             (unless (symbol? name)
+               (error "define-c-constant: name must be an identifier:" name))
+             (let1 type-expr (match type-expr?
+                               [() (quasirename r `<fixnum>)]
+                               [(type-expr) type-expr]
+                               [_ (error "Malformed define-c-constant form:"
+                                         ccst-form)])
+               (quasirename r
+                 `(make <foreign-c-constant>
+                    :scheme-name ',name
+                    :c-name ',(%ffi-c-name name)
+                    :type (%resolve-typespec ,type-expr))))]))
+
         (define (make-cdef-expr form)
           (ecase (car form) ; forms are already unwrapped
             [(define-c-function) (make-cfn-expr form)]
-            [(define-c-callback) (make-ccb-expr form)]))
+            [(define-c-callback) (make-ccb-expr form)]
+            [(define-c-constant) (make-ccst-expr form)]))
 
         ;; cfn-specs is ((name . cfn-expr) ...), where name is a symbol
         ;; name of cfn, and cfn-expr is (make <foreivn-c-function> ...)
@@ -325,6 +375,11 @@
         ;; the expansion with let etc.
         (ecase subsystem
           [(:native)
+           ;; The native subsystem has no C compiler at hand, so it can't
+           ;; reify a C constant yet.
+           (when (find (^[cdef] (eq? (car cdef) 'define-c-constant)) cdefs)
+             (error "define-c-constant is not supported in the native ffi \
+                     subsystem yet.  use stubgen ffi subsystem instead."))
            (quasirename r
              `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
                                ,(reverse ccb-info)
