@@ -114,7 +114,7 @@
                      ,(and (c-pointer-like-type? rtype) rtype)
                      ,@(map (^t (and (c-pointer-like-type? t) t)) atypes)))))
           cdef-instances)])
-    (cgen-dynamic-load unit (sys-tmpdir))
+    (cgen-dynamic-load unit)
     ((module-binding-ref mod 'ffisetup) dlobj pointer-ret-types
      variadic-type-infos callback-infos mod)))
 
@@ -159,7 +159,7 @@
          [unit       (build-substub-unit fixed-arg-types ret-type
                                          nvargs float-mask key c-name)]
          [setup-sym  (string->symbol (format "substub-setup-~a-~x" c-name key))])
-    (cgen-dynamic-load unit (sys-tmpdir))
+    (cgen-dynamic-load unit)
     (let1 setup (module-binding-ref (find-module 'gauche.ffi.stubgen) setup-sym)
       (if (c-pointer-like-type? ret-type)
         (setup fn-ptr-scm ret-type)

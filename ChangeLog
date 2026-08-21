@@ -1,3 +1,9 @@
+2026-08-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/dyncomp.scm (cgen-dynamic-load): Add
+	  :include-paths keyword arg.  Turn tmpdir arg from optional
+	  to keyword.
+
 2026-08-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm, ext/ffi/native-type.scm: Introduce <ScmObj>
