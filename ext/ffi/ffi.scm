@@ -42,9 +42,11 @@
           define-c-function
           define-c-callback
           define-c-constant
+          define-c-enum
           <foreign-c-function>
           <foreign-c-callback>
           <foreign-c-constant>
+          <foreign-c-enum>
           foreign-function-info)
   )
 (select-module gauche.ffi)
@@ -134,6 +136,24 @@
 ;;  <type> is an evaluated expression yielding a typespec, and tells how
 ;;  the C value is boxed.  It defaults to <fixnum>.
 ;;
+;;  A C enum can be reified as a whole:
+;;
+;;    (define-c-enum <enum-set-name> (<name> ...) [<base-type>])
+;;    (define-c-enum (<enum-set-name> <c-tag>) (<name> ...) [<base-type>])
+;;
+;;  Each <name> is bound as a Scheme constant, just as define-c-constant
+;;  does, and <enum-set-name> is bound to the <c-enum> native type that
+;;  collects them.  Use c-enum-value and c-enum-symbol to convert between
+;;  the enumerator symbols and their values.
+;;
+;;  In the first form the C tag is derived from <enum-set-name> by the
+;;  same name translation.  The second form gives the tag separately,
+;;  either as a symbol, or as #f for an anonymous enum.
+;;
+;;  <base-type> is an evaluated expression yielding a typespec; it fixes
+;;  the enum's size and alignment.  When omitted, they are derived from
+;;  the enumerator values.
+;;
 
 ;;;
 ;;; <foreign-c-function> - parsed representation of a define-c-function form
@@ -166,6 +186,13 @@
   ((scheme-name  :init-keyword :scheme-name)  ; symbol
    (c-name       :init-keyword :c-name)       ; string, C-safe name
    (type         :init-keyword :type)         ; <native-type>
+   ))
+
+(define-class <foreign-c-enum> ()
+  ((scheme-name  :init-keyword :scheme-name)  ; symbol, bound to the <c-enum>
+   (tag          :init-keyword :tag)          ; symbol or #f (anonymous)
+   (enumerators  :init-keyword :enumerators)  ; ((scheme-name . c-name) ...)
+   (base-type    :init-keyword :base-type)    ; <native-type> or #f
    ))
 
 ;; Resolve a typespec to a <native-type> instance at runtime.
@@ -229,6 +256,11 @@
     [(_ . _)
      (syntax-error "define-c-constant used outside with-ffi")]))
 
+(define-syntax define-c-enum
+  (syntax-rules ()
+    [(_ . _)
+     (syntax-error "define-c-enum used outside with-ffi")]))
+
 (autoload gauche.ffi.stubgen (:macro with-stubgen-ffi))
 (autoload gauche.ffi.native  (:macro with-native-ffi))
 (autoload gauche.ffi.ffiaux  native-alloc native-free)
@@ -256,8 +288,9 @@
                        (default-ffi-subsystem)))
         (define ids (list (r'define-c-function)
                           (r'define-c-callback)
-                          (r'define-c-constant)))
-        ;; Forms other than C FFIs, callbacks or constants
+                          (r'define-c-constant)
+                          (r'define-c-enum)))
+        ;; Forms other than C FFIs, callbacks, constants or enums
         (define extra-forms
           (filter-map
            (^[form]
@@ -347,11 +380,57 @@
                     :c-name ',(%ffi-c-name name)
                     :type (%resolve-typespec ,type-expr))))]))
 
+        ;; For each define-c-enum form, build a runtime
+        ;; (make <foreign-c-enum> ...) expression.
+        ;;   (define-c-enum <name> (<e> ...) [<base-type>])
+        ;;   (define-c-enum (<name> <tag>) (<e> ...) [<base-type>])
+        ;; When the tag isn't given, it is derived from <name> by the
+        ;; same name translation as the enumerators.  An explicit tag is
+        ;; used verbatim, and #f makes the enum anonymous.
+        (define (make-cenum-expr cenum-form)
+          (match cenum-form
+            [(_ head (enumerators ...) . base-type?)
+             (receive (name tag)
+                 (match head
+                   [(? symbol? name)
+                    (values name (string->symbol (%ffi-c-name name)))]
+                   [((? symbol? name) (? symbol? tag)) (values name tag)]
+                   [((? symbol? name) #f) (values name #f)]
+                   [_ (error "define-c-enum: malformed name and tag:" head)])
+               (unless (every symbol? enumerators)
+                 (error "define-c-enum: enumerators must be identifiers:"
+                        enumerators))
+               (let1 base-type-expr
+                   (match base-type?
+                     [() #f]
+                     [(e) e]
+                     [_ (error "Malformed define-c-enum form:" cenum-form)])
+                 (quasirename r
+                   `(make <foreign-c-enum>
+                      :scheme-name ',name
+                      :tag ',tag
+                      :enumerators ',(map (^e (cons e (%ffi-c-name e)))
+                                          enumerators)
+                      :base-type ,(if base-type-expr
+                                    (quasirename r
+                                      `(%resolve-typespec ,base-type-expr))
+                                    #f)))))]
+            [_ (error "Malformed define-c-enum form:" cenum-form)]))
+
         (define (make-cdef-expr form)
           (ecase (car form) ; forms are already unwrapped
             [(define-c-function) (make-cfn-expr form)]
             [(define-c-callback) (make-ccb-expr form)]
-            [(define-c-constant) (make-ccst-expr form)]))
+            [(define-c-constant) (make-ccst-expr form)]
+            [(define-c-enum)     (make-cenum-expr form)]))
+
+        ;; The Scheme name a cdef form binds.  It is the second element
+        ;; of the form, except that define-c-enum may carry the C tag
+        ;; along with the name.
+        (define (cdef-name form)
+          (match form
+            [('define-c-enum (name _) . _) name]
+            [(_ name . _) name]))
 
         ;; cfn-specs is ((name . cfn-expr) ...), where name is a symbol
         ;; name of cfn, and cfn-expr is (make <foreivn-c-function> ...)
@@ -359,9 +438,17 @@
         ;; cfn-specs so that cfn-expr is evaluated in proper context.
         (define cdef-specs
           (map (^[cdef]
-                 (cons (cadr cdef) ; name
+                 (cons (cdef-name cdef)
                        (make-cdef-expr cdef))) ;expr
                (reverse cdefs)))
+
+        ;; Names bound by define-c-enum forms, in declaration order.
+        ;; with-stubgen-ffi needs them to bind each <c-enum> the stub
+        ;; reifies.
+        (define cenum-names
+          (filter-map (^[cdef] (and (eq? (car cdef) 'define-c-enum)
+                                    (cdef-name cdef)))
+                      (reverse cdefs)))
 
         ;; Body forms with synthesized callback body definitions prepended.
         ;; The body lambdas need to be visible by the time the FFI binding
@@ -376,10 +463,15 @@
         (ecase subsystem
           [(:native)
            ;; The native subsystem has no C compiler at hand, so it can't
-           ;; reify a C constant yet.
-           (when (find (^[cdef] (eq? (car cdef) 'define-c-constant)) cdefs)
-             (error "define-c-constant is not supported in the native ffi \
-                     subsystem yet.  use stubgen ffi subsystem instead."))
+           ;; reify C constants yet.
+           (let1 cdef (find (^[cdef] (memq (car cdef)
+                                           '(define-c-constant
+                                             define-c-enum)))
+                            cdefs)
+             (when cdef
+               (errorf "~a is not supported in the native ffi subsystem \
+                        yet.  use stubgen ffi subsystem instead."
+                       (car cdef))))
            (quasirename r
              `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
                                ,(reverse ccb-info)
@@ -387,5 +479,5 @@
           [(:stubgen)
            (quasirename r
              `(with-stubgen-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
-                                ,final-forms))]
+                                ,cenum-names ,final-forms))]
           )]))))

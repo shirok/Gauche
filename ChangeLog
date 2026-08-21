@@ -4,6 +4,7 @@
 	  reify C constants (e.g. #defined values) into Scheme.
 	  Currently only available via stubgen backend.
 	  (with-ffi): Support :c-include-paths option.
+	  (define-c-enum): Also, reify C enums to Scheme.
 
 	* lib/gauche/cgen/dyncomp.scm (cgen-dynamic-load): Add
 	  :include-paths keyword arg.  Turn tmpdir arg from optional

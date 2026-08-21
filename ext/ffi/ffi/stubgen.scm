@@ -54,7 +54,7 @@
      (define %require. ((with-module gauche.internal make-identifier)
                         '%require (find-module 'gauche.internal) '()))
      (match f
-       [(_ dlo-var dlo-expr options cdef-specs forms)
+       [(_ dlo-var dlo-expr options cdef-specs cenum-names forms)
         (let1 cdef-list-expr
             (quasirename r
               `(list ,@(map cdr cdef-specs)))
@@ -72,6 +72,13 @@
                                             ',(get-keyword :c-include-paths
                                                            options '())
                                             (current-module)))
+               ;; compile-and-link-ffi-stub returns the <c-enum> instances
+               ;; it reified, in declaration order.
+               ,@(map (^[name i]
+                        (quasirename r
+                          `(define-type ,name (list-ref _dummy ,i))))
+                      cenum-names
+                      (iota (length cenum-names)))
                )))]))))
 
 (define (compile-and-link-ffi-stub dlobj cdef-instances c-headers
@@ -118,8 +125,20 @@
                      ,@(map (^t (and (c-pointer-like-type? t) t)) atypes)))))
           cdef-instances)])
     (cgen-dynamic-load unit :include-paths c-include-paths)
-    ((module-binding-ref mod 'ffisetup) dlobj pointer-ret-types
-     variadic-type-infos callback-infos mod)))
+    ;; ffisetup returns the reified enumerator lists, one per
+    ;; <foreign-c-enum> in declaration order.  Turn each into a <c-enum>;
+    ;; the caller binds them to the enum-set names.
+    ;; TODO: make-c-enum-type's "value out of range" error doesn't say
+    ;; which enum or enumerator is at fault.  Here the values come from
+    ;; the C compiler, so the user's mistake is the declared base type;
+    ;; we should add that context.
+    (let1 enumerator-lists
+        ((module-binding-ref mod 'ffisetup) dlobj pointer-ret-types
+         variadic-type-infos callback-infos mod)
+      (map (^[cen enumerators]
+             (make-c-enum-type (~ cen'tag) (~ cen'base-type) enumerators))
+           (filter (cut is-a? <> <foreign-c-enum>) cdef-instances)
+           enumerator-lists))))
 
 ;; Maximum number of variadic arguments supported by the switch-case kludge.
 ;; There is no portable way to convert a list of arguments to va_list, so
@@ -341,6 +360,10 @@
      (if (~ type'tag) (format "union ~a" (~ type'tag)) "union /*anon*/")]
     [<c-function>
      "void*"]                           ; function pointers used as opaque void*
+    ;; An enum is passed as its base type.  Its own c-type-name may name a
+    ;; tag the generated stub can't see, and with an explicit base type it
+    ;; is C23 syntax ("enum foo : uint8_t"), so we never emit it.
+    [<c-enum> (%type->c-type (c-enum-type-base-type type))]
     [<native-type> (~ type'c-type-name)]))
 
 ;; Generate a C expression that unboxes a Scheme value to a C value.
@@ -752,16 +775,51 @@
 ;; The C name is emitted verbatim, so it may be a macro, an enum member,
 ;; or any other constant expression the included headers make visible.
 ;; This is also used to define each enumerator of a define-c-enum form.
-(define (emit-const-define scheme-name c-name type)
-  (when (c-pointer-like-type? type)
-    (errorf "define-c-constant: ~a: pointer, array and function types \
-             are not supported" scheme-name))
+(define (emit-const-define scheme-name box-expr)
   (format "    Scm_DefineConst(target_mod_, SCM_SYMBOL(~a), ~a);"
           (cgen-cexpr (cgen-literal scheme-name))
-          (%type->box-expr type c-name)))
+          box-expr))
 
 (define (setup-code-for-const ccst)
-  (emit-const-define (~ ccst'scheme-name) (~ ccst'c-name) (~ ccst'type)))
+  (let1 type (~ ccst'type)
+    (when (c-pointer-like-type? type)
+      (errorf "define-c-constant: ~a: pointer, array and function types \
+               are not supported" (~ ccst'scheme-name)))
+    (emit-const-define (~ ccst'scheme-name)
+                       (%type->box-expr type (~ ccst'c-name)))))
+
+;; C expression boxing one enumerator.  If we know the base type we can
+;; emit appropriate boxer.  Othwerise, we check the value's sign at
+;; runtime.
+(define (%enum-value-cexpr c-name base-type)
+  (cond
+   [(not base-type)
+    (format "((~a) < 0 ? Scm_MakeInteger64((int64_t)(~a)) \
+                       : Scm_MakeIntegerU64((uint64_t)(~a)))"
+            c-name c-name c-name)]
+   [(~ base-type'unsigned?)
+    (format "Scm_MakeIntegerU64((uint64_t)(~a))" c-name)]
+   [else
+    (format "Scm_MakeInteger64((int64_t)(~a))" c-name)]))
+
+;; Emit, into the ffisetup body, the code that defines one enum's
+;; enumerators as Scheme constants and conses the (symbol value) pairs
+;; onto enums_ for make-c-enum-type to consume.
+(define (setup-code-for-cenum cen)
+  (define (value-cexpr e) (%enum-value-cexpr (cdr e) (~ cen'base-type)))
+  (with-output-to-string
+    (^[]
+      (dolist [e (~ cen'enumerators)]
+        (print (emit-const-define (car e) (value-cexpr e))))
+      (print "    {")
+      (print "      ScmObj es_ = SCM_NIL;")
+      ;; Build in reverse so the list comes out in declaration order.
+      (dolist [e (reverse (~ cen'enumerators))]
+        (format #t "      es_ = Scm_Cons(Scm_List(~a, ~a, NULL), es_);\n"
+                (cgen-cexpr (cgen-literal (car e)))
+                (value-cexpr e)))
+      (print "      enums_ = Scm_Cons(es_, enums_);")
+      (print "    }"))))
 
 ;;;
 ;;; Generate C code from a list of <foreign-c-function> instances.
@@ -775,6 +833,8 @@
     (filter (cut is-a? <> <foreign-c-callback>) cdef-instances))
   (define ccst-instances
     (filter (cut is-a? <> <foreign-c-constant>) cdef-instances))
+  (define cenum-instances
+    (filter (cut is-a? <> <foreign-c-enum>) cdef-instances))
   (define unit
     (make <cgen-unit>
       :name unit-name
@@ -836,7 +896,8 @@
                "    ScmDLObj *dlo SCM_UNUSED ="
                "        SCM_FALSEP(dlobj)? NULL : SCM_DLOBJ(dlobj);"
                "    ScmObj fptr SCM_UNUSED;"
-               "    ScmModule *target_mod_ = SCM_MODULE(argv[4]);")
+               "    ScmModule *target_mod_ = SCM_MODULE(argv[4]);"
+               "    ScmObj enums_ = SCM_NIL;")
     (when (pair? pointer-return-cfns)
       (cgen-body "    ScmObj types = argv[1];"))
     (when (pair? variadic-cfns)
@@ -863,7 +924,11 @@
     ;; Bind each C constant in the target module.
     (dolist [ccst ccst-instances]
       (cgen-body (setup-code-for-const ccst)))
-    (cgen-body "    return SCM_UNDEFINED;"
+    ;; Bind each enumerator, and collect the (symbol value) pairs so that
+    ;; the Scheme side can build the <c-enum> instances.
+    (dolist [cen cenum-instances]
+      (cgen-body (setup-code-for-cenum cen)))
+    (cgen-body "    return Scm_Reverse(enums_);"
                "}")
 
     (cgen-init "    Scm_Define(SCM_CURRENT_MODULE(),"

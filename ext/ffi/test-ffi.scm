@@ -393,6 +393,112 @@
   )
 
 ;;;----------------------------------------------------------
+(test-section "define-c-enum")
+
+(define-module ffi-enum-sandbox
+  (use gauche.test)
+  (use gauche.ffi)
+  (use gauche.native-type)
+  (use file.util)
+
+  (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
+
+  (parameterize ([default-ffi-subsystem :stubgen])
+    (eval `(with-ffi #f (:c-headers ("ffi-const.h")
+                         :c-include-paths (,c-dir))
+             ;; tag derived from the name
+             (define-c-enum ffi-test-color
+               (FFI-TEST-RED FFI-TEST-GREEN FFI-TEST-BLUE))
+             ;; tag given explicitly
+             (define-c-enum (flags ffi_test_flags)
+               (FFI-TEST-F-A FFI-TEST-F-B FFI-TEST-F-WIDE))
+             ;; anonymous, with an explicit base type
+             (define-c-enum (anon #f) (FFI-TEST-ANON-X FFI-TEST-ANON-Y)
+               'uint8_t)
+             ;; signed base type
+             (define-c-enum (signed-e ffi_test_signed)
+               (FFI-TEST-S-LO FFI-TEST-S-HI) 'int16_t))
+          (current-module)))
+
+  (test* "define-c-enum binds enumerators" '(0 1 2)
+         (list FFI-TEST-RED FFI-TEST-GREEN FFI-TEST-BLUE))
+  (test* "define-c-enum enumerators are constants" (test-error <error>)
+         (eval '(set! FFI-TEST-RED 3) (current-module)))
+
+  (test* "define-c-enum binds the enum set" #t
+         (c-enum-type? ffi-test-color))
+  (test* "define-c-enum derives the tag from the name" 'ffi_test_color
+         (c-enum-type-tag ffi-test-color))
+  (test* "define-c-enum name->value" 1
+         (c-enum-value ffi-test-color 'FFI-TEST-GREEN))
+  (test* "define-c-enum value->name" 'FFI-TEST-BLUE
+         (c-enum-symbol ffi-test-color 2))
+  (test* "define-c-enum name->value, unknown" (test-error <error>)
+         (c-enum-value ffi-test-color 'FFI-TEST-MAUVE))
+  (test* "define-c-enum value->name, unknown" (test-error <error>)
+         (c-enum-symbol ffi-test-color 99))
+  (test* "define-c-enum enumerator alist"
+         '((FFI-TEST-RED . 0) (FFI-TEST-GREEN . 1) (FFI-TEST-BLUE . 2))
+         (c-enum-type-enumerator-alist ffi-test-color))
+
+  ;; A value beyond int; the reified value must still be exact.
+  (test* "define-c-enum explicit tag" 'ffi_test_flags (c-enum-type-tag flags))
+  (test* "define-c-enum wide enumerator" #x80000000 FFI-TEST-F-WIDE)
+  (test* "define-c-enum wide enumerator, via the set" #x80000000
+         (c-enum-value flags 'FFI-TEST-F-WIDE))
+
+  ;; Base type fixes size and alignment; no tag at all.
+  (test* "define-c-enum anonymous" #f (c-enum-type-tag anon))
+  (test* "define-c-enum base type" '(1 1 10 20)
+         (list (~ anon'size) (~ anon'alignment)
+               FFI-TEST-ANON-X FFI-TEST-ANON-Y))
+
+  ;; With a base type the boxer is chosen at code generation time from its
+  ;; signedness; without one, at runtime from the enumerator itself.  Both
+  ;; must reify the value exactly.
+  (test* "define-c-enum signed base type" '(2 -5 5)
+         (list (~ signed-e'size) FFI-TEST-S-LO FFI-TEST-S-HI))
+  (test* "define-c-enum signed base type, via the set" -5
+         (c-enum-value signed-e 'FFI-TEST-S-LO))
+
+  ;; The enum type is usable as an FFI argument type: it is passed as its
+  ;; base type, so the generated stub compiles without naming the tag.
+  (parameterize ([default-ffi-subsystem :stubgen])
+    (eval `(with-ffi (dlopen "./f") ()
+             (define-c-function Fi-i (list ffi-test-color) 'int))
+          (current-module)))
+  (test* "c-enum as an FFI argument type" 3 (Fi-i FFI-TEST-BLUE))
+
+  (test* "define-c-enum rejects a base type that can't hold the values"
+         (test-error <error> #/out of range/)
+         (eval `(with-ffi #f (:subsystem :stubgen
+                              :c-headers ("ffi-const.h")
+                              :c-include-paths (,c-dir))
+                  (define-c-enum (narrow ffi_test_flags)
+                    (FFI-TEST-F-A FFI-TEST-F-WIDE) 'uint8_t))
+               (current-module)))
+
+  (test* "define-c-enum, malformed name and tag" (test-error <error>)
+         (eval '(with-ffi #f (:subsystem :stubgen)
+                  (define-c-enum (a b c) (X)))
+               (current-module)))
+  (test* "define-c-enum, malformed enumerator" (test-error <error>)
+         (eval '(with-ffi #f (:subsystem :stubgen)
+                  (define-c-enum foo ("X")))
+               (current-module)))
+
+  (test* "define-c-enum outside with-ffi" (test-error <error>)
+         (eval '(define-c-enum foo (X)) (current-module)))
+
+  (when (ffi-subsystem-available? :native)
+    (test* "define-c-enum is not supported in native subsystem yet"
+           (test-error <error> #/not supported in the native ffi subsystem/)
+           (eval '(with-ffi #f (:subsystem :native)
+                    (define-c-enum foo (X)))
+                 (current-module))))
+  )
+
+;;;----------------------------------------------------------
 (test-section "foreign-function-info")
 
 (with-module ffi-test-sandbox

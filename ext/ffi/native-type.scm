@@ -59,6 +59,7 @@
           c-struct/union-type-field-type
           c-struct/union-type-field-offset
           c-enum-type-tag
+          c-enum-type-base-type
           c-enum-type-enumerator-alist
           c-enum-value
           c-enum-symbol
@@ -391,6 +392,16 @@
 (define-inline (c-enum-type-tag type)
   (assume-type type <c-enum>)
   (~ type'tag))
+
+;; The integral native type the enum is actually represented by.  It is
+;; the explicitly given type-spec (C23's enum-type-specifier) if any,
+;; otherwise the one derived from the enumerator value range.  Unlike
+;; type-spec, this is never #f, so it can be used whenever the enum's
+;; representation is needed.
+(define-inline (c-enum-type-base-type type)
+  (assume-type type <c-enum>)
+  (or (~ type'type-spec)
+      (%native-int-type-of-size (~ type'size) (~ type'unsigned?))))
 
 (define-inline (c-enum-type-enumerator-alist type)
   (assume-type type <c-enum>)
