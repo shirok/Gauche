@@ -34004,7 +34004,8 @@ optional arguments are the same as @code{@@vector->vector}.
 @c COMMON
 @end defun
 
-@deffn {Function} list->@@vector list :optional clamp
+@deffn {Function} list->@@vector list :optional start end clamp
+@deffnx {Function} list->@@vector list :optional clamp
 @findex list->s8vector
 @findex list->u8vector
 @findex list->s16vector
@@ -34019,21 +34020,39 @@ optional arguments are the same as @code{@@vector->vector}.
 @findex list->c32vector
 @findex list->c64vector
 @findex list->c128vector
-[R7RS vector.@@]
+[R7RS vector.@@][SRFI-274]
 @c MOD gauche.uvector
 @c EN
 Converts a list @var{list} to a @@vector.
+The optional argument @var{start}/@var{end} limits the range of
+@var{list} to be used.  These optoinal arguments are defined in SRFI-274.
+
 Optional argument @var{clamp} specifies the behavior when
 the element of @var{list} is out of the valid range.
-(The @var{clamp} argument is Gauche's extension.)
+The @var{clamp} argument is Gauche's extension.
+
+NB: Originally this procedure only takes an optional @var{clamp}.
+After SRFI-274, we enhanced it to allow @var{start}/@var{end} arguments,
+but we still support the old API.
+If only one optional argument is given, it is @var{clamp} if it is a
+symbol or @code{#f}, and @var{start} if it is a number.
 
 Note that the generic function @code{coerce-to} can be used as well,
 if you import @code{gauche.collection}.
 @c JP
 リスト@var{list}を@@vectorに変換します。
-省略可能な引数@var{clamp}が、リスト内の要素が正しい範囲外の数であった場合の
+省略可能な@var{start}/@var{end}引数はリストの使われる範囲を制限する
+インデックスです。この引数はSRFI-274で導入されました。
+
+省略可能な引数@var{clamp}は、リスト内の要素が正しい範囲外の数であった場合の
 動作を指定します。
-(@var{clamp}引数はGauche独自拡張です。)
+@var{clamp}引数はGauche独自拡張です。
+
+註: 元々は、この手続きは@var{clamp}のみを省略可能引数として取っていましたが、
+SRFI-274の決定に伴い、@var{start}/@var{end}引数を取るように変更されました。
+ただし、古い呼び出し方法もサポートされます。
+省略可能引数がひとつだけ渡された場合、それがシンボルか@code{#f}なら
+@var{clamp}、数値なら@var{start}と解釈されます。
 
 モジュール@code{gauche.collection}をインポートしていれば、
 総称関数@code{coerce-to}を使うこともできます。

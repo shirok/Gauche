@@ -115,6 +115,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Uninterned symbols (SRFI)::   srfi.258
 * Tagged procedures with type safety::  srfi.259
 * Hexadecimal floating-point constants::  srfi.270
+* Extended list conversion procedures::  srfi.274
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -19861,7 +19862,7 @@ tag type name.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Hexadecimal floating-point constants,  , Tagged procedures with type safety, Library modules - SRFIs
+@node Hexadecimal floating-point constants, Extended list conversion procedures, Tagged procedures with type safety, Library modules - SRFIs
 @section @code{srfi.270} - Hexadecimal floating-point constants
 @c NODE 十六進浮動小数点定数, @code{srfi.270} - 十六進浮動小数点定数
 
@@ -19957,6 +19958,41 @@ and imaginary part are written in hexadecimal floating-point format.
 (write-hexadecimal-float 1e-310)  @result{} 0.93445b873158p-1029
 @end example
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Extended list conversion procedures,  , Hexadecimal floating-point constants, Library modules - SRFIs
+@section @code{srfi.274} - Extended list conversion procedures
+@c NODE リスト変換手続きの拡張, @code{srfi.274} - リスト変換手続きの拡張
+
+@deftp {Module} srfi.274
+@mdindex srfi.274
+Since Gauche already provides srfi-274 conforming procedures,
+this module simply re-exports them, so that @code{(import (srfi 274))}
+works.
+
+@table @code
+@item list-copy
+Builtin (@code{gauche.base}).  @xref{List constructors},
+@item list->string
+Builtin (@code{gauche.base}).  @xref{String utilities},
+@item list->vector
+Builtin (@code{gauche.base}).  @xref{Vectors}.
+@item list->stream
+From @code{util.stream} (same binding as @code{scheme.stream}).
+@xref{Stream constructors}.
+@item list->ideque
+From @code{scheme.ideque}.  @xref{R7RS immutable deques}.
+@item list->generator
+From @code{gauche.generator} (same binding as @code{scheme.generator}).
+@xref{Generator constructors}.
+@item list->@@vector
+@code{@@} is for @code{u8}, @code{s8}, etc.
+From @code{gauche.uvector} (same bindings as @code{scheme.vector.@@}).
+@xref{Uvector conversion operations}.
+@end table
+
+@end deftp
+
 
 @c Local variables:
 @c mode: texinfo

@@ -1866,3 +1866,19 @@ Reader and writer are supported by built-in procedures
 (@ref{Numeric literal syntax}参照)。
 補助手続き@code{write-hexadecimal-float}はモジュール@code{srfi.270}で
 提供されます(@ref{Hexadecimal floating-point constants}参照)。
+
+
+srfi-274, srfi-274
+()
+
+Extended list conversion procedures
+This srfi extends existing @code{list->*} procedures by allowing
+optional start/end arguments.  Gauche already provides extended
+version from the relevant libraries.  For the portability,
+using @code{srfi.274} imports procedures defined in this srfi.
+
+リスト変換手続きの拡張
+このsrfiは既存の@code{list->*}手続きを、省略可能なstart/end引数を取るように
+拡張するものです。Gaucheではそれぞれのライブラリの該当する関数は既に
+この拡張を備えています。移植性のために、@code{srfi.274}をuseすると
+このsrfiで定義される手続きがインポートされます。
