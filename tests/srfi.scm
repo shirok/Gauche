@@ -3475,6 +3475,9 @@
   )
 
 ;;-----------------------------------------------------------------------
+;; srfi-274 depends on multiple extension modules, so its tests are in srfi2.scm.
+
+;;-----------------------------------------------------------------------
 ;; srfi-277 depends on gauche.vport, and tested in ext/vport.
 
 (test-end)

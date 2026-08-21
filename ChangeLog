@@ -1,5 +1,10 @@
 2026-08-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi/274.scm: Added (this is just re-export Gauche's
+	  relevant procedures, which already support start/end args)
+	* tests/srfi2.scm: A place to put tests for srfis that needs
+	  to run after other extension modules are tested.
+
 	* ext/uvector/uvlib.scm.tmpl (list->@vector): Add SRFI-274
 	  compatibility mode, (list->@vector lis start end clamp).
 

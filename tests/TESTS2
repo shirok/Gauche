@@ -1,6 +1,7 @@
 math.scm
 data.scm
 util2.scm
+srfi2.scm
 lang.scm
 optimize.scm
 control.scm
