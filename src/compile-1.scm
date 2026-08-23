@@ -342,6 +342,26 @@
           (begin
             (push! (cdr vframe) def)
             (pass1/body-rec rest mframe vframe cenv))))]
+     [(global-syntax=? head define-type.)   ; internal type definition
+      ;; TEMPORARY:
+      ;; For the time being, we treat internal define-type just like
+      ;; define-inline with variables.  It doesn't work if the new named type
+      ;; is used in the following type expression, though---the compiler must
+      ;; recognize the bound var is a type.
+      (let1 def (match args
+                  [(var init) `(,var :rec ,init . ,incsrc)]
+                  [_ (error "malformed internal define-type:" (caar exprs))])
+        (dupe-check (car def) mframe vframe)
+        ;; TODO: This part is the dupe of above.  call for refactoring.
+        (if (not mframe)
+          (let* ([cenv (cenv-extend cenv '() SYNTAX)]
+                 [mframe (car (cenv-frames cenv))]
+                 [cenv (cenv-extend cenv `(,def) LEXICAL)]
+                 [vframe (car (cenv-frames cenv))])
+            (pass1/body-rec rest mframe vframe cenv))
+          (begin
+            (push! (cdr vframe) def)
+            (pass1/body-rec rest mframe vframe cenv))))]
      [(global-syntax=? head define-syntax.) ; internal syntax definition
       (match args
         [(name trans-spec)
@@ -523,6 +543,7 @@
 (define assume-type.      (global-id 'assume-type))
 (define begin.            (global-id 'begin))
 (define current-module.   (global-id 'current-module))
+(define define-type.      (global-id 'define-type))
 (define define-inline.    (global-id 'define-inline))
 (define define-syntax.    (global-id 'define-syntax))
 (define define.           (global-id 'define))
@@ -847,6 +868,7 @@
 ;; define-type, in Gauche, is define-inline specialized for type values.
 ;; TODO: We may allow parameterized types
 (define-pass1-syntax (define-type form cenv) :gauche
+  ;; Internal define-type is processed separately.
   (check-toplevel form cenv)
   (match form
     [(_ name expr)
@@ -957,7 +979,8 @@
     (or (global-head=? f define.)
         (global-head=? f r5rs-define.)
         (global-head=? f define-syntax.)
-        (global-head=? f define-inline.)))
+        (global-head=? f define-inline.)
+        (global-head=? f define-type.)))
   (define (begin-with-definitions? form)
     (and (global-head=? form begin.)
          (pair? (cdr form))

@@ -1,3 +1,7 @@
+2026-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm: Partial support of internal define-type.
+
 2026-08-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/274.scm: Added (this is just re-export Gauche's
