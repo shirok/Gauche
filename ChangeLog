@@ -1,6 +1,8 @@
 2026-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm: Partial support of internal define-type.
+	* src/libobj.scm, libsrc/gauche/record.scm: Use define-type to bind
+	  class and rtd.
 
 2026-08-21  Shiro Kawai  <shiro@acm.org>
 

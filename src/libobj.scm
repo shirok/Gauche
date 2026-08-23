@@ -253,7 +253,7 @@
       ;; reference.  Note that class redefinition does override the
       ;; inlinable binding (which should be rare, though).  We handle
       ;; redefinition of class specially in gloc.c.
-      `(define-inline ,name
+      `(define-type ,name
          (rlet1 ,class (make ,metaclass
                          ':name ',name ':supers (list ,@supers)
                          ':slots (list ,@slot-defs)
