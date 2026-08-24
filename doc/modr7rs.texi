@@ -7181,13 +7181,23 @@ idequeと同じ数の引数を取らねばならず、各idequeからひとつ�
 @end defun
 
 @defun ideque->list idq
-@defunx list->ideque list
+@defunx list->ideque list :optional start end
 [R7RS ideque]
 @c MOD scheme.ideque
 @c EN
 Convert between ideque and list.
 @c JP
 idequeとリストの間の変換を行います。
+@c COMMON
+
+@c EN
+The optional @var{start} and @var{end} index arguments are the extention
+defined in SRFI-274 to limit the range of @var{list} to be used.
+@xref{Extended list conversion procedures}.
+@c JP
+省略可能な@var{start}と@var{end}インデックス引数はSRFI-274で定義された拡張で、
+@var{list}中で使う範囲を指定します。
+@ref{Extended list conversion procedures}参照。
 @c COMMON
 @end defun
 

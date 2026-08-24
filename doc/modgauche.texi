@@ -10950,6 +10950,16 @@ at the last element, and reverse generators ends at the first element.
 (generator->list (reverse-vector->generator '#(a b c d e) #f 2))
   @result{} (b a)
 @end example
+
+@c EN
+NB: @code{list->generator} in SRFI-158 (and @code{scheme.generator}) does not
+allow the optional @var{start} and @var{end} arguments.  It is the extension
+defined in SRFI-274.  @xref{Extended list conversion procedures}.
+@c JP
+註: SRFI-158(および@code{scheme.generator})の@code{list->generator}は
+@var{start}と@var{end}引数を取りません。これはSRFI-274で定義された拡張です。
+@ref{Extended list conversion procedures}参照。
+@c COMMON
 @end defun
 
 @defun bits->generator n :optional start end
@@ -34025,7 +34035,8 @@ optional arguments are the same as @code{@@vector->vector}.
 @c EN
 Converts a list @var{list} to a @@vector.
 The optional argument @var{start}/@var{end} limits the range of
-@var{list} to be used.  These optoinal arguments are defined in SRFI-274.
+@var{list} to be used.  These optoinal arguments are defined in SRFI-274
+(@pxref{Extended list conversion procedures}).
 
 Optional argument @var{clamp} specifies the behavior when
 the element of @var{list} is out of the valid range.
@@ -34042,7 +34053,8 @@ if you import @code{gauche.collection}.
 @c JP
 リスト@var{list}を@@vectorに変換します。
 省略可能な@var{start}/@var{end}引数はリストの使われる範囲を制限する
-インデックスです。この引数はSRFI-274で導入されました。
+インデックスです。この引数はSRFI-274で導入されました
+(@ref{Extended list conversion procedures}参照)。
 
 省略可能な引数@var{clamp}は、リスト内の要素が正しい範囲外の数であった場合の
 動作を指定します。

@@ -37519,9 +37519,11 @@ Returns a new stream whose elements are the elements in @var{list}.
 @c EN
 The optional start/end indexes can limit the range of @var{list} to be
 used.  It is an extension defined in SRFI-274.
+(@xref{Extended list conversion procedures}.)
 @c JP
 省略可能な@var{start}/@var{end}インデックスは、@var{list}の使われる範囲を
 指定します。これはSRFI-274で定義される拡張です。
+(@ref{Extended list conversion procedures}参照。)
 @c COMMON
 
 @example
