@@ -19966,29 +19966,67 @@ and imaginary part are written in hexadecimal floating-point format.
 
 @deftp {Module} srfi.274
 @mdindex srfi.274
+@c EN
 Since Gauche already provides srfi-274 conforming procedures,
 this module simply re-exports them, so that @code{(import (srfi 274))}
 works.
+@c JP
+Gaucheの該当する手続きは既にSRFI-274をサポートするように拡張されています。
+このモジュールは、@code{(import (srfi 274))}が動くように
+それらを再エクスポートしているだけです。
+@c COMMON
 
 @table @code
 @item list-copy
-Builtin (@code{gauche.base}).  @xref{List constructors},
+@c EN
+Builtin (@code{gauche.base}).  @xref{List constructors}.
+@c JP
+組み込みのもの (@code{gauche.base})。@ref{List constructors}参照。
+@c COMMON
 @item list->string
-Builtin (@code{gauche.base}).  @xref{String utilities},
+@c EN
+Builtin (@code{gauche.base}).  @xref{String utilities}.
+@c JP
+組み込みのもの (@code{gauche.base})。@ref{String utilities}参照。
+@c COMMON
 @item list->vector
+@c EN
 Builtin (@code{gauche.base}).  @xref{Vectors}.
+@c JP
+組み込みのもの (@code{gauche.base})。  @ref{Vectors}参照。
+@c COMMON
 @item list->stream
+@c EN
 From @code{util.stream} (same binding as @code{scheme.stream}).
 @xref{Stream constructors}.
+@c JP
+@code{util.stream}および@code{scheme.stream}で提供されているものです。
+@ref{Stream constructors}参照。
+@c COMMON
 @item list->ideque
+@c EN
 From @code{scheme.ideque}.  @xref{R7RS immutable deques}.
+@c JP
+@code{scheme.ideque}で提供されているものです。@ref{R7RS immutable deques}参照。
+@c COMMON
 @item list->generator
+@c EN
 From @code{gauche.generator} (same binding as @code{scheme.generator}).
 @xref{Generator constructors}.
+@c JP
+@code{gauche.generator}および@code{scheme.generator}で提供されているものです。
+@ref{Generator constructors}参照。
+@c COMMON
 @item list->@@vector
+@c EN
 @code{@@} is for @code{u8}, @code{s8}, etc.
 From @code{gauche.uvector} (same bindings as @code{scheme.vector.@@}).
 @xref{Uvector conversion operations}.
+@c JP
+@code{@@}は@code{u8}, @code{s8}等です。
+@code{gauche.uvector}および@code{scheme.vector.@@}で提供されているものです。
+@ref{Uvector conversion operations}参照。
+@c COMMON
 @end table
 
 @end deftp

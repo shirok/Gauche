@@ -1875,10 +1875,12 @@ Extended list conversion procedures
 This srfi extends existing @code{list->*} procedures by allowing
 optional start/end arguments.  Gauche already provides extended
 version from the relevant libraries.  For the portability,
-using @code{srfi.274} imports procedures defined in this srfi.
+using @code{srfi.274} imports procedures defined in this srfi
+(@pxref{Extended list conversion procedures}).
 
 リスト変換手続きの拡張
 このsrfiは既存の@code{list->*}手続きを、省略可能なstart/end引数を取るように
 拡張するものです。Gaucheではそれぞれのライブラリの該当する関数は既に
 この拡張を備えています。移植性のために、@code{srfi.274}をuseすると
-このsrfiで定義される手続きがインポートされます。
+このsrfiで定義される手続きがインポートされます
+(@ref{Extended list conversion procedures}参照)。
