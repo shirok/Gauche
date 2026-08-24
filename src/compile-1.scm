@@ -306,6 +306,19 @@
       (pass1/body-rec
        (acons (call-macro-expander mac expr cenv) src rest)
        mframe vframe cenv)))
+  ;; internal define etc.  DEF := (var :rec init [srcinfo])
+  ;; rest is the rest of forms passed to process-form-1
+  (define (internal-env-expand def mframe vframe rest)
+    (dupe-check (car def) mframe vframe)
+    (if (not mframe)
+      (let* ([cenv (cenv-extend cenv '() SYNTAX)]
+             [mframe (car (cenv-frames cenv))]
+             [cenv (cenv-extend cenv `(,def) LEXICAL)]
+             [vframe (car (cenv-frames cenv))])
+        (pass1/body-rec rest mframe vframe cenv))
+      (begin
+        (push! (cdr vframe) def)
+        (pass1/body-rec rest mframe vframe cenv))))
   (define (process-form-1 op head args incsrc rest mframe vframe cenv)
     (unless (list? args)
       (error "proper list required for function application \
@@ -332,16 +345,7 @@
                      (error "define without expression is not allowed in R7RS" (caar exprs))
                      `(,var :rec ,(undefined) . ,incsrc))]
                   [_ (error "malformed internal define:" (caar exprs))])
-        (dupe-check (car def) mframe vframe)
-        (if (not mframe)
-          (let* ([cenv (cenv-extend cenv '() SYNTAX)]
-                 [mframe (car (cenv-frames cenv))]
-                 [cenv (cenv-extend cenv `(,def) LEXICAL)]
-                 [vframe (car (cenv-frames cenv))])
-            (pass1/body-rec rest mframe vframe cenv))
-          (begin
-            (push! (cdr vframe) def)
-            (pass1/body-rec rest mframe vframe cenv))))]
+        (internal-env-expand def mframe vframe rest))]
      [(global-syntax=? head define-type.)   ; internal type definition
       ;; TEMPORARY:
       ;; For the time being, we treat internal define-type just like
@@ -351,17 +355,7 @@
       (let1 def (match args
                   [(var init) `(,var :rec ,init . ,incsrc)]
                   [_ (error "malformed internal define-type:" (caar exprs))])
-        (dupe-check (car def) mframe vframe)
-        ;; TODO: This part is the dupe of above.  call for refactoring.
-        (if (not mframe)
-          (let* ([cenv (cenv-extend cenv '() SYNTAX)]
-                 [mframe (car (cenv-frames cenv))]
-                 [cenv (cenv-extend cenv `(,def) LEXICAL)]
-                 [vframe (car (cenv-frames cenv))])
-            (pass1/body-rec rest mframe vframe cenv))
-          (begin
-            (push! (cdr vframe) def)
-            (pass1/body-rec rest mframe vframe cenv))))]
+        (internal-env-expand def mframe vframe rest))]
      [(global-syntax=? head define-syntax.) ; internal syntax definition
       (match args
         [(name trans-spec)
