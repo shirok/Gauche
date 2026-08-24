@@ -40,6 +40,8 @@
    See src/libtype.scm for the detailed explanations of those types
    and their usage. */
 
+extern ScmObj Scm__VMOfType(ScmObj obj, ScmObj type);
+
 /* <type-constructor-meta> in Scheme.
    It inherits <class> in C level. */
 typedef struct ScmTypeConstructorRec {

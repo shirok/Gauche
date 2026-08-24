@@ -314,12 +314,16 @@
   (return (SCM_ISA obj SCM_CLASS_TYPE)))
 
 ;;;
-;;; of-type? obj type
+;;; of-type?
 ;;;
+
+;; This is the meat of of-type?.  However, of-type? is inserted by the
+;; expansion of define-class (via define-type), so Scheme binding is defined
+;; in libalpha.scm.
 
 (inline-stub
  ;;  This may push C continuations on VM, so must be called on VM.
- (define-cfn Scm_VMOfType (obj type)
+ (define-cfn Scm__VMOfType (obj type)
    (cond [(SCM_PROXY_TYPE_P type)
           (return (Scm_VMIsA obj (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))]
          [(SCM_DESCRIPTIVE_TYPE_P type)
@@ -337,8 +341,6 @@
          [else
           (Scm_Error "Second argument of of-type? must be a type, but got: %S"
                      type)]))
-
- (define-cproc of-type? (obj type) :constant Scm_VMOfType)
  )
 
 ;;;
