@@ -10577,8 +10577,25 @@ and you can call it as a Scheme function.
 @subsection FFI support procedures
 @c NODE FFIサポート手続き
 
-@defun dlopen dsoname
+@defun dlopen dsoname :key paths versions
 @c MOD gauche.ffi
+This is a convenience procedure, and simply calls
+@code{dynamic-load} with @code{:init-function #f}---that is,
+telling the dynamic loader not to call Gauche-specific initialization function.
+We find it worth to have this shortcut, because it aligns to the
+programmer's expectation.
+
+Returns @code{#<dlobj>} object, which can be given to @code{with-ffi}
+form.
+
+The keyword arguments are passed to @code{dynamic-load}.
+@var{Paths} specifies the list of directories to search @var{dsoname}
+if it is given in a relative path---when omitted, the value of
+the parameter @code{dynamic-load-paths} is used.
+@var{Versions} specifies a list of version suffixes, each of
+whose element may be an integer or a string.  The version number is
+attached @emph{after} DSO suffix.  @xref{Loading dynamic library}, for
+the details.
 @end defun
 
 @defun default-ffi-subsystem

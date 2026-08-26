@@ -28936,7 +28936,7 @@ When called outside of @code{load}, these procedures returns
 @subsection Load dynamic library
 @c NODE ダイナミックライブラリのロード
 
-@defun dynamic-load file :key init-function
+@defun dynamic-load file :key init-function paths versions
 @c EN
 Loads and links a dynamic loadable library (shared library) @var{file}.
 @var{File} shouldn't contain the suffix (``.so'' on most systems);
@@ -28947,10 +28947,13 @@ function name of the library in a string.  By default, if the file
 basename (without extension) is ``foo'', the initialization function
 name is ``Scm_Init_foo''.
 
-Usually a dynamic loadable library is provided with wrapping Scheme
-module, so the user doesn't have to call this function directly.
+This procedure can also be used to dynamically load general DSO, unrelated
+to Gauche, but you have to pass @code{#f} to @code{init-function} to
+suppress calling it.  For that purpose, you may want to use
+@code{dlopen} (@pxref{FFI support procedures}) instead.
 
-There's no way to unload the loaded libraries.
+
+
 @c JP
 ダイナミックローダブルライブラリ(共有ライブラリ)@var{file}をロードしてリンクします。
 @var{file}にはサフィックス(``.so'' 等) を含めないで下さい。システムによって
@@ -28960,10 +28963,49 @@ There's no way to unload the loaded libraries.
 指定します。デフォルトでは、サフィックスを除くファイル名が ``foo'' の場合、
 初期化関数名は ``Scm_Init_foo'' となります。
 
+この手続きはまた、Gaucheとは無関係なDSOファイルをロードするのにも使えます。
+ただその場合、Gauche特有の初期化手続きを呼ばないよう、
+@code{init-function}に@code{#f}を渡さなければなりません。
+この目的には@code{dlopen}を使った方がわかりやすいでしょう。
+@ref{FFI support procedures}を参照してください。
+@c COMMON
+
+@c EN
+The @var{paths} keyword argument can take a list of directories
+from which @var{file} is searched, if @var{file} is given with
+a relative path.  If omitted,
+the value of the parameter @code{dynamic-load-paths} is used.
+@c JP
+@var{paths}は、@var{file}が相対パスで与えられた場合にそれを探す
+ディレクトリのリストです。省略された場合はパラメータ@code{dynamic-load-paths}
+の値が使われます。
+@c COMMON
+
+@c EN
+The @var{versions} keyword argument is a list of exact integers and strings,
+to specify the extra version suffix of the DSO file to be searched.
+For example, the system's DSO suffix is @code{"so"} and @var{versions}
+is @code{("3.1" 3)}, attemt to dynamic-load @code{libfoo}
+caused to try @code{libfoo.so.3.1}, @code{libfoo.so.3}, then
+@code{libfoo.so}.
+@c JP
+@var{versions}キーワード引数は正確な整数もしくは文字列のリストで、
+DSOファイルを探す際に後ろに付け足すバージョン文字列を指定します。
+例えば、システムのDSOサフィックスが@code{"so"}である場合、
+@var{versons}に@code{("3.1" 3)}を指定して@code{libfoo}をロードしようとすると、
+@code{libfoo.so.3.1}、@code{libfoo.so.3}、@code{libfoo.so}が順に探されます。
+@c COMMON
+
+@c EN
+Usually a dynamic loadable library is provided with wrapping Scheme
+module, so the user doesn't have to call this function directly.
+
+Note that there's no way to unload the loaded libraries explicitly.
+@c JP
 通常、共有ライブラリはSchemeモジュール中でロードされるので、モジュールユーザが
 直接この手続きを呼ぶ必要はほとんどないでしょう。
 
-一度ロードされた共有ライブラリをアンロードすることはできません。
+なお、一度ロードされた共有ライブラリを明示的にアンロードすることはできません。
 @c COMMON
 @end defun
 
