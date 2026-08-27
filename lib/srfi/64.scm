@@ -590,7 +590,7 @@
     ((test-assert tname test-expression)
      (let* ((r (test-runner-get))
             (name tname))
-       (test-result-alist! r '((test-name . tname)))
+       (test-result-alist! r `((test-name . ,tname)))
        (%test-comp1body r test-expression)))
     ((test-assert test-expression)
      (let* ((r (test-runner-get)))
