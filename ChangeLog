@@ -1,3 +1,8 @@
+2026-08-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs-setup.scm (scheme.base): No longer needed to require
+	  srfi-43.
+
 2026-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm: Partial support of internal define-type.
