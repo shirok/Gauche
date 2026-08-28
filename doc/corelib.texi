@@ -11470,13 +11470,51 @@ See @code{substring} above for the condition that @var{start} and
 それが返ります。@var{start}と@var{end}が満すべき条件については
 前述の@code{substring}の項を見てください。
 @c COMMON
+@end defun
+
+@defun string-copy! target tstart s :optional start end
+[R7RS base][SRFI-13]
+@c EN
+Copies a string @var{s} into a string
+@var{target} from the position @var{tstart}.
+The @var{target} string must be mutable.
+Optional @var{start} and @var{end} arguments limits the range of @var{s}.
+If the copied string run over the end of @var{target}, an error is
+signaled.
+@c JP
+文字列@var{s}を、文字列@var{target}の@var{tstart}番目以降へコピーします。
+@var{target}文字列は変更可能でなければなりません。
+オプションの引数@var{start}と@var{end}は、@var{s}の範囲を制限します。
+コピーされた文字列が@var{target}の終端を越えたらエラーが通知されます。
+@c COMMON
+@example
+(define s (string-copy "abcde"))
+(string-copy! s 2 "ZZ")
+s @result{} "abZZe"
+@end example
 
 @c EN
-Node: R7RS's destructive version @code{string-copy!} is provided
-by @code{srfi.13} module (@pxref{String library}).
+It is ok to pass the same string to @var{target} and @var{s}; this
+always work even if the regions of source and destination are overlapping.
 @c JP
-註: R7RSの破壊的バージョン@code{string-copy!}は@code{srfi.13}モジュールで
-提供されます (@ref{String library}参照)。
+@var{target}と@var{s}に同じ文字列を渡しても構いません。コピー元とコピー先の
+領域が重なっていても、コピーは常に正しく行われます。
+@c COMMON
+
+@c EN
+Note that Gauche encourages you to treat strings as immutable objects.
+Internally, a string is an indirect pointer to a immutable entity, and
+mutating a string means copying the original entity and creating a new one.
+It doesn't ``save allocations''.
+Always use the functional version @code{string-copy} unless you
+absolutely need to replace a string in-place.
+@c JP
+Gaucheでは、文字列を変更不可なオブジェクトとして扱うことを強く推奨しています。
+内部的に、文字列オブジェクトは変更不可な文字列の実体へのポインタとなっています。
+文字列を変更すると、新たな文字列実体がアロケートされそれが変更されるので、
+破壊的手続きを使えばメモリアロケーションが節約できるということはありません。
+どうしても文字列そのものを破壊的変更したい場合でない限りは、
+非破壊版の@code{string-copy}を使いましょう。
 @c COMMON
 @end defun
 
