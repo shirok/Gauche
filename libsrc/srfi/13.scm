@@ -34,7 +34,7 @@
 (define-module srfi.13
   (export string-null? string-every string-any
           string-tabulate reverse-list->string
-          substring/shared string-copy!
+          substring/shared
           string-take string-take-right
           string-drop string-drop-right
           string-pad string-pad-right
@@ -75,7 +75,7 @@
           ;; importing SRFI-13 into vanilla environment.
           string? make-string string string->list list->string
           string-join string-length string-ref string-copy
-          string-set! string-fill!
+          string-set! string-fill! string-copy!
           string-append string-map string-for-each
           ))
 (select-module srfi.13)
@@ -139,23 +139,6 @@
 ;;;
 
 (define substring/shared string-copy)  ; same in Gauche
-
-(define (string-copy! target tstart s . args)
-  (assume-type target <string>)
-  (assume-type tstart <ufixnum>)
-  (let* ((str (apply opt-substring s args))
-         (slen (string-length str))
-         (tlen (string-length target)))
-    (when (> (+ tstart slen) tlen)
-      (error "copy operation runs off the target string:" target))
-    (if (= slen tlen)
-      (%string-replace-body! target str)
-      (%string-replace-body! target
-                             (string-append (substring target 0 tstart)
-                                            str
-                                            (substring target
-                                                       (+ tstart slen)
-                                                       tlen))))))
 
 (define (string-pad s len :optional (char #\space) start end)
   (assume-type char <char>)

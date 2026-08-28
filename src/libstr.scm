@@ -100,6 +100,25 @@
   (^ args
     (apply string-interpolate args))) ;;lambda is required to delay loading
 
+(select-module gauche.internal)
+;; srfi.13, scheem.base
+(define-in-module gauche (string-copy! target tstart s . args)
+  (assume-type target <string>)
+  (assume-type tstart <ufixnum>)
+  (let* ([str (apply opt-substring s args)]
+         [slen (string-length str)]
+         [tlen (string-length target)])
+    (when (> (+ tstart slen) tlen)
+      (error "copy operation runs off the target string:" target))
+    (if (= slen tlen)
+      (%string-replace-body! target str)
+      (%string-replace-body! target
+                             (string-append (substring target 0 tstart)
+                                            str
+                                            (substring target
+                                                       (+ tstart slen)
+                                                       tlen))))))
+
 ;;
 ;; Conversions
 ;;

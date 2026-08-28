@@ -1,3 +1,10 @@
+2026-08-28  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/srfi/13.scm, src/libstr.scm (string-copy!): Moved from
+	  srfi.13 to core.  string-copy! is a part of R7RS-small,
+	  and just moving this to core removes r7rs-setup dependency to
+	  srfi.13.
+
 2026-08-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs-setup.scm (scheme.base): No longer needed to require
