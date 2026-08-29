@@ -892,26 +892,28 @@
              ))))
   )
 
-(define (precomp-test-3)
-  (test* "running precomp 3" #t (do-precomp! '("types-test.scm") '("-e")))
-  (test* "compile 3" #t (do-compile! "types-test" '("types-test.c")))
+(define (precomp-test-type-reconstruction)
+  (test* "running precomp type-reconstruction" #t
+         (do-precomp! '("type-reconstruction.scm") '("-e")))
+  (test* "compile type-reconstruction" #t
+         (do-compile! "type-reconstruction" '("type-reconstruction.c")))
 
   (test* "type reconstruction" '(#t #t #f #t)
          (dynload-and-eval
-          "types-test"
+          "type-reconstruction"
           (list
-           (eq? (module-binding-ref 'types-test '<A>)
+           (eq? (module-binding-ref 'type-reconstruction '<A>)
                 (</> (<Tuple> (<?> <int8>) <string> <integer>)
                      (<List> <integer> 3 10)))
-           (eq? (module-binding-ref 'types-test '<A>)
-                (module-binding-ref 'types-test '<B>))
-           (eq? (module-binding-ref 'types-test '<A>)
-                (module-binding-ref 'types-test '<C>))
+           (eq? (module-binding-ref 'type-reconstruction '<A>)
+                (module-binding-ref 'type-reconstruction '<B>))
+           (eq? (module-binding-ref 'type-reconstruction '<A>)
+                (module-binding-ref 'type-reconstruction '<C>))
            ;; NB: The following may not be eq?, since (<List> <integer>) is
            ;; serialized as (<List> <integer> #f #f).  The memoization is
            ;; based on the argument list of the type constructor, so it
            ;; doesn't match with (<List> <integer>) at runtime.
-           (equal? (module-binding-ref 'types-test '<C>)
+           (equal? (module-binding-ref 'type-reconstruction '<C>)
                    (</> (<Tuple> (<?> <int8>) <string> <integer>)
                         (<List> <integer>)))
            )))
@@ -920,24 +922,26 @@
                                                (#f "ok" -8483958394)
                                                (1 2 3 4 5))
          (dynload-and-eval
-          "types-test"
+          "type-reconstruction"
           (list
-           ((module-binding-ref 'types-test 'foo) '(3 "ok" 8483958394))
-           ((module-binding-ref 'types-test 'foo) '(#f "ok" -8483958394))
-           ((module-binding-ref 'types-test 'foo) '(1 2 3 4 5)))))
+           ((module-binding-ref 'type-reconstruction 'foo) '(3 "ok" 8483958394))
+           ((module-binding-ref 'type-reconstruction 'foo) '(#f "ok" -8483958394))
+           ((module-binding-ref 'type-reconstruction 'foo) '(1 2 3 4 5)))))
 
   (test* "assertion with reconstructed type"
          #t
          (dynload-and-eval
-          "types-test"
+          "type-reconstruction"
           (guard (e ((<error> e)
                      (boolean (#/supposed to be of type/ (~ e'message)))))
-            ((module-binding-ref 'types-test 'foo) "ng"))))
+            ((module-binding-ref 'type-reconstruction 'foo) "ng"))))
   )
 
-(define (precomp-test-4)
-  (test* "running precomp 4" #t (do-precomp! '("literal-mutex.scm") '("-e")))
-  (test* "compile 4" #t (do-compile! "literal-mutex" '("literal-mutex.c")))
+(define (precomp-test-literal-mutex)
+  (test* "running precomp literal-mutex" #t
+         (do-precomp! '("literal-mutex.scm") '("-e")))
+  (test* "compile literal-mutex" #t
+         (do-compile! "literal-mutex" '("literal-mutex.c")))
 
   (test* "run-once" '(1 1 1 1 1)
          (dynload-and-eval
@@ -948,9 +952,9 @@
             (map thread-join! thrs))))
   )
 
-(define (precomp-test-5)
-  (test* "running precomp 5" #t (do-precomp! '("macros.scm") '("-e")))
-  (test* "compile 5" #t (do-compile! "macros" '("macros.c")))
+(define (precomp-test-macros)
+  (test* "running precomp macros" #t (do-precomp! '("macros.scm") '("-e")))
+  (test* "compile macros" #t (do-compile! "macros" '("macros.c")))
 
   (test* "compiled macro"
          '(("compiled macro (er)" ((apple) (banana) bonk))
@@ -967,9 +971,9 @@
 
 (wrap-with-test-directory precomp-test-1 '("test.o"))
 (wrap-with-test-directory precomp-test-2 '("test.o"))
-(wrap-with-test-directory precomp-test-3 '("test.o"))
-(wrap-with-test-directory precomp-test-4 '("test.o"))
-(wrap-with-test-directory precomp-test-5 '("test.o"))
+(wrap-with-test-directory precomp-test-type-reconstruction '("test.o"))
+(wrap-with-test-directory precomp-test-literal-mutex '("test.o"))
+(wrap-with-test-directory precomp-test-macros '("test.o"))
 
 ;;=======================================================================
 (test-section "build-standalone")
