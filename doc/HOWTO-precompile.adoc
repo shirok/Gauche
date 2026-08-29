@@ -249,7 +249,7 @@ one DSO and that can be loaded at once.
 == But I don't want a bunch of SCI files!
 
 The reason we have one `+*.sci+` file per one `+*.scm+` file is to guarantee
-the consitent behavior between source form and precompiled form.
+the consistent behavior between source form and precompiled form.
 With keeping the interface file in the same relative path as the source,
 we can guarantee the library user can say not only `(use foo)`,
 but also `(use foo.boo)` and `(use foo.woo)`.  The latter two still
