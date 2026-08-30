@@ -345,4 +345,68 @@
        (test-error <error> #/expecting one of types in \(<string> <symbol>\)/)
        (t-etypecase 1))
 
+(test-section "deferred type binding")
+
+;; A type constructor expression is evaluated at the compile time, so the
+;; value of the type used in it must be known to the compiler.  When the
+;; type definition is grouped with its use in the same toplevel form, the
+;; definition isn't executed by the time the use is compiled; the compiler
+;; leaves a placeholder binding, and the actual type is looked up lazily.
+
+(begin
+  (define-class <deferred-a> () ())
+
+  (define (deferred-a? x) (of-type? x (<?> <deferred-a>)))
+
+  (define-type <maybe-deferred-a> (<?> <deferred-a>))
+
+  (define (deferred-a-2? x) (of-type? x <maybe-deferred-a>)))
+
+(test* "deferred class in a type ctor expr" '(#t #t #f)
+       (list (deferred-a? #f)
+             (deferred-a? (make <deferred-a>))
+             (deferred-a? 1)))
+
+(test* "deferred class via define-type" '(#t #t #f)
+       (list (deferred-a-2? #f)
+             (deferred-a-2? (make <deferred-a>))
+             (deferred-a-2? 1)))
+
+(test* "name of a type built from a deferred class" '|<? <deferred-a>>|
+       (~ <maybe-deferred-a> 'name))
+
+(t-identity #t (<?> <deferred-a>) <maybe-deferred-a>)
+
+;; A type alias to a non-class type.
+(begin
+  (define-type <deferred-b> <int8>)
+
+  (define (deferred-b? x) (of-type? x (<?> <deferred-b>))))
+
+(test* "deferred alias to a native type" '(#t #t #f #f)
+       (list (deferred-b? #f)
+             (deferred-b? 100)
+             (deferred-b? 1000)
+             (deferred-b? "x")))
+
+;; Class redefinition must still be seen through the deferred proxy type.
+(begin
+  (define-class <deferred-c> () ())
+
+  (define-type <maybe-deferred-c> (<?> <deferred-c>)))
+
+(define deferred-c-instance (make <deferred-c>))
+
+(define-class <deferred-c> () ((x)))
+
+(test* "redefined class through a deferred proxy type" '(#t #t)
+       (list (of-type? deferred-c-instance <maybe-deferred-c>)
+             (of-type? (make <deferred-c>) <maybe-deferred-c>)))
+
+;; An unbound name is still rejected at the compile time---we only leave
+;; a placeholder for names we've seen a type definition for.
+(test* "unknown type in a type ctor expr"
+       (test-error <error> #/non-inlinable global variable/)
+       (eval '(of-type? 1 (<?> <no-such-type-at-all>)) (current-module)))
+
 (test-end)

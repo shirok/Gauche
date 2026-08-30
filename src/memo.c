@@ -33,7 +33,9 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/classP.h"
 #include "gauche/priv/configP.h"
+#include "gauche/priv/identifierP.h"
 #include "gauche/priv/memoP.h"
 
 /* See memoP.h for the design choices. */
@@ -103,9 +105,15 @@ static inline _Bool equal_1(ScmObj a, ScmObj b)
         }
         return TRUE;
     } else if (SCM_PROXY_TYPE_P(a)) {
-        return SCM_PROXY_TYPE_P(b)
-            && SCM_EQ(Scm_ProxyTypeRef(SCM_PROXY_TYPE(a)),
-                      Scm_ProxyTypeRef(SCM_PROXY_TYPE(b)));
+        if (!SCM_PROXY_TYPE_P(b)) return FALSE;
+        ScmGloc *ga = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(a));
+        ScmGloc *gb = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(b));
+        if (ga != NULL || gb != NULL) return ga == gb;
+        /* Both proxies are not bound yet (deferred proxy).  We use
+           identifier's identity as the fallback. */
+        ScmIdentifier *ia = Scm_OutermostIdentifier(SCM_PROXY_TYPE(a)->id);
+        ScmIdentifier *ib = Scm_OutermostIdentifier(SCM_PROXY_TYPE(b)->id);
+        return (SCM_EQ(ia->name, ib->name) && ia->module == ib->module);
     } else {
         return Scm_EqvP(a, b);
     }
@@ -124,7 +132,15 @@ static inline u_long hash_1(ScmObj key)
         }
         return h;
     } else if (SCM_PROXY_TYPE_P(key)) {
-        return hash_1(SCM_OBJ(Scm_ProxyTypeRef(SCM_PROXY_TYPE(key))));
+        ScmGloc *g = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(key));
+        if (g != NULL) return Scm_EqvHash(SCM_OBJ(g));
+        /* If proxy hasn't been bound, we use identifier as the fallback.
+           Note that proxy can be bound after this, and its hash value
+           changes by using gloc.  That's okay for our purpose---memoization
+           table can have semantically duplicate entries. */
+        ScmIdentifier *id = Scm_OutermostIdentifier(SCM_PROXY_TYPE(key)->id);
+        return Scm_CombineHashValue(Scm_EqvHash(id->name),
+                                    Scm_EqvHash(SCM_OBJ(id->module)));
     } else {
         return Scm_EqvHash(key);
     }

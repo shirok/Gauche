@@ -1,3 +1,13 @@
+2026-08-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (define-type): Insert a placeholder inlinable
+	  binding during compilation, so that a type constructor
+	  expression in the same compilation unit can refer to it
+	  before the definition is executed.  This is the fundamental fix
+	  for https://github.com/shirok/Gauche/issues/1313
+	* src/class.c, src/gauche/class.h (Scm_ProxyTypeGloc): Support
+	  deferred proxy binding---where gloc is NULL.
+
 2026-08-28  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/srfi/13.scm, src/libstr.scm (string-copy!): Moved from

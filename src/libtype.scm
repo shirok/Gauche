@@ -85,6 +85,14 @@
 ;;        the redefined class.
 ;;        Proxy types are automatically created and handled under the hood;
 ;;        users doesn't need to deal with them explicity.
+;;
+;;        A proxy type can also be *deferred*---created before the class it
+;;        refers to exists.  The compiler creates one when it sees a type
+;;        definition whose value can't be computed at the compile time, e.g.
+;;        a `define-class' grouped with its uses in a `begin', or any type
+;;        definition in the precompiled code (precomp never executes the
+;;        toplevel forms).  A deferred proxy type is resolved when it is
+;;        first used; until then, dereferencing it is an error.
 
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -454,6 +462,18 @@
   (unless (SCM_GLOCP gloc)
     (SCM_TYPE_ERROR gloc "gloc"))
   (return (Scm_MakeProxyType (SCM_IDENTIFIER id) (SCM_GLOC gloc))))
+
+(define-cproc proxy-type? (obj) ::<boolean> :constant
+  (return (SCM_PROXY_TYPE_P obj)))
+
+;; Creates a deferred proxy type, that is, a proxy type for a type binding
+;; that isn't available yet.  Called from the compiler when it sees a
+;; define-type; whose value can't be computed at the compile time
+;; (see pass1/define-type).
+(define-cproc %make-deferred-proxy-type (id)
+  (unless (SCM_IDENTIFIERP id)
+    (SCM_TYPE_ERROR id "identifier"))
+  (return (Scm_MakeProxyType (SCM_IDENTIFIER id) NULL)))
 
 (define-cproc proxy-type-ref (type)
   (unless (SCM_PROXY_TYPE_P type)
@@ -1573,6 +1593,8 @@
         '(construct-type
           deconstruct-type
           wrap-with-proxy-type
+          proxy-type?
+          %make-deferred-proxy-type
           proxy-type-ref
           proxy-type-id
           ;; these are used by native-supp.scm, so make them visible from

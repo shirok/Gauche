@@ -867,10 +867,60 @@
   (match form
     [(_ name expr)
      (unless (identifier? name) (error "syntax-error:" form))
-     (pass1/define-inline form name
-                          `(,assume-type. ,expr ,<type>.)
-                          cenv)]
+     (rlet1 iform (pass1/define-inline form name
+                                       `(,assume-type. ,expr ,<type>.)
+                                       cenv)
+       (pass1/insert-type-placeholder! iform expr cenv))]
     [_ (error "syntax-error: malformed define-type:" form)]))
+
+;; A type constructor expression such as (<?> <foo>) is evaluated at the
+;; compile time, so the value of <foo> must be known to the compiler.
+;; When the compile sees `define-type`, we insert a dummy binding
+;; with a deferred proxy type, so that the type expression evaluator
+;; knows the global variable reference is a type, though its concrete
+;; type hasn't been computed yet.
+(define (pass1/insert-type-placeholder! iform expr cenv)
+  (and-let* ([def (%iform-toplevel-define iform)]
+             [id ($define-id def)]
+             [module (identifier-module id)]
+             [name (identifier->symbol id)]
+             ;; Only insert the placeholder when the module doesn't have a
+             ;; binding of its own yet.  If it does, either we already know
+             ;; the type (so we don't need a placeholder), or the binding is
+             ;; something the definition is going to supersede at the runtime
+             ;; (e.g. an autoload stub, or the previous definition of a class
+             ;; being redefined)---clobbering it here would lose it.
+             ;; NB: We use find-binding, not %insert-binding's 'fresh flag,
+             ;; for the latter would resolve an autoload binding.
+             [ (not (find-binding module name #t)) ])
+    (%insert-binding module name
+                     (or (%known-non-class-type expr cenv)
+                         (%make-deferred-proxy-type id))
+                     '(inlinable dummy))))
+
+;; If EXPR is a variable reference whose value is already known to be a type
+;; that a proxy type can't stand for---that is, neither a class nor another
+;; proxy type---returns the value.  Otherwise returns #f.
+(define (%known-non-class-type expr cenv)
+  (and (identifier? expr)
+       (and-let* ([var (cenv-lookup cenv expr)]
+                  [ (wrapped-identifier? var) ]
+                  [gloc (id->bound-gloc var)]
+                  [ (gloc-inlinable? gloc) ]
+                  [v (gloc-ref gloc)]
+                  [ (is-a? v <type>) ]
+                  [ (not (is-a? v <class>)) ]
+                  [ (not (proxy-type? v)) ])
+         v)))
+
+;; PASS1/DEFINE-INLINE returns either a $DEFINE node, or a $SEQ node whose
+;; last element is the $DEFINE node of the binding in question.
+(define (%iform-toplevel-define iform)
+  (cond [(has-tag? iform $DEFINE) iform]
+        [(has-tag? iform $SEQ)
+         (let1 body ($seq-body iform)
+           (and (pair? body) (%iform-toplevel-define (last body))))]
+        [else #f]))
 
 ;; Toplevel macro definitions
 

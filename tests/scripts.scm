@@ -937,6 +937,49 @@
             ((module-binding-ref 'type-reconstruction 'foo) "ng"))))
   )
 
+(define (precomp-test-type-binding)
+  (test* "running precomp type-binding" #t
+         (do-precomp! '("type-binding.scm") '("-e")))
+  (test* "compile type-binding" #t
+         (do-compile! "type-binding" '("type-binding.c")))
+
+  ;; The types are constructed at the compile time, when the values of
+  ;; <myint_t>, <myclass> and <beginclass> aren't available yet.
+  (test* "types defined in the precompiled module"
+         '("#<? <int>>" "#<? <myclass>>" "#<? <beginclass>>")
+         (dynload-and-eval
+          "type-binding"
+          (map (^s (write-to-string (module-binding-ref 'type-binding s)))
+               '(<maybe-myint> <maybe-myclass> <maybe-beginclass>))))
+
+  (test* "assertion with the deferred types"
+         '(3 #f #f #t #f #t)
+         (dynload-and-eval
+          "type-binding"
+          (let ([foo-myint (module-binding-ref 'type-binding 'foo-myint)]
+                [foo-myclass (module-binding-ref 'type-binding 'foo-myclass)]
+                [foo-beginclass (module-binding-ref 'type-binding 'foo-beginclass)]
+                [<myclass> (module-binding-ref 'type-binding '<myclass>)]
+                [<beginclass> (module-binding-ref 'type-binding '<beginclass>)])
+            (list (foo-myint 3)
+                  (foo-myint #f)
+                  (foo-myclass #f)
+                  (is-a? (foo-myclass (make <myclass>)) <myclass>)
+                  (foo-beginclass #f)
+                  (is-a? (foo-beginclass (make <beginclass>)) <beginclass>)))))
+
+  (test* "type error with the deferred types" '(#t #t)
+         (dynload-and-eval
+          "type-binding"
+          (let ([foo-myint (module-binding-ref 'type-binding 'foo-myint)]
+                [foo-myclass (module-binding-ref 'type-binding 'foo-myclass)])
+            (map (^p (guard (e [(<error> e)
+                                (boolean (#/supposed to be of type/
+                                          (~ e'message)))])
+                       (p "ng")))
+                 (list foo-myint foo-myclass)))))
+  )
+
 (define (precomp-test-literal-mutex)
   (test* "running precomp literal-mutex" #t
          (do-precomp! '("literal-mutex.scm") '("-e")))
@@ -972,6 +1015,7 @@
 (wrap-with-test-directory precomp-test-1 '("test.o"))
 (wrap-with-test-directory precomp-test-2 '("test.o"))
 (wrap-with-test-directory precomp-test-type-reconstruction '("test.o"))
+(wrap-with-test-directory precomp-test-type-binding '("test.o"))
 (wrap-with-test-directory precomp-test-literal-mutex '("test.o"))
 (wrap-with-test-directory precomp-test-macros '("test.o"))
 
