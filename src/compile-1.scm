@@ -870,7 +870,7 @@
      (rlet1 iform (pass1/define-inline form name
                                        `(,assume-type. ,expr ,<type>.)
                                        cenv)
-       (pass1/insert-type-placeholder! iform expr cenv))]
+       (pass1/insert-type-placeholder! iform))]
     [_ (error "syntax-error: malformed define-type:" form)]))
 
 ;; A type constructor expression such as (<?> <foo>) is evaluated at the
@@ -879,7 +879,7 @@
 ;; with a deferred proxy type, so that the type expression evaluator
 ;; knows the global variable reference is a type, though its concrete
 ;; type hasn't been computed yet.
-(define (pass1/insert-type-placeholder! iform expr cenv)
+(define (pass1/insert-type-placeholder! iform)
   (and-let* ([def (%iform-toplevel-define iform)]
              [id ($define-id def)]
              [module (identifier-module id)]
@@ -893,25 +893,8 @@
              ;; NB: We use find-binding, not %insert-binding's 'fresh flag,
              ;; for the latter would resolve an autoload binding.
              [ (not (find-binding module name #t)) ])
-    (%insert-binding module name
-                     (or (%known-non-class-type expr cenv)
-                         (%make-deferred-proxy-type id))
+    (%insert-binding module name (%make-deferred-proxy-type id)
                      '(inlinable dummy))))
-
-;; If EXPR is a variable reference whose value is already known to be a type
-;; that a proxy type can't stand for---that is, neither a class nor another
-;; proxy type---returns the value.  Otherwise returns #f.
-(define (%known-non-class-type expr cenv)
-  (and (identifier? expr)
-       (and-let* ([var (cenv-lookup cenv expr)]
-                  [ (wrapped-identifier? var) ]
-                  [gloc (id->bound-gloc var)]
-                  [ (gloc-inlinable? gloc) ]
-                  [v (gloc-ref gloc)]
-                  [ (is-a? v <type>) ]
-                  [ (not (is-a? v <class>)) ]
-                  [ (not (proxy-type? v)) ])
-         v)))
 
 ;; PASS1/DEFINE-INLINE returns either a $DEFINE node, or a $SEQ node whose
 ;; last element is the $DEFINE node of the binding in question.

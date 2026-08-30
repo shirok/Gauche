@@ -3308,34 +3308,34 @@ static int proxy_type_compare(ScmObj x, ScmObj y, int equalp)
                                Scm_OutermostIdentifier(SCM_PROXY_TYPE(y)->id)->name);
         }
     }
-    ScmClass *cx = Scm_ProxyTypeRef(SCM_PROXY_TYPE(x));
-    ScmClass *cy = Scm_ProxyTypeRef(SCM_PROXY_TYPE(y));
+    ScmObj tx = Scm_ProxyTypeRef(SCM_PROXY_TYPE(x));
+    ScmObj ty = Scm_ProxyTypeRef(SCM_PROXY_TYPE(y));
     if (equalp) {
-        return cx != cy;
+        return !SCM_EQ(tx, ty);
     } else {
         /* delegate comparison to generic function */
-        return Scm_ObjectCompare(SCM_OBJ(cx), SCM_OBJ(cy), FALSE);
+        return Scm_ObjectCompare(tx, ty, FALSE);
     }
 }
 
-static ScmClass *proxy_type_get_class(ScmIdentifier *id, ScmGloc *ref)
+static ScmObj proxy_type_get_type(ScmIdentifier *id, ScmGloc *ref)
 {
-    ScmObj klass = Scm_GlocGetValue(ref);
-    if (!SCM_ISA(klass, SCM_CLASS_CLASS)) {
+    ScmObj type = Scm_GlocGetValue(ref);
+    if (!SCM_ISA(type, SCM_CLASS_TYPE)) {
         Scm_Error("Identifier %S wrapped by a proxy-type has to be bound "
-                  "to a class, but it is bound to %S.",
-                  id, klass);
+                  "to a type, but it is bound to %S.",
+                  id, type);
     }
-    return SCM_CLASS(klass);
+    return type;
 }
 
 ScmObj Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref)
 {
     /* If REF != NULL, it must be the binding of ID.  We trust the caller,
-       and just check that it is bound to a class.  If REF == NULL, ID
+       and just check that it is bound to a type.  If REF == NULL, ID
        doesn't need to be bound yet; see the comment in class.h. */
     if (ref != NULL) {
-        (void)proxy_type_get_class(id, ref); /* detect error early */
+        (void)proxy_type_get_type(id, ref); /* detect error early */
     }
     ScmProxyType *p = SCM_NEW(ScmProxyType);
     SCM_SET_CLASS(p, SCM_CLASS_PROXY_TYPE);
@@ -3370,14 +3370,14 @@ static int proxy_type_same_binding(ScmObj x, ScmObj y)
     return (SCM_EQ(ix->name, iy->name) && ix->module == iy->module);
 }
 
-ScmClass *Scm_ProxyTypeRef(ScmProxyType *p)
+ScmObj Scm_ProxyTypeRef(ScmProxyType *p)
 {
     ScmGloc *g = Scm_ProxyTypeGloc(p);
     if (g == NULL) {
         Scm_Error("Identifier wrapped by a proxy-type is unbound: %S",
                   SCM_OBJ(p->id));
     }
-    return proxy_type_get_class(p->id, g);
+    return proxy_type_get_type(p->id, g);
 }
 
 ScmObj Scm_ProxyTypeId(ScmProxyType *p)

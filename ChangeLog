@@ -1,5 +1,10 @@
 2026-08-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c, src/gauche/class.h (Scm_ProxyTypeRef): Return a
+	  generic ScmObj instead of ScmClass*.  A proxy type can now stand
+	  for any type, not just a class, so a deferred proxy type may be
+	  used for a `define-type' whose value turns out to be a native or
+	  a descriptive type.
 	* src/compile-1.scm (define-type): Insert a placeholder inlinable
 	  binding during compilation, so that a type constructor
 	  expression in the same compilation unit can refer to it

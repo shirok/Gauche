@@ -389,6 +389,26 @@
              (deferred-b? 1000)
              (deferred-b? "x")))
 
+;; A deferred type needn't be a class---the reference is resolved to whatever
+;; type the binding turns out to hold.
+(begin
+  (define-type <deferred-c1> (<?> <string>))
+
+  (define (deferred-c1? x) (of-type? x (</> <deferred-c1> <integer>)))
+
+  (define (deferred-c1-sub? x) (subtype? x (</> <deferred-c1> <integer>))))
+
+(test* "deferred reference to a descriptive type" '(#t #t #t #f)
+       (list (deferred-c1? #f)
+             (deferred-c1? "abc")
+             (deferred-c1? 42)
+             (deferred-c1? 'sym)))
+
+(test* "subtype? through a deferred reference" '(#t #t #f)
+       (list (deferred-c1-sub? <string>)
+             (deferred-c1-sub? <integer>)
+             (deferred-c1-sub? <symbol>)))
+
 ;; Class redefinition must still be seen through the deferred proxy type.
 (begin
   (define-class <deferred-c> () ())

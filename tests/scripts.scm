@@ -944,9 +944,11 @@
          (do-compile! "type-binding" '("type-binding.c")))
 
   ;; The types are constructed at the compile time, when the values of
-  ;; <myint_t>, <myclass> and <beginclass> aren't available yet.
+  ;; <myint_t>, <myclass> and <beginclass> aren't available yet.  Note that
+  ;; <maybe-myint> is named after <myint_t>, not after <int> it is aliased
+  ;; to---the compiler only had a deferred reference to the name.
   (test* "types defined in the precompiled module"
-         '("#<? <int>>" "#<? <myclass>>" "#<? <beginclass>>")
+         '("#<? <myint_t>>" "#<? <myclass>>" "#<? <beginclass>>")
          (dynload-and-eval
           "type-binding"
           (map (^s (write-to-string (module-binding-ref 'type-binding s)))

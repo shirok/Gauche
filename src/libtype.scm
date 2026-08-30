@@ -74,8 +74,9 @@
 ;;        the underlying `long` integer value.   Main use is for FFI.
 ;;
 ;;   <proxy-type>
-;;      - This is a wrapper of an prescriptive types, and as far as type
-;;        checking is concerened, it behaves just like the wrapped type.
+;;      - This is a wrapper of a type that is refered to by the name it is
+;;        bound to, and as far as type checking is concerened, it behaves
+;;        just like the wrapped type.
 ;;        We need this because classes can be redefined.  When a class
 ;;        is redefined, a new class instance is created and the class name
 ;;        is rebound to it.  We want that other aggregate descriptive types
@@ -86,13 +87,15 @@
 ;;        Proxy types are automatically created and handled under the hood;
 ;;        users doesn't need to deal with them explicity.
 ;;
-;;        A proxy type can also be *deferred*---created before the class it
+;;        A proxy type can also be deferred---created before the type it
 ;;        refers to exists.  The compiler creates one when it sees a type
 ;;        definition whose value can't be computed at the compile time, e.g.
 ;;        a `define-class' grouped with its uses in a `begin', or any type
 ;;        definition in the precompiled code (precomp never executes the
 ;;        toplevel forms).  A deferred proxy type is resolved when it is
-;;        first used; until then, dereferencing it is an error.
+;;        first used; until then, dereferencing it is an error.  Since the
+;;        deferred value needn't be a class, a proxy type may resolve to
+;;        any type---a native type or another descriptive type included.
 
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -327,9 +330,11 @@
 (inline-stub
  ;;  This may push C continuations on VM, so must be called on VM.
  (define-cfn Scm__VMOfType (obj type)
-   (cond [(SCM_PROXY_TYPE_P type)
-          (return (Scm_VMIsA obj (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))]
-         [(SCM_DESCRIPTIVE_TYPE_P type)
+   ;; A proxy type stands for whatever type its binding holds, so strip it
+   ;; first and dispatch on the actual type.
+   (while (SCM_PROXY_TYPE_P type)
+     (set! type (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))
+   (cond [(SCM_DESCRIPTIVE_TYPE_P type)
           (let* ([k::ScmClass* (SCM_CLASS_OF type)])
             (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
             (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) validator)
@@ -363,9 +368,9 @@
    (cond
     ;; Strip proxy types first
     [(SCM_PROXY_TYPE_P sub)
-     (set! sub (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE sub))))]
+     (set! sub (Scm_ProxyTypeRef (SCM_PROXY_TYPE sub)))]
     [(SCM_PROXY_TYPE_P super)
-     (set! super (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE super))))]
+     (set! super (Scm_ProxyTypeRef (SCM_PROXY_TYPE super)))]
     ;; Filter out the trivial cases
     [(SCM_EQ super (SCM_OBJ SCM_CLASS_TOP)) (return SCM_TRUE)]
     [(SCM_EQ sub (SCM_OBJ SCM_CLASS_BOTTOM)) (return SCM_TRUE)]
@@ -458,9 +463,6 @@
     (SCM_TYPE_ERROR gloc "gloc"))
   (return (Scm_MakeProxyType (SCM_IDENTIFIER id) (SCM_GLOC gloc))))
 
-(define-cproc proxy-type? (obj) ::<boolean> :constant
-  (return (SCM_PROXY_TYPE_P obj)))
-
 ;; Creates a deferred proxy type, that is, a proxy type for a type binding
 ;; that isn't available yet.  Called from the compiler when it sees a
 ;; define-type; whose value can't be computed at the compile time
@@ -473,7 +475,7 @@
 (define-cproc proxy-type-ref (type)
   (unless (SCM_PROXY_TYPE_P type)
     (SCM_TYPE_ERROR type "proxy-type"))
-  (return (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE type)))))
+  (return (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))
 
 (define-cproc proxy-type-id (type)
   (unless (SCM_PROXY_TYPE_P type)
@@ -1588,7 +1590,6 @@
         '(construct-type
           deconstruct-type
           wrap-with-proxy-type
-          proxy-type?
           %make-deferred-proxy-type
           proxy-type-ref
           proxy-type-id

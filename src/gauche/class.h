@@ -486,8 +486,9 @@ SCM_EXTERN ScmObj Scm_MakeNativeHandleSimple(void *ptr, ScmObj type);
  * Proxy types
  */
 
-/* A proxy type is to hold a reference to a class.
-   Used in other descriptive types to handle redefinition of the original class.
+/* A proxy type is to hold a reference to a type, by the name it is bound to.
+   Used in other descriptive types to handle redefinition of the original
+   type, and to refer to a type that isn't created yet.
    The actual definition and construtor is in gauche/priv/classP.h */
 typedef struct ScmProxyTypeRec ScmProxyType;
 
@@ -513,13 +514,13 @@ SCM_CLASS_DECL(Scm_ProxyTypeClass);
    (see pass1/define-type).
  */
 SCM_EXTERN ScmObj    Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref);
-SCM_EXTERN ScmClass *Scm_ProxyTypeRef(ScmProxyType *p);
+SCM_EXTERN ScmObj    Scm_ProxyTypeRef(ScmProxyType *p);
 SCM_EXTERN ScmObj    Scm_ProxyTypeId(ScmProxyType *p);
 
 /* Returns the GLOC the proxy type refers to, or NULL if it isn't resolved
    yet.  Unlike Scm_ProxyTypeRef, it never raises an error.  The GLOC is the
    stable identity of what a proxy type refers to (it survives class
-   redefinition, and it is available before the class is created), so it is
+   redefinition, and it is available before the type is created), so it is
    used to key proxy types in the constructed-type memo table. */
 SCM_EXTERN ScmGloc  *Scm_ProxyTypeGloc(ScmProxyType *p);
 

@@ -47,9 +47,12 @@ SCM_EXTERN ScmObj Scm__GenericDispatcherInfo(ScmGeneric *gf);
 SCM_EXTERN void   Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port);
 
 
-/* A proxy type is a class to hold a reference to another class.
+/* A proxy type holds a reference to another type, indirectly, through the
+   global binding the type is named by.
    It is used to keep reference to a type in another compound type
-   structure.  We need an indirection because a class may be redefined.
+   structure.  We need an indirection because a class may be redefined,
+   and because the compiler may have to refer to a type before its value
+   is computed (see Scm_MakeProxyType in gauche/class.h).
 */
 struct ScmProxyTypeRec {
     SCM_HEADER;
