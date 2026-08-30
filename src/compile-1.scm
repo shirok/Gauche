@@ -867,9 +867,10 @@
   (match form
     [(_ name expr)
      (unless (identifier? name) (error "syntax-error:" form))
-     (rlet1 iform (pass1/define-inline form name
-                                       `(,assume-type. ,expr ,<type>.)
-                                       cenv)
+     ;; Whether the value of EXPR is a type is checked
+     ;;   - Statically if possible
+     ;;   - Deferred when proxy type is dereferenced
+     (rlet1 iform (pass1/define-inline form name expr cenv)
        (pass1/insert-type-placeholder! iform))]
     [_ (error "syntax-error: malformed define-type:" form)]))
 

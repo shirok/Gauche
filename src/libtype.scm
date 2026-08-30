@@ -323,33 +323,26 @@
 ;;; of-type?
 ;;;
 
-;; This is the meat of of-type?.  However, of-type? is inserted by the
-;; expansion of define-class (via define-type), so Scheme binding is defined
-;; in libalpha.scm.
-
-(inline-stub
- ;;  This may push C continuations on VM, so must be called on VM.
- (define-cfn Scm__VMOfType (obj type)
-   ;; A proxy type stands for whatever type its binding holds, so strip it
-   ;; first and dispatch on the actual type.
-   (while (SCM_PROXY_TYPE_P type)
-     (set! type (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))
-   (cond [(SCM_DESCRIPTIVE_TYPE_P type)
-          (let* ([k::ScmClass* (SCM_CLASS_OF type)])
-            (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
-            (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) validator)
-                                  type obj)))]
-         [(SCM_NATIVE_TYPE_P type)
-          (return (SCM_MAKE_BOOL
-                   (funcall (-> (SCM_NATIVE_TYPE type) c-of-type)
-                            (SCM_NATIVE_TYPE type)
-                            obj)))]
-         [(SCM_CLASSP type)
-          (return (Scm_VMIsA obj (SCM_CLASS type)))]
-         [else
-          (Scm_Error "Second argument of of-type? must be a type, but got: %S"
-                     type)]))
- )
+(define-cproc of-type? (obj type) :constant
+  ;; A proxy type stands for whatever type its binding holds, so strip it
+  ;; first and dispatch on the actual type.
+  (while (SCM_PROXY_TYPE_P type)
+    (set! type (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))
+  (cond [(SCM_DESCRIPTIVE_TYPE_P type)
+         (let* ([k::ScmClass* (SCM_CLASS_OF type)])
+           (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
+           (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) validator)
+                                 type obj)))]
+        [(SCM_NATIVE_TYPE_P type)
+         (return (SCM_MAKE_BOOL
+                  (funcall (-> (SCM_NATIVE_TYPE type) c-of-type)
+                           (SCM_NATIVE_TYPE type)
+                           obj)))]
+        [(SCM_CLASSP type)
+         (return (Scm_VMIsA obj (SCM_CLASS type)))]
+        [else
+         (Scm_Error "Second argument of of-type? must be a type, but got: %S"
+                    type)]))
 
 ;;;
 ;;; subtype? type-or-class type-or-class
