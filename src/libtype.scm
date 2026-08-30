@@ -155,14 +155,10 @@
    (return (SCM_ISA klass (& Scm_TypeConstructorMetaClass))))
 
  ;; The 'name' slot is computed by the initializer.
- ;; The 'constructorArgs' slot is #f by default.  If the instance is
- ;; reconstructed from the precompiled form, however, we delay the actual
- ;; initialization until the type is used.
  (define-ctype ScmDescriptiveType
    ::(.struct ScmDescriptiveTypeRec
               (SCM_INSTANCE_HEADER::||
-               name::ScmObj
-               constructorArgs::ScmObj)))
+               name::ScmObj)))
 
  (define-cclass <descriptive-type> :base :private :no-meta
    "ScmDescriptiveType*" "Scm_DescriptiveTypeClass"
@@ -173,7 +169,6 @@
                       (SCM_NEW_INSTANCE ScmDescriptiveType klass)])
                 (cast void initargs)    ;suppress unused warning
                 (set! (-> z name) SCM_FALSE)
-                (set! (-> z constructorArgs) SCM_FALSE)
                 (return (SCM_OBJ z)))))
 
  ;; We memoize constructed types.  The type is keyed by the constructor class
