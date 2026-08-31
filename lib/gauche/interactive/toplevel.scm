@@ -469,8 +469,7 @@
       [()
        (dolist [v *1+]
          (write v (write-controls-copy (print-mode)
-                                       :pretty #t :width 79
-                                       :length #f :level #f
+                                       :pretty #t :length #f :level #f
                                        :string-length #f))
          (newline))]
       [_ (usage)])
