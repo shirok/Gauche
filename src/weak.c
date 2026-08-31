@@ -113,6 +113,15 @@ ScmObj Scm_WeakVectorRef(ScmWeakVector *v, ScmSmallInt index, ScmObj fallback)
     }
 }
 
+/* Returns the base address of VALUE if it is a GC-allocated object, or NULL
+   otherwise.  A disappearing link must be registered on the base of the
+   object. */
+static void *weak_target_base(ScmObj value)
+{
+    if (!SCM_PTRP(value)) return NULL;
+    return GC_base((void *)value);
+}
+
 ScmObj Scm_WeakVectorSet(ScmWeakVector *v, ScmSmallInt index, ScmObj value)
 {
     if (index < 0 || index >= v->size) {
@@ -125,10 +134,15 @@ ScmObj Scm_WeakVectorSet(ScmWeakVector *v, ScmSmallInt index, ScmObj value)
         GC_unregister_disappearing_link((void **)&p[index]);
     }
 
+    SCM_FLONUM_ENSURE_MEM(value);
+
     p[index] = value;
-    /* register the location if the value is a heap object */
-    if (SCM_PTRP(value)) {
-        GC_general_register_disappearing_link((void **)&p[index], (void *)value);
+
+    /* Register the location only if VALUE is a GC-allocated object, and
+       register its base address.  */
+    void *base = weak_target_base(value);
+    if (base != NULL) {
+        GC_general_register_disappearing_link((void **)&p[index], base);
     }
     return SCM_UNDEFINED;
 }

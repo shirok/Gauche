@@ -1,3 +1,9 @@
+2026-08-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/weak.c (Scm_WeakVectorSet): Fixed a bug that caused GC
+	  to crash if we set an ScmObj that's not point to the head
+	  of GC-allocated memory.
+
 2026-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c, src/gauche/class.h (Scm_ProxyTypeRef): Return a

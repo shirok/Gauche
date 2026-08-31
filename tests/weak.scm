@@ -42,6 +42,38 @@
 (test* "weak-vector-set!/ref (after gc)" '(#f #f #f #f #f)
        (map (cut weak-vector-ref x <>) '(0 1 2 3 4)))
 
+;; A disappearing link can only be registered on a GC-allocated object; attempt
+;; to register other values would calse GC crash later.  These tests checks
+;; we do not register such values.
+(let1 y (make-weak-vector 3)
+  (weak-vector-set! y 0 <integer>)
+  (weak-vector-set! y 1 <string>)
+  (weak-vector-set! y 2 'quote)
+  (clear-references)
+  (test* "weak-vector with statically allocated objects" '(#t #t #t)
+         (map (^i (and (weak-vector-ref y i) #t)) '(0 1 2))))
+
+(define (reciprocate x) (/ 1.0 x)) ; avoid constant-folded
+
+;; The link must be registered on the base of the object, not on the ScmObj:
+;; a heap flonum's ScmObj is base+6 and an extended pair's is base+8.
+(let* ([f  (reciprocate 3)]
+       [xp (extended-cons 'a 'b)]
+       [s  (string-copy "hello")]
+       [y  (make-weak-vector 3)])
+  (weak-vector-set! y 0 f)
+  (weak-vector-set! y 1 xp)
+  (weak-vector-set! y 2 s)
+  (clear-references)
+  (test* "weak-vector with interior-pointer objects" (list f xp s)
+         (map (cut weak-vector-ref y <>) '(0 1 2)))
+
+  (set! f #f)
+  (set! xp #f)
+  (set! s #f)
+  (clear-references)
+  (test* "weak-vector with interior-pointer objects" '(#f #f #f)
+         (map (cut weak-vector-ref y <>) '(0 1 2))))
 
 ; (test-section "weak hash table")
 
