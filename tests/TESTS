@@ -20,6 +20,7 @@ srfi.scm
 object.scm
 exception.scm
 lazy.scm
+weak.scm
 memo.scm
 type.scm
 regexp.scm
