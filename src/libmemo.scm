@@ -44,13 +44,8 @@
 ;;
 
 (define-cproc make-memo-table (capacity::<ulong>
-                               num-keys::<int>
-                               :key (weak #f)
-                                    (fixed #f))
-  (let* ([flags::u_long 0])
-    (unless (SCM_FALSEP weak) (logior= flags SCM_MEMO_TABLE_WEAK))
-    (unless (SCM_FALSEP fixed) (logior= flags SCM_MEMO_TABLE_FIXED))
-    (return (Scm_MakeMemoTable capacity num-keys flags))))
+                               num-keys::<int>)
+  (return (Scm_MakeMemoTable capacity num-keys 0)))
 
 ;; Instead of the standard (*-get obj key :optional default) -> <top>
 ;; signature, this returns two values: The value or #<undef>, and

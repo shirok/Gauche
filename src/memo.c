@@ -46,22 +46,19 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_MemoTableClass, NULL);
 
 static ScmMemoTableStorage *new_storage(u_long capacity,
                                         int entry_size,
-                                        u_long flags)
+                                        u_long flags SCM_UNUSED)
 {
     ScmMemoTableStorage *s = SCM_NEW(ScmMemoTableStorage);
     s->capacity = capacity;
-    if (flags & SCM_MEMO_TABLE_WEAK) {
-        s->vec = SCM_NEW_ATOMIC_ARRAY(ScmAtomicVar,
-                                      capacity * entry_size);
-    } else {
-        s->vec = SCM_NEW_ARRAY(ScmAtomicVar,
-                               capacity * entry_size);
-    }
+    s->vec = SCM_NEW_ARRAY(ScmAtomicVar, capacity * entry_size);
     return s;
 }
 
 ScmObj Scm_MakeMemoTable(u_long capacity, int num_keys, u_long flags)
 {
+    /* Flags is for future extension.  See memoP.h */
+    SCM_ASSERT(flags == 0);
+
     ScmMemoTable *t = SCM_NEW(ScmMemoTable);
     SCM_SET_CLASS(t, SCM_CLASS_MEMO_TABLE);
     t->flags = flags;
@@ -396,15 +393,8 @@ static inline void dump_1(ScmAtomicWord entry, int valid, ScmPort *port)
    during interactive debugging. */
 void Scm__MemoTableDump(ScmMemoTable *tab, ScmPort *port)
 {
-    Scm_Printf(port, "memo-table %p (num_keys=%d entry_size=%d capacity=%d",
+    Scm_Printf(port, "memo-table %p (num_keys=%d entry_size=%d capacity=%d)",
                tab, tab->num_keys, tab->entry_size, tab->storage->capacity);
-    if (tab->flags & SCM_MEMO_TABLE_WEAK) {
-        Scm_Printf(port, " weak");
-    }
-    if (tab->flags & SCM_MEMO_TABLE_FIXED) {
-        Scm_Printf(port, " fixed");
-    }
-    Scm_Printf(port, ")\n");
     u_long num_entries = tab->storage->capacity * tab->entry_size;
     int rest_keys;
     int fixed_keys = get_numkeys(tab->num_keys, &rest_keys);

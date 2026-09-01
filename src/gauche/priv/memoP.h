@@ -151,11 +151,11 @@
      valid keys.
 
    When these conditions are found during traversal, we set the value to 0
-   and the entry header to 0x10, in this order.
+   and the entry header to #b10, in this order.
 
     - Setting value to 0 makes other threads that are reading keys
       recognize the entry is invalid.
-    - Setting the header to 0x10 let future readers know this entry is
+    - Setting the header to #b10 let future readers know this entry is
       invalid immediatly.
 
   Table GC/expansion
@@ -173,20 +173,15 @@
    - If the table is not expandable, drop one of the existing entry.
  */
 
-/* Weakness.  The table can be made so that pointers to keys and values
-   all weak, to avoid retaining too much data.  For memoization, dropping
-   references merely triggers recalculation, and the outcome won't change.
-
-   If we keep the list of keys (num_keys == 0), there's an increased
-   chance that the key disappears even while value is alive, reducing
-   the hit rate.  If the value retains the reference to the key list,
-   we don't need to worry.
+/* Future plans:
+ * - Auto purging: If a table hits certain size, make room by purging
+ *   entries (oldest, LRU, etc.) instead of extending.  Mmeoization is
+ *   basically a cache, so dissapering entries are ok.
+ * - Weak reference: Make key/value references weak.  This turned out
+ *   very tricky, because we have to keep the table lock-free as well.
+ *   It may not be worth complicating implementation significantly,
+ *   and auto-purging can remedy over-retaining entries.
  */
-
-enum {
-    SCM_MEMO_TABLE_WEAK = (1L<<0),    /* use weak table (not supported yet) */
-    SCM_MEMO_TABLE_FIXED = (1L<<1)    /* don't allow expansion (not supported yet) */
-};
 
 typedef struct ScmMemoTableStorageRec {
     u_long capacity;            /* read only */
