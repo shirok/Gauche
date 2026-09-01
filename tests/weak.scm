@@ -75,6 +75,46 @@
   (test* "weak-vector with interior-pointer objects" '(#f #f #f)
          (map (cut weak-vector-ref y <>) '(0 1 2))))
 
+
+;; An untouched slot holds #f, so the fallback isn't used.  A slot whose
+;; object has been collected holds NULL, and the fallback is used.  This is
+;; the only way to tell the two apart.
+(let1 y (make-weak-vector 2)
+  (test* "weak-vector-ref, untouched slot" '(#f #f)
+         (list (weak-vector-ref y 0) (weak-vector-ref y 0 'fallback)))
+  (weak-vector-set! y 1 (list 'gone))
+  (clear-references)
+  (test* "weak-vector-ref, collected slot" '(#f fallback)
+         (list (weak-vector-ref y 1) (weak-vector-ref y 1 'fallback))))
+
+(let1 y (make-weak-vector 2)
+  (test* "weak-vector-ref, out of range" (test-error) (weak-vector-ref y 2))
+  (test* "weak-vector-ref, out of range with fallback" 'fallback
+         (weak-vector-ref y 2 'fallback))
+  (test* "weak-vector-ref, negative index" (test-error) (weak-vector-ref y -1))
+  (test* "weak-vector-set!, out of range" (test-error) (weak-vector-set! y 2 'x))
+  (test* "weak-vector-set!, negative index" (test-error) (weak-vector-set! y -1 'x)))
+
+;; Ensure overwriting a slot unregisters the previous disappearing link.
+(let1 y (make-weak-vector 2)
+  (weak-vector-set! y 0 (list 'old))
+  (weak-vector-set! y 0 'a-symbol)      ; interned symbol; not registered
+  (weak-vector-set! y 1 (list 'old))
+  (weak-vector-set! y 1 <integer>)      ; statically allocated; not registered
+  (clear-references)
+  (test* "weak-vector overwrite unregisters the old link" '(a-symbol #t)
+         (list (weak-vector-ref y 0) (and (weak-vector-ref y 1) #t))))
+
+;; Immediates are stored as they are and never disappear.
+(let1 y (make-weak-vector 4)
+  (weak-vector-set! y 0 42)
+  (weak-vector-set! y 1 #\a)
+  (weak-vector-set! y 2 #t)
+  (weak-vector-set! y 3 '())
+  (clear-references)
+  (test* "weak-vector with immediate values" '(42 #\a #t ())
+         (map (cut weak-vector-ref y <>) '(0 1 2 3))))
+
 ; (test-section "weak hash table")
 
 ; (define x (make-weak-hash-table 'eqv? 'value 'gone))
