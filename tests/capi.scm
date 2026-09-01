@@ -16,6 +16,22 @@
                (eq? (make-fptr-unique obj) (make-fptr-unique obj))
                (eq? (make-fptr-unique obj) (make-fptr-unique obj2))))
 
+  ;; Ensure weakness of the internal unique table.
+  ;; This relies on the fact that, if a new fptr is allocated at different
+  ;; address, its eq-hash value likely differs.
+  (let ([h1 (eq-hash (make-fptr-unique obj))]
+        [scrub (^[] (let loop ([n 1000])   ; overwrite the VM stack
+                      (if (zero? n) 1 (* n (loop (- n 1))))))])
+    (test* "weakness of fptr identity map" 'ok
+           (let retry ([i 0])
+             (scrub)
+             (dotimes (n 10) (gc))
+             (cond [(not (= h1 (eq-hash (make-fptr-unique obj)))) 'ok]
+                   [(>= i 10) 'give-up]
+                   [else (retry (+ i 1))])))
+    (test* "fptr recreated after its weak box is emptied" #t
+           (eq? obj (fptr-value (make-fptr-unique obj)))))
+
   ;; See MAP_NULL flag maps (void*)0 to #f, not #<fptr 0>.
   (test* "map-null" '(#t #f)
          (list (boolean (make-fptr-maybe obj))
