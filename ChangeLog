@@ -1,3 +1,10 @@
+2026-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm: Compute descriptive type name lazily.  It turne
+	  out the name generation take majority of the time of descriptive
+	  type initialization, but it is only needed when the type is
+	  ever printed.
+
 2026-08-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/weak.c (Scm_WeakVectorSet): Fixed a bug that caused GC

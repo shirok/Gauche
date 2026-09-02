@@ -157,16 +157,22 @@
  (define-cfn Scm_TypeConstructorP (klass) ::int
    (return (SCM_ISA klass (& Scm_TypeConstructorMetaClass))))
 
- ;; The 'name' slot is computed by the initializer.
+ ;; The 'name' slot is computed lazily.  An initializer stores a thunk in it,
+ ;; and the getter below forces the thunk on the first read and caches the
+ ;; result.
  (define-ctype ScmDescriptiveType
    ::(.struct ScmDescriptiveTypeRec
               (SCM_INSTANCE_HEADER::||
-               name::ScmObj)))
+               name::ScmObj)))          ;thunk or string
 
  (define-cclass <descriptive-type> :base :private :no-meta
    "ScmDescriptiveType*" "Scm_DescriptiveTypeClass"
    (c "SCM_CLASS_METACLASS_CPL+1")
-   ((name))
+   ((name :getter (begin
+                    ;; lazily compute the name
+                    (when (SCM_PROCEDUREP (-> obj name))
+                      (set! (-> obj name) (Scm_ApplyRec0 (-> obj name))))
+                    (return (-> obj name)))))
    (metaclass <type-constructor-meta>)
    (allocator (let* ([z::ScmDescriptiveType*
                       (SCM_NEW_INSTANCE ScmDescriptiveType klass)])
@@ -577,7 +583,7 @@
       [_ (error "Invalid arguments:" xs)]))
 
   (receive (args results) (scan-args init-args '())
-    (slot-set! type 'name      (make-compound-type-name '^ init-args))
+    (slot-set! type 'name      (^[] (make-compound-type-name '^ init-args)))
     (slot-set! type 'arguments (construct-type <Tuple> args))
     (slot-set! type 'results   (construct-type <Tuple> results))))
 
@@ -696,7 +702,7 @@
   :metaclass <type-constructor-meta>
   :initializer (^[type args]
                  (assume (every (cut is-a? <> <type>) args))
-                 (slot-set! type 'name (make-compound-type-name '/ args))
+                 (slot-set! type 'name (^[] (make-compound-type-name '/ args)))
                  (slot-set! type 'members args))
   :deconstructor (^[type] (~ type'members))
   :validator (^[type obj] (any (cut of-type? obj <>) (~ type'members)))
@@ -714,7 +720,7 @@
   :initializer (^[type args]
                  (let1 ptype (car args)
                    (assume (is-a? ptype <type>))
-                   (slot-set! type 'name (make-compound-type-name '? `(,ptype)))
+                   (slot-set! type 'name (^[] (make-compound-type-name '? `(,ptype))))
                    (slot-set! type 'primary-type ptype)))
   :deconstructor (^[type] (list (~ type'primary-type)))
   :validator (^[type obj]
@@ -740,7 +746,7 @@
     (dolist [t types]
       (unless (is-a? t <type>)
         (error "Non-type parameter in <Tuple> constructor:" t)))
-    (slot-set! type 'name (make-compound-type-name 'Tuple args))
+    (slot-set! type 'name (^[] (make-compound-type-name 'Tuple args)))
     (slot-set! type 'elements types)
     (slot-set! type 'allow-rest? rest?)))
 
@@ -794,7 +800,8 @@
              (unless (or (not max) (real? max))
                (error "max argument must be a real number or #f, but got:" max))
              (slot-set! type 'name
-                        (make-min-max-len-type-name name (list etype) min max))
+                        (^[] (make-min-max-len-type-name name (list etype)
+                                                         min max)))
              (slot-set! type 'element-type etype)
              (slot-set! type 'min-length min)
              (slot-set! type 'max-length max))
@@ -881,9 +888,9 @@
   :initializer (^[type args]
                  (define objs (map unwrap-syntax args))
                  (slot-set! type 'name
-                            (string->symbol
-                             (string-append
-                              "<Assortment " (x->string objs) ">")))
+                            (^[] (string->symbol
+                                  (string-append
+                                   "<Assortment " (x->string objs) ">"))))
                  (slot-set! type 'instances (sort objs)))
   :deconstructor (^[type] (list (~ type'instances)))
   :validator (^[type obj] (boolean (memv obj (~ type'instances))))
