@@ -272,8 +272,11 @@
 ;;
 ;;                <type>     <obj>
 ;;                ----------------------------------------------
-;;                LEXICAL    <lvar>     ;; lexical binding
-;;                SYNTAX     <macro>    ;; syntactic binding
+;;                LEXICAL    <lvar>            ;; lexical binding
+;;                SYNTAX     <macro>/<type>    ;; syntactic binding
+;;
+;;                Syntactic binding to <type> can be inserted by
+;;                internal define-type (see pass1/body-rec)
 ;;
 ;;     exp-name - The "name" of the current expression, that is, the
 ;;                name of the variable the result of the current
@@ -288,6 +291,7 @@
 ;;
 ;;     source-path - While processing included file, this slot is set to
 ;;                the full path of the included filename.
+
 (define-simple-struct cenv #f %make-cenv
   (module frames exp-name current-proc (source-path (current-load-path))))
 

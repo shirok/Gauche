@@ -57,6 +57,38 @@
               [(is-a? v <type>) v]
               [else #f]))))
 
+;; Called from pass1/body when it sees an internal `define-type'.
+;; If EXPR denotes a type we can compute at the compile time, returns the
+;; type; otherwise returns #f.
+(define (type/compile-time-value expr cenv)
+  (cond
+   [(identifier? expr)
+    ;; Like the $GREF case of type/ensure, but works on the source
+    ;; identifier: EXPR may be bound to an identifier macro, and we don't want
+    ;; to expand it here only to expand it again if we fall back.
+    (let1 var (cenv-lookup cenv expr)
+      (cond [(is-a? var <type>) var]    ;another internal type binding
+            [(wrapped-identifier? var)
+             (and-let* ([gloc (id->bound-gloc var)]
+                        [ (gloc-inlinable? gloc) ]
+                        [v (gloc-ref gloc)])
+               (cond [(is-a? v <class>) (wrap-with-proxy-type var gloc)]
+                     [(is-a? v <type>) v]
+                     [else #f]))]
+            [else #f]))]
+   [(type-constructor-call? expr cenv)
+    (type/ensure (pass1 expr cenv) cenv)]
+   [else #f]))
+
+;; Is EXPR a call of a type constructor, such as (<?> <integer>)?
+(define (type-constructor-call? expr cenv)
+  (and (pair? expr)
+       (identifier? (car expr))
+       (and-let* ([h (cenv-lookup cenv (car expr))]
+                  [ (wrapped-identifier? h) ])
+         (receive (gval type) (global-call-type h cenv)
+           (eq? type 'type-ctor)))))
+
 ;; Called from pass1/global-call, when we detect (<type-ctor> arg ...)
 ;; CTOR is the gloval value of type constructor,  IFORM is the $CALL node
 ;; represents the ctor invocation.

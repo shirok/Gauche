@@ -111,6 +111,8 @@
                (pass1 (call-macro-expander h program cenv) cenv)]
               [(syntax? h);; locally rebound syntax
                (call-syntax-handler h program cenv)]
+              [(is-a? h <type>) ;; internal type binding, used as an operator
+               (pass1/call program ($const h) (cdr program) cenv)]
               [else (error "[internal] unknown resolution of head:" h)]))]
      [(pass1/detect-constant-setter-call (car program) cenv)
       => (^[setter]
@@ -141,6 +143,8 @@
              (unless (identifier-macro? r)
                (error "Non-identifier-macro can't appear in this context:" r))
              (pass1 (call-id-macro-expander r program cenv) cenv)]
+            [(is-a? r <type>) ;; internal type binding (see pass1/body)
+             ($const r)]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
 
@@ -325,6 +329,7 @@
                      or macro use:" (caar exprs)))
     (cond
      [(lvar? head) (pass1/body-finish exprs mframe vframe cenv)]
+     [(is-a? head <type>) (pass1/body-finish exprs mframe vframe cenv)]
      [(macro? head)  ; locally defined macro
       (body-macro-expand head exprs mframe vframe cenv)]
      [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
@@ -347,15 +352,29 @@
                   [_ (error "malformed internal define:" (caar exprs))])
         (internal-env-expand def mframe vframe rest))]
      [(global-syntax=? head define-type.)   ; internal type definition
-      ;; TEMPORARY:
-      ;; For the time being, we treat internal define-type just like
-      ;; define-inline with variables.  It doesn't work if the new named type
-      ;; is used in the following type expression, though---the compiler must
-      ;; recognize the bound var is a type.
-      (let1 def (match args
-                  [(var init) `(,var :rec ,init . ,incsrc)]
-                  [_ (error "malformed internal define-type:" (caar exprs))])
-        (internal-env-expand def mframe vframe rest))]
+      (match args
+        [(var init)
+         (if-let1 type (type/compile-time-value init cenv)
+           ;; The type is known now, so we bind VAR in the macro frame, just
+           ;; like an internal define-syntax.  References to it compile into
+           ;; ($const type).
+           (begin
+             (dupe-check var mframe vframe)
+             (if (not mframe)
+               (let* ([cenv (cenv-extend cenv `((,var . ,type)) SYNTAX)]
+                      [mframe (car (cenv-frames cenv))]
+                      [cenv (cenv-extend cenv '() LEXICAL)]
+                      [vframe (car (cenv-frames cenv))])
+                 (pass1/body-rec rest mframe vframe cenv))
+               (begin
+                 (push! (cdr mframe) (cons var type))
+                 (pass1/body-rec rest mframe vframe cenv))))
+           ;; The value can't be computed at the compile time (a generative
+           ;; type). Usually this is from internal define-record-type etc.
+           ;; For now, treat it just as internal define (runtime value).
+           (internal-env-expand `(,var :rec ,init . ,incsrc)
+                                mframe vframe rest))]
+        [_ (error "malformed internal define-type:" (caar exprs))])]
      [(global-syntax=? head define-syntax.) ; internal syntax definition
       (match args
         [(name trans-spec)
@@ -1934,9 +1953,11 @@
        (or (and-let* ([ (identifier? name) ]
                       [var (cenv-lookup cenv name)]
                       [val (pass1 expr cenv)])
-             (if (lvar? var)
-               ($lset var val)
-               ($gset (ensure-identifier var cenv) val)))
+             (cond [(lvar? var) ($lset var val)]
+                   [(is-a? var <type>)
+                    (error "syntax-error: cannot assign to a type binding:"
+                           form)]
+                   [else ($gset (ensure-identifier var cenv) val)]))
            (error "syntax-error: malformed set!:" form)))]
     [_ (error "syntax-error: malformed set!:" form)]))
 

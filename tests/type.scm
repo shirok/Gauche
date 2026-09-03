@@ -429,4 +429,81 @@
        (test-error <error> #/non-inlinable global variable/)
        (eval '(of-type? 1 (<?> <no-such-type-at-all>)) (current-module)))
 
+(test-section "internal type definition")
+
+;; An internal define-type whose right-hand side is a type we can compute at
+;; the compile time binds the name as a compile-time constant, so it can be
+;; used where a type is required.
+
+(define (i-ctor-arg x) (define-type <myint> <int>) (of-type? x (<?> <myint>)))
+(test* "internal define-type in a type ctor arg" '(#t #t #f)
+       (list (i-ctor-arg 3) (i-ctor-arg #f) (i-ctor-arg "a")))
+
+(define (i-native x) (define-type <t> <int>) (of-type? x <t>))
+(test* "internal define-type, native type rhs" '(#t #f)
+       (list (i-native 3) (i-native "a")))
+
+(define (i-ctor-rhs x) (define-type <t> (</> <integer> <string>)) (of-type? x <t>))
+(test* "internal define-type, type ctor rhs" '(#t #t #f)
+       (list (i-ctor-rhs 3) (i-ctor-rhs "a") (i-ctor-rhs 'b)))
+
+(define (i-chained x)
+  (define-type <a> <int>)
+  (define-type <b> (<?> <a>))            ; refers to the previous one
+  (list (of-type? x <b>) (of-type? x <a>)))
+(test* "internal define-type, chained" '((#t #t) (#t #f) (#f #f))
+       (list (i-chained 3) (i-chained #f) (i-chained "a")))
+
+(define (i-annotation x)
+  (define-type <t> <int>)
+  (define (g y :: <t>) (* y 2))
+  (g x))
+(test* "internal define-type in a :: annotation" 6 (i-annotation 3))
+(test* "internal define-type in a :: annotation (violation)" (test-error)
+       (i-annotation "a"))
+
+(define (i-shadow x)
+  (define-type <t> <int>)
+  (list (of-type? x <t>)
+        (let () (define-type <t> <string>) (of-type? x <t>))))
+(test* "internal define-type is lexically scoped" '((#t #f) (#f #t))
+       (list (i-shadow 3) (i-shadow "a")))
+
+(define-syntax def-int-type
+  (syntax-rules () [(_ n) (define-type n <int>)]))
+(define (i-via-macro x) (def-int-type <mine>) (of-type? x (<?> <mine>)))
+(test* "internal define-type introduced by a macro" '(#t #t #f)
+       (list (i-via-macro 3) (i-via-macro #f) (i-via-macro "a")))
+
+;; A generative right-hand side can't be computed at the compile time, so
+;; the definition stays an ordinary internal one.  It works as a value, but
+;; not yet in a type expression.  (We build the class directly here, to keep
+;; this test from depending on gauche.record.)
+(define (i-generative)
+  (define-type <gen> (make <class> :name '<gen> :supers (list <top>) :slots '()))
+  (list (is-a? <gen> <class>) (class-name <gen>) (of-type? (make <gen>) <gen>)))
+(test* "generative internal define-type still works as a value"
+       '(#t <gen> #t)
+       (i-generative))
+
+(test* "generative internal type in a type ctor is still unsupported"
+       (test-error)
+       (eval '(define (h)
+                (define-type <gen>
+                  (make <class> :name '<gen> :supers (list <top>) :slots '()))
+                (of-type? (make <gen>) (<?> <gen>)))
+             (current-module)))
+
+(test* "set! on an internal type binding"
+       (test-error <error> #/cannot assign to a type binding/)
+       (eval '(define (h) (define-type <t> <int>) (set! <t> 3))
+             (current-module)))
+
+(test* "malformed internal define-type" (test-error)
+       (eval '(define (h) (define-type <t>) 1) (current-module)))
+
+(test* "internal define-type clashing with an internal define" (test-error)
+       (eval '(define (h) (define-type <t> <int>) (define <t> 3) 1)
+             (current-module)))
+
 (test-end)

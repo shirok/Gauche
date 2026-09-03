@@ -1,3 +1,10 @@
+2026-09-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (pass1/body-rec): Handle internal define-type.
+	  If the type is known at compile time, insert the type binding
+	  in SYNTAX frame so that references to that type would be
+	  expanded into the original type.
+
 2026-09-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm: Compute descriptive type name lazily.  It turne
