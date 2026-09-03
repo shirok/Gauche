@@ -161,7 +161,7 @@ int Scm_GlocInlinableP(ScmGloc *gloc)
             || ((gloc)->setter == gloc_dummy_inlinable_setter));
 }
 
-static int gloc_dummy_inlinable_p(ScmGloc *gloc)
+int Scm_GlocDummyP(ScmGloc *gloc)
 {
     return ((gloc)->setter == gloc_dummy_inlinable_setter);
 }
@@ -187,7 +187,7 @@ int Scm_GlocSupersedableP(ScmGloc *gloc, u_long flags, ScmObj newval)
         return ((flags & SCM_BINDING_CONST) && Scm_EqualP(gloc->value, newval));
     }
     if (Scm_GlocInlinableP(gloc)) {
-        if (gloc_dummy_inlinable_p(gloc)) {
+        if (Scm_GlocDummyP(gloc)) {
             return (flags & SCM_BINDING_INLINABLE);
         } else if (flags & SCM_BINDING_INLINABLE) {
             return (Scm_EqualP(gloc->value, newval)

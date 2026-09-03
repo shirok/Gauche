@@ -1,3 +1,13 @@
+2026-09-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-3.scm (pass3/constant-arguments): Do not take the
+	  compile-time value of a dummy inlinable binding, as it's a placeholder
+	  only exists in the compile-time, hence can't be used for constant
+	  folding.
+	* src/gloc.c, src/gauche/gloc.h (Scm_GlocDummyP): Exposes the
+	  dummy-inlinable predicate.
+	* src/libmod.scm (gloc-dummy?): Added in gauche.internal
+
 2026-09-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/ffi/stub.scm: Renamed :stubgen subsystem to :stub subsystem.

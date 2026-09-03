@@ -6,7 +6,8 @@
 (define-module type-binding
   (export foo-myint foo-myclass foo-beginclass
           <myclass> <beginclass>
-          <maybe-myint> <maybe-myclass> <maybe-beginclass>))
+          <maybe-myint> <maybe-myclass> <maybe-beginclass>
+          runtime-class-name))
 (select-module type-binding)
 
 (define-type <myint_t> <int>)
@@ -36,3 +37,16 @@
   (define (foo-beginclass x)
     (assume-type x (<?> <beginclass>))
     x))
+
+;; A define-type whose value can't be computed at the compile time, and which
+;; is also used as an ordinary runtime value.  While this file is precompiled,
+;; the compiler only has a placeholder binding for <runtime-class>; the
+;; placeholder's value is a stand-in, so it must not be used to constant-fold
+;; the of-type? that assume-type expands into.
+;; (If the file is loaded, the dummy binding of <runtime-class> is overwritten
+;; when the toplevel form is executed).
+(define-type <runtime-class> (car (list <myclass>)))
+
+(define (runtime-class-name)
+  (assume-type <runtime-class> <class>)
+  (class-name <runtime-class>))

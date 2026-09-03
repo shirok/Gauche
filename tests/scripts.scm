@@ -980,6 +980,13 @@
                                           (~ e'message)))])
                        (p "ng")))
                  (list foo-myint foo-myclass)))))
+
+  ;; The placeholder binding the compiler leaves for a define-type must not
+  ;; be used to constant-fold.
+  (test* "define-type placeholder isn't constant-folded" '<myclass>
+         (dynload-and-eval
+          "type-binding"
+          ((module-binding-ref 'type-binding 'runtime-class-name))))
   )
 
 (define (precomp-test-literal-mutex)

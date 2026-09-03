@@ -349,6 +349,7 @@
 (define-cproc gloc-set! (gloc::<gloc> value) SCM_GLOC_SET)
 (define-cproc gloc-const? (gloc::<gloc>) ::<boolean> Scm_GlocConstP)
 (define-cproc gloc-inlinable? (gloc::<gloc>) ::<boolean> Scm_GlocInlinableP)
+(define-cproc gloc-dummy? (gloc::<gloc>) ::<boolean> Scm_GlocDummyP)
 
 ;;;
 ;;; Identifier and binding
