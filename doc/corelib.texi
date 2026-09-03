@@ -15291,7 +15291,7 @@ as a bytevector followed by a string.
 後方互換性のため、現在のバージョンでは@code{#*"..."}は不完全文字列として読まれます。
 リーダー字句モードが@code{warn-legacy}であれば、この形のリテラルに対して警告が出されます
 (@ref{Reader lexical mode})。
-将来的には@code{#*"..."}はビットベクタと文字列として読まれるように徐々に以降する予定です。
+将来的には@code{#*"..."}はビットベクタと文字列として読まれるように徐々に移行する予定です。
 @c COMMON
 @end deftp
 

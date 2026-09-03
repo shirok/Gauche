@@ -37030,6 +37030,7 @@ Gaucheには遅延ストリームとリストを統合したような、組み�
 
 @node Stream primitives, Stream constructors, Stream library, Stream library
 @subsection Stream primitives
+@c NODE ストリームの基本手続き
 
 @defun stream? obj
 [R7RS stream]
@@ -37168,6 +37169,7 @@ as @code{(lambda formals (stream-delay body body2 @dots{}))}.
 
 @node Stream constructors, Stream binding, Stream primitives, Stream library
 @subsection Stream constructors
+@c NODE ストリームの作成
 
 @defun stream obj @dots{}
 [SRFI-40]
@@ -37742,6 +37744,7 @@ triples:
 
 @node Stream binding, Stream consumers, Stream constructors, Stream library
 @subsection Stream binding
+@c NODE ストリームの束縛
 
 @defmac define-stream (name . formals)  body body2 @dots{}
 [R7RS stream]
@@ -37883,6 +37886,7 @@ values in the stream:
 
 @node Stream consumers, Stream operations, Stream binding, Stream library
 @subsection Stream consumers
+@c NODE ストリームの消費
 
 @c EN
 These procedures takes stream(s) and consumes its/their elements
@@ -37933,6 +37937,7 @@ the element first, then the seed value.
 
 @node Stream operations,  , Stream consumers, Stream library
 @subsection Stream operations
+@c NODE ストリームの操作
 
 @defun stream-append stream @dots{}
 [R7RS stream]
