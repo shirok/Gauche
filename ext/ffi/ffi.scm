@@ -226,7 +226,7 @@
 ;; API
 (define (ffi-subsystem-available? kw)
   (case kw
-    [(:stubgen) #t]
+    [(:stub) #t]
     [(:native) (boolean (#/^x86_64-.*/ (gauche-architecture)))]
     [else (error "Unrecognized FFI subsystem:" kw)]))
 
@@ -235,7 +235,7 @@
   (make-parameter
    (if (ffi-subsystem-available? :native)
      :native
-     :stubgen)))
+     :stub)))
 
 ;;;
 ;;; Syntax
@@ -261,7 +261,7 @@
     [(_ . _)
      (syntax-error "define-c-enum used outside with-ffi")]))
 
-(autoload gauche.ffi.stubgen (:macro with-stubgen-ffi))
+(autoload gauche.ffi.stub    (:macro with-stub-ffi))
 (autoload gauche.ffi.native  (:macro with-native-ffi))
 (autoload gauche.ffi.ffiaux  native-alloc native-free)
 
@@ -443,7 +443,7 @@
                (reverse cdefs)))
 
         ;; Names bound by define-c-enum forms, in declaration order.
-        ;; with-stubgen-ffi needs them to bind each <c-enum> the stub
+        ;; with-stub-ffi needs them to bind each <c-enum> the stub
         ;; reifies.
         (define cenum-names
           (filter-map (^[cdef] (and (eq? (car cdef) 'define-c-enum)
@@ -470,14 +470,16 @@
                             cdefs)
              (when cdef
                (errorf "~a is not supported in the native ffi subsystem \
-                        yet.  use stubgen ffi subsystem instead."
+                        yet.  use stub ffi subsystem instead."
                        (car cdef))))
            (quasirename r
              `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
                                ,(reverse ccb-info)
                                ,final-forms))]
-          [(:stubgen)
+          [(:stub :stubgen)
+           (when (eq? subsystem :stubgen)
+             (warn "FFI :stubgen subsystem is now called :stub subsystem.\n"))
            (quasirename r
-             `(with-stubgen-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
-                                ,cenum-names ,final-forms))]
+             `(with-stub-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
+                             ,cenum-names ,final-forms))]
           )]))))

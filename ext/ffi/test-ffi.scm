@@ -256,7 +256,7 @@
                     #t))
          )]))
 
-  ;; define-c-callback (currently only supported in :stubgen)
+  ;; define-c-callback (currently only supported in :stub)
   (define-syntax do-test-cb
     (syntax-rules ::: ()
       [(_ opts)
@@ -325,7 +325,7 @@
 
   (define cb-noop-counter 0)
 
-  (parameterize ([default-ffi-subsystem :stubgen])
+  (parameterize ([default-ffi-subsystem :stub])
     (do-test-f ())
     (do-test-g ())
     (do-test-cb ()))
@@ -348,7 +348,7 @@
   ;; so that it works with out-of-tree builds as well.
   (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
 
-  (parameterize ([default-ffi-subsystem :stubgen])
+  (parameterize ([default-ffi-subsystem :stub])
     ;; Constants from the system headers; no include path needed.
     (eval '(with-ffi #f (:c-headers ("limits.h" "stdio.h"))
              (define-c-constant CHAR-BIT)
@@ -377,7 +377,7 @@
 
   (test* "define-c-constant rejects pointer type"
          (test-error <error> #/pointer, array and function types/)
-         (eval '(with-ffi #f (:subsystem :stubgen :c-headers ("stdio.h"))
+         (eval '(with-ffi #f (:subsystem :stub :c-headers ("stdio.h"))
                   (define-c-constant EOF 'int*))
                (current-module)))
 
@@ -403,7 +403,7 @@
 
   (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
 
-  (parameterize ([default-ffi-subsystem :stubgen])
+  (parameterize ([default-ffi-subsystem :stub])
     (eval `(with-ffi #f (:c-headers ("ffi-const.h")
                          :c-include-paths (,c-dir))
              ;; tag derived from the name
@@ -463,7 +463,7 @@
 
   ;; The enum type is usable as an FFI argument type: it is passed as its
   ;; base type, so the generated stub compiles without naming the tag.
-  (parameterize ([default-ffi-subsystem :stubgen])
+  (parameterize ([default-ffi-subsystem :stub])
     (eval `(with-ffi (dlopen "./f") ()
              (define-c-function Fi-i (list ffi-test-color) 'int))
           (current-module)))
@@ -471,7 +471,7 @@
 
   (test* "define-c-enum rejects a base type that can't hold the values"
          (test-error <error> #/out of range/)
-         (eval `(with-ffi #f (:subsystem :stubgen
+         (eval `(with-ffi #f (:subsystem :stub
                               :c-headers ("ffi-const.h")
                               :c-include-paths (,c-dir))
                   (define-c-enum (narrow ffi_test_flags)
@@ -479,11 +479,11 @@
                (current-module)))
 
   (test* "define-c-enum, malformed name and tag" (test-error <error>)
-         (eval '(with-ffi #f (:subsystem :stubgen)
+         (eval '(with-ffi #f (:subsystem :stub)
                   (define-c-enum (a b c) (X)))
                (current-module)))
   (test* "define-c-enum, malformed enumerator" (test-error <error>)
-         (eval '(with-ffi #f (:subsystem :stubgen)
+         (eval '(with-ffi #f (:subsystem :stub)
                   (define-c-enum foo ("X")))
                (current-module)))
 
@@ -521,12 +521,12 @@
         (test* #"foreign-function-info ~subsystem :rettype" rettype
                (get-keyword :rettype info #f))))
 
-    (parameterize ([default-ffi-subsystem :stubgen])
+    (parameterize ([default-ffi-subsystem :stub])
       (eval
        `(with-ffi (dlopen "./f") ()
           (define-c-function Fi-i '(int) 'int))
        (current-module))
-      (check-info Fi-i #/^\.\/f/ :stubgen '(int) 'int))
+      (check-info Fi-i #/^\.\/f/ :stub '(int) 'int))
 
     (when (ffi-subsystem-available? :native)
       (eval

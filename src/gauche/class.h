@@ -478,7 +478,7 @@ typedef struct ScmNativeHandleRec ScmNativeHandle;
 SCM_EXTERN void *Scm_NativeHandlePtr(ScmNativeHandle *h);
 
 /* Create a native handle wrapping a C pointer, with the given native type.
-   This is intended for generated code by stubgen FFI.
+   This is intended for generated code by the FFI stub subsystem.
    No region bounds or ownership information is recorded. */
 SCM_EXTERN ScmObj Scm_MakeNativeHandleSimple(void *ptr, ScmObj type);
 

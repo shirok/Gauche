@@ -1,5 +1,9 @@
 2026-09-02  Shiro Kawai  <shiro@acm.org>
 
+	* ext/ffi/ffi/stub.scm: Renamed :stubgen subsystem to :stub subsystem.
+	  gauche.ffi.stubgen is splitted to an internal common module,
+	  to be used by :aot subsystem in future.
+
 	* src/compile-1.scm (pass1/body-rec): Handle internal define-type.
 	  If the type is known at compile time, insert the type binding
 	  in SYNTAX frame so that references to that type would be

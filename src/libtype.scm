@@ -1248,7 +1248,7 @@
            (-> h flags) flags)
      (return (SCM_OBJ h))))
 
- ;; Public API for stubgen FFI
+ ;; Public API for the FFI stub subsystem
  (define-cfn Scm_MakeNativeHandleSimple (ptr::void* type::ScmObj) ::ScmObj
    (SCM_ASSERT (SCM_NATIVE_TYPE_P type))
    (return (Scm__MakeNativeHandle ptr

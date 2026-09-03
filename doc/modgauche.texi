@@ -10522,7 +10522,7 @@ Small mistakes can eaisly cause access violation or memory corruption.
 
 We adopt pluggable subsystems; you can choose the underlying FFI layer
 depending on the architecture and your particular needs.
-For the time being, @code{stubgen} subsystem is available on
+For the time being, @code{stub} subsystem is available on
 all the architecture, and @code{native} subsystem on x86_64 with
 with Unix-like systems and MinGW/Windows.  Native subsytem will
 be enhanced to Aarch64 soon.

@@ -73,7 +73,7 @@
                      (null? (get-keyword :c-include-paths options '())))
           (error "c-headers and c-include-paths options cannot be used with \
                   native ffi subsystem yet.  \
-                  use stubgen ffi subsystem instead."))
+                  use stub ffi subsystem instead."))
         (let* ([ccb-name-set (map car ccb-info)]
                [cfn-specs (filter (^s (not (memq (car s) ccb-name-set)))
                                   cdef-specs)]
