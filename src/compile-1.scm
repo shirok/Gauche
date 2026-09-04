@@ -1732,7 +1732,14 @@
 (define (pass1-for-type-annotations types args cenv)
   (define (type-1 type arg cenv)
     (or (type/ensure (pass1 type cenv) cenv)
-        (errorf "Invalid type expression ~s for argument ~s" type arg)))
+        ;; A `::' annotation is resolved at the compile time, so a type that
+        ;; only exists per activation can't be used in one.
+        (if-let1 name (type/local-type-mention type cenv)
+          (errorf "Locally defined type ~a can't be used in a type \
+                   annotation for argument ~s, for its value is only known \
+                   at runtime"
+                  name arg)
+          (errorf "Invalid type expression ~s for argument ~s" type arg))))
   (define (type-n types args cenv)
     (if (null? types)
       '()

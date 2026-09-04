@@ -644,10 +644,57 @@
        (test-error <error> #/must stand for a type/)
        (eval '(let () (define-type <t> (+ 40 2)) <t>) (current-module)))
 
+;; A type expression can reach the local type through a macro, in which case
+;; the type constructor call doesn't mention it in its own source.
+(define-syntax i-maybe (syntax-rules () [(_ t) (<?> t)]))
+(define (i-gen-macro x)
+  (define-type <gen> (make <class> :name '<gen> :supers (list <top>) :slots '()))
+  (let1 obj (make <gen>)
+    (list (of-type? x (i-maybe <gen>))
+          (of-type? obj (</> <string> (i-maybe <gen>)))
+          (of-type? x (</> <string> (i-maybe <gen>))))))
+(test* "local type reached through a macro" '((#t #t #t) (#f #t #f))
+       (list (i-gen-macro #f) (i-gen-macro 3)))
+
+;; Another internal define-type over a local one.  Its right-hand side isn't
+;; a compile-time type either, so it becomes a local type in turn.
+(define (i-gen-chained x)
+  (define-type <gen> (make <class> :name '<gen> :supers (list <top>) :slots '()))
+  (define-type <mgen> (<?> <gen>))
+  (list (of-type? x <mgen>)
+        (of-type? (make <gen>) <mgen>)
+        (of-type? (list (make <gen>)) (<List> <mgen>))))
+(test* "internal define-type over a local type" '((#t #t #t) (#f #t #t))
+       (list (i-gen-chained #f) (i-gen-chained 3)))
+
+;; A macro can hide the local type from the right-hand side check---but only
+;; when it is nested in a type constructor call, for a macro in the head
+;; position leaves the right-hand side alone anyway.  By the time the nested
+;; call is compiled we're in the middle of scanning the body, so the local
+;; bindings aren't in place and there's nothing to refer to.
+(test* "local type reached through a macro in a define-type rhs"
+       (test-error <error> #/right-hand side of another internal define-type/)
+       (eval '(define (h)
+                (define-type <gen>
+                  (make <class> :name '<gen> :supers (list <top>) :slots '()))
+                (define-type <mgen> (</> <string> (i-maybe <gen>)))
+                (of-type? (make <gen>) <mgen>))
+             (current-module)))
+
+;; A type constructor argument that isn't a type expression at all is still
+;; rejected at the compile time, local types or not.
+(test* "non-constant type ctor argument is still an error"
+       (test-error <error> #/must be a compile-time constant/)
+       (eval '(define (h y)
+                (define-type <gen>
+                  (make <class> :name '<gen> :supers (list <top>) :slots '()))
+                (of-type? y (</> <gen> (car (list <string>)))))
+             (current-module)))
+
 ;; Out of scope for now: a `::' annotation is resolved at the compile time,
 ;; so it can't refer to a type that only exists at runtime.
 (test* "generative internal type in a :: annotation is unsupported"
-       (test-error <error> #/Invalid type expression/)
+       (test-error <error> #/can't be used in a type annotation/)
        (eval '(define (h)
                 (define-type <gen>
                   (make <class> :name '<gen> :supers (list <top>) :slots '()))

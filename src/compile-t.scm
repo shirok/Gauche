@@ -77,7 +77,13 @@
                      [else #f]))]
             [else #f]))]
    [(%type-constructor-call? expr cenv)
-    (type/ensure (pass1 expr cenv) cenv)]
+    ;; If the expression refers to a local type binding, there's no
+    ;; compile-time type to return---and we can't even compile it here, for
+    ;; the body that binds the local type is still being scanned, so its
+    ;; bindings aren't in place yet.  Leaving it to the generative path
+    ;; compiles it later, in pass1/body-finish, when they are.
+    (and (not (%args-have-local-type? (cdr expr) cenv))
+         (type/ensure (pass1 expr cenv) cenv))]
    [else #f]))
 
 ;; Is EXPR a call of a type constructor, such as (<?> <integer>)?
@@ -134,17 +140,14 @@
 ;; construct-type to create a type at runtime.  The latter case is for
 ;; local type binding.
 (define (type/construct ctor id program cenv)
-  ;; Check if any of args refer to a local type binding.
-  (define (type-args-have-local-type? args cenv)
-    (any (^a (or (boolean (%local-type-ref a cenv))
-                 (and (pair? a)
-                      (%type-constructor-call? a cenv)
-                      (type-args-have-local-type? (cdr a) cenv))))
-         args))
-  (if (type-args-have-local-type? (cdr program) cenv)
+  (if (%args-have-local-type? (cdr program) cenv)
     (%construct-runtime ctor program cenv)
-    (%construct-const ctor
-                      (pass1/call program ($gref id) (cdr program) cenv))))
+    (let1 iform (pass1/call program ($gref id) (cdr program) cenv)
+      ;; Running pass1/call expands macros in the type constructor arguments,
+      ;; and it may introduce runtime-constructed types, so we check again.
+      (if (any %runtime-construction? ($call-args iform))
+        (%reconstruct-runtime ctor iform)
+        (%construct-const ctor iform)))))
 
 ;; Construct the type now, and return it as a constant.
 ;; IFORM is the $CALL node representing the ctor invocation.  Since its
@@ -169,13 +172,49 @@
        (let1 v (cenv-lookup cenv expr)
          (and (local-type? v) v))))
 
+;; Check if any of ARGS, the arguments of a type constructor expression,
+;; refer to a local type binding.  We look at the source, where such a
+;; reference is still an identifier we can resolve.
+(define (%args-have-local-type? args cenv)
+  (any (^a (or (boolean (%local-type-ref a cenv))
+               (and (pair? a)
+                    (%type-constructor-call? a cenv)
+                    (%args-have-local-type? (cdr a) cenv))))
+       args))
+
+;; If the type expression EXPR mentions a local type binding, whose value is
+;; only known at runtime, returns its name; otherwise returns #f.
+;; Used where a compile-time type is required.  Returned name is used
+;; to construct an error message.
+(define (type/local-type-mention expr cenv)
+  (cond [(%local-type-ref expr cenv) (variable-name expr)]
+        [(and (pair? expr) (%type-constructor-call? expr cenv))
+         (any (^a (type/local-type-mention a cenv)) (cdr expr))]
+        [else #f]))
+
+;; Compile a reference to the local proxy type standing for the local type
+;; binding LT, which the source refers to as NAME.
+;; The binding may not be in place yet: that happens when a type expression
+;; is compiled while the body binding NAME is still being scanned, which is
+;; to say from the right-hand side of another internal define-type---and
+;; only when a macro hid the local type from type/compile-time-value, which
+;; leaves such a right-hand side alone otherwise.  We can't support that,
+;; but we can say so instead of failing deeper in pass1.
+(define (%local-proxy-ref lt name cenv)
+  (let1 v (cenv-lookup cenv (local-type-proxy-name lt))
+    (unless (lvar? v)
+      (errorf "Locally defined type ~a can't be used in the right-hand side \
+               of another internal define-type"
+              (variable-name name)))
+    ($lref v)))
+
 ;; Emit code that constructs the type of PROGRAM on each evaluation, out of
 ;; the local proxy type the activation holds.  It is correct under re-entry
 ;; and across threads, for the type is built from the activation's own value.
 (define (%construct-runtime ctor program cenv)
   (define (arg-iform arg)
     (cond [(%local-type-ref arg cenv)
-           => (^[lt] (pass1 (local-type-proxy-name lt) cenv))]
+           => (^[lt] (%local-proxy-ref lt arg cenv))]
           [(and (pair? arg) (%type-constructor-call? arg cenv))
            ;; A nested type constructor call.  If it mentions a local type
            ;; as well, pass1 brings it back here and it is built at runtime,
@@ -184,6 +223,27 @@
           [else
            ($const (type/check-arg-value
                     (type/arg-value (pass1 arg cenv) program)))]))
-  ($call program ($gref construct-type.)
-         (list ($const ctor)
-               ($list program (map arg-iform (cdr program))))))
+  (%emit-construction ctor program (map arg-iform (cdr program))))
+
+;; Same, but for a call whose arguments have already gone through pass1, one
+;; of them being a runtime construction itself.  The rest still have to be
+;; compile-time constants.
+(define (%reconstruct-runtime ctor iform)
+  (let1 src ($*-src iform)
+    (%emit-construction
+     ctor src
+     (map (^a (if (%runtime-construction? a)
+                a
+                ($const (type/check-arg-value (type/arg-value a src)))))
+          ($call-args iform)))))
+
+(define (%emit-construction ctor src arg-iforms)
+  ($call src ($gref construct-type.)
+         (list ($const ctor) ($list src arg-iforms))))
+
+;; Is IFORM a call %emit-construction made?
+(define (%runtime-construction? iform)
+  (and (has-tag? iform $CALL)
+       (let1 proc ($call-proc iform)
+         (and (has-tag? proc $GREF)
+              (eq? ($gref-id proc) construct-type.)))))
