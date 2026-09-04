@@ -160,10 +160,14 @@
  ;; The 'name' slot is computed lazily.  An initializer stores a thunk in it,
  ;; and the getter below forces the thunk on the first read and caches the
  ;; result.
+ ;; The 'local' flag is TRUE iff this type is constructed from locally bound
+ ;; generative types---e.g. local define-record-type.  Such type bypasses
+ ;; memoization table, as they are created dynamically per scope.
  (define-ctype ScmDescriptiveType
    ::(.struct ScmDescriptiveTypeRec
               (SCM_INSTANCE_HEADER::||
-               name::ScmObj)))          ;thunk or string
+               name::ScmObj                ;thunk or string
+               local::_Bool)))
 
  (define-cclass <descriptive-type> :base :private :no-meta
    "ScmDescriptiveType*" "Scm_DescriptiveTypeClass"
@@ -178,6 +182,7 @@
                       (SCM_NEW_INSTANCE ScmDescriptiveType klass)])
                 (cast void initargs)    ;suppress unused warning
                 (set! (-> z name) SCM_FALSE)
+                (set! (-> z local) FALSE)
                 (return (SCM_OBJ z)))))
 
  ;; We memoize constructed types.  The type is keyed by the constructor class
@@ -430,15 +435,33 @@
 ;; This can also be called from initialization of precompiled code to recover
 ;; descripitve type instance.
 (inline-stub
+ ;; TRUE iff ARGS contain an locally bound generative type, which is either
+ ;; a local proxy type, or a type already built from one.  If a type constructor
+ ;; gets at least one such type, the resulting type won't be memoized.
+ ;; See %make-local-proxy-type.
+ (define-cfn args-have-local-type (args) ::_Bool :static
+   (dolist [arg args]
+     (when (or (SCM_LOCAL_PROXY_TYPE_P arg)
+               (and (SCM_DESCRIPTIVE_TYPE_P arg)
+                    (-> (SCM_DESCRIPTIVE_TYPE arg) local)))
+       (return TRUE)))
+   (return FALSE))
+
  (define-cfn Scm_ConstructType (ctor args)
    (SCM_ASSERT (!= ctor NULL))
    (unless (Scm_TypeConstructorP ctor)
      (SCM_TYPE_ERROR ctor "<type-constructor-meta>"))
    (let* ([ct::ScmTypeConstructor* (cast ScmTypeConstructor* ctor)]
-          [type (lookup-constructed-type ct args)])
-     (unless (SCM_FALSEP type) (return type))
+          [localp::_Bool (args-have-local-type args)]
+          [type SCM_FALSE])
+     (unless localp
+       (set! type (lookup-constructed-type ct args))
+       (unless (SCM_FALSEP type) (return type)))
      (set! type (Scm_NewInstance (SCM_CLASS ct) (sizeof ScmDescriptiveType)))
      (Scm_ApplyRec2 (-> ct initializer) type args)
+     (when localp
+       (set! (-> (SCM_DESCRIPTIVE_TYPE type) local) TRUE)
+       (return type))
      (return (register-constructed-type ct args type))))
  )
 ;; Public interface to construct a descriptive type.
@@ -471,11 +494,20 @@
     (SCM_TYPE_ERROR id "identifier"))
   (return (Scm_MakeProxyType (SCM_IDENTIFIER id) NULL)))
 
+;; Creates a local proxy type, that is, a proxy type that holds the locally
+;; bound generative type, instead of referring to it through a global binding.
+;; This is called at runtime to wrap a generative type for the argument
+;; of type constructors.
+(define-cproc %make-local-proxy-type (type)
+  (return (Scm_MakeLocalProxyType type)))
+
 (define-cproc proxy-type-ref (type)
   (unless (SCM_PROXY_TYPE_P type)
     (SCM_TYPE_ERROR type "proxy-type"))
   (return (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))
 
+;; Returns the identifier the proxy type refers to, or #f if TYPE is a local
+;; proxy type, which doesn't refer to a binding.
 (define-cproc proxy-type-id (type)
   (unless (SCM_PROXY_TYPE_P type)
     (SCM_TYPE_ERROR type "proxy-type"))
@@ -514,14 +546,18 @@
 ;;;
 
 (define (join-class-names classes)
-  (string-join (map (^k (x->string
-                         (cond [(is-a? k <class>) (class-name k)]
-                               [(is-a? k <descriptive-type>) (~ k'name)]
-                               [(is-a? k <native-type>) (~ k'name)]
-                               [(is-a? k <proxy-type>)
-                                (~ (proxy-type-id k) 'name)]
-                               [else k])))
-                    classes)
+  (define (type-name k)
+    (cond [(is-a? k <class>) (class-name k)]
+          [(is-a? k <descriptive-type>) (~ k'name)]
+          [(is-a? k <native-type>) (~ k'name)]
+          [(is-a? k <proxy-type>)
+           (if-let1 id (proxy-type-id k)
+             (~ id'name)
+             ;; A local proxy type has no name of its own; use the name of
+             ;; the type it stands for.
+             (type-name (proxy-type-ref k)))]
+          [else k]))
+  (string-join (map (^k (x->string (type-name k))) classes)
                " " 'prefix))
 
 (define (make-compound-type-name op-name classes)
@@ -1591,6 +1627,7 @@
           deconstruct-type
           wrap-with-proxy-type
           %make-deferred-proxy-type
+          %make-local-proxy-type
           proxy-type-ref
           proxy-type-id
           ;; these are used by native-supp.scm, so make them visible from

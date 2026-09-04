@@ -49,6 +49,14 @@ some_trick();
 (use gauche.cgen.type)
 (test-module 'gauche.cgen.literal)
 
+;; A local proxy type stands for a type created per activation, so there's
+;; nothing to serialize.
+(test* "cgen-literal of a local proxy type"
+       (test-error <error> #/Cannot serialize a proxy type of a local type binding/)
+       (parameterize ([cgen-current-unit (make <cgen-unit> :name "tmp.o")])
+         (cgen-literal ((with-module gauche.internal %make-local-proxy-type)
+                        <string>))))
+
 ;;====================================================================
 (test-section "gauche.cgen.type")
 (use gauche.cgen.type)

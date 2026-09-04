@@ -53,14 +53,37 @@ SCM_EXTERN void   Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port);
    structure.  We need an indirection because a class may be redefined,
    and because the compiler may have to refer to a type before its value
    is computed (see Scm_MakeProxyType in gauche/class.h).
+
+   There's a variation, a *local* proxy type, which carries the type it
+   stands for directly instead of going through a global binding.  It is
+   used for a type held in a local binding (e.g. an internal define-type
+   whose right hand side is generative); such a type has no global name to
+   be redefined through, so the indirection isn't needed---and can't be had.
+   A local proxy type is distinguished by ID == NULL, it is created per
+   activation of the scope that binds the type, and it can't be serialized
+   (see Scm_MakeLocalProxyType).
 */
 struct ScmProxyTypeRec {
     SCM_HEADER;
     ScmIdentifier *id;          /* Original Id (need to serialize in
-                                   precomp output. */
+                                   precomp output.
+                                   NULL iff this is a local proxy type. */
     ScmGloc *ref;               /* GLOC that holds the actual class.
                                    It can be NULL, if it is computed
-                                   from ID lazily. */
+                                   from ID lazily.  Always NULL in a local
+                                   proxy type. */
+    ScmObj value;               /* The type this proxy stands for.  Only
+                                   used in a local proxy type; SCM_FALSE
+                                   otherwise. */
 };
+
+#define SCM_LOCAL_PROXY_TYPE_P(obj) \
+    (SCM_PROXY_TYPE_P(obj) && SCM_PROXY_TYPE(obj)->id == NULL)
+
+/* Creates a local proxy type standing for TYPE.  TYPE must be a type, and
+   it is held directly, so this can only be called at runtime---the compiler
+   emits a call to it (via %make-local-proxy-type) instead of creating one
+   itself. */
+SCM_EXTERN ScmObj Scm_MakeLocalProxyType(ScmObj type);
 
 #endif /*GAUCHE_PRIV_CLASSP_H*/

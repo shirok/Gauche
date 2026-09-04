@@ -102,7 +102,10 @@ static inline _Bool equal_1(ScmObj a, ScmObj b)
         }
         return TRUE;
     } else if (SCM_PROXY_TYPE_P(a)) {
+        /* A local proxy type shouldn't be entered to the memo table. */
+        SCM_ASSERT(!SCM_LOCAL_PROXY_TYPE_P(a));
         if (!SCM_PROXY_TYPE_P(b)) return FALSE;
+        SCM_ASSERT(!SCM_LOCAL_PROXY_TYPE_P(b));
         ScmGloc *ga = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(a));
         ScmGloc *gb = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(b));
         if (ga != NULL || gb != NULL) return ga == gb;
@@ -129,6 +132,7 @@ static inline u_long hash_1(ScmObj key)
         }
         return h;
     } else if (SCM_PROXY_TYPE_P(key)) {
+        SCM_ASSERT(!SCM_LOCAL_PROXY_TYPE_P(key)); /* see equal_1 */
         ScmGloc *g = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(key));
         if (g != NULL) return Scm_EqvHash(SCM_OBJ(g));
         /* If proxy hasn't been bound, we use identifier as the fallback.

@@ -429,6 +429,86 @@
        (test-error <error> #/non-inlinable global variable/)
        (eval '(of-type? 1 (<?> <no-such-type-at-all>)) (current-module)))
 
+(test-section "local proxy type")
+
+(define %make-local-proxy-type
+  (with-module gauche.internal %make-local-proxy-type))
+(define proxy-type-id (with-module gauche.internal proxy-type-id))
+(define proxy-type-ref (with-module gauche.internal proxy-type-ref))
+(define construct-type (with-module gauche.internal construct-type))
+
+(define-class <local-a> () ())
+(define local-a-proxy (%make-local-proxy-type <local-a>))
+
+(test* "local proxy type basics" '(#t #f #t)
+       (list (type? local-a-proxy)
+             (proxy-type-id local-a-proxy) ; no identifier to refer to
+             (eq? (proxy-type-ref local-a-proxy) <local-a>)))
+
+(test* "local proxy type must stand for a type"
+       (test-error <error> #/must stand for a type/)
+       (%make-local-proxy-type 3))
+
+(test* "printing a local proxy type" "#<local #<class <local-a>>>"
+       (write-to-string local-a-proxy))
+
+(test* "of-type? through a local proxy type" '(#t #f)
+       (list (of-type? (make <local-a>) local-a-proxy)
+             (of-type? 3 local-a-proxy)))
+
+(test* "subtype? through a local proxy type" '(#t #t #f)
+       (list (subtype? local-a-proxy <local-a>)
+             (subtype? <local-a> local-a-proxy)
+             (subtype? <string> local-a-proxy)))
+
+(test* "type ctor with a local proxy type" '(#t #t #f)
+       (let1 t (construct-type <?> (list local-a-proxy))
+         (list (of-type? #f t) (of-type? (make <local-a>) t) (of-type? 3 t))))
+
+(test* "compound type name with a local proxy type"
+       '("<? <local-a>>" "<List <? <local-a>>>")
+       (let1 t (construct-type <?> (list local-a-proxy))
+         (list (x->string (~ t'name))
+               (x->string (~ (construct-type <List> (list t))'name)))))
+
+;; A fresh local proxy type is created per activation of the scope binding
+;; the type, so two of them are never the same, even for the same type.
+(test* "local proxy types compare by identity" '(#t #f)
+       (list (equal? local-a-proxy local-a-proxy)
+             (equal? local-a-proxy (%make-local-proxy-type <local-a>))))
+
+(test* "type built from a local proxy type isn't memoized" '(#f #f #t)
+       (let1 t (construct-type <?> (list local-a-proxy))
+         (list (eq? t (construct-type <?> (list local-a-proxy)))
+               (eq? (construct-type <List> (list t))
+                    (construct-type <List> (list t)))
+               (eq? (construct-type <?> (list <string>))
+                    (construct-type <?> (list <string>))))))
+
+(define (make-local-type)
+  (let1 c (make <class> :name '<local-b> :supers (list <top>) :slots '())
+    (cons c (%make-local-proxy-type c))))
+
+(test* "local types from different activations are independent"
+       '(#f #t #t #f)
+       (let* ([a (make-local-type)]
+              [b (make-local-type)]
+              [ta (construct-type <?> (list (cdr a)))]
+              [tb (construct-type <?> (list (cdr b)))])
+         (list (equal? (cdr a) (cdr b))
+               (of-type? (make (car a)) ta)
+               (of-type? (make (car b)) tb)
+               (of-type? (make (car a)) tb))))
+
+;; Repeating the same construction must keep working (and must not accumulate
+;; anything globally---see the memoization test above).
+(test* "repeated construction from a local proxy type" #t
+       (every (^_ (let1 t (construct-type <?> (list local-a-proxy))
+                    (and (of-type? (make <local-a>) t)
+                         (of-type? #f t)
+                         (not (of-type? 3 t)))))
+              (iota 100)))
+
 (test-section "internal type definition")
 
 ;; An internal define-type whose right-hand side is a type we can compute at

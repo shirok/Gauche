@@ -937,6 +937,12 @@
 (define-cgen-literal <cgen-scheme-proxy-type> <proxy-type>
   ((id :init-keyword :id))
   (make (value)
+    ;; A local proxy type carries the type it stands for directly, and that
+    ;; type is created per activation, so there's nothing to serialize.  The
+    ;; compiler never folds a type containing one into a constant, so this
+    ;; should be unreachable.
+    (unless ((with-module gauche.internal proxy-type-id) value)
+      (error "Cannot serialize a proxy type of a local type binding:" value))
     (make <cgen-scheme-proxy-type> :value value
           :c-name (cgen-allocate-static-datum)
           :id ($ cgen-literal

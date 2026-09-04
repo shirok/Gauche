@@ -3281,6 +3281,12 @@ static void proxy_type_print(ScmObj obj, ScmPort *port,
                              ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmIdentifier *id = SCM_PROXY_TYPE(obj)->id;
+    if (id == NULL) {
+        /* A local proxy type has no name of its own; show what it stands
+           for. */
+        Scm_Printf(port, "#<local %S>", SCM_PROXY_TYPE(obj)->value);
+        return;
+    }
     ScmGloc *g = SCM_PROXY_TYPE(obj)->ref;
     if (g == NULL || Scm_GlocPhantomBindingP(g)) {
         Scm_Printf(port, "#<%A (unresolved)>", id->name);
@@ -3293,6 +3299,18 @@ static int proxy_type_compare(ScmObj x, ScmObj y, int equalp)
 {
     SCM_ASSERT(SCM_PROXY_TYPE_P(x));
     SCM_ASSERT(SCM_PROXY_TYPE_P(y));
+    if (SCM_LOCAL_PROXY_TYPE_P(x) || SCM_LOCAL_PROXY_TYPE_P(y)) {
+        /* A local proxy type doesn't have a binding to compare, and a fresh
+           one is created for each activation of the scope that binds the
+           type, so identity is the only sound equality. */
+        if (equalp) return !SCM_EQ(x, y);
+        /* For ordering, we fall back to the types they stand for.  It gives
+           the same result as the resolved case below, only that two distinct
+           local proxies of the same type compare equal here. */
+        return Scm_ObjectCompare(Scm_ProxyTypeRef(SCM_PROXY_TYPE(x)),
+                                 Scm_ProxyTypeRef(SCM_PROXY_TYPE(y)),
+                                 FALSE);
+    }
     ScmGloc *gx = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(x));
     ScmGloc *gy = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(y));
     if (gx == NULL || gy == NULL) {
@@ -3341,6 +3359,24 @@ ScmObj Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref)
     SCM_SET_CLASS(p, SCM_CLASS_PROXY_TYPE);
     p->id = id;
     p->ref = ref;
+    p->value = SCM_FALSE;
+    return SCM_OBJ(p);
+}
+
+/* Creates a local proxy type; see the comment in gauche/priv/classP.h.
+   Unlike Scm_MakeProxyType, this is called at runtime, for TYPE is a value
+   of a local binding. */
+ScmObj Scm_MakeLocalProxyType(ScmObj type)
+{
+    if (!SCM_ISA(type, SCM_CLASS_TYPE)) {
+        Scm_Error("A local proxy type must stand for a type, but got: %S",
+                  type);
+    }
+    ScmProxyType *p = SCM_NEW(ScmProxyType);
+    SCM_SET_CLASS(p, SCM_CLASS_PROXY_TYPE);
+    p->id = NULL;
+    p->ref = NULL;
+    p->value = type;
     return SCM_OBJ(p);
 }
 
@@ -3348,6 +3384,8 @@ ScmObj Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref)
    isn't bound (yet).  Never raises an error. */
 ScmGloc *Scm_ProxyTypeGloc(ScmProxyType *p)
 {
+    /* A local proxy type isn't backed by a binding. */
+    if (p->id == NULL) return NULL;
     if (p->ref == NULL) {
         /* Lazily get the binding.  This is idempotent operation as long as
            p->id is already bound, so MT-safe.  Note that Scm_MakeBinding
@@ -3372,6 +3410,7 @@ static int proxy_type_same_binding(ScmObj x, ScmObj y)
 
 ScmObj Scm_ProxyTypeRef(ScmProxyType *p)
 {
+    if (p->id == NULL) return p->value; /* local proxy type */
     ScmGloc *g = Scm_ProxyTypeGloc(p);
     if (g == NULL) {
         Scm_Error("Identifier wrapped by a proxy-type is unbound: %S",
@@ -3380,8 +3419,11 @@ ScmObj Scm_ProxyTypeRef(ScmProxyType *p)
     return proxy_type_get_type(p->id, g);
 }
 
+/* Returns the identifier the proxy type refers to, or #f if it is a local
+   proxy type, which doesn't have one. */
 ScmObj Scm_ProxyTypeId(ScmProxyType *p)
 {
+    if (p->id == NULL) return SCM_FALSE;
     return SCM_OBJ(p->id);
 }
 

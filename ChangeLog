@@ -1,5 +1,13 @@
 2026-09-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/libtype.scm (ScmDescriptiveType): Add 'local' flag to
+	  mark the type is constructed from locally bound generative
+	  type---e.g. local define-record-type.
+	* src/gauche/priv/classP.h, src/class.c (Scm_MakeLocalProxyType):
+	  A proxy type to wrap locally bound generative types, as opposed
+	  to the one bound at toplevel.  Local proxy is marked with
+	  id==NULL.  It stands for local generative type.
+
 	* src/compile-3.scm (pass3/constant-arguments): Do not take the
 	  compile-time value of a dummy inlinable binding, as it's a placeholder
 	  only exists in the compile-time, hence can't be used for constant
