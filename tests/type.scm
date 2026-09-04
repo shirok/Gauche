@@ -6,6 +6,9 @@
 (use gauche.typeutil)
 (test-module 'gauche.typeutil)
 
+(use gauche.record)                     ;for internal define-record-type
+(use gauche.threads)
+
 (test-section "type constuctor memoization")
 
 ;; This tests the constructed types from the same arguments gets eq?,
@@ -555,10 +558,11 @@
 (test* "internal define-type introduced by a macro" '(#t #t #f)
        (list (i-via-macro 3) (i-via-macro #f) (i-via-macro "a")))
 
-;; A generative right-hand side can't be computed at the compile time, so
-;; the definition stays an ordinary internal one.  It works as a value, but
-;; not yet in a type expression.  (We build the class directly here, to keep
-;; this test from depending on gauche.record.)
+;; A generative right-hand side can't be computed at the compile time.  The
+;; value stays in an ordinary internal binding, and a type expression
+;; mentioning it builds the type at runtime, out of the local proxy type the
+;; activation holds.  (We build the class directly here, to keep these tests
+;; from depending on gauche.record; there's one with a record below.)
 (define (i-generative)
   (define-type <gen> (make <class> :name '<gen> :supers (list <top>) :slots '()))
   (list (is-a? <gen> <class>) (class-name <gen>) (of-type? (make <gen>) <gen>)))
@@ -566,12 +570,89 @@
        '(#t <gen> #t)
        (i-generative))
 
-(test* "generative internal type in a type ctor is still unsupported"
-       (test-error)
+(define (i-gen-ctor x)
+  (define-type <gen> (make <class> :name '<gen> :supers (list <top>) :slots '()))
+  (list (of-type? x (<?> <gen>))
+        (of-type? (make <gen>) (<?> <gen>))))
+(test* "generative internal type in a type ctor expression"
+       '((#t #t) (#f #t) (#f #t))
+       (list (i-gen-ctor #f) (i-gen-ctor 3) (i-gen-ctor "a")))
+
+;; The same local type in several type expressions, including nested ones.
+(define (i-gen-several x)
+  (define-type <gen> (make <class> :name '<gen> :supers (list <top>) :slots '()))
+  (let1 obj (make <gen>)
+    (list (of-type? x (<?> <gen>))
+          (of-type? x (</> <string> <gen>))
+          (of-type? (list obj) (<List> (<?> <gen>)))
+          (of-type? obj (</> <string> (<?> <gen>))))))
+(test* "local type in several type expressions"
+       '((#t #f #t #t) (#f #t #t #t))
+       (list (i-gen-several #f) (i-gen-several "a")))
+
+;; The property a compile-time constant can't have: each activation builds
+;; its own type, and an instance of one doesn't satisfy the other's.
+(define (i-gen-activation)
+  (define-type <gen> (make <class> :name '<gen> :supers (list <top>) :slots '()))
+  (values (make <gen>) (^x (of-type? x (<?> <gen>)))))
+(test* "generative internal type is per-activation" '(#t #f #f #t)
+       (receive (obj1 pred1) (i-gen-activation)
+         (receive (obj2 pred2) (i-gen-activation)
+           (list (pred1 obj1) (pred1 obj2) (pred2 obj1) (pred2 obj2)))))
+
+;; Re-entering the scope, and evaluating the same type expression over and
+;; over within one activation, must keep working.
+(define (i-gen-loop n)
+  (define-type <gen> (make <class> :name '<gen> :supers (list <top>) :slots '()))
+  (let1 obj (make <gen>)
+    (let loop ([i 0])
+      (cond [(= i n) #t]
+            [(and (of-type? obj (<?> <gen>))
+                  (not (of-type? 3 (<?> <gen>))))
+             (loop (+ i 1))]
+            [else #f]))))
+(test* "generative internal type in a loop" '(#t #t)
+       (list (i-gen-loop 100) (i-gen-loop 100)))
+
+;; Two threads running the same closure, each with its own activation.
+(define (i-gen-thread)
+  (define-type <gen> (make <class> :name '<gen> :supers (list <top>) :slots '()))
+  (cons (make <gen>) (^x (of-type? x (<?> <gen>)))))
+(test* "generative internal type in threads" '(#t #f #f #t)
+       (let* ([run (^[] (thread-join! (thread-start! (make-thread i-gen-thread))))]
+              [a (run)]
+              [b (run)])
+         (list ((cdr a) (car a)) ((cdr a) (car b))
+               ((cdr b) (car a)) ((cdr b) (car b)))))
+
+;; The shape this is all for: an internal define-record-type, used both as a
+;; value (constructor and accessors) and in type expressions.
+(define (i-record x)
+  (define-record-type point #t #t px py)
+  (let1 p (make-point 1 2)
+    (list (point-px p)
+          (of-type? p point)
+          (of-type? x (<?> point))
+          (of-type? p (<?> point)))))
+(test* "internal define-record-type in a type expression"
+       '((1 #t #t #t) (1 #t #f #t))
+       (list (i-record #f) (i-record 3)))
+
+;; A local proxy type is built on entry to the scope, so the value of a
+;; generative define-type must be a type even if no type expression uses it.
+(test* "generative internal define-type with a non-type value"
+       (test-error <error> #/must stand for a type/)
+       (eval '(let () (define-type <t> (+ 40 2)) <t>) (current-module)))
+
+;; Out of scope for now: a `::' annotation is resolved at the compile time,
+;; so it can't refer to a type that only exists at runtime.
+(test* "generative internal type in a :: annotation is unsupported"
+       (test-error <error> #/Invalid type expression/)
        (eval '(define (h)
                 (define-type <gen>
                   (make <class> :name '<gen> :supers (list <top>) :slots '()))
-                (of-type? (make <gen>) (<?> <gen>)))
+                (define (k p :: <gen>) p)
+                (k (make <gen>)))
              (current-module)))
 
 (test* "set! on an internal type binding"
@@ -579,11 +660,28 @@
        (eval '(define (h) (define-type <t> <int>) (set! <t> 3))
              (current-module)))
 
+(test* "set! on a generative internal type binding"
+       (test-error <error> #/cannot assign to a type binding/)
+       (eval '(define (h)
+                (define-type <gen>
+                  (make <class> :name '<gen> :supers (list <top>) :slots '()))
+                (set! <gen> 3))
+             (current-module)))
+
 (test* "malformed internal define-type" (test-error)
        (eval '(define (h) (define-type <t>) 1) (current-module)))
 
 (test* "internal define-type clashing with an internal define" (test-error)
        (eval '(define (h) (define-type <t> <int>) (define <t> 3) 1)
+             (current-module)))
+
+(test* "generative internal define-type clashing with an internal define"
+       (test-error)
+       (eval '(define (h)
+                (define-type <t>
+                  (make <class> :name '<t> :supers (list <top>) :slots '()))
+                (define <t> 3)
+                1)
              (current-module)))
 
 (test-end)

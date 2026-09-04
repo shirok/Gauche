@@ -4,10 +4,11 @@
 ;; in the same file unless the compiler leaves a placeholder for it.
 
 (define-module type-binding
+  (use gauche.record)
   (export foo-myint foo-myclass foo-beginclass
           <myclass> <beginclass>
           <maybe-myint> <maybe-myclass> <maybe-beginclass>
-          runtime-class-name))
+          runtime-class-name local-record-type))
 (select-module type-binding)
 
 (define-type <myint_t> <int>)
@@ -50,3 +51,13 @@
 (define (runtime-class-name)
   (assume-type <runtime-class> <class>)
   (class-name <runtime-class>))
+
+;; An internal define-record-type used in a type expression.  The record type
+;; is generative---a fresh one per call---so the type expression is built at
+;; runtime and nothing about it is serialized into the precompiled code.
+(define (local-record-type x)
+  (define-record-type point #t #t px py)
+  (let1 p (make-point 1 2)
+    (list (point-px p)
+          (of-type? p (<?> point))
+          (of-type? x (<?> point)))))

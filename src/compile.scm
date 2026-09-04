@@ -273,10 +273,12 @@
 ;;                <type>     <obj>
 ;;                ----------------------------------------------
 ;;                LEXICAL    <lvar>            ;; lexical binding
-;;                SYNTAX     <macro>/<type>    ;; syntactic binding
+;;                SYNTAX     <macro>           ;; syntactic binding
+;;                           <type>            ;; internal type binding
+;;                           <local-type>      ;; ditto, generative
 ;;
-;;                Syntactic binding to <type> can be inserted by
-;;                internal define-type (see pass1/body-rec)
+;;                Syntactic binding to <type> or <local-type> is inserted
+;;                by internal define-type (see pass1/body-rec)
 ;;
 ;;     exp-name - The "name" of the current expression, that is, the
 ;;                name of the variable the result of the current
@@ -294,6 +296,20 @@
 
 (define-simple-struct cenv #f %make-cenv
   (module frames exp-name current-proc (source-path (current-load-path))))
+
+;; A local type binding.  It is created by an internal define-type whose
+;; value can't be computed at the compile time (local define-record-type).
+;; It is bound in a SYNTAX frame under the user-visible name, and
+;; names two hidden internal definitions in the same body: VALUE-NAME is
+;; bound to the value of the definition, and PROXY-NAME to a local proxy
+;; type standing for it.  An ordinary reference to the name compiles to
+;; VALUE-NAME, while a type constructor expression uses PROXY-NAME.
+;; See pass1/body-rec and type/construct.
+(define-simple-struct local-type 'local-type make-local-type
+  (value-name proxy-name))
+
+(define-inline (local-type? obj)
+  (and (vector? obj) (eq? (vector-ref obj 0) 'local-type)))
 
 (define (make-cenv module :optional (frames '()) (exp-name #f))
   (%make-cenv module frames exp-name))

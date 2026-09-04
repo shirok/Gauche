@@ -987,6 +987,14 @@
          (dynload-and-eval
           "type-binding"
           ((module-binding-ref 'type-binding 'runtime-class-name))))
+
+  ;; A type expression mentioning an internal define-record-type is built at
+  ;; runtime, so precompiling it doesn't need to serialize anything.
+  (test* "local record type in a type expression" '((1 #t #t) (1 #t #f))
+         (dynload-and-eval
+          "type-binding"
+          (let1 f (module-binding-ref 'type-binding 'local-record-type)
+            (list (f #f) (f 3)))))
   )
 
 (define (precomp-test-literal-mutex)

@@ -76,12 +76,12 @@
                      [(is-a? v <type>) v]
                      [else #f]))]
             [else #f]))]
-   [(type-constructor-call? expr cenv)
+   [(%type-constructor-call? expr cenv)
     (type/ensure (pass1 expr cenv) cenv)]
    [else #f]))
 
 ;; Is EXPR a call of a type constructor, such as (<?> <integer>)?
-(define (type-constructor-call? expr cenv)
+(define (%type-constructor-call? expr cenv)
   (and (pair? expr)
        (identifier? (car expr))
        (and-let* ([h (cenv-lookup cenv (car expr))]
@@ -89,52 +89,101 @@
          (receive (gval type) (global-call-type h cenv)
            (eq? type 'type-ctor)))))
 
-;; Called from pass1/global-call, when we detect (<type-ctor> arg ...)
-;; CTOR is the gloval value of type constructor,  IFORM is the $CALL node
-;; represents the ctor invocation.
-;; Since arguments for the type constructor have already gone through pass1,
-;; constant variable reference and type constructor calls are already
-;; handled.
+;; Returns the compile-time value of ARG, an IForm of an argument of a type
+;; constructor expression.  SRC is the source of the expression, for error
+;; messages.
+(define (type/arg-value arg src)
+  (cond [($const? arg) ($const-value arg)]
+        [(has-tag? arg $GREF)
+         ;; We recognize some "reserved keywords".
+         ;; NB: Semantically we could use free-identifier=?, but
+         ;; global-syntax=? is faster.
+         (cond [(global-syntax=? ($gref-id arg) id:*) '*]
+               [(global-syntax=? ($gref-id arg) id:->) '->]
+               [(gref-inlinable-gloc arg)
+                => (^[gloc]
+                     (let1 v (gloc-ref gloc)
+                       (if (is-a? v <class>)
+                         (wrap-with-proxy-type ($gref-id arg) gloc)
+                         v)))]
+               [else
+                (errorf "Can't use non-inlinable global variable `~s' in \
+                         type constructor expression: ~s"
+                        ($gref-id arg) src)])]
+        [else
+         ;; we can run constant folding here, but for the time being...
+         (error "Arguments of type constructor expression must be \
+                 a compile-time constant:" src)]))
 
-(define (type/construct ctor iform cenv)
-  (define (get-arg-value arg)
-    (cond [($const? arg) ($const-value arg)]
-          [(has-tag? arg $GREF)
-           ;; We recognize some "reserved keywords".
-           ;; NB: Semantically we could use free-identifier=?, but
-           ;; global-syntax=? is faster.
-           (cond [(global-syntax=? ($gref-id arg) id:*) '*]
-                 [(global-syntax=? ($gref-id arg) id:->) '->]
-                 [(gref-inlinable-gloc arg)
-                  => (^[gloc]
-                       (let1 v (gloc-ref gloc)
-                         (if (is-a? v <class>)
-                           (wrap-with-proxy-type ($gref-id arg) gloc)
-                           v)))]
-                 [else
-                  (errorf "Can't use non-inlinable global variable `~s' in \
-                           type constructor expression: ~s"
-                          ($gref-id arg)
-                          ($*-src iform))])]
-          [else
-           ;; we can run constant folding here, but for the time being...
-           (error "Arguments of type constructor expression must be \
-                   a compile-time constant:" ($*-src iform))]))
-  (define (check-arg-value val)
-    ;; For now, we restrict type ctor arguments to simple values
-    (unless (or (is-a? val <type>)
-                (number? val)
-                (boolean? val)
-                (string? val)
-                (symbol? val))
-      (error "Invalid value as type constructor argument:" val))
-    val)
+;; For now, we restrict type ctor arguments to simple values
+(define (type/check-arg-value val)
+  (unless (or (is-a? val <type>)
+              (number? val)
+              (boolean? val)
+              (string? val)
+              (symbol? val))
+    (error "Invalid value as type constructor argument:" val))
+  val)
 
+;; Called from pass1/global-call, when we detect (<type-ctor> arg ...).
+;;
+;; CTOR is the global value of the type constructor, ID the identifier it is
+;; named by, and PROGRAM the source of the whole call.
+;;
+;; Returns IForm - either a $const of computed type, or $call of
+;; construct-type to create a type at runtime.  The latter case is for
+;; local type binding.
+(define (type/construct ctor id program cenv)
+  ;; Check if any of args refer to a local type binding.
+  (define (type-args-have-local-type? args cenv)
+    (any (^a (or (boolean (%local-type-ref a cenv))
+                 (and (pair? a)
+                      (%type-constructor-call? a cenv)
+                      (type-args-have-local-type? (cdr a) cenv))))
+         args))
+  (if (type-args-have-local-type? (cdr program) cenv)
+    (%construct-runtime ctor program cenv)
+    (%construct-const ctor
+                      (pass1/call program ($gref id) (cdr program) cenv))))
+
+;; Construct the type now, and return it as a constant.
+;; IFORM is the $CALL node representing the ctor invocation.  Since its
+;; arguments have already gone through pass1, constant variable reference
+;; and type constructor calls are already handled.
+(define (%construct-const ctor iform)
   ;; Call type constructor
   (let1 type ($ construct-type ctor
-                (map ($ check-arg-value $ get-arg-value $) ($call-args iform)))
+                (map (^a (type/check-arg-value
+                          (type/arg-value a ($*-src iform))))
+                     ($call-args iform)))
     (unless (is-a? type <descriptive-type>)
       (errorf "Type costructor ~s returned an object other than a \
                type instance: ~s"
               ($*-src iform) type))
     ($const type)))
+
+;; Returns the local type binding EXPR refers to, or #f if EXPR isn't a
+;; reference to one.  See pass1/body-rec for local type bindings.
+(define (%local-type-ref expr cenv)
+  (and (identifier? expr)
+       (let1 v (cenv-lookup cenv expr)
+         (and (local-type? v) v))))
+
+;; Emit code that constructs the type of PROGRAM on each evaluation, out of
+;; the local proxy type the activation holds.  It is correct under re-entry
+;; and across threads, for the type is built from the activation's own value.
+(define (%construct-runtime ctor program cenv)
+  (define (arg-iform arg)
+    (cond [(%local-type-ref arg cenv)
+           => (^[lt] (pass1 (local-type-proxy-name lt) cenv))]
+          [(and (pair? arg) (%type-constructor-call? arg cenv))
+           ;; A nested type constructor call.  If it mentions a local type
+           ;; as well, pass1 brings it back here and it is built at runtime,
+           ;; too; otherwise it is folded into a $const.
+           (pass1 arg cenv)]
+          [else
+           ($const (type/check-arg-value
+                    (type/arg-value (pass1 arg cenv) program)))]))
+  ($call program ($gref construct-type.)
+         (list ($const ctor)
+               ($list program (map arg-iform (cdr program))))))

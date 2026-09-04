@@ -86,11 +86,10 @@
           [(inline) (or (pass1/expand-inliner program id gval cenv)
                         (pass1/call program ($gref id) (cdr program) cenv))]
           [(type-ctor)
-           ;; Type constructor have to be called during compilation,
-           ;; and the resulting node becomes ($const <type-instance>).
-           (type/construct gval
-                           (pass1/call program ($gref id) (cdr program) cenv)
-                           cenv)])
+           ;; Type constructor call may be computed at runtime and foleded
+           ;; into ($const <type>), or expanded into runtime type construction
+           ;; code.
+           (type/construct gval id program cenv)])
         (pass1/call program ($gref id) (cdr program) cenv))))
 
   ;; main body of pass1
@@ -113,6 +112,9 @@
                (call-syntax-handler h program cenv)]
               [(is-a? h <type>) ;; internal type binding, used as an operator
                (pass1/call program ($const h) (cdr program) cenv)]
+              [(local-type? h) ;; generative internal type binding, ditto
+               (pass1/call program (pass1 (local-type-value-name h) cenv)
+                           (cdr program) cenv)]
               [else (error "[internal] unknown resolution of head:" h)]))]
      [(pass1/detect-constant-setter-call (car program) cenv)
       => (^[setter]
@@ -145,6 +147,9 @@
              (pass1 (call-id-macro-expander r program cenv) cenv)]
             [(is-a? r <type>) ;; internal type binding (see pass1/body)
              ($const r)]
+            [(local-type? r) ;; generative internal type binding (ditto).
+             ;; A plain reference sees the value, not the proxy type.
+             (pass1 (local-type-value-name r) cenv)]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
 
@@ -330,6 +335,7 @@
     (cond
      [(lvar? head) (pass1/body-finish exprs mframe vframe cenv)]
      [(is-a? head <type>) (pass1/body-finish exprs mframe vframe cenv)]
+     [(local-type? head) (pass1/body-finish exprs mframe vframe cenv)]
      [(macro? head)  ; locally defined macro
       (body-macro-expand head exprs mframe vframe cenv)]
      [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
@@ -369,11 +375,33 @@
                (begin
                  (push! (cdr mframe) (cons var type))
                  (pass1/body-rec rest mframe vframe cenv))))
-           ;; The value can't be computed at the compile time (a generative
-           ;; type). Usually this is from internal define-record-type etc.
-           ;; For now, treat it just as internal define (runtime value).
-           (internal-env-expand `(,var :rec ,init . ,incsrc)
-                                mframe vframe rest))]
+           ;; The value can only be known at runtime (a generative type).
+           ;; Usually this is from internal define-record-type etc.  We keep
+           ;; the value in a hidden internal definition, and add another one
+           ;; holding a local proxy type standing for it.  VAR itself is
+           ;; bound in the macro frame to a record tying the two, so that a
+           ;; plain reference to VAR sees the value, while a type expression
+           ;; mentioning VAR sees the proxy.
+           (let* ([vname (gensym #"~(variable-name var).")]
+                  [pname (gensym #"~(variable-name var).proxy.")]
+                  [vdef `(,vname :rec ,init . ,incsrc)]
+                  [pdef `(,pname :rec (,%make-local-proxy-type. ,vname)
+                                 . ,incsrc)]
+                  [ltype (make-local-type vname pname)])
+             (dupe-check var mframe vframe)
+             (if (not mframe)
+               (let* ([cenv (cenv-extend cenv `((,var . ,ltype)) SYNTAX)]
+                      [mframe (car (cenv-frames cenv))]
+                      ;; NB: The frame keeps the definitions in the reverse
+                      ;; order; pass1/body-finish reverses it back.
+                      [cenv (cenv-extend cenv `(,pdef ,vdef) LEXICAL)]
+                      [vframe (car (cenv-frames cenv))])
+                 (pass1/body-rec rest mframe vframe cenv))
+               (begin
+                 (push! (cdr mframe) (cons var ltype))
+                 (push! (cdr vframe) vdef)
+                 (push! (cdr vframe) pdef)
+                 (pass1/body-rec rest mframe vframe cenv)))))]
         [_ (error "malformed internal define-type:" (caar exprs))])]
      [(global-syntax=? head define-syntax.) ; internal syntax definition
       (match args
@@ -550,6 +578,8 @@
 (define %make-id-transformer.          (global-id% '%make-id-transformer))
 (define %make-id-macro-dispatcher.     (global-id% '%make-id-macro-dispatcher))
 (define %with-inline-transformer.      (global-id% '%with-inline-transformer))
+(define %make-local-proxy-type.        (global-id% '%make-local-proxy-type))
+(define construct-type.                (global-id% 'construct-type))
 
 (define =>.               (global-id '=>))
 (define apply.            (global-id 'apply))
@@ -1954,7 +1984,7 @@
                       [var (cenv-lookup cenv name)]
                       [val (pass1 expr cenv)])
              (cond [(lvar? var) ($lset var val)]
-                   [(is-a? var <type>)
+                   [(or (is-a? var <type>) (local-type? var))
                     (error "syntax-error: cannot assign to a type binding:"
                            form)]
                    [else ($gset (ensure-identifier var cenv) val)]))

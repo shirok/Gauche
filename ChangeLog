@@ -1,5 +1,11 @@
 2026-09-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile-1.scm (pass1/body-rec), src/compile.scm (local-type):
+	  Handle an internal define-type whose value can't be computed
+	  at compile-time (e.g. local define-record-type).
+	* src/compile-t.scm (type/construct): Now generates $call to
+	  construct-type if the type can't be computed at runtime.
+
 	* src/libtype.scm (ScmDescriptiveType): Add 'local' flag to
 	  mark the type is constructed from locally bound generative
 	  type---e.g. local define-record-type.
