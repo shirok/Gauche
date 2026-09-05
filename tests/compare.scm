@@ -122,6 +122,61 @@
                (compare ay bx)
                (compare bx ay))))
 
+;; object-compare must be consulted for two distinct classes that are not
+;; in a subclass relationship, when a method is defined for the pair.
+;; https://github.com/shirok/Gauche/issues/1225
+(define-class <foo> () ())
+(define-class <bar> () ())
+(define-method object-compare ((_ <foo>) (_ <foo>)) 0)
+(define-method object-compare ((_ <bar>) (_ <bar>)) 0)
+(define-method object-compare ((_ <foo>) (_ <bar>)) -1)
+(define-method object-compare ((_ <bar>) (_ <foo>)) 1)
+
+(let ((foo (make <foo>))
+      (bar (make <bar>))
+      (foo2 (make <foo>)))
+  (test* "object-compare (distinct)"
+         '(-1 1 0)
+         (list (compare foo bar)
+               (compare bar foo)
+               (compare foo foo2))))
+
+;; A method defined on a common ancestor must be used for sibling classes.
+(define-class <base> ()
+  ((value :init-keyword :value)))
+
+(define-method object-compare ((self <base>) (other <base>))
+  (compare (slot-ref self 'value)
+           (slot-ref other 'value)))
+
+(define-class <derived-a> (<base>) ())
+(define-class <derived-b> (<base>) ())
+
+(let ((a1 (make <derived-a> :value 1))
+      (a2 (make <derived-a> :value 2))
+      (b1 (make <derived-b> :value 1))
+      (b2 (make <derived-b> :value 2)))
+  (test* "object-compare (inheritance)"
+         '(-1 -1)
+         (list (compare a1 a2)
+               (compare b1 b2)))
+  (test* "object-compare (inheritance, cross)"
+         '(-1 1)
+         (list (compare a1 b2)
+               (compare a2 b1))))
+
+;; Regression: two distinct classes with no applicable object-compare method
+;; must still fall through to the default ordering (by class name) and order
+;; deterministically, without raising "not comparable".
+(define-class <no-cmp-x> () ())
+(define-class <no-cmp-y> () ())
+(let ((x (make <no-cmp-x>))
+      (y (make <no-cmp-y>)))
+  (test* "object-compare (no method falls through)"
+         '(-1 1)
+         (list (compare x y)
+               (compare y x))))
+
 (test-section "builtin comparators")
 
 (let ()
