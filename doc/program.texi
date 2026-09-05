@@ -878,10 +878,14 @@ it goes into interactive read-eval-print loop (REPL).
 @c COMMON
 
 @c EN
-To exit the interpreter, type EOF (usually Control-D in Unix terminals)
+To exit the interpreter, type @code{,quit} or @code{,q}
+(one of the toplevel commands; see below),
+type EOT (usually Control-D in Unix terminals),
 or evaluate @code{(exit)}.
 @c JP
-インタプリタを終了するには、EOF文字(Unix端末では通常Control-D)をタイプするか、
+インタプリタを終了するには、@code{,quit}か@code{,q}とタイプするか
+(トップレベルコマンドのひとつ; 下記参照)、
+EOT(Unix端末では通常Control-D)をタイプするか、
 @code{(exit)}を評価します。
 @c COMMON
 
@@ -1158,6 +1162,7 @@ Commands can be abbreviated as far as it is not ambiguous.
  ,print-mode|pm
              View/set print-mode of REPL.
  ,pwd        Print working directory.
+ ,quit|q     Quit REPL.
  ,reload|r   Reload the specified module, using gauche.reload.
  ,sh         Run command via shell.
  ,source     Show source code of the procedure if it's available.

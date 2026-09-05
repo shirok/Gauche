@@ -474,3 +474,8 @@
          (newline))]
       [_ (usage)])
     *no-value*))
+
+(define-toplevel-command (quit q) :trim
+  "\
+ \nQuit REPL."
+  (^_ (eof-object)))

@@ -1,3 +1,8 @@
+2026-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/toplevel.scm (quit): Add ,q toplevel
+	  command.  https://github.com/shirok/Gauche/issues/1325
+
 2026-09-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1/body-rec), src/compile.scm (local-type):
