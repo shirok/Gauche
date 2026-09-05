@@ -103,32 +103,35 @@
                                    ;  constructed in rev order.
    ))
 
-(define (static-data-c-struct-name category)
-  (case category
-    [(constant) "scm__sc"]
-    [(runtime)  "scm__rc"]
-    [else (error "[cgen internal] invalid category:" category)]))
+(define (static-data-c-struct-name unit category)
+  (let1 prefix (cgen-safe-name (x->string (~ unit'name)))
+    (case category
+      [(constant) #"scm__~|prefix|_sc"]
+      [(runtime)  #"scm__~|prefix|_rc"]
+      [else (error "[cgen internal] invalid category:" category)])))
 
 (define (cgen-allocate-static-datum :optional (category 'runtime)
                                               (c-type   'ScmObj)
                                               (init-thunk #f))
 
+  (define unit (cgen-current-unit))
+
   (define (ensure-static-data-list category c-type)
-    (and-let* ([unit (cgen-current-unit)])
-      (let* ([cppc (cgen-cpp-conditions)]
-             [dl   (find (^[dl] (and (eq? (~ dl'c-type) c-type)
-                                     (eq? (~ dl'category) category)
-                                     (equal? (~ dl'cpp-conditions) cppc)))
-                         (~ unit'static-data-list))])
-        (or dl
-            (rlet1 new (make <cgen-static-data-list>
-                         :category category :c-type c-type)
-              (when (eq? c-type 'ScmPair)
-                ;; We need a sentinel at the beginning of ScmPair array
-                ;; See ScmExtendedPair description in gauche/priv/pairP.h.
-                (push! (~ new'init-thunks) "   { SCM_NIL, SCM_NIL }")
-                (inc! (~ new'count)))
-              (push! (~ unit'static-data-list) new))))))
+    (and unit
+         (let* ([cppc (cgen-cpp-conditions)]
+                [dl   (find (^[dl] (and (eq? (~ dl'c-type) c-type)
+                                        (eq? (~ dl'category) category)
+                                        (equal? (~ dl'cpp-conditions) cppc)))
+                            (~ unit'static-data-list))])
+           (or dl
+               (rlet1 new (make <cgen-static-data-list>
+                            :category category :c-type c-type)
+                 (when (eq? c-type 'ScmPair)
+                   ;; We need a sentinel at the beginning of ScmPair array
+                   ;; See ScmExtendedPair description in gauche/priv/pairP.h.
+                   (push! (~ new'init-thunks) "   { SCM_NIL, SCM_NIL }")
+                   (inc! (~ new'count)))
+                 (push! (~ unit'static-data-list) new))))))
 
   (let ([dl (ensure-static-data-list category c-type)]
         [value-type? (not init-thunk)]
@@ -138,11 +141,11 @@
       (inc! (~ dl'count))
       (if value-type?
         (format "~a.~a[~a]" ; no cast, for this'll be also used as lvalue.
-                (static-data-c-struct-name category)
+                (static-data-c-struct-name unit category)
                 (~ dl'c-member-name)
                 count)
         (format "SCM_OBJ(&~a.~a[~a])"
-                (static-data-c-struct-name category)
+                (static-data-c-struct-name unit category)
                 (~ dl'c-member-name)
                 count)))))
 
@@ -166,7 +169,7 @@
   ;; depending on cpp conditions, and we don't want the compiler warn
   ;; about unused static var.
   (define (emit-struct-def category dls)
-    (let1 name (static-data-c-struct-name category)
+    (let1 name (static-data-c-struct-name unit category)
       (format #t "static ~astruct ~aRec {\n"
               (if (eq? category 'constant) "SCM_CGEN_CONST " "")
               name)
@@ -194,11 +197,15 @@
     (unless (null? dls)
       ;; This piece of code is required, for Win32 DLL doesn't like
       ;; structures to be const if it contains SCM_CLASS_PTR.  Doh!
+      ;; NB: The guard allows more than one unit's static data to be
+      ;; emitted into a single C file.
+      (print "#ifndef SCM_CGEN_CONST")
       (print "#if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)")
       (print "#define SCM_CGEN_CONST /*empty*/")
       (print "#else")
       (print "#define SCM_CGEN_CONST const")
-      (print "#endif"))
+      (print "#endif")
+      (print "#endif /*SCM_CGEN_CONST*/"))
     (emit-one-category 'constant dls)
     (emit-one-category 'runtime dls)
     ))

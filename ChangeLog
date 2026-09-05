@@ -1,3 +1,9 @@
+2026-09-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/literal.scm: Attach unit name to the static
+	  data structures,  This allows to generate code from
+	  multiple units into a single file.
+
 2026-09-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/toplevel.scm (quit): Add ,q toplevel
