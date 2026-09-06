@@ -1619,6 +1619,17 @@ multiple lines, or moves to previous or next history.
 @code{M-<}と@code{M->}は入力バッファの最初または最後にカーソルを移動します。
 @c COMMON
 
+@c EN
+@code{M-C-f} and @code{M-C-b} move the cursor for one-S-expression
+forward/backward.  @code{M-C-a} moves the cursor to the beginning of
+the current toplevel sexp.  @code{M-C-u} moves the cursor to the
+head of the list in which the current cursor is.
+@c JP
+@code{M-C-f}と@code{M-C-b}はカーソルをS式単位で前後に動かします。
+@code{M-C-a}は現在のトップレベルS式の開始位置に、
+@code{M-C-u}は現在のカーソルを囲むリストの先端にカーソルを移動します。
+@c COMMON
+
 @subsubheading Undo
 
 @c EN
