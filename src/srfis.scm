@@ -1884,3 +1884,13 @@ using @code{srfi.274} imports procedures defined in this srfi
 この拡張を備えています。移植性のために、@code{srfi.274}をuseすると
 このsrfiで定義される手続きがインポートされます
 (@ref{Extended list conversion procedures}参照)。
+
+
+srfi-277, srfi-277
+()
+
+Cyclic ports
+Supported by the module @code{srfi.277} (@pxref{Cyclic ports}).
+
+循環ポート
+モジュール@code{srfi.277}でサポートされます (@ref{Cyclic ports}参照)。
