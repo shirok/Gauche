@@ -54,6 +54,16 @@
 ;; export it, but needs better name if we do so.)
 (define (join/comma strs) (string-join strs ", "))
 
+;; Prefix prepended to every C identifier we emit for a with-ffi form.
+;; The :stub subsystem compiles each form into its own DSO, where the plain
+;; names can't collide, so it leaves this empty.  The :aot subsystem renders
+;; every form of a source file into one C file, so it passes a per-unit
+;; prefix to keep them apart.
+(define ffi-c-name-prefix (make-parameter ""))
+
+(define (ffi-cname fmt . args)
+  (string-append (ffi-c-name-prefix) (apply format fmt args)))
+
 ;;;
 ;;; On-the-fly sub-stub generation for float variadic arguments
 ;;;
@@ -78,7 +88,9 @@
 ;; ret-type        : <native-type> for the return value
 ;; fn-ptr-scm      : intptr_t-as-Scheme-integer encoding the C function ptr
 ;; key             : integer (nvargs << *max-variadic-args*) | float-mask
-;; c-name          : string, C-safe name of the outer function
+;; c-name          : string, C-safe name of the outer function, carrying
+;;                   the unit's C-name prefix (see ffi-substub-name), so
+;;                   that the symbol registered below is unique
 (define (%generate-float-substub fixed-arg-types ret-type fn-ptr-scm key c-name)
   (let* ([nvargs     (ash key (- *max-variadic-args*))]
          [float-mask (logand key (- (ash 1 *max-variadic-args*) 1))]
@@ -201,26 +213,26 @@
 ;; Name of the static ScmObj variable that holds the return type for boxing
 ;; for a function that returns a <c-pointer>.
 (define (ffi-rettype-varname cfn)
-  (format "ffi_rettype_~a" (~ cfn'c-name)))
+  (ffi-cname "ffi_rettype_~a" (~ cfn'c-name)))
 
 ;; Name of the static ScmObj variable that holds the fixed arg types list
 ;; for a variadic function (used by %generate-float-substub at call time).
 (define (ffi-substub-argtypes-varname cfn)
-  (format "ffi_substub_argtypes_~a" (~ cfn'c-name)))
+  (ffi-cname "ffi_substub_argtypes_~a" (~ cfn'c-name)))
 
 ;; Name of the static ScmObj variable that holds the return type Scheme object
 ;; for a variadic function (passed to %generate-float-substub).
 (define (ffi-substub-rettype-varname cfn)
-  (format "ffi_substub_rettype_~a" (~ cfn'c-name)))
+  (ffi-cname "ffi_substub_rettype_~a" (~ cfn'c-name)))
 
 ;; Name of the static ScmObj hash table used to cache per-pattern sub-stubs
 ;; for a variadic function.
 (define (ffi-substub-table-varname cfn)
-  (format "ffi_substub_table_~a" (~ cfn'c-name)))
+  (ffi-cname "ffi_substub_table_~a" (~ cfn'c-name)))
 
 ;; Name of the static ScmInternalMutex variable to lock substub table.
 (define (ffi-substub-mutex-varname cfn)
-  (format "ffi_substub_mutex_~a" (~ cfn'c-name)))
+  (ffi-cname "ffi_substub_mutex_~a" (~ cfn'c-name)))
 
 ;;
 ;; Callback static-variable name helpers.
@@ -231,17 +243,17 @@
 
 ;; Cache for the resolved Scheme procedure (lazy via SCM_BIND_PROC).
 (define (ccb-proc-varname ccb)
-  (format "cb_~a_proc" (~ ccb'c-name)))
+  (ffi-cname "cb_~a_proc" (~ ccb'c-name)))
 
 ;; Module to look the Scheme procedure up in (the with-ffi caller's module).
 (define (ccb-mod-varname ccb)
-  (format "cb_~a_mod" (~ ccb'c-name)))
+  (ffi-cname "cb_~a_mod" (~ ccb'c-name)))
 
 ;; Pointee <native-type> for the i-th argument, only used when arg-types[i]
 ;; is a <c-pointer>.  Lets us wrap incoming raw C pointers in native handles
 ;; when boxing.
 (define (ccb-argtype-varname ccb i)
-  (format "cb_~a_argtype_~a" (~ ccb'c-name) i))
+  (ffi-cname "cb_~a_argtype_~a" (~ ccb'c-name) i))
 
 ;; Pointee <native-type> for the return, only used when return-type is a
 ;; <c-pointer>.  Required to box a Scheme-returned handle back into a C
@@ -249,7 +261,28 @@
 ;; Scm_NativeHandlePtr directly and does not need this, but we still
 ;; declare it for symmetry with the function side.)
 (define (ccb-rettype-varname ccb)
-  (format "cb_~a_rettype" (~ ccb'c-name)))
+  (ffi-cname "cb_~a_rettype" (~ ccb'c-name)))
+
+;; Name of the C function implementing a callback.  Its address is handed to
+;; the foreign code, and it is static, so prefixing it is safe.
+(define (ccb-c-fname ccb)
+  (ffi-cname "~a" (~ ccb'c-name)))
+
+;; These take the c-name string, since that is what the emitters have at hand.
+;; Static function pointer holding the address of the foreign function.
+(define (ffi-fn-varname c-name) (ffi-cname "ffi_fn_~a" c-name))
+;; SUBR body function wrapping the foreign function.
+(define (ffi-subr-varname c-name) (ffi-cname "ffi_subr_~a" c-name))
+;; The unit's setup function.
+(define (ffi-setup-fname) (ffi-cname "ffisetup"))
+
+;; The name the runtime float sub-stub machinery keys off.  The generated
+;; code passes it to %generate-float-substub, which derives from it both a C
+;; identifier and a Scheme symbol registered in gauche.ffi.stubgen.  That
+;; symbol is shared process-wide, so it has to carry the prefix too---
+;; otherwise two same-named variadic functions rendered into one C file by
+;; the :aot subsystem would fight over it.
+(define (ffi-substub-name c-name) (ffi-cname "~a" c-name))
 
 ;; Convert a <native-type> to a C type string.
 (define (%type->c-type type)
@@ -320,8 +353,8 @@
          [arg-c-str (if (null? arg-types)
                       "void"
                       (join/comma (map %type->c-type arg-types)))])
-    (cgen-decl (format "static ~a (*ffi_fn_~a)(~a~a) = NULL;"
-                       ret-c c-name arg-c-str
+    (cgen-decl (format "static ~a (*~a)(~a~a) = NULL;"
+                       ret-c (ffi-fn-varname c-name) arg-c-str
                        (if variadic? ", ..." "")))))
 
 ;; Emit the SUBR function for one FFI function (body section).
@@ -342,11 +375,11 @@
          [ret-typevar (and (c-pointer-like-type? ret-type)
                            (ffi-rettype-varname cfn))])
     (cgen-body
-     (format "static ScmObj ffi_subr_~a(ScmObj *args, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
-             c-name))
+     (format "static ScmObj ~a(ScmObj *args, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
+             (ffi-subr-varname c-name)))
     (cgen-body "{")
     ;; Guard: function pointer must have been set up
-    (cgen-body (format "    if (ffi_fn_~a == NULL)" c-name))
+    (cgen-body (format "    if (~a == NULL)" (ffi-fn-varname c-name)))
     (cgen-body (format "        Scm_Error(\"FFI: ~a is not initialized; call with-ffi first\");"
                        (symbol->string scm-name)))
     ;; Unbox each argument into a typed C local variable
@@ -358,8 +391,8 @@
      arg-types)
     ;; Build the call expression and box the result
     (let1 call-expr
-        (format "ffi_fn_~a(~a)"
-                c-name
+        (format "~a(~a)"
+                (ffi-fn-varname c-name)
                 (join/comma (map (^i (format "arg~a" i))
                                  (iota (length arg-types)))))
       (cgen-body (format "    return ~a;"
@@ -400,11 +433,11 @@
          [argtypes-var (ffi-substub-argtypes-varname cfn)]
          [rettype-var  (ffi-substub-rettype-varname cfn)])
     (cgen-body
-     (format "static ScmObj ffi_subr_~a(ScmObj *args, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
-             c-name))
+     (format "static ScmObj ~a(ScmObj *args, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
+             (ffi-subr-varname c-name)))
     (cgen-body "{")
     ;; Guard: function pointer must have been set up
-    (cgen-body #"    if (ffi_fn_~|c-name| == NULL)"
+    (cgen-body #"    if (~(ffi-fn-varname c-name) == NULL)"
                #"        Scm_Error(\"FFI: ~(symbol->string scm-name) \
                                    is not initialized; call with-ffi first\");")
     ;; Unbox fixed arguments
@@ -447,7 +480,7 @@
       (let* ([fixed-args (map (^i (format "arg~a" i)) (iota nfixed))]
              [var-args   (map (^i (format "va_[~a]" i)) (iota n))]
              [all-args   (join/comma (append fixed-args var-args))]
-             [call-expr  (format "ffi_fn_~a(~a)" c-name all-args)])
+             [call-expr  (format "~a(~a)" (ffi-fn-varname c-name) all-args)])
         (cgen-body (format "        case ~a: return ~a; break;"
                            n (%type->box-expr ret-type call-expr
                                               ret-typevar)))))
@@ -485,13 +518,13 @@
      #"            SCM_BIND_PROC(generate_float_substub_proc,"
      #"                          \"%generate-float-substub\","
      #"                          SCM_FIND_MODULE(\"gauche.ffi.stubgen\", 0));"
-     #"            ScmObj fnptr_ = Scm_IntptrToInteger((intptr_t)(void*)ffi_fn_~c-name);"
+     #"            ScmObj fnptr_ = Scm_IntptrToInteger((intptr_t)(void*)~(ffi-fn-varname c-name));"
      #"            sub_ = Scm_ApplyRec(generate_float_substub_proc,"
      #"                                Scm_List(~argtypes-var,"
      #"                                         ~rettype-var,"
      #"                                         fnptr_,"
      #"                                         SCM_MAKE_INT(key_),"
-     #"                                         SCM_MAKE_STR(\"~c-name\"), NULL));"
+     #"                                         SCM_MAKE_STR(\"~(ffi-substub-name c-name)\"), NULL));"
      #"            SCM_INTERNAL_MUTEX_LOCK(~mutex-var);"
      #"            Scm_HashTableSet(SCM_HASH_TABLE(~table-var), SCM_MAKE_INT(key_), sub_, 0);"
      #"            SCM_INTERNAL_MUTEX_UNLOCK(~mutex-var);"
@@ -550,9 +583,9 @@
     ;; Signature
     (cgen-body
      (if (null? arg-vars)
-       (format "static ~a ~a(void)" ret-c c-name)
+       (format "static ~a ~a(void)" ret-c (ccb-c-fname ccb))
        (format "static ~a ~a(~a)"
-               ret-c c-name
+               ret-c (ccb-c-fname ccb)
                (join/comma
                 (map (^[ct cn] (format "~a ~a" ct cn))
                      arg-c-types arg-c-names)))))
@@ -637,7 +670,7 @@
         (format #t "      Scm_Define(target_mod_, SCM_SYMBOL(SCM_INTERN(~a)),\n"
                 (cgen-safe-string (symbol->string scm-name)))
         (format #t "                 Scm_MakeNativeHandleSimple((void*)~a, fn_type_));\n"
-                c-name)
+                (ccb-c-fname ccb))
         (display "    }\n")))))
 
 ;; Return a string with the setup code for one FFI function.
@@ -660,14 +693,14 @@
             \n        Scm_Error(\"FFI setup: symbol ~a not found in library\");"
              c-name)
      "\n"
-     (format "    *(void**)&ffi_fn_~a = Scm_NativeHandlePtr(SCM_NATIVE_HANDLE(fptr));"
-             c-name)
+     (format "    *(void**)&~a = Scm_NativeHandlePtr(SCM_NATIVE_HANDLE(fptr));"
+             (ffi-fn-varname c-name))
      "\n"
      ;; Pop the per-function tags alist from tags_ and define the tagged subr.
      (format "      Scm_Define(target_mod_, SCM_SYMBOL(SCM_INTERN(~a)),\
-             \n      Scm_MakeSubrWithTags(ffi_subr_~a, NULL, ~a, ~a, SCM_INTERN(~a), ~a));"
+             \n      Scm_MakeSubrWithTags(~a, NULL, ~a, ~a, SCM_INTERN(~a), ~a));"
              (cgen-safe-string (symbol->string scm-name))
-             c-name
+             (ffi-subr-varname c-name)
              nfixed
              optional
              (cgen-safe-string (symbol->string scm-name))
@@ -729,7 +762,12 @@
 ;;; Generate C code from a list of <foreign-c-function> instances.
 ;;;
 
-(define (generate-ffi-c-code-unit cdef-instances c-headers)
+;; C-NAME-PREFIX is prepended to every C identifier the unit defines.  The
+;; :stub subsystem gets its own DSO per with-ffi form and leaves it empty;
+;; the :aot subsystem passes a per-unit prefix, since all the forms of a
+;; source file end up in one C file.
+(define (generate-ffi-c-code-unit cdef-instances c-headers
+                                  :key (c-name-prefix ""))
   (define unit-name (symbol->string (gensym "ffi")))
   (define cfn-instances
     (filter (cut is-a? <> <foreign-c-function>) cdef-instances))
@@ -753,9 +791,14 @@
   ;; the sub-stub generation machinery.
   (define variadic-cfns
     (filter (^[cfn] (~ cfn'variadic?)) cfn-instances))
-  (parameterize ([cgen-current-unit unit])
+  (parameterize ([cgen-current-unit unit]
+                 [ffi-c-name-prefix c-name-prefix])
     (cgen-decl "#include <gauche.h>")
-    (cgen-decl #"#define SCM_STUBGEN_MAX_VARIADIC_ARGS ~*max-variadic-args*")
+    ;; Guarded: the :aot subsystem may render more than one unit into a
+    ;; single C file.
+    (cgen-decl #"#ifndef SCM_STUBGEN_MAX_VARIADIC_ARGS"
+               #"#define SCM_STUBGEN_MAX_VARIADIC_ARGS ~*max-variadic-args*"
+               #"#endif")
     (dolist [hdr c-headers]
       (cgen-decl #"#include <~|hdr|>"))
 
@@ -792,7 +835,7 @@
     ;;   argv[3] = list of callback infos (one per callback)
     ;;   argv[4] = target module (where to Scm_Define each function)
     (cgen-body ""
-               "static ScmObj ffisetup(ScmObj *argv, int argc, void *data)"
+               #"static ScmObj ~(ffi-setup-fname)(ScmObj *argv, int argc, void *data)"
                "{"
                "    SCM_ASSERT(argc == 5);"
                "    ScmObj dlobj = argv[0];"
@@ -837,7 +880,7 @@
 
     (cgen-init "    Scm_Define(SCM_CURRENT_MODULE(),"
                "               SCM_SYMBOL(SCM_INTERN(\"ffisetup\")),"
-               "               Scm_MakeSubr(ffisetup, NULL, 5, 0, SCM_FALSE));")
+               #"               Scm_MakeSubr(~(ffi-setup-fname), NULL, 5, 0, SCM_FALSE));")
     )
   ;; Return unit
   unit)
