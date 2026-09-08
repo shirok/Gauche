@@ -515,6 +515,7 @@ SCM_CLASS_DECL(Scm_ProxyTypeClass);
  */
 SCM_EXTERN ScmObj    Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref);
 SCM_EXTERN ScmObj    Scm_ProxyTypeRef(ScmProxyType *p);
+SCM_EXTERN void      Scm_ProxyTypeSetValue(ScmProxyType *p, ScmObj type);
 SCM_EXTERN ScmObj    Scm_ProxyTypeId(ScmProxyType *p);
 
 /* Returns the GLOC the proxy type refers to, or NULL if it isn't resolved

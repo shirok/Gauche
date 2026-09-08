@@ -485,14 +485,20 @@
     (SCM_TYPE_ERROR gloc "gloc"))
   (return (Scm_MakeProxyType (SCM_IDENTIFIER id) (SCM_GLOC gloc))))
 
-;; Creates a deferred proxy type, that is, a proxy type for a type binding
+;; Creates a deferred proxy type, a proxy type for a type binding
 ;; that isn't available yet.  Called from the compiler when it sees a
 ;; define-type; whose value can't be computed at the compile time
 ;; (see pass1/define-type).
-(define-cproc %make-deferred-proxy-type (id)
+;; The optional VALUE is the type the proxy stands for, when the caller
+;; could compute it.  It lets the proxy be dereferenced before its binding
+;; is executed; it is not serialized into precompiled output.
+(define-cproc %make-deferred-proxy-type (id :optional (value #f))
   (unless (SCM_IDENTIFIERP id)
     (SCM_TYPE_ERROR id "identifier"))
-  (return (Scm_MakeProxyType (SCM_IDENTIFIER id) NULL)))
+  (let* ([p (Scm_MakeProxyType (SCM_IDENTIFIER id) NULL)])
+    (unless (SCM_FALSEP value)
+      (Scm_ProxyTypeSetValue (SCM_PROXY_TYPE p) value))
+    (return p)))
 
 ;; Creates a local proxy type, that is, a proxy type that holds the locally
 ;; bound generative type, instead of referring to it through a global binding.

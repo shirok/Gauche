@@ -1,3 +1,13 @@
+2026-09-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, src/libtype.scm (%make-deferred-proxy-type):
+	  Introduced deferred proxy type, works as a placeholder
+	  of global type binding when it needs to be derefenced
+	  at compile time before the binding is done at runtime.
+	* lib/gauche/cgen/precomp.scm: Use deferred proxy type
+	  so that define-type'd types can be used in type
+	  expressions with the same compilation unit.
+
 2026-09-06  Shiro Kawai  <shiro@acm.org>
 
 	* Officially support srfi-277.

@@ -3412,11 +3412,33 @@ ScmObj Scm_ProxyTypeRef(ScmProxyType *p)
 {
     if (p->id == NULL) return p->value; /* local proxy type */
     ScmGloc *g = Scm_ProxyTypeGloc(p);
-    if (g == NULL) {
-        Scm_Error("Identifier wrapped by a proxy-type is unbound: %S",
-                  SCM_OBJ(p->id));
+    if (g != NULL) {
+        ScmObj t = proxy_type_get_type(p->id, g);
+        /* A deferred proxy the compiler installed as the placeholder of
+           its own binding resolves to itself.  If we recorded the value at
+           the definition site, hand that out instead, so the type can be
+           dereferenced before the binding is executed. */
+        if (!SCM_EQ(t, SCM_OBJ(p))) return t;
+        if (!SCM_FALSEP(p->value)) return p->value;
+        return t;
     }
-    return proxy_type_get_type(p->id, g);
+    if (!SCM_FALSEP(p->value)) return p->value;
+    Scm_Error("Identifier wrapped by a proxy-type is unbound: %S",
+              SCM_OBJ(p->id));
+    return SCM_UNDEFINED;       /* NOTREACHED */
+}
+
+/* Records the compile-time value of a deferred proxy type.  See the
+   comment on ScmProxyTypeRec.value. */
+void Scm_ProxyTypeSetValue(ScmProxyType *p, ScmObj type)
+{
+    if (p->id == NULL) {
+        Scm_Error("Can't set a value of a local proxy type");
+    }
+    if (!SCM_ISA(type, SCM_CLASS_TYPE)) {
+        Scm_Error("A proxy type must stand for a type, but got: %S", type);
+    }
+    p->value = type;
 }
 
 /* Returns the identifier the proxy type refers to, or #f if it is a local
