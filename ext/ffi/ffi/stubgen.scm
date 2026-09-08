@@ -766,8 +766,13 @@
 ;; :stub subsystem gets its own DSO per with-ffi form and leaves it empty;
 ;; the :aot subsystem passes a per-unit prefix, since all the forms of a
 ;; source file end up in one C file.
+;; SETUP-SCM-NAME is the name the setup procedure is bound to, in the module
+;; that is current when the unit's init code runs.  The :stub subsystem loads
+;; one DSO per with-ffi form and can use the plain name; the :aot subsystem
+;; puts every form of a source file in one module, so it passes a unique one.
 (define (generate-ffi-c-code-unit cdef-instances c-headers
-                                  :key (c-name-prefix ""))
+                                  :key (c-name-prefix "")
+                                       (setup-scm-name "ffisetup"))
   (define unit-name (symbol->string (gensym "ffi")))
   (define cfn-instances
     (filter (cut is-a? <> <foreign-c-function>) cdef-instances))
@@ -879,7 +884,7 @@
                "}")
 
     (cgen-init "    Scm_Define(SCM_CURRENT_MODULE(),"
-               "               SCM_SYMBOL(SCM_INTERN(\"ffisetup\")),"
+               #"               SCM_SYMBOL(SCM_INTERN(~(cgen-safe-string setup-scm-name))),"
                #"               Scm_MakeSubr(~(ffi-setup-fname), NULL, 5, 0, SCM_FALSE));")
     )
   ;; Return unit

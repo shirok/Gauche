@@ -1693,9 +1693,24 @@
      (values tag (native-type sig) enumerators)]
     [_ (error "Invalid .enum signature:" (cons '.enum rest))]))
 
+;; A deferred proxy type can appear in type signature if the code is
+;; precompiled.  This unwraps such proxies at runtime.
+;; NB: If proxy is unresolvable (i.e. the type hasn't been actually
+;; defined at this point), %unproxy leaves the proxy type itself.  It'll
+;; rejected by later phases.
+(define (%unproxy-signature sig)
+  (cond [(is-a? sig <proxy-type>) (%unproxy sig)]
+        [(pair? sig)
+         (let ([a (%unproxy-signature (car sig))]
+               [d (%unproxy-signature (cdr sig))])
+           (if (and (eq? a (car sig)) (eq? d (cdr sig)))
+             sig                        ;avoid reallocating unchanged lists
+             (cons a d)))]
+        [else sig]))
+
 (define (native-type signature)
-  (let rec ((signature signature)
-            (signedness #f))
+  (let rec ([signature (%unproxy-signature signature)]
+            [signedness #f])
     (define (no-signedness)
       (when signedness
         (errorf "~a can't be used with ~s" signature signedness)))

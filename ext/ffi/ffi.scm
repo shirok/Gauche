@@ -47,7 +47,9 @@
           <foreign-c-callback>
           <foreign-c-constant>
           <foreign-c-enum>
-          foreign-function-info)
+          foreign-function-info
+          ffi-setup-arguments
+          ffi-reify-enums)
   )
 (select-module gauche.ffi)
 
@@ -226,7 +228,7 @@
 ;; API
 (define (ffi-subsystem-available? kw)
   (case kw
-    [(:stub) #t]
+    [(:stub :aot) #t]
     [(:native) (boolean (#/^x86_64-.*/ (gauche-architecture)))]
     [else (error "Unrecognized FFI subsystem:" kw)]))
 
@@ -262,6 +264,7 @@
      (syntax-error "define-c-enum used outside with-ffi")]))
 
 (autoload gauche.ffi.stub    (:macro with-stub-ffi))
+(autoload gauche.ffi.aot     (:macro with-aot-ffi))
 (autoload gauche.ffi.native  (:macro with-native-ffi))
 (autoload gauche.ffi.ffiaux  native-alloc native-free)
 
@@ -323,7 +326,10 @@
                       :return-type rtype
                       :variadic? variadic?*
                       :tag-info `((foreign-function-tag
-                                   :dlobj ,(~ ,dlo-var'path)
+                                   ;; The :aot subsystem evaluates this at
+                                   ;; macro-expansion time, where the dlobj
+                                   ;; doesn't exist yet.
+                                   :dlobj ,(and ,dlo-var (~ ,dlo-var'path))
                                    :subsystem ,',subsystem
                                    :argtypes ,(map native-type->signature atypes)
                                    :rettype ,(native-type->signature rtype)))))))]))
@@ -482,4 +488,66 @@
            (quasirename r
              `(with-stub-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
                              ,cenum-names ,final-forms))]
+          [(:aot)
+           (quasirename r
+             `(with-aot-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
+                            ,cenum-names ,final-forms))]
           )]))))
+
+;;;
+;;; Runtime support for the subsystems that generate a C stub
+;;;
+
+;; The :stub and :aot subsystems both drive the ffisetup procedure that
+;; gauche.ffi.stubgen generates.  These two helpers live here, rather than
+;; alongside the generator, so that the runtime path doesn't have to pull in
+;; the code-generation machinery.
+;;
+;; Compute the extra arguments the generated ffisetup takes, from the cdef
+;; instances.  Returns three values:
+;;
+;; pointer-ret-types   : return types of the pointer-returning functions, in
+;;                       order; ffisetup stores them in the per-function
+;;                       static type variables used when boxing the result.
+;; variadic-type-infos : (fixed-arg-types . ret-type) per variadic function,
+;;                       in order; these populate the sub-stub type variables
+;;                       %generate-float-substub needs at call time.
+;; callback-infos      : one entry per <foreign-c-callback>, in order, of
+;;                         (function-type ret-pointee-or-#f arg-pointee-or-#f ...)
+;;                       function-type is the <c-function> instance used to
+;;                       bind <name> as a native handle; the pointee entries
+;;                       are the c-pointer types needed to box raw C pointers,
+;;                       or #f for a non-pointer (the slot is consumed either
+;;                       way, to keep the order parallel).
+(define (ffi-setup-arguments cdef-instances)
+  (values
+   (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
+                             (c-pointer-like-type? (~ cdef'return-type))
+                             (~ cdef'return-type)))
+               cdef-instances)
+   (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
+                             (~ cdef'variadic?)
+                             (cons (~ cdef'arg-types)
+                                   (~ cdef'return-type))))
+               cdef-instances)
+   (filter-map
+    (^[cdef]
+      (and (is-a? cdef <foreign-c-callback>)
+           (let ([atypes (~ cdef'arg-types)]
+                 [rtype  (~ cdef'return-type)])
+             `(,(make-c-function-type rtype atypes)
+               ,(and (c-pointer-like-type? rtype) rtype)
+               ,@(map (^t (and (c-pointer-like-type? t) t)) atypes)))))
+    cdef-instances)))
+
+;; ffisetup returns the reified enumerator lists, one per <foreign-c-enum> in
+;; declaration order.  Turn each into a <c-enum>; the caller binds them to the
+;; enum-set names.
+;; TODO: make-c-enum-type's "value out of range" error doesn't say which enum
+;; or enumerator is at fault.  Here the values come from the C compiler, so
+;; the user's mistake is the declared base type; we should add that context.
+(define (ffi-reify-enums cdef-instances enumerator-lists)
+  (map (^[cen enumerators]
+         (make-c-enum-type (~ cen'tag) (~ cen'base-type) enumerators))
+       (filter (cut is-a? <> <foreign-c-enum>) cdef-instances)
+       enumerator-lists))

@@ -1,5 +1,11 @@
 2026-09-07  Shiro Kawai  <shiro@acm.org>
 
+	* ext/ffi/ffi.scm, ext/ffi/ffi/aot.scm: Support :aot
+	  subsystem of FFI.  You can run precomp on
+	  (with-ffi ... (:subsystem :aot) ...) so that the generated
+	  stub code is precompiled together, instead of generate&compile
+	  at runtime.  This still needs to dlopen the target library.
+
 	* src/class.c, src/libtype.scm (%make-deferred-proxy-type):
 	  Introduced deferred proxy type, works as a placeholder
 	  of global type binding when it needs to be derefenced
