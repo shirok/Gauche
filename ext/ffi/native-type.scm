@@ -188,7 +188,21 @@
 ;;; Aggregate type constructors
 ;;;
 
+;; precomp wraps compile-time type values with proxy-type, as they may
+;; need to be computed at runtime, and such proxies can be passed to
+;; make-c-pointer-type etc.  At runtime, we need to strip it.
+;; Note: "Pure" placholding proxy--awaiting the real type to be assigned
+;; at runrime--is marked as t == (proxy-type-ref t).  %unproxy returns
+;; the such proxy type as is.
+(define (%unproxy t)
+  (let loop ([t t])
+    (if (is-a? t <proxy-type>)
+      (let1 u (proxy-type-ref t)
+        (if (eq? u t) t (loop u)))
+      t)))
+
 (define (make-c-pointer-type pointee-type)
+  (set! pointee-type (%unproxy pointee-type))
   (assume-type pointee-type <native-type>)
   (let* ([bare-name (regexp-replace* (symbol->string (~ pointee-type'name))
                                      #/^</ ""
@@ -199,11 +213,12 @@
 ;; Argument-types are list of native types, optionally end with
 ;; a symbol ... for varargs.
 (define (make-c-function-type return-type argument-types)
+  (set! return-type (%unproxy return-type))
   (assume-type return-type <native-type>)
   (receive (arg-types variadic?)
       (if (and (pair? argument-types) (eq? (last argument-types) '...))
-        (values (drop-right argument-types 1) #t)
-        (values argument-types #f))
+        (values (map %unproxy (drop-right argument-types 1)) #t)
+        (values (map %unproxy argument-types) #f))
     (dolist [arg-type arg-types]
       (assume-type arg-type <native-type>))
     (%make-c-function-type
@@ -215,6 +230,7 @@
 (define (make-c-array-type element-type dimensions)
   ;; allow single integer or '* for 1-dim array
   (define dims (if (list? dimensions) dimensions (list dimensions)))
+  (set! element-type (%unproxy element-type))
   (assume-type element-type <native-type>)
   (let loop ([dims dims])
     (cond [(null? dims)]
@@ -257,7 +273,8 @@
             (%make-c-struct/union-type
              (if struct? <c-struct> <c-union>)
              name size alignment (if bounded 1 0) tag (reverse descs))))]
-      [(((? symbol? fname) ftype) . rest)
+      [(((? symbol? fname) ftype0) . rest)
+       (define ftype (%unproxy ftype0))
        (assume-type ftype <native-type>)
        (when (and (not bounded) struct?)
          (error "Struct type can have unbounded field only at the end:" fs))
