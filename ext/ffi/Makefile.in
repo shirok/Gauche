@@ -17,7 +17,8 @@ PREGENERATED =
 XCLEANFILES = gauche--native-type.c native-type.sci \
 	      gauche--ffi--ffiaux.c ffi/ffiaux.sci \
 	      f.$(OBJEXT) f.$(SOEXT) \
-	      g.$(OBJEXT) g.$(SOEXT)
+	      g.$(OBJEXT) g.$(SOEXT) \
+	      test-aot.o
 
 all : $(LIBFILES) f.$(SOEXT) g.$(SOEXT)
 
