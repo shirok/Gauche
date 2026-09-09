@@ -94,11 +94,17 @@ default : all link
 
 check : all
 	@rm -f test.log
-	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) $(GOSH) -I"$(srcdir)" -I. "$(srcdir)/test.scm" > test.log
+	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
+	top_srcdir=$(top_srcdir) \
+	top_builddir=$(top_builddir) \
+	$(GOSH) -I"$(srcdir)" -I. "$(srcdir)/test.scm" > test.log
 
 install-check :
 	if test -f installed.stamp; then \
-	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) "${bindir}/gosh" "$(srcdir)/test.scm"; \
+	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
+	  top_srcdir=$(top_srcdir) \
+	  top_builddir=$(top_builddir) \
+	  "${bindir}/gosh" "$(srcdir)/test.scm"; \
 	fi
 
 # Cleaning
