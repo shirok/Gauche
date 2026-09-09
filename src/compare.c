@@ -37,6 +37,11 @@
 #include "gauche/priv/configP.h"
 #include "gauche/priv/compareP.h"
 
+/* The object-compare generic, defined in class.c.  We consult it directly
+   in Scm_Compare to honor object-compare methods defined for two distinct
+   classes that are not in a subclass relationship. */
+extern ScmGeneric Scm_GenericObjectCompare;
+
 /*
  * Comparator
  */
@@ -151,6 +156,27 @@ int Scm_Compare(ScmObj x, ScmObj y)
         if (cy->compare) return cy->compare(x, y, FALSE);
     } else if (Scm_SubclassP(cy, cx)) {
         if (cx->compare) return cx->compare(x, y, FALSE);
+    } else if (cx->compare == Scm_ObjectCompare
+               || cy->compare == Scm_ObjectCompare) {
+        /* x and y are of distinct, unrelated classes, but at least one of
+           them delegates comparison to the object-compare generic.  Honor
+           an object-compare method defined for this pair (e.g. cross-type
+           methods, or a method on a common ancestor).
+           object-compare has a universal (<top> <top>) catch-all method
+           (see libomega.scm) that raises "not comparable", so we must not
+           call Scm_ObjectCompare unconditionally---doing so would turn the
+           no-method fall-through into an error.  We dispatch only when a
+           method more specific than the catch-all is applicable, i.e. the
+           applicable-methods list has more than one element. */
+        ScmObj argv[2];
+        argv[0] = x;
+        argv[1] = y;
+        ScmObj applicable =
+            Scm_ComputeApplicableMethods(&Scm_GenericObjectCompare,
+                                         argv, 2, FALSE);
+        if (SCM_PAIRP(applicable) && SCM_PAIRP(SCM_CDR(applicable))) {
+            return Scm_ObjectCompare(x, y, FALSE);
+        }
     }
     if (cx == cy) {
         /* x and y are of the same type, and they can't be ordered. */
