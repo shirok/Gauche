@@ -85,10 +85,10 @@
 (define (compile-and-link-ffi-stub dlobj cdef-instances c-headers
                                   c-include-paths mod)
   (let1 unit (generate-ffi-c-code-unit cdef-instances c-headers)
-    (receive (pointer-ret-types variadic-type-infos callback-infos)
+    (receive (pointer-ret-types variadic-type-infos callback-infos fn-tag-infos)
         (ffi-setup-arguments cdef-instances)
       (cgen-dynamic-load unit :include-paths c-include-paths)
       (ffi-reify-enums cdef-instances
                        ((module-binding-ref mod 'ffisetup)
                         dlobj pointer-ret-types variadic-type-infos
-                        callback-infos mod)))))
+                        callback-infos mod fn-tag-infos)))))

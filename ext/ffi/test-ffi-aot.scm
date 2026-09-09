@@ -106,6 +106,9 @@
 
 ;; The basics, including a typespec that goes through a define-type of the
 ;; same file---precomp has to resolve it for the macro expander.
+;; The tail of the result is foreign-function-info: the tags are handed to
+;; the setup procedure at load time, not baked into the generated C, so the
+;; :dlobj entry has to name the library this run dlopen'd.
 (test-aot-module
  "aotbasic"
  '((define-module aotbasic
@@ -118,8 +121,14 @@
      (define-c-function F-i '() 'int)
      (define-c-function Fi-i `(,myint) 'int)
      (define-c-function Fd-d '(double) 'double))
-   (define (probe) (list (F-i) (Fi-i 41) (Fd-d 2.5))))
- '(42 42 5.0)
+   (define (probe)
+     (let1 info (foreign-function-info Fi-i)
+       (list (F-i) (Fi-i 41) (Fd-d 2.5)
+             (get-keyword :subsystem info #f)
+             (get-keyword :dlobj info #f)
+             (get-keyword :argtypes info #f)
+             (get-keyword :rettype info #f)))))
+ '(42 42 5.0 :aot "./f.so" (int) int)
  '((with-module aotbasic probe)))
 
 ;; Callbacks, a variadic call with float arguments (which builds a sub-stub at

@@ -683,7 +683,6 @@
   (let* ([scm-name  (~ cfn'scheme-name)]
          [c-name    (~ cfn'c-name)]
          [nfixed    (length (~ cfn'arg-types))]
-         [tags      (cgen-literal (~ cfn'tag-info))]
          [optional  (if (~ cfn'variadic?) 1 0)])
     (string-append
      (format "    fptr = Scm_DLOGetEntryAddress(dlo, SCM_STRING(SCM_MAKE_STR(~a)), SCM_FALSE);"
@@ -698,13 +697,15 @@
      "\n"
      ;; Pop the per-function tags alist from tags_ and define the tagged subr.
      (format "      Scm_Define(target_mod_, SCM_SYMBOL(SCM_INTERN(~a)),\
-             \n      Scm_MakeSubrWithTags(~a, NULL, ~a, ~a, SCM_INTERN(~a), ~a));"
+             \n      Scm_MakeSubrWithTags(~a, NULL, ~a, ~a, SCM_INTERN(~a),\
+             \n                           SCM_CAR(tags_)));"
              (cgen-safe-string (symbol->string scm-name))
              (ffi-subr-varname c-name)
              nfixed
              optional
-             (cgen-safe-string (symbol->string scm-name))
-             (cgen-cexpr tags)))))
+             (cgen-safe-string (symbol->string scm-name)))
+     "\n"
+     "    tags_ = SCM_CDR(tags_);")))
 
 ;; Emit the line that reifies one C constant as a Scheme constant
 ;; (ffisetup body section), e.g.:
@@ -839,10 +840,11 @@
     ;;   argv[2] = list of (fixed-arg-types . ret-type) for variadic functions
     ;;   argv[3] = list of callback infos (one per callback)
     ;;   argv[4] = target module (where to Scm_Define each function)
+    ;;   argv[5] = list of procedure tags (one per function)
     (cgen-body ""
                #"static ScmObj ~(ffi-setup-fname)(ScmObj *argv, int argc, void *data)"
                "{"
-               "    SCM_ASSERT(argc == 5);"
+               "    SCM_ASSERT(argc == 6);"
                "    ScmObj dlobj = argv[0];"
                "    SCM_ASSERT(SCM_FALSEP(dlobj) || SCM_DLOBJP(dlobj));"
                "    ScmDLObj *dlo SCM_UNUSED ="
@@ -856,6 +858,8 @@
       (cgen-body "    ScmObj var_infos_ = argv[2];"))
     (when (pair? ccb-instances)
       (cgen-body "    ScmObj cb_infos_ = argv[3];"))
+    (when (pair? cfn-instances)
+      (cgen-body "    ScmObj tags_ = argv[5];"))
     (dolist [cfn cfn-instances]
       (cgen-body (setup-code-for-fn cfn)))
     ;; Populate per-function return-type variables from the types list.
@@ -885,7 +889,7 @@
 
     (cgen-init "    Scm_Define(SCM_CURRENT_MODULE(),"
                #"               SCM_SYMBOL(SCM_INTERN(~(cgen-safe-string setup-scm-name))),"
-               #"               Scm_MakeSubr(~(ffi-setup-fname), NULL, 5, 0, SCM_FALSE));")
+               #"               Scm_MakeSubr(~(ffi-setup-fname), NULL, 6, 0, SCM_FALSE));")
     )
   ;; Return unit
   unit)

@@ -504,7 +504,7 @@
 ;; the code-generation machinery.
 ;;
 ;; Compute the extra arguments the generated ffisetup takes, from the cdef
-;; instances.  Returns three values:
+;; instances.  Returns four values:
 ;;
 ;; pointer-ret-types   : return types of the pointer-returning functions, in
 ;;                       order; ffisetup stores them in the per-function
@@ -519,6 +519,12 @@
 ;;                       are the c-pointer types needed to box raw C pointers,
 ;;                       or #f for a non-pointer (the slot is consumed either
 ;;                       way, to keep the order parallel).
+;; fn-tag-infos        : procedure tags of each <foreign-c-function>, in
+;;                       order; ffisetup attaches them to the subrs it makes.
+;;                       They are passed in rather than baked into the C code
+;;                       so that they can mention runtime values---notably
+;;                       the dlobj path, which the :aot subsystem doesn't
+;;                       know when the C code is generated.
 (define (ffi-setup-arguments cdef-instances)
   (values
    (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
@@ -538,7 +544,9 @@
              `(,(make-c-function-type rtype atypes)
                ,(and (c-pointer-like-type? rtype) rtype)
                ,@(map (^t (and (c-pointer-like-type? t) t)) atypes)))))
-    cdef-instances)))
+    cdef-instances)
+   (map (^[cdef] (~ cdef'tag-info))
+        (filter (cut is-a? <> <foreign-c-function>) cdef-instances))))
 
 ;; ffisetup returns the reified enumerator lists, one per <foreign-c-enum> in
 ;; declaration order.  Turn each into a <c-enum>; the caller binds them to the

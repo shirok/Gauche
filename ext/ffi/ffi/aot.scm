@@ -60,7 +60,10 @@
 ;; into, so a typespec may mention anything visible there---including a
 ;; define-type of the same file, which precomp resolves for us.
 ;; DLO-VAR isn't bound yet, so we bind it to #f; the only thing that reads
-;; it is the :dlobj entry of the tag info, which tolerates #f.
+;; it is the :dlobj entry of the tag info, which tolerates #f.  That tag info
+;; is only used for code generation---the tags the functions actually carry
+;; come from the instances %ffi-aot-setup builds at load time, when the dlobj
+;; does exist.
 (define (%eval-cdef-specs cdef-specs dlo-var mod)
   (map (^[spec] (eval `(let ((,dlo-var #f)) ,(cdr spec)) mod)) cdef-specs))
 
@@ -148,10 +151,13 @@
 ;; only known now, and reify the enums it returns.
 ;;
 ;; SETUP-SYM names the setup procedure the unit's init code bound in MOD.
+;; CDEF-INSTANCES are built here, at runtime, so their tag info carries the
+;; values the expansion-time instances used for code generation couldn't
+;; know---in particular the dlobj path.
 (define (%ffi-aot-setup setup-sym dlobj cdef-instances mod)
-  (receive (pointer-ret-types variadic-type-infos callback-infos)
+  (receive (pointer-ret-types variadic-type-infos callback-infos fn-tag-infos)
       (ffi-setup-arguments cdef-instances)
     (ffi-reify-enums cdef-instances
                      ((module-binding-ref mod setup-sym)
                       dlobj pointer-ret-types variadic-type-infos
-                      callback-infos mod))))
+                      callback-infos mod fn-tag-infos))))
