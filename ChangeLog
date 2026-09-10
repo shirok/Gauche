@@ -1,3 +1,7 @@
+2026-09-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/mt-random -> ext/random: Renamed.
+
 2026-09-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/ffi.scm, ext/ffi/ffi/aot.scm: Support :aot

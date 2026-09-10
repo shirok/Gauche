@@ -98,7 +98,7 @@ Copyright of lib/srfi-11.scm ------------------------------------------------
 ;;  PARTICULAR PURPOSE.
 
 
-Copyright of ext/mt-random/mt-random.c ------------------------------------
+Copyright of ext/random/mt-random.c ------------------------------------
 
    Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
    All rights reserved.

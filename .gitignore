@@ -121,9 +121,9 @@ test.record
 /ext/gauche/gauche--unicode.c
 /ext/gauche/unicode-attr.scm
 /ext/lang/lang--asm--x86_64.c
-/ext/mt-random/math--mt-random.c
 /ext/native/gauche--ffitest.c
 /ext/peg/parser--peg.c
+/ext/random/math--mt-random.c
 /ext/rfc/rfc--822.c
 /ext/rfc/rfc--mime.c
 /ext/scheme/scheme--charset.c

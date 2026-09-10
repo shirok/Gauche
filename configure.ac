@@ -975,8 +975,8 @@ AC_CONFIG_FILES([
           ext/file/Makefile
           ext/gauche/Makefile
           ext/lang/Makefile
-          ext/mt-random/Makefile
           ext/peg/Makefile
+          ext/random/Makefile
           ext/scheme/Makefile
           ext/sparse/Makefile
           ext/srfi/Makefile
