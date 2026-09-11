@@ -808,21 +808,6 @@ if given, becomes the suffix of result, and the result of
 @subsection String selection
 @c NODE 文字列の選択
 
-@defun substring/shared s start :optional end
-[SRFI-13]
-@c MOD srfi.13
-@c EN
-In Gauche, this is the same as @code{substring}, except
-that the @var{end} argument is optional.
-@c JP
-Gaucheでは、引数@var{end}がオプショナルであることを除いて、
-@code{substring}と同じです。
-@c COMMON
-@example
-(substring/shared "abcde" 2) @result{} "cde"
-@end example
-@end defun
-
 @defun string-take s nchars
 @defunx string-drop s nchars
 @defunx string-take-right s nchars
