@@ -104,7 +104,7 @@
   (equal? "" str))
 
 (define (string-every c/s/p s . args)
-  (let* ((src  (open-input-string (apply opt-substring s args)))
+  (let* ((src  (open-input-string (apply substring/shared s args)))
          (pred (%get-char-pred c/s/p)))
     (let loop ((ch (read-char src))
                (r  #t))
@@ -113,7 +113,7 @@
             (else (loop (read-char src) (pred c/s/p ch)))))))
 
 (define (string-any c/s/p s . args)
-  (let* ((src  (open-input-string (apply opt-substring s args)))
+  (let* ((src  (open-input-string (apply substring/shared s args)))
          (pred (%get-char-pred c/s/p)))
     (let loop ((ch (read-char src)))
       (cond ((eof-object? ch) #f)
@@ -140,7 +140,7 @@
 
 (define (string-pad s len :optional (char #\space) start end)
   (assume-type char <char>)
-  (let* ((str (opt-substring s start end))
+  (let* ((str (substring/shared s start end))
          (slen (string-length str)))
     (cond ((< slen len)
            (string-append (make-string (- len slen) char) str))
@@ -150,7 +150,7 @@
 
 (define (string-pad-right s len :optional (char #\space) start end)
   (assume-type char <char>)
-  (let* ((str (opt-substring s start end))
+  (let* ((str (substring/shared s start end))
          (slen (string-length str)))
     (cond ((< slen len)
            (string-append str (make-string (- len slen) char)))
@@ -162,25 +162,25 @@
   (assume-type s <string>)
   (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range:" nchars))
-  (opt-substring s 0 nchars))
+  (substring/shared s 0 nchars))
 
 (define (string-drop s nchars)
   (assume-type s <string>)
   (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range:" nchars))
-  (opt-substring s nchars))
+  (substring/shared s nchars))
 
 (define (string-take-right s nchars)
   (assume-type s <string>)
   (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range:" nchars))
-  (opt-substring s (- (string-length s) nchars)))
+  (substring/shared s (- (string-length s) nchars)))
 
 (define (string-drop-right s nchars)
   (assume-type s <string>)
   (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range:" nchars))
-  (opt-substring s 0 (- (string-length s) nchars)))
+  (substring/shared s 0 (- (string-length s) nchars)))
 
 (define (string-trim s :optional
                      (c/s/p #[\s])
@@ -228,8 +228,8 @@
                         :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (%string-compare-int start1 str1 str2
                          char<? char>?
                          proc< proc= proc>)))
@@ -238,8 +238,8 @@
                            :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (%string-compare-int start1 str1 str2
                          char-ci<? char-ci>?
                          proc< proc= proc>)))
@@ -334,12 +334,12 @@
 
 (define (string-hash s :optional bound start end)
   (assume-type s <string>)
-  (%hash-string (opt-substring s start end) bound))
+  (%hash-string (substring/shared s start end) bound))
 
 (define (string-hash-ci s :optional bound start end)
   (assume-type s <string>)
   ;; oops! optimization required!
-  (%hash-string (string-upcase (opt-substring s start end)) bound))
+  (%hash-string (string-upcase (substring/shared s start end)) bound))
 
 ;;;
 ;;; Prefix and suffix
@@ -362,30 +362,30 @@
 (define (string-prefix-length s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (%string-prefix-int str1 str2 char=?)))
 
 (define (string-prefix-length-ci s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (%string-prefix-int str1 str2 char-ci=?)))
 
 (define (string-prefix? s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (= (%string-prefix-int str1 str2 char=?)
        (string-length str1))))
 
 (define (string-prefix-ci? s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (= (%string-prefix-int str1 str2 char-ci=?)
        (string-length str1))))
 
@@ -408,30 +408,30 @@
 (define (string-suffix-length s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (%string-suffix-int str1 str2 char=?)))
 
 (define (string-suffix-length-ci s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (%string-suffix-int str1 str2 char-ci=?)))
 
 (define (string-suffix? s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (= (%string-suffix-int str1 str2 char=?)
        (string-length str1))))
 
 (define (string-suffix-ci? s1 s2 :optional start1 end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let ((str1 (opt-substring s1 start1 end1))
-        (str2 (opt-substring s2 start2 end2)))
+  (let ((str1 (substring/shared s1 start1 end1))
+        (str2 (substring/shared s2 start2 end2)))
     (= (%string-suffix-int str1 str2 char-ci=?)
        (string-length str1))))
 
@@ -540,8 +540,8 @@
 (define (string-contains s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let* ([str1 (opt-substring s1 start1 end1)]
-         [str2 (opt-substring s2 start2 end2)]
+  (let* ([str1 (substring/shared s1 start1 end1)]
+         [str2 (substring/shared s2 start2 end2)]
          [res  (string-scan str1 str2)])
     (and res (+ start1 res))))
 
@@ -549,8 +549,8 @@
 (define (string-contains-ci s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let* ([str1 (string-upcase (opt-substring s1 start1 end1))]
-         [str2 (string-upcase (opt-substring s2 start2 end2))]
+  (let* ([str1 (string-upcase (substring/shared s1 start1 end1))]
+         [str2 (string-upcase (substring/shared s2 start2 end2))]
          [res  (string-scan str1 str2)])
     (and res (+ start1 res))))
 
@@ -559,7 +559,7 @@
 ;;;
 
 (define (string-upcase s . args)
-  (let ((src (open-input-string (apply opt-substring s args)))
+  (let ((src (open-input-string (apply substring/shared s args)))
         (dst (open-output-string)))
     (let loop ((ch (read-char src)))
       (if (eof-object? ch)
@@ -568,7 +568,7 @@
                  (loop (read-char src)))))))
 
 (define (string-downcase s . args)
-  (let ((src (open-input-string (apply opt-substring s args)))
+  (let ((src (open-input-string (apply substring/shared s args)))
         (dst (open-output-string)))
     (let loop ((ch (read-char src)))
       (if (eof-object? ch)
@@ -579,7 +579,7 @@
 (define *%cased-char-set* #[A-Za-z]) ;; fixme
 
 (define (string-titlecase s . args)
-  (let ((src (open-input-string (apply opt-substring s args)))
+  (let ((src (open-input-string (apply substring/shared s args)))
         (dst (open-output-string)))
     (let loop ((title? #t)
                (ch   (read-char src)))
@@ -734,7 +734,7 @@
 (define (xsubstring s from :optional to start end)
   (assume-type s <string>)
   (assume-type from <integer>)
-  (let* ([str (opt-substring s start end)]
+  (let* ([str (substring/shared s start end)]
          [len (string-length str)]
          [dest (open-output-string)])
     ;; Fill TO if it's not provided; also check the validity.
@@ -776,12 +776,12 @@
   (assume-type s1 <string>)
   (assume-type s2 <string>)
   (string-append (substring s1 0 start1)
-                 (apply opt-substring s2 args)
+                 (apply substring/shared s2 args)
                  (substring s1 end1 (string-length s1))))
 
 (define (string-tokenize s :optional (token-set #[\S]) start end)
   (assume-type s <string>)
-  (letrec ([src (open-input-string (opt-substring s start end))]
+  (letrec ([src (open-input-string (substring/shared s start end))]
            [in-word (^[ch dst r]
                       (cond [(eof-object? ch)
                              (reverse! (cons (get-output-string dst) r))]
@@ -812,7 +812,7 @@
 (define (string-filter c/s/p s . args)
   (if (string? c/s/p)
     (apply string-filter s c/s/p args) ;; for the backward compatibility
-    (let ([src (open-input-string (apply opt-substring s args))]
+    (let ([src (open-input-string (apply substring/shared s args))]
           [dest (open-output-string)]
           [pred (%get-char-pred c/s/p)])
       (let loop ([ch (read-char src)])
@@ -823,7 +823,7 @@
 (define (string-delete c/s/p s . args)
   (if (string? c/s/p)
     (apply string-delete s c/s/p args) ;; for the backward compatibility
-    (let ([src (open-input-string (apply opt-substring s args))]
+    (let ([src (open-input-string (apply substring/shared s args))]
           [dest (open-output-string)]
           [pred (%get-char-pred c/s/p)])
       (let loop ([ch (read-char src)])
@@ -833,7 +833,7 @@
 
 ;;; Low-level procedures.  These are included for completeness, but
 ;;; I'm not using these in other SRFI-13 routines, since it is more
-;;; efficient to let opt-substring handle argument checking as well.
+;;; efficient to let substring/shared handle argument checking as well.
 
 (define (string-parse-start+end proc s args)
   (assume-type s <string>)
@@ -909,7 +909,7 @@
 ;; TODO: see if cursors can be used instead of index.
 
 (define (make-kmp-restart-vector s :optional (c= char=?) start end)
-  (let* ((pat (opt-substring s start end))
+  (let* ((pat (substring/shared s start end))
          (rv (make-vector (string-length pat) -1))
          (plen (string-length pat))
          (plen-1 (- plen 1)))

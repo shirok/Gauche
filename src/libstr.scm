@@ -105,7 +105,7 @@
 (define-in-module gauche (string-copy! target tstart s . args)
   (assume-type target <string>)
   (assume-type tstart <ufixnum>)
-  (let* ([str (apply opt-substring s args)]
+  (let* ([str (apply substring/shared s args)]
          [slen (string-length str)]
          [tlen (string-length target)])
     (when (> (+ tstart slen) tlen)
@@ -227,7 +227,7 @@
     (error "grammar argument must be one of (infix strict-infix prefix suffix), but got" grammar))
   (unless (or (not limit) (and (integer? limit) (>= limit 0)))
     (error "limit argument must be a nonnegative integer or #f, but got" limit))
-  (let1 s (opt-substring string start end)
+  (let1 s (substring/shared string start end)
     (if (equal? s "")
       (if (eq? grammar 'strict-infix)
         (error "string must not be empty with strict-infix grammar")
@@ -439,11 +439,11 @@
         [(or (integer? (car rest))
              (string-cursor? (car rest)))
          (if (null? (cdr rest))
-           (proc-single proc (opt-substring str (car rest) (undefined)))
+           (proc-single proc (substring/shared str (car rest) (undefined)))
            (if (or (integer? (cadr rest))
                    (string-cursor? (cadr rest)))
              (if (null? (cddr rest))
-               (proc-single proc (opt-substring str (car rest) (cadr rest)))
+               (proc-single proc (substring/shared str (car rest) (cadr rest)))
                (errorf "Too many arguments for SRFI-13 style ~a" name))
              (error "Integer or string-cursor expected, but got:" (cadr rest))))]
         [(string? (car rest))

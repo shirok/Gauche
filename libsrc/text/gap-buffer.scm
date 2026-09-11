@@ -318,7 +318,7 @@
                              :optional (gstart 0) (gend #f) sstart send)
   (assume-type gbuf <gap-buffer>)
   (assume-type str <string>)
-  (let* ([needle (string->u32vector (opt-substring str sstart send))]
+  (let* ([needle (string->u32vector (substring/shared str sstart send))]
          [needlelen (u32vector-length needle)]
          [buf (~ gbuf'buffer)]
          [ilimit (- (or gend (%gbuf-content-length gbuf)) needlelen)]

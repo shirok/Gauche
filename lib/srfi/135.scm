@@ -131,7 +131,7 @@
   (apply string->vector textual args))
 
 (define (string->text string . args)
-  (%textize (apply opt-substring string args)))
+  (%textize (apply substring/shared string args)))
 (define (vector->text vec . args)
   (%textize (apply vector->string vec args)))
 (define (list->text lis :optional start end)
