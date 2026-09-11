@@ -146,11 +146,13 @@
   (return (Scm_SubstringCursor str start end)))
 
 (select-module gauche)
+
+(define-cproc substring/shared (str::<string> :optional start end)
+  Scm_MaybeSubstring)
+(define opt-substring substring/shared) ;backward compatibility
+
 (define-cproc string-size (str::<string>) ::<fixnum> :constant
   (return (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
-
-(define-cproc opt-substring (str::<string> :optional start end)
-  Scm_MaybeSubstring)
 
 ;; bound argument is for SRFI-13
 (define-cproc %hash-string (str::<string> :optional bound) ::<ulong>

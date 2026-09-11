@@ -34,7 +34,7 @@
 (define-module srfi.13
   (export string-null? string-every string-any
           string-tabulate reverse-list->string
-          substring/shared
+          substring/shared              ;reexport
           string-take string-take-right
           string-drop string-drop-right
           string-pad string-pad-right
@@ -137,8 +137,6 @@
 ;;;
 ;;; Selectors
 ;;;
-
-(define substring/shared string-copy)  ; same in Gauche
 
 (define (string-pad s len :optional (char #\space) start end)
   (assume-type char <char>)
