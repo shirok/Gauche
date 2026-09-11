@@ -242,12 +242,12 @@
 
 ;; SRFI-41  (optional start/end is SRFI-274)
 (define (list->stream lis . args)
-  ;; When end argument is given, sublist copies the input.  We can
+  ;; When end argument is given, sublist/shared copies the input.  We can
   ;; avoid copying  by counting pairs as the stream unfolds, but
   ;; (1) we need to ensure list's length eagerly, and (2) carry around
   ;; the list and count requires cons for each iteration anyway, so
   ;; we take a naive approach for now.
-  (stream-unfold car pair? cdr (apply sublist lis args)))
+  (stream-unfold car pair? cdr (apply sublist/shared lis args)))
 
 (define (generator->stream gen :optional (fini #f))
   ((rec (next)

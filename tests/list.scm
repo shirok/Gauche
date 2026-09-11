@@ -122,14 +122,14 @@
     (test* `(list-copy ,lis ,@args)
            (list expected (and shared? (not (pair? expected))))
            (result list-copy))
-    (test* `(sublist ,lis ,@args)
+    (test* `(sublist/shared ,lis ,@args)
            (list expected shared?)
-           (result sublist)))
+           (result sublist/shared)))
   (define (terr lis args)
     (test* `(list-copy ,lis ,@args) (test-error)
            (apply list-copy lis args))
-    (test* `(sublist ,lis ,@args) (test-error)
-           (apply sublist lis args)))
+    (test* `(sublist/shared ,lis ,@args) (test-error)
+           (apply sublist/shared lis args)))
 
   (t '(a b c d e) '()    '(a b c d e) #t)
   (t '(a b c d e) '(0)   '(a b c d e) #t)
@@ -162,16 +162,16 @@
   (t 'x '()  'x #t)
   (t 'x '(0) 'x #t)
 
-  ;; sublist doesn't need to traverse the whole list, so it can deal with
-  ;; a circular list as far as the range is bounded.
-  (test* "(sublist circular)" #t
+  ;; sublist/shared doesn't need to traverse the whole list, so it can
+  ;; deal with a circular list as far as the range is bounded.
+  (test* "(sublist/shared circular)" #t
          (let1 x '#0=(a b c . #0#)
-           (eq? x (sublist x))))
-  (test* "(sublist circular 2)" #t
+           (eq? x (sublist/shared x))))
+  (test* "(sublist/shared circular 2)" #t
          (let1 x '#1=(a b c . #1#)
-           (eq? (list-tail x 2) (sublist x 2))))
-  (test* "(sublist circular 2 5)" '(c a b)
-         (sublist '#2=(a b c . #2#) 2 5))
+           (eq? (list-tail x 2) (sublist/shared x 2))))
+  (test* "(sublist/shared circular 2 5)" '(c a b)
+         (sublist/shared '#2=(a b c . #2#) 2 5))
   (test* "(list-copy circular 2 5)" '(c a b)
          (list-copy '#3=(a b c . #3#) 2 5))
   (test* "(list-copy circular)" (test-error)

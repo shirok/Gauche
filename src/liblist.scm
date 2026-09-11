@@ -345,7 +345,8 @@
     (return (%list-range-copy list start end))))
 
 ;; like list-copy, but shares pairs whenever possible
-(define-cproc sublist (list :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
+(define-cproc sublist/shared (list :optional (start::<fixnum>? 0)
+                                             (end::<fixnum>? -1))
   (if (== end -1)
     (return (Scm_ListTail list start SCM_UNBOUND))
     (return (%list-range-copy list start end))))

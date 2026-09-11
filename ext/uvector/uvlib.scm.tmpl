@@ -179,9 +179,9 @@
       (cond [(undefined? start) (%list->${t}vector lis #f)]
             [(or (symbol? start) (not start))
              (%list->${t}vector lis start)] ;1st arg is clamp
-            [else (%list->${t}vector (sublist lis start) #f)])
-      (%list->${t}vector (sublist lis start end) #f))
-    (%list->${t}vector (sublist lis start end) clamp)))
+            [else (%list->${t}vector (sublist/shared lis start) #f)])
+      (%list->${t}vector (sublist/shared lis start end) #f))
+    (%list->${t}vector (sublist/shared lis start end) clamp)))
 
 (define (reverse-list->${t}vector l :optional (clamp #f))
   (let* ([len (length l)]

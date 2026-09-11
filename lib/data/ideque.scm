@@ -438,7 +438,7 @@
 ;; API [SRFI-134]
 ;;  optional start/end argument is srfi-274.
 (define (list->ideque lis . args)
-  (let1 lis (apply sublist lis args)
+  (let1 lis (apply sublist/shared lis args)
     (check (length lis) lis 0 '())))
 
 ;; API [SRFI-134]
