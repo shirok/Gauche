@@ -528,6 +528,47 @@
    (test* #"@vector-copy! newapi /tstart,sstart,send" (@vector 0 1 2 9)
           (@vector-copy! (@vector 0 1 2 3) 3 (@vector 7 8 9 10) 2 3))))
 
+(let ()
+  (define (t-uvector-copy expected shared? src . args)
+    (define (result proc)
+      (let1 r (apply proc src args)
+        (list r (eq? r src))))
+    (define (xpected shared?)
+      (if (test-error? expected)
+        expected
+        (list expected shared?)))
+    (test* `(uvector-copy ,src ,@args)
+           (xpected #f)
+           (result uvector-copy))
+    (test* `(subuvector/shared ,src ,@args)
+           (xpected shared?)
+           (result subuvector/shared)))
+
+  (expand-uvec
+   (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
+   (let ([v (@vector 0 1 2 3 4 5)])
+     ;; the range covers the entire vector
+     (t-uvector-copy (@vector 0 1 2 3 4 5) #t v)
+     (t-uvector-copy (@vector 0 1 2 3 4 5) #t v 0)
+     (t-uvector-copy (@vector 0 1 2 3 4 5) #t v 0 6)
+     (t-uvector-copy (@vector 0 1 2 3 4 5) #t v #f #f)
+     (t-uvector-copy (@vector 0 1 2 3 4 5) #t v #f 6)
+     ;; partial range
+     (t-uvector-copy (@vector 2 3 4 5) #f v 2)
+     (t-uvector-copy (@vector 2 3) #f v 2 4)
+     (t-uvector-copy (@vector 0 1 2 3) #f v 0 4)
+     (t-uvector-copy (@vector 0 1 2 3) #f v #f 4)
+     ;; empty range
+     (t-uvector-copy (@vector) #f v 0 0)
+     (t-uvector-copy (@vector) #f v 3 3)
+     (t-uvector-copy (@vector) #f v 6 6)
+     (t-uvector-copy (@vector) #f v 6)
+     ;; out of range
+     (t-uvector-copy (test-error) #f v 7)
+     (t-uvector-copy (test-error) #f v -1)
+     (t-uvector-copy (test-error) #f v 0 7)
+     (t-uvector-copy (test-error) #f v 4 2))))
+
 (test* "uvector-copy! (generic)" '#u16(0 0 1 2 65535 0)
        (rlet1 v (make-u16vector 6 0)
          (uvector-copy! v 2 '#s16(1 2 -1))))

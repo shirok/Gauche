@@ -62,6 +62,7 @@
           s8vector->string u8vector->string
           s32vector->string u32vector->string
 
+          subuvector/shared
           uvector-alias uvector-segment/shared
           uvector-binary-search uvector-class-element-size
           uvector-copy uvector-copy! uvector-ref uvector-set! uvector-size
@@ -247,9 +248,18 @@
 ;; generic copy
 (inline-stub
  (define-cproc uvector-copy (v::<uvector>
-                             :optional (start::<fixnum> 0)
-                                       (end::<fixnum> -1))
+                             :optional (start::<fixnum>? 0)
+                                       (end::<fixnum>? -1))
    (return (Scm_UVectorCopy v start end)))
+
+ (define-cproc subuvector/shared (v::<uvector>
+                                  :optional (start::<fixnum>? 0)
+                                            (end::<fixnum>? -1))
+   (if (and (== start 0)
+            (or (== end -1)
+                (== end (SCM_UVECTOR_SIZE v))))
+     (return (SCM_OBJ v))
+     (return (Scm_UVectorAlias (Scm_ClassOf (SCM_OBJ v)) v start end))))
  )
 
 ;; search
