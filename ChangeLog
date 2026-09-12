@@ -1,5 +1,8 @@
 2026-09-12  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvector.scm (bytevector-fill!, bytevector->u8-list)
+	  (u8-list->bytevector): Allow optional start/end args,
+	  to adapt to srfi-281.
 	* ext/uvector/uvlib.scm.tmpl: Uniformly allow #f to optional
 	  start/end args, using <fixnum>? stub type.  This allows
 	  upper-level procedures to pass its own optional start/end

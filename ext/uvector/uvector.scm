@@ -523,8 +523,8 @@
 
 (define (make-bytevector len :optional (fill 0))
   (make-u8vector len (%adjust-fill-arg fill)))
-(define (bytevector-fill! v fill)       ; scheme.bytevector
-  (u8vector-fill! v (%adjust-fill-arg fill)))
+(define (bytevector-fill! v fill :optional (start #f) (end #f)) ; scheme.bytevector
+  (u8vector-fill! v (%adjust-fill-arg fill) start end))
 
 (define-inline bytevector         u8vector)
 (define-inline bytevector?        u8vector?)
@@ -548,5 +548,7 @@
 (define (bytevector-copy!-r6 src sstart target tstart len) ; scheme.bytevector
   (u8vector-copy! target tstart src sstart (+ sstart len)))
 
-(define (bytevector->u8-list v) (u8vector->list v))     ; scheme.bytevector
-(define (u8-list->bytevector lis) (list->u8vector lis)) ; scheme.bytevector
+(define (bytevector->u8-list v :optional (start #f) (end #f)) ; scheme.bytevector
+  (u8vector->list (subuvector/shared v start end)))
+(define (u8-list->bytevector lis :optional (start #f) (end #f)) ; scheme.bytevector
+  (list->u8vector (sublist/shared lis start end)))
