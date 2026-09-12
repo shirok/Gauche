@@ -59,7 +59,7 @@
 (define-cproc ${t}vector-length (v::<${t}vector>) ::<ulong> SCM_${T}VECTOR_SIZE)
 
 (define-cproc ${t}vector-copy
-  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (v::<${t}vector> :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   Scm_${T}VectorCopy)
 
 ;; NB: this function accommodates to two APIs.
@@ -83,7 +83,7 @@
    [else (SCM_TYPE_ERROR dstart "integer") (return SCM_UNDEFINED)]))
 
 (define-cproc ${t}vector-reverse-copy
-  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (v::<${t}vector> :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   (let* ([len::ScmSmallInt (SCM_UVECTOR_SIZE v)])
     (SCM_CHECK_START_END start end len)
     (let* ([r::ScmUVector* (SCM_UVECTOR (Scm_Make${T}Vector (- end start)
@@ -98,7 +98,7 @@
 
 (define-cproc ${t}vector-reverse-copy!
   (dst::<${t}vector> dstart::<fixnum> src::<${t}vector>
-          :optional (sstart::<fixnum> 0) (send::<fixnum> -1))
+          :optional (sstart::<fixnum>? 0) (send::<fixnum>? -1))
   ::<void>
   (let* ([dlen::ScmSmallInt (SCM_UVECTOR_SIZE dst)]
          [slen::ScmSmallInt (SCM_UVECTOR_SIZE src)]
@@ -119,8 +119,8 @@
 ;; multi-copy! - copy src repeatedly to different parts of dst.
 (define-cproc ${t}vector-multi-copy!
   (dst::<${t}vector> dstart::<fixnum> dstride::<fixnum>
-   src::<${t}vector> :optional (sstart::<fixnum> 0) (ssize::<fixnum> 0)
-                               (sstride::<fixnum> -1) (count::<fixnum> -1))
+   src::<${t}vector> :optional (sstart::<fixnum>? 0) (ssize::<fixnum>? 0)
+                               (sstride::<fixnum>? -1) (count::<fixnum>? -1))
   ::<void>
   (SCM_UVECTOR_CHECK_MUTABLE dst)
   (when (< sstride 0)
@@ -151,11 +151,11 @@
            (+= si sstride)))))
 
 (define-cproc ${t}vector->list
-  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (v::<${t}vector> :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   Scm_${T}VectorToList)
 
 (define-cproc reverse-${t}vector->list
-  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (v::<${t}vector> :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   (let* ([len::ScmSmallInt (SCM_UVECTOR_SIZE v)]
          [h SCM_NIL] [t SCM_NIL] [e::(${etype})] [z])
     (SCM_CHECK_START_END start end len)
@@ -192,17 +192,18 @@
       (${t}vector-set! v i (car l) clamp))))
 
 (define-cproc ${t}vector-fill!
-  (v::<${t}vector> val :optional (start::<fixnum> 0) (end::<fixnum> -1)) ::<void>
+  (v::<${t}vector> val :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
+  ::<void>
   (let* ([filler :: (${etype})])
     (C: "${UNBOX filler val SCM_CLAMP_ERROR}")
     (Scm_${T}VectorFill v filler start end)))
 
 (define-cproc ${t}vector->vector
-  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (v::<${t}vector> :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
   Scm_${T}VectorToVector)
 
 (define-cproc vector->${t}vector
-  (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) clamp)
+  (v::<vector> :optional (start::<fixnum>? 0) (end::<fixnum>? -1) clamp)
   (return (Scm_VectorTo${T}Vector v start end (Scm_ClampMode clamp))))
 
 (define-cproc ${t}vector=?              ; srfi-66
@@ -538,7 +539,7 @@
     (set! (SCM_${T}VECTOR_ELEMENT v j) e)))
 
 (define-cproc ${t}vector-reverse!
- (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1)) ::<void>
+ (v::<${t}vector> :optional (start::<fixnum>? 0) (end::<fixnum>? -1)) ::<void>
  (SCM_UVECTOR_CHECK_MUTABLE v)
  (let* ([len::ScmSmallInt (SCM_${T}VECTOR_SIZE v)])
     (SCM_CHECK_START_END start end len)

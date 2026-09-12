@@ -1,3 +1,10 @@
+2026-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvlib.scm.tmpl: Uniformly allow #f to optional
+	  start/end args, using <fixnum>? stub type.  This allows
+	  upper-level procedures to pass its own optional start/end
+	  args directly to lower procedures such as @vector-fill!.
+
 2026-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/207.scm (bytevector->hex-string etc.): Allow optional
