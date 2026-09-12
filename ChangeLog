@@ -1,3 +1,7 @@
+2026-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/libvec.scm (subvector/shared): Added.
+
 2026-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (sublist/shared): Rename sublist -> sublist/shared.

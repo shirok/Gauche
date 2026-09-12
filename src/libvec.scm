@@ -141,6 +141,18 @@
     (return dst)))
 
 (select-module gauche)
+(define-cproc subvector/shared (v::<vector> :optional (start::<fixnum>? 0)
+                                                      (end::<fixnum>? -1))
+  ;; We need to copy except it is an entire vector
+  (cond [(and (== start 0)
+              (or (== end -1)
+                  (== end (SCM_VECTOR_SIZE v))))
+         (return (SCM_OBJ v))]
+        [(> end (SCM_VECTOR_SIZE v))
+         (Scm_Error "end index out of range: %ld" end)]
+        [else
+         (return (Scm_VectorCopy v start end SCM_UNDEFINED))]))
+
 (define-cproc vector-immutable? (v::<vector>) ::<boolean>
   SCM_VECTOR_IMMUTABLE_P)
 

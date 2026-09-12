@@ -95,6 +95,27 @@
               (vector-append))
 (test* "vector-append 4" (test-error) (vector-append '#() 'b 'c))
 
+(test* "subvector/shared (nocopy)" #t
+       (let* ([x '#(a b c d e f g h i)]
+              [y (subvector/shared x)])
+         (eq? x y)))
+(test* "subvector/shared (nocopy, start)" #t
+       (let* ([x '#(a b c d e f g h i)]
+              [y (subvector/shared x 0)])
+         (eq? x y)))
+(test* "subvector/shared (nocopy, end)" #t
+       (let* ([x '#(a b c d e f g h i)]
+              [y (subvector/shared x 0 9)])
+         (eq? x y)))
+(test* "subvector/shared 1" '#(g h i)
+       (subvector/shared '#(a b c d e f g h i) 6))
+(test* "subvector/shared 2" '#(d e f)
+       (subvector/shared '#(a b c d e f g h i) 3 6))
+(test* "subvector/shared 3" '#()
+       (subvector/shared '#(a b c d e f g h i) 6 6))
+(test* "subvector/shared 4" (test-error)
+       (subvector/shared '#(a b c d e f g h i) 6 10))
+
 ;; immutable vectors
 ;; literal vectors are immutable only when compiled with API_VERSION >= 1000
 (when (vector-immutable? '#(1 2 3))
