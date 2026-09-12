@@ -1,5 +1,8 @@
 2026-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi/207.scm (bytevector->hex-string etc.): Allow optional
+	  start/end arguments, to adapt to srfi-281.
+
 	* ext/uvector/uvector.scm (subuvector/shared): Added.
 	* src/libvec.scm (subvector/shared): Added.
 
