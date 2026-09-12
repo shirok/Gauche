@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (use gauche.process)
+(use gauche.config)
 (use file.util)
 
 (test-start "FFI :aot")
@@ -128,7 +129,7 @@
              (get-keyword :dlobj info #f)
              (get-keyword :argtypes info #f)
              (get-keyword :rettype info #f)))))
- '(42 42 5.0 :aot "./f.so" (int) int)
+ `(42 42 5.0 :aot ,#"./f.~(gauche-config \"--so-suffix\")" (int) int)
  '((with-module aotbasic probe)))
 
 ;; Callbacks, a variadic call with float arguments (which builds a sub-stub at
