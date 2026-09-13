@@ -6792,7 +6792,7 @@ The @var{fallback} argument is Gauche's extension and not in SRFI-196.
 
 @var{i}が負、もしくは@var{range}の長さ以上だった場合、
 @var{fallback}が与えられていればそれが返され、そうでなければエラーが投げられます。
-@var{fallback}引数はSRFI-196に対するGauchenの拡張です。
+@var{fallback}引数はSRFI-196に対するGaucheの拡張です。
 @c COMMON
 @end defun
 
