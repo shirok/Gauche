@@ -410,7 +410,8 @@ static int isEllipsis(PatternContext *ctx, ScmObj obj)
     if (SCM_FALSEP(ctx->ellipsis)) return FALSE; /* inside (... TEMPLATE) */
     if (SCM_TRUEP(ctx->ellipsis)) {
         /* default ellipsis (...) */
-        return Scm__ERCompare(SCM_SYM_ELLIPSIS, obj, ctx->mod, ctx->env);
+        return Scm__CompareIdentifiers(SCM_SYM_ELLIPSIS, ctx->mod, ctx->env,
+                                       obj, ctx->mod, ctx->env);
     } else {
         /* specified ellipsis */
         return SCM_EQ(ctx->ellipsis, obj);
@@ -457,6 +458,25 @@ static ScmObj rename_variable(ScmObj var,
         SCM_ASSERT(SCM_IDENTIFIERP(var));
         id = Scm_WrapIdentifier(SCM_IDENTIFIER(var));
     }
+    *id_alist = Scm_Acons(var, id, *id_alist);
+    return id;
+}
+
+/* Renaming of a literal in a pattern.  Unlike rename_variable, which
+   lets new identifier to inherit source identifier's environment,
+   this always attach macro definition environment to the new identifier.
+   Macro-generting-macro needs it, as the expansion of inner (expanded)
+   macro should get its definition environment instead of the original
+   (outer) macro's. */
+static ScmObj rename_literal(ScmObj var,
+                             ScmObj *id_alist, /* ((var . id) ...) */
+                             ScmModule *mod,
+                             ScmObj env)
+{
+    ScmObj p = Scm_Assq(var, *id_alist);
+    if (SCM_PAIRP(p)) return SCM_CDR(p);
+    SCM_ASSERT(SCM_SYMBOLP(var) || SCM_IDENTIFIERP(var));
+    ScmObj id = Scm_MakeIdentifier(var, mod, env);
     *id_alist = Scm_Acons(var, id, *id_alist);
     return id;
 }
@@ -581,12 +601,13 @@ static ScmObj compile_rule1(ScmObj form,
         if (isEllipsis(ctx, form)) BAD_ELLIPSIS(ctx);
         if (!SCM_FALSEP(Scm_Memq(form, ctx->literals))) {
             if (patternp)
-                return rename_variable(form, &ctx->renames, ctx->mod, ctx->env);
+                return rename_literal(form, &ctx->renames, ctx->mod, ctx->env);
             else
                 return form;  /* template renaming is done in expansion time */
         }
-        if (patternp && Scm__ERCompare(form, SCM_SYM_UNDERBAR,
-                                       ctx->mod, ctx->env)) {
+        if (patternp && Scm__CompareIdentifiers(form, ctx->mod, ctx->env,
+                                                SCM_SYM_UNDERBAR,
+                                                ctx->mod, ctx->env)) {
             return SCM_SYM_UNDERBAR;
         }
         if (patternp) {
@@ -912,7 +933,12 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
         return TRUE;            /* unconditional match */
     }
     if (SCM_IDENTIFIERP(pattern)) {
-        return Scm__ERCompare(pattern, form, SCM_MODULE(mod), env);
+        /* An identifier in the compiled pattern is always a literal, created
+           by rename_literal at the macro definition time.  We use its
+           definition environment to matching against FORM. */
+        ScmIdentifier *pid = SCM_IDENTIFIER(pattern);
+        return Scm__CompareIdentifiers(pattern, pid->module, Scm_IdentifierEnv(pid),
+                                       form, SCM_MODULE(mod), env);
     }
     if (SCM_SYNTAX_PATTERN_P(pattern)) {
         return match_subpattern(form, SCM_SYNTAX_PATTERN(pattern),

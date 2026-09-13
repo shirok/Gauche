@@ -983,6 +983,45 @@
       (lambda ()
         (let-syntax ([if fi]) (if #f 'ok 'ng))))
 
+;; let-sytnax liteals
+;; https://github.com/shirok/Gauche/issues/1327 'no-match
+(test "let-syntax literal match" 'no-match
+      (lambda ()
+        (let-syntax ((m (syntax-rules ()
+                          ((m ignored)
+                           (let-syntax ((n (syntax-rules (k)
+                                             ((n k) 'matched-k)
+                                             ((n y) 'no-match))))
+                             (let ((k 99))
+                               (n k)))))))
+          (m anything))))
+
+;; The counterpart of the above: the literal and the input both refer to
+;; the binding that's visible where the inner syntax-rules appears, so
+;; they should match, even when they're introduced by the enclosing macro.
+(test "let-syntax literal match 2" 'matched-k
+      (lambda ()
+        (let-syntax ((m (syntax-rules ()
+                          ((m ignored)
+                           (let ((k 99))
+                             (let-syntax ((n (syntax-rules (k)
+                                               ((n k) 'matched-k)
+                                               ((n y) 'no-match))))
+                               (n k)))))))
+          (m anything))))
+
+;; A literal introduced by the enclosing macro's template refers to the
+;; global binding, and so does the input; they should match.
+(test "let-syntax literal match 3" 'matched-k
+      (lambda ()
+        (let-syntax ((m (syntax-rules ()
+                          ((m arg)
+                           (let-syntax ((n (syntax-rules (k)
+                                             ((n k) 'matched-k)
+                                             ((n y) 'no-match))))
+                             (n arg))))))
+          (m k))))
+
 ;; Macro-generating-macro scoping
 ;; Currently it's not working.
 (define-syntax mgm-bar

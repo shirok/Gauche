@@ -152,10 +152,11 @@ SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src,
  * Hygienic macro utilities
  */
 
-/* 'compare' function used in er macro.
+/* A base procedure of free-identifier=?
    The definition is in compile.scm, for it needs to access internal
    variable lookup routine. */
-SCM_EXTERN int     Scm__ERCompare(ScmObj, ScmObj, ScmModule*, ScmObj);
+SCM_EXTERN int Scm__CompareIdentifiers(ScmObj, ScmModule*, ScmObj,
+                                       ScmObj, ScmModule*, ScmObj);
 
 
 SCM_DECL_END

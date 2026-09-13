@@ -1765,9 +1765,21 @@
 ;; Macro support basis
 ;;
 
-;; free-identifier=? id1 id2
-;; Returns #t iff id1 and id2 would resolve to the same binding
-;; (or both are free).
+;; Identifier comparison
+;;
+;; The fundamental comparator is Scm__CompareIdentifiers.  It is a basis
+;; of free-identifier=?, but can have two extra features:
+;;
+;;  - Allows bare symbol, instead of ScmIdentifier, to compare.
+;;  - Allows alternative environment to interpret the binding.  Environment
+;;    is necessary when bare symbol is used.
+;;
+;; For free-identifier=?, we can simply use identifier's environment.
+;; For er-compare to be used in ER-transformer, we feed macro use
+;; environment, as the identifier can be rebound in the macro output.
+;; When used to compare literals, we need to interpret literal identifier
+;; precisely in the macro definition environment.  (See match_synrule in
+;; macro.c).
 
 (select-module gauche)
 (inline-stub
@@ -1777,40 +1789,59 @@
   (set! compare-identifiers-loosely
         (!= (Scm_GetEnv "GAUCHE_COMPARE_IDENTIFIERS_LOOSELY") NULL)))
 
- (define-cfn %free-identifier=? (id1 id2) ::int :static
+ (define-cfn Scm__CompareIdentifiers (a a-module::ScmModule* a-frames
+                                      b b-module::ScmModule* b-frames) ::int
+   (cond [(and (or (SCM_SYMBOLP a) (SCM_IDENTIFIERP a))
+               (or (SCM_SYMBOLP b) (SCM_IDENTIFIERP b)))
+          (when (== a-module NULL)
+            (SCM_ASSERT (SCM_IDENTIFIERP a))
+            (set! a-module (-> (SCM_IDENTIFIER a) module)
+                  a-frames (Scm_IdentifierEnv (SCM_IDENTIFIER a))))
+          (when (== b-module NULL)
+            (SCM_ASSERT (SCM_IDENTIFIERP b))
+            (set! b-module (-> (SCM_IDENTIFIER b) module)
+                  b-frames (Scm_IdentifierEnv (SCM_IDENTIFIER b))))
+          (let* ([aa (env-lookup-int a a-module a-frames)]
+                 [bb (env-lookup-int b b-module b-frames)])
+            (when (SCM_EQ aa bb) (return TRUE))
+            ;; If either one is an lvar or a macro, they must be eq?
+            ;; to be the same.
+            (unless (and (SCM_IDENTIFIERP aa) (SCM_IDENTIFIERP bb))
+              (return FALSE))
+            ;; Neither is locally bound, so compare their global bindings.
+            (let* ([ga::ScmGloc* (Scm__IdentifierToBoundGloc (SCM_IDENTIFIER aa))]
+                   [gb::ScmGloc* (Scm__IdentifierToBoundGloc (SCM_IDENTIFIER bb))])
+              ;; If both has bound in toplevel, they must refer to the
+              ;; same binding, hence (eq? g1 g2).  The name may differ,
+              ;; because of renaming on export/import.
+              ;; If both are unbound, we compare their names.
+              ;; If one is bound and another is unbound, we regard them differerent
+              ;; by default.  However, some old macros need them to be equal,
+              ;; especially when checking auxiliary macro keywords.
+              ;; Setting env var GAUCHE_COMPARE_IDENTIFIERS_LOOSELY allows that
+              ;; behavior.
+              (if (and ga gb)
+                (return (SCM_EQ ga gb))
+                (if (and (not compare-identifiers-loosely) (or ga gb))
+                  (return FALSE)
+                  (return (SCM_EQ (Scm_UnwrapSyntax2 aa FALSE)
+                                  (Scm_UnwrapSyntax2 bb FALSE)))))))]
+         ;; For the backward compatibility.  With symbol-keyword-integration,
+         ;; this branch is never taken.
+         [(and (SCM_KEYWORDP a) (SCM_KEYWORDP b))
+          (return (SCM_EQ a b))]
+         [else (return FALSE)]))
+
+ (define-cproc free-identifier=? (id1 id2) ::<boolean>
    ;; Eliminate trivial cases first
    (unless (and (SCM_IDENTIFIERP id1) (SCM_IDENTIFIERP id2)) (return FALSE))
    (when (SCM_EQ id1 id2) (return TRUE))
-   ;; Look at their binidngs
-   (let* ([b1 (env-lookup-int id1
-                              (-> (SCM_IDENTIFIER id1) module)
-                              (Scm_IdentifierEnv (SCM_IDENTIFIER id1)))]
-          [b2 (env-lookup-int id2
-                              (-> (SCM_IDENTIFIER id2) module)
-                              (Scm_IdentifierEnv (SCM_IDENTIFIER id2)))])
-     (if (and (SCM_IDENTIFIERP b1) (SCM_IDENTIFIERP b2))
-       (let* ([g1::ScmGloc* (Scm__IdentifierToBoundGloc (SCM_IDENTIFIER id1))]
-              [g2::ScmGloc* (Scm__IdentifierToBoundGloc (SCM_IDENTIFIER id2))])
-         ;; If both has bound in toplevel, they must refer to the
-         ;; same binding, hence (eq? g1 g2).  The name may differ,
-         ;; because of renaming on export/import.
-         ;; If both are unbound, we compare their names.
-         ;; If one is bound and another is unbound, we regard them differerent
-         ;; by default.  However, some old macros need them to be equal,
-         ;; especially when checking auxiliary macro keywords.
-         ;; Setting env var GAUCHE_COMPARE_IDENTIFIERS_LOOSELY allows that
-         ;; behavior.
-         (if (and g1 g2)
-           (return (SCM_EQ g1 g2))
-           (if (and (not compare-identifiers-loosely) (or g1 g2))
-             (return FALSE)
-             (return (SCM_EQ (Scm_UnwrapSyntax2 id1 FALSE)
-                             (Scm_UnwrapSyntax2 id2 FALSE))))))
-       ;; At least one of id1 and id2 is lvar or macro.
-       (return (SCM_EQ b1 b2)))))
+   (return (Scm__CompareIdentifiers id1 NULL NULL
+                                    id2 NULL NULL)))
 
- (define-cproc free-identifier=? (id1 id2) ::<boolean>
-   %free-identifier=?)
+ (define-cproc er-compare (a b use-module::<module> use-frames) ::<boolean>
+   (return (Scm__CompareIdentifiers a use-module use-frames
+                                    b use-module use-frames)))
  )
 
 (select-module gauche.internal)
@@ -1844,28 +1875,6 @@
               (vector-set! vec i e)
               (loop (+ i 1) vec dict))))))]
    [else (values form dict)]))
-
-;; er-compare :: (Obj, Obj, Module, Env) -> Bool
-;; Used for the 'compare' procedure in ER macro.  If two Objs refer
-;; to the same identifiers, return #t.
-;; We implement it in C for speed; it is also called from syntax-rules
-;; expander.
-(inline-stub
- (define-cfn Scm__ERCompare (a b module::ScmModule* frames) ::int
-   (cond [(and (or (SCM_SYMBOLP a) (SCM_IDENTIFIERP a))
-               (or (SCM_SYMBOLP b) (SCM_IDENTIFIERP b)))
-          (let* [(a1 (env-lookup-int a module frames))
-                 (b1 (env-lookup-int b module frames))]
-            (when (SCM_EQ a1 b1) (return TRUE))
-            (unless (and (SCM_IDENTIFIERP a1) (SCM_IDENTIFIERP b1)) (return FALSE))
-            (return (%free-identifier=? a1 b1)))]
-         [(and (SCM_KEYWORDP a) (SCM_KEYWORDP b))
-          (return (SCM_EQ a b))]
-         [else (return FALSE)]))
-
- (define-cproc er-compare (a b use-module::<module> use-frames) ::<boolean>
-   Scm__ERCompare)
- )
 
 ;; xformer  :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool)) -> Sexpr
 ;; xformer+ :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool), (Sym -> Sym)) -> Sexpr
