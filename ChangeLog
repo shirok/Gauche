@@ -1,12 +1,19 @@
 2026-09-13  Shiro Kawai  <shiro@acm.org>
 
-	* src/macro.c (rename_literal, match_synrule),
+	* src/macro.c (match_synrule),
 	  src/compile.scm (Scm__CompareIdentifiers): Clean up hygineic
 	  identifier comparison, integrating er-compare and free-identifier=?
 	  both based on Scm__CompareIdentifiers.
 	  Also fixes scope mismatch of literal identifiers in
 	  macro-generating macros:
 	  https://github.com/shirok/Gauche/issues/1327
+	* src/macro.c (rename_variable): Do not use Scm_WrapIdentifier,
+	  for it just inherits original identifier's env and loses the
+	  rename context.
+	* src/compile.scm (env-lookup-int): If we failed to look up
+	  multiply-wrapped id, peel just one layer and retry.  This
+	  is essential to keep hygiene in macro-generating macros.
+	  https://github.com/shirok/Gauche/issues/1326
 
 2026-09-12  Shiro Kawai  <shiro@acm.org>
 

@@ -329,11 +329,13 @@
          ;; inline assq here to squeeze performance.
          (dolist [vp (SCM_CDAR fp1)]
            (when (SCM_EQ y (SCM_CAR vp)) (return (SCM_CDR vp)))))
-       ;; No match.  We strip identifier wrapping and retry
+       ;; No match.  We strip one identifier wrapping and retry.  Each
+       ;; wrapping corresponds to one macro expansion, and the stripped
+       ;; identifier belongs to the definition environment of the macro
+       ;; that inserted it.
        (if (SCM_IDENTIFIERP y)
          (let* ([inner (-> (SCM_IDENTIFIER y) name)])
-           (unless (SCM_IDENTIFIERP inner)
-             (set! frames (Scm_IdentifierEnv (SCM_IDENTIFIER y))))
+           (set! frames (Scm_IdentifierEnv (SCM_IDENTIFIER y)))
            (set! y inner))
          (break))))
    ;; No local bindings.  Return an identifier.

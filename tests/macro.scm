@@ -1042,6 +1042,23 @@
 (test "macro-generating-macro scope" '(z y x)
       (lambda () (mgm-foo (x y z))))
 
+;; https://github.com/shirok/Gauche/issues/1326
+(let ()
+  (define-syntax b (syntax-rules () ((_) 'outer-b)))
+
+  (define-syntax gen
+    (syntax-rules ()
+      ((_) (let-syntax ((a (syntax-rules () ((_) (b))))
+                        (b (syntax-rules () ((_) 'sibling-b))))
+             (a)))))
+
+  (test* "let-syntax sibling scope"
+         '(generated outer-b written outer-b)
+         (list 'generated (gen)
+               'written (let-syntax ((a (syntax-rules () ((_) (b))))
+                                     (b (syntax-rules () ((_) 'sibling-b))))
+                          (a)))))
+
 ;;----------------------------------------------------------------------
 ;; macro and internal define
 
