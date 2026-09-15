@@ -137,10 +137,10 @@
         (loop (+ pos size)
               (cons (get size v pos endian) r))))))
 
-(define (bytevector->uint-list v endian size)
-  (%v->list get-uint v endian size))
-(define (bytevector->sint-list v endian size)
-  (%v->list get-sint v endian size))
+(define (bytevector->uint-list v endian size :optional (start #f) (end #f))
+  (%v->list get-uint (subuvector/shared v start end) endian size))
+(define (bytevector->sint-list v endian size :optional (start #f) (end #f))
+  (%v->list get-sint (subuvector/shared v start end) endian size))
 
 (define (%list->v put lis endian size)
   (rlet1 v (make-u8vector (* size (length list)))
@@ -149,10 +149,10 @@
         [(null? lis)]
       (put size v pos (car lis) endian))))
 
-(define (uint-list->bytevector lis endian size)
-  (%list->v put-uint! lis endian size))
-(define (sint-list->bytevector lis endian size)
-  (%list->v put-sint! lis endian size))
+(define (uint-list->bytevector lis endian size :optional (start #f) (end #f))
+  (%list->v put-uint! (sublist/shared lis start end) endian size))
+(define (sint-list->bytevector lis endian size :optional (start #f) (end #f))
+  (%list->v put-sint! (sublist/shared lis start end) endian size))
 
 (define ne (native-endian))
 

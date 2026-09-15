@@ -1,3 +1,8 @@
+2026-09-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/scheme/bytevector.scm (bytevector->sint-list etc.): Allow
+	  optional start/end arguments to adapt to srfi-281.
+
 2026-09-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (match_synrule),
