@@ -3480,4 +3480,7 @@
 ;;-----------------------------------------------------------------------
 ;; srfi-277 depends on gauche.vport, and tested in ext/vport.
 
+;;-----------------------------------------------------------------------
+;; srfi-282 depends on multiple extension modules, so its tests are in srfi2.scm
+
 (test-end)

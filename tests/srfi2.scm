@@ -12,4 +12,10 @@
 (use srfi.274)
 (test-module 'srfi.274)
 
+
+(test-section "SRFI-281")
+
+(use srfi.281)
+(test-module 'srfi.281)
+
 (test-end)

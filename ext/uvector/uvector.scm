@@ -534,7 +534,7 @@
 (define-inline bytevector-copy    u8vector-copy)
 (define-inline bytevector-copy!   u8vector-copy!)
 (define-inline bytevector-append  u8vector-append)
-(define-inline bytevector=?       u8vector=?)
+(define-inline bytevector=?       u8vector=)  ; srfi-281 takes varargs
 
 (define (bytevector-s8-set! v k b)      ; scheme.bytevector
   (bytevector-u8-set! v k (logand b #xff)))
