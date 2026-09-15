@@ -4327,24 +4327,43 @@ there's no point to define it inlinable.
 
 
 @defspec define-type variable type-expression
+@c EN
 This form can be used to name a constructed type.  @var{variable}
 must be an identifier, and @var{type-expression} is an expression
 that yields a type.  @xref{Type expressions and type constructors},
 for the details of type expressions.
+@c JP
+この形式は構築された型に名前をつけるのに使えます。
+@var{variable}は識別子、@var{type-expression}は型を生成する型式でなければ
+なりません。
+型式について詳しくは@ref{Type expressions and type constructors}を参照してください。
+@c COMMON
 
 @example
 (define-type <int-list> (<List> <int>))
 @end example
 
+@c EN
 In Gauche, types are first class values that can be constructed
 at runtime.  In order to take advantage of type information,
 however, it is critical that they are available at compile time.
 This form marks the binding of @var{variable} ``inlinable'',
 telling the compiler that it can assume the binding won't change.
+@c JP
+Gaucheでは、型は実行時に構築できる第一級の値です。
+しかし、型情報を活用するためには、コンパイル時に型がわかることが重要です。
+この形式は@var{variable}をインライン可能な束縛とするので、
+コンパイラは型の束縛が変わらないと想定できます。
+@c COMMON
 
+@c EN
 The distinction is important when you try to use @var{variable}
 as an argument for other type expressions.  Type expressions are
 computed at compile time, so mutable bindings can't be used in it.
+@c JP
+この区別は@var{variable}を他の型式の引数に渡す時に重要です。
+型式はコンパイル時に計算されるので、変更可能な束縛を使うことはきません。
+@c COMMON
 
 @example
 gosh> (define <int-list> (<List> <int>))
@@ -4354,7 +4373,11 @@ gosh> (<List> <int-list>)
 in type constructor expression: (<List> <int-list>)
 @end example
 
+@c EN
 Using @code{define-type} avoid this error.
+@c JP
+@code{define-type}を使えばこのエラーを回避できます。
+@c COMMON
 @end defspec
 
 
