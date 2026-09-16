@@ -48,6 +48,8 @@
           make-c-struct-type
           make-c-union-type
           make-c-enum-type
+          c-enum-type-complete!
+          default-c-enum-base-type
 
           c-pointer-type-pointee
           c-array-type-dimensions
@@ -301,6 +303,21 @@
 (define (make-c-union-type tag fields)
   (make-c-struct/union-type tag fields #f))
 
+;; Enum is tricky.  We can't extract each enumerator's value and the size
+;; of enum type itself from DSO file.  We have a few options:
+;;
+;; - Rely on the user to mirror enumerators and base type size precisely.
+;;   User can create enum type with `make-c-enum-type`.
+;;   We don't need to rely on external info.  If the user's descriptoin gets
+;;   out of sync with the binary, we're in trouble.
+;; - Run the compiler to figure out those info.  We can be sure the values
+;;   are in sync, even if the user omits some of enumerators.
+;;   `define-c-enum` with stub or aot backend adopts this.
+;; - Parse the header file to figure it out.  We can also be sure the enumerator
+;;   values are in sync.  The base type depends on the compiler, though.
+;;   We plan to implement this for `define-c-enum` with native backend.
+;;
+
 ;; make-c-enum-type tag typespec (enumerator ...)
 ;;   enumerator : symbol | (symbol integer-value)
 (define (make-c-enum-type tag typespec enumerators)
@@ -338,6 +355,36 @@
         ($ %register-native-tag! tag
            (%make-c-enum-type pname cname underlying size alignment
                               tag typespec alist))))))
+
+;; For stub/aot FFI backend, we need to have concrete enum type _before_
+;; we compile & load the generated stub.  This returns a provisional
+;; enum base type.  It is updated with c-enum-type-complete!.
+(define (default-c-enum-base-type)
+  (%native-int-type-of-size (implicit-enum-size 32) #t))
+
+;; Complete the provisional enum type with the actual enumerators.
+;;
+;; NAME, if given, identifies the enum in error messages; it is the name the
+;; user knows the type by, which is more useful than the type itself.
+;;
+;; Since the representation was settled before the values were known, the
+;; values have to fit it; otherwise the generated code would box or unbox
+;; them wrongly.  We reject that rather than silently widening the type---the
+;; code that assumed the narrower one is already compiled.
+(define (c-enum-type-complete! type enumerators :optional (name #f))
+  (assume-type type <c-enum>)
+  (unless (null? (~ type'enumerator-alist))
+    (errorf "c-enum type ~s has already been completed" (or name type)))
+  (let ([alist (%build-enum-alist enumerators)]
+        [base (c-enum-type-base-type type)])
+    (dolist [e alist]
+      (unless (of-type? (cdr e) base)
+        (errorf "enumerator ~a of the enum ~a has the value ~s, which \
+                 doesn't fit in ~a, the type the enum is represented by; \
+                 give the enum an explicit base type that can represent it"
+                (car e) (or name type) (cdr e) (~ base'name))))
+    (set! (~ type'enumerator-alist) alist)
+    type))
 
 ;;;
 ;;; Additonal native type predicates/accessors
