@@ -142,7 +142,7 @@
       (when ptr-ret?
         (cgen-decl "static ScmObj ss_rettype_ = SCM_FALSE;"))
       ;; The sub-stub function
-      (cgen-body "static ScmObj ss_fn_(ScmObj *args, int nargs SCM_UNUSED, void *data)")
+      (cgen-body "static ScmObj ss_fn_(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED, void *data)")
       (cgen-body "{")
       ;; Unbox fixed arguments
       (for-each-with-index
@@ -175,7 +175,7 @@
       ;; args[0] = fn-ptr-scm (intptr_t encoded as Scheme integer)
       ;; args[1] = ret-type Scheme object (only for pointer-returning functions)
       ;; Sets ss_rettype_ (if needed) and returns the configured sub-stub SUBR.
-      (cgen-body (format "static ScmObj ~a(ScmObj *args, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
+      (cgen-body (format "static ScmObj ~a(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
                          setup-c-name))
       (cgen-body "{")
       (cgen-body "    void *fn_ = (void*)(intptr_t)Scm_IntegerToIntptr(args[0]);")
@@ -375,7 +375,7 @@
          [ret-typevar (and (c-pointer-like-type? ret-type)
                            (ffi-rettype-varname cfn))])
     (cgen-body
-     (format "static ScmObj ~a(ScmObj *args, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
+     (format "static ScmObj ~a(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
              (ffi-subr-varname c-name)))
     (cgen-body "{")
     ;; Guard: function pointer must have been set up
@@ -433,7 +433,7 @@
          [argtypes-var (ffi-substub-argtypes-varname cfn)]
          [rettype-var  (ffi-substub-rettype-varname cfn)])
     (cgen-body
-     (format "static ScmObj ~a(ScmObj *args, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
+     (format "static ScmObj ~a(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
              (ffi-subr-varname c-name)))
     (cgen-body "{")
     ;; Guard: function pointer must have been set up
@@ -843,7 +843,7 @@
     ;;   argv[4] = target module (where to Scm_Define each function)
     ;;   argv[5] = list of procedure tags (one per function)
     (cgen-body ""
-               #"static ScmObj ~(ffi-setup-fname)(ScmObj *argv, int argc, void *data)"
+               #"static ScmObj ~(ffi-setup-fname)(ScmObj *argv, int argc, void *data SCM_UNUSED)"
                "{"
                "    SCM_ASSERT(argc == 6);"
                "    ScmObj dlobj = argv[0];"
