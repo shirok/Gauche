@@ -4,23 +4,38 @@ top_srcdir   = @top_srcdir@
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
-XCLEANFILES = math--mt-random.c mt-random.sci
+XCLEANFILES = math--mt-random.c mt-random.sci \
+	      math--xorshift.c xorshift.sci
 
 include ../Makefile.ext
 
 SCM_CATEGORY = math
 
-LIBFILES = math--mt-random.$(SOEXT)
-SCMFILES = mt-random.sci
+LIBFILES = math--mt-random.$(SOEXT) \
+	   math--xorshift.$(SOEXT)
+SCMFILES = mt-random.sci xorshift.sci
 
-OBJECTS = mt-random.$(OBJEXT) math--mt-random.$(OBJEXT)
+OBJECTS = $(math_mt_random_OBJECTS) \
+	  $(math_xorshift_OBJECTS)
 
 all : $(LIBFILES)
 
-math--mt-random.$(SOEXT) : $(OBJECTS)
-	$(MODLINK) math--mt-random.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+# math.mt-random
+math_mt_random_OBJECTS = mt-random.$(OBJEXT) math--mt-random.$(OBJEXT)
+
+math--mt-random.$(SOEXT) : $(math_mt_random_OBJECTS)
+	$(MODLINK) math--mt-random.$(SOEXT) $(math_mt_random_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 math--mt-random.c mt-random.sci : mt-random.scm
 	$(PRECOMP) -e -P -o math--mt-random $(srcdir)/mt-random.scm
+
+# math.xorshift
+math_xorshift_OBJECTS = math--xorshift.$(OBJEXT)
+
+math--xorshift.$(SOEXT) : $(math_xorshift_OBJECTS)
+	$(MODLINK) math--xorshift.$(SOEXT) $(math_xorshift_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+math--xorshift.c xorshift.sci : xorshift.scm
+	$(PRECOMP) -e -P -o math--xorshift $(srcdir)/xorshift.scm
 
 install : install-std

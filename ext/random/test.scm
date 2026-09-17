@@ -8,7 +8,7 @@
 (use srfi.13)
 (use gauche.uvector)
 
-(test-start "mt-random")
+(test-start "random")
 
 (test-section "math.mt-random")
 
@@ -115,6 +115,12 @@
              (equal? (make-random-sequence <list> 100 (^[] (mt-random-real m)))
                      (make-random-sequence <list> 100 (^[] (mt-random-real m2)))
                      ))))
+
+
+(test-section "math.xorshift")
+
+(use math.xorshift)
+(test-module 'math.xorshift)
 
 
 (test-end)

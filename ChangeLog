@@ -1,5 +1,7 @@
 2026-09-16  Shiro Kawai  <shiro@acm.org>
 
+	* ext/random/xorshift.scm: Start adding xorshift-family PRNG.
+
 	* ext/ffi/ffi.scm, ext/ffi/ffi/stub.scm, ext/ffi/ffi/aot.scm:
 	  Allow define-c-enum'ed enums to be used in the following typespec.
 	  To do this, we need to create a provisional <c-enum> type

@@ -124,6 +124,7 @@ test.record
 /ext/native/gauche--ffitest.c
 /ext/peg/parser--peg.c
 /ext/random/math--mt-random.c
+ext/random/math--xorshift.c
 /ext/rfc/rfc--822.c
 /ext/rfc/rfc--mime.c
 /ext/scheme/scheme--charset.c
