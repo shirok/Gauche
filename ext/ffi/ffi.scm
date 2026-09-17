@@ -49,7 +49,7 @@
           <foreign-c-enum>
           foreign-function-info
           ffi-setup-arguments
-          ffi-reify-enums)
+          ffi-complete-enums!)
   )
 (select-module gauche.ffi)
 
@@ -153,8 +153,9 @@
 ;;  either as a symbol, or as #f for an anonymous enum.
 ;;
 ;;  <base-type> is an evaluated expression yielding a typespec; it fixes
-;;  the enum's size and alignment.  When omitted, they are derived from
-;;  the enumerator values.
+;;  the enum's size and alignment.  It must match how the compiler handles
+;;  the enum.  If no explicit <base-type> is given, we use
+;;  `gauche.native-type#default-c-enum-base-type`.
 ;;
 
 ;;;
@@ -194,7 +195,7 @@
   ((scheme-name  :init-keyword :scheme-name)  ; symbol, bound to the <c-enum>
    (tag          :init-keyword :tag)          ; symbol or #f (anonymous)
    (enumerators  :init-keyword :enumerators)  ; ((scheme-name . c-name) ...)
-   (base-type    :init-keyword :base-type)    ; <native-type> or #f
+   (type         :init-keyword :type)         ; the (incomplete) <c-enum>
    ))
 
 ;; Resolve a typespec to a <native-type> instance at runtime.
@@ -386,14 +387,16 @@
                     :c-name ',(%ffi-c-name name)
                     :type (%resolve-typespec ,type-expr))))]))
 
-        ;; For each define-c-enum form, build a runtime
-        ;; (make <foreign-c-enum> ...) expression.
+        ;; Parse a define-c-enum form.
         ;;   (define-c-enum <name> (<e> ...) [<base-type>])
         ;;   (define-c-enum (<name> <tag>) (<e> ...) [<base-type>])
         ;; When the tag isn't given, it is derived from <name> by the
         ;; same name translation as the enumerators.  An explicit tag is
         ;; used verbatim, and #f makes the enum anonymous.
-        (define (make-cenum-expr cenum-form)
+        ;; Returns four values: the Scheme name the enum set is bound to,
+        ;; the C tag, the enumerators as ((scheme-name . c-name) ...), and
+        ;; the base type expression, or #f when the form omits it.
+        (define (parse-cenum-form cenum-form)
           (match cenum-form
             [(_ head (enumerators ...) . base-type?)
              (receive (name tag)
@@ -406,22 +409,50 @@
                (unless (every symbol? enumerators)
                  (error "define-c-enum: enumerators must be identifiers:"
                         enumerators))
-               (let1 base-type-expr
-                   (match base-type?
-                     [() #f]
-                     [(e) e]
-                     [_ (error "Malformed define-c-enum form:" cenum-form)])
-                 (quasirename r
-                   `(make <foreign-c-enum>
-                      :scheme-name ',name
-                      :tag ',tag
-                      :enumerators ',(map (^e (cons e (%ffi-c-name e)))
-                                          enumerators)
-                      :base-type ,(if base-type-expr
+               (values name tag
+                       (map (^e (cons e (%ffi-c-name e))) enumerators)
+                       (match base-type?
+                         [() #f]
+                         [(e) e]
+                         [_ (error "Malformed define-c-enum form:"
+                                   cenum-form)])))]
+            [_ (error "Malformed define-c-enum form:" cenum-form)]))
+
+        ;; Creates an expression that builds the enum's <c-enum>.  The subsystem
+        ;; macro binds <name> to its value ahead of the cdef instances, so
+        ;; that a typespec canmention the enum by name.
+        ;;
+        ;; Note that when we generate this form, enumerators aren't known yet.
+        ;; (We need to wait the form to be compiled to know that).
+        ;; So the <c-enum> created with this form is provisional.  Later we'll
+        ;; fill in enumerators.
+        (define (make-cenum-type-expr cenum-form)
+          (receive (name tag enumerators base-type-expr)
+              (parse-cenum-form cenum-form)
+            (quasirename r
+              `(make-c-enum-type ',tag
+                                 ,(if base-type-expr
                                     (quasirename r
                                       `(%resolve-typespec ,base-type-expr))
-                                    #f)))))]
-            [_ (error "Malformed define-c-enum form:" cenum-form)]))
+                                    (quasirename r
+                                      `(default-c-enum-base-type)))
+                                 '()))))
+
+        ;; For each define-c-enum form, build a runtime
+        ;; (make <foreign-c-enum> ...) expression.
+        (define (make-cenum-expr cenum-form)
+          (receive (name tag enumerators base-type-expr)
+              (parse-cenum-form cenum-form)
+            (quasirename r
+              `(make <foreign-c-enum>
+                 :scheme-name ',name
+                 :tag ',tag
+                 :enumerators ',enumerators
+                 ;; The <c-enum> made by make-cenum-type-expr above; NAME
+                 ;; is already bound to it here.  It goes through
+                 ;; %resolve-typespec because a precompiled reference to a
+                 ;; type binding arrives wrapped in a proxy type.
+                 :type (%resolve-typespec ,name)))))
 
         (define (make-cdef-expr form)
           (ecase (car form) ; forms are already unwrapped
@@ -448,12 +479,14 @@
                        (make-cdef-expr cdef))) ;expr
                (reverse cdefs)))
 
-        ;; Names bound by define-c-enum forms, in declaration order.
-        ;; with-stub-ffi needs them to bind each <c-enum> the stub
-        ;; reifies.
-        (define cenum-names
+        ;; ((name . type-expr) ...) for the define-c-enum forms, in
+        ;; declaration order.  The subsystem macro binds each name to its
+        ;; type-expr before the cdef instances are constructed; see
+        ;; make-cenum-type-expr.
+        (define cenum-specs
           (filter-map (^[cdef] (and (eq? (car cdef) 'define-c-enum)
-                                    (cdef-name cdef)))
+                                    (cons (cdef-name cdef)
+                                          (make-cenum-type-expr cdef))))
                       (reverse cdefs)))
 
         ;; Body forms with synthesized callback body definitions prepended.
@@ -487,11 +520,11 @@
              (warn "FFI :stubgen subsystem is now called :stub subsystem.\n"))
            (quasirename r
              `(with-stub-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
-                             ,cenum-names ,final-forms))]
+                             ,cenum-specs ,final-forms))]
           [(:aot)
            (quasirename r
              `(with-aot-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
-                            ,cenum-names ,final-forms))]
+                            ,cenum-specs ,final-forms))]
           )]))))
 
 ;;;
@@ -549,13 +582,11 @@
         (filter (cut is-a? <> <foreign-c-function>) cdef-instances))))
 
 ;; ffisetup returns the reified enumerator lists, one per <foreign-c-enum> in
-;; declaration order.  Turn each into a <c-enum>; the caller binds them to the
-;; enum-set names.
-;; TODO: make-c-enum-type's "value out of range" error doesn't say which enum
-;; or enumerator is at fault.  Here the values come from the C compiler, so
-;; the user's mistake is the declared base type; we should add that context.
-(define (ffi-reify-enums cdef-instances enumerator-lists)
-  (map (^[cen enumerators]
-         (make-c-enum-type (~ cen'tag) (~ cen'base-type) enumerators))
-       (filter (cut is-a? <> <foreign-c-enum>) cdef-instances)
-       enumerator-lists))
+;; declaration order.  Fill each into the <c-enum> the enum-set name is
+;; already bound to---the same object the generated code was built against.
+(define (ffi-complete-enums! cdef-instances enumerator-lists)
+  (for-each (^[cen enumerators]
+              (c-enum-type-complete! (~ cen'type) enumerators
+                                     (~ cen'scheme-name)))
+            (filter (cut is-a? <> <foreign-c-enum>) cdef-instances)
+            enumerator-lists))

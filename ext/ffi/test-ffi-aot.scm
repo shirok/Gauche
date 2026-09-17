@@ -50,6 +50,14 @@
    [gauche.os.windows (regexp-replace-all #/\\/ path "/")]
    [else              path]))
 
+;; The headers the :aot sources include live next to this file.  :aot
+;; ignores :c-include-paths by design, so the include path has to reach the
+;; child compiler through its flags.
+(define *aot-c-dir*
+  (fix-path (sys-normalize-pathname
+             (build-path (sys-dirname (current-load-path)) "c")
+             :absolute #t :canonicalize #t)))
+
 (define *aot-gosh*    (fix-path (build-path *top-builddir* "src/gosh")))
 (define *aot-precomp* (fix-path (build-path *top-srcdir* "lib/tools/precomp")))
 (define *aot-package* (fix-path (build-path *top-srcdir*
@@ -75,6 +83,7 @@
 
 (define (aot-compile! modname)
   (aot-run-in-workdir `(,*aot-gosh* "-ftest" ,*aot-package* "compile"
+                        ,#"--cppflags=-I~|*aot-c-dir*|"
                         ,#"~|modname|_c" ,#"~|modname|_c.c")))
 
 ;; Load the built module in a child gosh and read back the value of EXPR.
@@ -162,5 +171,73 @@
            (c-enum-symbol seek-whence SEEK-END))))
  '(42 7.5 42 8 2 SEEK-END)
  '((with-module aotfull probe)))
+
+;; An enum declared in one with-ffi form, used as a type in a later one.
+;; The name has to resolve at macro-expansion time, when the C code for the
+;; second form is generated---long before the enumerator values exist.
+(test-aot-module
+ "aotacross"
+ `((define-module aotacross
+     (use gauche.ffi)
+     (use gauche.native-type)
+     (export probe))
+   (select-module aotacross)
+   (with-ffi #f (:subsystem :aot :c-headers ("ffi-const.h"))
+     (define-c-enum (ffi_test_color_t ffi_test_color)
+       (FFI_TEST_RED FFI_TEST_GREEN FFI_TEST_BLUE)))
+   (with-ffi (dlopen "./f") (:subsystem :aot)
+     (define-c-function Fi_i `(,ffi_test_color_t) ffi_test_color_t))
+   (define (probe)
+     (list (Fi_i FFI_TEST_RED)
+           (c-enum-type-tag ffi_test_color_t)
+           (c-enum-value ffi_test_color_t 'FFI_TEST_BLUE))))
+ '(1 ffi_test_color 2)
+ '((with-module aotacross probe)))
+
+;; The same, within a single with-ffi form: the enum and the function that
+;; uses it are declared side by side.  The type has to exist before either
+;; the C code or the runtime cdef instances are built.
+(test-aot-module
+ "aotintra"
+ `((define-module aotintra
+     (use gauche.ffi)
+     (use gauche.native-type)
+     (export probe))
+   (select-module aotintra)
+   (with-ffi (dlopen "./f") (:subsystem :aot :c-headers ("ffi-const.h"))
+     (define-c-enum (ffi_test_color_t ffi_test_color)
+       (FFI_TEST_RED FFI_TEST_GREEN FFI_TEST_BLUE))
+     (define-c-function Fi_i `(,ffi_test_color_t) ffi_test_color_t))
+   (define (probe)
+     (list (Fi_i FFI_TEST_GREEN)
+           (c-enum-symbol ffi_test_color_t 2)
+           ;; The tag info is a snapshot taken when the cdef instances are
+           ;; built, which for an enum declared in this same form is before
+           ;; ffisetup has told us the enumerators---so the signature names
+           ;; the enum and its representation, but lists no enumerators.
+           ;; (In aotacross above, where the enum comes from an earlier
+           ;; form, it is complete by then and they are all listed.)
+           (get-keyword :rettype (foreign-function-info Fi_i) #f))))
+ '(2 FFI_TEST_BLUE (.enum ffi_test_color : uint32_t ()))
+ '((with-module aotintra probe)))
+
+;; An enum with negative enumerators needs an explicit base type, since the
+;; representation is settled before the values are known.
+(test-aot-module
+ "aotsigned"
+ `((define-module aotsigned
+     (use gauche.ffi)
+     (use gauche.native-type)
+     (export probe))
+   (select-module aotsigned)
+   (with-ffi (dlopen "./f") (:subsystem :aot :c-headers ("ffi-const.h"))
+     (define-c-enum (ffi_test_signed_t ffi_test_signed)
+       (FFI_TEST_S_LO FFI_TEST_S_HI) 'int16_t)
+     (define-c-function Fi_i `(,ffi_test_signed_t) ffi_test_signed_t))
+   (define (probe)
+     (list (Fi_i FFI_TEST_S_LO) FFI_TEST_S_LO
+           (~ ffi_test_signed_t'size))))
+ '(-4 -5 2)
+ '((with-module aotsigned probe)))
 
 (test-end)

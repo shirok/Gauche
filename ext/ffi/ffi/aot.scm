@@ -64,8 +64,31 @@
 ;; is only used for code generation---the tags the functions actually carry
 ;; come from the instances %ffi-aot-setup builds at load time, when the dlobj
 ;; does exist.
-(define (%eval-cdef-specs cdef-specs dlo-var mod)
-  (map (^[spec] (eval `(let ((,dlo-var #f)) ,(cdr spec)) mod)) cdef-specs))
+;;
+;; Each enum-set name is bound to its <c-enum> before any cdef expression is
+;; evaluated, so a typespec may name an enum declared in this very form as
+;; well as one from an earlier one.  precomp doesn't execute toplevel forms
+;; during compilation, so we call %bind-enum-type! to make the compiler
+;; know about the enums.
+(define (%eval-cdef-specs cdef-specs cenum-specs dlo-var mod)
+  (define (ev expr) (eval `(let ((,dlo-var #f)) ,expr) mod))
+  (dolist [spec cenum-specs]
+    (%bind-enum-type! (car spec) (ev (cdr spec)) mod))
+  (map (^[spec] (ev (cdr spec))) cdef-specs))
+
+;; Bind NAME to TYPE in MOD, the way precomp's handle-define-type does: a
+;; deferred proxy type that records the value, so it can be dereferenced
+;; before its binding is executed.  The recorded value is never serialized,
+;; and since the binding now exists, the compiler leaves it alone when it
+;; compiles the define-type the expansion emits.
+;; TODO: Consolidate this with handle-define-type.
+(define (%bind-enum-type! name type mod)
+  ((with-module gauche.internal %insert-binding)
+   mod name
+   ((with-module gauche.internal %make-deferred-proxy-type)
+    ((with-module gauche.internal make-identifier) name mod '())
+    type)
+   '(inlinable dummy)))
 
 (define-syntax with-aot-ffi
   (er-macro-transformer
@@ -75,7 +98,7 @@
      (define %require. ((with-module gauche.internal make-identifier)
                         '%require (find-module 'gauche.internal) '()))
      (match f
-       [(_ dlo-var dlo-expr options cdef-specs cenum-names forms)
+       [(_ dlo-var dlo-expr options cdef-specs cenum-specs forms)
         (let1 tm (%current-tmodule)
           (unless tm
             (error "The FFI :aot subsystem can only be used in a source that \
@@ -85,7 +108,7 @@
                    include paths in the CFLAGS of the build instead.\n"))
           (let* ([tag       (symbol->string (gensym "ffiaot"))]
                  [setup-sym (string->symbol #"%ffi-aot-setup-~tag")]
-                 [cdefs     (%eval-cdef-specs cdef-specs dlo-var
+                 [cdefs     (%eval-cdef-specs cdef-specs cenum-specs dlo-var
                                               (~ tm'module))]
                  ;; A variadic call with float arguments builds a sub-stub
                  ;; at call time, and the generated dispatch code reaches into
@@ -127,6 +150,15 @@
                  ;; procedure the initcode binds is already there.
                  (define ,dlo-var ,dlo-expr)
                  ,stub-form
+                 ;; Bind each enum-set name to its <c-enum> before the cdef
+                 ;; instances are built, so that a define-c-function of this
+                 ;; very form can name the enum in its typespec.  The type
+                 ;; carries no enumerators yet; %ffi-aot-setup fills them in
+                 ;; once the generated code has told us the values.
+                 ,@(map (^[spec]
+                          (quasirename r
+                            `(define-type ,(car spec) ,(cdr spec))))
+                        cenum-specs)
                  ;; We insert dummy binding so that expansion contains
                  ;; only definitions.
                  (define _dummy
@@ -135,20 +167,13 @@
                                    (list ,@(map cdr cdef-specs))
                                    ;; raw symbol: precomp rewrites this to
                                    ;; (find-module '<the module>)
-                                   ,'(current-module)))
-                 ;; %ffi-aot-setup returns the <c-enum> instances it
-                 ;; reified, in declaration order.
-                 ,@(map (^[name i]
-                          (quasirename r
-                            `(define-type ,name (list-ref _dummy ,i))))
-                        cenum-names
-                        (iota (length cenum-names)))))))]
+                                   ,'(current-module)))))))]
        [_ (error "Malformed with-aot-ffi form:" f)]))))
 
 ;; Runtime entry point, called from the expansion above.  The C code is
 ;; already compiled into this module; all that is left is what the :stub
 ;; subsystem does after loading its DSO---hand ffisetup the values that are
-;; only known now, and reify the enums it returns.
+;; only known now, and complete the enums with the enumerators it returns.
 ;;
 ;; SETUP-SYM names the setup procedure the unit's init code bound in MOD.
 ;; CDEF-INSTANCES are built here, at runtime, so their tag info carries the
@@ -157,7 +182,7 @@
 (define (%ffi-aot-setup setup-sym dlobj cdef-instances mod)
   (receive (pointer-ret-types variadic-type-infos callback-infos fn-tag-infos)
       (ffi-setup-arguments cdef-instances)
-    (ffi-reify-enums cdef-instances
-                     ((module-binding-ref mod setup-sym)
-                      dlobj pointer-ret-types variadic-type-infos
-                      callback-infos mod fn-tag-infos))))
+    (ffi-complete-enums! cdef-instances
+                         ((module-binding-ref mod setup-sym)
+                          dlobj pointer-ret-types variadic-type-infos
+                          callback-infos mod fn-tag-infos))))

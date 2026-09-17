@@ -742,9 +742,10 @@
 
 ;; Emit, into the ffisetup body, the code that defines one enum's
 ;; enumerators as Scheme constants and conses the (symbol value) pairs
-;; onto enums_ for make-c-enum-type to consume.
+;; onto enums_, for ffi-complete-enums! to fill into the <c-enum>.
 (define (setup-code-for-cenum cen)
-  (define (value-cexpr e) (%enum-value-cexpr (cdr e) (~ cen'base-type)))
+  (define (value-cexpr e)
+    (%enum-value-cexpr (cdr e) (c-enum-type-base-type (~ cen'type))))
   (with-output-to-string
     (^[]
       (dolist [e (~ cen'enumerators)]

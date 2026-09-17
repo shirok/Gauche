@@ -1,3 +1,14 @@
+2026-09-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/ffi.scm, ext/ffi/ffi/stub.scm, ext/ffi/ffi/aot.scm:
+	  Allow define-c-enum'ed enums to be used in the following typespec.
+	  To do this, we need to create a provisional <c-enum> type
+	  when we see define-c-enum, and insert the compile-time binding
+	  into the precomp's tmodule--since the whole information about
+	  enumerators of the enum won't be available until we actually
+	  compile the generated stub and execute it.
+	  https://github.com/shirok/Gauche/issues/1328
+
 2026-09-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/scheme/bytevector.scm (bytevector->sint-list etc.): Allow

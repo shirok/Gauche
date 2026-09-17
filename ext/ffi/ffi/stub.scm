@@ -55,7 +55,7 @@
      (define %require. ((with-module gauche.internal make-identifier)
                         '%require (find-module 'gauche.internal) '()))
      (match f
-       [(_ dlo-var dlo-expr options cdef-specs cenum-names forms)
+       [(_ dlo-var dlo-expr options cdef-specs cenum-specs forms)
         (let1 cdef-list-expr
             (quasirename r
               `(list ,@(map cdr cdef-specs)))
@@ -66,6 +66,15 @@
                ;; We insert dummy binding so that expansion contanis
                ;; only definitions.
                (define ,dlo-var ,dlo-expr)
+               ;; Bind each enum-set name to its <c-enum> before the cdef
+               ;; instances are built, so that a define-c-function of this
+               ;; very form can name the enum in its typespec.  The type
+               ;; carries no enumerators yet; compile-and-link-ffi-stub
+               ;; fills them in once the C compiler has told us the values.
+               ,@(map (^[spec]
+                        (quasirename r
+                          `(define-type ,(car spec) ,(cdr spec))))
+                      cenum-specs)
                (define _dummy
                  (compile-and-link-ffi-stub ,dlo-var
                                             ,cdef-list-expr
@@ -73,13 +82,6 @@
                                             ',(get-keyword :c-include-paths
                                                            options '())
                                             (current-module)))
-               ;; compile-and-link-ffi-stub returns the <c-enum> instances
-               ;; it reified, in declaration order.
-               ,@(map (^[name i]
-                        (quasirename r
-                          `(define-type ,name (list-ref _dummy ,i))))
-                      cenum-names
-                      (iota (length cenum-names)))
                )))]))))
 
 (define (compile-and-link-ffi-stub dlobj cdef-instances c-headers
@@ -88,7 +90,7 @@
     (receive (pointer-ret-types variadic-type-infos callback-infos fn-tag-infos)
         (ffi-setup-arguments cdef-instances)
       (cgen-dynamic-load unit :include-paths c-include-paths)
-      (ffi-reify-enums cdef-instances
-                       ((module-binding-ref mod 'ffisetup)
-                        dlobj pointer-ret-types variadic-type-infos
-                        callback-infos mod fn-tag-infos)))))
+      (ffi-complete-enums! cdef-instances
+                           ((module-binding-ref mod 'ffisetup)
+                            dlobj pointer-ret-types variadic-type-infos
+                            callback-infos mod fn-tag-infos)))))

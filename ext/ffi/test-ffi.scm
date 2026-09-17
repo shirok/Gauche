@@ -469,8 +469,11 @@
           (current-module)))
   (test* "c-enum as an FFI argument type" 3 (Fi-i FFI-TEST-BLUE))
 
+  ;; The error names the enum and the enumerator at fault: the values come
+  ;; from the C compiler, so what the user got wrong is the base type.
   (test* "define-c-enum rejects a base type that can't hold the values"
-         (test-error <error> #/out of range/)
+         (test-error <error>
+                     #/enumerator FFI-TEST-F-WIDE of the enum narrow .* <uint8>/)
          (eval `(with-ffi #f (:subsystem :stub
                               :c-headers ("ffi-const.h")
                               :c-include-paths (,c-dir))
@@ -496,6 +499,47 @@
            (eval '(with-ffi #f (:subsystem :native)
                     (define-c-enum foo (X)))
                  (current-module))))
+  )
+
+;; A define-c-enum and a define-c-function that uses it, in one with-ffi
+;; form.  The enum-set name has to be bound before the C code and the cdef
+;; instances are built, so define-c-enum binds it to a <c-enum> that carries
+;; the declared representation but no enumerators yet, and the enumerators
+;; are filled in once the C compiler has reported them.
+;; Its own module, so the enumerator names don't collide with the ones above.
+(define-module ffi-enum-intra-sandbox
+  (use gauche.test)
+  (use gauche.ffi)
+  (use gauche.native-type)
+  (use file.util)
+
+  (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
+
+  (parameterize ([default-ffi-subsystem :stub])
+    (eval `(with-ffi (dlopen "./f") (:c-headers ("ffi-const.h")
+                                     :c-include-paths (,c-dir))
+             (define-c-enum (color ffi_test_color)
+               (FFI-TEST-RED FFI-TEST-GREEN FFI-TEST-BLUE))
+             (define-c-function Fi-i (list color) color))
+          (current-module)))
+
+  (test* "c-enum declared and used in one with-ffi form"
+         '(1 2 FFI-TEST-BLUE ffi_test_color)
+         (list (Fi-i FFI-TEST-RED)
+               (c-enum-value color 'FFI-TEST-BLUE)
+               (c-enum-symbol color 2)
+               (c-enum-type-tag color)))
+
+  ;; The representation is settled when the enum is declared, before the
+  ;; values are known, so an enum the default can't hold has to say so.
+  (test* "define-c-enum rejects negative enumerators without a base type"
+         (test-error <error> #/enumerator FFI-TEST-S-LO of the enum bare/)
+         (eval `(with-ffi #f (:subsystem :stub
+                              :c-headers ("ffi-const.h")
+                              :c-include-paths (,c-dir))
+                  (define-c-enum (bare ffi_test_signed)
+                    (FFI-TEST-S-LO FFI-TEST-S-HI)))
+               (current-module)))
   )
 
 ;;;----------------------------------------------------------
