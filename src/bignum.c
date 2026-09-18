@@ -85,6 +85,7 @@ char *alloca ();
 #include "gauche/bits.h"
 #include "gauche/bits_inline.h"
 #include "gauche/priv/bignumP.h"
+#include "gauche/priv/numberP.h"
 
 #undef min
 #define min(x, y)   (((x) < (y))? (x) : (y))
@@ -360,8 +361,6 @@ uint64_t Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor)
     return r;
 }
 #endif /* SIZEOF_LONG == 4 */
-
-extern double Scm__EncodeDouble64(uint64_t, int, int);
 
 /* Converts a bignum b to a double.  b must be normalized.
    We don't rely on double arithmetic, for it may result

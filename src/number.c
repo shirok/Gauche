@@ -41,6 +41,7 @@
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/arith.h"
 #include "gauche/priv/bytesP.h"
+#include "gauche/priv/numberP.h"
 #include "gauche/priv/writerP.h"
 
 #include <limits.h>
