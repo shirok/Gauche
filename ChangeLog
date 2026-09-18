@@ -1,3 +1,10 @@
+2026-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* ext/random/mt.scm, ext/random/xos.scm: Rename math.mt-random
+	  to math.random.mt, and math.xorshift to math.random.xos.
+	  math.mt-random becomes a compatibility module just to inherit
+	  math.random.mt.
+
 2026-09-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm__EncodeDouble64): Replaces Scm__EncodeDouble,

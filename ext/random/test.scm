@@ -1,5 +1,5 @@
 ;;
-;; testing mt-random
+;; testing math.random.*
 ;;
 
 (use gauche.test)
@@ -10,10 +10,10 @@
 
 (test-start "random")
 
-(test-section "math.mt-random")
+(test-section "math.random.mt")
 
-(use math.mt-random)
-(test-module 'math.mt-random)
+(use math.random.mt)
+(test-module 'math.random.mt)
 
 
 (define (value-in-range? range)
@@ -117,10 +117,10 @@
                      ))))
 
 
-(test-section "math.xorshift")
+(test-section "math.random.xos")
 
-(use math.xorshift)
-(test-module 'math.xorshift)
+(use math.random.xos)
+(test-module 'math.random.xos)
 
 
 (test-end)

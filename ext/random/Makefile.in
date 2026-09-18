@@ -4,38 +4,38 @@ top_srcdir   = @top_srcdir@
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
-XCLEANFILES = math--mt-random.c mt-random.sci \
-	      math--xorshift.c xorshift.sci
+XCLEANFILES = math--random--mt.c random/mt.sci \
+	      math--random--xos.c random/xos.sci
 
 include ../Makefile.ext
 
 SCM_CATEGORY = math
 
-LIBFILES = math--mt-random.$(SOEXT) \
-	   math--xorshift.$(SOEXT)
-SCMFILES = mt-random.sci xorshift.sci
+LIBFILES = math--random--mt.$(SOEXT) \
+	   math--random--xos.$(SOEXT)
+SCMFILES = random/mt.sci random/xos.sci mt-random.scm
 
-OBJECTS = $(math_mt_random_OBJECTS) \
-	  $(math_xorshift_OBJECTS)
+OBJECTS = $(math_random_mt_OBJECTS) \
+	  $(math_random_xos_OBJECTS)
 
 all : $(LIBFILES)
 
-# math.mt-random
-math_mt_random_OBJECTS = mt-random.$(OBJEXT) math--mt-random.$(OBJEXT)
+# math.random.mt
+math_random_mt_OBJECTS = mt-random.$(OBJEXT) math--random--mt.$(OBJEXT)
 
-math--mt-random.$(SOEXT) : $(math_mt_random_OBJECTS)
-	$(MODLINK) math--mt-random.$(SOEXT) $(math_mt_random_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+math--random--mt.$(SOEXT) : $(math_random_mt_OBJECTS)
+	$(MODLINK) math--random--mt.$(SOEXT) $(math_random_mt_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-math--mt-random.c mt-random.sci : mt-random.scm
-	$(PRECOMP) -e -P -o math--mt-random $(srcdir)/mt-random.scm
+math--random--mt.c random/mt.sci : mt.scm
+	$(PRECOMP) -e -P -o math--random--mt -i random/mt.sci $(srcdir)/mt.scm
 
-# math.xorshift
-math_xorshift_OBJECTS = math--xorshift.$(OBJEXT)
+# math.random.xos
+math_random_xos_OBJECTS = math--random--xos.$(OBJEXT)
 
-math--xorshift.$(SOEXT) : $(math_xorshift_OBJECTS)
-	$(MODLINK) math--xorshift.$(SOEXT) $(math_xorshift_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+math--random--xos.$(SOEXT) : $(math_random_xos_OBJECTS)
+	$(MODLINK) math--random--xos.$(SOEXT) $(math_random_xos_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-math--xorshift.c xorshift.sci : xorshift.scm
-	$(PRECOMP) -e -P -o math--xorshift $(srcdir)/xorshift.scm
+math--random--xos.c random/xos.sci : xos.scm
+	$(PRECOMP) -e -P -o math--random--xos -i random/xos.sci $(srcdir)/xos.scm
 
 install : install-std

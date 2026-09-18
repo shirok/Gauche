@@ -123,8 +123,8 @@ test.record
 /ext/lang/lang--asm--x86_64.c
 /ext/native/gauche--ffitest.c
 /ext/peg/parser--peg.c
-/ext/random/math--mt-random.c
-ext/random/math--xorshift.c
+/ext/random/math--random--mt.c
+/ext/random/math--random--xos.c
 /ext/rfc/rfc--822.c
 /ext/rfc/rfc--mime.c
 /ext/scheme/scheme--charset.c
@@ -200,6 +200,7 @@ ext/random/math--xorshift.c
 /lib/gauche/vm/insn.scm
 /lib/gauche/vport.scm
 /lib/math/mt-random.scm
+/lib/math/random/
 /lib/os/
 /lib/parser/
 /lib/rfc/sha1.scm

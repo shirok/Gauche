@@ -1,5 +1,5 @@
 ;;;
-;;; math.xorshift - Xorshift PRNG
+;;; math.random.xos - xoshiro PRNG
 ;;;
 ;;;   Copyright (c) 2006  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -40,7 +40,7 @@
 ;; Fast Splittable Pseudorandom Number Generators
 ;; https://dl.acm.org/doi/pdf/10.1145/2714064.2660195
 
-(define-module math.xorshift
+(define-module math.random.xos
   (export <xoshiro256>
           make-xoshiro
           xoshiro-get-seed
@@ -48,7 +48,7 @@
           xoshiro-u64
           xoshiro-real
           xoshiro-real0))
-(select-module math.xorshift)
+(select-module math.random.xos)
 
 (inline-stub
  (.include "gauche/priv/numberP.h")
