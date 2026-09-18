@@ -1,3 +1,11 @@
+2026-09-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm__EncodeDouble64): Replaces Scm__EncodeDouble,
+	  which had an awkward API for 32bit-only architecture.  Now we assume
+	  uint64_t universal, we drop Scm__EncodeDouble.  Technically this is
+	  visible as ABI change, but this function has been internal.
+	  https://github.com/shirok/Gauche/issues/1330
+
 2026-09-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/random/xorshift.scm: Start adding xorshift-family PRNG.

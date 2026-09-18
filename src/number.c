@@ -585,21 +585,15 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
 
 /* Construct a double directly from the given bit patterns. This is
    an internal procedure; external procedure should use Scm_EncodeFlonum.
-
-   On 64bit architecture, only mant1 is used for mantissa.
-   On 32bit architecture, mant1 is for lower 32bits of mantissa, and
-   lower 20bits of mant0 is used for higher bits.
- */
-double Scm__EncodeDouble(u_long mant1,
-                         u_long mant0 SCM_UNUSED,
-                         int exp, int signbit)
+*/
+double Scm__EncodeDouble64(uint64_t mant, int exp, int signbit)
 {
     ScmIEEEDouble dd;
 #ifdef DOUBLE_ARMENDIAN
     ScmIEEEDoubleARM dd2;
     if (armendian_p) {
-        dd2.components.mant1 = mant1;
-        dd2.components.mant0 = mant0;
+        dd2.components.mant1 = (u_long)(mant & ULONG_MAX); /* lower bits */
+        dd2.components.mant0 = mant >> 32;
         dd2.components.exp = exp;
         dd2.components.sign = signbit;
         return dd2.d;
@@ -609,10 +603,10 @@ double Scm__EncodeDouble(u_long mant1,
     dd.components.exp = exp;
     dd.components.sign = signbit;
 #if SIZEOF_LONG >= 8
-    dd.components.mant = mant1;
+    dd.components.mant = mant;
 #else  /*SIZEOF_LONG==4*/
-    dd.components.mant1 = mant1;
-    dd.components.mant0 = mant0;
+    dd.components.mant1 = (u_long)(mant & ULONG_MAX);
+    dd.components.mant0 = mant >> 32;
 #endif /*SIZEOF_LONG==4*/
     return dd.d;
 }
@@ -654,13 +648,7 @@ double Scm_EncodeFlonum(ScmObj mant, int exp, int sign)
     }
 
     int expfield = exp + 0x3ff + 52;
-#if SIZEOF_LONG >= 8
-    return Scm__EncodeDouble(mant64, 0, expfield, signbit);
-#else
-    u_long hi = (mant64 >> 32);
-    u_long lo = (u_long)(mant64 & ULONG_MAX);
-    return Scm__EncodeDouble(lo, hi, expfield, signbit);
-#endif
+    return Scm__EncodeDouble64(mant64, expfield, signbit);
 }
 
 /*=====================================================================
