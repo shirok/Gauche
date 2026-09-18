@@ -423,7 +423,7 @@ double Scm_BignumToDouble(const ScmBignum *b)
     }
     if (exponent > 2046) return Scm__EncodeDouble64(0, 2047, (b->sign < 0));
     uint64_t d = ((uint64_t)dst[1] << 32) + dst[0];
-    else return Scm__EncodeDouble64(d, exponent, (b->sign < 0));
+    return Scm__EncodeDouble64(d, exponent, (b->sign < 0));
 #endif /*SIZEOF_LONG==4*/
 }
 
