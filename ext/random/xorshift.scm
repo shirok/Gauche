@@ -45,10 +45,14 @@
           make-xoshiro
           xoshiro-get-seed
           xoshiro-set-seed!
-          xoshiro-u64))
+          xoshiro-u64
+          xoshiro-real
+          xoshiro-real0))
 (select-module math.xorshift)
 
 (inline-stub
+ (.include "gauche/priv/numberP.h")
+
  (declcode
   (define-ctype ScmXoshiro256::(.struct
                                 (SCM_HEADER :: ""
@@ -61,13 +65,14 @@
    "ScmXoshiroClass"
    (c "SCM_CLASS_DEFAULT_CPL")
    ()
-   (allcator (let* ([seed_s (Scm_GetKeyword ':seed initargs '#f)]
-                    [seed (Scm_GetIntegerU64 seed_s)]
-                    ;[priv (Scm_GetKeyword ':private? initargs '#f)]
-                    [gen (SCM_NEW ScmXoshiro256)])
-               (SCM_SET_CLASS gen klass)
-               (set! (-> gen seed) seed)
-               (xoshiro256-init gen seed))))
+   (allocator (let* ([seed_s (Scm_GetKeyword ':seed initargs '#f)]
+                     [seed::uint64_t (Scm_GetIntegerU64 seed_s)]
+                     ;[priv (Scm_GetKeyword ':private? initargs '#f)]
+                     [gen::ScmXoshiro256* (SCM_NEW ScmXoshiro256)])
+                (SCM_SET_CLASS gen klass)
+                (set! (-> gen seed) seed)
+                (xoshiro256-init gen seed)
+                (return (SCM_OBJ gen)))))
 
  ;; For initial state generation.  See SplitMix paper for all the constants.
  (declcode
@@ -132,3 +137,21 @@
 ;; API
 (define-cproc xoshiro-u64 (gen::<xoshiro256>) ::<uint64>
   (return (xoshiro256++ gen)))
+
+(inline-stub
+ (define-cfn get-real (gen::ScmXoshiro256* exclude0::_Bool) ::double :static
+   (for ()
+     (let* ([v::uint64_t (xoshiro256++ gen)]
+            [sign::int (>> v 63)]
+            [mant::uint64_t (logand (>> v 10)
+                                    (C: #x000f_ffff_ffff_ffff))]
+            [d::double (Scm__EncodeDouble64 v #x3fe sign)])
+       (unless (and exclude0 (== d 0.0))
+         (return d)))))
+ )
+
+;; API
+(define-cproc xoshiro-real (gen::<xoshiro256>) ::<double>
+  (return (get-real gen TRUE)))
+(define-cproc xoshiro-real0 (gen::<xoshiro256>) ::<double>
+  (return (get-real gen FALSE)))
