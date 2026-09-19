@@ -342,43 +342,45 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
         module_add_visited(&searched, module);
     }
 
-    ScmObj p, mp;
-    /* Next, search from imported modules
-       If the import is prefixed, we avoid caching the result. */
-    SCM_FOR_EACH(p, module->imported) {
-        ScmObj elt = SCM_CAR(p);
-        ScmObj sym = SCM_OBJ(symbol);
-        int prefixed = FALSE;
+    ScmObj mp;
+    if (!external_only || module->exportAll) {
+        ScmObj p;
+        /* Next, search from imported modules
+           If the import is prefixed, we avoid caching the result. */
+        SCM_FOR_EACH(p, module->imported) {
+            ScmObj elt = SCM_CAR(p);
+            ScmObj sym = SCM_OBJ(symbol);
+            int prefixed = FALSE;
 
-        SCM_ASSERT(SCM_MODULEP(elt));
-        SCM_FOR_EACH(mp, SCM_MODULE(elt)->mpl) {
-            ScmGloc *g;
+            SCM_ASSERT(SCM_MODULEP(elt));
+            SCM_FOR_EACH(mp, SCM_MODULE(elt)->mpl) {
+                ScmGloc *g;
 
-            SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
-            ScmModule *m = SCM_MODULE(SCM_CAR(mp));
-            if (!prefixed && module_visited_p(&searched, m)) continue;
-            if (SCM_SYMBOLP(m->prefix)) {
-                sym = Scm_SymbolSansPrefix(SCM_SYMBOL(sym),
-                                           SCM_SYMBOL(m->prefix));
-                if (!SCM_SYMBOLP(sym)) break;
-                prefixed = TRUE;
-            }
-
-            ScmObj v = Scm_HashTableRef(m->external, SCM_OBJ(sym), SCM_FALSE);
-            if (SCM_GLOCP(v)) {
-                g = SCM_GLOC(v);
-                if (g->hidden) break;
-                if (SCM_GLOC_PHANTOM_BINDING_P(g)) {
-                    g = search_binding(m, g->name, FALSE, FALSE, TRUE);
-                    if (g) return g;
-                } else {
-                    return g;
+                SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
+                ScmModule *m = SCM_MODULE(SCM_CAR(mp));
+                if (!prefixed && module_visited_p(&searched, m)) continue;
+                if (SCM_SYMBOLP(m->prefix)) {
+                    sym = Scm_SymbolSansPrefix(SCM_SYMBOL(sym),
+                                               SCM_SYMBOL(m->prefix));
+                    if (!SCM_SYMBOLP(sym)) break;
+                    prefixed = TRUE;
                 }
+
+                ScmObj v = Scm_HashTableRef(m->external, SCM_OBJ(sym), SCM_FALSE);
+                if (SCM_GLOCP(v)) {
+                    g = SCM_GLOC(v);
+                    if (g->hidden) break;
+                    if (SCM_GLOC_PHANTOM_BINDING_P(g)) {
+                        g = search_binding(m, g->name, FALSE, FALSE, TRUE);
+                        if (g) return g;
+                    } else {
+                        return g;
+                    }
+                }
+                if (!prefixed) module_add_visited(&searched, m);
             }
-            if (!prefixed) module_add_visited(&searched, m);
         }
     }
-
     /* Then, search from parent modules */
     SCM_ASSERT(SCM_PAIRP(module->mpl));
     SCM_FOR_EACH(mp, SCM_CDR(module->mpl)) {
