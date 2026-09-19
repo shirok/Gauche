@@ -14104,10 +14104,11 @@ Napier's constant.
 
 @c ----------------------------------------------------------------------
 @node Mersenne-Twister random number generator, Prime numbers, Mathematical constants, Library modules - Utilities
-@section @code{math.mt-random} - Mersenne Twister Random number generator
-@c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
+@section @code{math.random.mt} - Mersenne Twister Random number generator
+@c NODE Mersenne Twister乱数発生器, @code{math.random.mt} - Mersenne Twister乱数発生器
 
-@deftp {Module} math.mt-random
+@deftp {Module} math.random.mt
+@mdindex math.random.mt
 @mdindex math.mt-random
 @c EN
 Provides a pseudo random number generator (RNG) based on
@@ -14139,7 +14140,7 @@ functions that aren't available through @code{srfi.27}.
 
 @deftp {Class} <mersenne-twister>
 @clindex mersenne-twister
-@c MOD math.mt-random
+@c MOD math.random.mt
 @c EN
 A class to encapsulate the state of Mersenne Twister RNG.
 Each instance of this class has its own state, and can be used
@@ -14154,7 +14155,7 @@ Mersenne Twister RNGの状態をカプセル化するクラスです。
 @end deftp
 
 @defun make-mersenne-twister :optional seed private?
-@c MOD math.mt-random
+@c MOD math.random.mt
 @c EN
 Creates and returns a new @code{<mersenne-twister>} RNG instance.
 
@@ -14206,7 +14207,7 @@ overhead of locking.
 @end defun
 
 @defun mt-random-set-seed! mt seed
-@c MOD math.mt-random
+@c MOD math.random.mt
 @c EN
 Sets random seed value @var{seed} to the Mersenne Twister RNG (MTRNG) @var{mt}.
 @var{Seed} can be an arbitrary positive exact integer,
@@ -14253,7 +14254,7 @@ in the bignum is used for the seed.
 @end defun
 
 @defun mt-random-get-seed mt
-@c MOD math.mt-random
+@c MOD math.random.mt
 @c EN
 Returns the last seed value used to initialize Mersenne Twister RNG @var{mt}.
 It is either an exact integer or u32vector.
@@ -14268,7 +14269,7 @@ Mersenne Twister RNG @var{mt}を初期化するのに使われたシード値を
 
 @defun mt-random-get-state mt
 @defunx mt-random-set-state! mt state
-@c MOD math.mt-random
+@c MOD math.random.mt
 @c EN
 Retrieves and reinstalls the state of Mersenne Twister RNG @var{mt}.
 The state is represented by a u32vector of 625 elements.  The state
@@ -14286,7 +14287,7 @@ Mersenne Twister RNG @var{mt}を取り出して再インストールします。
 
 @defun mt-random-real mt
 @defunx mt-random-real0 mt
-@c MOD math.mt-random
+@c MOD math.random.mt
 @c EN
 Returns a random real number between 0.0 and 1.0.
 1.0 is not included in the range.  @code{Mt-random-real} doesn't
@@ -14302,7 +14303,7 @@ Excluding 0.0 is from the draft SRFI-27.
 @end defun
 
 @defun mt-random-integer mt range
-@c MOD math.mt-random
+@c MOD math.random.mt
 @c EN
 Returns a random exact positive integer between 0 and @var{range}-1.
 @var{Range} can be any positive exact integer.
@@ -14315,7 +14316,7 @@ Returns a random exact positive integer between 0 and @var{range}-1.
 @defun mt-random-fill-u32vector! mt u32vector
 @defunx mt-random-fill-f32vector! mt f32vector
 @defunx mt-random-fill-f64vector! mt f64vector
-@c MOD math.mt-random
+@c MOD math.random.mt
 @c EN
 Fills the given uniform vector by the random numbers.
 For @code{mt-random-fill-u32vector!}, the elements are filled
@@ -14334,6 +14335,14 @@ faster than getting one by one.
 では、0.0と1.0(含まれない)の間の非正確実数で埋められます。
 @c COMMON
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Xor-shift-rotate random number generator
+@section @code{math.random.xos} - Xor-shift-rotate random number generator
+@c NODE Xor-shift-rotate乱数発生器, @code{math.random.xos} - Xor-shift-rotate乱数発生器
+
+
+
 
 @c ----------------------------------------------------------------------
 @node Prime numbers, Simplex solver, Mersenne-Twister random number generator, Library modules - Utilities

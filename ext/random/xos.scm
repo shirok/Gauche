@@ -57,8 +57,27 @@
   (define-ctype ScmXoshiro256::(.struct
                                 (SCM_HEADER :: ""
                                  s::(.array uint64_t (4))
-                                 seed::uint64_t))) ; original seed
+                                 seed::uint64_t     ; original seed
+                                 flags::u_long
+                                 lock::ScmInternalMutex)))
+
+  ;; flags
+  ;; SCM_XOSHIRO_PRIVATE - Do not use mutex.
+  (.define SCM_XOSHIRO_PRIVATE (<< 1 0))
+  (.define XOSHIRO_NEED_LOCK (gen)
+           (not (logand (-> gen flags) SCM_XOSHIRO_PRIVATE)))
   )
+
+ ;; Grab the lock while updating the state, unless the generator is private.
+ ;; NB: BODY must not escape (no 'return' etc.).
+ (define-cise-stmt with-xoshiro-lock
+   [(_ gen . body)
+    `(begin
+       (when (XOSHIRO_NEED_LOCK ,gen)
+         (SCM_INTERNAL_MUTEX_LOCK (-> ,gen lock)))
+       ,@body
+       (when (XOSHIRO_NEED_LOCK ,gen)
+         (SCM_INTERNAL_MUTEX_UNLOCK (-> ,gen lock))))])
 
  (define-cclass <xoshiro256> :private :no-meta
    "ScmXoshiro256*"
@@ -67,11 +86,16 @@
    ()
    (allocator (let* ([seed_s (Scm_GetKeyword ':seed initargs '#f)]
                      [seed::uint64_t (Scm_GetIntegerU64 seed_s)]
-                     ;[priv (Scm_GetKeyword ':private? initargs '#f)]
+                     [priv (Scm_GetKeyword ':private? initargs '#f)]
                      [gen::ScmXoshiro256* (SCM_NEW ScmXoshiro256)])
                 (SCM_SET_CLASS gen klass)
+                (set! (-> gen flags) (?: (SCM_FALSEP priv)
+                                         0
+                                         SCM_XOSHIRO_PRIVATE))
                 (set! (-> gen seed) seed)
                 (xoshiro256-init gen seed)
+                (when (XOSHIRO_NEED_LOCK gen)
+                  (SCM_INTERNAL_MUTEX_INIT (-> gen lock)))
                 (return (SCM_OBJ gen)))))
 
  ;; For initial state generation.  See SplitMix paper for all the constants.
@@ -98,6 +122,7 @@
  (define-cfn rotate64 (x::uint64_t k::int) ::uint64_t :static :inline
    (return (logior (<< x k) (>> x (- 64 k)))))
 
+ ;; Caller must hold the lock.
  (define-cfn xoshiro256++ (gen::ScmXoshiro256*) ::uint64_t :static
    (let* ([s::uint64_t* (-> gen s)]
           [result::uint64_t (+ (rotate64 (+ (aref s 0) (aref s 3)) 23)
@@ -111,6 +136,7 @@
      (set! (aref s 3) (rotate64 (aref s 3) 45))
      (return result)))
 
+ ;; Caller must hold the lock.
  (define-cfn xoshiro256-init (gen::ScmXoshiro256* seed::uint64_t)
    ::void :static
    (let* ([mixstate::SplitMix64])
@@ -122,8 +148,8 @@
  )
 
 ;; API
-(define (make-xoshiro :key (seed 42))
-  (make <xoshiro256> :seed seed))
+(define (make-xoshiro :key (seed 42) (private? #f))
+  (make <xoshiro256> :seed seed :private? private?))
 
 ;; API
 (define-cproc xoshiro-get-seed (gen::<xoshiro256>) ::<uint64>
@@ -131,27 +157,32 @@
 
 ;; API
 (define-cproc xoshiro-set-seed! (gen::<xoshiro256> seed::<uint64>) ::<void>
-  (set! (-> gen seed) seed)
-  (xoshiro256-init gen seed))
+  (with-xoshiro-lock gen
+    (set! (-> gen seed) seed)
+    (xoshiro256-init gen seed)))
 
 ;; API
 (define-cproc xoshiro-u64 (gen::<xoshiro256>) ::<uint64>
-  (return (xoshiro256++ gen)))
+  (let* ([r::uint64_t 0])
+    (with-xoshiro-lock gen (set! r (xoshiro256++ gen)))
+    (return r)))
 
 (inline-stub
+ ;; Caller must hold the lock.
  (define-cfn get-real (gen::ScmXoshiro256* exclude0::_Bool) ::double :static
    (for ()
      (let* ([v::uint64_t (xoshiro256++ gen)]
-            [sign::int (>> v 63)]
-            [mant::uint64_t (logand (>> v 10)
-                                    (C: #x000f_ffff_ffff_ffff))]
-            [d::double (Scm__EncodeDouble64 v #x3fe sign)])
+            [d::double (* v (/ 1.0 18446744073709551616.0))])
        (unless (and exclude0 (== d 0.0))
          (return d)))))
  )
 
 ;; API
 (define-cproc xoshiro-real (gen::<xoshiro256>) ::<double>
-  (return (get-real gen TRUE)))
+  (let* ([r::double 0.0])
+    (with-xoshiro-lock gen (set! r (get-real gen TRUE)))
+    (return r)))
 (define-cproc xoshiro-real0 (gen::<xoshiro256>) ::<double>
-  (return (get-real gen FALSE)))
+  (let* ([r::double 0.0])
+    (with-xoshiro-lock gen (set! r (get-real gen FALSE)))
+    (return r)))
