@@ -40,7 +40,8 @@
 * Filtering file content::      file.filter
 * Filesystem utilities::        file.util
 * Mathematical constants::      math.const
-* Mersenne-Twister random number generator::  math.mt-random
+* Mersenne-Twister random number generator::  math.random.mt
+* Xorshift random number generator:: math.random.xos
 * Prime numbers::               math.prime
 * Simplex solver::              math.simplex
 * Windows support::             os.windows
@@ -14103,7 +14104,7 @@ Napier's constant.
 @end defvr
 
 @c ----------------------------------------------------------------------
-@node Mersenne-Twister random number generator, Prime numbers, Mathematical constants, Library modules - Utilities
+@node Mersenne-Twister random number generator, Xorshift random number generator, Mathematical constants, Library modules - Utilities
 @section @code{math.random.mt} - Mersenne Twister Random number generator
 @c NODE Mersenne Twister乱数発生器, @code{math.random.mt} - Mersenne Twister乱数発生器
 
@@ -14135,6 +14136,15 @@ functions that aren't available through @code{srfi.27}.
 (@ref{Sources of random bits}参照)。
 @code{srfi.27}はこのモジュールの上に実装されていますが、ポータブルなAPIを提供しています。
 @code{srfi.27}にない機能が必要な時のみこのモジュールを直接使うようにしてください。
+@c COMMON
+
+@c EN
+This module used to be called @code{math.mt-random}.  The old name is still
+available as an alias, but the new code should use @code{math.random.mt}.
+@c JP
+このモジュールはかつて@code{math.mt-random}と呼ばれていました。
+以前の名前も別名として残してありますが、新たなコードでは@code{math.random.mt}
+を使ってください。
 @c COMMON
 @end deftp
 
@@ -14337,15 +14347,48 @@ faster than getting one by one.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Xor-shift-rotate random number generator
-@section @code{math.random.xos} - Xor-shift-rotate random number generator
-@c NODE Xor-shift-rotate乱数発生器, @code{math.random.xos} - Xor-shift-rotate乱数発生器
+@node Xorshift random number generator, Prime numbers, Mersenne-Twister random number generator, Library modules - Utilities
+@section @code{math.random.xos} - Xorshift random number generator
+@c NODE Xorshift乱数発生器, @code{math.random.xos} - Xorshift乱数発生器
+
+@deftp {Module} math.random.xos
+@mdindex math.random.xos
+This module implements one of xorshift-family pseudo random generator
+(in the current implementation, we use Xoshiro256++).  It has smaller
+state size than Mersenne-Twister.
+@end deftp
+
+@deftp {Class} <xoshiro256>
+@clindex xoshiro256
+@c MOD math.random.xos
+A class to packate the state of Xoshiro256 PRNG (the name stands for
+Xor-Shift-Rotate 256bits).
+@end deftp
 
 
+@defun make-xoshiro256 :optional seed private?
+@c MOD math.random.xos
+@end defun
 
+@defun xos-random-get-seed xos
+@c MOD math.random.xos
+@end defun
+
+@defun xos-random-set-seed! xos seed
+@c MOD math.random.xos
+@end defun
+
+@defun xos-random-u64 xos
+@c MOD math.random.xos
+@end defun
+
+@defun xos-random-real xos
+@defunx xos-random-real0 xos
+@c MOD math.random.xos
+@end defun
 
 @c ----------------------------------------------------------------------
-@node Prime numbers, Simplex solver, Mersenne-Twister random number generator, Library modules - Utilities
+@node Prime numbers, Simplex solver, Xorshift random number generator, Library modules - Utilities
 @section @code{math.prime} - Prime numbers
 @c NODE 素数, @code{math.prime} - 素数
 

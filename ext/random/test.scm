@@ -123,24 +123,24 @@
 (use math.random.xos)
 (test-module 'math.random.xos)
 
-(define (xoshiro-sequence g n)
-  (map (^_ (xoshiro-u64 g)) (iota n)))
+(define (xos-random-sequence g n)
+  (map (^_ (xos-random-u64 g)) (iota n)))
 
-(test* "seed" 12345 (xoshiro-get-seed (make-xoshiro :seed 12345)))
+(test* "seed" 12345 (xos-random-get-seed (make-xoshiro256 :seed 12345)))
 
 (test* "set-seed!" #t
-       (let1 g (make-xoshiro :seed 1)
-         (xoshiro-set-seed! g 7)
-         (equal? (xoshiro-sequence g 10)
-                 (xoshiro-sequence (make-xoshiro :seed 7) 10))))
+       (let1 g (make-xoshiro256 :seed 1)
+         (xos-random-set-seed! g 7)
+         (equal? (xos-random-sequence g 10)
+                 (xos-random-sequence (make-xoshiro256 :seed 7) 10))))
 
 ;; :private? only turns off the mutex; it must not affect the sequence.
 (test* "private? generates the same sequence" #t
-       (equal? (xoshiro-sequence (make-xoshiro :seed 7) 20)
-               (xoshiro-sequence (make-xoshiro :seed 7 :private? #t) 20)))
+       (equal? (xos-random-sequence (make-xoshiro256 :seed 7) 20)
+               (xos-random-sequence (make-xoshiro256 :seed 7 :private? #t) 20)))
 
 (test* "private? initarg" #t
-       (equal? (xoshiro-sequence (make <xoshiro256> :seed 7) 20)
-               (xoshiro-sequence (make <xoshiro256> :seed 7 :private? #t) 20)))
+       (equal? (xos-random-sequence (make <xoshiro256> :seed 7) 20)
+               (xos-random-sequence (make <xoshiro256> :seed 7 :private? #t) 20)))
 
 (test-end)
