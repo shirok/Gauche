@@ -9,8 +9,8 @@
 /* Included by arith.h if SCM_TARGET_AARCH64 is defined.
 
    SCM_ENABLE_ALL_ARITH_ASMS is not defined usually, so that we exclude macros
-   that didn't show performance improvements.  It is defined by bench-arith
-   only to compare performance.
+   that didn't show performance improvements.  It is defined by
+   bench-arith-driver.scm only to compare performance.
  */
 
 #ifdef __GNUC__

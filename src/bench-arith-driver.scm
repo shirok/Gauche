@@ -1,9 +1,10 @@
 #!/usr/bin/env gosh
 ;;;
-;;; bench-arith.scm - build & compare portable vs. native arith.h
+;;; bench-arith-driver.scm - build & compare portable vs. native arith.h
 ;;;
 ;;; Builds two variants of bench-arith.c (portable and arch-native),
 ;;; runs each, and prints a side-by-side table.
+;;;
 
 (use gauche.process)
 (use gauche.config)

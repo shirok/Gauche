@@ -8,7 +8,7 @@
  *     cc -O2 -I. bench-arith.c -o bench-arith-native
  *     cc -O2 -I. -DBENCH_PORTABLE bench-arith.c -o bench-arith-portable
  *
- * Or run bench-arith.scm to build both & compare.
+ * Or run bench-arith-driver.scm to build both & compare.
  */
 
 #include <stdio.h>
