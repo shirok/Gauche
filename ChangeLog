@@ -1,3 +1,7 @@
+2026-09-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/271/*: Start adding srfi.271 support.
+
 2026-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* ext/random/mt.scm, ext/random/xos.scm: Rename math.mt-random

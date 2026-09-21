@@ -7,10 +7,22 @@
 
 (test-start "Additional SRFIs")
 
+(test-section "SRFI-271")
+
+(use srfi.271)
+(test-module 'srfi.271)
+(use srfi.271.randomized)
+(test-module 'srfi.271.randomized)
+(use srfi.271.determinized)
+(test-module 'srfi.271.determinized)
+
+
+
 (test-section "SRFI-274")
 
 (use srfi.274)
 (test-module 'srfi.274)
+
 
 
 (test-section "SRFI-281")

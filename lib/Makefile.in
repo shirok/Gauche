@@ -38,7 +38,7 @@ SUBDIRS  = gauche gauche/vm gauche/configure gauche/serializer \
 	   slib \
 	   srfi srfi/160 srfi-29 srfi/29 srfi/146 \
 	   srfi-159 srfi-159/internal srfi/159 srfi/160 srfi/172 srfi/194 \
-	   srfi/226 srfi/227 \
+	   srfi/226 srfi/227 srfi/271 \
 	   binary control data dbd dbm math util compat file \
 	   parser parser/peg rfc rfc/http \
 	   scheme scheme/mapping scheme/show scheme/stream scheme/vector \
@@ -57,6 +57,7 @@ SCMFILES = \
        srfi/194/*.scm \
        srfi/226/*.scm \
        srfi/227/*.scm \
+       srfi/271/*.scm \
        slib.scm slib/path.scm \
        check-script \
        gauche/test.scm gauche/test/script.scm \
