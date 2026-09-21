@@ -157,10 +157,12 @@
 
 ;; API
 ;;  This can be used to take a snapshot of RNG state.
-(define-cproc copy-xoshiro256 (xos::<xoshiro256>)
+;;  NB: Flags are not copied, but can be set with keyword args.
+(define-cproc copy-xoshiro256 (xos::<xoshiro256> :key (private?::<boolean> #f))
   (let* ([new-xos::ScmXoshiro256* (SCM_NEW ScmXoshiro256)])
     (SCM_SET_CLASS new-xos (& ScmXoshiroClass))
-    (SCM_INTERNAL_MUTEX_INIT (-> xos lock))
+    (SCM_INTERNAL_MUTEX_INIT (-> new-xos lock))
+    (set! (-> new-xos flags) (?: private? SCM_XOSHIRO_PRIVATE 0))
     (with-xos-lock xos
       (memcpy (-> new-xos s) (-> xos s) (sizeof (-> xos s)))
       (set! (-> new-xos seed) (-> xos seed)))
@@ -168,11 +170,13 @@
 
 ;; API
 ;;  This can be used to restore RNG state.
+;;  NB: Flags are not copied; the dst's original flags are preserved.
 (define-cproc copy-xoshiro256! (dst::<xoshiro256> src::<xoshiro256>) ::<void>
-  (with-xos-lock dst
-    (with-xos-lock src
-      (memcpy (-> dst s) (-> src s) (sizeof (-> src s)))
-      (set! (-> dst seed) (-> src seed)))))
+  (unless (SCM_EQ dst src)
+    (with-xos-lock dst
+      (with-xos-lock src
+        (memcpy (-> dst s) (-> src s) (sizeof (-> src s)))
+        (set! (-> dst seed) (-> src seed))))))
 
 ;; API
 (define-cproc xos-random-get-seed (xos::<xoshiro256>) ::<uint64>

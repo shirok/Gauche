@@ -143,4 +143,60 @@
        (equal? (xos-random-sequence (make <xoshiro256> :seed 7) 20)
                (xos-random-sequence (make <xoshiro256> :seed 7 :private? #t) 20)))
 
+;; State saving/restoring with copy-xoshiro256 and copy-xoshiro256!
+
+(test* "copy-xoshiro256 copies the seed" 12345
+       (let1 g (make-xoshiro256 :seed 12345)
+         (xos-random-sequence g 5)      ;advance the state
+         (xos-random-get-seed (copy-xoshiro256 g))))
+
+(test* "copy-xoshiro256 snapshots the current state" #t
+       (let* ([g (make-xoshiro256 :seed 314159)]
+              [_ (xos-random-sequence g 10)] ;advance the state
+              [snapshot (copy-xoshiro256 g)])
+         (equal? (xos-random-sequence g 20)
+                 (xos-random-sequence snapshot 20))))
+
+(test* "copy-xoshiro256 snapshot is independent of the original" #t
+       (let* ([g (make-xoshiro256 :seed 2718)]
+              [snapshot (copy-xoshiro256 g)]
+              [expect (xos-random-sequence g 20)]) ;advances g, not snapshot
+         (equal? expect (xos-random-sequence snapshot 20))))
+
+(test* "copy-xoshiro256! restores the saved state" #t
+       (let* ([g (make-xoshiro256 :seed 8888)]
+              [_ (xos-random-sequence g 7)]
+              [snapshot (copy-xoshiro256 g)]
+              [expect (xos-random-sequence g 20)])
+         (copy-xoshiro256! g snapshot)
+         (equal? expect (xos-random-sequence g 20))))
+
+(test* "copy-xoshiro256! restores repeatedly" '(#t #t #t)
+       (let* ([g (make-xoshiro256 :seed 8888)]
+              [snapshot (copy-xoshiro256 g)]
+              [expect (xos-random-sequence g 20)])
+         (map (^_ (copy-xoshiro256! g snapshot)
+                  (equal? expect (xos-random-sequence g 20)))
+              (iota 3))))
+
+(test* "copy-xoshiro256! leaves the source intact" #t
+       (let* ([g (make-xoshiro256 :seed 4649)]
+              [snapshot (copy-xoshiro256 g)]
+              [h (make-xoshiro256 :seed 1)])
+         (copy-xoshiro256! h snapshot)
+         (xos-random-sequence h 20)     ;advances h, not snapshot
+         (equal? (xos-random-sequence g 20)
+                 (xos-random-sequence snapshot 20))))
+
+(test* "copy-xoshiro256! overwrites the destination" '(#t 8888)
+       (let* ([g (make-xoshiro256 :seed 8888)]
+              [_ (xos-random-sequence g 3)]
+              [snapshot (copy-xoshiro256 g)]
+              [expect (xos-random-sequence g 20)]
+              [h (make-xoshiro256 :seed 999)])
+         (xos-random-sequence h 5)
+         (copy-xoshiro256! h snapshot)
+         (list (equal? expect (xos-random-sequence h 20))
+               (xos-random-get-seed h))))
+
 (test-end)
