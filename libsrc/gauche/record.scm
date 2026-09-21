@@ -257,7 +257,7 @@
 ;; NB: If record is created procedurally, we don't know what to set
 ;; in :defined-module.
 (define (make-rtd name fieldspecs :optional (parent #f)
-                  :key (mixins '()) (metaclass #f) (module #f))
+                  :key (mixins '()) (metaclass #f) (initargs '()) (module #f))
   ;; We only allow to inherit either other record class, or classes that
   ;; don't add slots.  The metaclass be alwayas <record-meta>
   (when parent
@@ -272,16 +272,17 @@
     (unless (subtype? metaclass <record-meta>)
       (error "Cannot use a metaclass that isn't a subtype of <record-meta>:"
              metaclass)))
-  (make (or metaclass
-            (and parent (class-of parent))
-            <record-meta>)
-    :name name :field-specs fieldspecs
-    :supers (append mixins
-                    (cond [(is-a? parent <record-meta>) (list parent)]
-                          [else (list <record>)]))
-    :slots ($ fieldspecs->slotspecs fieldspecs
-              $ if parent (length (class-slots parent)) 0)
-    :defined-modules (if module (list module) '())))
+  (apply make (or metaclass
+                  (and parent (class-of parent))
+                  <record-meta>)
+         :name name :field-specs fieldspecs
+         :supers (append mixins
+                         (cond [(is-a? parent <record-meta>) (list parent)]
+                               [else (list <record>)]))
+         :slots ($ fieldspecs->slotspecs fieldspecs
+                   $ if parent (length (class-slots parent)) 0)
+         :defined-modules (if module (list module) '())
+         initargs))
 
 (define (rtd? obj) (is-a? obj <record-meta>))
 
@@ -453,12 +454,15 @@
          [((? identifier? name) parent) (values name parent '())]
          [((? identifier? name) parent . opts)
           (let-keywords opts ([mixins #f]
-                              [metaclass #f])
+                              [metaclass #f]
+                              [initargs '()])
             (values name parent
                     (cond-list [mixins @ (quasirename r
                                            `(:mixins (list ,@mixins)))]
                                [metaclass @ (quasirename r
-                                              `(:metaclass ,metaclass))])))]
+                                              `(:metaclass ,metaclass))]
+                               [initargs @ (quasirename r
+                                             `(:initargs (list ,@initargs)))])))]
          [_ (error "invalid type-spec" type-spec)]))
      (define (build-field-spec field-specs)
        (map-to <vector> (match-lambda
