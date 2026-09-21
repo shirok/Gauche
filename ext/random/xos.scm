@@ -43,6 +43,8 @@
 (define-module math.random.xos
   (export <xoshiro256>
           make-xoshiro256
+          copy-xoshiro256
+          copy-xoshiro256!
           xos-random-get-seed
           xos-random-set-seed!
           xos-random-u64
@@ -97,8 +99,7 @@
                                          SCM_XOSHIRO_PRIVATE))
                 (set! (-> xos seed) seed)
                 (xoshiro256-init xos seed)
-                (when (XOSHIRO_NEED_LOCK xos)
-                  (SCM_INTERNAL_MUTEX_INIT (-> xos lock)))
+                (SCM_INTERNAL_MUTEX_INIT (-> xos lock))
                 (return (SCM_OBJ xos)))))
 
  ;; For initial state generation.  See SplitMix paper for all the constants.
@@ -153,6 +154,25 @@
 ;; API
 (define (make-xoshiro256 :key (seed 42) (private? #f))
   (make <xoshiro256> :seed seed :private? private?))
+
+;; API
+;;  This can be used to take a snapshot of RNG state.
+(define-cproc copy-xoshiro256 (xos::<xoshiro256>)
+  (let* ([new-xos::ScmXoshiro256* (SCM_NEW ScmXoshiro256)])
+    (SCM_SET_CLASS new-xos (& ScmXoshiroClass))
+    (SCM_INTERNAL_MUTEX_INIT (-> xos lock))
+    (with-xos-lock xos
+      (memcpy (-> new-xos s) (-> xos s) (sizeof (-> xos s)))
+      (set! (-> new-xos seed) (-> xos seed)))
+    (return (SCM_OBJ new-xos))))
+
+;; API
+;;  This can be used to restore RNG state.
+(define-cproc copy-xoshiro256! (dst::<xoshiro256> src::<xoshiro256>) ::<void>
+  (with-xos-lock dst
+    (with-xos-lock src
+      (memcpy (-> dst s) (-> src s) (sizeof (-> src s)))
+      (set! (-> dst seed) (-> src seed)))))
 
 ;; API
 (define-cproc xos-random-get-seed (xos::<xoshiro256>) ::<uint64>
