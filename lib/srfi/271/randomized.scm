@@ -32,6 +32,7 @@
 ;;;
 
 (define-module srfi.271.randomized
+  (use gauche.vport)                    ; just for dummy
   (export make-random-port)
   )
 (select-module srfi.271.randomized)
@@ -39,6 +40,7 @@
 (define (make-random-port . _)
   (cond-expand
    [gauche.os.windows
-    (error "Not implemented yet")]
+    ;; We'll use BCryptGenRandom win32 call.  This is a placeholder until then.
+    (open-input-byte-generator (^[] #xa5))]
    [else
     (open-input-file "/dev/urandom")]))
