@@ -56,8 +56,8 @@ object for pointers to garbage-collectible memory, even if the block itself
 does not appear to be reachable. (Objects allocated in this way are
 effectively treated as roots by the collector.)
 
-`void * GC_REALLOC(void * _old_object_, size_t _new_bytes_)` - Allocates
-a new object of the indicated size and copy the old object's content into the
+`void * GC_REALLOC(void * _old_object_, size_t _new_bytes_)` - Allocates a new
+object of the indicated size and copies the old object's contents into the
 new object. The old object is reused in place if convenient. If the original
 object was allocated with `GC_MALLOC_ATOMIC`, the new object is subject to the
 same constraints. If it was allocated as an uncollectible object, then the new
@@ -111,8 +111,8 @@ interface. See also [here](finalization.md) for a more detailed discussion
 of the design. Note that an object may become inaccessible before client code
 is done operating on objects referenced by its fields. Suitable
 synchronization is usually required. See
-[here](http://portal.acm.org/citation.cfm?doid=604131.604153) or
-[here](http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html) for details.
+["Destructors, Finalizers, and Synchronization"](https://dl.acm.org/doi/10.1145/604131.604153)
+for details.
 
 If you are concerned with multiprocessor performance and scalability, you
 should consider enabling and using thread local allocation.

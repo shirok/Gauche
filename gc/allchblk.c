@@ -3,6 +3,7 @@
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1998-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
+ * Copyright (c) 2008-2025 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -296,7 +297,7 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
     return(TRUE);
 }
 
-/* Remove hhdr from the free list (it is assumed to specified by index). */
+/* Remove hhdr from the free list (it is assumed to be specified by index). */
 STATIC void GC_remove_from_fl_at(hdr *hhdr, int index)
 {
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);

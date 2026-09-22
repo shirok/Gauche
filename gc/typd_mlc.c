@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1999-2000 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2008-2024 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -116,7 +117,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
         word ed_size = GC_ed_size;
 
         if (ed_size == 0) {
-            GC_ASSERT((word)(&GC_ext_descriptors) % sizeof(word) == 0);
+            GC_ASSERT((word)(&GC_ext_descriptors) % ALIGNMENT == 0);
             GC_push_typed_structures = GC_push_typed_structures_proc;
             UNLOCK();
             new_size = ED_INITIAL_SIZE;

@@ -3,7 +3,7 @@
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
- *
+ * Copyright (c) 2008-2024 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -39,11 +39,17 @@
      GC_EXTERN PCR_Th_ML GC_allocate_ml;
 #    define UNCOND_LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
 #    define UNCOND_UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
+#    ifdef GC_ASSERTIONS
+#      define SET_LOCK_HOLDER() (void)0
+#    endif
 #  elif defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH)
-      extern void GC_lock(void);
-      extern void GC_unlock(void);
-#     define UNCOND_LOCK() GC_lock()
-#     define UNCOND_UNLOCK() GC_unlock()
+     extern void GC_lock(void);
+     extern void GC_unlock(void);
+#    define UNCOND_LOCK() GC_lock()
+#    define UNCOND_UNLOCK() GC_unlock()
+#    ifdef GC_ASSERTIONS
+#      define SET_LOCK_HOLDER() (void)0
+#    endif
 #  endif
 
 #  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_RTEMS_PTHREADS) \
@@ -143,7 +149,6 @@
       /* significant wasted time.  We thus rely mostly on queued locks. */
 #     undef USE_SPIN_LOCK
 #     define USE_SPIN_LOCK
-      GC_EXTERN volatile AO_TS_t GC_allocate_lock;
       GC_INNER void GC_lock(void);
 #     ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() \

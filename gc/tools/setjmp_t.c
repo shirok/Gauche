@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <setjmp.h>
 #include <string.h>
+
+#define NOT_GCBUILD
 #include "private/gc_priv.h"
 
 #ifdef OS2
@@ -60,6 +62,7 @@ struct a_s {
   char * a_b;
 } a;
 
+GC_ATTR_NOINLINE
 word nested_sp(void)
 {
 # if GC_GNUC_PREREQ(4, 0)
@@ -125,9 +128,9 @@ int main(void)
     (void)SETJMP(b);
     if (y == 1) {
       if (x == 2) {
-        printf("Setjmp-based generic mark_regs code probably won't work.\n");
-        printf("But we rarely try that anymore.  If you have getcontect()\n");
-        printf("this probably doesn't matter.\n");
+        printf("Setjmp-based generic code to push registers probably\n"
+               "will not work. But we rarely try that anymore.\n"
+               "If you have getcontext(), this probably does not matter.\n");
       } else if (x == 1) {
           printf("Setjmp-based register marking code may work.\n");
       } else {

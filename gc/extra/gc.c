@@ -4,7 +4,7 @@
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
  * Copyright (c) 2000-2009 by Hewlett-Packard Development Company.
  * All rights reserved.
- * Copyright (c) 2009-2018 Ivan Maidanski
+ * Copyright (c) 2009-2025 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -27,6 +27,8 @@
 /* Warning: GCC for Linux (for C++ clients only): Use -fexceptions both */
 /* for GC and the client otherwise GC_thread_exit_proc() is not         */
 /* guaranteed to be invoked (see the comments in pthread_start.c).      */
+
+#define GC_SINGLE_OBJ_BUILD
 
 #ifndef __cplusplus
   /* static is desirable here for more efficient linkage.               */

@@ -1,3 +1,7 @@
+2026-09-21  Shiro Kawai  <shiro@acm.org>
+
+	* gc/: Bumped to bdwgc 8.2.12
+
 2026-09-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/271/*: Start adding srfi.271 support.

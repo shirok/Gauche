@@ -3,7 +3,7 @@
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
- * Copyright (c) 2009-2021 Ivan Maidanski
+ * Copyright (c) 2009-2025 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -378,7 +378,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
 #endif /* ENABLE_DISCLAIM */
 
 /*
- * Restore an unmarked large object or an entirely empty blocks of small objects
+ * Restore an unmarked large object or an entirely empty block of small objects
  * to the heap block free list.
  * Otherwise enqueue the block for later processing
  * by GC_reclaim_small_nonempty_block.

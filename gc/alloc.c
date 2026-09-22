@@ -3,7 +3,7 @@
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1998 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
- * Copyright (c) 2008-2021 Ivan Maidanski
+ * Copyright (c) 2008-2025 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -56,7 +56,7 @@
 /*
  * The allocator uses GC_allochblk to allocate large chunks of objects.
  * These chunks all start on addresses which are multiples of
- * HBLKSZ.   Each allocated chunk has an associated header,
+ * HBLKSIZE.   Each allocated chunk has an associated header,
  * which can be located quickly based on the address of the chunk.
  * (See headers.c for details.)
  * This makes it possible to check quickly whether an

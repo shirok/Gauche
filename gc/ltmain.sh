@@ -31,7 +31,7 @@
 
 PROGRAM=libtool
 PACKAGE=libtool
-VERSION="2.4.7 Debian-2.4.7-7build1"
+VERSION=2.4.7
 package_revision=2.4.7
 
 
@@ -430,7 +430,7 @@ EXIT_SKIP=77	  # $? = 77 is used to indicate a skipped test to automake.
 # putting '$debug_cmd' at the start of all your functions, you can get
 # bash to show function call trace with:
 #
-#    debug_cmd='echo "${FUNCNAME[0]} $*" >&2' bash your-script-name
+#    debug_cmd='eval echo "${FUNCNAME[0]} $*" >&2' bash your-script-name
 debug_cmd=${debug_cmd-":"}
 exit_cmd=:
 
@@ -572,15 +572,27 @@ func_require_term_colors ()
 # ---------------------
 # Append VALUE onto the existing contents of VAR.
 
+  # We should try to minimise forks, especially on Windows where they are
+  # unreasonably slow, so skip the feature probes when bash or zsh are
+  # being used:
+  if test set = "${BASH_VERSION+set}${ZSH_VERSION+set}"; then
+    : ${_G_HAVE_ARITH_OP="yes"}
+    : ${_G_HAVE_XSI_OPS="yes"}
+    # The += operator was introduced in bash 3.1
+    case $BASH_VERSION in
+      [12].* | 3.0 | 3.0*) ;;
+      *)
+        : ${_G_HAVE_PLUSEQ_OP="yes"}
+        ;;
+    esac
+  fi
+
   # _G_HAVE_PLUSEQ_OP
   # Can be empty, in which case the shell is probed, "yes" if += is
   # useable or anything else if it does not work.
-  if test -z "$_G_HAVE_PLUSEQ_OP" &&  \
-      __PLUSEQ_TEST="a" &&  \
-      __PLUSEQ_TEST+=" b" 2>/dev/null &&  \
-      test "a b" = "$__PLUSEQ_TEST"; then
-    _G_HAVE_PLUSEQ_OP=yes
-  fi
+  test -z "$_G_HAVE_PLUSEQ_OP" \
+    && (eval 'x=a; x+=" b"; test "a b" = "$x"') 2>/dev/null \
+    && _G_HAVE_PLUSEQ_OP=yes
 
 if test yes = "$_G_HAVE_PLUSEQ_OP"
 then
@@ -1694,8 +1706,6 @@ func_run_hooks ()
 {
     $debug_cmd
 
-    _G_rc_run_hooks=false
-
     case " $hookable_fns " in
       *" $1 "*) ;;
       *) func_fatal_error "'$1' does not support hook functions." ;;
@@ -2296,12 +2306,12 @@ include the following information:
        compiler:       $LTCC
        compiler flags: $LTCFLAGS
        linker:         $LD (gnu? $with_gnu_ld)
-       version:        $progname $scriptversion Debian-2.4.7-7build1
+       version:        $progname (GNU libtool) 2.4.7
        automake:       `($AUTOMAKE --version) 2>/dev/null |$SED 1q`
        autoconf:       `($AUTOCONF --version) 2>/dev/null |$SED 1q`
 
 Report bugs to <bug-libtool@gnu.org>.
-GNU libtool home page: <http://www.gnu.org/s/libtool/>.
+GNU libtool home page: <http://www.gnu.org/software/libtool/>.
 General help using GNU software: <http://www.gnu.org/gethelp/>."
     exit 0
 }
@@ -2497,8 +2507,6 @@ libtool_options_prep ()
 
     nonopt=
     preserve_args=
-
-    _G_rc_lt_options_prep=:
 
     _G_rc_lt_options_prep=:
 
@@ -7549,13 +7557,11 @@ func_mode_link ()
       # -stdlib=*            select c++ std lib with clang
       # -fsanitize=*         Clang/GCC memory and address sanitizer
       # -fuse-ld=*           Linker select flags for GCC
-      # -static-*            direct GCC to link specific libraries statically
-      # -fcilkplus           Cilk Plus language extension features for C/C++
       # -Wa,*                Pass flags directly to the assembler
       -64|-mips[0-9]|-r[0-9][0-9]*|-xarch=*|-xtarget=*|+DA*|+DD*|-q*|-m*| \
       -t[45]*|-txscale*|-p|-pg|--coverage|-fprofile-*|-F*|@*|-tp=*|--sysroot=*| \
       -O*|-g*|-flto*|-fwhopr*|-fuse-linker-plugin|-fstack-protector*|-stdlib=*| \
-      -specs=*|-fsanitize=*|-fuse-ld=*|-static-*|-fcilkplus|-Wa,*)
+      -specs=*|-fsanitize=*|-fuse-ld=*|-Wa,*)
         func_quote_arg pretty "$arg"
 	arg=$func_quote_arg_result
         func_append compile_command " $arg"
@@ -7848,10 +7854,7 @@ func_mode_link ()
 	case $pass in
 	dlopen) libs=$dlfiles ;;
 	dlpreopen) libs=$dlprefiles ;;
-	link)
-	  libs="$deplibs %DEPLIBS%"
-	  test "X$link_all_deplibs" != Xno && libs="$libs $dependency_libs"
-	  ;;
+	link) libs="$deplibs %DEPLIBS% $dependency_libs" ;;
 	esac
       fi
       if test lib,dlpreopen = "$linkmode,$pass"; then
@@ -8170,19 +8173,19 @@ func_mode_link ()
 	    # It is a libtool convenience library, so add in its objects.
 	    func_append convenience " $ladir/$objdir/$old_library"
 	    func_append old_convenience " $ladir/$objdir/$old_library"
-	    tmp_libs=
-	    for deplib in $dependency_libs; do
-	      deplibs="$deplib $deplibs"
-	      if $opt_preserve_dup_deps; then
-		case "$tmp_libs " in
-		*" $deplib "*) func_append specialdeplibs " $deplib" ;;
-		esac
-	      fi
-	      func_append tmp_libs " $deplib"
-	    done
 	  elif test prog != "$linkmode" && test lib != "$linkmode"; then
 	    func_fatal_error "'$lib' is not a convenience library"
 	  fi
+	  tmp_libs=
+	  for deplib in $dependency_libs; do
+	    deplibs="$deplib $deplibs"
+	    if $opt_preserve_dup_deps; then
+	      case "$tmp_libs " in
+	      *" $deplib "*) func_append specialdeplibs " $deplib" ;;
+	      esac
+	    fi
+	    func_append tmp_libs " $deplib"
+	  done
 	  continue
 	fi # $pass = conv
 
@@ -9105,9 +9108,6 @@ func_mode_link ()
 	    age=$number_minor
 	    revision=$number_minor
 	    lt_irix_increment=no
-	    ;;
-	  *)
-	    func_fatal_configuration "$modename: unknown library version type '$version_type'"
 	    ;;
 	  esac
 	  ;;

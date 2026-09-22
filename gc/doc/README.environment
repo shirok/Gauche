@@ -92,9 +92,7 @@ GC_PRINT_BACK_HEIGHT - Print max length of chain through unreachable objects
                      It increases GC space and time requirements appreciably.
                      This feature is still somewhat experimental, and requires
                      that the collector have been built with MAKE_BACK_GRAPH
-                     defined.  For details, see Boehm, "Bounding Space Usage
-                     of Conservative Garbage Collectors", POPL 2001
-                     (http://www.hpl.hp.com/techreports/2001/HPL-2001-251.html).
+                     defined.
 
 GC_RETRY_SIGNALS -   Try to compensate for lost
                      thread suspend and restart signals (Pthreads only).
@@ -163,8 +161,8 @@ GC_FIND_LEAK - Turns on GC_find_leak and thus leak detection.  Forces a
                otherwise occur after the last GC.
 
 GC_FINDLEAK_DELAY_FREE - Turns on deferred freeing of objects in the
-                       leak-finding mode (see the corresponding macro
-                       description for more information).
+                         find-leak mode (see the corresponding macro
+                         description for more information).
 
 GC_ABORT_ON_LEAK - Causes the application to be terminated once leaked or
                    smashed objects are found.
