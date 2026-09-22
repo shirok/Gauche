@@ -38,9 +38,9 @@
   (use srfi.271.randomized :prefix rnd:)
   (export make-random-port
           random-port?
-          ;random-port-state
-          ;random-port-state?
-          ;random-port-state=?
+          random-port-state
+          random-port-state?
+          random-port-state=?
           random-port-initialization-error?)
   )
 (select-module srfi.271.determinized)
@@ -48,9 +48,13 @@
 (define-condition-type <random-port-initialization-error> <serious-condition>
   random-port-initialization-error?)
 
+(define-class <random-port-state> ()
+  (;; All slots private
+   (state :init-keyword :state)))
+
+;; API
 (define (make-random-port :optional (initializer #f))
-  (let* ([seed (%get-seed initializer)]
-         [xos (make-xoshiro256 :seed seed :private? #t)])
+  (let1 xos (%get-xos initializer)
     (rlet1 p (make <buffered-input-port>
                :fill (^[buf]
                        (rlet1 len (u8vector-length buf)
@@ -65,31 +69,50 @@
                                    (inner (+ k 1) (+ i 1) (ash v -8))))))))))
       (port-attribute-set! p 'xos xos))))
 
-(define (%get-seed initializer)
+(define (%get-xos initializer)
   (cond
    [(not initializer)
-    (call-with-input-file "/dev/urandom"
-      (^p
-       (rlet1 v 0
-         (dotimes [8]
-           (set! v (logior (ash v 8) (read-u8 p)))))))]
+    (let ([v 0]
+          [p (rnd:make-random-port)])
+      (dotimes [8]
+        (set! v (logior (ash v 8) (read-u8 p))))
+      (close-port p)
+      (make-xoshiro256 :seed v :private? #t))]
    [(input-port? initializer)
     (let loop ([i 0] [v 0])
       (if (= i 8)
-        v
+        (make-xoshiro256 :seed v :private? #t)
         (let1 b (read-u8 initializer)
           (if (eof-object? b)
             (error <random-port-initialization-error>
                    "Initializer port does not have enough bytes:" initializer)
             (loop (+ i 1) (logior (ash v 8) b))))))]
-   ;;[(random-port-state? initializer)
-    ;; WRITEME
-   ;;]
+   [(random-port-state? initializer)
+    (copy-xoshiro256 (~ initializer'state))]
    [else
      (error <random-port-initialization-error>
             "Random port initializer must be an input port or random state, \
              but got:" initializer)]))
 
+;; API
 (define (random-port? obj)
   (and (port? obj)
        (is-a? (port-attribute-ref obj 'xos #f) <xoshiro256>)))
+
+(define (%random-port-xos port)
+  (port-attribute-ref port 'xos))
+
+(define (random-port-state port)
+  (assume (random-port? port))
+  (make <random-port-state>
+    :state (copy-xoshiro256 (%random-port-xos port))))
+
+(define (random-port-state? st)
+  (is-a? st <random-port-state>))
+
+(define (random-port-state=? a b . rest)
+  (assume (random-port-state? a))
+  (assume (random-port-state? b))
+  (and (xos-random-state=? (~ a'state) (~ b'state))
+       (or (null? rest)
+           (apply random-port-state=? b rest))))

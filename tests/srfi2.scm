@@ -16,7 +16,11 @@
 (use srfi.271.determinized)
 (test-module 'srfi.271.determinized)
 
-
+(define-module srfi-271-tests
+  (use gauche.test)
+  (use srfi.64)
+  (test-include-r7 "include/srfi-271-tests")
+  )
 
 (test-section "SRFI-274")
 
