@@ -45,6 +45,7 @@
           make-xoshiro256
           copy-xoshiro256
           copy-xoshiro256!
+          xos-random-state=?
           xos-random-get-seed
           xos-random-set-seed!
           xos-random-u64
@@ -177,6 +178,17 @@
       (with-xos-lock src
         (memcpy (-> dst s) (-> src s) (sizeof (-> src s)))
         (set! (-> dst seed) (-> src seed))))))
+
+;; API
+;;  Compares equivalence of states; we ignore flags.
+(define-cproc xos-random-state=? (a::<xoshiro256> b::<xoshiro256>) ::<boolean>
+  (let* ((r::_Bool FALSE))
+    (with-xos-lock a
+      (with-xos-lock b
+        (when (and (== 0 (memcmp (-> a s) (-> b s) (sizeof (-> a s))))
+                   (== (-> a seed) (-> b seed)))
+          (set! r TRUE))))
+    (return r)))
 
 ;; API
 (define-cproc xos-random-get-seed (xos::<xoshiro256>) ::<uint64>

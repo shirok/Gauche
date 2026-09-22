@@ -199,4 +199,33 @@
          (list (equal? expect (xos-random-sequence h 20))
                (xos-random-get-seed h))))
 
+(test* "xos-random-state=? copied states" #t
+       (let* ([g (make-xoshiro256 :seed 1)]
+              [_ (xos-random-sequence g 3)]
+              [h (copy-xoshiro256 g)])
+         (xos-random-state=? g h)))
+(test* "xos-random-state=? copied states" #f
+       (let* ([g (make-xoshiro256 :seed 1)]
+              [h (copy-xoshiro256 g)]
+              [_ (xos-random-sequence g 3)])
+         (xos-random-state=? g h)))
+(test* "xos-random-state=? same parameter" #t
+       (let* ([g (make-xoshiro256 :seed 1)]
+              [h (make-xoshiro256 :seed 1 :private? #t)])
+         (xos-random-state=? g h)))
+(test* "xos-random-state=? same parameter, different state" #f
+       (let* ([g (make-xoshiro256 :seed 1)]
+              [h (make-xoshiro256 :seed 1)])
+         (xos-random-u64 g)
+         (xos-random-state=? g h)))
+(test* "xos-random-state=? different parameter" #f
+       (let* ([g (make-xoshiro256 :seed 1)]
+              [h (make-xoshiro256 :seed 2)])
+         (xos-random-state=? g h)))
+(test* "xos-random-state=? restored" #t
+       (let* ([g (make-xoshiro256 :seed 1)]
+              [h (make-xoshiro256 :seed 2)])
+         (copy-xoshiro256! g h)
+         (xos-random-state=? g h)))
+
 (test-end)
