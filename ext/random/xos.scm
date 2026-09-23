@@ -41,10 +41,10 @@
 ;; https://dl.acm.org/doi/pdf/10.1145/2714064.2660195
 
 (define-module math.random.xos
-  (export <xoshiro256>
-          make-xoshiro256
-          copy-xoshiro256
-          copy-xoshiro256!
+  (export <xos-random>
+          make-xos-random
+          xos-random-copy
+          xos-random-copy!
           xos-random-state=?
           xos-random-get-seed
           xos-random-set-seed!
@@ -85,7 +85,7 @@
        (when (XOSHIRO_NEED_LOCK ,xos)
          (SCM_INTERNAL_MUTEX_UNLOCK (-> ,xos lock))))])
 
- (define-cclass <xoshiro256> :private :no-meta
+ (define-cclass <xos-random> :private :no-meta
    "ScmXoshiro256*"
    "ScmXoshiroClass"
    (c "SCM_CLASS_DEFAULT_CPL")
@@ -153,13 +153,13 @@
  )
 
 ;; API
-(define (make-xoshiro256 :key (seed 42) (private? #f))
-  (make <xoshiro256> :seed seed :private? private?))
+(define (make-xos-random :key (seed 42) (private? #f))
+  (make <xos-random> :seed seed :private? private?))
 
 ;; API
 ;;  This can be used to take a snapshot of RNG state.
 ;;  NB: Flags are not copied, but can be set with keyword args.
-(define-cproc copy-xoshiro256 (xos::<xoshiro256> :key (private?::<boolean> #f))
+(define-cproc xos-random-copy (xos::<xos-random> :key (private?::<boolean> #f))
   (let* ([new-xos::ScmXoshiro256* (SCM_NEW ScmXoshiro256)])
     (SCM_SET_CLASS new-xos (& ScmXoshiroClass))
     (SCM_INTERNAL_MUTEX_INIT (-> new-xos lock))
@@ -172,7 +172,7 @@
 ;; API
 ;;  This can be used to restore RNG state.
 ;;  NB: Flags are not copied; the dst's original flags are preserved.
-(define-cproc copy-xoshiro256! (dst::<xoshiro256> src::<xoshiro256>) ::<void>
+(define-cproc xos-random-copy! (dst::<xos-random> src::<xos-random>) ::<void>
   (unless (SCM_EQ dst src)
     (with-xos-lock dst
       (with-xos-lock src
@@ -181,7 +181,7 @@
 
 ;; API
 ;;  Compares equivalence of states; we ignore flags.
-(define-cproc xos-random-state=? (a::<xoshiro256> b::<xoshiro256>) ::<boolean>
+(define-cproc xos-random-state=? (a::<xos-random> b::<xos-random>) ::<boolean>
   (let* ((r::_Bool FALSE))
     (with-xos-lock a
       (with-xos-lock b
@@ -191,17 +191,17 @@
     (return r)))
 
 ;; API
-(define-cproc xos-random-get-seed (xos::<xoshiro256>) ::<uint64>
+(define-cproc xos-random-get-seed (xos::<xos-random>) ::<uint64>
   (return (-> xos seed)))
 
 ;; API
-(define-cproc xos-random-set-seed! (xos::<xoshiro256> seed::<uint64>) ::<void>
+(define-cproc xos-random-set-seed! (xos::<xos-random> seed::<uint64>) ::<void>
   (with-xos-lock xos
     (set! (-> xos seed) seed)
     (xoshiro256-init xos seed)))
 
 ;; API
-(define-cproc xos-random-u64 (xos::<xoshiro256>) ::<uint64>
+(define-cproc xos-random-u64 (xos::<xos-random>) ::<uint64>
   (let* ([r::uint64_t 0])
     (with-xos-lock xos (set! r (xoshiro256++ xos)))
     (return r)))
@@ -217,25 +217,25 @@
  )
 
 ;; API
-(define-cproc xos-random-real (xos::<xoshiro256>) ::<double>
+(define-cproc xos-random-real (xos::<xos-random>) ::<double>
   (let* ([r::double 0.0])
     (with-xos-lock xos (set! r (get-real xos TRUE)))
     (return r)))
-(define-cproc xos-random-real0 (xos::<xoshiro256>) ::<double>
+(define-cproc xos-random-real0 (xos::<xos-random>) ::<double>
   (let* ([r::double 0.0])
     (with-xos-lock xos (set! r (get-real xos FALSE)))
     (return r)))
-(define-cproc xos-random-fill-u64vector! (xos::<xoshiro256> v::<u64vector>)
+(define-cproc xos-random-fill-u64vector! (xos::<xos-random> v::<u64vector>)
   (with-xos-lock xos
     (dotimes (i (SCM_U64VECTOR_SIZE v))
       (set! (SCM_U64VECTOR_ELEMENT v i) (xoshiro256++ xos))))
   (return (SCM_OBJ v)))
-(define-cproc xos-random-fill-f32vector! (xos::<xoshiro256> v::<f32vector>)
+(define-cproc xos-random-fill-f32vector! (xos::<xos-random> v::<f32vector>)
   (with-xos-lock xos
     (dotimes (i (SCM_F32VECTOR_SIZE v))
       (set! (SCM_F32VECTOR_ELEMENT v i) (cast float (get-real xos TRUE)))))
   (return (SCM_OBJ v)))
-(define-cproc xos-random-fill-f64vector! (xos::<xoshiro256> v::<f64vector>)
+(define-cproc xos-random-fill-f64vector! (xos::<xos-random> v::<f64vector>)
   (with-xos-lock xos
     (dotimes (i (SCM_F64VECTOR_SIZE v))
       (set! (SCM_F64VECTOR_ELEMENT v i) (get-real xos TRUE))))

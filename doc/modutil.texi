@@ -14358,15 +14358,34 @@ This module implements one of xorshift-family pseudo random generator
 state size than Mersenne-Twister.
 @end deftp
 
-@deftp {Class} <xoshiro256>
-@clindex xoshiro256
+@deftp {Class} <xos-random>
+@clindex xos-random
 @c MOD math.random.xos
 A class to packate the state of Xoshiro256 PRNG (the name stands for
 Xor-Shift-Rotate 256bits).
 @end deftp
 
 
-@defun make-xoshiro256 :optional seed private?
+@defun make-xos-random :optional seed private?
+@c MOD math.random.xos
+Creates and returns a new @code{<xos-random>} PRNG instance.
+An optional @var{seed} argument must be a u64 integer if given, providing
+a random seed.
+
+By default, access to the PRNG is mutexed.  If you know there's
+only one thread accessing it, you can pass a true value to @var{private?}
+to avoid the overhead.
+@end defun
+
+@defun xos-random-copy xos :optional private?
+@c MOD math.random.xos
+@end defun
+
+@defun xos-random-copy! dst-xos src-xos
+@c MOD math.random.xos
+@end defun
+
+@defun xos-random-state=? xos1 xos2
 @c MOD math.random.xos
 @end defun
 

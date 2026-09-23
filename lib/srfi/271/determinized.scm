@@ -77,18 +77,18 @@
       (dotimes [8]
         (set! v (logior (ash v 8) (read-u8 p))))
       (close-port p)
-      (make-xoshiro256 :seed v :private? #t))]
+      (make-xos-random :seed v :private? #t))]
    [(input-port? initializer)
     (let loop ([i 0] [v 0])
       (if (= i 8)
-        (make-xoshiro256 :seed v :private? #t)
+        (make-xos-random :seed v :private? #t)
         (let1 b (read-u8 initializer)
           (if (eof-object? b)
             (error <random-port-initialization-error>
                    "Initializer port does not have enough bytes:" initializer)
             (loop (+ i 1) (logior (ash v 8) b))))))]
    [(random-port-state? initializer)
-    (copy-xoshiro256 (~ initializer'state))]
+    (xos-random-copy (~ initializer'state))]
    [else
      (error <random-port-initialization-error>
             "Random port initializer must be an input port or random state, \
@@ -97,7 +97,7 @@
 ;; API
 (define (random-port? obj)
   (and (port? obj)
-       (is-a? (port-attribute-ref obj 'xos #f) <xoshiro256>)))
+       (is-a? (port-attribute-ref obj 'xos #f) <xos-random>)))
 
 (define (%random-port-xos port)
   (port-attribute-ref port 'xos))
@@ -105,7 +105,7 @@
 (define (random-port-state port)
   (assume (random-port? port))
   (make <random-port-state>
-    :state (copy-xoshiro256 (%random-port-xos port))))
+    :state (xos-random-copy (%random-port-xos port))))
 
 (define (random-port-state? st)
   (is-a? st <random-port-state>))

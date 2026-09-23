@@ -126,106 +126,106 @@
 (define (xos-random-sequence g n)
   (map (^_ (xos-random-u64 g)) (iota n)))
 
-(test* "seed" 12345 (xos-random-get-seed (make-xoshiro256 :seed 12345)))
+(test* "seed" 12345 (xos-random-get-seed (make-xos-random :seed 12345)))
 
 (test* "set-seed!" #t
-       (let1 g (make-xoshiro256 :seed 1)
+       (let1 g (make-xos-random :seed 1)
          (xos-random-set-seed! g 7)
          (equal? (xos-random-sequence g 10)
-                 (xos-random-sequence (make-xoshiro256 :seed 7) 10))))
+                 (xos-random-sequence (make-xos-random :seed 7) 10))))
 
 ;; :private? only turns off the mutex; it must not affect the sequence.
 (test* "private? generates the same sequence" #t
-       (equal? (xos-random-sequence (make-xoshiro256 :seed 7) 20)
-               (xos-random-sequence (make-xoshiro256 :seed 7 :private? #t) 20)))
+       (equal? (xos-random-sequence (make-xos-random :seed 7) 20)
+               (xos-random-sequence (make-xos-random :seed 7 :private? #t) 20)))
 
 (test* "private? initarg" #t
-       (equal? (xos-random-sequence (make <xoshiro256> :seed 7) 20)
-               (xos-random-sequence (make <xoshiro256> :seed 7 :private? #t) 20)))
+       (equal? (xos-random-sequence (make <xos-random> :seed 7) 20)
+               (xos-random-sequence (make <xos-random> :seed 7 :private? #t) 20)))
 
-;; State saving/restoring with copy-xoshiro256 and copy-xoshiro256!
+;; State saving/restoring with xos-random-copy and xos-random-copy!
 
-(test* "copy-xoshiro256 copies the seed" 12345
-       (let1 g (make-xoshiro256 :seed 12345)
+(test* "xos-random-copy copies the seed" 12345
+       (let1 g (make-xos-random :seed 12345)
          (xos-random-sequence g 5)      ;advance the state
-         (xos-random-get-seed (copy-xoshiro256 g))))
+         (xos-random-get-seed (xos-random-copy g))))
 
-(test* "copy-xoshiro256 snapshots the current state" #t
-       (let* ([g (make-xoshiro256 :seed 314159)]
+(test* "xos-random-copy snapshots the current state" #t
+       (let* ([g (make-xos-random :seed 314159)]
               [_ (xos-random-sequence g 10)] ;advance the state
-              [snapshot (copy-xoshiro256 g)])
+              [snapshot (xos-random-copy g)])
          (equal? (xos-random-sequence g 20)
                  (xos-random-sequence snapshot 20))))
 
-(test* "copy-xoshiro256 snapshot is independent of the original" #t
-       (let* ([g (make-xoshiro256 :seed 2718)]
-              [snapshot (copy-xoshiro256 g)]
+(test* "xos-random-copy snapshot is independent of the original" #t
+       (let* ([g (make-xos-random :seed 2718)]
+              [snapshot (xos-random-copy g)]
               [expect (xos-random-sequence g 20)]) ;advances g, not snapshot
          (equal? expect (xos-random-sequence snapshot 20))))
 
-(test* "copy-xoshiro256! restores the saved state" #t
-       (let* ([g (make-xoshiro256 :seed 8888)]
+(test* "xos-random-copy! restores the saved state" #t
+       (let* ([g (make-xos-random :seed 8888)]
               [_ (xos-random-sequence g 7)]
-              [snapshot (copy-xoshiro256 g)]
+              [snapshot (xos-random-copy g)]
               [expect (xos-random-sequence g 20)])
-         (copy-xoshiro256! g snapshot)
+         (xos-random-copy! g snapshot)
          (equal? expect (xos-random-sequence g 20))))
 
-(test* "copy-xoshiro256! restores repeatedly" '(#t #t #t)
-       (let* ([g (make-xoshiro256 :seed 8888)]
-              [snapshot (copy-xoshiro256 g)]
+(test* "xos-random-copy! restores repeatedly" '(#t #t #t)
+       (let* ([g (make-xos-random :seed 8888)]
+              [snapshot (xos-random-copy g)]
               [expect (xos-random-sequence g 20)])
-         (map (^_ (copy-xoshiro256! g snapshot)
+         (map (^_ (xos-random-copy! g snapshot)
                   (equal? expect (xos-random-sequence g 20)))
               (iota 3))))
 
-(test* "copy-xoshiro256! leaves the source intact" #t
-       (let* ([g (make-xoshiro256 :seed 4649)]
-              [snapshot (copy-xoshiro256 g)]
-              [h (make-xoshiro256 :seed 1)])
-         (copy-xoshiro256! h snapshot)
+(test* "xos-random-copy! leaves the source intact" #t
+       (let* ([g (make-xos-random :seed 4649)]
+              [snapshot (xos-random-copy g)]
+              [h (make-xos-random :seed 1)])
+         (xos-random-copy! h snapshot)
          (xos-random-sequence h 20)     ;advances h, not snapshot
          (equal? (xos-random-sequence g 20)
                  (xos-random-sequence snapshot 20))))
 
-(test* "copy-xoshiro256! overwrites the destination" '(#t 8888)
-       (let* ([g (make-xoshiro256 :seed 8888)]
+(test* "xos-random-copy! overwrites the destination" '(#t 8888)
+       (let* ([g (make-xos-random :seed 8888)]
               [_ (xos-random-sequence g 3)]
-              [snapshot (copy-xoshiro256 g)]
+              [snapshot (xos-random-copy g)]
               [expect (xos-random-sequence g 20)]
-              [h (make-xoshiro256 :seed 999)])
+              [h (make-xos-random :seed 999)])
          (xos-random-sequence h 5)
-         (copy-xoshiro256! h snapshot)
+         (xos-random-copy! h snapshot)
          (list (equal? expect (xos-random-sequence h 20))
                (xos-random-get-seed h))))
 
 (test* "xos-random-state=? copied states" #t
-       (let* ([g (make-xoshiro256 :seed 1)]
+       (let* ([g (make-xos-random :seed 1)]
               [_ (xos-random-sequence g 3)]
-              [h (copy-xoshiro256 g)])
+              [h (xos-random-copy g)])
          (xos-random-state=? g h)))
 (test* "xos-random-state=? copied states" #f
-       (let* ([g (make-xoshiro256 :seed 1)]
-              [h (copy-xoshiro256 g)]
+       (let* ([g (make-xos-random :seed 1)]
+              [h (xos-random-copy g)]
               [_ (xos-random-sequence g 3)])
          (xos-random-state=? g h)))
 (test* "xos-random-state=? same parameter" #t
-       (let* ([g (make-xoshiro256 :seed 1)]
-              [h (make-xoshiro256 :seed 1 :private? #t)])
+       (let* ([g (make-xos-random :seed 1)]
+              [h (make-xos-random :seed 1 :private? #t)])
          (xos-random-state=? g h)))
 (test* "xos-random-state=? same parameter, different state" #f
-       (let* ([g (make-xoshiro256 :seed 1)]
-              [h (make-xoshiro256 :seed 1)])
+       (let* ([g (make-xos-random :seed 1)]
+              [h (make-xos-random :seed 1)])
          (xos-random-u64 g)
          (xos-random-state=? g h)))
 (test* "xos-random-state=? different parameter" #f
-       (let* ([g (make-xoshiro256 :seed 1)]
-              [h (make-xoshiro256 :seed 2)])
+       (let* ([g (make-xos-random :seed 1)]
+              [h (make-xos-random :seed 2)])
          (xos-random-state=? g h)))
 (test* "xos-random-state=? restored" #t
-       (let* ([g (make-xoshiro256 :seed 1)]
-              [h (make-xoshiro256 :seed 2)])
-         (copy-xoshiro256! g h)
+       (let* ([g (make-xos-random :seed 1)]
+              [h (make-xos-random :seed 2)])
+         (xos-random-copy! g h)
          (xos-random-state=? g h)))
 
 (test-end)
