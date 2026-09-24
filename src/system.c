@@ -66,6 +66,8 @@ extern char **environ;
 #else   /* GAUCHE_WINDOWS */
 #include <lm.h>
 #include <tlhelp32.h>
+#include <bcrypt.h>
+#include <ntstatus.h>
 /* For windows redirection; win_prepare_handles creats and returns
    win_redirects[3].  Each entry contains an inheritable handle for
    the child process' stdin, stdout and stderr, respectively, and the flag
@@ -3029,6 +3031,21 @@ int link(const char *existing, const char *newpath)
     r = pCreateHardLink((LPTSTR)SCM_MBS2WCS(newpath),
                         (LPTSTR)SCM_MBS2WCS(existing), NULL);
     return r? 0 : -1;
+}
+
+/* System's RNG.  On Unix systems, reading from /dev/urandom suffices.
+ */
+uint64_t Scm_WinGetRandom()
+{
+    uint64_t buf;
+    NTSTATUS r = BCryptGenRandom(NULL, /* algorithm */
+                                 (PUCHAR)&buf,
+                                 sizeof(buf),
+                                 BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+    if (r != STATUS_SUCCESS) {
+        Scm_SysError("BCryptGenRandom failed");
+    }
+    return buf;
 }
 
 /* Winsock requires some obscure initialization.
