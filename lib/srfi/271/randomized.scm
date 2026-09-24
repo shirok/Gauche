@@ -32,7 +32,6 @@
 ;;;
 
 (define-module srfi.271.randomized
-  (use gauche.vport)                    ; just for dummy
   (export make-random-port)
   )
 (select-module srfi.271.randomized)
@@ -40,7 +39,15 @@
 (define (make-random-port . _)
   (cond-expand
    [gauche.os.windows
-    ;; We'll use BCryptGenRandom win32 call.  This is a placeholder until then.
-    (open-input-byte-generator (^[] #xa5))]
+    (use gauche.vport)
+    (let ([buf 0]
+          [cnt 0])
+      (make <virtual-input-port>
+        :getb (^[]
+                (when (zero? cnt)
+                  (set! buf ((with-module gauche.internal sys-win-get-random))))
+                (rlet1 b (logand buf #xff)
+                  (set! buf (ash buf -8))
+                  (set! cnt (modulo (+ cnt 1) 8))))))]
    [else
     (open-input-file "/dev/urandom")]))
