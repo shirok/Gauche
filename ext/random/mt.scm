@@ -42,6 +42,7 @@
           mt-random-real0
           mt-random-integer
           mt-random-fill-u32vector!
+          mt-random-fill-u64vector!
           mt-random-fill-f32vector!
           mt-random-fill-f64vector!)
   )
@@ -96,6 +97,9 @@
    Scm_MTGenrandU32)
 
  (define-cproc mt-random-fill-u32vector! (mt::<mersenne-twister> v::<u32vector>)
+   (return (Scm_MTFillUvector mt (SCM_OBJ v))))
+
+ (define-cproc mt-random-fill-u64vector! (mt::<mersenne-twister> v::<u64vector>)
    (return (Scm_MTFillUvector mt (SCM_OBJ v))))
 
  (define-cproc mt-random-fill-f32vector! (mt::<mersenne-twister> v::<f32vector>)

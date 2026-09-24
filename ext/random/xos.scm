@@ -51,6 +51,7 @@
           xos-random-u64
           xos-random-real
           xos-random-real0
+          xos-random-fill-u32vector!
           xos-random-fill-u64vector!
           xos-random-fill-f32vector!
           xos-random-fill-f64vector!))
@@ -225,6 +226,16 @@
   (let* ([r::double 0.0])
     (with-xos-lock xos (set! r (get-real xos FALSE)))
     (return r)))
+(define-cproc xos-random-fill-u32vector! (xos::<xos-random> v::<u32vector>)
+  (with-xos-lock xos
+    (let* ([len::ScmSmallInt (SCM_U32VECTOR_SIZE v)]
+           [i::ScmSmallInt 0])
+      (for [() (< i len) (post++ i)]
+        (let* ([val::uint64_t (xoshiro256++ xos)])
+          (set! (SCM_U32VECTOR_ELEMENT v i) (cast uint32_t val))
+          (when (< (pre++ i) len)
+            (set! (SCM_U32VECTOR_ELEMENT v i) (>> val 32)))))))
+  (return (SCM_OBJ v)))
 (define-cproc xos-random-fill-u64vector! (xos::<xos-random> v::<u64vector>)
   (with-xos-lock xos
     (dotimes (i (SCM_U64VECTOR_SIZE v))

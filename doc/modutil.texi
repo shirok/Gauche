@@ -14365,36 +14365,58 @@ A class to packate the state of Xoshiro256 PRNG (the name stands for
 Xor-Shift-Rotate 256bits).
 @end deftp
 
-
 @defun make-xos-random :optional seed private?
 @c MOD math.random.xos
 Creates and returns a new @code{<xos-random>} PRNG instance.
 An optional @var{seed} argument must be a u64 integer if given, providing
-a random seed.
+a random seed.  We process this sheed with split-mix 64 to fill the state,
+so any seed value is valid.  When omitted, a fixed seed value is used.
 
 By default, access to the PRNG is mutexed.  If you know there's
 only one thread accessing it, you can pass a true value to @var{private?}
 to avoid the overhead.
 @end defun
 
-@defun xos-random-copy xos :optional private?
+@defun xos-random-copy xos :key private?
 @c MOD math.random.xos
+Returns a new @code{<xos-random>} PRNG instance that copies
+the state of the source @var{xos}.  Both source and created PRNG
+will produce the same random sequence.  This can be used to take
+`snapshot` of the PRNG state.
+
+The private-ness (not mutexing PRNG) is not automatically passed
+to the new instance.  To make the new instance mutex-less, pass a
+true value to The keyword argument @var{private?}.
 @end defun
 
 @defun xos-random-copy! dst-xos src-xos
 @c MOD math.random.xos
+Copies @var{src-xos}'s PRNG state over @var{dst-xos}'s PRNG state.
+Previous state of @var{dst-xos} is destoryed, and both xos PRNG
+will produce the same random sequence afterwards.
+
+The private-ness of @var{dst-xos} is kept as is; it is not a part of
+the PRNG state.
+
+This can be used to ``restore'' previously saved PRNG state.
 @end defun
 
 @defun xos-random-state=? xos1 xos2
 @c MOD math.random.xos
+Compare to xos PRNGs' states.  If this returns @code{#t}, both
+PRNGs will produce the same random sequence.
+
+The private-ness of @var{xos1} and @var{xos2} are not compared.
 @end defun
 
 @defun xos-random-get-seed xos
 @c MOD math.random.xos
+Returns the seed value (u64 integer) used to initialize @var{xos}.
 @end defun
 
 @defun xos-random-set-seed! xos seed
 @c MOD math.random.xos
+Set the seed value (u64 integer) to the PRNG @var{xos}, and reinitialize it.
 @end defun
 
 @defun xos-random-u64 xos
@@ -14403,6 +14425,13 @@ to avoid the overhead.
 
 @defun xos-random-real xos
 @defunx xos-random-real0 xos
+@c MOD math.random.xos
+@end defun
+
+@defun xos-random-fill-u32vector! xos vec
+@defunx xos-random-fill-u64vector! xos vec
+@defunx xos-random-fill-f32vector! xos vec
+@defunx xos-random-fill-f64vector! xos vec
 @c MOD math.random.xos
 @end defun
 
