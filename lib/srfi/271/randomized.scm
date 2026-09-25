@@ -32,6 +32,8 @@
 ;;;
 
 (define-module srfi.271.randomized
+  (use gauche.vport)
+  (use gauche.uvector)
   (export make-random-port)
   )
 (select-module srfi.271.randomized)
@@ -39,7 +41,6 @@
 (define (make-random-port . _)
   (cond-expand
    [gauche.os.windows
-    (use gauche.vport)
     (let ([buf 0]
           [cnt 0])
       (make <virtual-input-port>
@@ -50,4 +51,10 @@
                   (set! buf (ash buf -8))
                   (set! cnt (modulo (+ cnt 1) 8))))))]
    [else
-    (open-input-file "/dev/urandom")]))
+    ;; We avoid holding the device file open.
+    (make <buffered-input-port>
+      :fill (^[buf]
+              (call-with-input-file "/dev/urandom"
+                (^p (dotimes [i (u8vector-length buf)]
+                      (u8vector-set! buf i (read-u8 p)))))
+              (u8vector-length buf)))]))

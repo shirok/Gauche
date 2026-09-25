@@ -32,5 +32,6 @@
 ;;;
 
 (define-module srfi.271
+  (extend srfi.271.randomized)
   )
 (select-module srfi.271)
