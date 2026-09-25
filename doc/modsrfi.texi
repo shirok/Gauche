@@ -2519,13 +2519,13 @@ character, such as @code{~@@a}.
 @deftp {Module} srfi.27
 @mdindex srfi.27
 @c EN
-This module provides SRFI-27 pseudo random generator interface,
-using Mersenne Twister algorithm
-(@pxref{Mersenne-Twister random number generator}) as the backbone.
+This module provides SRFI-27 pseudo random generator interface.
+Currently we build this on Mersenne Twister PRNG
+(@pxref{Mersenne-Twister random number generator}).
 @c JP
-このモジュールはメルセンヌツイスタアルゴリズム
-(@ref{Mersenne-Twister random number generator} 参照)
-を基礎に用いたSRFI-27疑似乱数発生器インタフェースを提供します。
+このモジュールはSRFI-27疑似乱数発生器インタフェースを提供します。
+現在のところ、これはメルセンヌツイスタPRNGの上に実装されています
+(@ref{Mersenne-Twister random number generator} 参照)。
 @c COMMON
 
 @c EN
@@ -2534,6 +2534,15 @@ can use the same random source without breaking its internal state.
 @c JP
 このモジュールが提供する乱数発生源はスレッドセーフです。
 複数のスレッドが同じ乱数発生源を使っても内部状態を壊してしまうことはありません。
+@c COMMON
+
+@c EN
+@xref{Random port libraries}, for an alternative way to get random
+numbers---it also provides access to system-provided high-entropy random
+source.
+@c JP
+乱数を得る別の方法には@ref{Random port libraries}もあります。
+そちらはシステムが提供する高エントロピー乱数源へのアクセスもカバーしています。
 @c COMMON
 @end deftp
 
@@ -19922,6 +19931,8 @@ so its @code{make-random-port} takes system's random source.
 Unless you need cryptographic quality, you may want
 @code{srfi.271.determinized}, as it can procude large quantitiy
 of random bits quickly, without exhausting external entropy pool.
+
+@xref{Sources of random bits}, for an alternative PRNG interface.
 @end deftp
 
 
@@ -20026,10 +20037,16 @@ the initializer is not adequate.
 @deftp {Module} srfi.274
 @mdindex srfi.274
 @c EN
+This srfi extends existing @code{list->*} procedures by allowing
+optional start/end arguments.
+
 Since Gauche already provides srfi-274 conforming procedures,
 this module simply re-exports them, so that @code{(import (srfi 274))}
 works.
 @c JP
+このsrfiは既存の@code{list->*}手続きを、省略可能なstart/end引数を取るように
+拡張するものです。
+
 Gaucheの該当する手続きは既にSRFI-274をサポートするように拡張されています。
 このモジュールは、@code{(import (srfi 274))}が動くように
 それらを再エクスポートしているだけです。
