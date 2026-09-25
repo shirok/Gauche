@@ -497,7 +497,7 @@
             (lambda ()
               (abort-current-continuation tag1 'foo))))))
 
-'(let ([tag (make-continuation-prompt-tag 'tag)])
+(let ([tag (make-continuation-prompt-tag 'tag)])
   (test* "abort-current-continuation crosses cstack boundary"
          '(a)
          (call-with-continuation-prompt
@@ -521,6 +521,28 @@
                 (^[] (push! r 'after))))
             tag1
             (^[x] (push! r x))))))
+
+(let ([tag1 (make-continuation-prompt-tag 'tag1)]
+      [tag2 (make-continuation-prompt-tag 'tag2)])
+  (test* "abort-current-continuation (two tags)"
+         "[p01][p02][a01][p05]"
+         (with-output-to-string
+           (lambda ()
+             (call-with-continuation-prompt
+              (lambda ()
+                (display "[p01]")
+                (call-with-continuation-prompt
+                 (lambda ()
+                   (display "[p02]")
+                   (abort-current-continuation
+                    tag2
+                    (lambda ()
+                      (display "[a01]")))
+                   (display "[p03]"))
+                 tag1)
+                (display "[p04]"))
+              tag2)
+             (display "[p05]")))))
 
 ;;-----------------------------------------------------------------------
 ;; Parameterizations
@@ -580,6 +602,60 @@
       (^[] (+ 1 (reset (+ 2 (shift k (+ 3 (k 5) (k 1))))))))
 (test "calling pc multi" '(1 3 2 2 4)
       (^[] (cons 1 (reset (cons 2 (shift k (cons 3 (k (k (cons 4 '()))))))))))
+
+;; Cf. https://reinyannyan.hatenadiary.org/entry/20090623/p1
+(test* "reset / shift (for-each)"
+       '(1 2 3)
+       (reset
+        (for-each
+         (lambda (x) (shift k (cons x (k 'next))))
+         '(1 2 3))
+        '()))
+
+;; from SRFI-226 document
+(test* "reset / shift 1" 4  (+ 1 (reset 3)))
+(test* "reset / shift 2" 5  (+ 1 (reset (* 2 (shift k 4)))))
+(test* "reset / shift 3" 9  (+ 1 (reset (* 2 (shift k (k 4))))))
+(test* "reset / shift 4" 17 (+ 1 (reset (* 2 (shift k (k (k 4)))))))
+(test* "reset / shift 5" 25 (+ 1 (reset (* 2 (shift k1 (* 3 (shift k2 (k1 (k2 4)))))))))
+
+;; Cf. https://gengar.hatenadiary.org/entry/20140406/1396795808
+(let ()
+  (define d display)
+  (define (d$ x) (lambda () (d x)))
+  (define (%dw x thunk) (dynamic-wind (d$ `(,x before)) thunk (d$ `(,x after))))
+  (define-syntax dw (syntax-rules () ((_ x body ...) (%dw x (lambda () body ...)))))
+
+  '(test* "call/comp 1" '(a b c b) (cons 'a (reset (cons 'b (call/comp (lambda (k) (cons 'c (k '()))))))))
+  (test* "call/cc 1"   '(a b)     (cons 'a (reset (cons 'b (call/cc (lambda (k) (cons 'c (k '()))))))))
+
+  ;; Racket result is '(a b c b) instead of '(a b)
+  (test* "call/cc 2"   '(a b)     (cons 'a (reset (cons 'b (call/cc (lambda (k) (cons 'c (reset (k '())))))))))
+
+  (test* "call/cc 3"   '(c b)
+         (let ((k #f))
+           (cons 'a (reset (cons 'b (call/cc (lambda (k1) (set! k k1) '())))))
+           (cons 'c (reset (cons 'd (k '()))))))
+  (test* "dw"
+         "(0 before)body(0 after)"
+         (with-output-to-string
+           (lambda ()
+             (dw 0 (d 'body)))))
+  (test* "dw + let/cc"
+         "(0 before)(0 after)42"
+         (with-output-to-string
+           (lambda ()
+             (d (let/cc return (dw 0 (return 42)))))))
+  (test* "dw + call/cc"
+         ;; due to the difference in call/cc specs
+         ;"(0 before)a(0 after)(1 before)(1 after)b"
+         "(0 before)a(0 after)(1 before)(1 after)(0 before)b(0 after)"
+         (with-output-to-string
+           (lambda ()
+             (let ((k #f))
+               (dw 0 (reset (d (call/cc (lambda (k1) (set! k k1) 'a)))))
+               (reset (dw 1 (k 'b)))))))
+  )
 
 ;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
 (let ()
