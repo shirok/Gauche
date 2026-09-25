@@ -48,28 +48,70 @@
 (define-condition-type <random-port-initialization-error> <serious-condition>
   random-port-initialization-error?)
 
+;; We handle buffering by ourselves, in order to allow saving the state.
+(define-constant buffer-size 256)       ;must be a multiple of 8
+
 (define-class <random-port-state> ()
   (;; All slots private
-   (state :init-keyword :state)))
+   (xos   :init-keyword :xos)           ;<xos-random>
+   (buf   :init-keyword :buf)           ;u8vector - generated octets
+   (index :init-keyword :index)         ;# of octets in buf already read
+   ))
 
 ;; API
 (define (make-random-port :optional (initializer #f))
-  (let1 xos (%get-xos initializer)
-    (rlet1 p (make <buffered-input-port>
-               :fill (^[buf]
-                       (rlet1 len (u8vector-length buf)
-                         (let outer ([i 0]
-                                     [v (xos-random-u64 xos)])
-                           (let inner ([k 0] [i i] [v v])
-                             (unless (>= i len)
-                               (if (= k 8)
-                                 (outer i (xos-random-u64 xos))
-                                 (begin
-                                   (u8vector-set! buf i (logand v #xff))
-                                   (inner (+ k 1) (+ i 1) (ash v -8))))))))))
-      (port-attribute-set! p 'xos xos))))
+  ;; We cache each component of state in local vars for speed.
+  (define st (%get-state initializer))
+  (define xos (~ st'xos))
+  (define buf (~ st'buf))
+  (define len (u8vector-length buf))
+  (define u64buf (uvector-alias <u64vector> buf)) ;u64 view of buf
+  (define index (~ st'index))
 
-(define (%get-xos initializer)
+  ;; Generate the next chunk of octets.  Byte-swapping is to produce
+  ;; the same sequence of octets from the same seed.
+  (define fill-buffer!
+    (if (eq? (native-endian) 'little-endian)
+      (^[]
+        (xos-random-fill-u64vector! xos u64buf)
+        (set! index 0))
+      (^[]
+        (xos-random-fill-u64vector! xos u64buf)
+        (u64vector-swap-bytes! u64buf)
+        (set! index 0))))
+
+  (define (getb)
+    (when (= index len) (fill-buffer!))
+    (rlet1 b (u8vector-ref buf index)
+      (inc! index)))
+
+  (define (gets size)
+    (let1 v (make-u8vector size)
+      (let loop ([i 0])
+        (if (= i size)
+          (u8vector->string v)
+          (begin
+            (when (= index len) (fill-buffer!))
+            (let1 n (min (- size i) (- len index))
+              (u8vector-copy! v i buf index (+ index n))
+              (set! index (+ index n))
+              (loop (+ i n))))))))
+
+  (define (take-snapshot)
+    (make <random-port-state>
+      :xos (xos-random-copy xos)
+      :buf (u8vector-copy buf)
+      :index index))
+
+  (rlet1 p (make <virtual-input-port> :getb getb :gets gets)
+    (port-attribute-set! p 'random-state-snapshot take-snapshot)))
+
+(define (%get-state initializer)
+  (define (new-state seed)
+    (make <random-port-state>
+      :xos (make-xos-random :seed seed :private? #t)
+      :buf (make-u8vector buffer-size 0)
+      :index buffer-size))               ;the buffer is empty
   (cond
    [(not initializer)
     (let ([v 0]
@@ -77,42 +119,56 @@
       (dotimes [8]
         (set! v (logior (ash v 8) (read-u8 p))))
       (close-port p)
-      (make-xos-random :seed v :private? #t))]
+      (new-state v))]
    [(input-port? initializer)
     (let loop ([i 0] [v 0])
       (if (= i 8)
-        (make-xos-random :seed v :private? #t)
+        (new-state v)
         (let1 b (read-u8 initializer)
           (if (eof-object? b)
             (error <random-port-initialization-error>
                    "Initializer port does not have enough bytes:" initializer)
             (loop (+ i 1) (logior (ash v 8) b))))))]
    [(random-port-state? initializer)
-    (xos-random-copy (~ initializer'state))]
+    ;; Copy it, so that the new port won't affect the given state.
+    (make <random-port-state>
+      :xos (xos-random-copy (~ initializer'xos))
+      :buf (u8vector-copy (~ initializer'buf))
+      :index (~ initializer'index))]
    [else
      (error <random-port-initialization-error>
             "Random port initializer must be an input port or random state, \
              but got:" initializer)]))
 
+(define (%state-snapshot port)
+  (and (port? port)
+       (port-attribute-ref port 'random-state-snapshot #f)))
+
 ;; API
 (define (random-port? obj)
-  (and (port? obj)
-       (is-a? (port-attribute-ref obj 'xos #f) <xos-random>)))
+  (procedure? (%state-snapshot obj)))
 
-(define (%random-port-xos port)
-  (port-attribute-ref port 'xos))
-
+;; API
 (define (random-port-state port)
   (assume (random-port? port))
-  (make <random-port-state>
-    :state (xos-random-copy (%random-port-xos port))))
+  ((%state-snapshot port)))
 
+;; API
 (define (random-port-state? st)
   (is-a? st <random-port-state>))
 
+;; API
 (define (random-port-state=? a b . rest)
   (assume (random-port-state? a))
   (assume (random-port-state? b))
-  (and (xos-random-state=? (~ a'state) (~ b'state))
+  (and (%state=? a b)
        (or (null? rest)
            (apply random-port-state=? b rest))))
+
+;; Two states behave the same iff the PRNG states are the same and the
+;; octets yet to be read are the same.  The part of the buffer that's
+;; already read doesn't matter.
+(define (%state=? a b)
+  (and (xos-random-state=? (~ a'xos) (~ b'xos))
+       (equal? (subuvector/shared (~ a'buf) (~ a'index))
+               (subuvector/shared (~ b'buf) (~ b'index)))))

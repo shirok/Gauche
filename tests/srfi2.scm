@@ -22,6 +22,58 @@
   (test-include-r7 "include/srfi-271-tests")
   )
 
+(define-module srfi-271-state-tests
+  (use gauche.test)
+  (use gauche.uvector)
+  (use gauche.vport)
+  (use srfi.271.determinized)
+
+  (define (seed-port)
+    (open-input-byte-generator (constantly 42)))
+  ;; State restoration test
+  (define (resumes-at? n)
+    (let* ([p1 (make-random-port (seed-port))]
+           [_  (read-bytevector n p1)]
+           [p2 (make-random-port (random-port-state p1))])
+      (equal? (read-bytevector 600 p1) (read-bytevector 600 p2))))
+
+  (test* "restored port continues the octet sequence" '()
+         (remove resumes-at? (iota 600)))
+
+  (test* "saved state isn't affected by subsequent reads" #t
+         (let* ([p (make-random-port (seed-port))]
+                [st (random-port-state p)]
+                [v (read-bytevector 600 p)])
+           (equal? v (read-bytevector 600 (make-random-port st)))))
+
+  (test* "random-port-state=? counts buffered octets" '(#t #f)
+         (let* ([p1 (make-random-port (seed-port))]
+                [p2 (make-random-port (random-port-state p1))]
+                [p3 (make-random-port (random-port-state p1))])
+           (read-bytevector 300 p1)
+           (read-bytevector 300 p2)
+           (read-bytevector 299 p3)
+           (list (random-port-state=? (random-port-state p1)
+                                      (random-port-state p2))
+                 (random-port-state=? (random-port-state p1)
+                                      (random-port-state p3)))))
+
+  ;; Block read and octet-by-octet read go through different callbacks.
+  (test* "block read and octet read agree" #t
+         (let* ([p1 (make-random-port (seed-port))]
+                [p2 (make-random-port (random-port-state p1))])
+           (equal? (read-bytevector 1000 p2)
+                   (list->u8vector (map (^_ (read-u8 p1)) (iota 1000))))))
+
+  (test* "mixing block read and octet read" #t
+         (let* ([p1 (make-random-port (seed-port))]
+                [p2 (make-random-port (random-port-state p1))])
+           (equal? (u8vector-append (u8vector (read-u8 p1))
+                                    (read-bytevector 500 p1)
+                                    (u8vector (read-u8 p1)))
+                   (read-bytevector 502 p2))))
+  )
+
 (define-module srfi-271-stat-tests
   (use gauche.test)
   (use gauche.uvector)
