@@ -1868,6 +1868,16 @@ Reader and writer are supported by built-in procedures
 提供されます(@ref{Hexadecimal floating-point constants}参照)。
 
 
+srfi-271, srfi-271
+()
+
+Random port libraries
+Supported by the module @code{srfi.271} (@pxref{Random port libraries}).
+
+乱数ポートライブラリ
+モジュール@code{srfi.271}でサポートされます (@ref{Random port libraries}参照)。
+
+
 srfi-274, srfi-274
 ()
 

@@ -115,8 +115,9 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Uninterned symbols (SRFI)::   srfi.258
 * Tagged procedures with type safety::  srfi.259
 * Hexadecimal floating-point constants::  srfi.270
+* Random port libraries::       srfi.271
 * Extended list conversion procedures::  srfi.274
-* Cyclic ports::
+* Cyclic ports::                srfi.277
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -19800,7 +19801,7 @@ tag type name.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Hexadecimal floating-point constants, Extended list conversion procedures, Tagged procedures with type safety, Library modules - SRFIs
+@node Hexadecimal floating-point constants, Random port libraries, Tagged procedures with type safety, Library modules - SRFIs
 @section @code{srfi.270} - Hexadecimal floating-point constants
 @c NODE 十六進浮動小数点定数, @code{srfi.270} - 十六進浮動小数点定数
 
@@ -19898,7 +19899,127 @@ and imaginary part are written in hexadecimal floating-point format.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Extended list conversion procedures, Cyclic ports, Hexadecimal floating-point constants, Library modules - SRFIs
+@node Random port libraries, Extended list conversion procedures, Hexadecimal floating-point constants, Library modules - SRFIs
+@section @code{srfi.271} - Random port libraries
+@c NODE 乱数ポートライブラリ, @code{srfi.271} - 乱数ポートライブラリ
+
+@deftp {Module} srfi.271
+@mdindex srfi.271
+This module provides the means to create @emph{random ports}, an
+input port to return random bytes.
+
+This srfi has two submodules, both export @code{make-random-port}:
+@code{srfi.271.randomized} draws random bits from system's
+high-entropy random source (@file{/dev/urandom} on Unix-family, and
+@code{BCryptGenRandom} on MinGW), which is hard to predict and
+cannot reproduce, while @code{srfi.271.determinized} uses
+pseudo random number generator (PRNG), which is deterministic.
+The user can import either one depending on the purpose.
+@code{srfi.271.determinized}.
+
+The module @code{srfi.271} is an alias of @code{srfi.271.rnndomized},
+so its @code{make-random-port} takes system's random source.
+Unless you need cryptographic quality, you may want
+@code{srfi.271.determinized}, as it can procude large quantitiy
+of random bits quickly, without exhausting external entropy pool.
+@end deftp
+
+
+@deftp {Module} srfi.271.randomized
+@mdindex srfi.271.randomized
+@end deftp
+
+@deftp {Module} srfi.271.determinized
+@mdindex srfi.271.determinized
+@end deftp
+
+
+@defun make-random-port :optional initializer
+[SRFI-271]
+@c MOD srfi.271.randomized srfi.271.determinized
+Returns an input port, from which you can read random octets.
+Note that the module @code{srfi.271.randomized} and
+@code{srfi.271.determinized} defines different procedures with the
+same name.
+
+@code{srfi.271.randomized#make-random-port} pulls from
+high-entropy random source provided by the system.  You can use it
+for the cryptgraphic purpose, but reading large number of bytes may
+be slow if it exhaust system's entropy pool.  The optional
+@var{initializer} argument is ignored.
+
+@code{srfi.271.determined#make-random-port} uses PRNG to generate
+random octets; it's fast, and reproducible from the same seed.
+The random seed can be provided with @var{initializer}, which may be
+either a binary input port or a @code{<random-port-state>} object
+retrieved from another determined random port.  If omitted, it uses
+@code{srfi.271.randomized#make-random-port} as an initializer, so
+the seed is quite random.
+
+To provide fixed seed, you can use @code{gauche.vport}'s
+@code{open-input-byte-list} (@pxref{Virtual ports}), or
+@code{srfi.277}'s @code{open-cyclic-input-bytevector}
+(@pxref{Cyclic ports}):
+
+@example
+(make-random-port (open-input-byte-list '#0=(1 2 3 4 . #0#)))
+
+(make-random-port (open-cyclic-input-bytevector '#u8"abcd"))
+@end example
+
+Providing a cicular list to @code{open-input-byte-list} ensures
+it provides enough seed values whatever the PRNG algorithm requires.
+If the initializer cannot provide enough seeds, a condition
+that satisfies @code{random-port-initialization-error?} is raised.
+@end defun
+
+
+@defun random-port? obj
+[SRFI-271]
+@c MOD srfi.271.determinized
+Returns @code{#t} iff @var{obj} is an input port
+created by @code{srfi.271.determined#make-random-port}.
+Note that the port returned by
+@code{srfi.271.randomized#make-random-port} does not satisfy
+this predicate.
+@end defun
+
+@defun random-port-state drport
+[SRFI-271]
+@c MOD srfi.271.determinized
+Returns an object that encapsulates the state of
+deteminized random port @var{drport}.
+Passing that state to @code{srfi.271.determined#make-random-port}
+yields a random port that produces exactly the same random sequence
+as @var{drport} would produce from this moment.
+@end defun
+
+@defun random-port-state? obj
+[SRFI-271]
+@c MOD srfi.271.determinized
+Returns @code{#t} iff @var{obj} is a random port state object
+returned by @code{random-port-state}.
+@end defun
+
+@defun random-port-state=? s1 s2 s3 @dots{}
+[SRFI-271]
+@c MOD srfi.271.determinized
+All the arguments must be random port states.  Returns @code{#t} iff
+all the states are equivalent, i.e. they will produce the same random
+sequence when passed to @code{srfi.271.determined#make-random-port}.
+@end defun
+
+@defun random-port-initialization-error? obj
+[SRFI-271]
+@c MOD srfi.271.determinized
+Returns @code{#t} iff @var{obj} is a condition raised
+from @code{srfi.271.determined#make-random-port} when
+the initializer is not adequate.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Extended list conversion procedures, Cyclic ports, Random port libraries, Library modules - SRFIs
 @section @code{srfi.274} - Extended list conversion procedures
 @c NODE リスト変換手続きの拡張, @code{srfi.274} - リスト変換手続きの拡張
 
