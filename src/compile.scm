@@ -1675,6 +1675,15 @@
    (ctarget-env-header-size parent-target)
    (ctarget-cont-frame-size parent-target)))
 
+;; A parameter to indicate whether we're precompiling or not
+;; NB: We can't just say `(define precmpiling (make-parameter #f))`,
+;; since `make-parameter` is defined after this module is initialized.
+(inline-stub
+ (initcode
+  (Scm_BindPrimitiveParameter (Scm_GaucheInternalModule)
+                              "precompiling?" '#f SCM_PARAMETER_SHARED))
+ )
+
 ;;============================================================
 ;; Entry points
 ;;
@@ -1689,7 +1698,11 @@
 ;; recognized.
 ;;    :env-header-size  - size of environment frame header
 ;;    :cont-frame-size  - size of continuation frame
-(define (compile program env :key (target-params '()))
+;;
+;; precompiling is #t if this compile pass is AOT compilation.
+;;
+(define (compile program env :key (target-params '())
+                                  (precompiling #f))
   (let1 cenv (cond [(module? env) (make-bottom-cenv env)]
                    [(vector? env) env] ; assumes env is cenv
                    [else (make-bottom-cenv)]) ; use default module
@@ -1698,9 +1711,10 @@
       (with-error-handler
           (^e (raise (%attach-compile-error-context e program)))
         (^[]
-          (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
-                 (make-compile-target env-header-size cont-frame-size)
-                 '() 'tail))))))
+          (parameterize ([precompiling? precompiling])
+            (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
+                   (make-compile-target env-header-size cont-frame-size)
+                   '() 'tail)))))))
 
 ;; Attach <compile-error-mixin> and/or <include-condition-mixin> to the
 ;; thrown condition, if necessary.

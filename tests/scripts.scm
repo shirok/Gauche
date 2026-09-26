@@ -1029,12 +1029,27 @@
                ,(im-state-test))))))
   )
 
+(define (precomp-test-discriminator)
+  (test* "running precomp precompiling-param" #t
+         (do-precomp! '("precompiling-param.scm") '("-e")))
+  (test* "compile precompiling-param" #t
+         (do-compile! "precompiling-param" '("precompiling-param.c")))
+
+  (test* "precomp-discriminator" '(#t #f)
+         (dynload-and-eval "precompiling-param"
+                           (begin
+                             (use precompiling-param)
+                             (list (call-inside)
+                                   (call-outside)))))
+  )
+
 (wrap-with-test-directory precomp-test-1 '("test.o"))
 (wrap-with-test-directory precomp-test-2 '("test.o"))
 (wrap-with-test-directory precomp-test-type-reconstruction '("test.o"))
 (wrap-with-test-directory precomp-test-type-binding '("test.o"))
 (wrap-with-test-directory precomp-test-literal-mutex '("test.o"))
 (wrap-with-test-directory precomp-test-macros '("test.o"))
+(wrap-with-test-directory precomp-test-discriminator '("test.o"))
 
 ;;=======================================================================
 (test-section "build-standalone")

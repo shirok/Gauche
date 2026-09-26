@@ -339,8 +339,17 @@
 ;; Expr -> CompiledCode
 ;;  target-params parameter is passed to 'compile'.
 (define (compile-in-current-tmodule expr)
-  (compile expr (~ (current-tmodule)'module)
-           :target-params (target-parameters)))
+  ;; TRANSIENT
+  ;;  While building 0.9.16 with 0.9.15, we can't pass :precompiing keyword
+  ;;  arg.
+  (cond-expand
+   [gauche-0.9.15
+    (compile expr (~ (current-tmodule)'module)
+             :target-params (target-parameters))]
+   [else
+    (compile expr (~ (current-tmodule)'module)
+             :precompiling #t
+             :target-params (target-parameters))]))
 
 ;;================================================================
 ;; Parameters
