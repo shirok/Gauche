@@ -151,14 +151,15 @@
      (use gauche.native-type)
      (export probe))
    (select-module aotfull)
-   (with-ffi (dlopen "./f") (:subsystem :aot)
+   ;; We leave subsystem to default, which should be :aot if precomp is
+   ;; involved.
+   (with-ffi (dlopen "./f") ()
      (define-c-function F-i '() 'int)
      (define-c-function Fdvar '(int ...) 'double)
      (define-c-function Fcb2-i '(void* int int) 'int)
      (define-c-callback cb-add ((x 'int) (y 'int)) 'int
        (+ x y)))
-   (with-ffi (dlopen "./f") (:subsystem :aot
-                             :c-headers ("limits.h" "stdio.h"))
+   (with-ffi (dlopen "./f") (:c-headers ("limits.h" "stdio.h"))
      (define-c-function F-i '() 'int)    ;same C name as above
      (define-c-constant CHAR-BIT)
      (define-c-enum seek-whence (SEEK-SET SEEK-CUR SEEK-END)))
@@ -182,10 +183,12 @@
      (use gauche.native-type)
      (export probe))
    (select-module aotacross)
-   (with-ffi #f (:subsystem :aot :c-headers ("ffi-const.h"))
+   ;; We leave subsystem to default, which should be :aot if precomp is
+   ;; involved.
+   (with-ffi #f (:c-headers ("ffi-const.h"))
      (define-c-enum (ffi_test_color_t ffi_test_color)
        (FFI_TEST_RED FFI_TEST_GREEN FFI_TEST_BLUE)))
-   (with-ffi (dlopen "./f") (:subsystem :aot)
+   (with-ffi (dlopen "./f") ()
      (define-c-function Fi_i `(,ffi_test_color_t) ffi_test_color_t))
    (define (probe)
      (list (Fi_i FFI_TEST_RED)
@@ -204,7 +207,9 @@
      (use gauche.native-type)
      (export probe))
    (select-module aotintra)
-   (with-ffi (dlopen "./f") (:subsystem :aot :c-headers ("ffi-const.h"))
+   ;; We leave subsystem to default, which should be :aot if precomp is
+   ;; involved.
+   (with-ffi (dlopen "./f") (:c-headers ("ffi-const.h"))
      (define-c-enum (ffi_test_color_t ffi_test_color)
        (FFI_TEST_RED FFI_TEST_GREEN FFI_TEST_BLUE))
      (define-c-function Fi_i `(,ffi_test_color_t) ffi_test_color_t))
@@ -230,7 +235,9 @@
      (use gauche.native-type)
      (export probe))
    (select-module aotsigned)
-   (with-ffi (dlopen "./f") (:subsystem :aot :c-headers ("ffi-const.h"))
+   ;; We leave subsystem to default, which should be :aot if precomp is
+   ;; involved.
+   (with-ffi (dlopen "./f") (:c-headers ("ffi-const.h"))
      (define-c-enum (ffi_test_signed_t ffi_test_signed)
        (FFI_TEST_S_LO FFI_TEST_S_HI) 'int16_t)
      (define-c-function Fi_i `(,ffi_test_signed_t) ffi_test_signed_t))

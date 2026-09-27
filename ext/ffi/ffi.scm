@@ -288,8 +288,9 @@
         ;; its body procedure when batching them into one codepad.
         (define ccb-info '())
         (define subsystem
-          (get-keyword :subsystem (unwrap-syntax options)
-                       (default-ffi-subsystem)))
+          (cond [(get-keyword :subsystem (unwrap-syntax options) #f)]
+                [((with-module gauche.internal precompiling?)) :aot]
+                [else (default-ffi-subsystem)]))
         (define ids (list (r'define-c-function)
                           (r'define-c-callback)
                           (r'define-c-constant)
