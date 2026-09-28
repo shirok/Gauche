@@ -20134,6 +20134,10 @@ The returned input ports are positionable, that is,
 you can obtain the port position and later restart from the
 previously obtained position.  It can be portably done with
 SRFI-291 (@pxref{Port positioning}).
+
+You can also realize circular ports with passing a circular list
+to @code{open-input-char-list}/@code{open-input-byte-list}
+of @code{gauche.vport} (@pxref{Virtual ports}).
 @end defun
 
 

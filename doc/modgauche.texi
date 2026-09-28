@@ -36331,6 +36331,15 @@ This is an R7RS base procedure.
 @code{open-input-uvector}と似ていますが、引数はu8vectorでなければなりません。
 R7RS baseの手続きです。
 @c COMMON
+
+@c EN
+Cf. @code{open-cyclic-input-bytevector} (@pxref{Cyclic ports}) allows
+to create an infinite input port repeating to read from the
+given bytevector.
+@c JP
+参考: @code{open-cyclic-input-bytevector} (@ref{Cyclic ports})は
+与えたバイトベクタから繰り返し無限に読み込む入力ポートを作ります。
+@c COMMON
 @end defun
 
 @defun open-output-uvector :optional uvector :key extendable
