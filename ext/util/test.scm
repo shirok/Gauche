@@ -402,6 +402,25 @@
 
 ;;--------------------------------------------------------------
 
+;; Original bug caused by mutaton & backtracking.
+;; https://github.com/shirok/Gauche/issues/646
+(test* "or + and + not" '(1)
+       (match '(1)
+         [(or (and x (not 42)) (x)) x]))
+(test* "or + and + not (1st alternative)" 1
+       (match 1
+         [(or (and x (not 42)) (= list x)) x]))
+(test* "or + and + not (2nd alternative)" 42
+       (match 42
+         [(or (and x (not 42)) (= list (x))) x]))
+(test* "or + and + not (fall through)" '(() 5)
+       (list (match '(4)
+               [(or (and (x) (not (4))) (_ . x)) x])
+             (match '(5)
+               [(or (and (x) (not (4))) (_ . x)) x])))
+
+;;--------------------------------------------------------------
+
 (define-module util-match-with-prefix
   (use gauche.test)
   (use util.match :prefix --)

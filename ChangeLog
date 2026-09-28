@@ -1,3 +1,11 @@
+2026-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match-impl.scm (gen): Let the success continuation
+	  pass down the bindings (v), instead of mutating it when alternatives
+	  are tried.  This fixes https://github.com/shirok/Gauche/issues/646,
+	  and also the potential bugs caused by mixture of backtracking
+	  and mutations.
+
 2026-09-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (precompiling?),
