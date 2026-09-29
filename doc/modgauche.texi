@@ -10504,13 +10504,13 @@ suidビットとsgidビットを無視します。
 
 @c ----------------------------------------------------------------------
 @node Foreign function interface, Generators, Low-level file operations, Library modules - Gauche extensions
-@section @code{gauche.FFI} - Foreign function interface
+@section @code{gauche.ffi} - Foreign function interface
 @c NODE FFI, @code{gauche.ffi} - FFI
 
 @deftp {Module} gauche.ffi
 @mdindex gauche.ffi
 This module provides the means to call compiled functions in other
-langauges via C ABI.  It allows user programs to use external libraries
+languages via C ABI.  It allows user programs to use external libraries
 without writing a custom extension.
 
 Although it is convenient, you need to keep in mind that
@@ -10520,12 +10520,32 @@ You can easily pass arguments of incorrect types, interpret
 the result incorrectly, or access objects outside of its lifetime.
 Small mistakes can eaisly cause access violation or memory corruption.
 
-We adopt pluggable subsystems; you can choose the underlying FFI layer
-depending on the architecture and your particular needs.
-For the time being, @code{stub} subsystem is available on
-all the architecture, and @code{native} subsystem on x86_64 with
-with Unix-like systems and MinGW/Windows.  Native subsytem will
-be enhanced to Aarch64 soon.
+We adopt pluggable subsystems; we have a few different FFI implementations.
+The system chooses one suitable for the situation, or you can specify
+which one ot use.  Here is the list of available subsystems:
+
+@table @code
+@item :native
+A machine-code trampoline stub is constructed at the runtime.
+The overhad is small, but this is architecture-dependent and only available
+on limited architecture (currently, x86_64 on Unix-family and MinGW.
+a plan to support Aarch64 in near future).  This is selected by default
+when you're running on the supported platform.
+
+@item :stub
+A stub C code is generated, compiled and dyamically linked when
+@code{with-ffi} form is evaluated.  It incurs one-time overhead when
+the compilation takes place; but once linked, calling the FFI functions
+are just as fast as calling C funcitons via extension modules.
+This is available on all platforms, and used as the fallback by default.
+
+@item :aot
+A variation of @code{:stub} subsystem, used when the file including
+@code{with-ffi} forms are precompiled.  The stub code generation is
+done at the same time of precompilation, so loading the compiled module
+does not incur extra overhead.   This is selected when
+you precompile the file, regardless of the underlying architecture.
+@end table
 
 The code that uses FFI looks like the following:
 
@@ -10560,6 +10580,36 @@ and you can call it as a Scheme function.
 
 @defmac with-ffi dso options form @dots{}
 @c MOD gauche.ffi
+The @var{dso} form must be an expression that yields a dynamically
+loaded object (@code{dlopen}, @pxref{FFI support procedures}),
+@var{options} is a keyword-value form to tune the behavior
+of @code{with-ffi}, and @var{form} is a toplevel form
+to define foreign interface (see below) which accesses the external
+function provided by @var{dso}.
+
+@var{dso} can be @code{#f} if @var{form} @dots{} only refer to
+the values solely derived from the header files (you need to
+specify @code{:c-headers} option in that case).
+
+You can mix ordinary toplevel definitions like @code{defin} in
+@var{forms}.  However, @code{with-ffi} may reorder @var{forms}
+depending on its kind.
+
+This form does not create a scope; the toplevel definitions
+of @var{form} @dots{} are spliced into the surrounding scope.
+Some subsystem may need to insert the binding into the module's
+toplevel scope, so we recommend users to place @code{with-ffi} form
+at the toplevel scope as well, to avoid the confusion.
+
+@table @asis
+@item @code{:subsystem} @var{name}
+
+
+@item @code{:c-headers} (@var{header-name} @dots{})
+
+
+@end table
+
 @end defmac
 
 
@@ -10569,6 +10619,15 @@ and you can call it as a Scheme function.
 
 
 @defmac define-c-callback name ((var type) @dots{}) return-type body @dots{}
+@c MOD gauche.ffi
+@end defmac
+
+@defmac define-c-constant name :optional type
+@c MOD gauche.ffi
+@end defmac
+
+@defmac define-c-enum name (enumerator @dots{}) :optional base-type
+@defmacx define-c-enum (name tag) (enumerator @dots{}) :optional base-type
 @c MOD gauche.ffi
 @end defmac
 
