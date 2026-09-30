@@ -201,6 +201,7 @@
    (kind :init-keyword :kind)  ; :function, :callbac, :constant or :enum
    (expr :init-keyword :expr)  ; S-expr to create <foreign-*> class
    (body-name :init-keyword :body-name)  ; for callbacks, keep body name
+   (enum-type-expr :init-keyword :enum-type-expr) ; (make-c-enum-type ...)
    ))
 
 ;; Resolve a typespec to a <native-type> instance at runtime.
@@ -480,18 +481,9 @@
                    [(define-c-constant)
                     (make-spec :constant (make-ccst-expr cdef))]
                    [(define-c-enum)
-                    (make-spec :enum (make-cenum-expr cdef))]))
+                    (make-spec :enum (make-cenum-expr cdef)
+                               :enum-type-expr (make-cenum-type-expr cdef))]))
                (reverse cdefs)))
-
-        ;; ((name . type-expr) ...) for the define-c-enum forms, in
-        ;; declaration order.  The subsystem macro binds each name to its
-        ;; type-expr before the cdef instances are constructed; see
-        ;; make-cenum-type-expr.
-        (define cenum-specs
-          (filter-map (^[cdef] (and (eq? (car cdef) 'define-c-enum)
-                                    (cons (cdef-name cdef)
-                                          (make-cenum-type-expr cdef))))
-                      (reverse cdefs)))
 
         ;; Body forms with synthesized callback body definitions prepended.
         ;; The body lambdas need to be visible by the time the FFI binding
@@ -513,11 +505,11 @@
              (warn "FFI :stubgen subsystem is now called :stub subsystem.\n"))
            (quasirename r
              `(with-stub-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
-                             ,cenum-specs ,final-forms))]
+                             ,final-forms))]
           [(:aot)
            (quasirename r
              `(with-aot-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
-                            ,cenum-specs ,final-forms))]
+                            ,final-forms))]
           )]))))
 
 ;;;

@@ -70,10 +70,11 @@
 ;; well as one from an earlier one.  precomp doesn't execute toplevel forms
 ;; during compilation, so we call %bind-enum-type! to make the compiler
 ;; know about the enums.
-(define (%eval-cdef-specs cdef-specs cenum-specs dlo-var mod)
+(define (%eval-cdef-specs cdef-specs dlo-var mod)
   (define (ev expr) (eval `(let ((,dlo-var #f)) ,expr) mod))
-  (dolist [spec cenum-specs]
-    (%bind-enum-type! (car spec) (ev (cdr spec)) mod))
+  (dolist [spec cdef-specs]
+    (when (eq? (~ spec'kind) :enum)
+      (%bind-enum-type! (~ spec'name) (ev (~ spec'enum-type-expr)) mod)))
   (map (^[spec] (ev (~ spec'expr))) cdef-specs))
 
 ;; Bind NAME to TYPE in MOD, the way precomp's handle-define-type does: a
@@ -98,7 +99,7 @@
      (define %require. ((with-module gauche.internal make-identifier)
                         '%require (find-module 'gauche.internal) '()))
      (match f
-       [(_ dlo-var dlo-expr options cdef-specs cenum-specs forms)
+       [(_ dlo-var dlo-expr options cdef-specs forms)
         (let1 tm (%current-tmodule)
           (unless tm
             (error "The FFI :aot subsystem can only be used in a source that \
@@ -108,8 +109,7 @@
                    include paths in the CFLAGS of the build instead.\n"))
           (let* ([tag       (symbol->string (gensym "ffiaot"))]
                  [setup-sym (string->symbol #"%ffi-aot-setup-~tag")]
-                 [cdefs     (%eval-cdef-specs cdef-specs cenum-specs dlo-var
-                                              (~ tm'module))]
+                 [cdefs     (%eval-cdef-specs cdef-specs dlo-var (~ tm'module))]
                  ;; A variadic call with float arguments builds a sub-stub
                  ;; at call time, and the generated dispatch code reaches into
                  ;; gauche.ffi.stubgen to do it.  Nothing else refers to that
@@ -155,10 +155,12 @@
                  ;; very form can name the enum in its typespec.  The type
                  ;; carries no enumerators yet; %ffi-aot-setup fills them in
                  ;; once the generated code has told us the values.
-                 ,@(map (^[spec]
-                          (quasirename r
-                            `(define-type ,(car spec) ,(cdr spec))))
-                        cenum-specs)
+                 ,@(filter-map (^[spec]
+                                 (and (eq? (~ spec'kind) :enum)
+                                      (quasirename r
+                                        `(define-type ,(~ spec'name)
+                                           ,(~ spec'enum-type-expr)))))
+                               cdef-specs)
                  ;; We insert dummy binding so that expansion contains
                  ;; only definitions.
                  (define _dummy

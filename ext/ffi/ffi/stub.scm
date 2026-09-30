@@ -55,7 +55,7 @@
      (define %require. ((with-module gauche.internal make-identifier)
                         '%require (find-module 'gauche.internal) '()))
      (match f
-       [(_ dlo-var dlo-expr options cdef-specs cenum-specs forms)
+       [(_ dlo-var dlo-expr options cdef-specs forms)
         (let1 cdef-list-expr
             (quasirename r
               `(list ,@(map (cut ~ <>'expr) cdef-specs)))
@@ -71,10 +71,12 @@
                ;; very form can name the enum in its typespec.  The type
                ;; carries no enumerators yet; compile-and-link-ffi-stub
                ;; fills them in once the C compiler has told us the values.
-               ,@(map (^[spec]
-                        (quasirename r
-                          `(define-type ,(car spec) ,(cdr spec))))
-                      cenum-specs)
+               ,@(filter-map (^[spec]
+                               (and (eq? (~ spec'kind) :enum)
+                                    (quasirename r
+                                      `(define-type ,(~ spec'name)
+                                         ,(~ spec'enum-type-expr)))))
+                             cdef-specs)
                (define _dummy
                  (compile-and-link-ffi-stub ,dlo-var
                                             ,cdef-list-expr
