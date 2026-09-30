@@ -69,34 +69,35 @@
                         '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs ccb-info forms)
-        (unless (and (null? (get-keyword :c-headers options '()))
-                     (null? (get-keyword :c-include-paths options '())))
-          (error "c-headers and c-include-paths options cannot be used with \
-                  native ffi subsystem yet.  \
-                  use stub ffi subsystem instead."))
+        (when (any (^s (memq (~ s'kind) '(:constant :enum))) cdef-specs)
+          (error "define-c-constant and define-c-enum are not supported \
+                  in the native ffi subsystem yet."))
         (let* ([ccb-name-set (map car ccb-info)]
-               [cfn-specs (filter (^s (not (memq (car s) ccb-name-set)))
+               [cfn-specs (filter (^s (eq? (~ s'kind) :function))
                                   cdef-specs)]
-               [ccb-specs (filter (^s (memq (car s) ccb-name-set))
+               [ccb-specs (filter (^s (eq? (~ s'kind) :callback))
                                   cdef-specs)]
+               [c-headers (get-keyword :c-headers options '())]
+               [c-incdirs (get-keyword :c-include-paths options '())]
                [ctx-var   (gensym "%ffi-native-ctx-")]
                [instances-var (gensym "%ccbs-")])
           (define (emit-cfn-set! spec)
             (quasirename r
-              `(set! ,(car spec)
-                     (make-native-ffi-proc ,dlo-var ,(cdr spec)))))
+              `(set! ,(~ spec'name)
+                     (make-native-ffi-proc ,dlo-var ,(~ spec'expr)))))
           (define (emit-ccb-block)
             (if (null? ccb-specs)
               #f
               (quasirename r
-                `(let* ([,instances-var (list ,@(map cdr ccb-specs))]
+                `(let* ([,instances-var (list ,@(map (cut ~ <> 'expr)  ccb-specs))]
                         [bodies         (list ,@(map (^[name]
                                                        (cadr (assq name ccb-info)))
-                                                     (map car ccb-specs)))]
+                                                     (map (cut ~ <> 'name)
+                                                          ccb-specs)))]
                         [ctx (install-callback-context! ,instances-var bodies)])
                    ,@(map (^[i s]
                             (quasirename r
-                              `(set! ,(car s)
+                              `(set! ,(~ s'name)
                                      (callback-context-handle
                                       ctx ,i (list-ref ,instances-var ,i)))))
                           (iota (length ccb-specs)) ccb-specs)
@@ -104,7 +105,7 @@
           (quasirename r
             `(begin
                (,%require. "gauche/ffi/native")
-               ,@(map (^s (quasirename r `(define ,(car s)))) cdef-specs)
+               ,@(map (^s (quasirename r `(define ,(~ s'name)))) cdef-specs)
                ,@forms
                (define ,ctx-var
                  (let ([,dlo-var ,dlo-expr])

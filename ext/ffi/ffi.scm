@@ -47,6 +47,7 @@
           <foreign-c-callback>
           <foreign-c-constant>
           <foreign-c-enum>
+          <cdef-spec>
           foreign-function-info
           ffi-setup-arguments
           ffi-complete-enums!)
@@ -159,12 +160,13 @@
 ;;
 
 ;;;
-;;; <foreign-c-function> - parsed representation of a define-c-function form
+;;; Classes to handle foreign declaratoins.
 ;;;
 
-;; Created by parse-define-c-function at macro-expansion time.
-;; Backend macros receive a list of its instances.
-;; 'Type' in arg-types and return-type is an instance of <native-type>.
+;; The with-*-ffi macros expands define-c-function etc. into an expression
+;; building an instance of these classes, e.g. (make <foreign-c-function> ...).
+;; Note that they are evaluated at runtime, so the isntances are not
+;; available at the macro-expansion time.
 
 (define-class <foreign-c-function> ()
   ((scheme-name  :init-keyword :scheme-name)  ; symbol
@@ -197,6 +199,17 @@
    (enumerators  :init-keyword :enumerators)  ; ((scheme-name . c-name) ...)
    (type         :init-keyword :type)         ; the (incomplete) <c-enum>
    ))
+
+;; A helper class to manage code fragments passed to subsystem macros
+;; The instances are created during macro expansion.
+
+(define-class <cdef-spec> ()
+  ((name :init-keyword :name)
+   (kind :init-keyword :kind)          ; :function, :callbac, :constant or :enum
+   (expr :init-keyword :expr)          ; S-expr to create <foreign-*> class
+   ))
+
+
 
 ;; Resolve a typespec to a <native-type> instance at runtime.
 ;; Reference to this procedure is inserted by macro expander.
@@ -455,13 +468,6 @@
                  ;; type binding arrives wrapped in a proxy type.
                  :type (%resolve-typespec ,name)))))
 
-        (define (make-cdef-expr form)
-          (ecase (car form) ; forms are already unwrapped
-            [(define-c-function) (make-cfn-expr form)]
-            [(define-c-callback) (make-ccb-expr form)]
-            [(define-c-constant) (make-ccst-expr form)]
-            [(define-c-enum)     (make-cenum-expr form)]))
-
         ;; The Scheme name a cdef form binds.  It is the second element
         ;; of the form, except that define-c-enum may carry the C tag
         ;; along with the name.
@@ -476,8 +482,20 @@
         ;; cfn-specs so that cfn-expr is evaluated in proper context.
         (define cdef-specs
           (map (^[cdef]
-                 (cons (cdef-name cdef)
-                       (make-cdef-expr cdef))) ;expr
+                 (receive [kind expr]
+                     (ecase (car cdef) ; forms are already unwrapped
+                       [(define-c-function)
+                        (values :function (make-cfn-expr cdef))]
+                       [(define-c-callback)
+                        (values :callback (make-ccb-expr cdef))]
+                       [(define-c-constant)
+                        (values :constant (make-ccst-expr cdef))]
+                       [(define-c-enum)
+                        (values :enum (make-cenum-expr cdef))])
+                   (make <cdef-spec>
+                     :name (cdef-name cdef)
+                     :kind kind
+                     :expr expr)))
                (reverse cdefs)))
 
         ;; ((name . type-expr) ...) for the define-c-enum forms, in
@@ -502,16 +520,6 @@
         ;; the expansion with let etc.
         (ecase subsystem
           [(:native)
-           ;; The native subsystem has no C compiler at hand, so it can't
-           ;; reify C constants yet.
-           (let1 cdef (find (^[cdef] (memq (car cdef)
-                                           '(define-c-constant
-                                             define-c-enum)))
-                            cdefs)
-             (when cdef
-               (errorf "~a is not supported in the native ffi subsystem \
-                        yet.  use stub ffi subsystem instead."
-                       (car cdef))))
            (quasirename r
              `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
                                ,(reverse ccb-info)

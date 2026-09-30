@@ -74,7 +74,7 @@
   (define (ev expr) (eval `(let ((,dlo-var #f)) ,expr) mod))
   (dolist [spec cenum-specs]
     (%bind-enum-type! (car spec) (ev (cdr spec)) mod))
-  (map (^[spec] (ev (cdr spec))) cdef-specs))
+  (map (^[spec] (ev (~ spec'expr))) cdef-specs))
 
 ;; Bind NAME to TYPE in MOD, the way precomp's handle-define-type does: a
 ;; deferred proxy type that records the value, so it can be dereferenced
@@ -164,7 +164,7 @@
                  (define _dummy
                    (%ffi-aot-setup ',setup-sym
                                    ,dlo-var
-                                   (list ,@(map cdr cdef-specs))
+                                   (list ,@(map (cut ~ <>'expr)  cdef-specs))
                                    ;; raw symbol: precomp rewrites this to
                                    ;; (find-module '<the module>)
                                    ,'(current-module)))))))]

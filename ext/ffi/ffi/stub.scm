@@ -58,7 +58,7 @@
        [(_ dlo-var dlo-expr options cdef-specs cenum-specs forms)
         (let1 cdef-list-expr
             (quasirename r
-              `(list ,@(map cdr cdef-specs)))
+              `(list ,@(map (cut ~ <>'expr) cdef-specs)))
           (quasirename r
             `(begin
                (,%require. "gauche/ffi/stub")
