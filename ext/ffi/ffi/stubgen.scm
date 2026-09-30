@@ -34,7 +34,7 @@
 ;; Generates the C code that implements FFI entities, as a <cgen-unit>.
 
 (define-module gauche.ffi.stubgen
-  (use gauche.ffi)
+  (extend gauche.ffi)
   (use gauche.cgen)
   (use gauche.cgen.type)
   (use gauche.cgen.dyncomp)

@@ -34,7 +34,7 @@
 ;; Experimental.  Only available on selected platforms (OS/CPU)
 
 (define-module gauche.ffi.native
-  (use gauche.ffi)
+  (extend gauche.ffi)
   (use gauche.native-type)
   (use util.match)
   (export with-native-ffi))

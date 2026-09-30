@@ -37,7 +37,7 @@
 ;; The actual code generation is handled by gauche.ffi.stubgen module.
 
 (define-module gauche.ffi.aot
-  (use gauche.ffi)
+  (extend gauche.ffi)
   (use gauche.native-type)
   (use gauche.cgen.unit)
   (use util.match)

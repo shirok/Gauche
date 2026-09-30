@@ -43,14 +43,7 @@
           define-c-callback
           define-c-constant
           define-c-enum
-          <foreign-c-function>
-          <foreign-c-callback>
-          <foreign-c-constant>
-          <foreign-c-enum>
-          <cdef-spec>
-          foreign-function-info
-          ffi-setup-arguments
-          ffi-complete-enums!)
+          foreign-function-info)
   )
 (select-module gauche.ffi)
 

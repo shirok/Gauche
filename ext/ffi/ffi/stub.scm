@@ -38,7 +38,7 @@
 ;; The actual code generation is handled by gauche.ffi.stubgen module.
 
 (define-module gauche.ffi.stub
-  (use gauche.ffi)
+  (extend gauche.ffi)
   (use gauche.ffi.stubgen)
   (use gauche.cgen.dyncomp)
   (use gauche.native-type)
