@@ -198,11 +198,10 @@
 
 (define-class <cdef-spec> ()
   ((name :init-keyword :name)
-   (kind :init-keyword :kind)          ; :function, :callbac, :constant or :enum
-   (expr :init-keyword :expr)          ; S-expr to create <foreign-*> class
+   (kind :init-keyword :kind)  ; :function, :callbac, :constant or :enum
+   (expr :init-keyword :expr)  ; S-expr to create <foreign-*> class
+   (body-name :init-keyword :body-name)  ; for callbacks, keep body name
    ))
-
-
 
 ;; Resolve a typespec to a <native-type> instance at runtime.
 ;; Reference to this procedure is inserted by macro expander.
@@ -289,10 +288,6 @@
         ;; procedure.
         ;;   (define <body-name> (lambda <vars> <body> ...))
         (define ccb-defines '())
-        ;; (name body-name) per callback, in declaration order.  Threaded
-        ;; through to with-native-ffi so it can pair each callback with
-        ;; its body procedure when batching them into one codepad.
-        (define ccb-info '())
         (define subsystem
           (cond [(get-keyword :subsystem (unwrap-syntax options) #f)]
                 [((with-module gauche.internal precompiling?)) :aot]
@@ -344,34 +339,28 @@
         ;; For each define-c-callback form, build a runtime
         ;; (make <foreign-c-callback> ...) expression.
         ;; We also generate a definition of Scheme-side procedure
-        ;; with the generated body-name.
-        (define (make-ccb-expr ccb-form)
+        ;; which will be bound to body-name.
+        (define (make-ccb-expr ccb-form body-name)
           (match ccb-form
             [(_ name ((vars type-exprs) ...) rettype-expr . body)
-             ;; Use an interned symbol so the symbol the C stub interns via
-             ;; SCM_INTERN matches the binding made by `define' below.
-             (let ([body-name
-                    (string->symbol
-                     (symbol->string (gensym "%c-callback-body-")))])
-               (unless (every symbol? vars)
-                 (error "define-c-callback: arglist vars must be identifiers:"
-                        vars))
-               (push! ccb-defines
-                      (quasirename r
-                        `(define ,body-name (lambda ,vars ,@body))))
-               (push! ccb-info (list name body-name))
-               (quasirename r
-                 `(let ([atypes (list ,@(map (^t (quasirename r
-                                                   `(%resolve-typespec ,t)))
-                                             type-exprs))]
-                        [rtype (%resolve-typespec ,rettype-expr)])
-                    (make <foreign-c-callback>
-                      :scheme-name ',name
-                      :c-name ,(cgen-safe-name-friendly (x->string name))
-                      :body-name ',body-name
-                      :arg-vars ',vars
-                      :arg-types atypes
-                      :return-type rtype))))]
+             (unless (every symbol? vars)
+               (error "define-c-callback: arglist vars must be identifiers:"
+                      vars))
+             (push! ccb-defines
+                    (quasirename r
+                      `(define ,body-name (lambda ,vars ,@body))))
+             (quasirename r
+               `(let ([atypes (list ,@(map (^t (quasirename r
+                                                 `(%resolve-typespec ,t)))
+                                           type-exprs))]
+                      [rtype (%resolve-typespec ,rettype-expr)])
+                  (make <foreign-c-callback>
+                    :scheme-name ',name
+                    :c-name ,(cgen-safe-name-friendly (x->string name))
+                    :body-name ',body-name
+                    :arg-vars ',vars
+                    :arg-types atypes
+                    :return-type rtype)))]
             [_ (error "Malformed define-c-callback form:" ccb-form)]))
 
         ;; For each define-c-constant form, build a runtime
@@ -475,20 +464,23 @@
         ;; cfn-specs so that cfn-expr is evaluated in proper context.
         (define cdef-specs
           (map (^[cdef]
-                 (receive [kind expr]
-                     (ecase (car cdef) ; forms are already unwrapped
-                       [(define-c-function)
-                        (values :function (make-cfn-expr cdef))]
-                       [(define-c-callback)
-                        (values :callback (make-ccb-expr cdef))]
-                       [(define-c-constant)
-                        (values :constant (make-ccst-expr cdef))]
-                       [(define-c-enum)
-                        (values :enum (make-cenum-expr cdef))])
-                   (make <cdef-spec>
-                     :name (cdef-name cdef)
-                     :kind kind
-                     :expr expr)))
+                 (define (make-spec kind expr . args)
+                   (apply make <cdef-spec> :name (cdef-name cdef)
+                          :kind kind :expr expr args))
+                 (ecase (car cdef) ; forms are already unwrapped
+                   [(define-c-function)
+                    (make-spec :function (make-cfn-expr cdef))]
+                   [(define-c-callback)
+                    ;; body-name needs to be interned
+                    (let1 body-name
+                        (string->symbol
+                         (symbol->string (gensym "%c-callback-body-")))
+                      (make-spec :callback (make-ccb-expr cdef body-name)
+                                 :body-name body-name))]
+                   [(define-c-constant)
+                    (make-spec :constant (make-ccst-expr cdef))]
+                   [(define-c-enum)
+                    (make-spec :enum (make-cenum-expr cdef))]))
                (reverse cdefs)))
 
         ;; ((name . type-expr) ...) for the define-c-enum forms, in
@@ -515,7 +507,6 @@
           [(:native)
            (quasirename r
              `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
-                               ,(reverse ccb-info)
                                ,final-forms))]
           [(:stub :stubgen)
            (when (eq? subsystem :stubgen)
