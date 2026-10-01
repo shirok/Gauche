@@ -204,6 +204,9 @@
    (enum-type-expr :init-keyword :enum-type-expr) ; (make-c-enum-type ...)
    ))
 
+;; utility
+(define (of-kind? spec kind) (eq? (~ spec'kind) kind))
+
 ;; Resolve a typespec to a <native-type> instance at runtime.
 ;; Reference to this procedure is inserted by macro expander.
 ;; A typespec is either a <native-type> instance (returned as-is), <top>

@@ -73,7 +73,7 @@
 (define (%eval-cdef-specs cdef-specs dlo-var mod)
   (define (ev expr) (eval `(let ((,dlo-var #f)) ,expr) mod))
   (dolist [spec cdef-specs]
-    (when (eq? (~ spec'kind) :enum)
+    (when (of-kind? spec :enum)
       (%bind-enum-type! (~ spec'name) (ev (~ spec'enum-type-expr)) mod)))
   (map (^[spec] (ev (~ spec'expr))) cdef-specs))
 
@@ -156,7 +156,7 @@
                  ;; carries no enumerators yet; %ffi-aot-setup fills them in
                  ;; once the generated code has told us the values.
                  ,@(filter-map (^[spec]
-                                 (and (eq? (~ spec'kind) :enum)
+                                 (and (of-kind? spec :enum)
                                       (quasirename r
                                         `(define-type ,(~ spec'name)
                                            ,(~ spec'enum-type-expr)))))

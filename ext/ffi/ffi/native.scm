@@ -66,18 +66,11 @@
                         '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs forms)
-        (when (any (^s (memq (~ s'kind) '(:constant :enum))) cdef-specs)
-          (error "define-c-constant and define-c-enum are not supported \
-                  in the native ffi subsystem yet."))
-        (let* ([cfn-specs (filter (^s (eq? (~ s'kind) :function))
-                                  cdef-specs)]
-               [ccb-specs (filter (^s (eq? (~ s'kind) :callback))
-                                  cdef-specs)]
-               [ccb-body-names (filter-map (^s (and (eq? (~ s'kind) :callback)
-                                                    (~ s'body-name)))
-                                           cdef-specs)]
-               [c-headers (get-keyword :c-headers options '())]
-               [c-incdirs (get-keyword :c-include-paths options '())]
+        (let* ([cfn-specs (filter (cut of-kind? <> :function) cdef-specs)]
+               [ccb-specs (filter (cut of-kind? <> :callback) cdef-specs)]
+               [cst-specs (filter (cut of-kind? <> :constant) cdef-specs)]
+               [cen-specs (filter (cut of-kind? <> :enum) cdef-specs)]
+               [ccb-body-names (map (cut ~ <>'body-name) ccb-specs)]
                [ctx-var   (gensym "%ffi-native-ctx-")]
                [instances-var (gensym "%ccbs-")])
           (define (emit-cfn-set! spec)
@@ -98,6 +91,9 @@
                                       ctx ,i (list-ref ,instances-var ,i)))))
                           (iota (length ccb-specs)) ccb-specs)
                    ctx))))
+          (unless (and (null? cst-specs) (null? cen-specs))
+            (error "define-c-constant and define-c-enum are not supported \
+                    in the native ffi subsystem yet."))
           (quasirename r
             `(begin
                (,%require. "gauche/ffi/native")

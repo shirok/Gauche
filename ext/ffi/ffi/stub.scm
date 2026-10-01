@@ -72,7 +72,7 @@
                ;; carries no enumerators yet; compile-and-link-ffi-stub
                ;; fills them in once the C compiler has told us the values.
                ,@(filter-map (^[spec]
-                               (and (eq? (~ spec'kind) :enum)
+                               (and (of-kind? spec :enum)
                                     (quasirename r
                                       `(define-type ,(~ spec'name)
                                          ,(~ spec'enum-type-expr)))))
