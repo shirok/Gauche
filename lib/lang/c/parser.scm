@@ -428,10 +428,10 @@
 (define (grok-member-declaration specs decl)
   (match decl
     [('bitfield #f size) `(#f (int ()) ,size)] ;padding
-    [('bitfield d size)  (match-let1 (id sorage type init)
+    [('bitfield d size)  (match-let1 (id storage type init)
                              (grok-declaration specs `(,d))
                            `(,id ,type ,size))]
-    [d (match-let1 (id sorage type init)
+    [d (match-let1 (id storage type init)
            (grok-declaration specs `(,d))
          `(,id ,type))]))
 
@@ -546,8 +546,8 @@
                       (fail "typedef name"))))))
 
 ;; 6.7 Declarations
-;;   Returns (decl (identifier storage-class type init) ...)
-;;   The type part is constructed by grok-declaration
+;;   Returns (decls (identifier storage-class type init) ...)
+;;   The type part is constructed by grok-declaration.
 (define %declaration
   ($lbinding ($: specs %declaration-specifiers)
              ($: declarators ($sep-by %init-declarator ($. '|,|)))
@@ -559,7 +559,7 @@
                (let ([decls (map (cut grok-declaration specs <>) declarators)])
                  (when (memq 'typedef specs)
                    (map (^d (register-typedefs! specs d)) decls))
-                 `(decl ,@decls)))))
+                 `(decls ,@decls)))))
 
 (define (register-typedefs! specs decl)
   (match decl
@@ -568,6 +568,11 @@
     [else
      (error "something wrong with typedef decl" decl)]))
 
+;; Returns (id storage-class type init)
+;;   id - C identifier as a symbol
+;;   storage-class - Given stroage class (symbol) or #f
+;;   type - C type in S-expr
+;;   init - initialization expression, or #f
 (define (grok-declaration specs decl)
   (define (build-decl id type init)
     (let* ([sc (find (cut memq <> *storage-classes*) specs)]
@@ -735,7 +740,7 @@
             ($: lis ($many %declaration))
             ($assert ($. #\{))
             ($: body ($cut %compound-statement))
-            `(,spec ,decl ,lis ,body)))
+            `(def ,@(grok-declaration spec `(,decl)) ,lis ,body)))
 
 ;;;
 ;;; Preprocessor
