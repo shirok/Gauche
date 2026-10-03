@@ -253,7 +253,7 @@
     (test* code expect
            (let loop ((decls (c-parse-string c-parser code)))
              (match decls
-               [(('decls ('x _ type _)) . _) type]
+               [(('decl 'x _ type _) . _) type]
                [(_ . r) (loop r)]))))
 
   (t-type '(int ()) "int x;")

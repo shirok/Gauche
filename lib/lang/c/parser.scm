@@ -548,6 +548,9 @@
 ;; 6.7 Declarations
 ;;   Returns (decls (identifier storage-class type init) ...)
 ;;   The type part is constructed by grok-declaration.
+;;   The (decls (id sc ty ini) ...) form will be spliced into
+;;   the outer forms as (decl id sc ty ini) ..., by splice-decls,
+;;   so 'decls' form won't appear in the final parse result.
 (define %declaration
   ($lbinding ($: specs %declaration-specifiers)
              ($: declarators ($sep-by %init-declarator ($. '|,|)))
@@ -560,6 +563,19 @@
                  (when (memq 'typedef specs)
                    (map (^d (register-typedefs! specs d)) decls))
                  `(decls ,@decls)))))
+
+;; (decls (id sc ty init) ...) -> ((decl id sc ty init) ...)
+(define (expand-decls dcls)
+  (match dcls
+    [('decls ds ...) (map (cut cons 'decl <>) (cdr ds))]))
+
+;; Intersperse (decls (...) ...) as multiple (decl ...) into the given list
+(define (splice-decls xs)
+  (match xs
+    [() '()]
+    [(('decls . ds) . xs)
+     (fold-right (^[d xs] `((decl ,@d) ,@xs)) (splice-decls xs) ds)]
+    [(x . xs) (cons x (splice-decls xs))]))
 
 (define (register-typedefs! specs decl)
   (match decl
@@ -676,7 +692,7 @@
             ($with-scope
              ($: stmts ($many ($or %declaration %statement))))
             %RC
-            `(begin ,stmts)))
+            `(begin ,@(splice-decls stmts))))
 
 ;; 6.8.3 Expression and null statements
 (define %expression-statement
@@ -712,7 +728,7 @@
                  %RP
                  ($: body %statement)
                  (if (undefined? init)
-                   `(for (,decl ,test ,update) ,body)
+                   `(for (,(splice-decls decl) ,test ,update) ,body)
                    `(for (,init ,test ,update) ,body)))))
 
 ;; 6.8.6 Jump statement
@@ -728,10 +744,14 @@
                  `(return ,@(if expr `(,expr) '())))))
 
 ;; 6.9 External definitions
+;;   This leaves (decls ...) to the caller %translation-unit, which
+;;   splices it.
 (define %external-declaration
   ($lazy ($or ($try %function-definition) %declaration)))
 
-(define %translation-unit ($many1 %external-declaration))
+(define %translation-unit
+  ($binding ($: forms ($many1 %external-declaration))
+            (splice-decls forms)))
 
 ;; 6.9.1 Function definitions
 (define %function-definition
@@ -740,7 +760,9 @@
             ($: lis ($many %declaration))
             ($assert ($. #\{))
             ($: body ($cut %compound-statement))
-            `(def ,@(grok-declaration spec `(,decl)) ,lis ,body)))
+            `(def ,@(grok-declaration spec `(,decl))
+                  ,(splice-decls lis)
+                  ,body)))
 
 ;;;
 ;;; Preprocessor
