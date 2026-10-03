@@ -34,6 +34,7 @@
 ;; This is a submodule of gauche.ffi and not meant to be used directly.
 
 (define-module gauche.ffi.ffiaux
+  (use gauche.native-type)
   (export native-alloc
           native-free))
 (select-module gauche.ffi.ffiaux)
@@ -68,7 +69,7 @@
                     [<fixnum> size-or-type]
                     [<native-type> (~ size-or-type'size)])]
         [ptype (cond
-                [(aggregate-type? size-or-type) size-or-type]
+                [(c-aggregate-type? size-or-type) size-or-type]
                 [(is-a? size-or-type <native-type>)
                  (make-c-pointer-type size-or-type)]
                 [else (make-c-pointer-type <void>)])])

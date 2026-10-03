@@ -43,7 +43,10 @@
           define-c-callback
           define-c-constant
           define-c-enum
-          foreign-function-info)
+          foreign-function-info
+
+          native-alloc
+          native-free)
   )
 (select-module gauche.ffi)
 

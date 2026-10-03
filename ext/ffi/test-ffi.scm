@@ -10,6 +10,9 @@
 (use gauche.ffi)
 (test-module 'gauche.ffi)
 
+(use gauche.ffi.ffiaux)
+(test-module 'gauche.ffi.ffiaux)
+
 ;;;---------------------------------------------------
 (test-section "with-ffi")
 
