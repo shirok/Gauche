@@ -10667,10 +10667,30 @@ the details.
 
 @defun native-alloc size-or-type
 @c MOD gauche.ffi
+Returns a native pointer to a memory region allocated by system's malloc.
+The memory is not subject to Gauche's GC; you need to either free
+it by yourself, using @code{native-free}, or pass the pointer to
+a foreign function which will be responsible for freeing.
+
+It is mainly for foreign functions that take the owneship of the
+objects whose pointer is passed.  You should not pass a native handle
+pointing Gauche objects to such functions, since calling @code{free} on
+those objects will be a disaster.
+
+The @var{size-or-type} argument must be either nonnegative exact integer
+that specifies the size of the memory in bytes to allocate,
+or a @code{<native-type>} object, whose size is allocated.
+
+If a size is given, the returned handle has a type @code{<void*>}.
+If a native type is given, the returned handle has a pointer to that type.
 @end defun
 
 @defun native-free handle
 @c MOD gauche.ffi
+@var{handle} must be a native handle pointing a memory allocated by
+the system's malloc.  It can be the one created by @code{native-alloc},
+or the one which is returned by a foreign function and whose freeing
+is caller's responsibility.
 @end defun
 
 
