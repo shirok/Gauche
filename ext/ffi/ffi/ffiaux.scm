@@ -34,10 +34,12 @@
 ;; This is a submodule of gauche.ffi and not meant to be used directly.
 
 (define-module gauche.ffi.ffiaux
-  (use gauche.native-type)
   (export native-alloc
           native-free))
 (select-module gauche.ffi.ffiaux)
+
+;; Delay loading gauche.native-type to avoid built-time dependency
+(autoload gauche.native-type c-aggregate-type? make-c-pointer-type)
 
 (inline-stub
  (.include "gauche/priv/typeP.h")
