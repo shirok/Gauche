@@ -10603,11 +10603,23 @@ at the toplevel scope as well, to avoid the confusion.
 
 @table @asis
 @item @code{:subsystem} @var{name}
+Specify the subsystem to use.  Available names are one of
+@code{:native}, @code{:stub}, or @code{:aot}.
+@xref{Foreign function interface}, for the description of
+each subsystem.
 
+Without this option, the most appropriate subsystem is
+automatically selected.  You need this only in special
+circumstances, such as working around issues
+in subsystems.
 
 @item @code{:c-headers} (@var{header-name} @dots{})
-
-
+Specify a list of headers of the library.
+If you only use C functions and C callbacks, you don't
+need this.  On the other hand, if you use C constants
+(@code{#define}d macro constants) or C enums,
+you need to specify this, as their information cannot
+be extracted from the DSO.
 @end table
 
 @end defmac
@@ -10615,6 +10627,52 @@ at the toplevel scope as well, to avoid the confusion.
 
 @defmac define-c-function name arg-types return-type
 @c MOD gauche.ffi
+Bind @code{name} to a Scheme procedure that calls C function
+with the name derived by @code{cgen-safe-name-friendly} from
+@code{name}.  Basically,
+hyphens in @code{name} becomes underbar in C name, e.g.
+you can call C function @code{gtk_init} with Scheme name
+@code{gtk-init}.   @xref{Generating C source files}, for
+more detailed transliteration rules.
+
+As a special case, if @var{name} begins with @code{%},
+the character is removed to derive the C name.  It is useful
+when you want to expose the Scheme function which is a wrapper
+of C function for convenience.  That is, you can define FFI to
+a C function @code{foo} with @code{(define-c-function %foo ...)},
+then define a wrapper Scheme function @code{foo}, which wraps
+@code{%fpp}, as an external API.
+
+@var{arg-types} is a list of native type signatures to
+specify types of the arguments, and @var{return-type} is a
+native type signature.
+@xref{Native type signature}), for the details of native
+type signatue.  The last element of @var{arg-types} can be
+a symbol @code{...}, to indicate the C function takes varargs.
+Both @var{arg-types} and @var{return-type} are evaluated,
+which allows you to mix expressoins that yields a native
+type in them.
+
+For example, a C function @code{foo} that takes an @code{int}
+and a pointer to @code{int}, and returns @code{double}, can be
+described as follows.  Note the quotes for @var{arg-types}
+and @var{return-type}, as they are evaluated:
+
+@example
+(define-c-function foo '(int int*) 'double)
+@end example
+
+Or, you can use native type objects.
+
+@example
+(define-c-function foo `(,<int> ,(make-c-pointer-type <int>)) <double>)
+
+;; You can mix native types and literal native type signatures as well:
+(define-c-function foo `(,<int> int*) <double>)
+@end example
+
+It is useful when you defines custom types and use them for
+arguments/return types.
 @end defmac
 
 
