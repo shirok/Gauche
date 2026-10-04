@@ -2339,7 +2339,7 @@ are synonyms of @code{:close-on-eof} and @code{:asynchronous}, respectively.
 @c JP
 @var{oport}をplumbingのouletに接続します。@var{name}が与えられればそれが
 名前になります。また、@var{option}としてキーワード
-@code{:close-on-eof}、@var{:coe}、@code{:asynchronous}、@code{:async}の
+@code{:close-on-eof}、@code{:coe}、@code{:asynchronous}、@code{:async}の
 組み合わせを指定することができます。@code{:close-on-eof}、@code{:asynchronous}は
 @code{add-outlet-output-port!}で同名のキーワード引数に真の値を指定するのと同じ効果
 を持ちます。@code{:coe}と@code{:async}はそれぞれ@code{:close-on-eof}と
