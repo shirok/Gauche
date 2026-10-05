@@ -505,18 +505,57 @@
 
 ;; Called when the local function (lambda-node) doesn't have recursive
 ;; calls, can be inlined, and called from multiple places.
-;; NB: Here we destructively modify $call node to change it to $seq,
-;; in order to hold the $LET node.  It breaks the invariance that $seq
-;; contains zero or two or more nodes---this may prevent Pass 5 from
-;; doing some optimization.
 (define (pass2/local-call-inliner lvar lambda-node calls)
   (define (inline-it call-node lambda-node)
     (let1 inlined (expand-inlined-procedure ($*-src lambda-node) lambda-node
                                             ($call-args call-node))
+      ;; If this call is not in tail position, then any tail call within
+      ;; the inlined procedure becomes non-tail call.  We have to walk
+      ;; the body to find call node with 'tail-rec, and change it to 'rec.
+      (unless (eq? ($call-flag call-node) 'tail-rec)
+        (untail-rec-calls! inlined))
+      ;; NB: Here we destructively modify $call node to change it to $seq,
+      ;; in order to hold the $LET node.  It breaks the invariance that $seq
+      ;; contains zero or two or more nodes---this may prevent Pass 5 from
+      ;; doing some optimization.
       (vector-set! call-node 0 $SEQ)
       (if (has-tag? inlined $SEQ)
         ($seq-body-set! call-node ($seq-body inlined))
         ($seq-body-set! call-node (list inlined)))))
+
+  ;; Change 'tail-rec calls in IFORM to 'rec.
+  (define (untail-rec-calls! iform)
+    (define (rec* iforms) (ifor-each untail-rec-calls! iforms))
+    (case/unquote
+     (iform-tag iform)
+     [($DEFINE) (untail-rec-calls! ($define-expr iform))]
+     [($LSET)   (untail-rec-calls! ($lset-expr iform))]
+     [($GSET)   (untail-rec-calls! ($gset-expr iform))]
+     [($IF)     (untail-rec-calls! ($if-test iform))
+                (untail-rec-calls! ($if-then iform))
+                (untail-rec-calls! ($if-else iform))]
+     [($LET)    (rec* ($let-inits iform))
+                (untail-rec-calls! ($let-body iform))]
+     [($RECEIVE)(untail-rec-calls! ($receive-expr iform))
+                (untail-rec-calls! ($receive-body iform))]
+     [($LABEL)  (untail-rec-calls! ($label-body iform))]
+     [($SEQ)    (rec* ($seq-body iform))]
+     [($CALL)   (when (eq? ($call-flag iform) 'tail-rec)
+                  ($call-flag-set! iform 'rec))
+                (unless (eq? ($call-flag iform) 'jump)
+                  (untail-rec-calls! ($call-proc iform)))
+                (rec* ($call-args iform))]
+     [($ASM)    (rec* ($asm-args iform))]
+     [($CONS $APPEND $MEMV $EQ? $EQV?)
+                (untail-rec-calls! ($*-arg0 iform))
+                (untail-rec-calls! ($*-arg1 iform))]
+     [($VECTOR $LIST $LIST*) (rec* ($*-args iform))]
+     [($LIST->VECTOR) (untail-rec-calls! ($*-arg0 iform))]
+     [($DYNENV) (untail-rec-calls! ($dynenv-key iform))
+                (untail-rec-calls! ($dynenv-value iform))
+                (untail-rec-calls! ($dynenv-body iform))]
+     ;; NB: We don't recurse into $lambda
+     [else #f]))
 
   (lvar-ref-count-set! lvar 0)
   ($lambda-dissolved-set! lambda-node)
