@@ -567,7 +567,7 @@
 ;; (decls (id sc ty init) ...) -> ((decl id sc ty init) ...)
 (define (expand-decls dcls)
   (match dcls
-    [('decls ds ...) (map (cut cons 'decl <>) (cdr ds))]))
+    [('decls ds ...) (map (cut cons 'decl <>) ds)]))
 
 ;; Intersperse (decls (...) ...) as multiple (decl ...) into the given list
 (define (splice-decls xs)
@@ -728,7 +728,12 @@
                  %RP
                  ($: body %statement)
                  (if (undefined? init)
-                   `(for (,(splice-decls decl) ,test ,update) ,body)
+                   ;; If new variables are declared in the init clause,
+                   ;; we create an explicit scope by lifting decls.
+                   (let1 decls (expand-decls decl)
+                     `(begin
+                        ,@decls
+                        (for (() ,test ,update) ,body)))
                    `(for (,init ,test ,update) ,body)))))
 
 ;; 6.8.6 Jump statement
