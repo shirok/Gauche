@@ -1,4 +1,4 @@
-;;;
+:;;;
 ;;; C Parser
 ;;;
 ;;;   Copyright (c) 2021-2025  Shiro Kawai  <shiro@acm.org>
@@ -45,6 +45,10 @@
   (use srfi.13)
 
   (export <c-parser>
+          c-toplevel-parser
+          c-statement-parser
+          c-expression-parser
+
           c-tokenize-file
           c-tokenize-string
           c-parse-file
@@ -57,15 +61,15 @@
 ;; customizable values.  While PEG parser is running, its intance
 ;; is accessible via a parameter.
 (define-class <c-parser> ()
-  ((peg-parser :init-form %translation-unit)
+  ((peg-parser :init-form %translation-unit :init-keyword :peg-parser)
    ;;  peg-parser : PEG parser to use.
    ;;    For the time being, we don't export internal PEG parsers,
    ;;    but we may provide alternative parsers or partial parsers (e.g. just
    ;;    for expressions).
-   (cpp-include-paths :init-form '())
+   (cpp-include-paths :init-form '() :init-keyword :cpp-include-paths)
    ;;  cpp-include-paths : A list of strings to be considered for include file
    ;;    search.
-   (cpp-definitions :init-form '())
+   (cpp-definitions :init-form '() :init-keyword :cpp-definitions)
    ;;  cpp-definitions : (def ...)
    ;;    where each def may be VAR or (VAR VAL ...)
    ;;    Single VAR becomes -DVAR, and the list becomes -DVAR=VAL ...
@@ -79,6 +83,7 @@
    (hooks :init-form (make-hash-table eq-comparator))
    ))
 
+;; Internal
 (define current-c-parser (make-parameter #f))
 
 ;; Internal.  Typedef names may be nested during parsing, so we have a
@@ -811,6 +816,22 @@
   (call-with-input-process `(,@cc "-E" ,@Is ,@Ds ,file)
     proc
     :on-abnormal-exit :ignore))
+
+;;;
+;;; Predefined parsers
+;;;
+
+(define (make-parser-api peg-parser)
+  (^[:key (cpp-include-paths '())
+          (cpp-definitions '())]
+    (make <c-parser> :peg-parser peg-parser
+          :cpp-include-paths cpp-include-paths
+          :cpp-definitions cpp-definitions)))
+
+;; APIs
+(define c-toplevel-parser (make-parser-api %translation-unit))
+(define c-statement-parser (make-parser-api %statement))
+(define c-expression-parser (make-parser-api %expression))
 
 ;;;
 ;;; Driver
