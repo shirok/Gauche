@@ -289,32 +289,68 @@
         ;; Variable dlo-var is bound to the result of dlo-expr
         ;; in the expaneded with-*-ffi macros.
         (define dlo-var (gensym "dlo-"))
-        ;; Chain define-c-function and define-c-callback
-        (define cdefs '())
         ;; Chain scheme procedure definitions for c-callback body
         ;; procedure.
         ;;   (define <body-name> (lambda <vars> <body> ...))
         (define ccb-defines '())
-        (define subsystem
-          (cond [(get-keyword :subsystem (unwrap-syntax options) #f)]
-                [((with-module gauche.internal precompiling?)) :aot]
-                [else (default-ffi-subsystem)]))
+
         (define ids (list (r'define-c-function)
                           (r'define-c-callback)
                           (r'define-c-constant)
                           (r'define-c-enum)))
-        ;; Forms other than C FFIs, callbacks, constants or enums
-        (define extra-forms
-          (filter-map
-           (^[form]
-             (if (and (pair? form)
-                      (member (r (car form)) ids c)
-                      (pair? (cdr form)))
-               (begin
-                 (push! cdefs (unwrap-syntax form))
-                 #f)
-               form))
-           body))
+        ;; cdefs - define-c-* forms, unwrap-syntaxed
+        ;; extra-forms - other than those
+        (define-values [cdefs extra-forms]
+          (receive [cdefs extra-forms]
+              (partition (^[form] (and (pair? form)
+                                       (member (r (car form)) ids c)
+                                       (pair? (cdr form))))
+                         body)
+            (values (map unwrap-syntax cdefs) extra-forms)))
+
+        ;; Determine which subsystem to use.  This has to be defined
+        ;; before we create cdef-specs.
+        (define subsystem
+          (cond [(get-keyword :subsystem (unwrap-syntax options) #f)]
+                [((with-module gauche.internal precompiling?)) :aot]
+                ;; TRANSIENT: native subsystem cannot handle constants and enums
+                ;; yet, so we force stub subsystem if we have any.
+                [(any (^[cdef] (memq (car cdef)
+                                     '(define-c-constant define-c-enum)))
+                      cdefs)
+                 :stub]
+                [else (default-ffi-subsystem)]))
+
+        ;; cfn-specs is ((name . cfn-expr) ...), where name is a symbol
+        ;; name of cfn, and cfn-expr is (make <foreivn-c-function> ...)
+        ;; constructed above.  The subsystem macro should rearrange
+        ;; cfn-specs so that cfn-expr is evaluated in proper context.
+        (define cdef-specs
+          (map (^[cdef]
+                 (define (cdef-name form)
+                   (match form
+                     [('define-c-enum (name _) . _) name]
+                     [(_ name . _) name]))
+                 (define (make-spec kind expr . args)
+                   (apply make <cdef-spec> :name (cdef-name cdef)
+                          :kind kind :expr expr args))
+                 (ecase (car cdef) ; forms are already unwrapped
+                   [(define-c-function)
+                    (make-spec :function (make-cfn-expr cdef))]
+                   [(define-c-callback)
+                    ;; body-name needs to be interned
+                    (let1 body-name
+                        (string->symbol
+                         (symbol->string (gensym "%c-callback-body-")))
+                      (make-spec :callback (make-ccb-expr cdef body-name)
+                                 :body-name body-name))]
+                   [(define-c-constant)
+                    (make-spec :constant (make-ccst-expr cdef))]
+                   [(define-c-enum)
+                    (make-spec :enum (make-cenum-expr cdef)
+                               :enum-type-expr (make-cenum-type-expr cdef))]))
+               (reverse cdefs)))
+
         ;; For each define-c-function form, build a runtime
         ;; (make <foreign-c-function> ...) expression.
         ;; define-c-function arg-types may end with '... to mark a variadic
@@ -456,40 +492,6 @@
                  ;; %resolve-typespec because a precompiled reference to a
                  ;; type binding arrives wrapped in a proxy type.
                  :type (%resolve-typespec ,name)))))
-
-        ;; The Scheme name a cdef form binds.  It is the second element
-        ;; of the form, except that define-c-enum may carry the C tag
-        ;; along with the name.
-        (define (cdef-name form)
-          (match form
-            [('define-c-enum (name _) . _) name]
-            [(_ name . _) name]))
-
-        ;; cfn-specs is ((name . cfn-expr) ...), where name is a symbol
-        ;; name of cfn, and cfn-expr is (make <foreivn-c-function> ...)
-        ;; constructed above.  The subsystem macro should rearrange
-        ;; cfn-specs so that cfn-expr is evaluated in proper context.
-        (define cdef-specs
-          (map (^[cdef]
-                 (define (make-spec kind expr . args)
-                   (apply make <cdef-spec> :name (cdef-name cdef)
-                          :kind kind :expr expr args))
-                 (ecase (car cdef) ; forms are already unwrapped
-                   [(define-c-function)
-                    (make-spec :function (make-cfn-expr cdef))]
-                   [(define-c-callback)
-                    ;; body-name needs to be interned
-                    (let1 body-name
-                        (string->symbol
-                         (symbol->string (gensym "%c-callback-body-")))
-                      (make-spec :callback (make-ccb-expr cdef body-name)
-                                 :body-name body-name))]
-                   [(define-c-constant)
-                    (make-spec :constant (make-ccst-expr cdef))]
-                   [(define-c-enum)
-                    (make-spec :enum (make-cenum-expr cdef)
-                               :enum-type-expr (make-cenum-type-expr cdef))]))
-               (reverse cdefs)))
 
         ;; Body forms with synthesized callback body definitions prepended.
         ;; The body lambdas need to be visible by the time the FFI binding

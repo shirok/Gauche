@@ -1,3 +1,10 @@
+2026-10-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/ffi.scm (with-ffi): Select :stub subsystem if the body
+	  contains define-c-constant or define-c-enum and the subsystem is
+	  not explicitly specified.  This should be a temporary solution
+	  until we support them in native subsystem.
+
 2026-10-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (%pass1/er-macro-maker): Internal expansion
