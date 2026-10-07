@@ -570,6 +570,7 @@
 ;; should be reffered, so we directly refer to them.
 (define (global-id id) (make-identifier id (find-module 'gauche) '()))
 (define (global-id% id) (make-identifier id (find-module 'gauche.internal) '()))
+(define (global-id: id) (make-identifier id (find-module 'gauche.keyword) '()))
 
 (define %expression-name-mark-key.     (global-id% '%expression-name-mark-key))
 (define %exception-handler-mark-key.   (global-id% '%exception-handler-mark-key))
@@ -614,6 +615,10 @@
 (define values.           (global-id 'values))
 (define with-module.      (global-id 'with-module))
 (define <type>.           (global-id '<type>))
+
+(define :has-inject?.       (global-id: ':has-inject?))
+(define :identifier-macro?. (global-id: ':identifier-macro?))
+(define :info-alist.        (global-id: ':info-alist))
 
 ;; Returns an IForm for (values) - useful for define-pass1-syntax that does
 ;; compile-time things and returns nothing.  The delay trick is to create
@@ -1141,16 +1146,16 @@
     (pass1 `(,%make-er-transformer/toplevel.
              ,xformer ,(cenv-module cenv) ',(cenv-exp-name cenv)
              ,@(cond-list
-                [has-inject? @ `(:has-inject? ',has-inject?)]
-                [(pair? info) @ `(:info-alist ',info)]
-                [id-macro? @ `(:identifier-macro? #t)]))
+                [has-inject? @ `(,:has-inject?. ',has-inject?)]
+                [(pair? info) @ `(,:info-alist. ',info)]
+                [id-macro? @ `(,:identifier-macro?. #t)]))
            cenv)
     (pass1 `(,%make-er-transformer.
              ,xformer ,cenv
              ,@(cond-list
-                [has-inject? @ `(:has-inject? ',has-inject?)]
-                [(pair? info) @ `(:info-alist ',info)]
-                [id-macro? @ `(:identifier-macro? #t)]))
+                [has-inject? @ `(,:has-inject?. ',has-inject?)]
+                [(pair? info) @ `(,:info-alist. ',info)]
+                [id-macro? @ `(,:identifier-macro? #t)]))
            cenv)))
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche

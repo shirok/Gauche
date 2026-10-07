@@ -1,5 +1,10 @@
 2026-10-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile-1.scm (%pass1/er-macro-maker): Internal expansion
+	  of `er-macro-transformer` should insert keywords hygienically,
+	  so that the macro works even `gauche.keyword` module isn't visible.
+	  https://github.com/shirok/Gauche/issues/1335
+
 	* lib/srfi/273.scm: Added https://github.com/shirok/Gauche/pull/1306
 
 	* lib/srfi/253.scm (lambda-checked, case-lambda-checked): Enhanced

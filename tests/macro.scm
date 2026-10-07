@@ -280,6 +280,18 @@
              (foo 4)
              bar))))
 
+;; er-macro-transformer hygiene
+;;  https://github.com/shirok/Gauche/issues/1335
+(test* "er-macro expander inserts internal keywords hygienically"
+       'ok
+       (eval
+        '(define-module er-macro-hygiene
+           (use gauche.base :only (er-macro-transformer))
+           (extend scheme)
+           (define-syntax foo (er-macro-transformer (lambda (f r c) ''ok)))
+           (foo))
+        (current-module)))
+
 ;; Mixing syntax-rules and er-macro requires unhygienic identifiers to be
 ;; explicitly "injected".
 ;; (This does not work with the current compiler)
