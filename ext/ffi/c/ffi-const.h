@@ -3,6 +3,14 @@
 #define FFI_TEST_MAX_VALUE 65535
 #define FFI_TEST_NEG       (-3)
 #define FFI_TEST_GREETING  "hello, ffi"
+#define FFI_TEST_DOUBLE    2.5
+#define FFI_TEST_NEG_DOUBLE (-0.125)
+#define FFI_TEST_FLOAT     0.75f
+/* A double literal not representable in float; reading it as 'float
+   must round it to float precision. */
+#define FFI_TEST_TENTH_D   0.1
+#define FFI_TEST_TENTH_F   0.1
+#define FFI_TEST_INT_AS_DOUBLE 3
 
 enum ffi_test_color {
     FFI_TEST_RED,

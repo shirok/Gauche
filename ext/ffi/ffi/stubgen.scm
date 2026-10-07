@@ -724,7 +724,10 @@
       (errorf "define-c-constant: ~a: pointer, array and function types \
                are not supported" (~ ccst'scheme-name)))
     (emit-const-define (~ ccst'scheme-name)
-                       (%type->box-expr type (~ ccst'c-name)))))
+                       (%type->box-expr type
+                                        (format "(~a)(~a)"
+                                                (%type->c-type type)
+                                                (~ ccst'c-name))))))
 
 ;; C expression boxing one enumerator.  If we know the base type we can
 ;; emit appropriate boxer.  Othwerise, we check the value's sign at

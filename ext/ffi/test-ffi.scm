@@ -364,7 +364,19 @@
              (define-c-constant FFI-TEST-MAX-VALUE)
              (define-c-constant FFI-TEST-NEG)
              (define-c-constant FFI-TEST-GREETING 'c-string)
-             (define-c-constant FFI-TEST-BLUE 'int))
+             (define-c-constant FFI-TEST-BLUE 'int)
+             (define-c-constant FFI-TEST-DOUBLE 'double)
+             (define-c-constant FFI-TEST-NEG-DOUBLE 'double)
+             (define-c-constant FFI-TEST-FLOAT 'float)
+             (define-c-constant FFI-TEST-TENTH-D 'double)
+             (define-c-constant FFI-TEST-TENTH-F 'float)
+             (define-c-constant FFI-TEST-INT-AS-DOUBLE 'double))
+          (current-module))
+    ;; Flonum constants from the system header.
+    (eval '(with-ffi #f (:c-headers ("float.h"))
+             (define-c-constant DBL-EPSILON 'double)
+             (define-c-constant FLT-EPSILON 'float)
+             (define-c-constant DBL-MAX <double>))
           (current-module)))
 
   (test* "define-c-constant, type omitted" 8 CHAR-BIT)
@@ -374,6 +386,22 @@
   (test* "define-c-constant, parenthesized macro" -3 FFI-TEST-NEG)
   (test* "define-c-constant, c-string" "hello, ffi" FFI-TEST-GREETING)
   (test* "define-c-constant, enum member" 2 FFI-TEST-BLUE)
+  (test* "define-c-constant, double" 2.5 FFI-TEST-DOUBLE)
+  (test* "define-c-constant, negative double" -0.125 FFI-TEST-NEG-DOUBLE)
+  (test* "define-c-constant, float" 0.75 FFI-TEST-FLOAT)
+  (test* "define-c-constant, float is a flonum" #t (flonum? FFI-TEST-FLOAT))
+  (test* "define-c-constant, double keeps double precision" 0.1
+         FFI-TEST-TENTH-D)
+  (test* "define-c-constant, float rounds to float precision"
+         (let1 v (make-f32vector 1 0.1) (f32vector-ref v 0))
+         FFI-TEST-TENTH-F)
+  (test* "define-c-constant, integer macro as double" 3.0
+         FFI-TEST-INT-AS-DOUBLE)
+  (test* "define-c-constant, integer macro as double is a flonum" #t
+         (flonum? FFI-TEST-INT-AS-DOUBLE))
+  (test* "define-c-constant, DBL_EPSILON" (flonum-epsilon) DBL-EPSILON)
+  (test* "define-c-constant, FLT_EPSILON" (expt 2.0 -23) FLT-EPSILON)
+  (test* "define-c-constant, DBL_MAX" (greatest-positive-flonum) DBL-MAX)
 
   (test* "define-c-constant binds a constant" (test-error <error>)
          (eval '(set! EOF 0) (current-module)))
