@@ -10682,11 +10682,94 @@ arguments/return types.
 
 @defmac define-c-constant name :optional type
 @c MOD gauche.ffi
+This form defines a Scheme constant @var{name}, bound to a
+@code{#define}-d constant of the same name in the C library.
+In order to use this form,
+you have to provide the library's header file to @code{:c-headers}
+option in @code{with-ffi} form, because @code{#define}-d constants
+cannot be extracted from the compiled binary.
+
+By default, the constant is assumed of type @code{<fixnum>}.  If the
+defined constant is of other types, you need to provide a native type
+object or native type signature to @var{type}
+(@pxref{Native type signature}).
+
+An error is signaled if @var{name} is not defined in C.
+
+The same effect can be achieved by bindng @var{name} to an explicit
+literal constant with @code{define-constant}.  If you do so, however,
+you have to change the literal value whenever a new revision of C API
+changes the value.  Also, it would be cumbersome if different platforms
+use different values.
+
+NB: Currently, this form does not work with the @code{:native} subsystem.
+If you use this form in @code{with-ffi} without specifying the subsystem,
+the @code{:stub} subsystem is used for the @code{with-ffi} form
+even if the platform supports @code{:native} subsystem.
 @end defmac
 
 @defmac define-c-enum name (enumerator @dots{}) :optional base-type
 @defmacx define-c-enum (name tag) (enumerator @dots{}) :optional base-type
 @c MOD gauche.ffi
+This form defines Scheme constants for C enum values, and also binds
+@code{name} to a C-enum native type.
+
+With the first form, @var{name} is also used as the enum tag name,
+modulo transliterations similar to @code{define-c-function} (e.g.
+@code{-} to @code{_}, etc.)  To specify a different tag name,
+you can use the second form.  If you want to specify no tags
+(i.e. anonymous enum), you can give @code{#f} to @code{tag}.
+
+Each @var{enumerator} is a symbol, corresponding to the C's
+enumerators.  The value of each @var{enumerator} is taken from the C
+definition, so its order doesn't matter, and it is allowed to
+list only a subset of enumerators.  However, an error is signaled
+if the name in @var{enumderator} isn't defined in C.
+
+The following example reflects one of Gauche's enums into Scheme:
+
+@example
+(with-ffi #f (:c-headers ("gauche.h"))
+  (define-c-enum (cmp-mode #f)
+    (SCM_CMP_EQ
+     SCM_CMP_EQV
+     SCM_CMP_EQUAL))
+@end example
+
+It binds Scheme constants @code{SCM_CMP_EQ}, @code{SCM_CMP_EQV},
+and @code{SCM_CMP_EQUAL} to the appropriate values defined in
+@file{gauche.h}, and also binds @code{cmp-mode} to a native
+c-enum type, which can be used to convert symbols and values
+(@code{c-enum-symbol} and @code{c-enum-value},
+@pxref{Derived and aggregate native types}).
+
+The same effect can be achieved by manually defining c-enum type
+and constants:
+
+@example
+(define-type cmp-mode
+  (native-type '(.enum (SCM_CMP_EQ SCM_CMP_EQV SCM_CMP_EQUAL))))
+(define-constant SCM_CMP_EQ 0)
+(define-constant SCM_CMP_EQV 1)
+(define-constant SCM_CMP_EQUAL 2)
+@end example
+
+If you do so, however, you need to keep the values in sync
+with the C API manually.
+
+It is up to the C compiler to choose which integer type to be used
+to store the enum value.  It matters when you define a C struct type with
+a field of the enum type, because it affects the layout of the struct.
+We try to guess the appropriate type as much as possible, with
+@code{<uint32>} as the fallback value.
+If it is not what you want, you can give
+a native type object or native type signatire to the optional
+@var{base-type} argument.
+
+NB: Currently, this form does not work with the @code{:native} subsystem.
+If you use this form in @code{with-ffi} without specifying the subsystem,
+the @code{:stub} subsystem is used for the @code{with-ffi} form
+even if the platform supports @code{:native} subsystem.
 @end defmac
 
 
