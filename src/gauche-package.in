@@ -32,10 +32,12 @@
 ;;;
 
 (use gauche.package.commands)
+(use srfi.13)
 
 (define (main args)
   (gauche-package-config)
   (cond [(null? (cdr args)) (gauche-package-usage)]
+        [(string-prefix? "-" (cadr args)) (gauche-package-usage)]
         [(gauche-package-command (cadr args)) => (cut <> (cddr args))]
         [else (print "Unknown command: " (cadr args)) (gauche-package-usage)])
   0)

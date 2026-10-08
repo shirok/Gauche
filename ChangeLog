@@ -1,5 +1,8 @@
 2026-10-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-package.in: Show help message when no subcommand is
+	  given but an option (e.g. --help).
+
 	* ext/ffi/ffi.scm (with-ffi): Select :stub subsystem if the body
 	  contains define-c-constant or define-c-enum and the subsystem is
 	  not explicitly specified.  This should be a temporary solution
