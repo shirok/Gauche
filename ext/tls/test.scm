@@ -42,10 +42,17 @@
                    (tls-bind serv #f 0)
                    (set! serv-port (sockaddr-port (connection-self-address serv)))
                    (and (integer? serv-port) (positive? serv-port))))
+          ;; Mbed TLS 4.x can't decrypt the 3DES-encrypted test-key.pem,
+          ;; and Mbed TLS 2.x can't decrypt the AES-encrypted
+          ;; test-key-aes.pem.  Both contain the same key.
           (test* "loading private key" #t
                  (boolean
-                  (tls-load-private-key serv (datafile "test-key.pem")
-                                        "cafebabe")))
+                  (guard (e [else
+                             (tls-load-private-key serv
+                                                   (datafile "test-key.pem")
+                                                   "cafebabe")])
+                    (tls-load-private-key serv (datafile "test-key-aes.pem")
+                                          "cafebabe"))))
           (test* "loading server cert" #t
                  (boolean
                   (tls-load-certificate serv (datafile "test-cert.pem"))))
