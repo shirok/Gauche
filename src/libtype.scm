@@ -1146,7 +1146,7 @@
     SCM_REALP Scm_MakeFlonum Scm_GetDouble FALSE)
 
   ;; <ScmObj> is a reference to ScmObj---it is basically <top>, but
-  ;; we provide a dedicate natiev type so that ScmObj is passed to and from
+  ;; we provide a dedicated native type so that ScmObj is passed to and from
   ;; foreign functions.
   (define-native-type <ScmObj>  Scm_NativeScmObjType  SCM_CLASS_TOP ScmObj
     SCM_OBJP SCM_OBJ SCM_OBJ FALSE)
@@ -1154,6 +1154,14 @@
   ;; Technically, time_t can be a real numebr.
   (define-native-type <time_t>  Scm_UnixTimeType      SCM_CLASS_NUMBER time_t
     SCM_REALP Scm_MakeSysTime Scm_GetSysTime FALSE)
+
+  ;; Map C integer to Scheme boolean.  In stub, <boolean> is accepted,
+  ;; but to use within native type, we need a <native-type> equivalent.
+  ;; We also allow 'bool in native type signature.
+  (define-native-type <c-bool>  Scm_NativeBoolType    SCM_CLASS_INTEGER _Bool
+    SCM_BOOLP SCM_MAKE_BOOL SCM_BOOL_VALUE FALSE)
+  (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
+                    'bool (Scm_NativeBoolType) (sizeof _Bool))
 
   ;; We map C char to our character in 8-bit range.  If you want to use
   ;; char as a one-byte integer, use <c-int8> or <c-uint8>.

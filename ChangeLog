@@ -1,5 +1,7 @@
 2026-10-08  Shiro Kawai  <shiro@acm.org>
 
+	* src/libtype.scm (<c-bool>): Added, in order to treat C int <->
+	  Scheme boolean mapping within native type signature.
 	* ext/ffi/native-type.scm (native-type): Improve error messages.
 
 2026-10-07  Shiro Kawai  <shiro@acm.org>
