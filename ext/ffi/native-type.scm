@@ -1866,7 +1866,24 @@
          (error "Unknown native type:" signature))
         signedness)]
 
-      [_ (error "Invalid native type signature:" signature)])))
+      ;; Invalid signature.  We check typical errors for better
+      ;; error message.
+      [_
+       (if-let1 c (cond [(is-a? signature <class>) signature]
+                        [(and (list? signature)
+                              (any (cut is-a? <> <class>) signature))]
+                        [else #f])
+         (cond
+          [(eq? signature <char>)
+           (error "You cannot use Scheme <char> class in native type \
+                   signature.  Maybe you mean <c-char>?:" signature)]
+          [(eq? signature <string>)
+           (error "You cannot use Scheme <string> class in native type \
+                   signature. Maybe you meant <c-string>?:" signature)]
+          [else
+           (error "You cannot include a class other than <native-type> in \
+                   native type signature:" signature)])
+         (error "Invalid native type signature:" signature))])))
 
 ;; Reverse table: native-type instance -> C type name symbol
 (define %native-type->cname
