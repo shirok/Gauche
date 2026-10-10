@@ -4338,21 +4338,35 @@ M_74207281 (2^74207281 - 1)
 [SRFI-94]
 @c EN
 Real-only version of elementary functions.  An error is signaled
-unless the arguments are real numbers.
+unless the arguments or the result are real numbers.
 
 These are useful for performance-sensitive code, for they don't need to
 check whether the input is complex.  Furthermore, they are subject to
 constant folding.
+
+@code{real-expt} has some caveats.  If @var{x} is negative,
+the prodedure returns value only if @var{y} is an integer,
+or an exact rational whose denominator is odd.  It may not coincides
+with @code{(expt x y)} because of branches of complex functions.  For example,
+@code{(real-expt -8.0 1/3)} is @code{-2.0}, while @code{(expt -8.0 1/3)}
+is @code{2.0@@1/3pi}.
 
 Those names are defined in SRFI-94.  However, for the portable programs,
 you may want to use @code{scheme.flonum} module, which is a part of
 R7RS-large and defines
 flonum-only versions of elementary functions (@pxref{R7RS flonum}).
 @c JP
-実数の範囲に限定した初等関数です。引数が実数でなかったらエラーが投げられます。
+実数の範囲に限定した初等関数です。引数が実数でなかったり、
+結果が実数で表せなければエラーが投げられます。
 
 性能を気にするコードでは有用です。複素数の処理のためのチェックが省かれるのと、
 定数畳み込みが行われやすくなります。
+
+@code{real-expt}には注意が必要です。@var{x}が負の場合、
+@var{y}が整数であるか、奇数を分母とする正確な有理数である場合にのみ
+値を返します。複素関数の分岐のため、結果は@code{(expt x y)}と異なる
+場合があります。例えば@code{(real-expt -8.0 1/3)}は@code{-2.0}ですが、
+@code{(expt -8.0 1/3)}は@code{2.0@@1/3pi}を返します。
 
 これらの名前はSRFI-94で定義されています。ただ、今ポータブルなコードを書きたいなら、
 R7RS-largeの一部である@code{scheme.flonum}を使う方が良いでしょう。

@@ -13729,9 +13729,15 @@ overflow or underflow during the intermediate steps.
 [R7RS flonum]
 @c MOD scheme.flonum
 @c EN
-Flonum-specific version of @code{expt} (@pxref{Arithmetics}).
+Flonum-specific version of computing @var{x} to the power of @var{y}.
+Behaves like @code{real-expt}, except when the result
+can't be a real number, this returns @code{+nan.0} instead
+of throwing an error. (@pxref{Arithmetics}).
 @c JP
-flonum専用の@code{expt}です(@ref{Arithmetics}参照)。
+@var{x}の@var{y}乗を計算します。
+@code{real-expt}と同じように動作しますが、
+結果が実数で表現できない場合はエラーを投げるのではなく@code{+nan.0}を返します
+(@ref{Arithmetics}参照)。
 @c COMMON
 @end defun
 
