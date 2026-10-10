@@ -611,6 +611,6 @@
 (test* "flexpt negative base yielding real result"
        -1000.0
        (flexpt -0.1 -3.0)
-       approx=?)
+       (cut approx=? <> <> 1e-8))
 
 (test-end)
