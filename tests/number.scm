@@ -482,6 +482,17 @@
 (test* "no integral part" 0.5 (read-from-string "+.5"))
 
 ;;------------------------------------------------------------------
+(test-section "elementary functions")
+
+(test* "real-expt" -27 (real-expt -3 3))
+(test* "real-expt" -27.0 (real-expt -3.0 3.0))
+(test* "real-expt" (test-error) (real-expt -3.0 3.1))
+(test* "real-expt" -2.0 (real-expt -8.0 1/3) (cut approx=? <> <> 1e-7))
+(test* "real-expt" 4.0 (real-expt -8.0 2/3) (cut approx=? <> <> 1e-7))
+(test* "real-expt" 4.0 (real-expt -8.0 2/3) (cut approx=? <> <> 1e-7))
+(test* "real-expt" -27.0 (real-expt -243.0 3/5) (cut approx=? <> <> 1e-7))
+
+;;------------------------------------------------------------------
 (test-section "exact fractional number")
 
 (test* "exact fractonal number" 12345

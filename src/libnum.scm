@@ -558,7 +558,9 @@
     ;; We use Scm_IntegerP to allow inexact integer, e.g. (real-expt -1.0 -1.0)
     (cond [(Scm_IntegerP y) (return (Scm_Expt x y))]
           [(and (SCM_RATNUMP y) (Scm_OddP (SCM_RATNUM_DENOM y)))
-           (return (Scm_Negate (Scm_Expt (Scm_Negate x) y)))]
+           (if (Scm_OddP (SCM_RATNUM_NUMER y))
+             (return (Scm_Negate (Scm_Expt (Scm_Negate x) y)))
+             (return (Scm_Expt (Scm_Negate x) y)))]
           [else
            (when error?
              (Scm_Error "real-expt would yield non-real result for (%S %S)" x y))
