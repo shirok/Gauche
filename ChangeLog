@@ -1,3 +1,12 @@
+2026-10-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (real-expt): Adjust handling of negative base;
+	  returns real result when possible, or raise an error if not.
+	  The real result may differ from `expt`, due to the branch cuts.
+	* ext/scheme/flonum.scm (flexpt): Same, but returns +nan.0
+	  instead of raising an error.
+	  https://github.com/shirok/Gauche/issues/1338
+
 2026-10-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm (<c-bool>): Added, in order to treat C int <->

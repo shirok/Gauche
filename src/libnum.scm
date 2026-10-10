@@ -548,8 +548,26 @@
              (return (Scm_VMReturnFlonum q))))]
         [else (return SCM_FALSE)]))
 
+;; real-expt is not a subset of complex sqrt, as the former need to pick
+;; real result whenever possible, which may be on a different branch;
+;; e.g. (expt -1 1/3) => 1@1/3pi, while (real-ext -1 1/3) => -1.
+(define-cproc %real-expt (x y error?::<boolean>) :fast-flonum :constant
+  (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real"))
+  (unless (SCM_REALP y) (SCM_TYPE_ERROR y "real"))
+  (if (< (Scm_Sign x) 0)
+    ;; We use Scm_IntegerP to allow inexact integer, e.g. (real-expt -1.0 -1.0)
+    (cond [(Scm_IntegerP y) (return (Scm_Expt x y))]
+          [(and (SCM_RATNUMP y) (Scm_OddP (SCM_RATNUM_DENOM y)))
+           (return (Scm_Negate (Scm_Expt (Scm_Negate x) y)))]
+          [else
+           (when error?
+             (Scm_Error "real-expt would yield non-real result for (%S %S)" x y))
+           (return '+nan.0)])
+    (return (Scm_Expt x y))))
+
 (select-module gauche)
-(define-cproc real-expt (x y) :fast-flonum :constant Scm_Expt)
+(define-inline (real-expt x y)
+  ((with-module gauche.internal %real-expt) x y #t))
 (define-cproc exact-expt (x y::<integer>) :constant
   (unless (SCM_EXACTP x) (SCM_TYPE_ERROR x "exact real number"))
   (return (Scm_ExactIntegerExpt x y)))
@@ -576,6 +594,8 @@
     (/ (log z) (log (car base)))))  ; R6RS addition
 
 (select-module gauche.internal)
+(define-cproc %expt-fast-path (x y) :fast-flonum :constant Scm_Expt)
+
 (define-in-module scheme (sqrt z)
   (cond
    [(%sqrt-fast-path z)] ; fast-path check
@@ -625,16 +645,16 @@
               (values s (- k s2))
               (loop (quotient (+ s2 k) (* 2 s))))))))))
 
+(select-module gauche.internal)
 (define-in-module scheme (expt x y)
-  (cond [(and (exact? x) (exact? y))
-         ((with-module gauche.internal %exact-expt) x y)]
+  (cond [(and (exact? x) (exact? y)) (%exact-expt x y)]
         [(real? x)
-         (cond [(real? y) (real-expt x y)]
+         (cond [(real? y) (%expt-fast-path x y)]
                [(number? y)
                 (let1 ry (real-part y)
                   (if (and (zero? x) (positive? ry))
                     (if (exact? x) 0 0.0)
-                    (* (real-expt x ry)
+                    (* (%expt-fast-path x ry)
                        (exp (* +i (imag-part y) (real-ln x))))))]
                [else (error "number required, but got" y)])]
         [(number? x) (exp (* y (log x)))]
@@ -643,7 +663,7 @@
 (select-module gauche.internal)
 (define (%exact-expt x y) ;; x, y :: exact
   (cond [(integer? y) (exact-expt x y)]
-        [(< x 0) (real-expt x y)] ; we don't have exact compnum
+        [(< x 0) (%expt-fast-path x y)] ; we don't have exact compnum
         [(< y 0) (/ (%exact-expt x (- y)))]
         [(integer? x)
          (let ([a (numerator y)]

@@ -599,4 +599,18 @@
        ((with-module scheme.flonum flcbrt) -4)
        approx=?)
 
+;; https://github.com/shirok/Gauche/issues/1338
+(test* "flexpt returns NaN if the result wouldn't be real"
+       +nan.0
+       (flexpt -1.0 1.5))
+
+;; negative base can yield real result in certain exponents
+(test* "flexpt negative base yielding real result"
+       -1.0
+       (flexpt -1.0 -1.0))
+(test* "flexpt negative base yielding real result"
+       -1000.0
+       (flexpt -0.1 -3.0)
+       approx=?)
+
 (test-end)
