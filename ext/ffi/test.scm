@@ -2,4 +2,5 @@
 (include "test-native-wrapper.scm")
 (include "test-native-call.scm")
 (include "test-ffi.scm")
+(include "test-ffi-aux.scm")
 (include "test-ffi-aot.scm")

@@ -46,8 +46,10 @@
           foreign-function-info
 
           native-alloc
-          native-free)
-  )
+          native-free
+          <FILE*>
+          port->FILE*
+          close-FILE*))
 (select-module gauche.ffi)
 
 ;; API
@@ -279,7 +281,8 @@
 (autoload gauche.ffi.stub    (:macro with-stub-ffi))
 (autoload gauche.ffi.aot     (:macro with-aot-ffi))
 (autoload gauche.ffi.native  (:macro with-native-ffi))
-(autoload gauche.ffi.ffiaux  native-alloc native-free)
+(autoload gauche.ffi.ffiaux  native-alloc native-free
+                             <FILE*> port->FILE* close-FILE*)
 
 (define-syntax with-ffi
   (er-macro-transformer

@@ -35,11 +35,17 @@
 
 (define-module gauche.ffi.ffiaux
   (export native-alloc
-          native-free))
+          native-free
+
+          <FILE*>
+          port->FILE*
+          close-FILE*))
 (select-module gauche.ffi.ffiaux)
 
 ;; Delay loading gauche.native-type to avoid built-time dependency
-(autoload gauche.native-type c-aggregate-type? make-c-pointer-type)
+(autoload gauche.native-type
+          c-aggregate-type? make-c-pointer-type
+          native-type)
 
 (inline-stub
  (.include "gauche/priv/typeP.h")
@@ -87,3 +93,56 @@
   (set! (-> handle attrs)
         (Scm_Acons 'freed '#t (-> handle attrs)))
   (free (-> handle ptr)))
+
+;;;
+;;;  FILE*
+;;;
+
+;; Since Gauche implements its own buffered I/O integrated with
+;; Scheme ports, we don't recommend using FILE*.  However, many
+;; foreign functions provdies API taking it, so having this is
+;; convenient to quickly adopt foreign libraries.
+
+;; We represelnt FILE* as native pointer to an opaque struct
+(define-type <FILE*> (native-type '((.struct FILE ()) *)))
+
+;; TRANSIENT: This is to obtain <FILE*> from C code.  We should have
+;; a cise macro to generate this.
+(inline-stub
+ (define-cvar pfile-type::ScmNativeType* :static NULL)
+ (define-cfn get-pfile-type () ::ScmNativeType* :static
+   (when (== pfile-type NULL)
+     (set! pfile-type
+           (cast ScmNativeType* (Scm_GlobalVariableRef (Scm_CurrentModule)
+                                                       (SCM_SYMBOL '<FILE*>)
+                                                       0))))
+   (return pfile-type)))
+
+(define-cproc port->FILE* (port::<port>)
+  (let* ([fd::int (Scm_PortFileNo port)]
+         [fd2::int -1]
+         [fp::FILE* NULL])
+    (when (< fd 0)
+      (Scm_Error "port->FILE* can only take a port associated to a file, \
+                  but got: %S" port))
+    ;; We dup fd so that close-FILE* won't close the port's fd.
+    (when (SCM_OPORTP port) (Scm_Flush port))
+    (set! fd2 (dup fd))
+    (when (< fd2 0)
+      (Scm_SysError "dup failed for port %S" port))
+    (set! fp (fdopen fd2 (?: (SCM_IPORTP port) "r" "w")))
+    (when (== fp NULL)
+      (close fd2)
+      (Scm_SysError "fdopen failed for port %S" port))
+    (return (Scm_MakeNativeHandleSimple fp (SCM_OBJ (get-pfile-type))))))
+
+(define-cproc %close-FILE* (handle::<native-handle>) ::<void>
+  (let* ([fp::FILE* (Scm_NativeHandlePtr handle)])
+    (when (== fp NULL)
+      (Scm_Error "close-FILE* got a null pointer: %S" handle))
+    (when (!= (fclose fp) 0)
+      (Scm_SysError "fclsoe failed on %S" handle))))
+
+(define (close-FILE* handle)
+  (assume (of-type? handle <FILE*>))
+  (%close-FILE* handle))

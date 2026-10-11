@@ -1,3 +1,8 @@
+2026-10-10  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/ffi/ffiaux.scm (port->FILE*): Add conversion to FILE*,
+	  for the foreign functions that expects it.
+
 2026-10-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (real-expt): Adjust handling of negative base;

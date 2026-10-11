@@ -1490,6 +1490,7 @@
   [(_ a b c d e) `(Scm_Values5 ,a ,b ,c ,d ,e)]
   [(_ x ...)     `(Scm_Values ,(fold (^[elt r] `(Scm_cons ,elt ,r)) '() x))]
   )
+
 ;; Using quote is a convenient way to embed Scheme constant in C code.
 (define-cise-expr quote
   [(_ cst)

@@ -18,9 +18,10 @@ XCLEANFILES = gauche--native-type.c native-type.sci \
 	      gauche--ffi--ffiaux.c ffi/ffiaux.sci \
 	      f.$(OBJEXT) f.$(SOEXT) \
 	      g.$(OBJEXT) g.$(SOEXT) \
+	      ffiaux.$(OBJEXT) ffiaux.$(SOEXT) \
 	      test-aot.o
 
-all : $(LIBFILES) f.$(SOEXT) g.$(SOEXT)
+all : $(LIBFILES) f.$(SOEXT) g.$(SOEXT) ffiaux.$(SOEXT)
 
 gauche_native_type_OBJECTS = gauche--native-type.$(OBJEXT)
 
@@ -51,3 +52,7 @@ f.$(SOEXT): c/f.h c/f.c
 g.$(SOEXT): c/g.c
 	$(COMPILE) -c -I $(srcdir)/c $(srcdir)/c/g.c -o g.$(OBJEXT)
 	$(LINK) g.$(SOEXT) g.$(OBJEXT) $(EXT_LIBGAUCHE) $(LIBS)
+
+ffiaux.$(SOEXT): c/ffiaux.c
+	$(COMPILE) -c -I $(srcdir)/c $(srcdir)/c/ffiaux.c -o ffiaux.$(OBJEXT)
+	$(LINK) ffiaux.$(SOEXT) ffiaux.$(OBJEXT)
