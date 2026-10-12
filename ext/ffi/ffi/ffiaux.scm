@@ -119,22 +119,23 @@
                                                        0))))
    (return pfile-type)))
 
-(define-cproc port->FILE* (port::<port> :key (share-fd?::<boolean> #f))
+(define-cproc port->FILE* (port::<port> :key (close-original::<boolean> #t))
   (let* ([fd::int (Scm_PortFileNo port)]
          [fd2::int -1]
          [fp::FILE* NULL])
     (when (< fd 0)
       (Scm_Error "port->FILE* can only take a port associated to a file, \
                   but got: %S" port))
-    ;; We dup fd so that close-FILE* won't close the port's fd.
     (when (SCM_OPORTP port) (Scm_Flush port))
-    (set! fd2 (?: share-fd? fd (dup fd)))
+    (set! fd2 (dup fd))
     (when (< fd2 0)
       (Scm_SysError "dup failed for port %S" port))
     (set! fp (fdopen fd2 (?: (SCM_IPORTP port) "r" "w")))
     (when (== fp NULL)
-      (when (!= fd fd2) (close fd2))
+      (close fd2)
       (Scm_SysError "fdopen failed for port %S" port))
+    (when close-original
+      (Scm_ClosePort port))
     (return (Scm_MakeNativeHandleSimple fp (SCM_OBJ (get-pfile-type))))))
 
 (define-cproc %close-FILE* (handle::<native-handle>) ::<void>
