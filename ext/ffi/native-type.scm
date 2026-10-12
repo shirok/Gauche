@@ -48,6 +48,7 @@
           make-c-struct-type
           make-c-union-type
           make-c-enum-type
+          make-c-opaque-type
           c-enum-type-complete!
           default-c-enum-base-type
 
@@ -385,6 +386,16 @@
                 (car e) (or name type) (cdr e) (~ base'name))))
     (set! (~ type'enumerator-alist) alist)
     type))
+
+;; Opaque type stands for typedef'ed type whose internals are not
+;; supposed to be known for the users.  An example is FILE.
+(define (make-c-opaque-type name :optional (super #f) (c-name #f))
+  (assume-type name <symbol>)
+  (assume-type super (<?> <class>))
+  (assume-type c-name (<?> <string>))
+  (%make-c-opaque-type (symbol->string name)
+                       (or super <top>)
+                       (or c-name (symbol->string name))))
 
 ;;;
 ;;; Additonal native type predicates/accessors
@@ -1972,6 +1983,8 @@
                       (append args '(...))
                       args)
                    ,ret))]
+    ;; Opaque
+    [(is-a? type <c-opaque>) (~ type'c-type-name)]
     [else (error "Cannot produce signature for native type:" type)]))
 
 ;;;

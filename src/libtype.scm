@@ -290,6 +290,12 @@
     (enumerator-alist))
    (printer (Scm_Printf port "#<c-enum %A>" (-> (& (-> (SCM_C_ENUM obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
+
+ (define-cclass <c-opaque> :base :no-meta
+   "ScmCOpaque*" "Scm_COpaqueClass"
+   (c "native_type_cpa")
+   ()
+   (printer (Scm_Printf port "#<c-opaque %A>" (-> (SCM_C_OPAQUE obj) name))))
  )
 
 (define-method initialize ((c <type-constructor-meta>) initargs)
@@ -1001,6 +1007,21 @@
      (when c-set (set! (-> z c-set) c-set))
      (return (SCM_OBJ z))))
 
+ (define-cfn opaque-type-of-type (_::ScmNativeType* _) ::int
+   (return FALSE))
+
+ (define-cproc %make-c-opaque-type (name::<const-cstring>
+                                    super::<class>
+                                    c-type-name::<const-cstring>)
+   (let* ([z::ScmCOpaque*
+           (SCM_NEW_INSTANCE ScmCOpaque (& Scm_COpaqueClass))])
+     (init-native-type-common (SCM_NATIVE_TYPE z)
+                              name (SCM_OBJ super) c-type-name
+                              0 0 FALSE ;size, alignment bounded
+                              opaque-type-of-type
+                              NULL NULL) ;c-ref, c-set
+     (return (SCM_OBJ z))))
+
  ;; Primitive native type name -> native type instance
  ;; Used by gauche.native-type.  Can be used for other purposes, but
  ;; it's not official and the structure/interface may change.
@@ -1625,7 +1646,7 @@
 ;; workaround dependency issues. User programs should use gauche.native-type
 ;; for these identifiers.
 (export <native-handle> <c-pointer> <c-array> <c-struct> <c-union> <c-function>
-        <c-enum>)
+        <c-enum> <c-opaque>)
 
 (let ((xfer (with-module gauche.internal %transfer-bindings)))
   (xfer (current-module)

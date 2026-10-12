@@ -192,6 +192,18 @@ SCM_CLASS_DECL(Scm_CEnumClass);
 #define SCM_C_ENUM(obj)    ((ScmCEnum*)(obj))
 #define SCM_C_ENUM_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_ENUM))
 
+/* <c-opaque> - an opaque type.
+   In C, this is something typedef'ed.  We treat them as unknown type,
+   unreferenceable/unmodifiable, but we can treat pointer to it just fine.
+   The instance is the same as ScmNativeType.
+ */
+
+typedef ScmNativeType ScmCOpaque;
+SCM_CLASS_DECL(Scm_COpaqueClass);
+#define SCM_CLASS_C_OPAQYE  (&Scm_COpaqueClass)
+#define SCM_C_OPAQUE(obj)   ((ScmCOpaque*)(obj))
+#define SCM_C_OPAQUE_P(obj) (SCM_ISA(obj, SCM_CLASS_C_OPAQUE))
+
 /*
  * Native handle
  */

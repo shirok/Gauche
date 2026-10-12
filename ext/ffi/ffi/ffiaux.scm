@@ -44,7 +44,7 @@
 
 ;; Delay loading gauche.native-type to avoid built-time dependency
 (autoload gauche.native-type
-          c-aggregate-type? make-c-pointer-type
+          c-aggregate-type? make-c-pointer-type make-c-opaque-type
           native-type)
 
 (inline-stub
@@ -103,8 +103,9 @@
 ;; foreign functions provdies API taking it, so having this is
 ;; convenient to quickly adopt foreign libraries.
 
-;; We represelnt FILE* as native pointer to an opaque struct
-(define-type <FILE*> (native-type '((.struct FILE ()) *)))
+;; We represelnt FILE* as native pointer to an opaque type
+(define-type <FILE*>
+  (make-c-pointer-type (make-c-opaque-type 'FILE)))
 
 ;; TRANSIENT: This is to obtain <FILE*> from C code.  We should have
 ;; a cise macro to generate this.
