@@ -10615,13 +10615,20 @@ in subsystems.
 
 @item @code{:c-headers} (@var{header-name} @dots{})
 Specify a list of headers of the library.
-If you only use C functions and C callbacks, you don't
+If you only use C functions and C callbacks with standard
+types, you don't
 need this.  On the other hand, if you use C constants
 (@code{#define}d macro constants) or C enums,
 you need to specify this, as their information cannot
 be extracted from the DSO.
-@end table
 
+You may also need headers if you use c opaque pointers
+(@pxref{Derived and aggregate native types}), as the opaque type
+name needs to be visible from the C compiler when the @code{:stub}
+or @code{:aot} subsystem is used.  In case if you don't have a header,
+however, you can workaround with setting @code{c-name} to @code{"void"};
+see @code{make-c-opaque-pointer-type} for the details.
+@end table
 @end defmac
 
 
@@ -15641,6 +15648,32 @@ Returns the pointee type of the given c-pointer type.
 @end example
 @end defun
 
+@defun make-c-opaque-pointer-type name :optional super c-name
+@c MOD gauche.native-type
+Creates a c-pointer type that points to an @emph{c-opaque} type,
+that the user does not supposed to know the details except the name
+of the type.  It is useful to passing around pointers to the
+opaque types to/from foreign functions.
+
+The @var{name} argument is a symbol that names the type.  Typically
+it is a typedef-ed name in the foreign function API.
+
+@example
+(make-c-opaque-pointer-type 'FOO) @result{}  #<c-pointer <FOO*>>
+@end example
+
+The @var{c-name} argument, if given and not @code{#f}, must be
+a string specifying the C type name, if you want to use a different
+name from @var{name}.  It is rarely needed, but one possible
+scenario is that you want to use a pointer to a library-specific
+opaque type in FFI, but you don't have a header that defines the
+type; FFI backend may generate a C code fragement and compile it
+on-the-fly, and it needs to see the type nmae.  You can give @code{"void"}
+to the @var{c-name} to workaround it.  You can use @code{<void*>} type
+instead, but then the external representation of the pointer
+also shows @code{<void*>}, which is less convenient for development.
+@end defun
+
 @subsubheading C arrays
 
 @deftp {Class} <c-array>
@@ -15806,6 +15839,34 @@ from a signature with
 @code{native-type} (e.g.
 @code{(native-type '(.enum Color (Red Green Blue)))}.
 @end deftp
+
+@defun make-c-enum-type tag typespec enumerators
+@c MOD gauche.native-type
+Creates and returns a new C enum type.  @var{tag} specifies the
+enum tag in symbol; it can be @code{#f} for untagged enum.
+@var{typespec} can be @code{#f} or an integer native type..  If it is
+a native type, it specifies the base type of the enum.
+If no @var{typespec} is given, the base type is inferred from the values
+of enumerators. Note that if you include a field of an enum type in a struct
+or an array, the layout is affected by the base type of the enum, and it
+should match the compiler's settings when you make FFI calls.
+
+The @var{enumerators} argument is a list, each of which element
+can be either a symbol or @code{(<symbol> <integer-value>)}.
+The symbol names each enumerator.  The integer value of each enumerator
+is assigned from 0 and increasing order by default.  If an integer value
+is specified in the second form, the internal counter is ``reset'' to
+that value.
+
+If you create an C enum type for foreign functon call, you'd want
+to use @code{define-c-enum} in @code{gauche.ffi}, which creats
+c-enum type and synchronizing enum values of the given enum symbols
+(@pxref{With-ffi form}).
+
+The created enum type object maintains mapping between enumerator
+names and values.  You can look it up with @code{c-enum-value}
+and @code{c-enum-symbol}.
+@end defun
 
 @defun c-enum-type-tag type
 @c MOD gauche.native-type
