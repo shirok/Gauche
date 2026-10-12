@@ -91,7 +91,7 @@
   (let1 unit (generate-ffi-c-code-unit cdef-instances c-headers)
     (receive (pointer-ret-types variadic-type-infos callback-infos fn-tag-infos)
         (ffi-setup-arguments cdef-instances)
-      (cgen-dynamic-load unit :include-paths c-include-paths)
+      (cgen-dynamic-load unit :include-paths c-include-paths :module mod)
       (ffi-complete-enums! cdef-instances
                            ((module-binding-ref mod 'ffisetup)
                             dlobj pointer-ret-types variadic-type-infos

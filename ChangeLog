@@ -1,5 +1,13 @@
 2026-10-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/load.c (Scm_CallInitFunction): Add module argument to specify
+	  a module in which init function is called.  This is technically
+	  an ABI change, though this function is only called via
+	  dynamic-load, so it should be ok.
+	* lib/gauche/cgen/dyncomp.scm (cgen-dynamic-load),
+	  src/libeval.scm (dynamic-load): Add :module keyword argument to
+	  pass to Scm_CallInitFunction.
+
 	* src/libtype.scm (<c-opaque>),
 	  ext/ffi/native-type.scmm (make-c-opaque-type):  Add C opaque
 	  native type, for https://github.com/shirok/Gauche/issues/1339

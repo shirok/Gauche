@@ -202,8 +202,8 @@
                                      [else #\_]))
                            (string->list stem)))))))
 
-(define-cproc %call-initfn (dlo::<dlobj> initfn::<string>)
-  (return (Scm_CallInitFunction dlo initfn)))
+(define-cproc %call-initfn (dlo::<dlobj> initfn::<string> module::<module>?)
+  (return (Scm_CallInitFunction dlo initfn module)))
 
 (define-cproc %prelinked-path (dsoname::<string>)
   (return (Scm_PrelinkedPath dsoname)))
@@ -263,6 +263,7 @@
                      (error-if-not-found #t)
                      (versions '())
                      (init-function #t)
+                     (module #f)
                      (export-symbols #f)); for backward compatibility
   (assume (or (boolean? init-function)
               (string? init-function))
@@ -279,7 +280,8 @@
                 [else (map (cut string-append dsoname <>) sfxs)])])
     (receive [dlo err] (%try-dlopen dsopaths error-if-not-found)
       (when init-function
-        (%call-initfn dlo (%get-initfn-name init-function dsoname)))
+        (%call-initfn dlo (%get-initfn-name init-function dsoname)
+                      module))
       dlo)))
 
 (select-module gauche)

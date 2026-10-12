@@ -814,7 +814,9 @@ ScmObj Scm_CloseDLO(ScmDLObj *dlo, int force)
     return SCM_TRUE;
 }
 
-ScmObj Scm_CallInitFunction(ScmDLObj *dlo, ScmString *initfn_name)
+ScmObj Scm_CallInitFunction(ScmDLObj *dlo,
+                            ScmString *initfn_name,
+                            ScmModule *mod)
 {
     lock_dlobj(dlo);
     if (dlo->state == DLOBJ_INCOMPLETE) {
@@ -822,9 +824,28 @@ ScmObj Scm_CallInitFunction(ScmDLObj *dlo, ScmString *initfn_name)
            use this DLO. */
         Scm_Error("the dlobj couldn't be initialized: %S", dlo);
     }
-    SCM_UNWIND_PROTECT {call_initfn(dlo, initfn_name);}
-    SCM_WHEN_ERROR {unlock_dlobj(dlo);  SCM_NEXT_HANDLER; }
+    ScmModule *orig_mod = SCM_CURRENT_MODULE();
+    SCM_UNWIND_PROTECT {
+        if (mod != 0) {
+            /* Kludge - the right way would have been making initfn take
+               the module.  It's too late now (maybe until major version bump).
+               Assigning to SCM_CURRENT_MODULE() is not a proper way and
+               shouldn't be used elsewhere. */
+            SCM_CURRENT_MODULE() = mod;
+        }
+        call_initfn(dlo, initfn_name);
+    }
+    SCM_WHEN_ERROR {
+        if (mod != 0) {
+            SCM_CURRENT_MODULE() = orig_mod;
+        }
+        unlock_dlobj(dlo);
+        SCM_NEXT_HANDLER;
+    }
     SCM_END_PROTECT;
+    if (mod != 0) {
+        SCM_CURRENT_MODULE() = orig_mod;
+    }
     unlock_dlobj(dlo);
     return SCM_UNDEFINED;
 }
