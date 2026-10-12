@@ -49,6 +49,7 @@
           make-c-union-type
           make-c-enum-type
           make-c-opaque-type
+          make-c-opaque-pointer-type
           c-enum-type-complete!
           default-c-enum-base-type
 
@@ -396,6 +397,10 @@
   (%make-c-opaque-type (symbol->string name)
                        (or super <top>)
                        (or c-name (symbol->string name))))
+
+;; Convenient utility
+(define (make-c-opaque-pointer-type name :optional (super #f) (c-name #f))
+  (make-c-pointer-type (make-c-opaque-type name super c-name)))
 
 ;;;
 ;;; Additonal native type predicates/accessors
