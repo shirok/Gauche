@@ -44,7 +44,7 @@
 
 ;; Delay loading gauche.native-type to avoid built-time dependency
 (autoload gauche.native-type
-          c-aggregate-type? make-c-pointer-type make-c-opaque-type
+          c-aggregate-type? make-c-pointer-type make-c-opaque-pointer-type
           native-type)
 
 (inline-stub
@@ -105,7 +105,7 @@
 
 ;; We represelnt FILE* as native pointer to an opaque type
 (define-type <FILE*>
-  (make-c-pointer-type (make-c-opaque-type 'FILE)))
+  (make-c-opaque-pointer-type 'FILE))
 
 ;; TRANSIENT: This is to obtain <FILE*> from C code.  We should have
 ;; a cise macro to generate this.

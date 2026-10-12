@@ -9,8 +9,8 @@
 	  pass to Scm_CallInitFunction.
 
 	* src/libtype.scm (<c-opaque>),
-	  ext/ffi/native-type.scmm (make-c-opaque-type):  Add C opaque
-	  native type, for https://github.com/shirok/Gauche/issues/1339
+	  ext/ffi/native-type.scmm (make-c-opaque-pointer-type):  Add C
+	  opaque native type, for https://github.com/shirok/Gauche/issues/1339
 
 2026-10-10  Shiro Kawai  <shiro@acm.org>
 

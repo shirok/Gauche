@@ -43,13 +43,12 @@
   (use gauche.uvector)
   (extend gauche.typeutil)              ;access internal routines
   (export make-c-pointer-type
+          make-c-opaque-pointer-type
           make-c-function-type
           make-c-array-type
           make-c-struct-type
           make-c-union-type
           make-c-enum-type
-          make-c-opaque-type
-          make-c-opaque-pointer-type
           c-enum-type-complete!
           default-c-enum-base-type
 
@@ -213,6 +212,19 @@
                                      #/>$/ "")]
          [pointer-name #"<~|bare-name|*>"])
     (%make-c-pointer-type pointer-name pointee-type)))
+
+;; Opaque type stands for typedef'ed type whose internals are not
+;; supposed to be known for the users.  An example is FILE.
+;; It is only useful to be used as a pointee of C pointer type.
+(define (make-c-opaque-pointer-type name :optional (super #f) (c-name #f))
+  (assume-type name <symbol>)
+  (assume-type super (<?> <class>))
+  (assume-type c-name (<?> <string>))
+  (let1 opaque-type
+      (%make-c-opaque-type (symbol->string name)
+                           (or super <top>)
+                           (or c-name (symbol->string name)))
+    (make-c-pointer-type opaque-type)))
 
 ;; Argument-types are list of native types, optionally end with
 ;; a symbol ... for varargs.
@@ -387,20 +399,6 @@
                 (car e) (or name type) (cdr e) (~ base'name))))
     (set! (~ type'enumerator-alist) alist)
     type))
-
-;; Opaque type stands for typedef'ed type whose internals are not
-;; supposed to be known for the users.  An example is FILE.
-(define (make-c-opaque-type name :optional (super #f) (c-name #f))
-  (assume-type name <symbol>)
-  (assume-type super (<?> <class>))
-  (assume-type c-name (<?> <string>))
-  (%make-c-opaque-type (symbol->string name)
-                       (or super <top>)
-                       (or c-name (symbol->string name))))
-
-;; Convenient utility
-(define (make-c-opaque-pointer-type name :optional (super #f) (c-name #f))
-  (make-c-pointer-type (make-c-opaque-type name super c-name)))
 
 ;;;
 ;;; Additonal native type predicates/accessors
