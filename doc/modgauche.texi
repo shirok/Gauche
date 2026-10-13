@@ -15648,7 +15648,7 @@ Returns the pointee type of the given c-pointer type.
 @end example
 @end defun
 
-@defun make-c-opaque-pointer-type name :optional super c-name
+@defun make-c-opaque-pointer-type name :optional c-name
 @c MOD gauche.native-type
 Creates a c-pointer type that points to an @emph{c-opaque} type,
 that the user does not supposed to know the details except the name

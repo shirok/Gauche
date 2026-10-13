@@ -216,14 +216,14 @@
 ;; Opaque type stands for typedef'ed type whose internals are not
 ;; supposed to be known for the users.  An example is FILE.
 ;; It is only useful to be used as a pointee of C pointer type.
-(define (make-c-opaque-pointer-type name :optional (super #f) (c-name #f))
+;; TODO: Shall we allow optional super argument?
+(define (make-c-opaque-pointer-type name :optional (c-name #f))
   (assume-type name <symbol>)
-  (assume-type super (<?> <class>))
   (assume-type c-name (<?> <string>))
   (let1 opaque-type
       (%make-c-opaque-type (symbol->string name)
-                           (or super <top>)
-                           (or c-name (symbol->string name)))
+                           (or c-name (symbol->string name))
+                           <top>)
     (make-c-pointer-type opaque-type)))
 
 ;; Argument-types are list of native types, optionally end with

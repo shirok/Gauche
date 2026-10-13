@@ -1010,9 +1010,10 @@
  (define-cfn opaque-type-of-type (_::ScmNativeType* _) ::int
    (return FALSE))
 
+ ;; To be called by gauche.native-type#make-c-opaque-pointer-type
  (define-cproc %make-c-opaque-type (name::<const-cstring>
-                                    super::<class>
-                                    c-type-name::<const-cstring>)
+                                    c-type-name::<const-cstring>
+                                    super::<class>)
    (let* ([z::ScmCOpaque*
            (SCM_NEW_INSTANCE ScmCOpaque (& Scm_COpaqueClass))])
      (init-native-type-common (SCM_NATIVE_TYPE z)
