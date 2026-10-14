@@ -1499,6 +1499,23 @@
             cst))
    (list (cgen-cexpr (cgen-literal cst)))])
 
+;; Eash run-time referencing
+
+;; (@module name-expr) - evaluates to ScmModule* of the given name; throws
+;; an error if named module is not found.  Lookup is only done once,
+;; and the result is cached.
+(define-cise-expr @module
+  [(_ name-expr)
+   (let ([mod-var (gensym "module_var_")])
+     (cise-push-static-decl!
+      (cise-render-to-string
+       `(define-cvar ,mod-var :: ScmModule* NULL)
+       'toplevel))
+     `(?: (== ,mod-var NULL)
+          (set! ,mod-var (Scm_FindModule (SCM_SYMBOL ,name-expr) 0))
+          ,mod-var))])
+
+
 ;;=============================================================
 ;; Other utilities
 ;;

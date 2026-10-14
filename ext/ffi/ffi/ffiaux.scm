@@ -115,9 +115,7 @@
    (when (== pfile-type NULL)
      (set! pfile-type
            (cast ScmNativeType*
-                 (Scm_GlobalVariableRef (Scm_FindModule
-                                         (SCM_SYMBOL 'gauche.ffi.ffiaux)
-                                         0)
+                 (Scm_GlobalVariableRef (@module 'gauche.ffi.ffiaux)
                                         (SCM_SYMBOL '<FILE*>)
                                         0))))
    (return pfile-type)))
