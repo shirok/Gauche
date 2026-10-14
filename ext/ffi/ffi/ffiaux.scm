@@ -114,9 +114,12 @@
  (define-cfn get-pfile-type () ::ScmNativeType* :static
    (when (== pfile-type NULL)
      (set! pfile-type
-           (cast ScmNativeType* (Scm_GlobalVariableRef (Scm_CurrentModule)
-                                                       (SCM_SYMBOL '<FILE*>)
-                                                       0))))
+           (cast ScmNativeType*
+                 (Scm_GlobalVariableRef (Scm_FindModule
+                                         (SCM_SYMBOL 'gauche.ffi.ffiaux)
+                                         0)
+                                        (SCM_SYMBOL '<FILE*>)
+                                        0))))
    (return pfile-type)))
 
 (define-cproc port->FILE* (port::<port> :key (close-original::<boolean> #t))
