@@ -125,26 +125,19 @@
 ;; Global bindind access, public API
 (define-cproc module-binds? (mod-or-name name::<symbol>) ::<boolean>
   (return
-   (not (SCM_UNBOUNDP
-         (Scm_GlobalVariableRef (get-module-from-mod-or-name mod-or-name)
-                                name 0)))))
+   (Scm_ModuleBindsP (get-module-from-mod-or-name mod-or-name)
+                     name 0)))
 (define-cproc module-exports? (mod-or-name name::<symbol>) ::<boolean>
   (return
-   (not (SCM_UNBOUNDP
-         (Scm_GlobalVariableRef (get-module-from-mod-or-name mod-or-name)
-                                name SCM_BINDING_EXTERNAL)))))
+   (Scm_ModuleBindsP (get-module-from-mod-or-name mod-or-name)
+                     name SCM_BINDING_EXTERNAL)))
 (define-cproc module-binding-ref (mod_or_name name::<symbol>
                                               :optional
                                               fallback
                                               (stay-in-module::<boolean> #f))
   (let* ([module::ScmModule* (get_module_from_mod_or_name mod_or_name)]
-         [flags::int (?: stay_in_module SCM_BINDING_STAY_IN_MODULE 0)]
-         [r  (Scm_GlobalVariableRef module name flags)]
-         [r2 (?: (SCM_UNBOUNDP r) fallback r)])
-    (when (SCM_UNBOUNDP r2)
-      (Scm_Error "global identifier %S is not bound in module %S"
-                 name module))
-    (return r2)))
+         [flags::u_long (?: stay_in_module SCM_BINDING_STAY_IN_MODULE 0)])
+    (return (Scm_ModuleBindingRef module name fallback flags))))
 
 ;; Backward compatibility.  Deprecated
 (define global-variable-bound? module-binds?)
@@ -171,9 +164,7 @@
                                              :optional (flags '()))
   (let* ([z::int 0])
     (if (and (not (SCM_FALSEP (Scm_Memq 'fresh flags)))
-             (not (SCM_UNBOUNDP
-                   (Scm_GlobalVariableRef mod name
-                                          SCM_BINDING_STAY_IN_MODULE))))
+             (Scm_ModuleBindsP mod name SCM_BINDING_STAY_IN_MODULE))
       (return SCM_FALSE)
       (begin
         (unless (SCM_FALSEP (Scm_Memq 'const flags))

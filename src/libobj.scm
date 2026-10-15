@@ -196,11 +196,10 @@
  ;; After the call to this procedure, a binding of NAME is inserted in
  ;; the current module.
  (define-cproc %ensure-generic-function (name::<symbol> module::<module>)
-   (let* ([val (Scm_GlobalVariableRef module name 0)])
+   (let* ([val (Scm_ModuleBindingRef module name SCM_UNDEFINED 0)])
      (cond
       [(Scm_TypeP val SCM_CLASS_GENERIC)
-       (when (SCM_UNBOUNDP (Scm_GlobalVariableRef module name
-                                                  SCM_BINDING_STAY_IN_MODULE))
+       (unless (Scm_ModuleBindsP module name SCM_BINDING_STAY_IN_MODULE)
          (Scm_Define module name val))]
       [else
        (if (or (SCM_SUBRP val) (SCM_CLOSUREP val))

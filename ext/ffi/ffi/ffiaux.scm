@@ -115,9 +115,10 @@
    (when (== pfile-type NULL)
      (set! pfile-type
            (cast ScmNativeType*
-                 (Scm_GlobalVariableRef (@module 'gauche.ffi.ffiaux)
-                                        (SCM_SYMBOL '<FILE*>)
-                                        0))))
+                 (Scm_ModuleBindingRef (@module 'gauche.ffi.ffiaux)
+                                       (SCM_SYMBOL '<FILE*>)
+                                       SCM_UNBOUND
+                                       0))))
    (return pfile-type)))
 
 (define-cproc port->FILE* (port::<port> :key (close-original::<boolean> #t))

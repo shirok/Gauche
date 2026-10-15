@@ -538,9 +538,7 @@
    [(_ . syms)
     `(let* ([mod::ScmModule* (Scm_CurrentModule)])
        ,@(map (^[sym]
-                `(unless (SCM_UNBOUNDP (Scm_GlobalVariableRef mod
-                                                              (SCM_SYMBOL ',sym)
-                                                              0))
+                `(when (Scm_ModuleBindsP mod (SCM_SYMBOL ',sym) 0)
                    (Scm_ExportSymbols mod (list ',sym))))
               syms))])
 

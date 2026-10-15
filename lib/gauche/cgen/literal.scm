@@ -934,7 +934,7 @@
               n (cgen-c-name (~ self'name)))
       (format #t "  SCM_ASSERT(SCM_MODULEP(~a));\n" m)
       (format #t "  SCM_ASSERT(SCM_SYMBOLP(~a));\n" n)
-      (format #t "  ~a = Scm_GlobalVariableRef(SCM_MODULE(~a), SCM_SYMBOL(~a),0);\n"
+      (format #t "  ~a = Scm_ModuleBindingRef(SCM_MODULE(~a), SCM_SYMBOL(~a), SCM_UNBOUND, 0);\n"
               (cgen-c-name self) m n)
       (format #t "}\n")))
   (static (self) #f))
@@ -983,11 +983,8 @@
           :c-name (cgen-allocate-static-datum)
           :name (cgen-literal (~ value'name))))
   (init (self)
-        (format #t "  ~a = Scm_GlobalVariableRef(Scm_GaucheModule(), \
-                                     SCM_SYMBOL(~a), 0);"
-                (cgen-c-name self) (cgen-c-name (~ self'name)))
-        (format #t "  if (SCM_UNBOUNDP(~a)) \
-                             Scm_Error(\"Invalid native type: %S\", ~a);"
+        (format #t "  ~a = Scm_ModuleBindingRef(Scm_GaucheModule(), \
+                                     SCM_SYMBOL(~a), SCM_UNBOUND, 0);"
                 (cgen-c-name self) (cgen-c-name (~ self'name))))
   (static (self) #f))
 

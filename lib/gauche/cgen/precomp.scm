@@ -1227,7 +1227,7 @@
       :c-name  (cgen-allocate-static-datum)
       :gf-name (cgen-literal (ref value 'name))))
   (init (self)
-    (format #t "  ~a = Scm_GlobalVariableRef(SCM_MODULE(~a), SCM_SYMBOL(~a), FALSE);\n"
+    (format #t "  ~a = Scm_ModuleBindingRef(SCM_MODULE(~a), SCM_SYMBOL(~a), SCM_UNBOUND, FALSE);\n"
             (~ self'c-name)
             (current-tmodule-cname)
             (~ self'gf-name'c-name)))
