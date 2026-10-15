@@ -104,22 +104,7 @@
 ;; convenient to quickly adopt foreign libraries.
 
 ;; We represelnt FILE* as native pointer to an opaque type
-(define-type <FILE*>
-  (make-c-opaque-pointer-type 'FILE))
-
-;; TRANSIENT: This is to obtain <FILE*> from C code.  We should have
-;; a cise macro to generate this.
-(inline-stub
- (define-cvar pfile-type::ScmNativeType* :static NULL)
- (define-cfn get-pfile-type () ::ScmNativeType* :static
-   (when (== pfile-type NULL)
-     (set! pfile-type
-           (cast ScmNativeType*
-                 (Scm_ModuleBindingRef (@module 'gauche.ffi.ffiaux)
-                                       (SCM_SYMBOL '<FILE*>)
-                                       SCM_UNBOUND
-                                       0))))
-   (return pfile-type)))
+(define-type <FILE*> (make-c-opaque-pointer-type 'FILE))
 
 (define-cproc port->FILE* (port::<port> :key (close-original::<boolean> #t))
   (let* ([fd::int (Scm_PortFileNo port)]
@@ -138,7 +123,9 @@
       (Scm_SysError "fdopen failed for port %S" port))
     (when close-original
       (Scm_ClosePort port))
-    (return (Scm_MakeNativeHandleSimple fp (SCM_OBJ (get-pfile-type))))))
+    (return
+     (Scm_MakeNativeHandleSimple fp (.cref '<FILE*>
+                                           (.module 'gauche.ffi.ffiaux))))))
 
 (define-cproc %close-FILE* (handle::<native-handle>) ::<void>
   (let* ([fp::FILE* (Scm_NativeHandlePtr handle)])

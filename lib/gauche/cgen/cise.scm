@@ -1501,10 +1501,10 @@
 
 ;; Eash run-time referencing
 
-;; (@module name-expr) - evaluates to ScmModule* of the given name; throws
+;; (.module name-expr) - evaluates to ScmModule* of the given name; throws
 ;; an error if named module is not found.  Lookup is only done once,
 ;; and the result is cached.
-(define-cise-expr @module
+(define-cise-expr .module
   [(_ name-expr)
    (let ([mod-var (gensym "module_var_")])
      (cise-push-static-decl!
@@ -1515,6 +1515,23 @@
           (set! ,mod-var (Scm_FindModule (SCM_SYMBOL ,name-expr) 0))
           ,mod-var))])
 
+;; (.cref name-expr module-expr) - Look up the value of the global variable
+;; name-expr in the module module-expr.  The variable is supposed to be
+;; constant once initialized, so it looks up the value the first time it is
+;; executed, and caches the result to be used subsequently.
+(define-cise-expr .cref
+  [(_ name-expr mod-expr)
+   (let ([val-var (gensym "constval_var_")])
+     (cise-push-static-decl!
+      (cise-render-to-string
+       `(define-cvar ,val-var SCM_UNBOUND)
+       'toplevel))
+     `(?: (SCM_UNBOUNDP ,val-var)
+          (set! ,val-var (Scm_ModuleBindingRef ,mod-expr
+                                               (SCM_SYMBOL ,name-expr)
+                                               SCM_UNBOUND
+                                               0))
+          ,val-var))])
 
 ;;=============================================================
 ;; Other utilities

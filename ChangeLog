@@ -1,5 +1,11 @@
 2026-10-14  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/cise.scm (.cref): Added.  Also, changed @module
+	  to .module.  https://github.com/shirok/Gauche/issues/1341
+	  We may need a consistent naming policy for cise macros,
+	  but using '@' looks to stand out too much.  Using '.' has
+	  precedents, and won't conflict with general identifiers.
+
 	* src/module.c (Scm_ModuleBindingRef, Scm_ModuleBindsP):
 	  Making C API corresponing to Scheme's module-binding-ref and
 	  module-binds?.  The underlying API, Scm_GlobalVariableRef,
