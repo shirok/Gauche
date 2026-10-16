@@ -1,5 +1,9 @@
 2026-10-16  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/cise.scm (render-rec): Emit integer literals
+	  with proper suffix if necessary.
+	  https://github.com/shirok/Gauche/issues/1329
+
 	* src/libeval.scm (%try-dlopen): Heuristically recognize
 	  when the existing dso is indeed a linker script, and
 	  try to find the real dso to dlopen.  For now we check a couple

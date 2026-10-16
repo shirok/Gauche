@@ -435,6 +435,7 @@
     [[? identifier?] (wrap-expr (cise-render-identifier (unwrap-syntax form))
                                 env)]
     [[? string?] (wrap-expr (write-to-string form) env)]
+    [[? exact-integer?] (wrap-expr (render-integer-literal form) env)]
     [[? real?]   (wrap-expr form env)]
     [()          '()]
     [#\'         (wrap-expr "'\\''"  env)]
@@ -450,6 +451,22 @@
                            (format "\\x~2,'0x" (char->integer form)))
                     "'") env))]
     [_           (error "Invalid CISE form: " form)]))
+
+;; render-integer-literal :: Integer -> String
+;;   Attach a suffix so that the C compiler will handle the literal with
+;;   the appropriate type.  We use 'LL' instead of 'L', as the size of long
+;;   can vary.
+(define (render-integer-literal n)
+  (cond [(<= (- (expt 2 31)) n (- (expt 2 31) 1))
+         (if (= n (- (expt 2 31)))
+           "(-2147483647-1)"
+           (number->string n))]
+        [(<= (- (expt 2 63)) n (- (expt 2 63) 1))
+         (if (= n (- (expt 2 63)))
+           "(-9223372036854775807LL-1)"
+           #"~|n|LL")]
+        [(<= 0 n (- (expt 2 64) 1)) #"~|n|ULL"]
+        [else (error "CISE: Integer literal out of range:" n)]))
 
 ;;
 ;; cise-translate inp outp &key enviroment
