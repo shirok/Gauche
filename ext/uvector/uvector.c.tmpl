@@ -1142,11 +1142,11 @@ ScmObj Scm_${T}Vector${Opname}(ScmUVector *x, ScmObj min, ScmObj max)
 
 ///(append! *tmpl-prologue* (list
 
-static void f64vector_swapb_arm2le(ScmF64Vector *v)
+static void f64vector_swapb_arm2le(ScmF64Vector *v,
+                                   ScmSmallInt start, ScmSmallInt end)
 {
-    int len = SCM_UVECTOR_SIZE(v);
-    double *d = SCM_F64VECTOR_ELEMENTS(v);
-    for (int i=0; i<len; i++, d++) {
+    double *d = SCM_F64VECTOR_ELEMENTS(v) + start;
+    for (ScmSmallInt i=start; i<end; i++, d++) {
         swap_f64_t v;
         v.val = *d;
         SWAP_ARM2LE(v);
@@ -1154,11 +1154,11 @@ static void f64vector_swapb_arm2le(ScmF64Vector *v)
     }
 }
 
-static void f64vector_swapb_arm2be(ScmF64Vector *v)
+static void f64vector_swapb_arm2be(ScmF64Vector *v,
+                                   ScmSmallInt start, ScmSmallInt end)
 {
-    int len = SCM_UVECTOR_SIZE(v);
-    double *d = SCM_F64VECTOR_ELEMENTS(v);
-    for (int i=0; i<len; i++, d++) {
+    double *d = SCM_F64VECTOR_ELEMENTS(v) + start;
+    for (ScmSmallInt i=start; i<end; i++, d++) {
         swap_f64_t v;
         v.val = *d;
         SWAP_ARM2BE(v);
@@ -1166,31 +1166,37 @@ static void f64vector_swapb_arm2be(ScmF64Vector *v)
     }
 }
 
-ScmObj Scm_F64VectorSwapBytes_ARM2LE(ScmF64Vector *v)
+ScmObj Scm_F64VectorSwapBytes_ARM2LE(ScmF64Vector *v,
+                                     ScmSmallInt start, ScmSmallInt end)
 {
-    ScmObj d = Scm_F64VectorCopy(v, 0, -1);
-    f64vector_swapb_arm2le(SCM_F64VECTOR(d));
+    ScmObj d = Scm_F64VectorCopy(v, start, end);
+    f64vector_swapb_arm2le(SCM_F64VECTOR(d), 0, SCM_UVECTOR_SIZE(d));
     return d;
 }
 
-ScmObj Scm_F64VectorSwapBytesX_ARM2LE(ScmF64Vector *v)
+ScmObj Scm_F64VectorSwapBytesX_ARM2LE(ScmF64Vector *v,
+                                      ScmSmallInt start, ScmSmallInt end)
 {
+    SCM_CHECK_START_END(start, end, SCM_UVECTOR_SIZE(v));
     SCM_UVECTOR_CHECK_MUTABLE(v);
-    f64vector_swapb_arm2le(v);
+    f64vector_swapb_arm2le(v, start, end);
     return SCM_OBJ(v);
 }
 
-ScmObj Scm_F64VectorSwapBytes_ARM2BE(ScmF64Vector *v)
+ScmObj Scm_F64VectorSwapBytes_ARM2BE(ScmF64Vector *v,
+                                     ScmSmallInt start, ScmSmallInt end)
 {
-    ScmObj d = Scm_F64VectorCopy(v, 0, -1);
-    f64vector_swapb_arm2be(SCM_F64VECTOR(d));
+    ScmObj d = Scm_F64VectorCopy(v, start, end);
+    f64vector_swapb_arm2be(SCM_F64VECTOR(d), 0, SCM_UVECTOR_SIZE(d));
     return d;
 }
 
-ScmObj Scm_F64VectorSwapBytesX_ARM2BE(ScmF64Vector *v)
+ScmObj Scm_F64VectorSwapBytesX_ARM2BE(ScmF64Vector *v,
+                                      ScmSmallInt start, ScmSmallInt end)
 {
+    SCM_CHECK_START_END(start, end, SCM_UVECTOR_SIZE(v));
     SCM_UVECTOR_CHECK_MUTABLE(v);
-    f64vector_swapb_arm2be(v);
+    f64vector_swapb_arm2be(v, start, end);
     return SCM_OBJ(v);
 }
 
@@ -1198,11 +1204,10 @@ ScmObj Scm_F64VectorSwapBytesX_ARM2BE(ScmF64Vector *v)
 
 ///(define *tmpl-swapb* '(
 
-static void ${t}vector_swapb(ScmUVector *v)
+static void ${t}vector_swapb(ScmUVector *v, ScmSmallInt start, ScmSmallInt end)
 {
-    int len = SCM_UVECTOR_SIZE(v);
-    ${etype} *d = SCM_${T}VECTOR_ELEMENTS(v);
-    for (int i=0; i<len; i++, d++) {
+    ${etype} *d = SCM_${T}VECTOR_ELEMENTS(v) + start;
+    for (ScmSmallInt i=start; i<end; i++, d++) {
         swap_${t}_t v;
         v.val = *d;
         ${SWAPB}(v);
@@ -1210,17 +1215,20 @@ static void ${t}vector_swapb(ScmUVector *v)
     }
 }
 
-ScmObj Scm_${T}VectorSwapBytes(ScmUVector *v)
+ScmObj Scm_${T}VectorSwapBytes(ScmUVector *v,
+                               ScmSmallInt start, ScmSmallInt end)
 {
-    ScmObj d = Scm_${T}VectorCopy(v, 0, -1);
-    ${t}vector_swapb(SCM_${T}VECTOR(d));
+    ScmObj d = Scm_${T}VectorCopy(v, start, end);
+    ${t}vector_swapb(SCM_${T}VECTOR(d), 0, SCM_UVECTOR_SIZE(d));
     return d;
 }
 
-ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v)
+ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v,
+                                ScmSmallInt start, ScmSmallInt end)
 {
+    SCM_CHECK_START_END(start, end, SCM_UVECTOR_SIZE(v));
     SCM_UVECTOR_CHECK_MUTABLE(v);
-    ${t}vector_swapb(v);
+    ${t}vector_swapb(v, start, end);
     return SCM_OBJ(v);
 }
 
@@ -1305,48 +1313,57 @@ $END
 /*
  * Generic swapb
  */
-ScmObj Scm_UVectorSwapBytes(ScmUVector *v, int option)
+ScmObj Scm_UVectorSwapBytes(ScmUVector *v, int option,
+                            ScmSmallInt start, ScmSmallInt end)
 {
     switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
-    case SCM_UVECTOR_S8:  return SCM_OBJ(v);
-    case SCM_UVECTOR_U8:  return SCM_OBJ(v);
-    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytes(v);
-    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytes(v);
-    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytes(v);
-    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytes(v);
-    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytes(v);
-    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytes(v);
-    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytes(v);
-    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytes(v);
+    case SCM_UVECTOR_S8:  return Scm_S8VectorCopy(v, start, end);
+    case SCM_UVECTOR_U8:  return Scm_U8VectorCopy(v, start, end);
+    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytes(v, start, end);
+    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytes(v, start, end);
+    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytes(v, start, end);
+    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytes(v, start, end);
+    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytes(v, start, end);
+    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytes(v, start, end);
+    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytes(v, start, end);
+    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytes(v, start, end);
     case SCM_UVECTOR_F64:
         switch (option) {
-        case SWAPB_ARM_LE: return Scm_F64VectorSwapBytes_ARM2LE(v);
-        case SWAPB_ARM_BE: return Scm_F64VectorSwapBytes_ARM2BE(v);
-        default:           return Scm_F64VectorSwapBytes(v);
+        case SWAPB_ARM_LE:
+            return Scm_F64VectorSwapBytes_ARM2LE(v, start, end);
+        case SWAPB_ARM_BE:
+            return Scm_F64VectorSwapBytes_ARM2BE(v, start, end);
+        default:           return Scm_F64VectorSwapBytes(v, start, end);
         }
     default: Scm_Error("uniform vector required, but got %S", v);
         return SCM_UNDEFINED;
     }
 }
 
-ScmObj Scm_UVectorSwapBytesX(ScmUVector *v, int option)
+ScmObj Scm_UVectorSwapBytesX(ScmUVector *v, int option,
+                             ScmSmallInt start, ScmSmallInt end)
 {
     switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
-    case SCM_UVECTOR_S8:  return SCM_OBJ(v);
-    case SCM_UVECTOR_U8:  return SCM_OBJ(v);
-    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytesX(v);
-    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytesX(v);
-    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytesX(v);
-    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytesX(v);
-    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytesX(v);
-    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytesX(v);
-    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytesX(v);
-    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytesX(v);
+    case SCM_UVECTOR_S8:
+    case SCM_UVECTOR_U8:
+        SCM_CHECK_START_END(start, end, SCM_UVECTOR_SIZE(v));
+        SCM_UVECTOR_CHECK_MUTABLE(v);
+        return SCM_OBJ(v);
+    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytesX(v, start, end);
+    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytesX(v, start, end);
+    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytesX(v, start, end);
+    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytesX(v, start, end);
+    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytesX(v, start, end);
+    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytesX(v, start, end);
+    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytesX(v, start, end);
+    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytesX(v, start, end);
     case SCM_UVECTOR_F64:
         switch (option) {
-        case SWAPB_ARM_LE: return Scm_F64VectorSwapBytesX_ARM2LE(v);
-        case SWAPB_ARM_BE: return Scm_F64VectorSwapBytesX_ARM2BE(v);
-        default:           return Scm_F64VectorSwapBytesX(v);
+        case SWAPB_ARM_LE:
+            return Scm_F64VectorSwapBytesX_ARM2LE(v, start, end);
+        case SWAPB_ARM_BE:
+            return Scm_F64VectorSwapBytesX_ARM2BE(v, start, end);
+        default:          return Scm_F64VectorSwapBytesX(v, start, end);
         }
     default: Scm_Error("uniform vector required, but got %S", v);
         return SCM_UNDEFINED;
@@ -1371,31 +1388,33 @@ ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
     ScmSize r = Scm_Getz((char*)v->elements + start*eltsize,
                          (end-start)*eltsize, port);
     if (r == EOF) SCM_RETURN(SCM_EOF);
+    /* Only swap the elements we've actually read. */
+    ScmSmallInt rend = start + r/eltsize;
 #ifdef DOUBLE_ARMENDIAN
     if (Scm_IsArmLE(Scm_NativeEndian())) {
         if (Scm_IsLE(SCM_OBJ(endian))) {
             /* arm-le and le is equivalent when eltsize <= 4 */
             if (eltsize == 8) {
-                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE);
+                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE, start, rend);
             }
         } else if (Scm_IsBE(SCM_OBJ(endian))) {
-            Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_BE);
+            Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_BE, start, rend);
         }
     } else
 #endif /*!DOUBLE_ARMENDIAN*/
         {
 #ifdef WORDS_BIGENDIAN
             if (Scm_IsLE(SCM_OBJ(endian))) {
-                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_STD);
+                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_STD, start, rend);
             } else if (Scm_IsArmLE(SCM_OBJ(endian))) {
-                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_BE);
+                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_BE, start, rend);
             }
 #else  /*!WORDS_BIGENDIAN*/
             if (Scm_IsBE(SCM_OBJ(endian))) {
-                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_STD);
+                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_STD, start, rend);
             } else if (Scm_IsArmLE(SCM_OBJ(endian))) {
                 if (eltsize == 8) {
-                    Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE);
+                    Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE, start, rend);
                 }
             }
 #endif /*!WORDS_BIGENDIAN*/

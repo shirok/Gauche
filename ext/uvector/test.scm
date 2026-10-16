@@ -638,6 +638,83 @@
        (u64vector-swap-bytes
         '#u64(#xefcdab8967452301 #x1032547698badcfe)))
 
+;; Flonum vectors are compared through integer aliases.  The data is
+;; chosen so that both the original and swapped values are normal numbers.
+(test* "swapb f16"
+       '#u16(#x403c #x3c40)
+       (uvector-alias <u16vector>
+                      (f16vector-swap-bytes
+                       (uvector-alias <f16vector> (u16vector #x3c40 #x403c)))))
+(test* "swapb f32"
+       '#u32(#x4000803f)
+       (uvector-alias <u32vector>
+                      (f32vector-swap-bytes
+                       (uvector-alias <f32vector> (u32vector #x3f800040)))))
+(test* "swapb f64"
+       '#u64(#x400000000000f03f)
+       (uvector-alias <u64vector>
+                      (f64vector-swap-bytes
+                       (uvector-alias <f64vector>
+                                      (u64vector #x3ff0000000000040)))))
+
+(test* "swapb range" '#u16(#x0403 #x0605)
+       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 1))
+(test* "swapb range" '#u16(#x0403)
+       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 1 2))
+(test* "swapb range" '#u16()
+       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 3))
+(test* "swapb range (OOB)" (test-error)
+       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 1 4))
+(test* "swapb range (OOB)" (test-error)
+       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 2 1))
+(test* "swapb! range" '#u16(#x0102 #x0403 #x0506)
+       (rlet1 v (u16vector #x0102 #x0304 #x0506)
+         (u16vector-swap-bytes! v 1 2)))
+(test* "swapb! range" '#u32(#x01020304 #x08070605)
+       (rlet1 v (u32vector #x01020304 #x05060708)
+         (u32vector-swap-bytes! v 1)))
+(test* "swapb! (immutable)" (test-error)
+       (u16vector-swap-bytes! '#u16(#x0102 #x0304)))
+(test* "swapb! range (OOB)" (test-error)
+       (u16vector-swap-bytes! (u16vector #x0102 #x0304) 0 3))
+
+(test* "uvector-swap-bytes" '(#u16(#x0201 #x0403) #u16(#x0102 #x0304))
+       (let* ([v (u16vector #x0102 #x0304)]
+              [w (uvector-swap-bytes v)])
+         (list w v)))
+(test* "uvector-swap-bytes range" '#u32(#x08070605)
+       (uvector-swap-bytes '#u32(#x01020304 #x05060708) #f 1))
+(test* "uvector-swap-bytes u8 range" '(#u8(2 3) #f)
+       (let* ([v (u8vector 1 2 3)]
+              [w (uvector-swap-bytes v #f 1)])
+         (list w (eq? v w))))
+(test* "uvector-swap-bytes u8 copy" '(#u8(1 2 3) #f)
+       (let* ([v (u8vector 1 2 3)]
+              [w (uvector-swap-bytes v)])
+         (list w (eq? v w))))
+(test* "uvector-swap-bytes! range" '#s64(1 #x0807060504030201 3)
+       (rlet1 v (s64vector 1 #x0102030405060708 3)
+         (uvector-swap-bytes! v #f 1 2)))
+(test* "uvector-swap-bytes! u8 (OOB)" (test-error)
+       (uvector-swap-bytes! (u8vector 1 2 3) #f 0 4))
+(test* "uvector-swap-bytes le:arm-le range"
+       '#u64(#x3ff0000040000000 #x400000003ff00000)
+       (uvector-alias <u64vector>
+                      (rlet1 v (uvector-alias <f64vector>
+                                              (u64vector #x3ff0000040000000
+                                                         #x3ff0000040000000))
+                        (uvector-swap-bytes! v 'le:arm-le 1))))
+(test* "uvector-swap-bytes be:arm-le range"
+       '#u64(#x0000f03f00000040)
+       (uvector-alias <u64vector>
+                      (uvector-swap-bytes
+                       (uvector-alias <f64vector>
+                                      (u64vector #x3ff0000040000000
+                                                 #x3ff0000040000000))
+                       'be:arm-le 1)))
+(test* "uvector-swap-bytes (bad type)" (test-error)
+       (uvector-swap-bytes (u16vector 1) 'foo))
+
 ;;-------------------------------------------------------------------
 (test-section "collection/sequence interface")
 
@@ -1515,6 +1592,31 @@
   (run-across-f (test-default-endian data5))
   (run-across test-reverse-endian)
   )
+
+;; Byte swapping must be limited to the elements actually read.
+(let1 rev-endian (case (native-endian)
+                   [(big-endian) 'little-endian]
+                   [else 'big-endian])
+  (define (read-swapped data buf start end)
+    (call-with-output-file "test.o" (cut write-block data <>))
+    (let1 r (call-with-input-file "test.o"
+              (cut read-block! buf <> start end rev-endian))
+      (list r buf)))
+  (test* "reading reverse endian, partial range"
+         '(2 #u16(1 #x0102 #x0304 4))
+         (read-swapped '#u8(1 2 3 4) (u16vector 1 2 3 4) 1 3))
+  (test* "reading reverse endian, short read"
+         '(1 #u16(#x0102 2 3 4))
+         (read-swapped '#u8(1 2) (u16vector 1 2 3 4) 0 -1))
+  ;; The trailing partial element is left as raw bytes; we only check
+  ;; the others.
+  (test* "reading reverse endian, short read with partial element"
+         '(1 1 #x01020304 4)
+         (match (read-swapped '#u8(1 2 3 4 5 6) (u32vector 1 2 3 4) 1 4)
+           [(r v) (list r (u32vector-ref v 0) (u32vector-ref v 1)
+                        (u32vector-ref v 3))]))
+  )
+(sys-unlink "test.o")
 
 ;;-------------------------------------------------------------------
 (test-section "string <-> uvector")

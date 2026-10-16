@@ -60,8 +60,10 @@ SCM_EXTERN ScmObj Scm_UVectorAlias(ScmClass *klass, ScmUVector *v,
 
 SCM_EXTERN ScmObj Scm_UVectorCopy(ScmUVector *v,
                                   ScmSmallInt start, ScmSmallInt end);
-SCM_EXTERN ScmObj Scm_UVectorSwapBytes(ScmUVector *v, int option);
-SCM_EXTERN ScmObj Scm_UVectorSwapBytesX(ScmUVector *v, int option);
+SCM_EXTERN ScmObj Scm_UVectorSwapBytes(ScmUVector *v, int option,
+                                       ScmSmallInt start, ScmSmallInt end);
+SCM_EXTERN ScmObj Scm_UVectorSwapBytesX(ScmUVector *v, int option,
+                                        ScmSmallInt start, ScmSmallInt end);
 
 SCM_EXTERN ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
                                  ScmSmallInt start, ScmSmallInt end,
@@ -120,8 +122,10 @@ SCM_EXTERN ScmObj Scm_${T}VectorRangeCheck(ScmUVector *v0, ScmObj min, ScmObj ma
 SCM_EXTERN ScmObj Scm_${T}VectorClamp(ScmUVector *v0, ScmObj min, ScmObj max);
 SCM_EXTERN ScmObj Scm_${T}VectorClampX(ScmUVector *v0, ScmObj min, ScmObj max);
 
-SCM_EXTERN ScmObj Scm_${T}VectorSwapBytes(ScmUVector *v0);
-SCM_EXTERN ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v0);
+SCM_EXTERN ScmObj Scm_${T}VectorSwapBytes(ScmUVector *v0,
+                                          ScmSmallInt start, ScmSmallInt end);
+SCM_EXTERN ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v0,
+                                           ScmSmallInt start, ScmSmallInt end);
 
 ///)) ;; tmpl-body
 

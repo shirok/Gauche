@@ -129,21 +129,31 @@
 
 ;; byte swapping
 (inline-stub
- (define-cise-stmt swap-bytes-common
-   [(_ c-fn v type)
+ ;; Binds C variable 'opt' according to TYPE and executes BODY.
+ (define-cise-stmt with-swap-bytes-option
+   [(_ type . body)
     `(let* ([opt::int SWAPB_STD])
        (cond [(== ,type NULL)]
              [(SCM_EQ (SCM_OBJ ,type) 'le:arm-le) (= opt SWAPB_ARM_LE)]
              [(SCM_EQ (SCM_OBJ ,type) 'be:arm-le) (= opt SWAPB_ARM_BE)]
              [else (Scm_TypeError "type" "#f or a symbol le:arm-le or be:arm-le"
                                   (SCM_OBJ ,type))])
-       (,c-fn ,v opt))])
+       ,@body)])
 
- (define-cproc uvector-swap-bytes (v::<uvector> :optional (type::<symbol>? #f)) ::<void>
-   (swap-bytes-common Scm_UVectorSwapBytes v type))
+ (define-cproc uvector-swap-bytes (v::<uvector>
+                                   :optional (type::<symbol>? #f)
+                                             (start::<fixnum> 0)
+                                             (end::<fixnum> -1))
+   (with-swap-bytes-option type
+     (return (Scm_UVectorSwapBytes v opt start end))))
 
- (define-cproc uvector-swap-bytes! (v::<uvector> :optional (type::<symbol>? #f)) ::<void>
-   (swap-bytes-common Scm_UVectorSwapBytesX v type))
+ (define-cproc uvector-swap-bytes! (v::<uvector>
+                                    :optional (type::<symbol>? #f)
+                                              (start::<fixnum> 0)
+                                              (end::<fixnum> -1))
+   ::<void>
+   (with-swap-bytes-option type
+     (Scm_UVectorSwapBytesX v opt start end)))
  )
 
 ;; uvector-size

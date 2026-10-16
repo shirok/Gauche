@@ -655,8 +655,14 @@
 ///)) ;; end of tmpl-rangeop
 
 ///(define *tmpl-swapb* '(
-(define-cproc ${t}vector-swap-bytes (v0::<${t}vector>) Scm_${T}VectorSwapBytes)
-(define-cproc ${t}vector-swap-bytes!(v0::<${t}vector>) Scm_${T}VectorSwapBytesX)
+(define-cproc ${t}vector-swap-bytes (v0::<${t}vector>
+                                    :optional (start::<fixnum> 0)
+                                              (end::<fixnum> -1))
+  Scm_${T}VectorSwapBytes)
+(define-cproc ${t}vector-swap-bytes! (v0::<${t}vector>
+                                     :optional (start::<fixnum> 0)
+                                               (end::<fixnum> -1))
+  Scm_${T}VectorSwapBytesX)
 ///)) ;; end of tmpl-rangeop
 
 ///(define *extra-procedure*  ;; procedurally generates code
