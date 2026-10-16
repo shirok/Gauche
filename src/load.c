@@ -619,6 +619,8 @@ static ScmObj load_dlo(ScmDLObj *dlo)
     }
     dlo->handle = dl_open(Scm_GetStringConst(dlo->path));
     if (dlo->handle == NULL) {
+        /* NB: This error message string is heurisitically parsed in
+           %try-dlopen, so be careful to change it. */
         const char *err = dl_error();
         ScmDString ds;
         Scm_DStringInit(&ds);

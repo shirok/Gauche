@@ -184,7 +184,7 @@
 (define-cproc %load-verbose? () ::<boolean>
   (return (SCM_VM_RUNTIME_FLAG_IS_SET (Scm_VM) SCM_LOAD_VERBOSE)))
 
-;; Called from Scm_DynLoad to get initfn name, which always begins with #\_.
+;; Called from dynamic-load to get initfn name, which always begins with #\_.
 ;; If INITFN is given, we just add "_" in front of it.  Otherwise we
 ;; derive it from the name of DSO.
 (select-module gauche.internal)
@@ -218,16 +218,73 @@
 
 ;; try %open-dlo in each of PATHS.  failure are tolerated except the
 ;; last one in PATHS AND error-if-not-found is true.
-;; caller ensures PATHS contains at least one element.
+;; Caller ensures PATHS contains at least one element.
 (define (%try-dlopen paths error-if-not-found)
   (receive [dlo errmsg] (%open-dlo (car paths))
-    (if (not dlo)
-      (if (null? (cdr paths))
-        (if error-if-not-found
-          (error errmsg)
-          (values #f errmsg))
-        (%try-dlopen (cdr paths) error-if-not-found))
-      (values dlo errmsg))))
+    (cond
+     [dlo (values dlo errmsg)]          ;success
+     [(%find-real-dso-path errmsg)
+      => (^[path] (%try-dlopen (cons path (cdr paths)) error-if-not-found))]
+     [(null? (cdr paths))               ;no hits
+      (if error-if-not-found
+        (error errmsg)
+        (values #f errmsg))]
+     [else (%try-dlopen (cdr paths) error-if-not-found)])))
+
+;; Kludge: Linux sometimes installs a linker script in the standard
+;; library path (e.g. /usr/lib).  The real DSO is written in the script.
+;; GNU ld recognizes the linker script and works as if the real DSO is
+;; specified in the command line.  Unfortunately, dlopen() doesn't do so,
+;; and barfs if the found *.so file is actually a linker script.
+;; There's no standard way to detect the situation (if we rely on
+;; the system's library search path, there's no "official" API to obtain
+;; which *.so file the system has tried to read). However, the error message
+;; contains something like "/path/to/lib.so: invalid ELF header" or
+;; "/path/to/lib.so: file too short".  We recognize that message and tries
+;; to read the DSO as a linker script.
+;; For now, we don't need to consider portability much.
+;;
+;; NB: We can't embed literal regexp in the code yet, since this
+;; libeval.scm is initiailzed before librx.scm is initialized.
+(define %open-dlo-errmsg-rx
+  (delay (string->regexp "dynamically: (\\/\\S+): ")))
+(define %input-command-rx
+  (delay (string->regexp "INPUT\\((lib\\S+)\\s")))
+(define %dlname-var-rx
+  (delay (string->regexp "dlname='([^'\\s]+)'")))
+
+(define (%find-real-dso-path errmsg)
+  (define (%read-ascii iport size)
+    (let1 buf (make-u8vector size 0)
+      (let loop ([i 0])
+        (if (= i size)
+          (u8vector->string buf)
+          (let1 b (read-byte iport)
+            (and (integer? b)
+                 (< b 128)
+                 (begin (u8vector-set! buf i b)
+                        (loop (+ i 1)))))))))
+  (define (input-command content)
+    (rxmatch->string (force %input-command-rx) content 1))
+  (define (dlname-var path content)
+    (rxmatch->string (force %dlname-var-rx) content 1))
+  (and-let* ([path (rxmatch->string (force %open-dlo-errmsg-rx) errmsg 1)]
+             [ (file-exists? path) ]
+             [stat (sys-stat path)]
+             [ (< (~ stat'size) 2048) ])
+    (call-with-input-file path
+      (^[iport]
+        (and-let* ([content (%read-ascii iport (~ stat'size))]
+                   [dlname (or (input-command content)
+                               (dlname-var path content))])
+          (when (%load-verbose?)
+            (format (current-error-port)
+                    ";;~v,aFound dlname from linker script: ~a\n"
+                    (* (length (current-load-history)) 2) "" ; indent
+                    dlname))
+          (let1 paths (string-split path #\/)
+            (and (pair? paths)
+                 (string-join `(,@(drop-right paths 1) ,dlname) "/"))))))))
 
 ;; Returns all combinations of dso_suffixes and versions.
 (define (%all-dlo-suffixes/versions versions)
