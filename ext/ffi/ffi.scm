@@ -143,7 +143,7 @@
 ;;    (define-c-enum (<enum-set-name> <c-tag>) (<name> ...) [<base-type>])
 ;;
 ;;  Each <name> is bound as a Scheme constant, just as define-c-constant
-;;  does, and <enum-set-name> is bound to the <c-enum> native type that
+;;  does, and <enum-set-name> is bound to the <c-enum-type> native type that
 ;;  collects them.  Use c-enum-value and c-enum-symbol to convert between
 ;;  the enumerator symbols and their values.
 ;;
@@ -192,10 +192,10 @@
    ))
 
 (define-class <foreign-c-enum> ()
-  ((scheme-name  :init-keyword :scheme-name)  ; symbol, bound to the <c-enum>
+  ((scheme-name  :init-keyword :scheme-name)  ; symbol, bound to the <c-enum-type>
    (tag          :init-keyword :tag)          ; symbol or #f (anonymous)
    (enumerators  :init-keyword :enumerators)  ; ((scheme-name . c-name) ...)
-   (type         :init-keyword :type)         ; the (incomplete) <c-enum>
+   (type         :init-keyword :type)         ; the (incomplete) <c-enum-type>
    ))
 
 ;; A helper class to manage code fragments passed to subsystem macros
@@ -460,13 +460,13 @@
                                    cenum-form)])))]
             [_ (error "Malformed define-c-enum form:" cenum-form)]))
 
-        ;; Creates an expression that builds the enum's <c-enum>.  The subsystem
+        ;; Creates an expression that builds the enum's <c-enum-type>.  The subsystem
         ;; macro binds <name> to its value ahead of the cdef instances, so
         ;; that a typespec canmention the enum by name.
         ;;
         ;; Note that when we generate this form, enumerators aren't known yet.
         ;; (We need to wait the form to be compiled to know that).
-        ;; So the <c-enum> created with this form is provisional.  Later we'll
+        ;; So the <c-enum-type> created with this form is provisional.  Later we'll
         ;; fill in enumerators.
         (define (make-cenum-type-expr cenum-form)
           (receive (name tag enumerators base-type-expr)
@@ -490,7 +490,7 @@
                  :scheme-name ',name
                  :tag ',tag
                  :enumerators ',enumerators
-                 ;; The <c-enum> made by make-cenum-type-expr above; NAME
+                 ;; The <c-enum-type> made by make-cenum-type-expr above; NAME
                  ;; is already bound to it here.  It goes through
                  ;; %resolve-typespec because a precompiled reference to a
                  ;; type binding arrives wrapped in a proxy type.
@@ -543,7 +543,7 @@
 ;;                       %generate-float-substub needs at call time.
 ;; callback-infos      : one entry per <foreign-c-callback>, in order, of
 ;;                         (function-type ret-pointee-or-#f arg-pointee-or-#f ...)
-;;                       function-type is the <c-function> instance used to
+;;                       function-type is the <c-function-type> instance used to
 ;;                       bind <name> as a native handle; the pointee entries
 ;;                       are the c-pointer types needed to box raw C pointers,
 ;;                       or #f for a non-pointer (the slot is consumed either
@@ -578,7 +578,7 @@
         (filter (cut is-a? <> <foreign-c-function>) cdef-instances))))
 
 ;; ffisetup returns the reified enumerator lists, one per <foreign-c-enum> in
-;; declaration order.  Fill each into the <c-enum> the enum-set name is
+;; declaration order.  Fill each into the <c-enum-type> the enum-set name is
 ;; already bound to---the same object the generated code was built against.
 (define (ffi-complete-enums! cdef-instances enumerator-lists)
   (for-each (^[cen enumerators]

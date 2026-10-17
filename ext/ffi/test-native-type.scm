@@ -2199,9 +2199,9 @@
        (equal? (native-type '(int* *))
                (make-c-pointer-type (make-c-pointer-type <int>))))
 
-;; Pointer type is a <c-pointer>
-(test* "native-type int* is <c-pointer>" #t
-       (is-a? (native-type 'int*) <c-pointer>))
+;; Pointer type is a <c-pointer-type>
+(test* "native-type int* is <c-pointer-type>" #t
+       (is-a? (native-type 'int*) <c-pointer-type>))
 (test* "native-type int* pointee-type" #t
        (eq? (c-pointer-type-pointee (native-type 'int*)) <int>))
 
@@ -2260,7 +2260,7 @@
          (eq? (~ a'element-type) <int>))
   (test* "native-type array dimensions" '(5)
          (c-array-type-dimensions a))
-  (test* "native-type array is <c-array>" #t
+  (test* "native-type array is <c-array-type>" #t
          (c-array-type? a)))
 
 ;; Array with unsized first dimension
@@ -2279,7 +2279,7 @@
 
 ;; Struct type properties
 (let1 s (native-type '(.struct pt (x::int y::int)))
-  (test* "native-type struct is <c-struct>" #t
+  (test* "native-type struct is <c-struct-type>" #t
          (c-struct-type? s))
   (test* "native-type struct tag" 'pt
          (c-struct/union-type-tag s)))
@@ -2380,7 +2380,7 @@
 
 ;; Union type properties
 (let1 u (native-type '(.union val (i::int f::float)))
-  (test* "native-type union is <c-union>" #t
+  (test* "native-type union is <c-union-type>" #t
          (c-union-type? u))
   (test* "native-type union tag" 'val
          (c-struct/union-type-tag u)))
@@ -2394,7 +2394,7 @@
 
 ;; Enums
 (let1 e (native-type '(.enum color (red green blue)))
-  (test* "native-type .enum is <c-enum>" #t (c-enum-type? e))
+  (test* "native-type .enum is <c-enum-type>" #t (c-enum-type? e))
   (test* "native-type .enum tag" 'color (c-enum-type-tag e))
   (test* "native-type .enum alist" '((red . 0) (green . 1) (blue . 2))
          (c-enum-type-enumerator-alist e)))
@@ -2434,7 +2434,7 @@
 
 ;; Function type properties
 (let1 f (native-type '(.function (int double) float))
-  (test* "native-type function is <c-function>" #t
+  (test* "native-type function is <c-function-type>" #t
          (c-function-type? f))
   (test* "native-type function return-type" #t
          (eq? (c-function-type-return-type f) <float>))

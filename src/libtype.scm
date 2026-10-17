@@ -242,60 +242,60 @@
  (define-cfn Scm_NativeHandleType (h::ScmNativeHandle*) ::ScmNativeType*
    (return (-> h type)))
 
- (define-cclass <c-pointer> :base :no-meta
-   "ScmCPointer*" "Scm_CPointerClass"
+ (define-cclass <c-pointer-type> :base :no-meta
+   "ScmCPointerType*" "Scm_CPointerTypeClass"
    (c "native_type_cpa")
    ((pointee-type :type <native-type> :c-name "pointee_type"))
-   (printer (Scm_Printf port "#<c-pointer %A>" (-> (& (-> (SCM_C_POINTER obj) common)) name)))
+   (printer (Scm_Printf port "#<c-pointer %A>" (-> (& (-> (SCM_C_POINTER_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-function> :base :no-meta
-   "ScmCFunction*" "Scm_CFunctionClass"
+ (define-cclass <c-function-type> :base :no-meta
+   "ScmCFunctionType*" "Scm_CFunctionTypeClass"
    (c "native_type_cpa")
    ((return-type :type <native-type> :c-name "return_type")
     (argument-types :c-name "argument_types")
     (variadic? :c-name "variadic" :type <boolean>))
-   (printer (Scm_Printf port "#<c-function%A>" (-> (& (-> (SCM_C_FUNCTION obj) common)) name)))
+   (printer (Scm_Printf port "#<c-function%A>" (-> (& (-> (SCM_C_FUNCTION_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-array> :base :no-meta
-   "ScmCArray*" "Scm_CArrayClass"
+ (define-cclass <c-array-type> :base :no-meta
+   "ScmCArrayType*" "Scm_CArrayTypeClass"
    (c "native_type_cpa")
    ((element-type :type <native-type> :c-name "element_type")
     (dimensions))
-   (printer (Scm_Printf port "#<c-array %A>" (-> (& (-> (SCM_C_ARRAY obj) common)) name)))
+   (printer (Scm_Printf port "#<c-array %A>" (-> (& (-> (SCM_C_ARRAY_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-struct> :base :no-meta
-   "ScmCStruct*" "Scm_CStructClass"
+ (define-cclass <c-struct-type> :base :no-meta
+   "ScmCStructType*" "Scm_CStructTypeClass"
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<c-struct %A>" (-> (& (-> (SCM_C_STRUCT obj) common)) name)))
+   (printer (Scm_Printf port "#<c-struct %A>" (-> (& (-> (SCM_C_STRUCT_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-union> :base :no-meta
-   "ScmCUnion*" "Scm_CUnionClass"
+ (define-cclass <c-union-type> :base :no-meta
+   "ScmCUnionType*" "Scm_CUnionTypeClass"
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<c-union %A>" (-> (& (-> (SCM_C_UNION obj) common)) name)))
+   (printer (Scm_Printf port "#<c-union %A>" (-> (& (-> (SCM_C_UNION_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-enum> :base :no-meta
-   "ScmCEnum*" "Scm_CEnumClass"
+ (define-cclass <c-enum-type> :base :no-meta
+   "ScmCEnumType*" "Scm_CEnumTypeClass"
    (c "native_type_cpa")
    ((tag)
     (type-spec)
     (enumerator-alist))
-   (printer (Scm_Printf port "#<c-enum %A>" (-> (& (-> (SCM_C_ENUM obj) common)) name)))
+   (printer (Scm_Printf port "#<c-enum %A>" (-> (& (-> (SCM_C_ENUM_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-opaque> :base :no-meta
-   "ScmCOpaque*" "Scm_COpaqueClass"
+ (define-cclass <c-opaque-type> :base :no-meta
+   "ScmCOpaqueType*" "Scm_COpaqueTypeClass"
    (c "native_type_cpa")
    ()
-   (printer (Scm_Printf port "#<c-opaque %A>" (-> (SCM_C_OPAQUE obj) name))))
+   (printer (Scm_Printf port "#<c-opaque %A>" (-> (SCM_C_OPAQUE_TYPE obj) name))))
  )
 
 (define-method initialize ((c <type-constructor-meta>) initargs)
@@ -1014,8 +1014,8 @@
  (define-cproc %make-c-opaque-type (name::<const-cstring>
                                     c-type-name::<const-cstring>
                                     super::<class>)
-   (let* ([z::ScmCOpaque*
-           (SCM_NEW_INSTANCE ScmCOpaque (& Scm_COpaqueClass))])
+   (let* ([z::ScmCOpaqueType*
+           (SCM_NEW_INSTANCE ScmCOpaqueType (& Scm_COpaqueTypeClass))])
      (init-native-type-common (SCM_NATIVE_TYPE z)
                               name (SCM_OBJ super) c-type-name
                               0 0 FALSE ;size, alignment bounded
@@ -1236,43 +1236,43 @@
  (define-cfn Scm_NativeTypeEqualP (a::ScmNativeType* b::ScmNativeType*) ::int
    (cond
     [(SCM_EQ a b) (return TRUE)]
-    [(SCM_C_POINTER_P a)
-     (return (and (SCM_C_POINTER_P b)
-                  (Scm_NativeTypeEqualP (-> (SCM_C_POINTER a) pointee-type)
-                                        (-> (SCM_C_POINTER b) pointee-type))))]
-    [(SCM_C_FUNCTION_P a)
+    [(SCM_C_POINTER_TYPE_P a)
+     (return (and (SCM_C_POINTER_TYPE_P b)
+                  (Scm_NativeTypeEqualP (-> (SCM_C_POINTER_TYPE a) pointee-type)
+                                        (-> (SCM_C_POINTER_TYPE b) pointee-type))))]
+    [(SCM_C_FUNCTION_TYPE_P a)
      (return
-      (and (SCM_C_FUNCTION_P b)
-           (Scm_NativeTypeEqualP (-> (SCM_C_FUNCTION a) return-type)
-                                 (-> (SCM_C_FUNCTION b) return-type))
-           (native_type_list_equalP (-> (SCM_C_FUNCTION a) argument-types)
-                                    (-> (SCM_C_FUNCTION b) argument-types))
-           (== (-> (SCM_C_FUNCTION a) variadic)
-               (-> (SCM_C_FUNCTION b) variadic))))]
-     [(SCM_C_ARRAY_P a)
+      (and (SCM_C_FUNCTION_TYPE_P b)
+           (Scm_NativeTypeEqualP (-> (SCM_C_FUNCTION_TYPE a) return-type)
+                                 (-> (SCM_C_FUNCTION_TYPE b) return-type))
+           (native_type_list_equalP (-> (SCM_C_FUNCTION_TYPE a) argument-types)
+                                    (-> (SCM_C_FUNCTION_TYPE b) argument-types))
+           (== (-> (SCM_C_FUNCTION_TYPE a) variadic)
+               (-> (SCM_C_FUNCTION_TYPE b) variadic))))]
+     [(SCM_C_ARRAY_TYPE_P a)
       (return
-       (and (SCM_C_ARRAY_P b)
-            (Scm_NativeTypeEqualP (-> (SCM_C_ARRAY a) element-type)
-                                  (-> (SCM_C_ARRAY b) element-type))
-            (native_type_list_equalP (-> (SCM_C_ARRAY a) dimensions)
-                                     (-> (SCM_C_ARRAY b) dimensions))))]
-     [(or (SCM_C_STRUCT_P a) (SCM_C_UNION_P a))
+       (and (SCM_C_ARRAY_TYPE_P b)
+            (Scm_NativeTypeEqualP (-> (SCM_C_ARRAY_TYPE a) element-type)
+                                  (-> (SCM_C_ARRAY_TYPE b) element-type))
+            (native_type_list_equalP (-> (SCM_C_ARRAY_TYPE a) dimensions)
+                                     (-> (SCM_C_ARRAY_TYPE b) dimensions))))]
+     [(or (SCM_C_STRUCT_TYPE_P a) (SCM_C_UNION_TYPE_P a))
       (return
        (and (SCM_EQ (Scm_ClassOf (SCM_OBJ a)) (Scm_ClassOf (SCM_OBJ b)))
-            (Scm_EqvP (-> (SCM_C_STRUCT a) tag)
-                      (-> (SCM_C_STRUCT b) tag))
-            (native_type_list_equalP (-> (SCM_C_ARRAY a) dimensions)
-                                     (-> (SCM_C_ARRAY b) dimensions))))]
-     [(SCM_C_ENUM_P a)
+            (Scm_EqvP (-> (SCM_C_STRUCT_TYPE a) tag)
+                      (-> (SCM_C_STRUCT_TYPE b) tag))
+            (native_type_list_equalP (-> (SCM_C_ARRAY_TYPE a) dimensions)
+                                     (-> (SCM_C_ARRAY_TYPE b) dimensions))))]
+     [(SCM_C_ENUM_TYPE_P a)
       (return
-       (and (SCM_C_ENUM_P b)
-            (Scm_EqvP (-> (SCM_C_ENUM a) tag)
-                      (-> (SCM_C_ENUM b) tag))
-            (enum_type_spec_equalP (-> (SCM_C_ENUM a) type-spec)
-                                   (-> (SCM_C_ENUM b) type-spec))
+       (and (SCM_C_ENUM_TYPE_P b)
+            (Scm_EqvP (-> (SCM_C_ENUM_TYPE a) tag)
+                      (-> (SCM_C_ENUM_TYPE b) tag))
+            (enum_type_spec_equalP (-> (SCM_C_ENUM_TYPE a) type-spec)
+                                   (-> (SCM_C_ENUM_TYPE b) type-spec))
             ;; enumerator-alist holds only symbols and integers
-            (Scm_EqualP (-> (SCM_C_ENUM a) enumerator-alist)
-                        (-> (SCM_C_ENUM b) enumerator-alist))))]
+            (Scm_EqualP (-> (SCM_C_ENUM_TYPE a) enumerator-alist)
+                        (-> (SCM_C_ENUM_TYPE b) enumerator-alist))))]
      [else (return FALSE)]))
 
  ) ;inline-stub
@@ -1380,15 +1380,15 @@
  (define-cfn c-pointer-set (_::ScmNativeType* ptr::void* obj)
    ::void :static
    (unless (and (SCM_NATIVE_HANDLE_P obj)
-                (SCM_C_POINTER_P (-> (SCM_NATIVE_HANDLE obj) type)))
+                (SCM_C_POINTER_TYPE_P (-> (SCM_NATIVE_HANDLE obj) type)))
      (Scm_Error "c-pointer handle required, bot got: %S" obj))
    (set! (* (cast void** ptr)) (-> (SCM_NATIVE_HANDLE obj) ptr)))
 
  (define-cfn %make-c-pointer-type-fn (pointer-type-name::(const char *)
                                       pointee-type)
    :static
-   (let* ([z::ScmCPointer*
-           (SCM_NEW_INSTANCE ScmCPointer (& Scm_CPointerClass))])
+   (let* ([z::ScmCPointerType*
+           (SCM_NEW_INSTANCE ScmCPointerType (& Scm_CPointerTypeClass))])
      ;; Fill in common fields
      (init-native-type-common (& (-> z common))
                               pointer-type-name
@@ -1419,8 +1419,8 @@
                                      return-type
                                      argument-types
                                      variadic?::<boolean>)
-  (let* ([z::ScmCFunction*
-          (SCM_NEW_INSTANCE ScmCFunction (& Scm_CFunctionClass))])
+  (let* ([z::ScmCFunctionType*
+          (SCM_NEW_INSTANCE ScmCFunctionType (& Scm_CFunctionTypeClass))])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1455,8 +1455,8 @@
                                   size::<fixnum>
                                   alignment::<fixnum>
                                   dimensions)
-  (let* ([z::ScmCArray*
-          (SCM_NEW_INSTANCE ScmCArray (& Scm_CArrayClass))])
+  (let* ([z::ScmCArrayType*
+          (SCM_NEW_INSTANCE ScmCArrayType (& Scm_CArrayTypeClass))])
     ;; Fill in common fields
     ;; If the first element of dimensions is no a fixnum
     ;; (then it must be '* --- checked by the caller), the array
@@ -1485,7 +1485,7 @@
                                          bounded-p::<int>
                                          tag-name::<symbol>?
                                          field-list)
-  (let* ([z::ScmCStruct* (SCM_NEW_INSTANCE ScmCStruct klass)])
+  (let* ([z::ScmCStructType* (SCM_NEW_INSTANCE ScmCStructType klass)])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1557,11 +1557,11 @@
                                   enumerator-alist)
    (SCM_ASSERT (SCM_NATIVE_TYPE_P underlying))
    (let* ([u::ScmNativeType* (SCM_NATIVE_TYPE underlying)]
-          [z::ScmCEnum* (SCM_NEW_INSTANCE ScmCEnum (& Scm_CEnumClass))]
+          [z::ScmCEnumType* (SCM_NEW_INSTANCE ScmCEnumType (& Scm_CEnumTypeClass))]
           [nt::ScmNativeType* (& (-> z common))])
      ;; Borrow integer accessors from the underlying integral native type.
      ;; (We copy field-by-field rather than the whole struct, to keep z's
-     ;; instance header pointing at Scm_CEnumClass.)
+     ;; instance header pointing at Scm_CEnumTypeClass.)
      (set! (-> nt name) (SCM_INTERN type-name))
      (set! (-> nt super) (SCM_OBJ SCM_CLASS_INTEGER))
      (set! (-> nt c-type-name) c-type-name)
@@ -1646,8 +1646,8 @@
 ;; We export those only to be used by selected library modules to
 ;; workaround dependency issues. User programs should use gauche.native-type
 ;; for these identifiers.
-(export <native-handle> <c-pointer> <c-array> <c-struct> <c-union> <c-function>
-        <c-enum> <c-opaque>)
+(export <native-handle> <c-pointer-type> <c-array-type> <c-struct-type> <c-union-type> <c-function-type>
+        <c-enum-type> <c-opaque-type>)
 
 (let ((xfer (with-module gauche.internal %transfer-bindings)))
   (xfer (current-module)
@@ -1668,7 +1668,7 @@
           proxy-type-id
           ;; these are used by native-supp.scm, so make them visible from
           ;; gauche.internal
-          <c-pointer> <c-array> <c-struct> <c-union> <c-function>
+          <c-pointer-type> <c-array-type> <c-struct-type> <c-union-type> <c-function-type>
           ;; followings are called from procedure-type (libproc)
           reconstruct-procedure-type
           compute-procedure-type

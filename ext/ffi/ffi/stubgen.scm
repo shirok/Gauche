@@ -204,14 +204,14 @@
 ;; True if a native type is compound (pointer, array, struct, union,
 ;; or function pointer).  Compound types are passed as native handles.
 (define (compound-native-type? type)
-  (or (is-a? type <c-pointer>)
-      (is-a? type <c-array>)
-      (is-a? type <c-struct>)
-      (is-a? type <c-union>)
-      (is-a? type <c-function>)))
+  (or (is-a? type <c-pointer-type>)
+      (is-a? type <c-array-type>)
+      (is-a? type <c-struct-type>)
+      (is-a? type <c-union-type>)
+      (is-a? type <c-function-type>)))
 
 ;; Name of the static ScmObj variable that holds the return type for boxing
-;; for a function that returns a <c-pointer>.
+;; for a function that returns a <c-pointer-type>.
 (define (ffi-rettype-varname cfn)
   (ffi-cname "ffi_rettype_~a" (~ cfn'c-name)))
 
@@ -250,13 +250,13 @@
   (ffi-cname "cb_~a_mod" (~ ccb'c-name)))
 
 ;; Pointee <native-type> for the i-th argument, only used when arg-types[i]
-;; is a <c-pointer>.  Lets us wrap incoming raw C pointers in native handles
+;; is a <c-pointer-type>.  Lets us wrap incoming raw C pointers in native handles
 ;; when boxing.
 (define (ccb-argtype-varname ccb i)
   (ffi-cname "cb_~a_argtype_~a" (~ ccb'c-name) i))
 
 ;; Pointee <native-type> for the return, only used when return-type is a
-;; <c-pointer>.  Required to box a Scheme-returned handle back into a C
+;; <c-pointer-type>.  Required to box a Scheme-returned handle back into a C
 ;; pointer with the right type tag.  (Currently the unbox path uses
 ;; Scm_NativeHandlePtr directly and does not need this, but we still
 ;; declare it for symmetry with the function side.)
@@ -287,25 +287,25 @@
 ;; Convert a <native-type> to a C type string.
 (define (%type->c-type type)
   (etypecase type
-    [<c-pointer>
+    [<c-pointer-type>
      (string-append (%type->c-type (~ type'pointee-type)) "*")]
-    [<c-array>
+    [<c-array-type>
      (string-append (%type->c-type (~ type'element-type)) "*")]
-    [<c-struct>
+    [<c-struct-type>
      (if (~ type'tag) (format "struct ~a" (~ type'tag)) "struct /*anon*/")]
-    [<c-union>
+    [<c-union-type>
      (if (~ type'tag) (format "union ~a" (~ type'tag)) "union /*anon*/")]
-    [<c-function>
+    [<c-function-type>
      "void*"]                           ; function pointers used as opaque void*
     ;; An enum is passed as its base type.  Its own c-type-name may name a
     ;; tag the generated stub can't see, and with an explicit base type it
     ;; is C23 syntax ("enum foo : uint8_t"), so we never emit it.
-    [<c-enum> (%type->c-type (c-enum-type-base-type type))]
+    [<c-enum-type> (%type->c-type (c-enum-type-base-type type))]
     [<native-type> (~ type'c-type-name)]))
 
 ;; Generate a C expression that unboxes a Scheme value to a C value.
 ;; arg-expr: C string expression yielding ScmObj.
-;; For <c-pointer> types, extracts the raw pointer from the native handle.
+;; For <c-pointer-type> types, extracts the raw pointer from the native handle.
 (define (%type->unbox-expr type arg-expr)
   (cond
    [(c-pointer-like-type? type)
@@ -321,13 +321,13 @@
 
 ;; Generate a C expression that boxes a C value back to a Scheme object.
 ;; val-expr: C string expression yielding the C value.
-;; For <c-pointer> return types, type-var is the name of a static ScmObj
+;; For <c-pointer-type> return types, type-var is the name of a static ScmObj
 ;; variable that holds the native type object (populated during ffisetup).
 (define (%type->box-expr type val-expr :optional (type-var #f))
   (cond
    [(c-pointer-like-type? type)
     (unless type-var
-      (errorf "type-var required for boxing <c-pointer> return type: ~s" type))
+      (errorf "type-var required for boxing <c-pointer-type> return type: ~s" type))
     ;; Wrap the raw C pointer in a native handle using the stored type object.
     (format "Scm_MakeNativeHandleSimple((void*)(~a), ~a)" val-expr type-var)]
    [else
@@ -370,7 +370,7 @@
          [c-name    (~ cfn'c-name)]
          [arg-types (~ cfn'arg-types)]
          [ret-type  (~ cfn'return-type)]
-         ;; For <c-pointer> return types we use a per-function static ScmObj
+         ;; For <c-pointer-type> return types we use a per-function static ScmObj
          ;; variable (populated during ffisetup) to hold the type for boxing.
          [ret-typevar (and (c-pointer-like-type? ret-type)
                            (ffi-rettype-varname cfn))])
@@ -564,7 +564,7 @@
 ;;
 ;; The function is named (~ ccb'c-name) — the same C-safe name the user
 ;; gave on the Scheme side.  Its address is exposed to Scheme as a
-;; <native-handle> of <c-function> type, bound to (~ ccb'scheme-name) in
+;; <native-handle> of <c-function-type> type, bound to (~ ccb'scheme-name) in
 ;; the target module by ffisetup.
 (define (emit-callback-fn ccb)
   (let* ([c-name      (~ ccb'c-name)]
@@ -666,7 +666,7 @@
          arg-types)
         ;; Bind <name> in the target module to a native handle wrapping
         ;; the C callback's address.  The handle's type is the
-        ;; <c-function> instance built Scheme-side.
+        ;; <c-function-type> instance built Scheme-side.
         (format #t "      Scm_Define(target_mod_, SCM_SYMBOL(SCM_INTERN(~a)),\n"
                 (cgen-safe-string (symbol->string scm-name)))
         (format #t "                 Scm_MakeNativeHandleSimple((void*)~a, fn_type_));\n"
@@ -745,7 +745,7 @@
 
 ;; Emit, into the ffisetup body, the code that defines one enum's
 ;; enumerators as Scheme constants and conses the (symbol value) pairs
-;; onto enums_, for ffi-complete-enums! to fill into the <c-enum>.
+;; onto enums_, for ffi-complete-enums! to fill into the <c-enum-type>.
 (define (setup-code-for-cenum cen)
   (define (value-cexpr e)
     (%enum-value-cexpr (cdr e) (c-enum-type-base-type (~ cen'type))))
@@ -793,7 +793,7 @@
       :preamble
       (list "/* Generated by gauche.ffi.stubgen.  Do not edit. */")
       :init-name unit-name))
-  ;; Collect functions that return a <c-pointer> — they need a static ScmObj
+  ;; Collect functions that return a <c-pointer-type> — they need a static ScmObj
   ;; variable to hold the type object for use in boxing the return value.
   (define pointer-return-cfns
     (filter (^[cfn] (c-pointer-like-type? (~ cfn'return-type))) cfn-instances))
@@ -814,7 +814,7 @@
 
     (for-each emit-fn-ptr-decl cfn-instances)
 
-    ;; Static type variables for functions that return a <c-pointer>.
+    ;; Static type variables for functions that return a <c-pointer-type>.
     ;; Populated during ffisetup; used in the boxer call.
     (dolist [cfn pointer-return-cfns]
       (cgen-decl (format "static ScmObj ~a = SCM_FALSE;" (ffi-rettype-varname cfn))))
@@ -885,7 +885,7 @@
     (dolist [ccst ccst-instances]
       (cgen-body (setup-code-for-const ccst)))
     ;; Bind each enumerator, and collect the (symbol value) pairs so that
-    ;; the Scheme side can build the <c-enum> instances.
+    ;; the Scheme side can build the <c-enum-type> instances.
     (dolist [cen cenum-instances]
       (cgen-body (setup-code-for-cenum cen)))
     (cgen-body "    return Scm_Reverse(enums_);"

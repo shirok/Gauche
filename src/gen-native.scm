@@ -852,9 +852,9 @@
       (or (eq? t <top>)
           (subtype? t <integer>)
           (eq? t <c-string>)
-          (is-a? t <c-pointer>)
-          (is-a? t <c-array>)
-          (is-a? t <c-function>)))
+          (is-a? t <c-pointer-type>)
+          (is-a? t <c-array-type>)
+          (is-a? t <c-function-type>)))
    `(define (%farg-type? t)
       (or (eq? t <double>)
           (eq? t <float>)))
@@ -883,9 +883,9 @@
             [(eq? type <float>)                                   5]
             [(eq? type <void>)                                    6]
             [(eq? type <c-string>)                                7]
-            [(or (is-a? type <c-pointer>)
-                 (is-a? type <c-array>)
-                 (is-a? type <c-function>))                       8]
+            [(or (is-a? type <c-pointer-type>)
+                 (is-a? type <c-array-type>)
+                 (is-a? type <c-function-type>))                  8]
             [else (error "unknown FFI box kind for asm path:" type)]))
    `(define-enum SCM_STRING_COPYING)
    ;; Common address table patches.
@@ -1130,9 +1130,9 @@
 
    ;; Pointer arg type for kind=8; SCM_FALSE for everything else.
    `(define (%asm-argtype type)
-      (if (or (is-a? type <c-pointer>)
-              (is-a? type <c-array>)
-              (is-a? type <c-function>))
+      (if (or (is-a? type <c-pointer-type>)
+              (is-a? type <c-array-type>)
+              (is-a? type <c-function-type>))
         type
         #f)))
 

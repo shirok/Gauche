@@ -118,91 +118,91 @@ SCM_EXTERN ScmObj Scm_NativeVoidType(void);
 SCM_EXTERN ScmObj Scm_NativeVoidPointerType(void);
 SCM_EXTERN ScmObj Scm_NativeScmObjType(void);
 
-/* <c-pointer> - a pointer to another native type */
-typedef struct ScmCPointerRec {
+/* <c-pointer-type> - a pointer to another native type */
+typedef struct ScmCPointerTypeRec {
     ScmNativeType common;
     ScmNativeType *pointee_type;
-} ScmCPointer;
+} ScmCPointerType;
 
-SCM_CLASS_DECL(Scm_CPointerClass);
-#define SCM_CLASS_C_POINTER (&Scm_CPointerClass)
-#define SCM_C_POINTER(obj)  ((ScmCPointer*)(obj))
-#define SCM_C_POINTER_P(obj) (SCM_ISA(obj, SCM_CLASS_C_POINTER))
+SCM_CLASS_DECL(Scm_CPointerTypeClass);
+#define SCM_CLASS_C_POINTER_TYPE (&Scm_CPointerTypeClass)
+#define SCM_C_POINTER_TYPE(obj)  ((ScmCPointerType*)(obj))
+#define SCM_C_POINTER_TYPE_P(obj) (SCM_ISA(obj, SCM_CLASS_C_POINTER_TYPE))
 
-/* <c-function> - a function pointer type */
-typedef struct ScmCFunctionRec {
+/* <c-function-type> - a function pointer type */
+typedef struct ScmCFunctionTypeRec {
     ScmNativeType common;
     ScmNativeType *return_type;
     ScmObj argument_types;       /* list of ScmNativeType* */
     int variadic;                /* boolean: does it accept varargs? */
-} ScmCFunction;
+} ScmCFunctionType;
 
-SCM_CLASS_DECL(Scm_CFunctionClass);
-#define SCM_CLASS_C_FUNCTION (&Scm_CFunctionClass)
-#define SCM_C_FUNCTION(obj) ((ScmCFunction*)(obj))
-#define SCM_C_FUNCTION_P(obj) (SCM_ISA(obj, SCM_CLASS_C_FUNCTION))
+SCM_CLASS_DECL(Scm_CFunctionTypeClass);
+#define SCM_CLASS_C_FUNCTION_TYPE (&Scm_CFunctionTypeClass)
+#define SCM_C_FUNCTION_TYPE(obj) ((ScmCFunctionType*)(obj))
+#define SCM_C_FUNCTION_TYPE_P(obj) (SCM_ISA(obj, SCM_CLASS_C_FUNCTION_TYPE))
 
-/* <c-array> - an array of a native type */
-typedef struct ScmCArrayRec {
+/* <c-array-type> - an array of a native type */
+typedef struct ScmCArrayTypeRec {
     ScmNativeType common;
     ScmNativeType *element_type;
     ScmObj dimensions;           /* list of fixnums, first elt can be '* */
-} ScmCArray;
+} ScmCArrayType;
 
-SCM_CLASS_DECL(Scm_CArrayClass);
-#define SCM_CLASS_C_ARRAY   (&Scm_CArrayClass)
-#define SCM_C_ARRAY(obj)    ((ScmCArray*)(obj))
-#define SCM_C_ARRAY_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_ARRAY))
+SCM_CLASS_DECL(Scm_CArrayTypeClass);
+#define SCM_CLASS_C_ARRAY_TYPE   (&Scm_CArrayTypeClass)
+#define SCM_C_ARRAY_TYPE(obj)    ((ScmCArrayType*)(obj))
+#define SCM_C_ARRAY_TYPE_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_ARRAY_TYPE))
 
-/* <c-struct> - a C struct type */
-typedef struct ScmCStructRec {
+/* <c-struct-type> - a C struct type */
+typedef struct ScmCStructTypeRec {
     ScmNativeType common;
     ScmObj tag;                  /* symbol or #f */
     ScmObj fields;               /* list of (name type offset) */
-} ScmCStruct;
+} ScmCStructType;
 
-SCM_CLASS_DECL(Scm_CStructClass);
-#define SCM_CLASS_C_STRUCT  (&Scm_CStructClass)
-#define SCM_C_STRUCT(obj)   ((ScmCStruct*)(obj))
-#define SCM_C_STRUCT_P(obj) (SCM_ISA(obj, SCM_CLASS_C_STRUCT))
+SCM_CLASS_DECL(Scm_CStructTypeClass);
+#define SCM_CLASS_C_STRUCT_TYPE  (&Scm_CStructTypeClass)
+#define SCM_C_STRUCT_TYPE(obj)   ((ScmCStructType*)(obj))
+#define SCM_C_STRUCT_TYPE_P(obj) (SCM_ISA(obj, SCM_CLASS_C_STRUCT_TYPE))
 
-/* <c-union> - a C union type.
+/* <c-union-type> - a C union type.
    The C-level structure is the same as native-struct;
    the difference (all field offsets are 0) is handled at the Scheme level. */
-typedef ScmCStruct ScmCUnion;
+typedef ScmCStructType ScmCUnionType;
 
-SCM_CLASS_DECL(Scm_CUnionClass);
-#define SCM_CLASS_C_UNION   (&Scm_CUnionClass)
-#define SCM_C_UNION(obj)    ((ScmCUnion*)(obj))
-#define SCM_C_UNION_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_UNION))
+SCM_CLASS_DECL(Scm_CUnionTypeClass);
+#define SCM_CLASS_C_UNION_TYPE   (&Scm_CUnionTypeClass)
+#define SCM_C_UNION_TYPE(obj)    ((ScmCUnionType*)(obj))
+#define SCM_C_UNION_TYPE_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_UNION_TYPE))
 
-/* <c-enum> - a C enum type.
+/* <c-enum-type> - a C enum type.
    type-spec is C23's enum-type-specifier, e.g. 'int8_t' in
      'enum foo : int8_t { ... }'.
 */
-typedef struct ScmCEnumRec {
+typedef struct ScmCEnumTypeRec {
     ScmNativeType common;
     ScmObj tag;                 /* symbol or #f */
     ScmObj type_spec;           /* native-type or #f */
     ScmObj enumerator_alist;    /* ((id . value) ...) */
-} ScmCEnum;
+} ScmCEnumType;
 
-SCM_CLASS_DECL(Scm_CEnumClass);
-#define SCM_CLASS_C_ENUM   (&Scm_CEnumClass)
-#define SCM_C_ENUM(obj)    ((ScmCEnum*)(obj))
-#define SCM_C_ENUM_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_ENUM))
+SCM_CLASS_DECL(Scm_CEnumTypeClass);
+#define SCM_CLASS_C_ENUM_TYPE   (&Scm_CEnumTypeClass)
+#define SCM_C_ENUM_TYPE(obj)    ((ScmCEnumType*)(obj))
+#define SCM_C_ENUM_TYPE_P(obj)  (SCM_ISA(obj, SCM_CLASS_C_ENUM_TYPE))
 
-/* <c-opaque> - an opaque type.
+/* <c-opaque-type> - an opaque type.
    In C, this is something typedef'ed.  We treat them as unknown type,
    unreferenceable/unmodifiable, but we can treat pointer to it just fine.
    The instance is the same as ScmNativeType.
  */
 
-typedef ScmNativeType ScmCOpaque;
-SCM_CLASS_DECL(Scm_COpaqueClass);
-#define SCM_CLASS_C_OPAQYE  (&Scm_COpaqueClass)
-#define SCM_C_OPAQUE(obj)   ((ScmCOpaque*)(obj))
-#define SCM_C_OPAQUE_P(obj) (SCM_ISA(obj, SCM_CLASS_C_OPAQUE))
+typedef ScmNativeType ScmCOpaqueType;
+SCM_CLASS_DECL(Scm_COpaqueTypeClass);
+#define SCM_CLASS_C_OPAQUE_TYPE  (&Scm_COpaqueTypeClass)
+#define SCM_C_OPAQUE_TYPE(obj)   ((ScmCOpaqueType*)(obj))
+#define SCM_C_OPAQUE_TYPE_P(obj) (SCM_ISA(obj, SCM_CLASS_C_OPAQUE_TYPE))
 
 /*
  * Native handle
@@ -210,10 +210,10 @@ SCM_CLASS_DECL(Scm_COpaqueClass);
 
 struct ScmNativeHandleRec {
     SCM_HEADER;
-    void *ptr;                  /* If it is <c-pointer>, this is
+    void *ptr;                  /* If it is <c-pointer-type>, this is
                                    the pointer value.  Otherwise, this
                                    is a pointer to the typed value.
-                                   (In another word, <c-pointer>
+                                   (In another word, <c-pointer-type>
                                    does not have extra indirection).
                                 */
     ScmNativeType *type;        /* One of native aggregate types.

@@ -287,7 +287,7 @@
                       #"~tname anonymous")]) ;TODO: Give better name
          ($ %register-native-tag! tag
             (%make-c-struct/union-type
-             (if struct? <c-struct> <c-union>)
+             (if struct? <c-struct-type> <c-union-type>)
              name size alignment (if bounded 1 0) tag (reverse descs))))]
       [(((? symbol? fname) ftype0) . rest)
        (define ftype (%unproxy ftype0))
@@ -386,7 +386,7 @@
 ;; them wrongly.  We reject that rather than silently widening the type---the
 ;; code that assumed the narrower one is already compiled.
 (define (c-enum-type-complete! type enumerators :optional (name #f))
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (unless (null? (~ type'enumerator-alist))
     (errorf "c-enum type ~s has already been completed" (or name type)))
   (let ([alist (%build-enum-alist enumerators)]
@@ -404,71 +404,71 @@
 ;;; Additonal native type predicates/accessors
 ;;;
 
-(define-inline (c-pointer-type? type) (is-a? type <c-pointer>))
-(define-inline (c-array-type? type) (is-a? type <c-array>))
-(define-inline (c-function-type? type) (is-a? type <c-function>))
-(define-inline (c-struct-type? type) (is-a? type <c-struct>))
-(define-inline (c-union-type? type) (is-a? type <c-union>))
-(define-inline (c-enum-type? type) (is-a? type <c-enum>))
+(define-inline (c-pointer-type? type) (is-a? type <c-pointer-type>))
+(define-inline (c-array-type? type) (is-a? type <c-array-type>))
+(define-inline (c-function-type? type) (is-a? type <c-function-type>))
+(define-inline (c-struct-type? type) (is-a? type <c-struct-type>))
+(define-inline (c-union-type? type) (is-a? type <c-union-type>))
+(define-inline (c-enum-type? type) (is-a? type <c-enum-type>))
 
 (define-inline (c-struct/union-type? type)
-  (or (is-a? type <c-struct>)
-      (is-a? type <c-union>)))
+  (or (is-a? type <c-struct-type>)
+      (is-a? type <c-union-type>)))
 
 ;; C types that has some structure
 (define (c-aggregate-type? type)
-  (or (is-a? type <c-array>)
-      (is-a? type <c-struct>)
-      (is-a? type <c-union>)))
+  (or (is-a? type <c-array-type>)
+      (is-a? type <c-struct-type>)
+      (is-a? type <c-union-type>)))
 
 ;; C types that can be 'casted' to a poinetr
 (define (c-pointer-like-type? type)
-  (or (is-a? type <c-pointer>)
-      (is-a? type <c-array>)
-      (is-a? type <c-function>)))
+  (or (is-a? type <c-pointer-type>)
+      (is-a? type <c-array-type>)
+      (is-a? type <c-function-type>)))
 
 (define-inline (c-pointer-type-pointee type)
-  (assume-type type <c-pointer>)
+  (assume-type type <c-pointer-type>)
   (~ type'pointee-type))
 
 (define-inline (c-array-type-dimensions type)
-  (assume-type type <c-array>)
+  (assume-type type <c-array-type>)
   (~ type'dimensions))
 
 (define-inline (c-function-type-return-type type)
-  (assume-type type <c-function>)
+  (assume-type type <c-function-type>)
   (~ type'return-type))
 
 (define-inline (c-function-type-argument-types type)
-  (assume-type type <c-function>)
+  (assume-type type <c-function-type>)
   (~ type'argument-types))
 
 (define-inline (c-function-type-variadic? type)
-  (assume-type type <c-function>)
+  (assume-type type <c-function-type>)
   (~ type'variadic?))
 
 (define-inline (c-struct/union-type-tag type)
-  (assume-type type (</> <c-struct> <c-union>))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
   (~ type'tag))
 
 (define-inline (c-struct/union-type-field-names type)
-  (assume-type type (</> <c-struct> <c-union>))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
   (map car (~ type'fields)))
 
 (define-inline (c-struct/union-type-field-type type field-name)
-  (assume-type type (</> <c-struct> <c-union>))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
   (if-let1 e (assq field-name (~ type'fields))
     (cadr e)
     (errorf "~s does not have a field named ~a" type field-name)))
 
 (define-inline (c-struct/union-type-field-offset type field-name)
-  (assume-type type (</> <c-struct> <c-union>))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
   (if-let1 e (assq field-name (~ type'fields))
     (caddr e)
     (errorf "~s does not have a field named ~a" type field-name)))
 
 (define-inline (c-enum-type-tag type)
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (~ type'tag))
 
 ;; The integral native type the enum is actually represented by.  It is
@@ -477,22 +477,22 @@
 ;; type-spec, this is never #f, so it can be used whenever the enum's
 ;; representation is needed.
 (define-inline (c-enum-type-base-type type)
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (or (~ type'type-spec)
       (%native-int-type-of-size (~ type'size) (~ type'unsigned?))))
 
 (define-inline (c-enum-type-enumerator-alist type)
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (~ type'enumerator-alist))
 
 (define-inline (c-enum-value type symbol)
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (assume-type symbol <symbol>)
   (or (alist-ref (~ type'enumerator-alist) symbol)
       (errorf "Invalid enum symbol ~s for ~s" symbol type)))
 
 (define-inline (c-enum-symbol type value)
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (assume-type value <integer>)
   (or (alist-key (~ type'enumerator-alist) value)
       (errorf "Invalid enum value ~s for ~s" value type)))
@@ -778,13 +778,13 @@
                                        offset::<fixnum>)
   (let* ([p::void* (SCM_UVECTOR_ELEMENTS uv)]
          [vecsize::ScmSmallInt (Scm_UVectorSizeInBytes uv)]
-         [data-type::ScmNativeType* (?: (SCM_C_POINTER_P handle-type)
-                                        (-> (SCM_C_POINTER handle-type)
+         [data-type::ScmNativeType* (?: (SCM_C_POINTER_TYPE_P handle-type)
+                                        (-> (SCM_C_POINTER_TYPE handle-type)
                                             pointee_type)
                                         handle-type)]
          [datasize::ScmSmallInt (-> data-type size)]
          [max::void* (+ p (Scm_UVectorSizeInBytes uv))])
-    (if (SCM_C_POINTER_P handle-type)
+    (if (SCM_C_POINTER_TYPE_P handle-type)
       ;; NB: Pointer can point to zero-length array (or one element past
       ;; the last one), so offset==vecsize can happen.  Dereferencing
       ;; it triggers an error by the region boundary check.
@@ -904,9 +904,9 @@
 (define-cproc null-pointer-handle (:optional (type::<native-type>? #f))
   (let* ([t::ScmNativeType*
           (?: type type (SCM_NATIVE_TYPE (Scm_NativeVoidPointerType)))])
-    (unless (or (SCM_C_POINTER_P t)
-                (SCM_C_ARRAY_P t)
-                (SCM_C_FUNCTION_P t))
+    (unless (or (SCM_C_POINTER_TYPE_P t)
+                (SCM_C_ARRAY_TYPE_P t)
+                (SCM_C_FUNCTION_TYPE_P t))
       (Scm_Error "Invalid type for a null pointer: %S" t))
     (return
      (Scm__MakeNativeHandle NULL
@@ -919,29 +919,29 @@
                             0))))
 
 (define-cproc null-pointer-handle? (h::<native-handle>) ::<boolean>
-  (return (and (or (SCM_C_POINTER_P (-> h type))
-                   (SCM_C_ARRAY_P (-> h type)))
+  (return (and (or (SCM_C_POINTER_TYPE_P (-> h type))
+                   (SCM_C_ARRAY_TYPE_P (-> h type)))
                (== (-> h ptr) NULL))))
 
 (define (c-pointer-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-pointer>)))
+       (is-a? (native-handle-type obj) <c-pointer-type>)))
 
 (define (c-array-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-array>)))
+       (is-a? (native-handle-type obj) <c-array-type>)))
 
 (define (c-function-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-function>)))
+       (is-a? (native-handle-type obj) <c-function-type>)))
 
 (define (c-struct-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-struct>)))
+       (is-a? (native-handle-type obj) <c-struct-type>)))
 
 (define (c-union-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-union>)))
+       (is-a? (native-handle-type obj) <c-union-type>)))
 
 (define (c-pointer-like-handle? obj)
   (and (is-a? obj <native-handle>)
@@ -998,7 +998,7 @@
   (let* ([p::void* (+ (-> handle ptr) offset)])
     ;; If destination type is not a c-pointer, ensure the source handle's
     ;; known memory region (if any) covers the destination type's size.
-    (when (and (not (SCM_C_POINTER_P type))
+    (when (and (not (SCM_C_POINTER_TYPE_P type))
                (!= (-> handle region-min) NULL)
                (!= (-> handle region-max) NULL))
       (let* ([dsize::ScmSmallInt (-> type size)])
@@ -1038,14 +1038,14 @@
 
 (define-cproc c-pointer-compare (a::<native-handle> b::<native-handle>)
   ::<fixnum>
-  (unless (or (SCM_C_POINTER_P (-> a type))
-              (SCM_C_ARRAY_P (-> a type))
-              (SCM_C_FUNCTION_P (-> a type)))
+  (unless (or (SCM_C_POINTER_TYPE_P (-> a type))
+              (SCM_C_ARRAY_TYPE_P (-> a type))
+              (SCM_C_FUNCTION_TYPE_P (-> a type)))
     (Scm_Error "c-pointer, c-array, or c-function handle expeced, but got: %S"
                a))
-  (unless (or (SCM_C_POINTER_P (-> b type))
-              (SCM_C_ARRAY_P (-> b type))
-              (SCM_C_FUNCTION_P (-> b type)))
+  (unless (or (SCM_C_POINTER_TYPE_P (-> b type))
+              (SCM_C_ARRAY_TYPE_P (-> b type))
+              (SCM_C_FUNCTION_TYPE_P (-> b type)))
     (Scm_Error "c-pointer, c-array, or c-function handle expeced, but got: %S"
                b))
   (cond [(== (-> a ptr) (-> b ptr)) (return 0)]
@@ -1064,13 +1064,13 @@
 ;; Two types may differ.
 (define-cproc c-memwise-compare (a::<native-handle> b::<native-handle>)
   ::<fixnum>
-  (unless (or (SCM_C_ARRAY_P (-> a type))
-              (SCM_C_STRUCT_P (-> a type))
-              (SCM_C_UNION_P (-> a type)))
+  (unless (or (SCM_C_ARRAY_TYPE_P (-> a type))
+              (SCM_C_STRUCT_TYPE_P (-> a type))
+              (SCM_C_UNION_TYPE_P (-> a type)))
     (Scm_Error "c-array, c-struct, or c-union handle expected, but got: %S" a))
-  (unless (or (SCM_C_ARRAY_P (-> b type))
-              (SCM_C_STRUCT_P (-> b type))
-              (SCM_C_UNION_P (-> b type)))
+  (unless (or (SCM_C_ARRAY_TYPE_P (-> b type))
+              (SCM_C_STRUCT_TYPE_P (-> b type))
+              (SCM_C_UNION_TYPE_P (-> b type)))
     (Scm_Error "c-array, c-struct, or c-union handle expected, but got: %S" b))
   (let* ([a-size::ptrdiff_t (- (-> a region-max) (-> a region-min))]
          [b-size::ptrdiff_t (- (-> b region-max) (-> b region-min))])
@@ -1225,7 +1225,7 @@
     (%pset! type handle offset val)]))
 
 (define (c-struct-field type selector)
-  (assume-type type (</> <c-struct> <c-union>))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
   (assume-type selector <symbol>)
   (if-let1 field (assq selector (~ type'fields))
     field
@@ -1235,14 +1235,14 @@
 (define (native-type-offset type selector)
   (assume-type type <native-type>)
   (typecase type
-    [<c-pointer>
+    [<c-pointer-type>
      ;; Selector is a single element index, passed as a one-element list.
      (match selector
        [((? fixnum? i)) (* i (~ type'pointee-type'size))]
        [_
         (error "Pointer dereference requires a single integer index, but got:"
                selector)])]
-    [<c-array>
+    [<c-array-type>
      (unless (every (every-pred fixnum? (complement negative?)) selector)
        (error "Invalid native array selector:" selector))
      (let* ([etype (~ type'element-type)]
@@ -1272,7 +1272,7 @@
                       (+ (* (car ss) step) i))]
                [else
                 (error "Native array selector is out of range:" selector)])))]
-    [(</> <c-struct> <c-union>)
+    [(</> <c-struct-type> <c-union-type>)
      (caddr (c-struct-field type selector))]
     [else
      (error "Unsupported native aggregate type:" type)]))
@@ -1303,7 +1303,7 @@
 (define (native* handle :optional (type #f))
   (assume-type handle <native-handle>)
   (let1 t (%handle-type handle type)
-    (assume-type t <c-pointer>
+    (assume-type t <c-pointer-type>
       "Attempt to dereferencing non-pointer type:" (cons handle t))
     (let1 pt (~ t'pointee-type)
       ;; NB: We 'shortcut' pointer-to-aggregate handles; both
@@ -1318,7 +1318,7 @@
 (define (%native*-set! handle type val)
   (assume-type handle <native-handle>)
   (let* ([t (%handle-type handle type)])
-    (assume-type t <c-pointer>)
+    (assume-type t <c-pointer-type>)
     (%handle-set! (~ t'pointee-type) handle 0 val)))
 (set! (setter native*)
       (case-lambda
@@ -1333,9 +1333,9 @@
   (let* ([t (%handle-type handle #f)]
          [offset (native-type-offset t indices)])
     (etypecase t
-      [<c-array>
+      [<c-array-type>
        (%handle-ref (%array-dereference-type t indices) handle offset)]
-      [<c-pointer>
+      [<c-pointer-type>
        (%handle-ref (~ t 'pointee-type) handle offset)])))
 
 (define (%native-aref-set! handle indices val)
@@ -1344,9 +1344,9 @@
   (let* ([t (%handle-type handle #f)]
          [offset (native-type-offset t indices)])
     (etypecase t
-      [<c-array>
+      [<c-array-type>
        (%handle-set! (%array-dereference-type t indices) handle offset val)]
-      [<c-pointer>
+      [<c-pointer-type>
        (%handle-set! (~ t'pointee-type) handle offset val)])))
 (set! (setter native-aref)
       (^[handle . args]
@@ -1365,14 +1365,14 @@
      (assume-type slot <symbol>)
      (let* ([t (native-handle-type handle)])
        (typecase t
-         [(</> <c-struct> <c-union>)
+         [(</> <c-struct-type> <c-union-type>)
           (let* ([field (c-struct-field t slot)]
                  [ctype (cadr field)]
                  [offset (caddr field)])
             (%handle-ref ctype handle offset))]
-         [<c-pointer>
+         [<c-pointer-type>
           (let* ([pt (~ t'pointee-type)])
-            (unless (of-type? pt (</> <c-struct> <c-union>)) (bad))
+            (unless (of-type? pt (</> <c-struct-type> <c-union-type>)) (bad))
             (let* ([field (c-struct-field pt slot)]
                    [ctype (cadr field)]
                    [offset (caddr field)])
@@ -1391,14 +1391,14 @@
      (assume-type slot <symbol>)
      (let* ([t (native-handle-type handle)])
        (typecase t
-         [(</> <c-struct> <c-union>)
+         [(</> <c-struct-type> <c-union-type>)
           (let* ([field (c-struct-field t slot)]
                  [ctype (cadr field)]
                  [offset (caddr field)])
             (%handle-set! ctype handle offset val))]
-         [<c-pointer>
+         [<c-pointer-type>
           (let* ([pt (~ t'pointee-type)])
-            (unless (of-type? pt (</> <c-struct> <c-union>)) (bad))
+            (unless (of-type? pt (</> <c-struct-type> <c-union-type>)) (bad))
             (let* ([field (c-struct-field pt slot)]
                    [ctype (cadr field)]
                    [offset (caddr field)])
@@ -1434,20 +1434,20 @@
   (assume-type handle <native-handle>)
   (let1 type (~ handle'type)
     (typecase type
-      [(</> <c-struct> <c-union>)
+      [(</> <c-struct-type> <c-union-type>)
        (if selector
          (struct-field& type)
          (make-internal-handle handle 0 (make-c-pointer-type type)))]
-      [<c-array>
+      [<c-array-type>
        (if selector
          (array& type)
          (make-internal-handle handle 0 (make-c-pointer-type type)))]
-      [<c-pointer>
+      [<c-pointer-type>
        (if selector
          ;; We let native& handle both &(foo.field) and &(foo->field)
          (typecase (c-pointer-type-pointee type)
-           [(</> <c-struct> <c-union>) => struct-field&]
-           [<c-array> => array&]
+           [(</> <c-struct-type> <c-union-type>) => struct-field&]
+           [<c-array-type> => array&]
            [else (bad)])
          (error "native& on c-pointer type needs a selector:" handle))]
       [else (bad)])))
@@ -1458,12 +1458,12 @@
   (assume-type handle <native-handle>)
   (let1 t (~ handle'type)
     (etypecase t
-      [<c-pointer>
+      [<c-pointer-type>
        (let1 pt (~ t'pointee-type)
          (make-internal-handle handle
                                (* element-offset (~ pt'size))
                                (~ handle'type)))]
-      [<c-array>
+      [<c-array-type>
        (let* ([et (~ t'element-type)]
               [dims (~ t'dimensions)]
               [pt (if (length=? dims 1)
@@ -1493,18 +1493,18 @@
   :static
   (let* ([t::ScmNativeType* (-> handle type)]
          [size-explicit?::_Bool (>= size 0)])
-    (cond [(SCM_C_POINTER_P t)
-           (let* ([pt::ScmNativeType* (-> (SCM_C_POINTER t) pointee_type)])
+    (cond [(SCM_C_POINTER_TYPE_P t)
+           (let* ([pt::ScmNativeType* (-> (SCM_C_POINTER_TYPE t) pointee_type)])
              (unless (octet-native-type? pt)
                (goto bad))
              (when (== size -2)
                (goto bad)))]
-          [(SCM_C_ARRAY_P t)
-           (let* ([et::ScmNativeType* (-> (SCM_C_ARRAY t) element_type)])
-             (unless (and (== 1 (Scm_Length (-> (SCM_C_ARRAY t) dimensions)))
+          [(SCM_C_ARRAY_TYPE_P t)
+           (let* ([et::ScmNativeType* (-> (SCM_C_ARRAY_TYPE t) element_type)])
+             (unless (and (== 1 (Scm_Length (-> (SCM_C_ARRAY_TYPE t) dimensions)))
                           (octet-native-type? et))
                (goto bad))
-             (let* ([dim (SCM_CAR (-> (SCM_C_ARRAY t) dimensions))])
+             (let* ([dim (SCM_CAR (-> (SCM_C_ARRAY_TYPE t) dimensions))])
                (cond
                 [(== size -1)
                  (when (SCM_INTP dim)
@@ -1583,11 +1583,11 @@
                  (SCM_OBJ dst-handle)))
     ;; Type check.  An array of a known dimension also bounds the destination.
     (cond
-     [(SCM_C_POINTER_P t)
-      (unless (octet-native-type? (-> (SCM_C_POINTER t) pointee_type))
+     [(SCM_C_POINTER_TYPE_P t)
+      (unless (octet-native-type? (-> (SCM_C_POINTER_TYPE t) pointee_type))
         (goto bad))]
-     [(SCM_C_ARRAY_P t)
-      (let* ([ca::ScmCArray* (SCM_C_ARRAY t)])
+     [(SCM_C_ARRAY_TYPE_P t)
+      (let* ([ca::ScmCArrayType* (SCM_C_ARRAY_TYPE t)])
         (unless (and (== 1 (Scm_Length (-> ca dimensions)))
                      (octet-native-type? (-> ca element_type)))
           (goto bad))
@@ -1952,34 +1952,34 @@
     ;; Primitive types (including void and c-string)
     [(%native-type->cname type)]
     ;; Pointer: collect depth, build name*...*
-    [(is-a? type <c-pointer>)
+    [(is-a? type <c-pointer-type>)
      (let loop ([t type] [depth 0])
-       (if (is-a? t <c-pointer>)
+       (if (is-a? t <c-pointer-type>)
          (loop (~ t'pointee-type) (+ depth 1))
          (let1 base (native-type->signature t)
            (string->symbol
             (string-append (x->string base)
                            (make-string depth #\*))))))]
     ;; Array
-    [(is-a? type <c-array>)
+    [(is-a? type <c-array-type>)
      `(.array ,(native-type->signature (~ type'element-type))
               ,(~ type'dimensions))]
     ;; Struct
-    [(is-a? type <c-struct>)
+    [(is-a? type <c-struct-type>)
      `(.struct ,@(cond-list [(~ type'tag)])
                ,(%unparse-field-specs (~ type'fields)))]
     ;; Union
-    [(is-a? type <c-union>)
+    [(is-a? type <c-union-type>)
      `(.union ,@(cond-list [(~ type'tag)])
               ,(%unparse-field-specs (~ type'fields)))]
     ;; Enum
-    [(is-a? type <c-enum>)
+    [(is-a? type <c-enum-type>)
      `(.enum ,@(cond-list [(~ type'tag)])
              ,@(cond-list [(~ type'type-spec)
                            @ `(: ,(native-type->signature (~ type'type-spec)))])
              ,(%unparse-enumerators (~ type'enumerator-alist)))]
     ;; Function
-    [(is-a? type <c-function>)
+    [(is-a? type <c-function-type>)
      (let ([args (map native-type->signature (~ type'argument-types))]
            [ret (native-type->signature (~ type'return-type))])
        `(.function ,(if (~ type'variadic?)
@@ -1987,7 +1987,7 @@
                       args)
                    ,ret))]
     ;; Opaque
-    [(is-a? type <c-opaque>) (~ type'c-type-name)]
+    [(is-a? type <c-opaque-type>) (~ type'c-type-name)]
     [else (error "Cannot produce signature for native type:" type)]))
 
 ;;;
@@ -2059,17 +2059,17 @@
 (define (%make-native-wrapper-class type name slot-overrides)
   (define (make-class type)
     (typecase type
-      [<c-struct>
+      [<c-struct-type>
        (make <native-wrapper-meta>
          :name name :supers (list <wrapped-c-struct>)
          :native-type type
          :slots (map build-slot (~ type'fields)))]
-      [<c-union>
+      [<c-union-type>
        (make <native-wrapper-meta>
          :name name :supers (list <wrapped-c-union>)
          :native-type type
          :slots (map build-slot (~ type'fields)))]
-      [<c-array>
+      [<c-array-type>
        (make <native-wrapper-meta>
          :name name :supers (list <wrapped-c-array>)
          :native-type type)]

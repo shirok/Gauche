@@ -65,7 +65,7 @@
 ;; come from the instances %ffi-aot-setup builds at load time, when the dlobj
 ;; does exist.
 ;;
-;; Each enum-set name is bound to its <c-enum> before any cdef expression is
+;; Each enum-set name is bound to its <c-enum-type> before any cdef expression is
 ;; evaluated, so a typespec may name an enum declared in this very form as
 ;; well as one from an earlier one.  precomp doesn't execute toplevel forms
 ;; during compilation, so we call %bind-enum-type! to make the compiler
@@ -150,7 +150,7 @@
                  ;; procedure the initcode binds is already there.
                  (define ,dlo-var ,dlo-expr)
                  ,stub-form
-                 ;; Bind each enum-set name to its <c-enum> before the cdef
+                 ;; Bind each enum-set name to its <c-enum-type> before the cdef
                  ;; instances are built, so that a define-c-function of this
                  ;; very form can name the enum in its typespec.  The type
                  ;; carries no enumerators yet; %ffi-aot-setup fills them in

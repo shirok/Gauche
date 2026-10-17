@@ -1,5 +1,12 @@
 2026-10-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/libtype.scm, src/gauche/priv/typeP.h, ext/ffi/*: Renamed
+	  native type classes <c-pointer>, <c-array>, <c-struct>, <c-union>,
+	  <c-function>, <c-enum> and <c-opaque> to <c-pointer-type> etc.
+	  C-level names are renamed accordingly
+	  (e.g. ScmCPointer -> ScmCPointerType,
+	  SCM_C_POINTER_P -> SCM_C_POINTER_TYPE_P).
+
 	* lib/gauche/cgen/cise.scm (render-rec): Emit integer literals
 	  with proper suffix if necessary.
 	  https://github.com/shirok/Gauche/issues/1329

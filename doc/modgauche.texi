@@ -15561,7 +15561,7 @@ you access native data from Scheme world (@pxref{Native handles}).
 We have subclasses of @code{<native-type>}, which are classes
 of individual derived or aggregate native types.
 For example, ``pointer to int'' native type is an instance of
-@code{<c-pointer>} class.  Note that @code{<c-pointer>} itself
+@code{<c-pointer-type>} class.  Note that @code{<c-pointer-type>} itself
 is not an instance of @code{<native-type>}.
 
 @subsubheading Tag namespace
@@ -15608,8 +15608,8 @@ parameter is used.
 
 @subsubheading C pointers
 
-@deftp {Class} <c-pointer>
-@clindex c-pointer
+@deftp {Class} <c-pointer-type>
+@clindex c-pointer-type
 @c MOD gauche.native-type
 A class of native types representing pointers.  Can be created
 with @code{make-c-pointer-type}, or from a signature
@@ -15676,8 +15676,8 @@ also shows @code{<void*>}, which is less convenient for development.
 
 @subsubheading C arrays
 
-@deftp {Class} <c-array>
-@clindex c-array
+@deftp {Class} <c-array-type>
+@clindex c-array-type
 @c MOD gauche.native-type
 A class of native types representing C-style arrays.  Can be created
 with @code{make-c-array-type}, or from a signature
@@ -15714,8 +15714,8 @@ Returns a list of lengths of dimensions of @var{c-array-type}.
 
 @subsubheading C functions
 
-@deftp {Class} <c-function>
-@clindex c-function
+@deftp {Class} <c-function-type>
+@clindex c-function-type
 @c MOD gauche.native-type
 A class of native types representing C function types.  Can be created
 with @code{make-c-function-type}, or from a signature
@@ -15723,10 +15723,10 @@ with @code{native-type} (e.g.
 @code{(native-type '(.function (int int) ::int))},
 @pxref{Native type signature}).
 
-Instances of @code{<c-function>} describe the signature of a C function:
+Instances of @code{<c-function-type>} describe the signature of a C function:
 its return type, argument types, and whether it accepts variable arguments.
 
-A native handle with a @code{<c-function>} type can be cast to and from
+A native handle with a @code{<c-function-type>} type can be cast to and from
 a pointer-to-function type with @code{cast-handle}
 (@pxref{Native handles}).
 @end deftp
@@ -15781,10 +15781,10 @@ argument-type list), @code{#f} otherwise.
 
 @subsubheading C structs and unions
 
-@deftp {Class} <c-struct>
-@deftpx {Class} <c-union>
-@clindex c-struct
-@clindex c-union
+@deftp {Class} <c-struct-type>
+@deftpx {Class} <c-union-type>
+@clindex c-struct-type
+@clindex c-union-type
 @c MOD gauche.native-type
 A class of native types representing C struct and union types, respectively.
 Can be created with @code{make-c-struct-type} and
@@ -15829,8 +15829,8 @@ of @var{c-struct/union-type}.
 
 @subsubsection C enums
 
-@deftp {Class} <c-enum>
-@clindex c-enum
+@deftp {Class} <c-enum-type>
+@clindex c-enum-type
 @c MOD gauche.native-type
 A class of native types representing C enum types.
 C enum type is a subtype of @code{<integer>}.
@@ -15915,9 +15915,9 @@ with @var{value}.
 @defunx c-union-type? obj
 @defunx c-enum-type? obj
 @c MOD gauche.native-type
-Returns @code{#t} if @var{obj} is an instance of @code{<c-pointer>},
-@code{<c-array>}, @code{c-function>}, @code{c-struct}, @code{<c-union>},
-or @code{c-enum},
+Returns @code{#t} if @var{obj} is an instance of @code{<c-pointer-type>},
+@code{<c-array-type>}, @code{<c-function-type>}, @code{<c-struct-type>},
+@code{<c-union-type>}, or @code{<c-enum-type>},
 and @code{#f} otherwise, respectively.
 @end defun
 
@@ -16055,7 +16055,7 @@ the 32-bit and 64-bit integer types and for @code{float} and @code{double}.
 
 A symbol whose name ends with one or more asterisks denotes a pointer
 type; each trailing asterisk wraps the rest of the type in one
-additional layer of @code{<c-pointer>}.  Thus @code{int*} is equivalent
+additional layer of @code{<c-pointer-type>}.  Thus @code{int*} is equivalent
 to @code{(make-c-pointer-type <int>)}, @code{char**} is a pointer to a
 pointer to @code{<c-char>}, and so on.
 
@@ -16350,7 +16350,7 @@ the pointer.
 @defun native-pointer+ handle offset
 @c MOD gauche.native-type
 This corresponds to C pointer addition.  The @var{handle} argument
-must be a native handle of type @code{<c-pointer>} and @var{offset}
+must be a native handle of type @code{<c-pointer-type>} and @var{offset}
 must be a fixnum.  Returns a new c-pointer handle of the same pointer
 type, that points to @var{offset} elements away from @var{handle}.
 

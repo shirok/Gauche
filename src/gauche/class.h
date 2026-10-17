@@ -472,7 +472,7 @@ typedef struct ScmNativeHandleRec ScmNativeHandle;
 #define SCM_NATIVE_HANDLE_P(obj)  (SCM_ISA(obj, SCM_CLASS_NATIVE_HANDLE))
 
 /* Public accessors.
-   NativeHandlePtr returns the pointer value if it is <c-pointer>,
+   NativeHandlePtr returns the pointer value if it is <c-pointer-type>,
    otherwise the pointer to the native object.
  */
 SCM_EXTERN void *Scm_NativeHandlePtr(ScmNativeHandle *h);

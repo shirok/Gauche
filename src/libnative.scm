@@ -81,7 +81,9 @@
            (Scm_Error "%%native-ptr-fill!: string required for <c-string>, \
                        but got: %S" obj))
          (set! ptr-val (cast intptr_t (Scm_GetStringConst (SCM_STRING obj))))]
-        [(or (SCM_C_POINTER_P type) (SCM_C_ARRAY_P type) (SCM_C_FUNCTION_P type))
+        [(or (SCM_C_POINTER_TYPE_P type)
+             (SCM_C_ARRAY_TYPE_P type)
+             (SCM_C_FUNCTION_TYPE_P type))
          (unless (SCM_NATIVE_HANDLE_P obj)
            (Scm_Error "%%native-ptr-fill!: <native-handle> required for \
                        pointer type, but got: %S" obj))

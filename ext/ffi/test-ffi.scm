@@ -531,7 +531,7 @@
 
 ;; A define-c-enum and a define-c-function that uses it, in one with-ffi
 ;; form.  The enum-set name has to be bound before the C code and the cdef
-;; instances are built, so define-c-enum binds it to a <c-enum> that carries
+;; instances are built, so define-c-enum binds it to a <c-enum-type> that carries
 ;; the declared representation but no enumerators yet, and the enumerators
 ;; are filled in once the C compiler has reported them.
 ;; Its own module, so the enumerator names don't collide with the ones above.

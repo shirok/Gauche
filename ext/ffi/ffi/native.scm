@@ -118,13 +118,13 @@
 ;;   <intptr_t>  - signed integer (all other integral types)
 (define (native-type->call-canon type)
   (cond
-    [(or (is-a? type <c-pointer>)
-         (is-a? type <c-function>)) type]
+    [(or (is-a? type <c-pointer-type>)
+         (is-a? type <c-function-type>)) type]
     ;; An array argument is treated the same way as a pointer.
-    [(is-a? type <c-array>)
+    [(is-a? type <c-array-type>)
      (make-c-pointer-type (~ type 'element-type))]
-    [(or (is-a? type <c-struct>)
-         (is-a? type <c-union>))
+    [(or (is-a? type <c-struct-type>)
+         (is-a? type <c-union-type>))
      (error "Directly passing struct or union isn't supported yet")]
     [(is-a? type <native-type>)
      (cond
