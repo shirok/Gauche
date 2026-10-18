@@ -136,12 +136,17 @@
               [xs `(,op ,@xs)])))
 
 ;; multiple choice infix.  assuming sep and op are the same.
+;;   x0 op1 x1 op2 x2 ... => left:  (... (op2 (op1 x0 x1) x2) ...)
+;;                           right: (op1 x0 (op2 x1 (... xn)))
 (define ($infix-n term associativity seps)
   ($binding ($: x term)
             ($: xs ($many ($list ($one-of seps) term)))
             (ecase associativity
-              [(left)  (fold (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)]
-              [(right) (fold-right (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)])))
+              [(left)  (fold (^[e r] `(,(car e) ,r ,(cadr e))) x xs)]
+              [(right) (let loop ([x x] [xs xs])
+                         (match xs
+                           [() x]
+                           [((op t) . xs) `(,op ,x ,(loop t xs))]))])))
 
 ;;
 ;; nonstandard elements
@@ -304,7 +309,7 @@
 
 ;; 6.5.9 Equality expression
 (define %equality-expression
-  ($infix-n %relational-expression 'right '(== !=)))
+  ($infix-n %relational-expression 'left '(== !=)))
 
 ;; 6.5.10 Bitwise AND operator
 (define %and-expression

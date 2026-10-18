@@ -387,6 +387,22 @@
   (t-succ #t "typedef int N; N x; { int N; return N; } N y;")
   )
 
+;; Binary operators: operand order and associativity
+(let ()
+  (define (t-expr expect code)
+    (test* code expect (c-parse-string (c-expression-parser) code)))
+
+  (t-expr '(- (ident a) (ident b)) "a - b")
+  (t-expr '(- (- (ident a) (ident b)) (ident c)) "a - b - c")
+  (t-expr '(% (/ (* (ident a) (ident b)) (ident c)) (ident d))
+          "a * b / c % d")
+  (t-expr '(- (+ (ident a) (* (ident b) (ident c))) (ident d))
+          "a + b * c - d")
+  (t-expr '(>> (<< (ident a) (ident b)) (ident c)) "a << b >> c")
+  (t-expr '(> (ident z) (const int "0")) "z > 0")
+  (t-expr '(!= (== (ident a) (ident b)) (ident c)) "a == b != c")
+  )
+
 ;; Function definition.
 (let ()
   (test* "function definition, ANSI style"
