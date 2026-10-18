@@ -122,11 +122,6 @@ SCM_EXTERN ScmObj Scm_${T}VectorRangeCheck(ScmUVector *v0, ScmObj min, ScmObj ma
 SCM_EXTERN ScmObj Scm_${T}VectorClamp(ScmUVector *v0, ScmObj min, ScmObj max);
 SCM_EXTERN ScmObj Scm_${T}VectorClampX(ScmUVector *v0, ScmObj min, ScmObj max);
 
-SCM_EXTERN ScmObj Scm_${T}VectorSwapBytes(ScmUVector *v0,
-                                          ScmSmallInt start, ScmSmallInt end);
-SCM_EXTERN ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v0,
-                                           ScmSmallInt start, ScmSmallInt end);
-
 ///)) ;; tmpl-body
 
 ///(define *tmpl-epilogue* '(

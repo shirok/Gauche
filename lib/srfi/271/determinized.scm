@@ -77,7 +77,7 @@
         (set! index 0))
       (^[]
         (xos-random-fill-u64vector! xos u64buf)
-        (u64vector-swap-bytes! u64buf)
+        (uvector-swap-bytes! u64buf)
         (set! index 0))))
 
   (define (getb)

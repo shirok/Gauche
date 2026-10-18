@@ -33991,6 +33991,55 @@ and collects the elements that satisfies ('filter'), or doest not satisfy
 @end example
 @end deffn
 
+@defun uvector-swap-bytes vec :optional start end special-endianness
+@defunx uvector-swap-bytes! vec :optional start end special-endiannes
+@c MOD gauche.uvector
+@c EN
+Swaps the byte order of each element of a uniform vector @var{vec}
+between big- and little-endian.  @code{uvector-swap-bytes}
+returns a fresh uvector of the same type containing the swapped
+elements between @var{start} and @var{end}, while
+@code{uvector-swap-bytes!} swaps the elements of @var{vec} in place,
+returning an undefined value.
+For @code{u8vector} and @code{s8vector}, no swapping occurs.
+For complex uvectors, the real and imaginary parts are swapped individually.
+
+The @var{special-endianness} argument is only meaningful for
+@code{f64vector} and @code{c128vector}, and allows to specify
+a special case for ARM-specific IEEE double endianness.
+If it is @code{#f} (default), the byte swapping is applied to
+the entire 8-byte word.
+ @code{#f} (default) for the conversion above.
+It can also be a symbol @code{le:arm-le}, to convert between
+@code{little-endian} and @code{arm-little-endian}, or
+@code{be:arm-le}, to convert between @code{big-endian} and
+@code{arm-little-endian} (@pxref{Endianness}).
+@c JP
+ユニフォームベクタ@var{vec}の各要素のバイト順を、ビッグエンディアンと
+リトルエンディアンの間で入れ替えます。@code{uvector-swap-bytes}は
+@var{start}から@var{end}までの要素のバイト順を入れ替えた、
+同じ型の新たなユニフォームベクタを返します。
+@code{uvector-swap-bytes!}は@var{vec}の要素をその場で入れ替えます。
+@code{uvector-swap-bytes!}の戻り値は未定義値です。
+@code{u8vector}と@code{s8vector}については入れ替えは起こりません。
+複素数ベクタについては、実部と虚部がそれぞれ個別に入れ替えられます。
+
+引数@var{special-endianness}は@code{f64vector}と@var{c128vector}のみに対して
+意味を持ち、ARM特有のIEEE倍精度浮動小数点数のエンディアン変換を指定します。
+@code{#f}(デフォルト)の場合は8バイトワード全体の順序を入れ替えます。
+シンボル@code{le:arm-le}を渡すと@code{little-endian}と
+@code{arm-little-endian}の間の変換、
+@code{be:arm-le}を渡すと@code{big-endian}と
+@code{arm-little-endian}の間の変換を行います(@ref{Endianness}参照)。
+@c COMMON
+
+@example
+(uvector-swap-bytes '#u16(#x0102 #x0304))
+ @result{} #u16(513 1027)   ; #x0201 #x0403
+(uvector-swap-bytes '#u16(#x0102 #x0304 #x0506 #x0708) 1 3)
+ @result{} #u16(1027 1541)  ; #x0403 #x0605
+@end example
+@end defun
 
 @deffn {Function} make-@@vector-generator vec
 @findex make-u8vector-generator

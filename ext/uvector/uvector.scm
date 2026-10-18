@@ -141,16 +141,16 @@
        ,@body)])
 
  (define-cproc uvector-swap-bytes (v::<uvector>
-                                   :optional (type::<symbol>? #f)
-                                             (start::<fixnum> 0)
-                                             (end::<fixnum> -1))
+                                   :optional (start::<fixnum> 0)
+                                             (end::<fixnum> -1)
+                                             (type::<symbol>? #f))
    (with-swap-bytes-option type
      (return (Scm_UVectorSwapBytes v opt start end))))
 
  (define-cproc uvector-swap-bytes! (v::<uvector>
-                                    :optional (type::<symbol>? #f)
-                                              (start::<fixnum> 0)
-                                              (end::<fixnum> -1))
+                                    :optional (start::<fixnum> 0)
+                                              (end::<fixnum> -1)
+                                              (type::<symbol>? #f))
    ::<void>
    (with-swap-bytes-option type
      (Scm_UVectorSwapBytesX v opt start end)))

@@ -1142,94 +1142,77 @@ ScmObj Scm_${T}Vector${Opname}(ScmUVector *x, ScmObj min, ScmObj max)
 
 ///(append! *tmpl-prologue* (list
 
-static void f64vector_swapb_arm2le(ScmF64Vector *v,
-                                   ScmSmallInt start, ScmSmallInt end)
+/* Swaps bytes of N components of CSIZE bytes each, starting from P.
+   MODE is either SWAPB_STD, SWAPB_ARM_LE or SWAPB_ARM_BE.  The latter
+   two are only valid when CSIZE is 8 (double). */
+static void swapb_components(char *p, ScmSmallInt n, int csize, int mode)
 {
-    double *d = SCM_F64VECTOR_ELEMENTS(v) + start;
-    for (ScmSmallInt i=start; i<end; i++, d++) {
-        swap_f64_t v;
-        v.val = *d;
-        SWAP_ARM2LE(v);
-        *d = v.val;
+    switch (csize) {
+    case 2: {
+        uint16_t *d = (uint16_t*)p;
+        for (ScmSmallInt i=0; i<n; i++, d++) {
+            swap_u16_t v;
+            v.val = *d;
+            SWAP_2(v);
+            *d = v.val;
+        }
+        break;
+    }
+    case 4: {
+        uint32_t *d = (uint32_t*)p;
+        for (ScmSmallInt i=0; i<n; i++, d++) {
+            swap_u32_t v;
+            v.val = *d;
+            SWAP_4(v);
+            *d = v.val;
+        }
+        break;
+    }
+    case 8: {
+        uint64_t *d = (uint64_t*)p;
+        for (ScmSmallInt i=0; i<n; i++, d++) {
+            swap_u64_t v;
+            v.val = *d;
+            switch (mode) {
+            case SWAPB_ARM_LE: SWAP_ARM2LE(v); break;
+            case SWAPB_ARM_BE: SWAP_ARM2BE(v); break;
+            default:           SWAP_8(v); break;
+            }
+            *d = v.val;
+        }
+        break;
+    }
     }
 }
 
-static void f64vector_swapb_arm2be(ScmF64Vector *v,
-                                   ScmSmallInt start, ScmSmallInt end)
+/* Returns swapping mode according to the KLASS.
+   Sets *csize (component size) and *ncomp (num components per element).
+ */
+static int swapb_mode(ScmClass *klass, int option, int *csize, int *ncomp)
 {
-    double *d = SCM_F64VECTOR_ELEMENTS(v) + start;
-    for (ScmSmallInt i=start; i<end; i++, d++) {
-        swap_f64_t v;
-        v.val = *d;
-        SWAP_ARM2BE(v);
-        *d = v.val;
+    int dbl = FALSE;
+    *ncomp = 1;
+    switch (Scm_UVectorType(klass)) {
+    case SCM_UVECTOR_S8:
+    case SCM_UVECTOR_U8:   *csize = 1; return SWAPB_NONE;
+    case SCM_UVECTOR_S16:
+    case SCM_UVECTOR_U16:
+    case SCM_UVECTOR_F16:  *csize = 2; break;
+    case SCM_UVECTOR_S32:
+    case SCM_UVECTOR_U32:
+    case SCM_UVECTOR_F32:  *csize = 4; break;
+    case SCM_UVECTOR_S64:
+    case SCM_UVECTOR_U64:  *csize = 8; break;
+    case SCM_UVECTOR_F64:  *csize = 8; dbl = TRUE; break;
+    case SCM_UVECTOR_C32:  *csize = 2; *ncomp = 2; break;
+    case SCM_UVECTOR_C64:  *csize = 4; *ncomp = 2; break;
+    case SCM_UVECTOR_C128: *csize = 8; *ncomp = 2; dbl = TRUE; break;
+    default: Scm_Error("uniform vector class required, but got %S", klass);
     }
-}
-
-ScmObj Scm_F64VectorSwapBytes_ARM2LE(ScmF64Vector *v,
-                                     ScmSmallInt start, ScmSmallInt end)
-{
-    ScmObj d = Scm_F64VectorCopy(v, start, end);
-    f64vector_swapb_arm2le(SCM_F64VECTOR(d), 0, SCM_UVECTOR_SIZE(d));
-    return d;
-}
-
-ScmObj Scm_F64VectorSwapBytesX_ARM2LE(ScmF64Vector *v,
-                                      ScmSmallInt start, ScmSmallInt end)
-{
-    SCM_CHECK_START_END(start, end, SCM_UVECTOR_SIZE(v));
-    SCM_UVECTOR_CHECK_MUTABLE(v);
-    f64vector_swapb_arm2le(v, start, end);
-    return SCM_OBJ(v);
-}
-
-ScmObj Scm_F64VectorSwapBytes_ARM2BE(ScmF64Vector *v,
-                                     ScmSmallInt start, ScmSmallInt end)
-{
-    ScmObj d = Scm_F64VectorCopy(v, start, end);
-    f64vector_swapb_arm2be(SCM_F64VECTOR(d), 0, SCM_UVECTOR_SIZE(d));
-    return d;
-}
-
-ScmObj Scm_F64VectorSwapBytesX_ARM2BE(ScmF64Vector *v,
-                                      ScmSmallInt start, ScmSmallInt end)
-{
-    SCM_CHECK_START_END(start, end, SCM_UVECTOR_SIZE(v));
-    SCM_UVECTOR_CHECK_MUTABLE(v);
-    f64vector_swapb_arm2be(v, start, end);
-    return SCM_OBJ(v);
-}
-
-///))
-
-///(define *tmpl-swapb* '(
-
-static void ${t}vector_swapb(ScmUVector *v, ScmSmallInt start, ScmSmallInt end)
-{
-    ${etype} *d = SCM_${T}VECTOR_ELEMENTS(v) + start;
-    for (ScmSmallInt i=start; i<end; i++, d++) {
-        swap_${t}_t v;
-        v.val = *d;
-        ${SWAPB}(v);
-        *d = v.val;
-    }
-}
-
-ScmObj Scm_${T}VectorSwapBytes(ScmUVector *v,
-                               ScmSmallInt start, ScmSmallInt end)
-{
-    ScmObj d = Scm_${T}VectorCopy(v, start, end);
-    ${t}vector_swapb(SCM_${T}VECTOR(d), 0, SCM_UVECTOR_SIZE(d));
-    return d;
-}
-
-ScmObj Scm_${T}VectorSwapBytesX(ScmUVector *v,
-                                ScmSmallInt start, ScmSmallInt end)
-{
-    SCM_CHECK_START_END(start, end, SCM_UVECTOR_SIZE(v));
-    SCM_UVECTOR_CHECK_MUTABLE(v);
-    ${t}vector_swapb(v, start, end);
-    return SCM_OBJ(v);
+    if (dbl) return option;
+    /* arm-little-endian differs from little-endian only in doubles. */
+    if (option == SWAPB_ARM_LE) return SWAPB_NONE;
+    return SWAPB_STD;
 }
 
 ///))
@@ -1300,7 +1283,6 @@ $END
 ///    (generate-bitop)
 ///    (generate-dotop)
 ///    (generate-rangeop)
-///    (generate-swapb)
 ///    (generate-dispatch)
 ///)) ;; end of extra-procedure
 
@@ -1316,58 +1298,22 @@ $END
 ScmObj Scm_UVectorSwapBytes(ScmUVector *v, int option,
                             ScmSmallInt start, ScmSmallInt end)
 {
-    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
-    case SCM_UVECTOR_S8:  return Scm_S8VectorCopy(v, start, end);
-    case SCM_UVECTOR_U8:  return Scm_U8VectorCopy(v, start, end);
-    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytes(v, start, end);
-    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytes(v, start, end);
-    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytes(v, start, end);
-    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytes(v, start, end);
-    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytes(v, start, end);
-    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytes(v, start, end);
-    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytes(v, start, end);
-    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytes(v, start, end);
-    case SCM_UVECTOR_F64:
-        switch (option) {
-        case SWAPB_ARM_LE:
-            return Scm_F64VectorSwapBytes_ARM2LE(v, start, end);
-        case SWAPB_ARM_BE:
-            return Scm_F64VectorSwapBytes_ARM2BE(v, start, end);
-        default:           return Scm_F64VectorSwapBytes(v, start, end);
-        }
-    default: Scm_Error("uniform vector required, but got %S", v);
-        return SCM_UNDEFINED;
-    }
+    ScmObj d = Scm_UVectorCopy(v, start, end);
+    return Scm_UVectorSwapBytesX(SCM_UVECTOR(d), option, 0, -1);
 }
 
 ScmObj Scm_UVectorSwapBytesX(ScmUVector *v, int option,
                              ScmSmallInt start, ScmSmallInt end)
 {
-    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
-    case SCM_UVECTOR_S8:
-    case SCM_UVECTOR_U8:
-        SCM_CHECK_START_END(start, end, SCM_UVECTOR_SIZE(v));
-        SCM_UVECTOR_CHECK_MUTABLE(v);
-        return SCM_OBJ(v);
-    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytesX(v, start, end);
-    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytesX(v, start, end);
-    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytesX(v, start, end);
-    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytesX(v, start, end);
-    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytesX(v, start, end);
-    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytesX(v, start, end);
-    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytesX(v, start, end);
-    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytesX(v, start, end);
-    case SCM_UVECTOR_F64:
-        switch (option) {
-        case SWAPB_ARM_LE:
-            return Scm_F64VectorSwapBytesX_ARM2LE(v, start, end);
-        case SWAPB_ARM_BE:
-            return Scm_F64VectorSwapBytesX_ARM2BE(v, start, end);
-        default:          return Scm_F64VectorSwapBytesX(v, start, end);
-        }
-    default: Scm_Error("uniform vector required, but got %S", v);
-        return SCM_UNDEFINED;
+    int csize, ncomp;
+    int mode = swapb_mode(Scm_ClassOf(SCM_OBJ(v)), option, &csize, &ncomp);
+    SCM_CHECK_START_END(start, end, SCM_UVECTOR_SIZE(v));
+    SCM_UVECTOR_CHECK_MUTABLE(v);
+    if (mode != SWAPB_NONE) {
+        swapb_components((char*)v->elements + start*csize*ncomp,
+                         (end-start)*ncomp, csize, mode);
     }
+    return SCM_OBJ(v);
 }
 
 /*
@@ -1393,10 +1339,7 @@ ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
 #ifdef DOUBLE_ARMENDIAN
     if (Scm_IsArmLE(Scm_NativeEndian())) {
         if (Scm_IsLE(SCM_OBJ(endian))) {
-            /* arm-le and le is equivalent when eltsize <= 4 */
-            if (eltsize == 8) {
-                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE, start, rend);
-            }
+            Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE, start, rend);
         } else if (Scm_IsBE(SCM_OBJ(endian))) {
             Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_BE, start, rend);
         }
@@ -1413,9 +1356,7 @@ ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
             if (Scm_IsBE(SCM_OBJ(endian))) {
                 Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_STD, start, rend);
             } else if (Scm_IsArmLE(SCM_OBJ(endian))) {
-                if (eltsize == 8) {
-                    Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE, start, rend);
-                }
+                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE, start, rend);
             }
 #endif /*!WORDS_BIGENDIAN*/
         }
@@ -1437,7 +1378,7 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
         if (Scm_IsBE(SCM_OBJ(endian))) {
             swap_needed = TRUE;
             swap_type = SWAPB_ARM_BE;
-        } else if (Scm_IsLE(SCM_OBJ(endian)) && eltsize == 8) {
+        } else if (Scm_IsLE(SCM_OBJ(endian))) {
             swap_needed = TRUE;
             swap_type = SWAPB_ARM_LE;
         }
@@ -1456,63 +1397,28 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
             if (Scm_IsBE(SCM_OBJ(endian))) {
                 swap_needed = TRUE;
                 swap_type = SWAPB_STD;
-            } else if (Scm_IsArmLE(SCM_OBJ(endian)) && eltsize == 8) {
+            } else if (Scm_IsArmLE(SCM_OBJ(endian))) {
                 swap_needed = TRUE;
                 swap_type = SWAPB_ARM_LE;
             }
 #endif  /*!WORDS_BIGENDIAN*/
         }
-    if (!swap_needed || eltsize == 1) {
+    int csize, ncomp, mode = SWAPB_NONE;
+    if (swap_needed) {
+        mode = swapb_mode(Scm_ClassOf(SCM_OBJ(v)), swap_type, &csize, &ncomp);
+    }
+    if (mode == SWAPB_NONE) {
         Scm_Putz((const char*)v->elements + start*eltsize,
                  (end-start)*eltsize, port);
     } else {
-        /* ugly */
-        switch (eltsize) {
-        case 2: {
-            swap_u16_t d;
-            for (ScmSmallInt i=start; i<end; i++) {
-                d.val = ((uint16_t*)v->elements)[i];
-                SWAP_2(d);
-                Scm_Putz((const char*)d.buf, 2, port);
-            }
-            break;
-        }
-        case 4: {
-            swap_u32_t d;
-            for (ScmSmallInt i=start; i<end; i++) {
-                d.val = ((uint32_t*)v->elements)[i];
-                SWAP_4(d);
-                Scm_Putz((const char*)d.buf, 4, port);
-            }
-            break;
-        }
-        case 8:{
-            swap_u64_t d;
-            switch (swap_type) {
-            case SWAPB_STD:
-                for (ScmSmallInt i=start; i<end; i++) {
-                    d.val = ((uint64_t*)v->elements)[i];
-                    SWAP_8(d);
-                    Scm_Putz((const char*)d.buf, 8, port);
-                }
-                break;
-            case SWAPB_ARM_LE:
-                for (ScmSmallInt i=start; i<end; i++) {
-                    d.val = ((uint64_t*)v->elements)[i];
-                    SWAP_ARM2LE(d);
-                    Scm_Putz((const char*)d.buf, 8, port);
-                }
-                break;
-            case SWAPB_ARM_BE:
-                for (ScmSmallInt i=start; i<end; i++) {
-                    d.val = ((uint64_t*)v->elements)[i];
-                    SWAP_ARM2BE(d);
-                    Scm_Putz((const char*)d.buf, 8, port);
-                }
-                break;
-            }
-            break;
-        }
+        /* Swap through a buffer, chunk by chunk. */
+        union { double align; char buf[4096]; } b;
+        ScmSmallInt chunk = sizeof(b.buf)/eltsize;
+        for (ScmSmallInt i=start; i<end; i+=chunk) {
+            ScmSmallInt n = (end-i < chunk) ? end-i : chunk;
+            memcpy(b.buf, (const char*)v->elements + i*eltsize, n*eltsize);
+            swapb_components(b.buf, n*ncomp, csize, mode);
+            Scm_Putz(b.buf, n*eltsize, port);
         }
     }
     SCM_RETURN(SCM_UNDEFINED);

@@ -206,7 +206,8 @@ static inline uint64_t range_u64lo(uint64_t val, int clamp)
 enum {
     SWAPB_STD,                  /* simple swapping */
     SWAPB_ARM_LE,               /* arm-little-endian <-> little-endian */
-    SWAPB_ARM_BE                /* arm-little-endian <-> big-endian */
+    SWAPB_ARM_BE,               /* arm-little-endian <-> big-endian */
+    SWAPB_NONE                  /* no swapping needed (internal use) */
 };
 
 

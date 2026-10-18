@@ -431,17 +431,5 @@
                                         ,@rule))
                   *tmpl-rangeop*)))))
 
-(define (generate-swapb)
-  (dolist [rule (make-scalar-rules)]
-    (let1 tag (string->symbol (getval rule 't))
-      (define (SWAPB)
-        (case tag
-          [(s16 u16 f16) "SWAP_2"]
-          [(s32 u32 f32) "SWAP_4"]
-          [(s64 u64 f64) "SWAP_8"]))
-      (unless (memq tag '(s8 u8))
-        (for-each (cute substitute <> `((SWAPB  ,SWAPB) ,@rule))
-                  *tmpl-swapb*)))))
-
 (define (generate-dispatch)
   (expand/substitute *tmpl-dispatch* (make-rules)))

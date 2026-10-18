@@ -654,24 +654,12 @@
   Scm_${T}Vector${Opname})
 ///)) ;; end of tmpl-rangeop
 
-///(define *tmpl-swapb* '(
-(define-cproc ${t}vector-swap-bytes (v0::<${t}vector>
-                                    :optional (start::<fixnum> 0)
-                                              (end::<fixnum> -1))
-  Scm_${T}VectorSwapBytes)
-(define-cproc ${t}vector-swap-bytes! (v0::<${t}vector>
-                                     :optional (start::<fixnum> 0)
-                                               (end::<fixnum> -1))
-  Scm_${T}VectorSwapBytesX)
-///)) ;; end of tmpl-rangeop
-
 ///(define *extra-procedure*  ;; procedurally generates code
 ///  (lambda ()
 ///    (generate-numop)
 ///    (generate-bitop)
 ///    (generate-dotop)
 ///    (generate-rangeop)
-///    (generate-swapb)
 ///)) ;; end of extra-procedure
 
 ///; Local variables:

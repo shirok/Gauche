@@ -1,3 +1,10 @@
+2026-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector (uvector-swap-bytes, uvector-swap-bytes!): Make them
+	  official.  Reordered arguments so that the special endianness
+	  specifier comes last.  Add support of complex uvectors.
+	  Dropped type-specific byte swapping API.
+
 2026-10-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm, src/gauche/priv/typeP.h, ext/ffi/*: Renamed

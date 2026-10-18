@@ -619,23 +619,23 @@
 
 (test* "swapb s16"
        '#s16(#x0123 #x4567 #x7654 #x3210)
-       (s16vector-swap-bytes '#s16(#x2301 #x6745 #x5476 #x1032)))
+       (uvector-swap-bytes '#s16(#x2301 #x6745 #x5476 #x1032)))
 (test* "swapb u16"
        '#u16(#x0123 #x4567 #x7654 #x3210)
-       (u16vector-swap-bytes '#u16(#x2301 #x6745 #x5476 #x1032)))
+       (uvector-swap-bytes '#u16(#x2301 #x6745 #x5476 #x1032)))
 (test* "swapb s32"
        '#s32(#x01234567 #x76543210)
-       (s32vector-swap-bytes '#s32(#x67452301 #x10325476)))
+       (uvector-swap-bytes '#s32(#x67452301 #x10325476)))
 (test* "swapb u32"
        '#u32(#x01234567 #x76543210)
-       (u32vector-swap-bytes '#u32(#x67452301 #x10325476)))
+       (uvector-swap-bytes '#u32(#x67452301 #x10325476)))
 (test* "swapb s64"
        '#s64(#x0123456789abcdef #x-123456789abcdf0)
-       (s64vector-swap-bytes
+       (uvector-swap-bytes
         '#s64(#x-1032547698badcff #x1032547698badcfe)))
 (test* "swapb u64"
        '#u64(#x0123456789abcdef #xfedcba9876543210)
-       (u64vector-swap-bytes
+       (uvector-swap-bytes
         '#u64(#xefcdab8967452301 #x1032547698badcfe)))
 
 ;; Flonum vectors are compared through integer aliases.  The data is
@@ -643,50 +643,50 @@
 (test* "swapb f16"
        '#u16(#x403c #x3c40)
        (uvector-alias <u16vector>
-                      (f16vector-swap-bytes
+                      (uvector-swap-bytes
                        (uvector-alias <f16vector> (u16vector #x3c40 #x403c)))))
 (test* "swapb f32"
        '#u32(#x4000803f)
        (uvector-alias <u32vector>
-                      (f32vector-swap-bytes
+                      (uvector-swap-bytes
                        (uvector-alias <f32vector> (u32vector #x3f800040)))))
 (test* "swapb f64"
        '#u64(#x400000000000f03f)
        (uvector-alias <u64vector>
-                      (f64vector-swap-bytes
+                      (uvector-swap-bytes
                        (uvector-alias <f64vector>
                                       (u64vector #x3ff0000000000040)))))
 
 (test* "swapb range" '#u16(#x0403 #x0605)
-       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 1))
+       (uvector-swap-bytes '#u16(#x0102 #x0304 #x0506) 1))
 (test* "swapb range" '#u16(#x0403)
-       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 1 2))
+       (uvector-swap-bytes '#u16(#x0102 #x0304 #x0506) 1 2))
 (test* "swapb range" '#u16()
-       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 3))
+       (uvector-swap-bytes '#u16(#x0102 #x0304 #x0506) 3))
 (test* "swapb range (OOB)" (test-error)
-       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 1 4))
+       (uvector-swap-bytes '#u16(#x0102 #x0304 #x0506) 1 4))
 (test* "swapb range (OOB)" (test-error)
-       (u16vector-swap-bytes '#u16(#x0102 #x0304 #x0506) 2 1))
+       (uvector-swap-bytes '#u16(#x0102 #x0304 #x0506) 2 1))
 (test* "swapb! range" '#u16(#x0102 #x0403 #x0506)
        (rlet1 v (u16vector #x0102 #x0304 #x0506)
-         (u16vector-swap-bytes! v 1 2)))
+         (uvector-swap-bytes! v 1 2)))
 (test* "swapb! range" '#u32(#x01020304 #x08070605)
        (rlet1 v (u32vector #x01020304 #x05060708)
-         (u32vector-swap-bytes! v 1)))
+         (uvector-swap-bytes! v 1)))
 (test* "swapb! (immutable)" (test-error)
-       (u16vector-swap-bytes! '#u16(#x0102 #x0304)))
+       (uvector-swap-bytes! '#u16(#x0102 #x0304)))
 (test* "swapb! range (OOB)" (test-error)
-       (u16vector-swap-bytes! (u16vector #x0102 #x0304) 0 3))
+       (uvector-swap-bytes! (u16vector #x0102 #x0304) 0 3))
 
 (test* "uvector-swap-bytes" '(#u16(#x0201 #x0403) #u16(#x0102 #x0304))
        (let* ([v (u16vector #x0102 #x0304)]
               [w (uvector-swap-bytes v)])
          (list w v)))
 (test* "uvector-swap-bytes range" '#u32(#x08070605)
-       (uvector-swap-bytes '#u32(#x01020304 #x05060708) #f 1))
+       (uvector-swap-bytes '#u32(#x01020304 #x05060708) 1))
 (test* "uvector-swap-bytes u8 range" '(#u8(2 3) #f)
        (let* ([v (u8vector 1 2 3)]
-              [w (uvector-swap-bytes v #f 1)])
+              [w (uvector-swap-bytes v 1)])
          (list w (eq? v w))))
 (test* "uvector-swap-bytes u8 copy" '(#u8(1 2 3) #f)
        (let* ([v (u8vector 1 2 3)]
@@ -694,16 +694,16 @@
          (list w (eq? v w))))
 (test* "uvector-swap-bytes! range" '#s64(1 #x0807060504030201 3)
        (rlet1 v (s64vector 1 #x0102030405060708 3)
-         (uvector-swap-bytes! v #f 1 2)))
+         (uvector-swap-bytes! v 1 2)))
 (test* "uvector-swap-bytes! u8 (OOB)" (test-error)
-       (uvector-swap-bytes! (u8vector 1 2 3) #f 0 4))
+       (uvector-swap-bytes! (u8vector 1 2 3) 0 4))
 (test* "uvector-swap-bytes le:arm-le range"
        '#u64(#x3ff0000040000000 #x400000003ff00000)
        (uvector-alias <u64vector>
                       (rlet1 v (uvector-alias <f64vector>
                                               (u64vector #x3ff0000040000000
                                                          #x3ff0000040000000))
-                        (uvector-swap-bytes! v 'le:arm-le 1))))
+                        (uvector-swap-bytes! v 1 2 'le:arm-le))))
 (test* "uvector-swap-bytes be:arm-le range"
        '#u64(#x0000f03f00000040)
        (uvector-alias <u64vector>
@@ -711,9 +711,36 @@
                        (uvector-alias <f64vector>
                                       (u64vector #x3ff0000040000000
                                                  #x3ff0000040000000))
-                       'be:arm-le 1)))
+                       1 2 'be:arm-le)))
 (test* "uvector-swap-bytes (bad type)" (test-error)
-       (uvector-swap-bytes (u16vector 1) 'foo))
+       (uvector-swap-bytes (u16vector 1) 0 1 'foo))
+(let ()
+  (define (swapped class bytes . args)
+    (uvector-alias <u8vector>
+                   (apply uvector-swap-bytes (uvector-alias class bytes) args)))
+  (test* "uvector-swap-bytes c32" '#u8(2 1 4 3 6 5 8 7)
+         (swapped <c32vector> '#u8(1 2 3 4 5 6 7 8)))
+  (test* "uvector-swap-bytes c64 range" '#u8(12 11 10 9 16 15 14 13)
+         (swapped <c64vector> '#u8(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16) 1))
+  (test* "uvector-swap-bytes c128" '#u8(8 7 6 5 4 3 2 1 16 15 14 13 12 11 10 9)
+         (swapped <c128vector> '#u8(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)))
+  (test* "uvector-swap-bytes c128 le:arm-le"
+         '#u8(5 6 7 8 1 2 3 4 13 14 15 16 9 10 11 12)
+         (swapped <c128vector> '#u8(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)
+                  0 1 'le:arm-le))
+  (test* "uvector-swap-bytes c128 be:arm-le"
+         '#u8(4 3 2 1 8 7 6 5 12 11 10 9 16 15 14 13)
+         (swapped <c128vector> '#u8(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)
+                  0 1 'be:arm-le))
+  (test* "uvector-swap-bytes! c32 range" '#u8(1 2 3 4 6 5 8 7)
+         (rlet1 v (u8vector 1 2 3 4 5 6 7 8)
+           (uvector-swap-bytes! (uvector-alias <c32vector> v) 1)))
+  ;; arm-little-endian differs from little-endian only for doubles
+  (test* "uvector-swap-bytes u64 le:arm-le" '#u8(1 2 3 4 5 6 7 8)
+         (swapped <u64vector> '#u8(1 2 3 4 5 6 7 8) 0 1 'le:arm-le))
+  (test* "uvector-swap-bytes u64 be:arm-le" '#u8(8 7 6 5 4 3 2 1)
+         (swapped <u64vector> '#u8(1 2 3 4 5 6 7 8) 0 1 'be:arm-le))
+  )
 
 ;;-------------------------------------------------------------------
 (test-section "collection/sequence interface")
@@ -1615,6 +1642,50 @@
          (match (read-swapped '#u8(1 2 3 4 5 6) (u32vector 1 2 3 4) 1 4)
            [(r v) (list r (u32vector-ref v 0) (u32vector-ref v 1)
                         (u32vector-ref v 3))]))
+  )
+
+;; Explicit endianness.  These results are independent of the native endian.
+(let ()
+  (define (written v endian)
+    (call-with-output-file "test.o" (cut write-block v <> 0 -1 endian))
+    (rlet1 buf (make-u8vector (sys-stat->size (sys-stat "test.o")))
+      (call-with-input-file "test.o" (cut read-block! buf <>))))
+  (define (read-back v bytes endian)
+    (call-with-output-file "test.o" (cut write-block bytes <>))
+    (rlet1 buf (make-uvector (class-of v) (uvector-length v))
+      (call-with-input-file "test.o" (cut read-block! buf <> 0 -1 endian))))
+  (define (t v endian bytes)
+    (test* (format "writing ~a ~s" endian v) bytes (written v endian))
+    (test* (format "reading ~a ~s" endian v) v (read-back v bytes endian)))
+
+  (t '#u64(#x0102030405060708) 'big-endian '#u8(1 2 3 4 5 6 7 8))
+  (t '#u64(#x0102030405060708) 'little-endian '#u8(8 7 6 5 4 3 2 1))
+  (t '#u64(#x0102030405060708) 'arm-little-endian '#u8(8 7 6 5 4 3 2 1))
+  (t '#f64(1.0) 'big-endian '#u8(#x3f #xf0 0 0 0 0 0 0))
+  (t '#f64(1.0) 'little-endian '#u8(0 0 0 0 0 0 #xf0 #x3f))
+  (t '#f64(1.0) 'arm-little-endian '#u8(0 0 #xf0 #x3f 0 0 0 0))
+  (t '#c32(1+2i) 'big-endian '#u8(#x3c 0 #x40 0))
+  (t '#c32(1+2i) 'little-endian '#u8(0 #x3c 0 #x40))
+  (t '#c32(1+2i) 'arm-little-endian '#u8(0 #x3c 0 #x40))
+  (t '#c64(1+2i) 'big-endian '#u8(#x3f #x80 0 0 #x40 0 0 0))
+  (t '#c64(1+2i) 'little-endian '#u8(0 0 #x80 #x3f 0 0 0 #x40))
+  (t '#c64(1+2i) 'arm-little-endian '#u8(0 0 #x80 #x3f 0 0 0 #x40))
+  (t '#c128(1+2i) 'big-endian
+     '#u8(#x3f #xf0 0 0 0 0 0 0 #x40 0 0 0 0 0 0 0))
+  (t '#c128(1+2i) 'little-endian
+     '#u8(0 0 0 0 0 0 #xf0 #x3f 0 0 0 0 0 0 0 #x40))
+  (t '#c128(1+2i) 'arm-little-endian
+     '#u8(0 0 #xf0 #x3f 0 0 0 0 0 0 0 #x40 0 0 0 0))
+
+  ;; Writing more than the internal swap buffer
+  (let1 v (list->c128vector (map (^i (make-rectangular i (- i))) (iota 600)))
+    (test* "writing/reading c128vector, large, partial" #t
+           (let1 buf (make-c128vector 500)
+             (call-with-output-file "test.o"
+               (cut write-block v <> 100 -1 'big-endian))
+             (call-with-input-file "test.o"
+               (cut read-block! buf <> 0 -1 'big-endian))
+             (equal? buf (c128vector-copy v 100)))))
   )
 (sys-unlink "test.o")
 

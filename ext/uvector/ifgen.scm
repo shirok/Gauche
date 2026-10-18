@@ -59,15 +59,13 @@
                                                      *srfi-160-api*
                                                      *extra-api*
                                                      *extra-api-integral*
-                                                     *extra-api-scalar*
-                                                     *extra-api-multibyte*))
+                                                     *extra-api-scalar*))
                               '(u16 s16 u32 s32 u64 s64))
                 ,@(append-map (cute subst <> (append *srfi-160-base-api*
                                                      *srfi-160-api*
                                                      *extra-api*
                                                      *extra-api-real*
-                                                     *extra-api-scalar*
-                                                     *extra-api-multibyte*))
+                                                     *extra-api-scalar*))
                               '(f16 f32 f64))
                 ,@(append-map (cute subst <> (append *srfi-160-base-api*
                                                      *srfi-160-api*
@@ -165,7 +163,3 @@
   '(@vector-clamp
     @vector-clamp!
     @vector-range-check))
-
-(define *extra-api-multibyte*
-  '(@vector-swap-bytes
-    @vector-swap-bytes!))
