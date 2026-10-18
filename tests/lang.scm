@@ -248,10 +248,9 @@
 
 ;; grokking type
 (let ()
-  (define c-parser (make <c-parser>))
   (define (t-type expect code)
     (test* code expect
-           (let loop ((decls (c-parse-string c-parser code)))
+           (let loop ((decls (c-parse-string (c-toplevel-parser) code)))
              (match decls
                [(('decl 'x _ type _) . _) type]
                [(_ . r) (loop r)]))))
@@ -386,6 +385,26 @@
   (t-succ #t "int N; { typedef double N; (N)3; } N = 3;")
   (t-succ #t "typedef int N; N x; { int N; return N; }")
   (t-succ #t "typedef int N; N x; { int N; return N; } N y;")
+  )
+
+;; Function definition.
+(let ()
+  (test* "function definition, ANSI style"
+         '(def f #f
+               (.function () (int ())
+                          ((i (int ()))
+                           (j (double ()))))
+               (begin (return (ident i))))
+         (car (c-parse-string (c-toplevel-parser)
+                              "int f(int i, double j) { return i; }")))
+  (test* "function definition, K&R style"
+         '(def f #f
+               (.function () (int ())
+                          ((i (int ()))
+                           (j (double ()))))
+               (begin (return (ident i))))
+         (car (c-parse-string (c-toplevel-parser)
+                              "int f(i, j) int i; double j; { return i; }")))
   )
 
 (use lang.c.grokker)

@@ -778,7 +778,16 @@
 (define (integrate-k&r-argdecls type argdecls)
   (if (null? argdecls)
     type
-    (error "K&R-style argument list is not supported:" argdecls))) ; for now
+    (match-let1 ('.function sc rtype ((arg atype) ...)) type
+      (let1 arglist
+          (map (^[arg atype]
+                 (match (find (^e (eq? (cadr e) arg)) argdecls)
+                   [('decl _ _ type _) (list arg type)]
+                   [_ (if atype
+                        (list arg atype)
+                        (list arg '(int ())))])) ; int by default
+               arg atype)
+        `(.function ,sc ,rtype ,arglist)))))
 
 ;;;
 ;;; Preprocessor
