@@ -748,8 +748,8 @@
                                ($list ($. '*) %expression))) ;gcc computed goto
                  ($. '|\;|)
                  `(goto ,dest))
-       ($seq ($. 'continue) ($. '|\;|) ($return 'continue))
-       ($seq ($. 'break) ($. '|\;|) ($return 'break))
+       ($seq ($. 'continue) ($. '|\;|) ($return '(continue)))
+       ($seq ($. 'break) ($. '|\;|) ($return '(break)))
        ($binding ($. 'return) ($: expr ($optional %expression)) ($. '|\;|)
                  `(return ,@(if expr `(,expr) '())))))
 
