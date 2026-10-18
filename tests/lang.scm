@@ -369,9 +369,8 @@
 ;; We haven't fixed the format of the semantic value, so for now we just
 ;; see if it parses.
 (let ()
-  (define c-parser (make <c-parser>))
   (define (t-succ expect code)
-    (test* code expect (boolean (c-parse-string c-parser code))))
+    (test* code expect (boolean (c-parse-string (c-toplevel-parser) code))))
 
   ;; simple declaration
   (t-succ #t "int x;")
@@ -387,6 +386,29 @@
   (t-succ #t "int N; { typedef double N; (N)3; } N = 3;")
   (t-succ #t "typedef int N; N x; { int N; return N; }")
   (t-succ #t "typedef int N; N x; { int N; return N; } N y;")
+  )
+
+(use lang.c.grokker)
+(test-module 'lang.c.grokker)
+
+(let ()
+  (define parsed
+    (c-parse-string (c-toplevel-parser)
+                    (string-join
+                     '("int i, j=1;"
+                       "static int k;"
+                       "extern double d;"
+                       "int f(int c, char **v) {"
+                       " return c;"
+                       "}"))))
+
+  ;; Note that grokker API is still undetermined.  The tests will evolve
+  ;; as the code evolves.
+  (test* "grokker global names" '(d f i j k)
+         (let1 ctx (make <c-context>)
+           (parameterize ([current-c-context ctx])
+             (for-each c-grok-parser-output-1 parsed))
+           (sort (hash-table-keys (~ ctx'globals)))))
   )
 
 (test-end)
