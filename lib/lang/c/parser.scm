@@ -767,12 +767,18 @@
 (define %function-definition
   ($binding ($: spec %declaration-specifiers)
             ($: decl %declarator)
-            ($: lis ($many %declaration))
+            ($: lis ($many %declaration)) ; K&E style argument decls
             ($assert ($. #\{))
             ($: body ($cut %compound-statement))
-            `(def ,@(grok-declaration spec `(,decl))
-                  ,(splice-decls lis)
-                  ,body)))
+            (match-let1 (name sc type init) (grok-declaration spec `(,decl))
+              (let1 ftype (integrate-k&r-argdecls type (splice-decls lis))
+                `(def ,name ,sc ,ftype
+                      ,body)))))
+
+(define (integrate-k&r-argdecls type argdecls)
+  (if (null? argdecls)
+    type
+    (error "K&R-style argument list is not supported:" argdecls))) ; for now
 
 ;;;
 ;;; Preprocessor
