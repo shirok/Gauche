@@ -53,6 +53,8 @@
           c-tokenize-string
           c-parse-file
           c-parse-string
+
+          c-source-info-of
           )
   )
 (select-module lang.c.parser)
@@ -105,6 +107,43 @@
            (if (parse-success? r)
              (values r (hook v) s1)
              (values r v s1)))))))
+
+;; Attach (c-source-info . (filename line)) attribute to the parse result.
+(define ($source-info parser)
+  (^s (receive (r v s1) (parser s)
+        (if (and (parse-success? r) (not (c-source-info-of v)))
+          (values r (with-source-info v (token-source-info s)) s1)
+          (values r v s1)))))
+
+;; From token position, make (filename line)
+;; Note that the column info in the lseq-position is after cpp macro
+;; expansion, so we don't rely on it, at least for now.
+(define (token-source-info s)
+  (and-let1 pos (lseq-position s)
+    (list (sequence-position-source pos)
+          (sequence-position-line pos))))
+
+;; API
+(define (c-source-info-of x)
+  (and (extended-pair? x)
+       (pair-attribute-get x 'c-source-info #f)))
+
+;; Internal API
+;; Returns a copy of the head of X with c-source-info SI.
+;; The reader's source-info of literals in this file is dropped, for it
+;; is of no use for the user.
+(define (with-source-info x si)
+  (if (and si (pair? x))
+    (extended-cons (car x) (cdr x)
+                   `((c-source-info . ,si)
+                     ,@(if (extended-pair? x)
+                         (alist-delete 'source-info (pair-attributes x))
+                         '())))
+    x))
+
+;; Returns TO, with the source-info of FROM if FROM has one.
+(define (inherit-source-info from to)
+  (with-source-info to (c-source-info-of from)))
 
 ;;;
 ;;; PEG Parser
@@ -562,29 +601,32 @@
 ;;   the outer forms as (decl id sc ty ini) ..., by splice-decls,
 ;;   so 'decls' form won't appear in the final parse result.
 (define %declaration
-  ($lbinding ($: specs %declaration-specifiers)
-             ($: declarators ($sep-by %init-declarator ($. '|,|)))
-             %attribute-specifier-list  ;ignore for now
-             ($. '|\;|)
-             (=> fail)
-             ;; need to catch error from grok-c-type
-             (guard (e [else (fail 'error (~ e'message))])
-               (let ([decls (map (cut grok-declaration specs <>) declarators)])
-                 (when (memq 'typedef specs)
-                   (map (^d (register-typedefs! specs d)) decls))
-                 `(decls ,@decls)))))
+  ($source-info
+   ($lbinding ($: specs %declaration-specifiers)
+              ($: declarators ($sep-by %init-declarator ($. '|,|)))
+              %attribute-specifier-list  ;ignore for now
+              ($. '|\;|)
+              (=> fail)
+              ;; need to catch error from grok-c-type
+              (guard (e [else (fail 'error (~ e'message))])
+                (let ([decls (map (cut grok-declaration specs <>) declarators)])
+                  (when (memq 'typedef specs)
+                    (map (^d (register-typedefs! specs d)) decls))
+                  `(decls ,@decls))))))
 
 ;; (decls (id sc ty init) ...) -> ((decl id sc ty init) ...)
+;; Each decl inherits source-info of decls.
 (define (expand-decls dcls)
   (match dcls
-    [('decls ds ...) (map (cut cons 'decl <>) ds)]))
+    [('decls ds ...)
+     (map (^d (inherit-source-info dcls `(decl ,@d))) ds)]))
 
 ;; Intersperse (decls (...) ...) as multiple (decl ...) into the given list
 (define (splice-decls xs)
   (match xs
     [() '()]
-    [(('decls . ds) . xs)
-     (fold-right (^[d xs] `((decl ,@d) ,@xs)) (splice-decls xs) ds)]
+    [((and ('decls . _) dcls) . xs)
+     (append (expand-decls dcls) (splice-decls xs))]
     [(x . xs) (cons x (splice-decls xs))]))
 
 (define (register-typedefs! specs decl)
@@ -678,13 +720,14 @@
 ;;  we need $try for %labeled-statement, for it may consume the first
 ;;  identifier before failing.
 (define %statement
-  ($lazy ($cut ($or %compound-statement
-                    %selection-statement
-                    %iteration-statement
-                    %jump-statement
-                    %asm-statement            ; gcc specific
-                    ($try %labeled-statement)
-                    %expression-statement))))
+  ($source-info
+   ($lazy ($cut ($or %compound-statement
+                     %selection-statement
+                     %iteration-statement
+                     %jump-statement
+                     %asm-statement            ; gcc specific
+                     ($try %labeled-statement)
+                     %expression-statement)))))
 
 ;; 6.8.1 Labeled statement
 (define %labeled-statement
@@ -698,11 +741,12 @@
 
 ;; 6.8.2 Compound statement
 (define %compound-statement
-  ($binding %LC
-            ($with-scope
-             ($: stmts ($many ($or %declaration %statement))))
-            %RC
-            `(begin ,@(splice-decls stmts))))
+  ($source-info
+   ($binding %LC
+             ($with-scope
+              ($: stmts ($many ($or %declaration %statement))))
+             %RC
+             `(begin ,@(splice-decls stmts)))))
 
 ;; 6.8.3 Expression and null statements
 (define %expression-statement
@@ -770,15 +814,16 @@
 
 ;; 6.9.1 Function definitions
 (define %function-definition
-  ($binding ($: spec %declaration-specifiers)
-            ($: decl %declarator)
-            ($: lis ($many %declaration)) ; K&E style argument decls
-            ($assert ($. #\{))
-            ($: body ($cut %compound-statement))
-            (match-let1 (name sc type init) (grok-declaration spec `(,decl))
-              (let1 ftype (integrate-k&r-argdecls type (splice-decls lis))
-                `(def ,name ,sc ,ftype
-                      ,body)))))
+  ($source-info
+   ($binding ($: spec %declaration-specifiers)
+             ($: decl %declarator)
+             ($: lis ($many %declaration)) ; K&E style argument decls
+             ($assert ($. #\{))
+             ($: body ($cut %compound-statement))
+             (match-let1 (name sc type init) (grok-declaration spec `(,decl))
+               (let1 ftype (integrate-k&r-argdecls type (splice-decls lis))
+                 `(def ,name ,sc ,ftype
+                       ,body))))))
 
 (define (integrate-k&r-argdecls type argdecls)
   (if (null? argdecls)

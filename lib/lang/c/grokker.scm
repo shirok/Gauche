@@ -35,6 +35,7 @@
 
 (define-module lang.c.grokker
   (use util.match)
+  (use lang.c.parser)
   (export-all)                          ;for now
   )
 (select-module lang.c.grokker)
@@ -50,10 +51,11 @@
    (storage-class :init-keyword :storage-class)
    (initializer :init-keyword :initializer)))
 
-(define (add-variable name type storage-class initializer)
+(define (add-variable name type storage-class initializer si)
   (let1 g (~ (current-c-context)'globals)
     (when (hash-table-exists? g name)
-      (warn "C-context: Duplicate identifier: ~a\n" name))
+      (warn "~aC-context: Duplicate identifier: ~a\n"
+            (format-source-info si) name))
     (rlet1 e (make <c-variable> :name name :type type
                    :storage-class storage-class :initializer initializer)
       (hash-table-put! g name e))))
@@ -64,18 +66,25 @@
    (storage-class :init-keyword :storage-class)
    (body :init-keyword :body)))
 
-(define (add-function name type storage-class body)
+(define (add-function name type storage-class body si)
   (let1 g (~ (current-c-context)'globals)
     (when (hash-table-exists? g name)
-      (warn "C-context: Duplicate identifier: ~a\n" name))
+      (warn "~aC-context: Duplicate identifier: ~a\n"
+            (format-source-info si) name))
     (rlet1 e (make <c-function> :name name :type type
                    :storage-class storage-class :body body)
       (hash-table-put! g name e))))
 
+(define (format-source-info si)
+  (match si
+    [(file line) (format "~s:~d:" file line)]
+    [_ ""]))
+
 (define (c-grok-parser-output-1 form)
-  (match form
-    [('decl identifier storage-class type init)
-     (add-variable identifier type storage-class init)]
-    [('def identifier storage-class type body)
-     (add-function identifier type storage-class body)]
-    [_ (error "[internal] Unknown parser output:" form)]))
+  (let1 si (c-source-info-of form)
+    (match form
+      [('decl identifier storage-class type init)
+       (add-variable identifier type storage-class init si)]
+      [('def identifier storage-class type body)
+       (add-function identifier type storage-class body si)]
+      [_ (error "[internal] Unknown parser output:" form)])))
