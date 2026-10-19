@@ -945,13 +945,15 @@
            (coroutine->cseq (c-tokenize-file-coroutine c-parser file)))
         ($ peg-run-parser peg (c-tokenize-file c-parser file))))))
 
+;; We create a temp file so that we can call cpp on it.
 (define (%operate-on-string string proc)
-  (let1 f (format "x~8,'0x.c" (receive (s us) (sys-gettimeofday)
-                                (modulo (* s us) 99999989)))
-    (with-output-to-file f (cut display string))
-    (unwind-protect
-        (proc f)
-      (sys-remove f))))
+  (call-with-temporary-file
+   (^[oport name]
+     (display string oport)
+     (close-output-port oport)
+     (proc name))
+   :prefix "c-parse"
+   :suffix ".c"))
 
 (define (c-tokenize-string c-parser string)
   (%operate-on-string string (cut c-tokenize-file c-parser <>)))
