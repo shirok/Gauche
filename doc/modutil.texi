@@ -13603,7 +13603,7 @@ for greater flexibility.
 @c COMMON
 @end deffn
 
-@defun call-with-temporary-file proc :key directory prefix
+@defun call-with-temporary-file proc :key directory prefix suffix
 @c MOD file.util
 @c EN
 Creates a temporary file with a unique name and opens it for output,
@@ -13616,6 +13616,11 @@ The temporary file is created in the directory @var{directory},
 with the name @var{prefix} followed by several random alphanumeric characters.
 When omitted, the value of @code{(temporary-directory)} is used
 for @var{directory}, and @code{"gtemp"} for @var{prefix}.
+
+If @var{suffix} is given and is a non-empty string, it is appended
+after the random characters.  It is useful when the file is passed
+to a program that dispatches by the file extension, e.g.
+@code{:suffix ".c"}.  @var{suffix} must not contain a path separator.
 
 The name passed to @var{proc} consists of @var{directory} and
 the file's name.  So whether the name is absolute or relative pathname
@@ -13647,6 +13652,11 @@ Internally, it calls @code{sys-mkstemp} to create a unique file.
 その名前は@var{prefix}の後にいくつかの英数字を付け加えたものになります。
 省略された場合、@code{(temporary-directory)}の値が@var{directory}に、
 @code{"gtemp"}が@var{prefix}に使われます。
+
+@var{suffix}に空でない文字列が与えられた場合、それが英数字の後に付け加えられます。
+拡張子でファイルの扱いを決めるプログラムにファイルを渡す場合に便利です
+(例: @code{:suffix ".c"})。
+@var{suffix}はパス区切り文字を含んではいけません。
 
 @var{proc}に渡される名前は@var{directory}とファイル名をつなげたパス名です。
 絶対パスになるか相対パスになるかは@var{directory}の値によります。
