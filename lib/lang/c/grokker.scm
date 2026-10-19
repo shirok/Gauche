@@ -36,7 +36,9 @@
 (define-module lang.c.grokker
   (use util.match)
   (use lang.c.parser)
-  (export-all)                          ;for now
+  (export <c-context>
+          c-grok-file
+          c-grok-string)
   )
 (select-module lang.c.grokker)
 
@@ -44,6 +46,10 @@
   ((globals :init-form (make-hash-table 'eq?))))
 
 (define current-c-context (make-parameter (make <c-context>)))
+
+(define (with-fresh-c-context thunk)
+  (rlet1 ctx (make <c-context>)
+    (parameterize ([current-c-context ctx]) (thunk))))
 
 (define-class <c-variable> ()
   ((name :init-keyword :name)               ;symbol
@@ -88,3 +94,17 @@
       [('def identifier storage-class type body)
        (add-function identifier type storage-class body si)]
       [_ (error "[internal] Unknown parser output:" form)])))
+
+;; TODO: Make parser returns lseq/cseq and run grokker concurrently
+
+(define (c-grok-file file)
+  (with-fresh-c-context
+   (^[]
+     (dolist [form (c-parse-file (c-toplevel-parser) file)]
+       (c-grok-parser-output-1 form)))))
+
+(define (c-grok-string string)
+  (with-fresh-c-context
+   (^[]
+     (dolist [form (c-parse-string (c-toplevel-parser) string)]
+       (c-grok-parser-output-1 form)))))

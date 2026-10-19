@@ -427,22 +427,19 @@
 (test-module 'lang.c.grokker)
 
 (let ()
-  (define parsed
-    (c-parse-string (c-toplevel-parser)
-                    (string-join
-                     '("int i, j=1;"
-                       "static int k;"
-                       "extern double d;"
-                       "int f(int c, char **v) {"
-                       " return c;"
-                       "}"))))
+  (define input
+    (string-join
+     '("int i, j=1;"
+       "static int k;"
+       "extern double d;"
+       "int f(int c, char **v) {"
+       " return c;"
+       "}")))
 
   ;; Note that grokker API is still undetermined.  The tests will evolve
   ;; as the code evolves.
   (test* "grokker global names" '(d f i j k)
-         (let1 ctx (make <c-context>)
-           (parameterize ([current-c-context ctx])
-             (for-each c-grok-parser-output-1 parsed))
+         (let1 ctx (c-grok-string input)
            (sort (hash-table-keys (~ ctx'globals)))))
   )
 
