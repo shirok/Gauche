@@ -35,13 +35,12 @@
   (use file.util)
   (use util.match)
   (use parser.peg)
-  (use gauche.process)
-  (use gauche.config)
   (use gauche.dictionary)
   (use gauche.lazy)
   (use control.cseq)
   (use lang.c.lexer)
   (use lang.c.type)
+  (use lang.c.toolchain)
   (use srfi.13)
 
   (export <c-parser>
@@ -842,45 +841,6 @@
 ;;;
 ;;; Preprocessor
 ;;;
-
-;; NB: We may eventually implement our own preprocessor, for we can do
-;; more things (such as caching), but for the time being, we call cpp.
-;;
-;; gcc exits with non-zero status if output isn't fully read, which happens
-;; when PROC throws an error.  We don't want to lose that error, so we set
-;; :on-abnormal-exit to :ignore.
-;;
-;; INCLUDES is a list of include paths, or #f to use the system default
-;; (gauche-config --incdirs).  DEFS is an list of (var val ...) which will
-;; be used as -Dvar=val -Dvar=val ..., or just var for -Dvar.
-
-(define (call-with-cpp file proc
-                       :key (includes #f)
-                            (defs '()))
-  (define Is
-    (cond [(list? includes)
-           (map (^d (shell-escape-string #"-I~d")) includes)]
-          [(not includes)
-           (map (^d #"-I~d")
-                (string-split (gauche-config "--incdirs") #\:))]
-          [else (error "includes keyword arg must be a list of \
-                        directories or #f, but got:" includes)]))
-  (define Ds
-    (append-map (^[def]
-                  (match def
-                    [(var val ...)
-                     (map (^[val] (shell-escape-string #"-D~|var|=~val")) val)]
-                    [var `(,#"-D~var")]))
-                defs))
-  ;; Kludge - gauche-config --cc may return something like "gcc --std=gnu23".
-  ;; We need to split the command and the argument.  However, the compiler
-  ;; pathname may include whitespaces, e.g. "c:\\Program Files\\...\\gcc.exe",
-  ;; so we use heuristics.
-  (define cc (string-split (gauche-config "--cc") #/\s(?=-)/))
-
-  (call-with-input-process `(,@cc "-E" ,@Is ,@Ds ,file)
-    proc
-    :on-abnormal-exit :ignore))
 
 ;;;
 ;;; Predefined parsers

@@ -152,6 +152,9 @@
 ;;----------------------------------------------------------------------
 (test-section "lang.c")
 
+(use lang.c.toolchain)
+(test-module 'lang.c.toolchain)
+
 (use lang.c.type)
 (test-module 'lang.c.type)
 
