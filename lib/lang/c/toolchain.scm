@@ -35,11 +35,13 @@
 (define-module lang.c.toolchain
   (use gauche.config)
   (use gauche.process)
+  (use file.util)
   (use scheme.list)
   (use srfi.13)
   (use util.match)
   (export call-with-cpp
-          cpp-include-paths))
+          cpp-include-paths
+          c-find-header))
 (select-module lang.c.toolchain)
 
 ;; Returns command line list to invoke cc.
@@ -86,10 +88,10 @@
     proc
     :on-abnormal-exit :ignore))
 
+;; API
 ;; Obtain built-in include paths for the system's compiler.
 ;; This isn't guaranteed to work universally, but works for
 ;; gcc and clang family.   If the info cannot be obtained, returns ().
-
 (define cpp-include-paths
   (let1 paths (delay (%try-get-include-paths))
     (^[] (force paths))))
@@ -108,3 +110,9 @@
                (zero? (sys-wait-exit-status status)))
         paths
         '()))))
+
+;; API
+(define (c-find-header name :optional (includes '()))
+  (find-file-in-paths name
+                      :paths (append includes (cpp-include-paths))
+                      :pred file-is-readable?))

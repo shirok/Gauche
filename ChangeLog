@@ -1,3 +1,7 @@
+2026-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/lang/c.scm: Add lang.c module for public interface.
+
 2026-10-18  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (call-with-temporary-file): Support suffix
