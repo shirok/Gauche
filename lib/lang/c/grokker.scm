@@ -51,35 +51,45 @@
   (rlet1 ctx (make <c-context>)
     (parameterize ([current-c-context ctx]) (thunk))))
 
-(define-class <c-variable> ()
+(define-class <c-global> ()
   ((name :init-keyword :name)               ;symbol
    (type :init-keyword :type)
    (storage-class :init-keyword :storage-class)
-   (initializer :init-keyword :initializer)))
+   (source-info :init-keyword :source-info)))
+
+(define-method register-global! ((ctx <c-context>) (g <c-global>))
+  (let* ([tab (~ ctx'globals)]
+         [name (~ g'name)]
+         [e (hash-table-get tab name #f)])
+    (if e
+      (begin
+        ;; TODO: we also need to check type mistmatch
+        (unless (or (eq? (~ e'storage-class) 'extern)
+                    (eq? (~ g'storage-class) 'extern))
+          (warn "~aC-context: Duplicate identifier: ~a (previously ~a)\n"
+                (format-source-info (~ g'source-info))
+                name
+                (format-source-info (~ e'source-info))))
+        ;; We keep non-"extern" version
+        (unless (eq? (~ g'storage-class) 'extern)
+          (hash-table-put! tab name g)))
+      (hash-table-put! tab name g))))
+
+(define-class <c-variable> (<c-global>)
+  ((initializer :init-keyword :initializer)))
 
 (define (add-variable name type storage-class initializer si)
-  (let1 g (~ (current-c-context)'globals)
-    (when (hash-table-exists? g name)
-      (warn "~aC-context: Duplicate identifier: ~a\n"
-            (format-source-info si) name))
-    (rlet1 e (make <c-variable> :name name :type type
-                   :storage-class storage-class :initializer initializer)
-      (hash-table-put! g name e))))
+  (rlet1 e (make <c-variable> :name name :type type :source-info si
+                 :storage-class storage-class :initializer initializer)
+    (register-global! (current-c-context) e)))
 
-(define-class <c-function> ()
-  ((name :init-keyword :name)               ;symbol
-   (type :init-keyword :type)
-   (storage-class :init-keyword :storage-class)
-   (body :init-keyword :body)))
+(define-class <c-function> (<c-global>)
+  ((body :init-keyword :body)))
 
 (define (add-function name type storage-class body si)
-  (let1 g (~ (current-c-context)'globals)
-    (when (hash-table-exists? g name)
-      (warn "~aC-context: Duplicate identifier: ~a\n"
-            (format-source-info si) name))
-    (rlet1 e (make <c-function> :name name :type type
-                   :storage-class storage-class :body body)
-      (hash-table-put! g name e))))
+  (rlet1 e (make <c-function> :name name :type type :source-info si
+                 :storage-class storage-class :body body)
+    (register-global! (current-c-context) e)))
 
 (define (format-source-info si)
   (match si
