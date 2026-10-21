@@ -38,7 +38,9 @@
   (use lang.c.parser)
   (export <c-context>
           c-grok-file
-          c-grok-string)
+          c-grok-string
+
+          c-variable-initial-value)
   )
 (select-module lang.c.grokker)
 
@@ -107,14 +109,70 @@
 
 ;; TODO: Make parser returns lseq/cseq and run grokker concurrently
 
+;; API
 (define (c-grok-file file)
   (with-fresh-c-context
    (^[]
      (dolist [form (c-parse-file (c-toplevel-parser) file)]
        (c-grok-parser-output-1 form)))))
 
+;; API
 (define (c-grok-string string)
   (with-fresh-c-context
    (^[]
      (dolist [form (c-parse-string (c-toplevel-parser) string)]
        (c-grok-parser-output-1 form)))))
+
+;; API
+;;   Look up definition or declaration
+(define-method c-get-definition-or-declaration ((ctx <c-context>) name)
+  (hash-table-get (~ ctx'globals) name #f))
+
+;; Evaluate initializer expression.  INITIALIZER is what the parser
+;; returned in the initializer slot.
+;; As the representation of parser output hasn't been finalized, the
+;; implementation here is provisional.  The API remains same.
+;; Returns #f if there's no initializer, or it can't be evaluated.
+(define-method c-eval-initializer ((ctx <c-context>) initializer)
+  (define (unop op x) (and x (op (ev x))))
+  (define (binop op x y) (and x y (op (ev x) (ev y))))
+  (define (lsh x y) (ash x (- y)))
+  (define (cnot x) (if (eqv? x 0) 1 0))
+  (define (cand x y) (if (or (eqv? x 0) (eqv? y 0)) 0 1))
+  (define (cor x y) (if (and (eqv? x 0) (eqv? y 0)) 0 1))
+  (define (ev expr)
+    (match expr
+      [('const (or 'int 'u-int 'long 'u-long 'long-long 'u-long-long) s)
+       (let1 v (string->number s) (and v (exact-integer? v) v))]
+      [('const (or 'float 'double) s)
+       (let1 v (string->number s) (and v (inexact v)))]
+      [('paren x) (ev x)]
+      [('+ a b) (binop + a b)]
+      [('- a b) (binop - a b)]
+      [('* a b) (binop * a b)]
+      [('/ a b) (binop / a b)]
+      [('<< a b) (binop ash a b)]
+      [('>> a b) (binop lsh a b)]
+      [('- a) (unop - a)]
+      [('+ a) (ev a)]
+      [('! a) (unop cnot a)]
+      [('and a b) (binop cand a b)]
+      [('or a b) (binop cor a b)]
+      [('~ a) (unop lognot a)]
+      [('logand a b) (binop logand a b)]
+      [('logior a b) (binop logior a b)]
+      [('logxor a b) (binop logxor a b)]
+      [('ident v) (c-variable-initial-value ctx v)]
+      [#f #f]                           ;no initializer
+      [_ (warn "Unevaluatable initializer: ~s\n" initializer) #f]))
+
+  (ev initializer))
+
+;; API
+;;   Lookup the initial value of the named variable.  Returns #f if
+;;   no initializer, or the initializer can't be evaluated.
+(define-method c-variable-initial-value ((ctx <c-context>) name)
+  (and-let* ([vv (c-get-definition-or-declaration ctx name)]
+             [ (is-a? vv <c-variable>) ]
+             [init (~ vv'initializer)])
+    (c-eval-initializer ctx init)))
