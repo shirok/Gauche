@@ -157,6 +157,8 @@ int Scm_Compare(ScmObj x, ScmObj y)
         goto distinct_types;
     }
 
+    if (Scm_EqualP(x, y)) return 0;
+
     if (Scm_SubclassP(cx, cy)) {
         if (cy->compare) return cy->compare(x, y, FALSE);
     } else if (Scm_SubclassP(cy, cx)) {
@@ -242,6 +244,7 @@ int Scm__CompareDistinctTypes(ScmObj x, ScmObj y)
     /* If we come here via Scm_Compare, we've alerady done this check.
        We check it again just in case when object-compare is directly
        called, to avoid yielding inconsistent result. */
+    if (Scm_EqualP(x, y)) return 0;
     if (compare_srfi114_types(x, y, &r)) return r;
 
     /* Now we have two objects of different types, both are not the
