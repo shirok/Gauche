@@ -462,6 +462,10 @@
 (define-cproc round (v) ::<number> :fast-flonum :constant
   (return (Scm_Round v SCM_ROUND_ROUND)))
 
+(select-module gauche)
+(define-cproc round-away (v) ::<number> :fast-flonum :constant ;SRFI-278
+  (return (Scm_Round v SCM_ROUND_AWAY)))
+
 ;; Transcedental functions.   First, real-only versions.
 ;; The name real-* is coined in SRFI-94.
 ;; NB: We don't support 'real-log' of SRFI-94.  It takes base number first,
@@ -980,6 +984,13 @@
 
 (define-cproc magnitude (z::<number>) ::<number> :fast-flonum :constant Scm_VMAbs)
 (define-cproc angle (z::<number>) ::<double> :fast-flonum :constant Scm_Angle)
+
+(select-module gauche)
+
+(define-cproc conjugate (z::<number>)   ;SRFI-278
+  (cond [(SCM_REALP z) (return z)]
+        [else (return (Scm_MakeComplex (SCM_COMPNUM_REAL z)
+                                       (- (SCM_COMPNUM_IMAG z))))]))
 
 ;; Utility to recognize clamp mode symbols and returns C enum
 ;; (Mostly used in uvector-related apis)

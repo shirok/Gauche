@@ -2094,40 +2094,44 @@
 ;;------------------------------------------------------------------
 (test-section "rounding")
 
-(define (round-tester value exactness cei flo tru rou)
+(define (round-tester value exactness cei flo tru rou awy)
   (test* (string-append "rounding " (number->string value))
-         (list exactness cei flo tru rou)
+         (list exactness cei flo tru rou awy)
          (let ((c (ceiling value))
                (f (floor value))
                (t (truncate value))
-               (r (round value)))
-           (list (and (exact? c) (exact? f) (exact? t) (exact? r))
-                 c f t r))))
+               (r (round value))
+               (a (round-away value)))
+           (list (and (exact? c) (exact? f) (exact? t) (exact? r) (exact? a))
+                 c f t r a))))
 
-(round-tester 0  #t 0 0 0 0)
-(round-tester 3  #t 3 3 3 3)
-(round-tester -3 #t -3 -3 -3 -3)
-(round-tester (expt 2 99) #t (expt 2 99) (expt 2 99) (expt 2 99) (expt 2 99))
+(round-tester 0  #t 0 0 0 0 0)
+(round-tester 3  #t 3 3 3 3 3)
+(round-tester -3 #t -3 -3 -3 -3 -3)
+(round-tester (expt 2 99) #t
+              (expt 2 99) (expt 2 99) (expt 2 99) (expt 2 99) (expt 2 99))
 (round-tester (- (expt 2 99)) #t
-              (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)))
+              (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)))
 
-(round-tester 9/4  #t 3 2 2 2)
-(round-tester -9/4 #t -2 -3 -2 -2)
+(round-tester 9/4  #t 3 2 2 2 3)
+(round-tester -9/4 #t -2 -3 -2 -2 -3)
 (round-tester 34985495387484938453495/17 #t
               2057970316910878732559
               2057970316910878732558
               2057970316910878732558
+              2057970316910878732559
               2057970316910878732559)
 (round-tester -34985495387484938453495/17 #t
               -2057970316910878732558
               -2057970316910878732559
               -2057970316910878732558
+              -2057970316910878732559
               -2057970316910878732559)
 
-(round-tester 35565/2 #t 17783 17782 17782 17782)
-(round-tester -35565/2 #t -17782 -17783 -17782 -17782)
-(round-tester 35567/2 #t 17784 17783 17783 17784)
-(round-tester -35567/2 #t -17783 -17784 -17783 -17784)
+(round-tester 35565/2 #t 17783 17782 17782 17782 17783)
+(round-tester -35565/2 #t -17782 -17783 -17782 -17782 -17783)
+(round-tester 35567/2 #t 17784 17783 17783 17784 17784)
+(round-tester -35567/2 #t -17783 -17784 -17783 -17784 -17784)
 
 ;; Ensure that rounding never yields -0.0.
 ;; It is not specified in R7RS, but having them return -0.0 complicates

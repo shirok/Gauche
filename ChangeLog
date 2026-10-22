@@ -1,5 +1,8 @@
 2026-10-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (scm_round), src/libnum.scm (round-away, conjugate):
+	  Added SRFI-278 procedures.
+
 	* src/compare.c (Scm_Compare): Integrate code paths for comparing
 	  distinct type objects, called from Scm_Compare and object-compare.
 	  Addresses https://github.com/shirok/Gauche/issues/1225

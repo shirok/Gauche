@@ -3322,6 +3322,9 @@ static ScmObj scm_round(ScmObj num, int mode, int vmp)
         case SCM_ROUND_TRUNC:
             offset = 0;
             break;
+        case SCM_ROUND_AWAY:
+            offset = (Scm_Sign(num) < 0)? -1 : 1;
+            break;
         case SCM_ROUND_ROUND: {
             ScmObj rem2 = Scm_Mul(Scm_Abs(rem), SCM_MAKE_INT(2));
             int cmp = Scm_NumCmp(SCM_RATNUM_DENOM(num), rem2);
@@ -3360,6 +3363,7 @@ static ScmObj scm_round(ScmObj num, int mode, int vmp)
 #else
         case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
 #endif
+        case SCM_ROUND_AWAY:  r = (v < 0.0)? floor(v) : ceil(v); break;
         case SCM_ROUND_ROUND: r = roundeven(v); break;
         default: Scm_Panic("something screwed up");
         }
@@ -3398,6 +3402,7 @@ ScmObj Scm_RoundToExact(ScmObj num, int mode)
 #else
         case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
 #endif
+        case SCM_ROUND_AWAY: r = (v < 0.0)? floor(v) : ceil(v); break;
         case SCM_ROUND_ROUND: r = roundeven(v); break;
         default: Scm_Panic("something screwed up");
         }

@@ -404,7 +404,8 @@ enum ScmRoundMode {
     SCM_ROUND_FLOOR,
     SCM_ROUND_CEIL,
     SCM_ROUND_TRUNC,
-    SCM_ROUND_ROUND
+    SCM_ROUND_ROUND,
+    SCM_ROUND_AWAY
 };
 SCM_EXTERN ScmObj Scm_Round(ScmObj num, int mode);
 SCM_EXTERN ScmObj Scm_RoundToExact(ScmObj num, int mode);
