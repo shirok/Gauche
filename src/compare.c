@@ -69,7 +69,17 @@ ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
 
 /*
  * Generic compare.
+ *
+ *  Scm_Compare
+ *    - Handle both are builtin types with defined orderring
+ *    - Handle if either one is subtype of the other, and has
+ *      ScmClass->compare handler
+ *    - Check SRFI-144 type-based ordering
+ *    - Call object-compare gf via Scm_ObjectCompare
+ *        -- Fallback to Scm__CompareDistinctTypes
  */
+
+static int compare_srfi114_types(ScmObj x, ScmObj y, int *result);
 
 int Scm_Compare(ScmObj x, ScmObj y)
 {
@@ -103,7 +113,7 @@ int Scm_Compare(ScmObj x, ScmObj y)
         return SCM_CHAR_VALUE(x) == SCM_CHAR_VALUE(y)? 0 :
             SCM_CHAR_VALUE(x) < SCM_CHAR_VALUE(y)? -1 : 1;
 
-    /* Set cx, cy here, for we may jump to distinct_types later. */
+    /* Set cx, cy here, for we may jump past the code using them. */
     ScmClass *cx = Scm_ClassOf(x);
     ScmClass *cy = Scm_ClassOf(y);
 
@@ -158,17 +168,31 @@ int Scm_Compare(ScmObj x, ScmObj y)
     }
 
  distinct_types:
-    /* x and y are of distinct types.  Follow the srfi-114 rule:
-       () < pairs < booleans < chars < strings < symbols < numbers
-          < vectors < bytevectors < others
-       Note that we already eliminated NULL.
-    */
+    {
+        int r;
+        if (compare_srfi114_types(x, y, &r)) return r;
+    }
+    /* Both x and y are of the types without srfi-114 order.  Let
+       object-compare decide; its fallback orders them by classes
+       (see Scm__CompareDistinctTypes). */
+    return Scm_ObjectCompare(x, y, FALSE);
+}
+
+/* x and y are of distinct types.  Follow the srfi-114 rule:
+   () < pairs < booleans < chars < strings < symbols < numbers
+      < vectors < bytevectors < others
+   If either x or y has a type in the above list, set *result to the
+   result and return TRUE.  Otherwise, returns FALSE.
+*/
+static int compare_srfi114_types(ScmObj x, ScmObj y, int *result)
+{
 #define ELIMINATE(pred) \
     do { \
-        if pred(x) return -1;                   \
-        if pred(y) return 1;                    \
+        if pred(x) { *result = -1; return TRUE; }       \
+        if pred(y) { *result = 1;  return TRUE; }       \
     } while (0)
 
+    ELIMINATE(SCM_NULLP);
     ELIMINATE(SCM_PAIRP);
     ELIMINATE(SCM_BOOLP);
     ELIMINATE(SCM_CHARP);
@@ -176,6 +200,7 @@ int Scm_Compare(ScmObj x, ScmObj y)
     ELIMINATE(SCM_SYMBOLP);
     ELIMINATE(SCM_NUMBERP);
     ELIMINATE(SCM_VECTORP);
+#undef ELIMINATE
 
     /* To conform srfi-114, we must order u8vector first.  For the
        consistency, we use this order:
@@ -187,21 +212,37 @@ int Scm_Compare(ScmObj x, ScmObj y)
         if (SCM_UVECTORP(y)) {
             int tx = Scm_UVectorType(Scm_ClassOf(x));
             int ty = Scm_UVectorType(Scm_ClassOf(y));
-            if (tx/2 < ty/2) return -1;
-            if (tx/2 > ty/2) return 1;
-            if (tx < SCM_UVECTOR_F16) {
+            if (tx/2 < ty/2) *result = -1;
+            else if (tx/2 > ty/2) *result = 1;
+            else if (tx < SCM_UVECTOR_F16) {
                 /* x and y are either sNvector and uNvector with the same N.
                    The odd one is uNvector.
                  */
-                return (tx%2)? -1:1;
+                *result = (tx%2)? -1:1;
             } else {
-                return (tx<ty)? -1:1;
+                *result = (tx<ty)? -1:1;
             }
+        } else {
+            *result = -1;       /* y is other, so x comes first. */
         }
-        return -1;              /* y is other, so x comes first. */
+        return TRUE;
     } else if (SCM_UVECTORP(y)) {
-        return 1;               /* x is other, so y comes first. */
+        *result = 1;            /* x is other, so y comes first. */
+        return TRUE;
     }
+    return FALSE;
+}
+
+/* Order objects x and y of distinct classes.  This is called as the
+   fallback of object-compare (so, if any method handles the comparison,
+   this won't be called). */
+int Scm__CompareDistinctTypes(ScmObj x, ScmObj y)
+{
+    int r;
+    /* If we come here via Scm_Compare, we've alerady done this check.
+       We check it again just in case when object-compare is directly
+       called, to avoid yielding inconsistent result. */
+    if (compare_srfi114_types(x, y, &r)) return r;
 
     /* Now we have two objects of different types, both are not the
        types defined the order in srfi-114.
@@ -211,6 +252,10 @@ int Scm_Compare(ScmObj x, ScmObj y)
        Note: Addresses and defining modules may be changed when
        the class is redefined.
     */
+    ScmClass *cx = Scm_ClassOf(x);
+    ScmClass *cy = Scm_ClassOf(y);
+    SCM_ASSERT(cx != cy);
+
     ScmObj nx = cx->name;
     ScmObj ny = cy->name;
     int nr = Scm_Compare(nx, ny);
@@ -220,8 +265,8 @@ int Scm_Compare(ScmObj x, ScmObj y)
     ScmObj my = cy->modules;
     while (SCM_PAIRP(mx) && SCM_PAIRP(my)) {
         SCM_ASSERT(SCM_MODULEP(SCM_CAR(mx)) && SCM_MODULEP(SCM_CAR(my)));
-        int r = Scm_Compare(SCM_MODULE(SCM_CAR(mx))->name,
-                            SCM_MODULE(SCM_CAR(my))->name);
+        r = Scm_Compare(SCM_MODULE(SCM_CAR(mx))->name,
+                        SCM_MODULE(SCM_CAR(my))->name);
         if (r != 0) return r;
         mx = SCM_CDR(mx);
         my = SCM_CDR(my);

@@ -46,4 +46,6 @@ struct ScmComparatorRec {
     u_long flags;
 };
 
+SCM_EXTERN int Scm__CompareDistinctTypes(ScmObj x, ScmObj y);
+
 #endif /*GAUCHE_PRIV_COMPAREP_H*/

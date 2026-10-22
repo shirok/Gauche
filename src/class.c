@@ -38,6 +38,7 @@
 #include "gauche/priv/configP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/classP.h"
+#include "gauche/priv/compareP.h"
 #include "gauche/priv/identifierP.h"
 #include "gauche/priv/macroP.h"
 #include "gauche/priv/pairP.h"
@@ -80,6 +81,7 @@ static ScmObj slot_set_using_accessor(ScmObj obj, ScmSlotAccessor *sa,
 static void   immutable_setter(ScmObj, ScmObj);
 static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs);
 
+static ScmObj fallback_equal(ScmObj *, int, ScmGeneric *);
 static ScmObj fallback_compare(ScmObj *, int, ScmGeneric *);
 
 static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
@@ -174,7 +176,7 @@ SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotRefUsingClass, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotSetUsingClass, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, fallback_compare, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, fallback_equal, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, fallback_compare, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectHash, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectApply, Scm_InvalidApply, NULL);
@@ -2088,14 +2090,24 @@ int Scm_ObjectCompare(ScmObj x, ScmObj y, int equalp)
     }
 }
 
-/* Fallback of object-equal? and object-compare.
-   We return #f for fallback of object-compare, which means two objects
-   can't be ordered.
- */
-static ScmObj fallback_compare(ScmObj *argv, int argc, ScmGeneric *gf)
+/* Fallback of object-equal?. */
+static ScmObj fallback_equal(ScmObj *argv, int argc, ScmGeneric *gf)
 {
     if (argc == 2) return SCM_FALSE;
     else return Scm_NoNextMethod(argv, argc, gf);
+}
+
+/* Fallback of object-compare.  If two objects are of the same class,
+   we return #f, meaning they can't be ordered.  Otherwise, we order
+   them by their types. */
+static ScmObj fallback_compare(ScmObj *argv, int argc, ScmGeneric *gf)
+{
+    if (argc == 2) {
+        if (Scm_ClassOf(argv[0]) == Scm_ClassOf(argv[1])) return SCM_FALSE;
+        return SCM_MAKE_INT(Scm__CompareDistinctTypes(argv[0], argv[1]));
+    } else {
+        return Scm_NoNextMethod(argv, argc, gf);
+    }
 }
 
 
