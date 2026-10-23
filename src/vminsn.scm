@@ -682,7 +682,10 @@
       ($type-check v0 SCM_NUMBERP "number")
       ($branch*
        (not (or (and (SCM_INTP v0)    (== (SCM_INT_VALUE v0) imm))
-                (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm))))))))
+                (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm))
+                (and (SCM_COMPNUMP v0)
+                     (== (SCM_COMPNUM_IMAG v0) 0.0)
+                     (== (SCM_COMPNUM_REAL v0) imm))))))))
 (define-insn BNEQC       0 obj+label #f
   (let* ([z]) (FETCH-OPERAND z) INCR-PC ($branch* (not (SCM_EQ VAL0 z)))))
 (define-insn BNEQVC      0 obj+label #f

@@ -246,8 +246,8 @@
     (%native <uint16>  "SCM_INTEGER_FITS_UINT16_P" "Scm_GetIntegerU16" "Scm_MakeIntegerU")
     (%native <uint32>  "SCM_INTEGER_FITS_UINT32_P" "Scm_GetIntegerU32" "Scm_MakeIntegerU")
     (%native <uint64>  "SCM_INTEGER_FITS_UINT64_P" "Scm_GetIntegerU64" "Scm_MakeIntegerU")
-    (%native <float>   "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
-    (%native <double>  "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
+    (%native <float>   "SCM_REAL_VALUED_P" "(float)Scm_GetDouble" "Scm_MakeFlonum")
+    (%native <double>  "SCM_REAL_VALUED_P" "Scm_GetDouble" "Scm_VMReturnFlonum")
 
     (%native <size_t>  "Scm_IntegerFitsSizeP" "Scm_IntegerToSize" "Scm_SizeToInteger")
     (%native <ssize_t> "Scm_IntegerFitsSsizeP" "Scm_IntegerToSsize" "Scm_SsizeToInteger")
@@ -259,13 +259,13 @@
     (%native <void>    "" "" "SCM_VOID_RETURN_VALUE")]
    [else
     ;; After 0.9.16
-    (define (%native native-type)
+    (define (%native native-type :optional (pred #f))
       (make <cgen-type>
         :name (~ native-type'name)
         :scheme-type native-type
         :c-type (~ native-type'c-type-name)
         :description (~ native-type'c-type-name)
-        :c-predicate (~ native-type'c-typecheck-name)
+        :c-predicate (or pred (~ native-type'c-typecheck-name))
         :unboxer (~ native-type'c-unboxer-name)
         :boxer (~ native-type'c-boxer-name)
         :maybe #f))
@@ -286,8 +286,12 @@
     (%native <uint32>)
     (%native <int64>)
     (%native <uint64>)
-    (%native <float>)
-    (%native <double>)
+    ;; TRANSIENT: Gauche up to 0.9.16_pre3 has SCM_REALP as the
+    ;; typecheck of <float> and <double>, which rejects compnums with
+    ;; zero imaginary part.  We override it while BUILD_GOSH may be
+    ;; such a version.  Remove this after 0.9.16 release.
+    (%native <float>  "SCM_REAL_VALUED_P")
+    (%native <double> "SCM_REAL_VALUED_P")
     (%native <size_t>)
     (%native <ssize_t>)
     (%native <ptrdiff_t>)
@@ -307,7 +311,7 @@
 ;; or <float>.  We keep it so for the backward compatibility, but at some
 ;; point we'll change it to a pass-through type.
 (make-cgen-type '<real> <real> "double" "real number"
-                "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+                "SCM_REAL_VALUED_P" "Scm_GetDouble" "Scm_MakeFlonum")
 (make-cgen-type '<char> <char> "ScmChar" "character"
                 "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
 (make-cgen-type '<boolean> <boolean> "int" "boolean"

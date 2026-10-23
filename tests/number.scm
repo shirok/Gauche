@@ -576,11 +576,24 @@
 (test* "complex reader" '(0.0 -1.0) (decompose-complex '-1.i))
 (test* "complex reader" '(0.0 1.0) (decompose-complex '+1.0i))
 (test* "complex reader" '(0.0 -1.0) (decompose-complex '-1.0i))
-(test* "complex reader" 1.0 (decompose-complex '1+0.0i))
-(test* "complex reader" 1.0 (decompose-complex '1+.0i))
-(test* "complex reader" 1.0 (decompose-complex '1+0.i))
-(test* "complex reader" 1.0 (decompose-complex '1+0.0e-43i))
-(test* "complex reader" 100.0 (decompose-complex '1e2+0.0e-43i))
+;; Inexact zero imaginary part makes a compnum, while exact zero
+;; imaginary part makes a real.
+(test* "complex reader" '(1.0 0.0) (decompose-complex '1+0.0i))
+(test* "complex reader" '(1.0 0.0) (decompose-complex '1+.0i))
+(test* "complex reader" '(1.0 0.0) (decompose-complex '1+0.i))
+(test* "complex reader" '(1.0 0.0) (decompose-complex '1+0.0e-43i))
+(test* "complex reader" '(100.0 0.0) (decompose-complex '1e2+0.0e-43i))
+(test* "complex reader" '(1.0 -0.0) (decompose-complex '1-0.0i))
+(test* "complex reader" '(-0.0 -0.0) (decompose-complex '-0.0-0.0i))
+(test* "complex reader" '(0.0 0.0) (decompose-complex '+0.0i))
+(test* "complex reader" '(0.0 -0.0) (decompose-complex '-0.0i))
+(test* "complex reader" 1 (decompose-complex '1+0i))
+(test* "complex reader" 1 (decompose-complex '1-0i))
+(test* "complex reader" 1.0 (decompose-complex '1.0+0i))
+(test* "complex reader" 1 (decompose-complex '#e1+0i))
+(test* "complex reader" 1 (decompose-complex '#e1+0.0i))
+(test* "complex reader" '(1.0 0.0) (decompose-complex '#i1+0i))
+(test* "complex reader" '(1.0 2.0) (decompose-complex '1+2i))
 
 (test* "complex reader" 'i (decompose-complex 'i))
 (test* "complex reader" #f (decompose-complex (string->number ".i")))
@@ -606,7 +619,7 @@
 
 (test* "complex reader (padding)" '(100.0 234.5)
        (decompose-complex (string->number "1##+234.5###i")))
-(test* "complex reader (padding)" '100.0
+(test* "complex reader (padding)" '(100.0 0.0)
        (decompose-complex (string->number "1##@.0###")))
 (test* "complex reader (padding)" '(0.0 1.2)
        (decompose-complex (string->number "1.2##@.5###pi")))
@@ -1743,8 +1756,8 @@
 (test* "compnum * 1" +i (* 1 +i) eqv?)
 (test* "1 * compnum" +i (* +i 1) eqv?)
 
-(test* "compnum * 0.0" 0.0 (* 0.0 +i) eqv?)
-(test* "0.0 * compnum" 0.0 (* +i 0.0) eqv?)
+(test* "compnum * 0.0" 0.0+0.0i (* 0.0 +i) eqv?)
+(test* "0.0 * compnum" 0.0+0.0i (* +i 0.0) eqv?)
 (test* "compnum * 1.0" +i (* 1.0 +i) eqv?)
 (test* "1.0 * compnum" +i (* +i 1.0) eqv?)
 
@@ -1847,7 +1860,7 @@
       (d-tester 13.0 4.0))
 
 ;; complex division
-(test* "complex division" 0.0
+(test* "complex division" 0.0+0.0i
        (let ((a 3)
              (b 4+3i)
              (c 7.3))
@@ -2766,6 +2779,174 @@
   (test* "radians->degrees + degrees->radians" 90
          (radians->degrees (degrees->radians 90))
          approx=?))
+
+;;------------------------------------------------------------------
+(test-section "complex numbers with zero imaginary part")
+
+;; A complex number with inexact zero imaginary part is kept as a compnum,
+;; for the sign of the zero matters on branch cuts.  It isn't real?,
+;; but it is real-valued?, and real-domain procedures accept it.
+
+(define (complex-parts z)
+  (if (real? z)
+    z
+    (list 'C (real-part z) (imag-part z))))
+
+(let ()
+  (define-syntax t
+    (syntax-rules ()
+      [(_ expect expr) (test* 'expr expect (complex-parts expr))]))
+
+  (t '(C 1.0 0.0)  (make-rectangular 1.0 0.0))
+  (t '(C 1.0 -0.0) (make-rectangular 1.0 -0.0))
+  (t '(C 1.0 0.0)  (make-rectangular 1 0.0))
+  (t 1             (make-rectangular 1 0))
+  (t 1.0           (make-rectangular 1.0 0))
+  (t '(C 2.0 0.0)  (make-polar 2.0 0.0))
+  (t '(C 2.0 -0.0) (make-polar 2.0 -0.0))
+  (t 2             (make-polar 2 0))
+  (t '(C 1.0 -0.0) (string->number "1.0-0.0i"))
+  (t '(C 1.0 0.0)  (read-from-string "#c(1.0 0.0)"))
+  (t 1.0           (read-from-string "#c(1 0)"))
+
+  ;; Arithmetic.  Results are not normalized to reals.
+  (t '(C -1.0 0.0)  (* +i +i))
+  (t '(C 2.0 0.0)   (* 1+i 1-i))
+  (t '(C 2.0 0.0)   (+ 1.0+0.0i 1))
+  (t '(C 2.0 -0.0)  (+ 1 1.0-0.0i))
+  (t '(C 0.0 0.0)   (- 1.0+0.0i 1))
+  (t '(C 1.0 -0.0)  (- 1.0 0.0+0.0i))
+  (t '(C -1.0 -0.0) (- 1.0+0.0i))
+  (t '(C 2.0 -0.0)  (* 2.0 1.0-0.0i))
+  (t '(C -2.0 0.0)  (* -2 1.0-0.0i))
+  (t '(C 0.5 -0.0)  (/ 1.0-0.0i 2))
+  (t '(C 1.0 -0.0)  (/ 1.0+0.0i))
+  (t '(C 1.0 -0.0)  (conjugate 1.0+0.0i))
+  (t '(C 1.0 0.0)   (conjugate 1.0-0.0i))
+  (t '(C 1.0 0.0)   (inexact 1.0+0.0i))
+  )
+
+(test* "printing" "1.0+0.0i" (number->string 1.0+0.0i))
+(test* "printing" "1.0-0.0i" (number->string 1.0-0.0i))
+(test* "printing" "-0.0-0.0i" (number->string (make-rectangular -0.0 -0.0)))
+(test* "write/read roundtrip" #t
+       (every (^z (eqv? z (read-from-string (write-to-string z))))
+              (list 1.0+0.0i 1.0-0.0i -0.0+0.0i -0.0-0.0i
+                    +inf.0-0.0i -inf.0+0.0i)))
+
+(let ()
+  (define-syntax t
+    (syntax-rules ()
+      [(_ expect expr) (test* 'expr expect expr)]))
+
+  ;; predicates
+  (t #t (number? 1.0+0.0i))
+  (t #t (complex? 1.0+0.0i))
+  (t #f (real? 1.0+0.0i))
+  (t #f (real? 1.0-0.0i))
+  (t #f (rational? 1.0+0.0i))
+  (t #f (integer? 3.0+0.0i))
+  (t #t (real-valued? 1.0+0.0i))
+  (t #t (real-valued? 1.0-0.0i))
+  (t #t (real-valued? 1.0))
+  (t #f (real-valued? 1.0+1.0i))
+  (t #f (real-valued? 'a))
+  (t #t (rational-valued? 1.5-0.0i))
+  (t #f (rational-valued? +inf.0+0.0i))
+  (t #f (rational-valued? +nan.0+0.0i))
+  (t #t (rational-valued? 1/2))
+  (t #t (integer-valued? 3.0+0.0i))
+  (t #f (integer-valued? 3.5+0.0i))
+  (t #t (integer-valued? 3))
+  (t #f (integer-valued? 3+1i))
+  (t #f (exact? 1.0+0.0i))
+  (t #t (inexact? 1.0+0.0i))
+  (t #t (zero? 0.0+0.0i))
+  (t #t (zero? -0.0-0.0i))
+  (t #f (zero? 0.0+1.0i))
+  (t #f (zero? 1.0+0.0i))
+  (t #t (positive? 1.0-0.0i))
+  (t #f (positive? -1.0+0.0i))
+  (t #t (negative? -1.0+0.0i))
+  (t #f (negative? 0.0-0.0i))
+  (t #t (odd? 3.0+0.0i))
+  (t #t (even? 4.0-0.0i))
+  (t #t (finite? 1.0+0.0i))
+  (t #t (infinite? +inf.0+0.0i))
+  (t #t (nan? +nan.0-0.0i))
+
+  ;; equivalence
+  (t #t (eqv? 1.0+0.0i 1.0+0.0i))
+  (t #f (eqv? 1.0+0.0i 1.0-0.0i))
+  (t #f (eqv? 1.0+0.0i 1.0))
+  (t #f (eqv? 1.0 1.0-0.0i))
+  (t #f (eqv? 0.0+1.0i -0.0+1.0i))
+  (t #t (eqv? -0.0+1.0i -0.0+1.0i))
+  (t #f (equal? 1.0+0.0i 1.0-0.0i))
+  (t #f (equal? '(1.0+0.0i) '(1.0)))
+  (t #t (= 1.0+0.0i 1.0-0.0i))
+  (t #t (= 1.0+0.0i 1.0))
+  (t #t (= 1 1.0+0.0i))
+  (t #t (= 1.0-0.0i 1))
+  (t #t (= 1/2 0.5+0.0i 0.5))
+  (t #f (= 1.0+0.0i 2))
+  (t #f (= 1.0+0.0i 1+i))
+  (t #f (= +nan.0+0.0i +nan.0+0.0i))
+  ;; this exercises BNUMNEI instruction
+  (t 'yes (let ([x (make-rectangular 10.0 0.0)]) (if (= x 10) 'yes 'no)))
+  (t 'no  (let ([x (make-rectangular 10.0 1.0)]) (if (= x 10) 'yes 'no)))
+  (t 2 (let ([h (make-hash-table 'eqv?)])
+         (hash-table-put! h 1.0+0.0i 'a)
+         (hash-table-put! h 1.0-0.0i 'b)
+         (hash-table-num-entries h)))
+
+  ;; comparison
+  (t #t (< 1.0+0.0i 2))
+  (t #t (< 1 2.0-0.0i 3.0+0.0i))
+  (t #f (< 1.0+0.0i 1.0-0.0i))
+  (t #t (<= 1.0+0.0i 1.0-0.0i))
+  (t #t (> 2.0+0.0i 1/2))
+  (t #t (>= 2.0+0.0i 2))
+  (t #f (< +nan.0+0.0i 1))
+  (t #f (> +nan.0+0.0i 1))
+  (t 3.0 (max 1.0+0.0i 3))
+  (t 1.0 (min 1.0+0.0i 3))
+  (t 3.0 (clamp 5.0+0.0i 0 3))
+  (t 0.5 (clamp 0.5-0.0i 0 3))
+  (t (test-error) (< 1.0+1.0i 2))
+  (t (test-error) (max 1.0+1.0i 2))
+
+  ;; real-domain procedures
+  (t 1.0  (floor 1.5+0.0i))
+  (t 2.0  (ceiling 1.5-0.0i))
+  (t 1.0  (truncate 1.5+0.0i))
+  (t 2.0  (round 2.5+0.0i))
+  (t 2    (round->exact 2.5-0.0i))
+  (t 1    (floor->exact 1.5+0.0i))
+  (t 3/2  (exact 1.5+0.0i))
+  (t 1    (exact 1.0-0.0i))
+  (t (test-error) (exact 1.0+2.0i))
+  (t 3.0  (quotient 7.0+0.0i 2))
+  (t 3.0  (quotient 7 2.0-0.0i))
+  (t 1.0  (remainder 7.0+0.0i 2))
+  (t 1.0  (modulo 7 2.0-0.0i))
+  (t 2.0  (gcd 6.0+0.0i 4))
+  (t 12.0 (lcm 6 4.0-0.0i))
+  (t 2.0  (abs -2.0+0.0i))
+  (t 3.0  (div 7.0+0.0i 2))
+  (t 1.0  (mod 7.0+0.0i 2))
+  (t 2.0  (real-sqrt 4.0+0.0i))
+  (t 0.0  (real-ln 1.0-0.0i))
+  (t 1.0  (real-exp 0.0+0.0i))
+  (t 0.0  (real-sin 0.0+0.0i))
+  (t 0.7853981633974483 (atan 1 1.0+0.0i))
+  (t 0.7853981633974483 (atan 1.0-0.0i 1))
+  (t 1.0  (real-part 1.0-0.0i))
+  (t -0.0 (imag-part 1.0-0.0i))
+  (t -3.141592653589793 (angle -1.0-0.0i))
+  (t 3.141592653589793 (angle -1.0+0.0i))
+  (t (test-error) (real-sqrt 4.0+1.0i))
+  )
 
 ;;------------------------------------------------------------------
 (test-section "ffx optimization")

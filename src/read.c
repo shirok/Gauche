@@ -1870,8 +1870,8 @@ static ScmObj read_sharp_word_1(ScmPort *port, char ch, ScmReadContext *ctx)
                 || !SCM_REALP(SCM_CADR(r))) {
                 Scm_ReadError(port, "invalid #c syntax: #c%S", r);
             }
-            return Scm_MakeComplex(Scm_GetDouble(SCM_CAR(r)),
-                                   Scm_GetDouble(SCM_CADR(r)));
+            return Scm_MakeRectangular(Scm_Inexact(SCM_CAR(r)),
+                                       SCM_CADR(r));
         }
         break;
     case 'f':

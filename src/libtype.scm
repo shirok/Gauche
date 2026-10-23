@@ -1163,9 +1163,9 @@
     Scm_IntegerFitsUintptrP Scm_UintptrToInteger Scm_IntegerToUintptr TRUE)
 
   (define-native-type <float>   Scm_NativeFloatType   SCM_CLASS_REAL float
-    SCM_REALP Scm_MakeFlonum Scm_GetDouble FALSE)
+    SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE)
   (define-native-type <double>  Scm_NativeDoubleType  SCM_CLASS_REAL double
-    SCM_REALP Scm_MakeFlonum Scm_GetDouble FALSE)
+    SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE)
 
   ;; <ScmObj> is a reference to ScmObj---it is basically <top>, but
   ;; we provide a dedicated native type so that ScmObj is passed to and from

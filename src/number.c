@@ -828,26 +828,73 @@ ScmObj Scm_MakeCompnum(double r, double i)
     return SCM_OBJ(c);
 }
 
+/* NB: Up to 0.9.15, Scm_MakeComplex and Scm_MakeComplexPolar returned
+   a flonum if the imaginary part is 0.0.  We no longer do so, for the sign
+   of zero imaginary part matters on branch cuts (e.g. sqrt(-1+0.0i) vs
+   sqrt(-1-0.0i)).  Only an exact zero imaginary part makes a real number;
+   use Scm_MakeRectangular and Scm_MakePolar for that. */
 ScmObj Scm_MakeComplex(double r, double i)
 {
-    if (i == 0.0) return Scm_MakeFlonum(r);
-    else          return Scm_MakeCompnum(r, i);
+    return Scm_MakeCompnum(r, i);
 }
 
 ScmObj Scm_MakeComplexPolar(double mag, double angle)
 {
-    double real = mag * cos(angle);
-    double imag = mag * sin(angle);
-    if (imag == 0.0) return Scm_MakeFlonum(real);
-    else             return Scm_MakeCompnum(real, imag);
+    return Scm_MakeCompnum(mag * cos(angle), mag * sin(angle));
 }
 
 ScmObj Scm_MakeComplexPolarPI(double mag, double pi_angle)
 {
-    double real = mag * Scm_CosPi(pi_angle);
-    double imag = mag * Scm_SinPi(pi_angle);
-    if (imag == 0.0) return Scm_MakeFlonum(real);
-    else             return Scm_MakeCompnum(real, imag);
+    return Scm_MakeCompnum(mag * Scm_CosPi(pi_angle),
+                           mag * Scm_SinPi(pi_angle));
+}
+
+/* Real-domain functions accept a compnum with zero imaginary part,
+   treating it as its real part.  We check it in the slow path of those
+   functions after the fast type dispatch fails, so the common cases
+   don't pay the cost. */
+static inline int zero_imag_compnum_p(ScmObj obj)
+{
+    return SCM_COMPNUMP(obj) && SCM_COMPNUM_IMAG(obj) == 0.0;
+}
+
+/* If OBJ is a compnum with zero imaginary part, returns its real part
+   as a flonum.  Otherwise returns OBJ. */
+static inline ScmObj coerce_real_valued(ScmObj obj)
+{
+    if (zero_imag_compnum_p(obj)) {
+        return Scm_MakeFlonum(SCM_COMPNUM_REAL(obj));
+    }
+    return obj;
+}
+
+/* Scheme's make-rectangular and make-polar.  The arguments must be
+   real-valued.  If the imaginary part (or the angle) is an exact zero,
+   the result is real; otherwise it is a compnum.  */
+ScmObj Scm_MakeRectangular(ScmObj real, ScmObj imag)
+{
+    real = Scm_RealValuedToReal(real);
+    imag = Scm_RealValuedToReal(imag);
+    if (SCM_EXACT_ZERO_P(imag)) return real;
+    return Scm_MakeCompnum(Scm_GetDouble(real), Scm_GetDouble(imag));
+}
+
+ScmObj Scm_MakePolar(ScmObj mag, ScmObj angle)
+{
+    mag = Scm_RealValuedToReal(mag);
+    angle = Scm_RealValuedToReal(angle);
+    if (SCM_EXACT_ZERO_P(angle)) return mag;
+    return Scm_MakeComplexPolar(Scm_GetDouble(mag), Scm_GetDouble(angle));
+}
+
+/* If OBJ is real, returns it.  If OBJ is a compnum with zero imaginary
+   part, returns its real part as a flonum.  Otherwise, an error. */
+ScmObj Scm_RealValuedToReal(ScmObj obj)
+{
+    if (SCM_REALP(obj)) return obj;
+    if (zero_imag_compnum_p(obj)) return coerce_real_valued(obj);
+    Scm_Error("real number required, but got %S", obj);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /* NB: This isn't called by Scheme's real-part; see libnum.scm */
@@ -1611,6 +1658,7 @@ double Scm_GetDouble(ScmObj obj)
         double dquo = Scm_GetDouble(quo);
         return ldexp(dquo, -shift);
     }
+    else if (zero_imag_compnum_p(obj)) return SCM_COMPNUM_REAL(obj);
     else return 0.0;
 }
 
@@ -1648,6 +1696,7 @@ int Scm_OddP(ScmObj obj)
     if (SCM_FLONUMP(obj) && Scm_IntegerP(obj)) {
         return (fmod(SCM_FLONUM_VALUE(obj), 2.0) != 0.0);
     }
+    if (zero_imag_compnum_p(obj)) return Scm_OddP(coerce_real_valued(obj));
     Scm_Error("integer required, but got %S", obj);
     return FALSE;       /* dummy */
 
@@ -1746,6 +1795,11 @@ int Scm_Sign(ScmObj obj)
     }
     if (SCM_RATNUMP(obj)) {
         return Scm_Sign(SCM_RATNUM_NUMER(obj));
+    }
+    if (zero_imag_compnum_p(obj)) {
+        double v = SCM_COMPNUM_REAL(obj);
+        if (v == 0.0) return 0;
+        return (v > 0.0)? 1 : -1;
     }
     /* NB: zero? can accept a complex number, but it is processed in
        the stub function.   see libnum.scm */
@@ -1860,8 +1914,13 @@ ScmObj Scm_Exact(ScmObj obj)
             obj = Scm_ApplyRec1(real_to_rational, obj);
         }
     } else if (SCM_COMPNUMP(obj)) {
+        /* We don't have exact compnums.  If the imaginary part is zero,
+           we can return an exact real number. */
+        if (SCM_COMPNUM_IMAG(obj) == 0.0) {
+            return Scm_Exact(coerce_real_valued(obj));
+        }
         Scm_Error("exact complex is not supported: %S", obj);
-    } if (!SCM_EXACTP(obj)) {
+    } else if (!SCM_EXACTP(obj)) {
         Scm_Error("number required: %S", obj);
     }
     return obj;
@@ -2667,8 +2726,14 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
   DIVBYZERO:
     Scm_Error("attempt to calculate a quotient by zero");
   BADARGY:
+    if (zero_imag_compnum_p(y)) {
+        return Scm_Quotient(x, coerce_real_valued(y), rem);
+    }
     x = y;
   BADARG:
+    if (zero_imag_compnum_p(x)) {
+        return Scm_Quotient(coerce_real_valued(x), y, rem);
+    }
     SCM_FLONUM_ENSURE_MEM(x);
     Scm_Error("integer required, but got %S", x);
     return SCM_UNDEFINED;       /* dummy */
@@ -2775,8 +2840,14 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
   DIVBYZERO:
     Scm_Error("attempt to take a modulo or remainder by zero");
   BADARGY:
+    if (zero_imag_compnum_p(y)) {
+        return Scm_Modulo(x, coerce_real_valued(y), remp);
+    }
     x = y;
   BADARG:
+    if (zero_imag_compnum_p(x)) {
+        return Scm_Modulo(coerce_real_valued(x), y, remp);
+    }
     SCM_FLONUM_ENSURE_MEM(x);
     Scm_Error("integer required, but got %S", x);
     return SCM_UNDEFINED;       /* dummy */
@@ -2824,6 +2895,8 @@ static u_long gcd_bigfix(ScmBignum *x, u_long y)
 /* We don't provide Scm_VMGcd, assuming passing flonums to gcd is rare. */
 ScmObj Scm_Gcd(ScmObj x, ScmObj y)
 {
+    x = coerce_real_valued(x);
+    y = coerce_real_valued(y);
     if (!Scm_IntegerP(x)) {
         Scm_Error("integer required, but got %S", x);
     }
@@ -2953,8 +3026,8 @@ static ScmObj scm_expt(ScmObj x, ScmObj y, int vmp)
     /* NB: The exact case is handled by expt in libnum.scm; we check this case
        just for the backward compatibility. */
     if (SCM_EXACTP(x) && SCM_INTEGERP(y)) return Scm_ExactIntegerExpt(x, y);
-    if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
-    if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
+    if (!SCM_REALP(x)) x = Scm_RealValuedToReal(x);
+    if (!SCM_REALP(y)) y = Scm_RealValuedToReal(y);
     double dx = Scm_GetDouble(x);
     double dy = Scm_GetDouble(y);
     if (dy == 0.0) {
@@ -3039,7 +3112,9 @@ double Scm_TanPi(double x)
 
 static inline int nan_p(ScmObj arg)
 {
-    return (SCM_FLONUMP(arg) && SCM_IS_NAN(SCM_FLONUM_VALUE(arg)));
+    return ((SCM_FLONUMP(arg) && SCM_IS_NAN(SCM_FLONUM_VALUE(arg)))
+            || (SCM_COMPNUMP(arg) && SCM_COMPNUM_IMAG(arg) == 0.0
+                && SCM_IS_NAN(SCM_COMPNUM_REAL(arg))));
 }
 
 static inline int either_nan_p(ScmObj arg0, ScmObj arg1)
@@ -3054,9 +3129,11 @@ int Scm_NumEq(ScmObj arg0, ScmObj arg1)
             return ((SCM_COMPNUM_REAL(arg0) == SCM_COMPNUM_REAL(arg1))
                     && (SCM_COMPNUM_IMAG(arg0) == SCM_COMPNUM_IMAG(arg1)));
         }
-        return FALSE;
+        /* real vs compnum; = only cares the value, so x+0.0i = x. */
+        if (SCM_COMPNUM_IMAG(arg0) != 0.0) return FALSE;
+        return Scm_NumEq(coerce_real_valued(arg0), arg1);
     } else {
-        if (SCM_COMPNUMP(arg1)) return FALSE;
+        if (SCM_COMPNUMP(arg1)) return Scm_NumEq(arg1, arg0);
         if (either_nan_p(arg0, arg1)) return FALSE;
         return (Scm_NumCmp(arg0, arg1) == 0);
     }
@@ -3228,6 +3305,9 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
     }
     else badnum = arg0;
 
+    if (zero_imag_compnum_p(arg0) || zero_imag_compnum_p(arg1)) {
+        return Scm_NumCmp(coerce_real_valued(arg0), coerce_real_valued(arg1));
+    }
     SCM_FLONUM_ENSURE_MEM(badnum);
     Scm_Error("real number required: %S", badnum);
     return 0;                    /* dummy */
@@ -3235,7 +3315,7 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 
 void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
 {
-    if (!SCM_REALP(arg0)) Scm_Error("real number required, but got %S", arg0);
+    if (!SCM_REALP(arg0)) arg0 = Scm_RealValuedToReal(arg0);
     if (nan_p(arg0)) goto got_nan;
     int inexact = !SCM_EXACTP(arg0);
     ScmObj mi = arg0;
@@ -3243,7 +3323,7 @@ void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
 
     for (;SCM_PAIRP(args); args = SCM_CDR(args)) {
         ScmObj arg = SCM_CAR(args);
-        if (!SCM_REALP(arg)) Scm_Error("real number required, but got %S", arg);
+        if (!SCM_REALP(arg)) arg = Scm_RealValuedToReal(arg);
         if (nan_p(arg)) goto got_nan;
         if (!SCM_EXACTP(arg)) inexact = TRUE;
         if (min && Scm_NumCmp(mi, arg) > 0) mi = arg;
@@ -3370,6 +3450,9 @@ static ScmObj scm_round(ScmObj num, int mode, int vmp)
         if (r == 0.0) r = 0.0;  /* Don't return -0.0 */
         RETURN_FLONUM(r);
     }
+    if (zero_imag_compnum_p(num)) {
+        return scm_round(coerce_real_valued(num), mode, vmp);
+    }
     Scm_Error("real number required, but got %S", num);
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -3410,6 +3493,9 @@ ScmObj Scm_RoundToExact(ScmObj num, int mode)
     }
     if (SCM_INTEGERP(num)) return num;
     if (SCM_RATNUMP(num))  return Scm_Round(num, mode);
+    if (zero_imag_compnum_p(num)) {
+        return Scm_RoundToExact(coerce_real_valued(num), mode);
+    }
     Scm_Error("real number required, but got %S", num);
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -4968,6 +5054,7 @@ static ScmObj read_real(const char **strp, int *lenp,
     int minusp = FALSE;
     int sign_seen = FALSE;
     int fracdigs = 0;
+    int point_seen = FALSE;
     ScmObj intpart, fraction;
     const char *mark;           /* will point (*strp)[1] if there's a sign,
                                    otherwise (*strp)[0], to check if the
@@ -5081,6 +5168,7 @@ static ScmObj read_real(const char **strp, int *lenp,
         }
 
         (*strp)++; (*lenp)--;
+        point_seen = TRUE;
         const char *fracp = *strp;
         fraction = read_uint(strp, lenp, ctx, intpart);
 
@@ -5152,6 +5240,15 @@ static ScmObj read_real(const char **strp, int *lenp,
     }
 
     /*Scm_Printf(SCM_CURERR, "fraction=%S, exponent=%d\n", fraction, exponent);*/
+
+    /* A plain integer followed by other characters, e.g. the parts of
+       "1+0i".  It's exact unless specified otherwise.  We need this to
+       distinguish exact zero imaginary part (1+0i is real) from inexact
+       one (1+0.0i is a compnum). */
+    if (!point_seen && exponent_char == 0 && !ctx->padread
+        && ctx->exactness != INEXACT && SCM_INTEGERP(fraction)) {
+        return minusp? Scm_Negate(fraction) : fraction;
+    }
 
     /* Compose the number. */
     if (ctx->exactness == EXACT) {
@@ -5360,6 +5457,7 @@ static ScmObj read_number(struct numread_packet *ctx)
             /* Gauche extension: X@Ypi */
             int pi_angle = (len == 2 && str[0] == 'p' && str[1] == 'i');
             if (!pi_angle && len != 0) return SCM_FALSE;
+            if (SCM_EXACT_ZERO_P(angle)) return realpart;
             CHK_EXACT_COMPLEX();
             double dmag = Scm_GetDouble(realpart);
             double dangle = Scm_GetDouble(angle);
@@ -5381,8 +5479,9 @@ static ScmObj read_number(struct numread_packet *ctx)
                 || (*str != 'i' && *str != 'I')) {
                 return SCM_FALSE;
             }
+            /* NB: x+0.0i and x-0.0i are compnums. */
+            if (SCM_EXACT_ZERO_P(imagpart)) return realpart;
             CHK_EXACT_COMPLEX();
-            if (Scm_Sign(imagpart) == 0) return realpart;
             return Scm_MakeComplex(Scm_GetDouble(realpart),
                                    Scm_GetDouble(imagpart));
         }
@@ -5391,7 +5490,7 @@ static ScmObj read_number(struct numread_packet *ctx)
         /* '+' <ureal> 'i'  or '-' <ureal> 'i' */
         if (!sign_seen || len != 1) return SCM_FALSE;
         CHK_EXACT_COMPLEX();
-        if (Scm_Sign(realpart) == 0) return Scm_MakeFlonum(0.0);
+        if (SCM_EXACT_ZERO_P(realpart)) return Scm_MakeFlonum(0.0);
         else return Scm_MakeComplex(0.0, Scm_GetDouble(realpart));
     default:
         return SCM_FALSE;

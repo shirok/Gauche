@@ -60,11 +60,31 @@
 (define-cproc integer? (obj) ::<boolean> :fast-flonum :constant
   (return (and (SCM_NUMBERP obj) (Scm_IntegerP obj))))
 
+;; R6RS.  A complex number with zero imaginary part (e.g. 1.0+0.0i or
+;; 1.0-0.0i) isn't real?, but real-valued?.  Likewise for rational and
+;; integer.  Real-domain procedures accept such numbers.
+(select-module gauche)
+(define-cproc real-valued? (obj) ::<boolean> :fast-flonum :constant
+  SCM_REAL_VALUED_P)
+(define-cproc rational-valued? (obj) ::<boolean> :fast-flonum :constant
+  (cond [(SCM_REALP obj) (return (Scm_FiniteP obj))]
+        [(SCM_REAL_VALUED_P obj) (return (isfinite (SCM_COMPNUM_REAL obj)))]
+        [else (return FALSE)]))
+(define-cproc integer-valued? (obj) ::<boolean> :fast-flonum :constant
+  (cond [(SCM_REALP obj) (return (Scm_IntegerP obj))]
+        [(SCM_REAL_VALUED_P obj)
+         (return (Scm_IntegerP (Scm_RealValuedToReal obj)))]
+        [else (return FALSE)]))
+(select-module scheme)
+
 (define-cproc exact? (obj)   ::<boolean> :fast-flonum :constant SCM_EXACTP)
 (define-cproc inexact? (obj) ::<boolean> :fast-flonum :constant SCM_INEXACTP)
 
 (define-cproc zero? (obj::<number>) ::<boolean> :fast-flonum :constant
-  (return (and (SCM_REALP obj) (== (Scm_Sign obj) 0))))
+  (if (SCM_COMPNUMP obj)
+    (return (and (== (SCM_COMPNUM_REAL obj) 0.0)
+                 (== (SCM_COMPNUM_IMAG obj) 0.0)))
+    (return (== (Scm_Sign obj) 0))))
 
 (define-cproc positive? (obj) ::<boolean> :fast-flonum :constant
   (return (> (Scm_Sign obj) 0)))
@@ -410,7 +430,7 @@
     (if (null? args)
       arg
       (recn ((with-module gauche.internal %gcd) arg (car args)) (cdr args))))
-  (let1 args (map (^[arg] (unless (integer? arg)
+  (let1 args (map (^[arg] (unless (integer-valued? arg)
                             (error "integer required, but got" arg))
                     (abs arg))
                   args)
@@ -426,7 +446,7 @@
     (if (null? args)
       arg
       (recn (lcm2 arg (car args)) (cdr args))))
-  (let1 args (map (^[arg] (unless (integer? arg)
+  (let1 args (map (^[arg] (unless (integer-valued? arg)
                             (error "integer required, but got" arg))
                     (abs arg))
                   args)
@@ -473,7 +493,7 @@
 (select-module gauche)
 (define-cproc real-exp (x::<double>) ::<double> :fast-flonum :constant exp)
 (define-cproc real-ln (x::<number>) ::<double> :fast-flonum :constant
-  (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
+  (unless (SCM_REALP x) (set! x (Scm_RealValuedToReal x)))
   (when (< (Scm_Sign x) 0)
     (Scm_Error "Argument must be nonnegative real number: %S" x))
   ;; We can't simply cast x to double, for x can be a large bignum
@@ -516,7 +536,7 @@
 
 (define-cproc real-atan (z::<double> :optional x) ::<double> :fast-flonum :constant
   (cond [(SCM_UNBOUNDP x) (return (atan z))]
-        [else (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
+        [else (unless (SCM_REAL_VALUED_P x) (SCM_TYPE_ERROR x "real number"))
               (return (atan2 z (Scm_GetDouble x)))]))
 
 (define-cproc real-sinh (x::<double>) ::<double> :fast-flonum :constant sinh)
@@ -556,8 +576,8 @@
 ;; real result whenever possible, which may be on a different branch;
 ;; e.g. (expt -1 1/3) => 1@1/3pi, while (real-ext -1 1/3) => -1.
 (define-cproc %real-expt (x y error?::<boolean>) :fast-flonum :constant
-  (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real"))
-  (unless (SCM_REALP y) (SCM_TYPE_ERROR y "real"))
+  (unless (SCM_REALP x) (set! x (Scm_RealValuedToReal x)))
+  (unless (SCM_REALP y) (set! y (Scm_RealValuedToReal y)))
   (if (< (Scm_Sign x) 0)
     ;; We use Scm_IntegerP to allow inexact integer, e.g. (real-expt -1.0 -1.0)
     (cond [(Scm_IntegerP y) (return (Scm_Expt x y))]
@@ -828,7 +848,8 @@
            (cond [(eq? z 0) +nan.0]
                  [(negative-zero? z) -1.5707963267948966]
                  [else +1.5707963267948966])]
-          [(and (real? z) (real? (car x))) (real-atan z (car x))]
+          [(and (real-valued? z) (real-valued? (car x)))
+           (real-atan z (car x))]
           [else (error "two-argument atan requires real numbers, but got"
                        (list z (car x)))])))
 
@@ -941,8 +962,8 @@
          (return arg1)]))
 
 (define-cproc clamp (x :optional (min #f) (max #f)) :fast-flonum :constant
+  (unless (SCM_REALP x) (set! x (Scm_RealValuedToReal x)))
   (let* ([r x] [maybe_exact::int (SCM_EXACTP x)])
-    (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
     (cond [(SCM_EXACTP min) (when (< (Scm_NumCmp x min) 0) (set! r min))]
           [(SCM_FLONUMP min)
            (set! maybe_exact FALSE)
@@ -965,10 +986,10 @@
 ;;
 
 (select-module scheme)
-(define-cproc make-rectangular (a::<double> b::<double>) ::<number> :constant
-  Scm_MakeComplex)
-(define-cproc make-polar (r::<double> t::<double>) ::<number> :constant
-  Scm_MakeComplexPolar)
+(define-cproc make-rectangular (a b) ::<number> :constant
+  Scm_MakeRectangular)
+(define-cproc make-polar (r t) ::<number> :constant
+  Scm_MakePolar)
 
 ;; we don't use Scm_RealPart and Scm_ImagPart, for preserving exactness
 ;; and avoiding extra allocation.

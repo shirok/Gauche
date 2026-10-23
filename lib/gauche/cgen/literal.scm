@@ -650,7 +650,7 @@
               [(positive? v) "SCM_DBL_POSITIVE_INFINITY"]
               [else "SCM_DBL_NEGATIVE_INFINITY"]))
       (print "  "(cgen-c-name self)" = "
-             "Scm_MakeComplex("(double-literal real)", "(double-literal imag)");")))
+             "Scm_MakeCompnum("(double-literal real)", "(double-literal imag)");")))
   (static (self) #f))
 
 ;; pair ---------------------------------------------------------

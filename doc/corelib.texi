@@ -2995,7 +2995,8 @@ Gaucheでは、数の集合は複素数の集合と同一であり、有理数�
 (complex? 3+4i)   @result{} #t
 (complex? 3)      @result{} #t
 (real? 3)         @result{} #t
-(real? -2.5+0.0i) @result{} #t
+(real? -2.5+0i)   @result{} #t
+(real? -2.5+0.0i) @result{} #f
 (real? #e1e10)    @result{} #t
 (integer? 3+0i)   @result{} #t
 (integer? 3.0)    @result{} #t
@@ -3007,20 +3008,44 @@ Gaucheでは、数の集合は複素数の集合と同一であり、有理数�
 @end example
 
 @c EN
-Note: R6RS adopts more strict definition on exactness,
-and notably, it defines a complex number with non-exact zero imaginary
-part is not a real number.   Currently Gauche doesn't have
-exact complex numbers, and automatically coerces complex
-numbers with zero imaginary part to a real number.
-Thus R6RS code that relies on the fact that @code{(real? 1+0.0i)} is
-@code{#f} won't work with Gauche.
+Note: A complex number with inexact zero imaginary part,
+such as @code{1.0+0.0i} or @code{1.0-0.0i}, is treated as a
+non-real complex number,
+since the sign of the zero imaginary part matters at branch cuts.
+@code{real?} returns @code{#f} for such complex numbers.
+
+However, as inexact zero is numerically equal to exact zero
+(@code{(= 0 0.0)} @result{} @code{#t}), a complex number
+with inexact zero imaginary part is numerically equal to
+its real part (@code{(= 1 1.0+0.0i)} @result{} @code{#t}),
+and can be passed to procedures that take real numbers,
+such as @code{<}, @code{floor}
+or @code{exact}.  Use @code{real-valued?} to check
+if a number can be treated as a real number.
+
+A complex number only becomes a real number if its imaginary part
+is an exact zero.  Gauche does not have exact complex numbers
+internally, but if the imaginary part is exact zero when
+a complex number is constructed, it results a real number; e.g.
+@code{1+0i} is read as @code{1},
+and @code{(make-rectangular 1.0 0)} returns @code{1.0}.
 @c JP
-R6RSでは正確性についてより厳密な定義がなされ、特に
-非正確なゼロを虚数部に持つ複素数は実数ではないと規定されています。
-Gaucheは今のところ正確な複素数を持たず、虚部がゼロの複素数は
-自動的に実数に変換されます。従ってR6RSのコードのうち、
-@code{(real? 1+0.0i)}が@code{#f}であることを当てにしているものは
-うまく動かないでしょう。
+註: @code{1.0+0.0i}や@code{1.0-0.0i}のように、非正確なゼロを虚部に持つ
+複素数は非実数の複素数として扱われます。
+ゼロの虚部の符号は分岐切断上で意味を持つことがあるためです。
+@code{real?}はそのような複素数に対して@code{#f}を返します。
+
+ただ、非正確なゼロと正確なゼロが数値的に等しい
+(@code{(= 0 0.0)} @result{} @code{#t})のと同様に、
+非正確なゼロの虚部を持つ複素数はその実部のみの実数と数値的に同値であり
+(@code{(= 1 1.0+0.0i)} @result{} @code{#t})、
+実数を期待する
+@code{<}、@code{floor}、@code{exact}などの手続きにもそのまま渡せます。
+数が実数として扱えるかどうかを調べるには@code{real-valued?}を使ってください。
+
+複素数が実数に変換されるのは、虚部が正確なゼロである場合のみです。
+例えば@code{1+0i}は@code{1}と読まれ、
+@code{(make-rectangular 1.0 0)}は@code{1.0}を返します。
 @c COMMON
 @end defun
 
@@ -3029,23 +3054,30 @@ Gaucheは今のところ正確な複素数を持たず、虚部がゼロの複�
 @defunx integer-valued? obj
 [R6RS]
 @c EN
-In Gauche these are just an alias of @code{real?}, @code{rational?}
-and @code{integer?}.  They are provided for R6RS compatibility.
+These are like @code{real?}, @code{rational?} and @code{integer?},
+except that they also return @code{#t} if @var{obj} is a complex number
+with inexact zero imaginary part whose real part satisfies the
+respective predicate.
 
-The difference of those and non @code{-valued} versions in R6RS is
-that these returns @code{#t} if @var{obj} is a complex number
-with nonexact zero imaginary part.   Since Gauche doesn't distinguish
-complex numbers with zero imaginary part and real numbers, we don't
-have the difference.
+@example
+(real? 1.0+0.0i)            @result{} #f
+(real-valued? 1.0+0.0i)     @result{} #t
+(real-valued? 1.0-0.0i)     @result{} #t
+(integer-valued? 3.0+0.0i)  @result{} #t
+(rational-valued? +inf.0+0.0i) @result{} #f
+@end example
 @c JP
-Gaucheではこれらの手続きはそれぞれ@code{real?}、@code{rational?}、
-および@code{integer?}の別名となっています。これらはR6RSコードとの互換性のために
-提供されています。
+これらは@code{real?}、@code{rational?}、@code{integer?}とほぼ同じですが、
+@var{obj}が非正確なゼロの虚部を持つ複素数で、その実部がそれぞれの述語を
+満たす場合にも@code{#t}を返します。
 
-R6RSで規定されている、これらの手続きと@code{-valued}がついていない手続きの違いは、
-これらの手続きは非正確なゼロの虚部を持つ複素数に対しても@code{#t}を返すという
-ことです。Gaucheではゼロの虚部を持つ複素数は実数とみなしているので、
-この違いは現れません。
+@example
+(real? 1.0+0.0i)            @result{} #f
+(real-valued? 1.0+0.0i)     @result{} #t
+(real-valued? 1.0-0.0i)     @result{} #t
+(integer-valued? 3.0+0.0i)  @result{} #t
+(rational-valued? +inf.0+0.0i) @result{} #f
+@end example
 @c COMMON
 @end defun
 
@@ -4519,11 +4551,20 @@ Creates a complex number from two real numbers, @var{x1} and @var{x2}.
 @code{make-rectangular} returns @var{x1} + @b{i}@var{x2}.
 @code{make-polar} returns @var{x1}@b{e}^(@b{i}@var{x2}).
 
+If @var{x2} is an exact zero, @var{x1} is returned.  Otherwise,
+the result is a complex number, even if its imaginary part is
+an inexact zero: @code{(make-rectangular 1.0 -0.0)} is
+@code{1.0-0.0i}.
+
 In R7RS, these procedures are in the @code{(scheme complex)} library.
 @c JP
 二つの実数@var{x1}と@var{x2}から複素数を作ります。
 @code{make-rectangular} は @var{x1} + @b{i}@var{x2} を返します。
 @code{make-polar} は @var{x1}@b{e}^(@b{i}@var{x2}) を返します。
+
+@var{x2}が正確なゼロの場合は@var{x1}が返されます。そうでなければ、
+虚部が非正確なゼロであっても結果は複素数になります。
+例えば@code{(make-rectangular 1.0 -0.0)}は@code{1.0-0.0i}です。
 
 R7RSではこれらの手続きは@code{(scheme complex)}ライブラリにあります。
 @c COMMON

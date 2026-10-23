@@ -477,9 +477,9 @@
 (define-cproc u64? (v) ::<boolean> SCM_INTEGER_FITS_UINT64_P)
 (define-cproc s64? (v) ::<boolean> SCM_INTEGER_FITS_INT64_P)
 
-(define-cproc f16? (v) ::<boolean> :fast-flonum (return (SCM_REALP v)))
-(define-cproc f32? (v) ::<boolean> :fast-flonum (return (SCM_REALP v)))
-(define-cproc f64? (v) ::<boolean> :fast-flonum (return (SCM_REALP v)))
+(define-cproc f16? (v) ::<boolean> :fast-flonum (return (SCM_REAL_VALUED_P v)))
+(define-cproc f32? (v) ::<boolean> :fast-flonum (return (SCM_REAL_VALUED_P v)))
+(define-cproc f64? (v) ::<boolean> :fast-flonum (return (SCM_REAL_VALUED_P v)))
 
 (define-cproc c32? (v) ::<boolean> :fast-flonum (return (SCM_NUMBERP v)))
 (define-cproc c64? (v) ::<boolean> :fast-flonum (return (SCM_NUMBERP v)))
@@ -496,7 +496,8 @@
     [(SCM_UVECTOR_S32) (return (SCM_INTEGER_FITS_INT32_P v))]
     [(SCM_UVECTOR_U64) (return (SCM_INTEGER_FITS_UINT64_P v))]
     [(SCM_UVECTOR_S64) (return (SCM_INTEGER_FITS_INT64_P v))]
-    [(SCM_UVECTOR_F16 SCM_UVECTOR_F32 SCM_UVECTOR_F64) (return (SCM_REALP v))]
+    [(SCM_UVECTOR_F16 SCM_UVECTOR_F32 SCM_UVECTOR_F64)
+     (return (SCM_REAL_VALUED_P v))]
     [(SCM_UVECTOR_C32 SCM_UVECTOR_C64 SCM_UVECTOR_C128) (return (SCM_NUMBERP v))]
     [else (return FALSE)]
     ))

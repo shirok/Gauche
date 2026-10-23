@@ -70,6 +70,20 @@ int Scm_EqvP(ScmObj x, ScmObj y)
             } else if (SCM_FLONUMP(y)) {
                 return FALSE;
             }
+            /* Likewise, compare each part of compnums, so that
+               1.0+0.0i and 1.0-0.0i are distinguished. */
+            if (SCM_COMPNUMP(x)) {
+                if (SCM_COMPNUMP(y)) {
+                    double rx = SCM_COMPNUM_REAL(x), ix = SCM_COMPNUM_IMAG(x);
+                    double ry = SCM_COMPNUM_REAL(y), iy = SCM_COMPNUM_IMAG(y);
+                    return (rx == ry && signbit(rx) == signbit(ry)
+                            && ix == iy && signbit(ix) == signbit(iy));
+                } else {
+                    return FALSE;
+                }
+            } else if (SCM_COMPNUMP(y)) {
+                return FALSE;
+            }
             /* More generic case. */
             if ((SCM_EXACTP(x) && SCM_EXACTP(y))
                 || (SCM_INEXACTP(x) && SCM_INEXACTP(y))) {

@@ -191,11 +191,25 @@
                    '#f32(0.0 -1.0 1.0))
 (uvrefset-test-f64 '(0.0 -1.0 1.0)
                    '#f64(0.0 -1.0 1.0))
-(uvrefset-test-c32 '(0.0 -1-i 1+i)
+;; Elements of complex vectors are always compnums, even if the imaginary
+;; part is zero.  OTOH, a complex number with zero imaginary part can
+;; be stored in flonum vectors.
+(test* "c64vector-ref (zero imaginary part)" '(1.0 0.0)
+       (let1 z (c64vector-ref (c64vector 1.0) 0)
+         (and (not (real? z)) (list (real-part z) (imag-part z)))))
+(test* "c128vector-ref (negative zero imaginary part)" '(1.0 -0.0)
+       (let1 z (c128vector-ref (c128vector 1.0-0.0i) 0)
+         (list (real-part z) (imag-part z))))
+(test* "f64vector-set! (zero imaginary part)" '#f64(1.0 -2.0)
+       (rlet1 v (f64vector 0.0 0.0)
+         (f64vector-set! v 0 1.0+0.0i)
+         (f64vector-set! v 1 -2.0-0.0i)))
+
+(uvrefset-test-c32 '(0.0+0.0i -1-i 1+i)
                    '#c32(0.0 -1-i 1+i))
-(uvrefset-test-c64 '(0.0 -1-i 1+i)
+(uvrefset-test-c64 '(0.0+0.0i -1-i 1+i)
                    '#c64(0.0 -1-i 1+i))
-(uvrefset-test-c128 '(0.0 -1-i 1+i)
+(uvrefset-test-c128 '(0.0+0.0i -1-i 1+i)
                     '#c128(0.0 -1-i 1+i))
 
 ;; UVEC-REF type check
@@ -275,9 +289,9 @@
 (uvconv-test-f16 '#f16(0.0 -1.0 1.0) '(0.0 -1.0 1.0))
 (uvconv-test-f32 '#f32(0.0 -1.0 1.0) '(0.0 -1.0 1.0))
 (uvconv-test-f64 '#f64(0.0 -1.0 1.0) '(0.0 -1.0 1.0))
-(uvconv-test-c32 '#c32(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
-(uvconv-test-c64 '#c64(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
-(uvconv-test-c128 '#c128(0.0 -1.0+i 1.0-i) '(0.0 -1.0+i 1.0-i))
+(uvconv-test-c32 '#c32(0.0 -1.0+i 1.0-i) '(0.0+0.0i -1.0+i 1.0-i))
+(uvconv-test-c64 '#c64(0.0 -1.0+i 1.0-i) '(0.0+0.0i -1.0+i 1.0-i))
+(uvconv-test-c128 '#c128(0.0 -1.0+i 1.0-i) '(0.0+0.0i -1.0+i 1.0-i))
 
 (test* "list->u8vector (start)" '#u8(1 2 3 4)
        (list->u8vector '(0 1 2 3 4) 1))
@@ -437,6 +451,8 @@
   (t f64 -1e300 #t)
   (t f64 +nan.0 #t)
   (t f64 0+i #f)
+  (t f64 1.0+0.0i #t)
+  (t f64 1.0-0.0i #t)
   (t f64 'a #f)
 
   (t c32 0 #t)
@@ -502,9 +518,9 @@
 (uvcopy-test-f16 '#f16(0 -1.0 1.0) 1.0)
 (uvcopy-test-f32 '#f32(0 -1.0 1.0) 1.0)
 (uvcopy-test-f64 '#f64(0 -1.0 1.0) 1.0)
-(uvcopy-test-c32 '#c32(0+i -1.0-i 1.0) 1.0)
-(uvcopy-test-c64 '#c64(0+i -1.0-i 1.0) 1.0)
-(uvcopy-test-c128 '#c128(0+i -1.0-i 1.0) 1.0)
+(uvcopy-test-c32 '#c32(0+i -1.0-i 1.0) 1.0+0.0i)
+(uvcopy-test-c64 '#c64(0+i -1.0-i 1.0) 1.0+0.0i)
+(uvcopy-test-c128 '#c128(0+i -1.0-i 1.0) 1.0+0.0i)
 
 (expand-uvec
  (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
@@ -2111,9 +2127,9 @@
      "#,(<s16array> (-1 0 0 1) 1)")
 
   (t (c32array (shape 0 2 1 3) 1 +i -i 1+i)
-     "#2c32@0@1((1.0 0.0+1.0i) (0.0-1.0i 1.0+1.0i))"
-     "#2c32:2@1:2((1.0 0.0+1.0i) (0.0-1.0i 1.0+1.0i))"
-     "#,(<c32array> (0 2 1 3) 1.0 0.0+1.0i 0.0-1.0i 1.0+1.0i)")
+     "#2c32@0@1((1.0+0.0i 0.0+1.0i) (0.0-1.0i 1.0+1.0i))"
+     "#2c32:2@1:2((1.0+0.0i 0.0+1.0i) (0.0-1.0i 1.0+1.0i))"
+     "#,(<c32array> (0 2 1 3) 1.0+0.0i 0.0+1.0i 0.0-1.0i 1.0+1.0i)")
 
   (t (array (shape 0 0 0 1))
      "#2a()"

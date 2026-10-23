@@ -1,3 +1,14 @@
+2026-10-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c, src/libnum.scm, src/read.c, src/boolean.c,
+	  src/vminsn.scm, src/gauche/number.h: Keep complex numbers with
+	  inexact zero imaginary part (e.g. 1.0+0.0i, 1.0-0.0i) as compnums,
+	  instead of coercing them into reals.
+	  https://github.com/shirok/Gauche/issues/1299
+	  Also change real domain procedures to accept compnum with
+	  zero imaginary part; readl-valued? can be used to check it,
+	  instead of real?.
+
 2026-10-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (scm_round), src/libnum.scm (round-away, conjugate):
