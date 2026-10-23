@@ -4121,6 +4121,18 @@ phrase @code{(exact (floor x))} etc.
 @c COMMON
 @end defun
 
+@defun round-away x
+@c [SRFI-278]
+@c EN
+Round a real numebr @var{x} toward the direction away from zero
+(opposite of @code{truncate}).
+@c JP
+実数@var{x}を、ゼロから遠い方向へと丸めます
+(@code{truncate}の逆です)。
+@c COMMON
+@end defun
+
+
 @defun clamp x :optional min max
 @c EN
 Returns
@@ -4535,6 +4547,16 @@ In R7RS, these procedures are in the @code{(scheme complex)} library.
 @code{magnitude}と@code{angle}は@var{z}の絶対値と偏角をそれぞれ返します。
 
 R7RSではこれらの手続きは@code{(scheme complex)}ライブラリにあります。
+@c COMMON
+@end defun
+
+@defun conjugate z
+@c [SRFI-278]
+@c EN
+Returns a conjugate of the given complex numebr @var{z}.  If @var{z} is
+a real number, the same value is returned.
+@c JP
+引数@var{z}の共役複素数を返します。@var{z}が実数であればそのまま返ります。
 @c COMMON
 @end defun
 
