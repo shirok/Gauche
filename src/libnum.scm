@@ -605,8 +605,13 @@
 ;; branch cuts aligns to C99 spec.
 ;; These always return a compnum.
 (select-module gauche.internal)
+;; NB: MacOS's cexp appears to have a bug, as of macos-27, dropping the
+;; sign of imag part when the argument's imag part is 0.0.
 (define-cproc %complex-exp (z::<number>) :constant
-  (return (Scm_DoubleComplexToComplex (cexp (Scm_GetDoubleComplex z)))))
+  (let* ([zz::ScmDoubleComplex (Scm_GetDoubleComplex z)])
+    (if (== (cimag zz) 0.0)
+      (return (Scm_MakeComplex (exp (creal zz)) (cimag zz))) ; keep sign
+      (return (Scm_DoubleComplexToComplex (cexp zz))))))
 (define-cproc %complex-log (z::<number>) :constant
   (return (Scm_DoubleComplexToComplex (clog (Scm_GetDoubleComplex z)))))
 (define-cproc %complex-sqrt (z::<number>) :constant
@@ -618,7 +623,16 @@
 (define-cproc %complex-cos (z::<number>) :constant
   (return (Scm_DoubleComplexToComplex (ccos (Scm_GetDoubleComplex z)))))
 (define-cproc %complex-tan (z::<number>) :constant
-  (return (Scm_DoubleComplexToComplex (ctan (Scm_GetDoubleComplex z)))))
+  ;; MinGw's implementation of ctan overflows with large imaginary part.
+  ;; If fabs(imag) passes 20.0, imag part gets to 1.0 or -1.0 in double
+  ;; precision.
+  (let* ([zz::ScmDoubleComplex (Scm_GetDoubleComplex z)]
+         [absy::double (fabs (cimag zz))])
+    (if (> absy 20.0)
+      (return (Scm_MakeCompnum (* 4.0 (sin (creal zz)) (cos (creal zz))
+                                  (exp (* -2.0 absy)))
+                               (copysign 1.0 (cimag zz))))
+      (return (Scm_DoubleComplexToComplex (ctan zz))))))
 (define-cproc %complex-asin (z::<number>) :constant
   (return (Scm_DoubleComplexToComplex (casin (Scm_GetDoubleComplex z)))))
 (define-cproc %complex-acos (z::<number>) :constant
@@ -630,7 +644,15 @@
 (define-cproc %complex-cosh (z::<number>) :constant
   (return (Scm_DoubleComplexToComplex (ccosh (Scm_GetDoubleComplex z)))))
 (define-cproc %complex-tanh (z::<number>) :constant
-  (return (Scm_DoubleComplexToComplex (ctanh (Scm_GetDoubleComplex z)))))
+  ;; MinGw's implementation of ctanh has similar overflow issue as ctan.
+  ;; See %complex-tan above.
+  (let* ([zz::ScmDoubleComplex (Scm_GetDoubleComplex z)]
+         [absx::double (fabs (creal zz))])
+    (if (> absx 20.0)
+      (return (Scm_MakeCompnum (copysign 1.0 (creal zz))
+                               (* 4.0 (sin (cimag zz)) (cos (cimag zz))
+                                  (exp (* -2.0 absx)))))
+      (return (Scm_DoubleComplexToComplex (ctanh zz))))))
 (define-cproc %complex-asinh (z::<number>) :constant
   (return (Scm_DoubleComplexToComplex (casinh (Scm_GetDoubleComplex z)))))
 ;; For acosh and atanh, real z outside of the domain falls on the branch
@@ -638,7 +660,24 @@
 ;; extends to -inf, real z is taken as z+0.0i, which is what
 ;; Scm_GetDoubleComplex does.
 (define-cproc %complex-acosh (z::<number>) :constant
-  (return (Scm_DoubleComplexToComplex (cacosh (Scm_GetDoubleComplex z)))))
+  (let* ([zz::ScmDoubleComplex (Scm_GetDoubleComplex z)])
+    (.if (not (defined GAUCHE_WINDOWS))
+      (return (Scm_DoubleComplexToComplex (cacosh zz)))
+      ;; NB: MinGW's cacosh has numerically unstable.  We use Kahan's formula.
+      (if (and (isfinite (creal zz))
+               (isfinite (cimag zz)))
+        (let* ([s1::ScmDoubleComplex
+                (csqrt (Scm__MakeDoubleComplex (- (creal zz) 1.0)
+                                               (cimag zz)))]
+               [s2::ScmDoubleComplex
+                (csqrt (Scm__MakeDoubleComplex (+ (creal zz) 1.0)
+                                               (cimag zz)))])
+          (return (Scm_MakeCompnum
+                   (asinh (+ (* (creal s1) (creal s2))
+                             (* (cimag s1) (cimag s2))))
+                   (* 2.0 (atan2 (cimag s1) (creal s2))))))
+        ;; let cacosh handle infinite case
+        (return (Scm_DoubleComplexToComplex (cacosh zz)))))))
 (define-cproc %complex-atanh (z::<number>) :constant
   (if (SCM_REALP z)
     (let* ([x::double (Scm_GetDouble z)])
