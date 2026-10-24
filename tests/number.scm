@@ -2949,6 +2949,138 @@
   )
 
 ;;------------------------------------------------------------------
+(test-section "complex transcendental functions and branch cuts")
+
+;; Compnum arguments follow C99 Annex G, so the sign of a zero imaginary
+;; (or real) part selects the side of a branch cut.
+
+(let ()
+  ;; Each part must be approx=?, and zeros must agree in sign.
+  (define (part=? a b)
+    (if (zero? a)
+      (eqv? a b)
+      (or (and (nan? a) (nan? b))
+          (approx=? a b 1e-14 1e-300))))
+  (define (cnum=? expected got)
+    (and (number? got)
+         (eq? (real? expected) (real? got))
+         (part=? (real-part expected) (real-part got))
+         (or (real? expected)
+             (part=? (imag-part expected) (imag-part got)))))
+  (define-syntax t
+    (syntax-rules ()
+      [(_ expect expr) (test* 'expr expect expr cnum=?)]))
+
+  (define pi 3.141592653589793)
+  (define pi/2 1.5707963267948966)
+
+  ;; sqrt
+  (t 0.0+2.0i  (sqrt -4.0))
+  (t 0.0+2.0i  (sqrt -4))
+  (t 0.0+2.0i  (sqrt -4.0+0.0i))
+  (t (make-rectangular 0.0 -2.0) (sqrt -4.0-0.0i))
+  (t 2.0+0.0i  (sqrt 4.0+0.0i))
+  (t (make-rectangular 2.0 -0.0) (sqrt 4.0-0.0i))
+  (t 1.272019649514069+0.7861513777574233i (sqrt 1+2i))
+  (t (make-rectangular +inf.0 +inf.0) (sqrt (make-rectangular 1.0 +inf.0)))
+
+  ;; exp and log
+  (t 1.0+0.0i  (exp 0.0+0.0i))
+  (t (make-rectangular 1.0 -0.0) (exp 0.0-0.0i))
+  (t 1.4686939399158851+2.2873552871788423i (exp 1+i))
+  (t (make-rectangular +inf.0 0.0) (exp +inf.0+0.0i))
+  (t (make-rectangular 0.0 pi)  (log -1.0))
+  (t (make-rectangular 0.0 pi)  (log -1.0+0.0i))
+  (t (make-rectangular 0.0 (- pi)) (log -1.0-0.0i))
+  (t (make-rectangular 0.0 0.0) (log 1.0+0.0i))
+  (t (make-rectangular 0.0 -0.0) (log 1.0-0.0i))
+  (t (make-rectangular 0.34657359027997264 0.7853981633974483) (log 1+i))
+  (t (make-rectangular 691.1221014884936 0.7853981633974483)
+     (log 1e300+1e300i))
+
+  ;; expt
+  (t 8.0+0.0i  (expt 2.0+0.0i 3))
+  (t (make-rectangular 8.0 -0.0) (expt 2.0-0.0i 3))
+  (t 8.0+0.0i  (expt 2 3.0+0.0i))
+  (t 0.0+2.0i  (expt 1+i 2))
+  (t (make-rectangular 0.0 -0.5) (expt 1+i -2))
+  (t 1.0+1.7320508075688772i (expt -8.0+0.0i 1/3))
+  (t (make-rectangular 1.0 -1.7320508075688772) (expt -8.0-0.0i 1/3))
+  (t 0.0+2.0i  (expt -4.0+0.0i 1/2))
+  (t (make-rectangular 0.0 -2.0) (expt -4.0-0.0i 0.5))
+  (t -0.06648365401771332-0.05522404073666603i (expt -2 1+i))
+  (t 0.20787957635076193 (real-part (expt +i +i)))
+  (t 0    (expt 0 1+i))
+  (t 0.0  (expt 0.0 1+i))
+  (t 1.0  (expt 0.0 0.0+0.0i))
+  (t 1    (expt 1+i 0))
+
+  ;; trigonometric and hyperbolic functions
+  (t 1.2984575814159773+0.6349639147847361i (sin 1+i))
+  (t 0.8337300251311491-0.9888977057628651i (cos 1+i))
+  (t 0.2717525853195117+1.0839233273386946i (tan 1+i))
+  (t 0.6349639147847361+1.2984575814159773i (sinh 1+i))
+  (t 0.8337300251311491+0.9888977057628651i (cosh 1+i))
+  (t 1.0839233273386946+0.2717525853195117i (tanh 1+i))
+  (t 0.0+1.0i  (tan 1+1000i))
+  (t (make-rectangular 0.0 -1.0) (tan 1-1000i))
+  (t 1.0+0.0i  (tanh 1000+i))
+  (t 0.0+0.0i  (sin 0.0+0.0i))
+  (t (make-rectangular 0.0 -0.0) (sin 0.0-0.0i))
+
+  ;; asin and acos: cuts on the real axis outside of [-1, 1]
+  (t (make-rectangular pi/2 -1.3169578969248166) (asin 2.0))
+  (t (make-rectangular pi/2 -1.3169578969248166) (asin 2))
+  (t (make-rectangular pi/2 1.3169578969248166)  (asin 2.0+0.0i))
+  (t (make-rectangular pi/2 -1.3169578969248166) (asin 2.0-0.0i))
+  (t (make-rectangular (- pi/2) 1.3169578969248166)  (asin -2.0))
+  (t (make-rectangular (- pi/2) 1.3169578969248166)  (asin -2.0+0.0i))
+  (t (make-rectangular (- pi/2) -1.3169578969248166) (asin -2.0-0.0i))
+  (t (make-rectangular 0.0 1.3169578969248166)  (acos 2.0))
+  (t (make-rectangular 0.0 -1.3169578969248166) (acos 2.0+0.0i))
+  (t (make-rectangular 0.0 1.3169578969248166)  (acos 2.0-0.0i))
+  (t (make-rectangular pi -1.3169578969248166)  (acos -2.0))
+  (t (make-rectangular pi -1.3169578969248166)  (acos -2.0+0.0i))
+  (t (make-rectangular pi 1.3169578969248166)   (acos -2.0-0.0i))
+  (t 0.6662394324925153+1.0612750619050357i (asin 1+i))
+  (t 0.9045568943023814-1.0612750619050357i (acos 1+i))
+  (t (make-rectangular 0.7853981633974483 691.8152486690535)
+     (asin 1e300+1e300i))
+
+  ;; atan and asinh: cuts on the imaginary axis outside of [-i, i]
+  (t (make-rectangular pi/2 0.5493061443340549)     (atan 0.0+2.0i))
+  (t (make-rectangular (- pi/2) 0.5493061443340549) (atan -0.0+2.0i))
+  (t (make-rectangular pi/2 -0.5493061443340549)     (atan 0.0-2.0i))
+  (t (make-rectangular (- pi/2) -0.5493061443340549) (atan -0.0-2.0i))
+  (t 1.0172219678978514+0.4023594781085251i (atan 1+i))
+  (t (make-rectangular 1.3169578969248166 pi/2)     (asinh 0.0+2.0i))
+  (t (make-rectangular -1.3169578969248166 pi/2)    (asinh -0.0+2.0i))
+  (t (make-rectangular 1.3169578969248166 (- pi/2))  (asinh 0.0-2.0i))
+  (t (make-rectangular -1.3169578969248166 (- pi/2)) (asinh -0.0-2.0i))
+
+  ;; acosh: cut on the real axis less than 1
+  (t (make-rectangular 0.0 1.0471975511965976)  (acosh 0.5))
+  (t (make-rectangular 0.0 1.0471975511965976)  (acosh 0.5+0.0i))
+  (t (make-rectangular 0.0 -1.0471975511965976) (acosh 0.5-0.0i))
+  (t (make-rectangular 1.3169578969248166 pi)     (acosh -2.0))
+  (t (make-rectangular 1.3169578969248166 pi)     (acosh -2.0+0.0i))
+  (t (make-rectangular 1.3169578969248166 (- pi)) (acosh -2.0-0.0i))
+  (t 1.3169578969248166 (acosh 2.0))
+  (t 0.0 (acosh 1))
+
+  ;; atanh: cuts on the real axis outside of [-1, 1]
+  (t (make-rectangular 0.5493061443340549 (- pi/2)) (atanh 2.0))
+  (t (make-rectangular 0.5493061443340549 pi/2)     (atanh 2.0+0.0i))
+  (t (make-rectangular 0.5493061443340549 (- pi/2)) (atanh 2.0-0.0i))
+  (t (make-rectangular -0.5493061443340549 pi/2)     (atanh -2.0))
+  (t (make-rectangular -0.5493061443340549 pi/2)     (atanh -2.0+0.0i))
+  (t (make-rectangular -0.5493061443340549 (- pi/2)) (atanh -2.0-0.0i))
+  (t 0.5493061443340549 (atanh 0.5))
+  (t +inf.0 (atanh 1.0))
+  (t +nan.0 (atanh +nan.0))
+  )
+
+;;------------------------------------------------------------------
 (test-section "ffx optimization")
 
 ;; This code is provided by naoya_t to reproduce the FFX bug

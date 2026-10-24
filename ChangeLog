@@ -1,3 +1,13 @@
+2026-10-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm, src/number.c: Reimplement complex transcendental
+	  functions using C99 complex functions, so that the sign of zero
+	  imaginary part determines the side of branch cuts.
+	  acosh and atanh now return complex results for real arguments
+	  outside of their domain, instead of NaN.
+	* src/number.c (Scm_GetDoubleComplex, Scm_GetFloatComplex): Fixed
+	  the real part becoming NaN when the imaginary part is infinite.
+
 2026-10-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c, src/libnum.scm, src/read.c, src/boolean.c,

@@ -4236,6 +4236,43 @@ The two-argument version of @code{atan} returns
 @c COMMON
 
 @c EN
+The functions with branch cuts (@code{log}, @code{asin}, @code{acos},
+@code{atan}, and @code{sqrt}, @code{expt}, @code{asinh}, @code{acosh},
+and @code{atanh}) follow the C99 standard (Annex G) when given
+a non-real complex number.  Notably,
+the sign of a zero imaginary (or real) part determines
+which side of the branch cut the argument is on.
+On the other hand, a real number on a branch cut is regarded
+as continuous with the quadrant in counterclockwise direction,
+as in Common Lisp.  That is, a real number on a cut extending to
+negative infinity is treated as having @code{+0.0} imaginary part,
+and one on a cut extending to positive infinity is treated
+as having @code{-0.0} imaginary part.
+It is consistent to the definitions in R7RS, regarding a real number
+having exact zero imaginary part.
+@c JP
+分岐切断を持つ関数 (@code{log}、@code{asin}、@code{acos}、@code{atan}、
+および@code{sqrt}、@code{expt}、@code{asinh}、@code{acosh}、@code{atanh})
+に実数でない複素数を与えた場合、その分岐切断はC99規格 (Annex G) に従います。
+特に、虚部 (あるいは実部) のゼロの符号によって、引数が分岐切断の
+どちら側にあるかが決まります。
+一方、分岐切断上の実数は、Common Lispと同様に
+反時計回り方向の象限と連続しているとみなされます。
+すなわち、負の無限大へと伸びる分岐切断上の実数は虚部が@code{+0.0}であるかのように、
+正の無限大へと伸びる分岐切断上の実数は虚部が@code{-0.0}であるかのように扱われます。
+これは、実数を正確なゼロの虚部を持つ数とみなした場合のR7RSの定義と一致します。
+@c COMMON
+
+@example
+(log -1.0)       @result{} 0.0+3.141592653589793i
+(log -1.0+0.0i)  @result{} 0.0+3.141592653589793i
+(log -1.0-0.0i)  @result{} 0.0-3.141592653589793i
+(asin 2.0)       @result{} 1.5707963267948966-1.3169578969248166i
+(asin 2.0+0.0i)  @result{} 1.5707963267948966+1.3169578969248166i
+(asin 2.0-0.0i)  @result{} 1.5707963267948966-1.3169578969248166i
+@end example
+
+@c EN
 See also @code{real-exp} etc. below, for real-only version of these functions.
 @c JP
 実数に限定したこれらの関数については、下の@code{real-exp}等も参照してください。
@@ -4250,10 +4287,12 @@ See also @code{real-exp} etc. below, for real-only version of these functions.
 @defunx atanh z
 @c EN
 Hyperbolic trigonometric functions.  Work for complex numbers as well.
+See @code{exp} etc. above for the treatment of branch cuts.
 
 See also @code{real-sinh} etc. below, for real-only version of these functions.
 @c JP
 双曲線関数です。複素数も扱えます。
+分岐切断の扱いについては上の@code{exp}等の項を参照してください。
 
 実数に限定したこれらの関数については、下の@code{real-sinh}等も参照してください。
 @c COMMON
@@ -4273,13 +4312,15 @@ The argument must be a real number.
 [R7RS inexact]
 @c EN
 Returns a square root of a complex number @var{z}.
-The branch cut scheme is the same as Common Lisp.
+The branch cut is on the negative real axis; see @code{exp} etc. above
+for the treatment of the sign of zero imaginary part.
 For real numbers, it returns a positive root.
 
 If @var{z} is the square of an exact real number, the return value
 is also an exact number.
 @c JP
-複素数@var{z}の平方根のひとつを返します。枝刈りの定義はCommon Lispと同じです。
+複素数@var{z}の平方根のひとつを返します。分岐切断は負の実軸上にあります。
+虚部のゼロの符号の扱いについては上の@code{exp}等の項を参照してください。
 実数に対しては正の平方根を返します。
 
 @var{z}が正確な実数の平方である場合、戻り値は正確数となります。
@@ -4288,6 +4329,7 @@ is also an exact number.
 @example
 (sqrt 2)      @result{} 1.4142135623730951
 (sqrt -2)     @result{} 0.0+1.4142135623730951i
+(sqrt -2.0-0.0i) @result{} 0.0-1.4142135623730951i
 (sqrt 256)    @result{} 16
 (sqrt 256.0)  @result{} 16.0
 (sqrt 81/169) @result{} 9/13

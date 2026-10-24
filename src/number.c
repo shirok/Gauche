@@ -941,10 +941,10 @@ ScmFloatComplex Scm_GetFloatComplex(ScmObj z)
 {
     ScmFloatComplex c = 0.0f;
     if (SCM_COMPNUMP(z)) {
-        c = (float)SCM_COMPNUM_REAL(z)
-            + (float)SCM_COMPNUM_IMAG(z) * _Complex_I;
+        c = Scm__MakeFloatComplex((float)SCM_COMPNUM_REAL(z),
+                                  (float)SCM_COMPNUM_IMAG(z));
     } else if (SCM_REALP(z)) {
-        c = (float)Scm_GetDouble(z);
+        c = Scm__MakeFloatComplex((float)Scm_GetDouble(z), 0.0f);
     } else {
         Scm_Error("number required, but got %S", z);
     }
@@ -953,12 +953,11 @@ ScmFloatComplex Scm_GetFloatComplex(ScmObj z)
 
 ScmDoubleComplex Scm_GetDoubleComplex(ScmObj z)
 {
-    ScmDoubleComplex c = 0.0f;
+    ScmDoubleComplex c = 0.0;
     if (SCM_COMPNUMP(z)) {
-        c = SCM_COMPNUM_REAL(z)
-            + SCM_COMPNUM_IMAG(z) * _Complex_I;
+        c = Scm__MakeDoubleComplex(SCM_COMPNUM_REAL(z), SCM_COMPNUM_IMAG(z));
     } else if (SCM_REALP(z)) {
-        c = Scm_GetDouble(z);
+        c = Scm__MakeDoubleComplex(Scm_GetDouble(z), 0.0);
     } else {
         Scm_Error("number required, but got %S", z);
     }
@@ -992,9 +991,7 @@ double Scm_Magnitude(ScmObj z)
         Scm_Error("number required, but got %S", z);
         return 0.0;                /* dummy */
     }
-    double r = SCM_COMPNUM_REAL(z);
-    double i = SCM_COMPNUM_IMAG(z);
-    return sqrt(r*r+i*i);
+    return hypot(SCM_COMPNUM_REAL(z), SCM_COMPNUM_IMAG(z));
 }
 
 double Scm_Angle(ScmObj z)
@@ -1764,10 +1761,7 @@ static ScmObj scm_abs(ScmObj obj, int vmp)
                                    SCM_RATNUM_DENOM(obj));
         }
     } else if (SCM_COMPNUMP(obj)) {
-        double r = SCM_COMPNUM_REAL(obj);
-        double i = SCM_COMPNUM_IMAG(obj);
-        double a = sqrt(r*r+i*i);
-        RETURN_FLONUM(a);
+        RETURN_FLONUM(hypot(SCM_COMPNUM_REAL(obj), SCM_COMPNUM_IMAG(obj)));
     } else {
         Scm_Error("number required: %S", obj);
     }
@@ -3043,6 +3037,58 @@ static ScmObj scm_expt(ScmObj x, ScmObj y, int vmp)
     }
 }
 DEFINE_DUAL_API2(Scm_Expt, Scm_VMExpt, scm_expt)
+
+/* expt where x or y is a compnum.  If y is a real, x must be a compnum.
+   The branch cut is the same as log(x); x on the negative real axis
+   has the angle pi or -pi depending on the sign of its imaginary part
+   (a real x is regarded as having +0.0 imaginary part.)
+   We don't simply use cpow(), for we want x^y to be exact when
+   possible, e.g. (expt 2 3.0+0.0i) => 8.0+0.0i. */
+ScmObj Scm__ComplexExpt(ScmObj x, ScmObj y)
+{
+    if (SCM_INTP(y)) return Scm_ExactIntegerExpt(x, y);
+
+    ScmDoubleComplex cx = Scm_GetDoubleComplex(x);
+    double yr, yi;
+    if (SCM_COMPNUMP(y)) {
+        yr = SCM_COMPNUM_REAL(y);
+        yi = SCM_COMPNUM_IMAG(y);
+    } else {
+        yr = Scm_GetDouble(y);
+        yi = 0.0;
+    }
+    if (yr == 0.5 && yi == 0.0) {
+        return Scm_DoubleComplexToComplex(csqrt(cx));
+    }
+
+    double magni = cabs(cx);
+    double angle = carg(cx);
+    if (magni == 0.0) {
+        if (yr > 0.0) return Scm_MakeCompnum(0.0, 0.0);
+        if (yr == 0.0 && yi == 0.0) return Scm_MakeCompnum(1.0, 0.0);
+        /* Otherwise the result is infinite or undefined; let it go. */
+    }
+
+    /* x^y = |x|^yr * exp(-yi*angle) * cis(yr*angle + yi*log|x|) */
+    double c, s;
+    if (fabs(angle) == M_PI) {
+        c = Scm_CosPi(yr);
+        s = copysign(1.0, angle) * Scm_SinPi(yr);
+    } else {
+        c = cos(yr * angle);
+        s = sin(yr * angle);
+    }
+    double r = pow(magni, yr);
+    if (yi != 0.0) {
+        double t = yi * log(magni);
+        double c2 = cos(t), s2 = sin(t);
+        double cc = c*c2 - s*s2;
+        s = s*c2 + c*s2;
+        c = cc;
+        r *= exp(-yi * angle);
+    }
+    return Scm_MakeCompnum(r * c, r * s);
+}
 
 /* If num is exact 2^s (s >= 0), returns s.  Otherwise returns -1. */
 long Scm_TwosPower(ScmObj n)

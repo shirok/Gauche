@@ -35,5 +35,35 @@
 #define GAUCHE_PRIV_NUMBERP_H
 
 extern double Scm__EncodeDouble64(uint64_t, int, int);
+extern ScmObj Scm__ComplexExpt(ScmObj x, ScmObj y);
+
+/* We can't construct a complex value by r + i*_Complex_I, for the real part
+   becomes NaN when i is infinite, and the sign of zero may be lost.
+   C11 has CMPLX, but it's not universally available.  As a fallback,
+   we use a union; C guarantees a complex type has the same representation
+   as an array of two elements of the corresponding real type. */
+static inline ScmFloatComplex Scm__MakeFloatComplex(float r, float i)
+{
+#if defined(CMPLXF)
+    return CMPLXF(r, i);
+#else
+    union { ScmFloatComplex c; float a[2]; } u;
+    u.a[0] = r;
+    u.a[1] = i;
+    return u.c;
+#endif
+}
+
+static inline ScmDoubleComplex Scm__MakeDoubleComplex(double r, double i)
+{
+#if defined(CMPLX)
+    return CMPLX(r, i);
+#else
+    union { ScmDoubleComplex c; double a[2]; } u;
+    u.a[0] = r;
+    u.a[1] = i;
+    return u.c;
+#endif
+}
 
 #endif /* GAUCHE_PRIV_NUMBERP_H */

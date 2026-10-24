@@ -37,6 +37,7 @@
  (.include "gauche/priv/configP.h"
            "gauche/vminsn.h"
            "gauche/priv/bignumP.h"
+           "gauche/priv/numberP.h"
            "gauche/priv/writerP.h"
            <stdlib.h>
            <float.h>
@@ -518,21 +519,21 @@
 (define-cproc real-cospi (x::<double>) ::<double> :fast-flonum :constant Scm_CosPi)
 (define-cproc real-tanpi (x::<double>) ::<double> :fast-flonum :constant Scm_TanPi)
 
+(inline-stub
+ ;; For asin, acos, and atanh - put real argument on right branch
+ (define-cise-expr on-cut
+   [(_ x) `(Scm__MakeDoubleComplex ,x (?: (< ,x 0) 0.0 -0.0))])
+ )
+
 (define-cproc real-asin (x::<double>) ::<number> :fast-flonum :constant
-  (cond [(> x 1.0)
-         (return (Scm_MakeComplex (/ M_PI 2.0)
-                                  (- (log (+ x (sqrt (- (* x x) 1.0)))))))]
-        [(< x -1.0)
-         (return (Scm_MakeComplex (/ (- M_PI) 2.0)
-                                  (- (log (- (- x) (sqrt (- (* x x) 1.0)))))))]
-        [else (return (Scm_VMReturnFlonum (asin x)))]))
+  (if (> (fabs x) 1.0)
+    (return (Scm_DoubleComplexToComplex (casin (on-cut x))))
+    (return (Scm_VMReturnFlonum (asin x)))))
 
 (define-cproc real-acos (x::<double>) ::<number> :fast-flonum :constant
-  (cond [(> x 1.0)
-         (return (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0))))))]
-        [(< x -1.0)
-         (return (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0))))))]
-        [else (return (Scm_VMReturnFlonum (acos x)))]))
+  (if (> (fabs x) 1.0)
+    (return (Scm_DoubleComplexToComplex (cacos (on-cut x))))
+    (return (Scm_VMReturnFlonum (acos x)))))
 
 (define-cproc real-atan (z::<double> :optional x) ::<double> :fast-flonum :constant
   (cond [(SCM_UNBOUNDP x) (return (atan z))]
@@ -600,11 +601,55 @@
 (define-cproc integer-expt (x::<integer> y::<integer>) ::<integer> :constant
   Scm_ExactIntegerExpt)
 
+;; Complex-domain primitives.  We rely on C99 <complex.h> so that
+;; branch cuts aligns to C99 spec.
+;; These always return a compnum.
+(select-module gauche.internal)
+(define-cproc %complex-exp (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (cexp (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-log (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (clog (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-sqrt (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (csqrt (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-expt (x::<number> y::<number>) :constant
+  Scm__ComplexExpt)
+(define-cproc %complex-sin (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (csin (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-cos (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (ccos (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-tan (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (ctan (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-asin (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (casin (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-acos (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (cacos (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-atan (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (catan (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-sinh (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (csinh (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-cosh (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (ccosh (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-tanh (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (ctanh (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-asinh (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (casinh (Scm_GetDoubleComplex z)))))
+;; For acosh and atanh, real z outside of the domain falls on the branch
+;; cut.  See real-asin above for the side we take.  Since the cut of acosh
+;; extends to -inf, real z is taken as z+0.0i, which is what
+;; Scm_GetDoubleComplex does.
+(define-cproc %complex-acosh (z::<number>) :constant
+  (return (Scm_DoubleComplexToComplex (cacosh (Scm_GetDoubleComplex z)))))
+(define-cproc %complex-atanh (z::<number>) :constant
+  (if (SCM_REALP z)
+    (let* ([x::double (Scm_GetDouble z)])
+      (return (Scm_DoubleComplexToComplex (catanh (on-cut x)))))
+    (return (Scm_DoubleComplexToComplex (catanh (Scm_GetDoubleComplex z))))))
+
 ;; Now, handles complex numbers.
-;;  Cf. Teiji Takagi: "Kaiseki Gairon" pp.193--198
+(select-module gauche.internal)
 (define-in-module scheme (exp z)
   (cond [(real? z) (real-exp z)]
-        [(complex? z) (make-polar (real-exp (real-part z)) (imag-part z))]
+        [(complex? z) (%complex-exp z)]
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (log z . base)
@@ -615,7 +660,7 @@
              ;; The constant pi is not avaialble here, but (* 4 (real-atan 1))
              ;; is constand-foled to pi.
              (make-rectangular (real-ln (- z)) (* 4 (real-atan 1))))]
-          [(complex? z) (make-rectangular (real-ln (magnitude z)) (angle z))]
+          [(complex? z) (%complex-log z)]
           [else (error "number required, but got" z)])
     (/ (log z) (log (car base)))))  ; R6RS addition
 
@@ -647,7 +692,7 @@
                   (real-sqrt z)))
               (real-sqrt z))))))]
    [(real? z) (real-sqrt z)]
-   [(complex? z) (make-polar (real-sqrt (magnitude z)) (/ (angle z) 2.0))]
+   [(complex? z) (%complex-sqrt z)]
    [else (error "number required, but got" z)]))
 
 (define-in-module gauche.internal (%exact-integer-sqrt k) ; k >= 0
@@ -674,17 +719,16 @@
 (select-module gauche.internal)
 (define-in-module scheme (expt x y)
   (cond [(and (exact? x) (exact? y)) (%exact-expt x y)]
-        [(real? x)
-         (cond [(real? y) (%expt-fast-path x y)]
-               [(number? y)
-                (let1 ry (real-part y)
-                  (if (and (zero? x) (positive? ry))
-                    (if (exact? x) 0 0.0)
-                    (* (%expt-fast-path x ry)
-                       (exp (* +i (imag-part y) (real-ln x))))))]
-               [else (error "number required, but got" y)])]
-        [(number? x) (exp (* y (log x)))]
-        [else (error "number required, but got" x)]))
+        [(and (real? x) (real? y)) (%expt-fast-path x y)]
+        [(not (number? x)) (error "number required, but got" x)]
+        [(not (number? y)) (error "number required, but got" y)]
+        [(and (real? x) (zero? x))
+         ;; R7RS: 0.0^z is 1.0 if z = 0.0, and 0.0 if (real-part z) is
+         ;; positive.  Exactness follows x.
+         (cond [(positive? (real-part y)) (if (exact? x) 0 0.0)]
+               [(zero? y) 1.0]
+               [else (%complex-expt x y)])]
+        [else (%complex-expt x y)]))
 
 (select-module gauche.internal)
 (define (%exact-expt x y) ;; x, y :: exact
@@ -738,110 +782,36 @@
                (/ xn xd))
              (real-expt x y))]))
 
-(select-module gauche)
-(define-in-module scheme (cos z)
-  (cond [(real? z) (real-cos z)]
-        [(number? z)
-         (let ([x (real-part z)]
-               [y (imag-part z)])
-           (make-rectangular (* (real-cos x) (real-cosh y))
-                             (- (* (real-sin x) (real-sinh y)))))]
-        [else (error "number required, but got" z)]))
-
-(define (cosh z)
-  (cond [(real? z) (real-cosh z)]
-        [(number? z)
-         (let ([x (real-part z)]
-               [y (imag-part z)])
-           (make-rectangular (* (real-cosh x) (real-cos y))
-                             (* (real-sinh x) (real-sin y))))]
-        [else (error "number required, but got" z)]))
-
+(select-module gauche.internal)
 (define-in-module scheme (sin z)
   (cond [(real? z) (real-sin z)]
-        [(number? z)
-         (let ([x (real-part z)]
-               [y (imag-part z)])
-           (make-rectangular (* (real-sin x) (real-cosh y))
-                             (* (real-cos x) (real-sinh y))))]
+        [(number? z) (%complex-sin z)]
         [else (error "number required, but got" z)]))
 
-(define (sinh z)
-  (cond [(real? z) (real-sinh z)]
-        [(number? z)
-         (let ([x (real-part z)]
-               [y (imag-part z)])
-           (make-rectangular (* (real-sinh x) (real-cos y))
-                             (* (real-cosh x) (real-sin y))))]
+(define-in-module scheme (cos z)
+  (cond [(real? z) (real-cos z)]
+        [(number? z) (%complex-cos z)]
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (tan z)
   (cond [(real? z) (real-tan z)]
-        [(number? z)
-         (let1 iz (* +i z)
-           (* -i
-              (/ (- (exp iz) (exp (- iz)))
-                 (+ (exp iz) (exp (- iz))))))]
-        [else (error "number required, but got" z)]))
-
-(define (tanh z)
-  (cond [(real? z) (real-tanh z)]
-        [(number? z) (/ (- (exp z) (exp (- z)))
-                        (+ (exp z) (exp (- z))))]
+        [(number? z) (%complex-tan z)]
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (asin z)
   (cond [(real? z) (real-asin z)]
-        [(number? z)
-         ;; The definition of asin is
-         ;;   (* -i (log (+ (* +i z) (sqrt (- 1 (* z z))))))
-         ;; This becomes unstable when the term in the log is reaching
-         ;; toward 0.0.  The term, k = (+ (* +i z) (sqrt (- 1 (* z z)))),
-         ;; gets closer to zero when |z| gets bigger, but for large |z|,
-         ;; k is prone to lose precision and starts drifting around
-         ;; the point zero.
-         ;; For now, I let asin to return NaN in such cases.
-         (let1 zz (+ (* +i z) (sqrt (- 1 (* z z))))
-           (if (< (/. (magnitude zz) (magnitude z)) 1.0e-8)
-             (make-rectangular +nan.0 +nan.0)
-             (* -i (log zz))))]
-        [else (error "number required, but got" z)]))
-
-(define (asinh z)
-  (cond [(real? z) (real-asinh z)]
-        [(number? z)
-         (let1 zz (+ z (sqrt (+ (* z z) 1)))
-           (if (< (/. (magnitude zz) (magnitude z)) 1.0e-8)
-             (make-rectangular +nan.0 +nan.0)
-             (log zz)))]
+        [(number? z) (%complex-asin z)]
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (acos z)
   (cond [(real? z) (real-acos z)]
-        [(number? z)
-         ;; The definition of acos is
-         ;;  (* -i (log (+ z (* +i (sqrt (- 1 (* z z)))))))))
-         ;; This also falls in the victim of numerical unstability; worse than
-         ;; asin, sometimes the real part of marginal value "hops" between
-         ;; +pi and -pi.  It's rather stable to use asin.
-         (- 1.5707963267948966 (asin z))]
-        [else (error "number required, but got" z)]))
-
-(define (acosh z)
-  (cond [(real? z) (real-acosh z)]
-        [(number? z);; See the discussion of CLtL2, pp. 313-314
-         (* 2 (log (+ (sqrt (/ (+ z 1) 2))
-                      (sqrt (/ (- z 1) 2)))))]
+        [(number? z) (%complex-acos z)]
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (atan z . x)
   (if (null? x)
     (cond [(real? z) (real-atan z)]
-          [(number? z)
-           (let1 iz (* z +i)
-             (/ (- (log (+ 1 iz))
-                   (log (- 1 iz)))
-                +2i))]
+          [(number? z) (%complex-atan z)]
           [else (error "number required, but got" z)])
     (cond [(and (eq? (car x) 0) (zero? z))
            ;; Special case.  See R7RS.
@@ -853,9 +823,34 @@
           [else (error "two-argument atan requires real numbers, but got"
                        (list z (car x)))])))
 
-(define (atanh z)
-  (cond [(real? z) (real-atanh z)]
-        [(number? z) (/ (- (log (+ 1 z)) (log (- 1 z))) 2)]
+(define-in-module gauche (sinh z)
+  (cond [(real? z) (real-sinh z)]
+        [(number? z) (%complex-sinh z)]
+        [else (error "number required, but got" z)]))
+
+(define-in-module gauche (cosh z)
+  (cond [(real? z) (real-cosh z)]
+        [(number? z) (%complex-cosh z)]
+        [else (error "number required, but got" z)]))
+
+(define-in-module gauche (tanh z)
+  (cond [(real? z) (real-tanh z)]
+        [(number? z) (%complex-tanh z)]
+        [else (error "number required, but got" z)]))
+
+(define-in-module gauche (asinh z)
+  (cond [(real? z) (real-asinh z)]
+        [(number? z) (%complex-asinh z)]
+        [else (error "number required, but got" z)]))
+
+(define-in-module gauche (acosh z)
+  (cond [(real? z) (if (< z 1) (%complex-acosh z) (real-acosh z))]
+        [(number? z) (%complex-acosh z)]
+        [else (error "number required, but got" z)]))
+
+(define-in-module gauche (atanh z)
+  (cond [(real? z) (if (or (< z -1) (> z 1)) (%complex-atanh z) (real-atanh z))]
+        [(number? z) (%complex-atanh z)]
         [else (error "number required, but got" z)]))
 
 (select-module gauche)

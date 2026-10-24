@@ -204,6 +204,14 @@
        (rlet1 v (f64vector 0.0 0.0)
          (f64vector-set! v 0 1.0+0.0i)
          (f64vector-set! v 1 -2.0-0.0i)))
+;; Infinite imaginary part shouldn't contaminate the real part.
+(test* "c64/c128vector (infinite imaginary part)"
+       '((1.0 +inf.0) (+inf.0 -0.0) (1.0 +inf.0) (+inf.0 -0.0))
+       (let ([v64 (c64vector 1.0+inf.0i (make-rectangular +inf.0 -0.0))]
+             [v128 (c128vector 1.0+inf.0i (make-rectangular +inf.0 -0.0))])
+         (map (^z (list (real-part z) (imag-part z)))
+              (list (c64vector-ref v64 0) (c64vector-ref v64 1)
+                    (c128vector-ref v128 0) (c128vector-ref v128 1)))))
 
 (uvrefset-test-c32 '(0.0+0.0i -1-i 1+i)
                    '#c32(0.0 -1-i 1+i))
