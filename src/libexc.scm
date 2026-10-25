@@ -208,9 +208,9 @@
 (define &i/o-closed-error <io-closed-error>)
 (define &read-error  <read-error>)
 
-(define (message-condition? obj) (is-a? obj <message-condition>))
-(define (serious-condition? obj) (is-a? obj <serious-condition>))
-(define (error? obj) (is-a? obj <error>))
+(define (message-condition? obj) (condition-has-type? obj <message-condition>))
+(define (serious-condition? obj) (condition-has-type? obj <serious-condition>))
+(define (error? obj) (condition-has-type? obj <error>))
 
 ;; SRFI-226
 (define &continuation <continuation-violation>)
@@ -326,12 +326,14 @@
 (define &thread <thread-exception>)
 (define (make-thread-condition)
   (make <thread-exception> :thread (current-thread)))
-(define (thread-condition? obj) (is-a? obj <thread-exception>))
+(define (thread-condition? obj)
+  (condition-has-type? obj <thread-exception>))
 
 (define &uncaught-exception <uncaught-exception>)
 (define (make-uncaught-exception-condition obj)
   (make <uncaught-exception> :reason obj))
-(define (uncaught-exception-condition? obj) (is-a? obj <uncaught-exception>))
+(define (uncaught-exception-condition? obj)
+  (condition-has-type? obj <uncaught-exception>))
 (define (uncaught-exception-condition-reason obj)
   (assume-type obj <uncaught-exception>)
   (slot-ref obj 'reason))
@@ -340,25 +342,25 @@
 (define (make-thread-already-terminated-condition)
   (make <terminated-thread-exception>))
 (define (thread-already-terminated-condition? obj)
-  (is-a? obj <terminated-thread-exception>))
+  (condition-has-type? obj <terminated-thread-exception>))
 
 (define &thread-timeout <join-timeout-exception>)
 (define (make-thread-timeout-condition)
   (make <join-timeout-exception>))
 (define (thread-timeout-condition? obj)
-  (is-a? obj <join-timeout-exception>))
+  (condition-has-type? obj <join-timeout-exception>))
 
 (define &thread-abandoned-mutex <abandoned-mutex-exception>)
 (define (make-thread-abandoned-mutex-condition)
   (make <abandoned-mutex-exception>))
 (define (thread-abandoned-mutex-condition? obj)
-  (is-a? obj <abandoned-mutex-exception>))
+  (condition-has-type? obj <abandoned-mutex-exception>))
 
 (define &concurrent-modification <concurrent-modification-violation>)
 (define (make-concurrent-modification-violation)
   (make <concurrent-modification-violation>))
 (define (concurrent-modification-violation? obj)
-  (is-a? obj <concurrent-modification-violation>))
+  (condition-has-type? obj <concurrent-modification-violation>))
 
 ;;;
 ;;; Mixin conditions

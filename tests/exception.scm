@@ -166,6 +166,17 @@
            (lambda () (error &c1 :a "ok"))))
   )
 
+;; Ensure built-in predicate works for compond condition
+;; https://github.com/shirok/Gauche/issues/1343
+(test* "error? on compond condition w/message" #t
+       (error? (condition (&error) (&message (message "!")))))
+(test* "error? on compond condition w/custom" #t
+       (error? (condition (&c) (&error))))
+(test* "message-condition? on compond condition w/custom" #t
+       (message-condition? (condition (&c) (&message (message "!")))))
+(test* "serious-condition? on compond condition w/custom" #t
+       (serious-condition? (condition (&c) (<serious-condition>))))
+
 ;;--------------------------------------------------------------------
 (test-section "with-exception-handler")
 
