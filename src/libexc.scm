@@ -66,10 +66,15 @@
 ;; A convenience procedure; safe for non-message condition objects.
 ;; (cf. error-object-message of r7rs)
 (define (condition-message e :optional (fallback #f))
-  (if (and (condition? e)
-           (condition-has-type? e <message-condition>))
-    (condition-ref e 'message)
-    fallback))
+  (or (and (condition? e)
+           (cond
+            [(is-a? e <message-condition>) (~ e'message)]
+            [(is-a? e <compound-condition>)
+             (any (^e (and (is-a? e <message-condition>)
+                           (~ e'message)))
+                  (~ e'%conditions))]
+            [else #f]))
+      fallback))
 
 (define (print-default-error-heading exc out)
   (assume-type out <output-port>)

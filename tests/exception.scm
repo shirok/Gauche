@@ -114,6 +114,22 @@
           (list (condition-ref s 'message) (condition-ref s 'errno)))
          ))
 
+;; When we have multiple conditions with message slot in a compound condition,
+;; get the first one with the actual message.
+;; Cf. https://github.com/shirok/Gauche/issues/1343
+(test* "condition-message (single)" "foo"
+       (condition-message (make-condition <message-condition> 'message "foo")))
+(test* "condition-message (single, none)" #f
+       (condition-message (make-condition <message-condition>)))
+(test* "condition-message (compound, one message)" "boo"
+       (condition-message (make-compound-condition
+                           (make-condition <condition>)
+                           (make-condition <message-condition> 'message "boo"))))
+(test* "condition-message (compound, ignore no message)" "qoo"
+       (condition-message (make-compound-condition
+                           (make-condition <error>)
+                           (make-condition <message-condition> 'message "qoo"))))
+
 ;;--------------------------------------------------------------------
 (test-section "SRFI-35 style condition definitions")
 
