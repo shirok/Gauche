@@ -67,20 +67,26 @@
    ;;    For the time being, we don't export internal PEG parsers,
    ;;    but we may provide alternative parsers or partial parsers (e.g. just
    ;;    for expressions).
+
    (cpp-include-paths :init-form '() :init-keyword :cpp-include-paths)
    ;;  cpp-include-paths : A list of strings to be considered for include file
    ;;    search.
+
    (cpp-definitions :init-form '() :init-keyword :cpp-definitions)
    ;;  cpp-definitions : (def ...)
    ;;    where each def may be VAR or (VAR VAL ...)
    ;;    Single VAR becomes -DVAR, and the list becomes -DVAR=VAL ...
    ;;    to be passed to cpp.
+
    (use-concurrent-lexer :init-form (> (sys-available-processors) 1))
    ;;  A boolean value to specify whether we run lexer concurrently.
+
    (typedefs :init-form (make-hash-table eq-comparator))
    ;;  typedefs : symbol -> c-type
    ;;    C syntax is ambiguous that identifier can also be a type name.  We need
-   ;;    to track previously declared type names.
+   ;;    to track previously declared type names. This holds global typedef
+   ;;    names; local ones are kept in a stacked map held in a parameter.
+
    (hooks :init-form (make-hash-table eq-comparator))
    ))
 

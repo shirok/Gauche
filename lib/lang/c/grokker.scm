@@ -110,18 +110,24 @@
 ;; TODO: Make parser returns lseq/cseq and run grokker concurrently
 
 ;; API
-(define (c-grok-file file)
+(define (c-grok-file file :key (cpp-include-paths '())
+                               (cpp-definitions '()))
   (with-fresh-c-context
    (^[]
-     (dolist [form (c-parse-file (c-toplevel-parser) file)]
-       (c-grok-parser-output-1 form)))))
+     (let1 parser (c-toplevel-parser :cpp-include-paths cpp-include-paths
+                                     :cpp-definitions cpp-definitions)
+       (dolist [form (c-parse-file parser file)]
+         (c-grok-parser-output-1 form))))))
 
 ;; API
-(define (c-grok-string string)
+(define (c-grok-string string :key (cpp-include-paths '())
+                                   (cpp-definitions '()))
   (with-fresh-c-context
    (^[]
-     (dolist [form (c-parse-string (c-toplevel-parser) string)]
-       (c-grok-parser-output-1 form)))))
+     (let1 parser (c-toplevel-parser :cpp-include-paths cpp-include-paths
+                                     :cpp-definitions cpp-definitions)
+       (dolist [form (c-parse-string parser string)]
+         (c-grok-parser-output-1 form))))))
 
 ;; API
 ;;   Look up definition or declaration
