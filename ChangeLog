@@ -1,3 +1,8 @@
+2026-10-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (make_native_type): Assign signedness of <c-char>
+	  native type according to the compiler that compiles Gauche core.
+
 2026-10-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/libexc.scm (error? etc.): Should check compound condition case.

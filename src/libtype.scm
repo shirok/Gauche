@@ -1187,8 +1187,9 @@
 
   ;; We map C char to our character in 8-bit range.  If you want to use
   ;; char as a one-byte integer, use <c-int8> or <c-uint8>.
+  ;; The signedness of plain char is platform-dependent.
   (define-native-type <c-char>   Scm_NativeCCharType   SCM_CLASS_INTEGER char
-    SCM_CHAR_FITS_LATIN1_P SCM_MAKE_CHAR SCM_CHAR_VALUE FALSE)
+    SCM_CHAR_FITS_LATIN1_P SCM_MAKE_CHAR SCM_CHAR_VALUE (== CHAR_MIN 0))
   ;; A special case of NUL-terminated string.
   (define-native-type <c-string> Scm_NativeCStringType SCM_CLASS_STRING "const char*"
     SCM_STRINGP SCM_MAKE_STR_COPYING SCM_STRING_CONST_CSTRING FALSE)
