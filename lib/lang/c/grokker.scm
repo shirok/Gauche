@@ -134,40 +134,81 @@
 (define-method c-get-definition-or-declaration ((ctx <c-context>) name)
   (hash-table-get (~ ctx'globals) name #f))
 
+;; Convert the string of C integer constant, as the lexer returns, to
+;; an exact integer.  The suffix is already validated by the lexer.
+;; Returns #f if the string isn't a valid integer constant.
+(define (c-integer-literal->number s)
+  (rxmatch-case s
+    [#/^0[xX]([[:xdigit:]]+)[uUlL]*$/ (_ ds) (string->number ds 16)]
+    [#/^0[bB]([01]+)[uUlL]*$/ (_ ds) (string->number ds 2)]
+    [#/^(0[0-7]*)[uUlL]*$/ (_ ds) (string->number ds 8)]
+    [#/^([1-9][0-9]*)[uUlL]*$/ (_ ds) (string->number ds 10)]
+    [else #f]))
+
+;; Convert the string of C floating constant to a flonum.
+;; Returns #f if the string isn't a valid floating constant.
+;; NB: Gauche's flonum is always double; we discard suffix information.
+(define (c-floating-literal->number s)
+  (rxmatch-case s
+    [#/^0[xX]([[:xdigit:]]*\.?[[:xdigit:]]*[pP][-+]?[0-9]+)[fFlL]?$/ (_ ds)
+     (string->number ds 16 'inexact)]
+    [#/^([0-9]*\.?[0-9]*(?:[eE][-+]?[0-9]+)?)[fFlL]?$/ (_ ds)
+     (string->number ds 10 'inexact)]
+    [else #f]))
+
 ;; Evaluate initializer expression.  INITIALIZER is what the parser
 ;; returned in the initializer slot.
 ;; As the representation of parser output hasn't been finalized, the
 ;; implementation here is provisional.  The API remains same.
 ;; Returns #f if there's no initializer, or it can't be evaluated.
 (define-method c-eval-initializer ((ctx <c-context>) initializer)
-  (define (unop op x) (and x (op (ev x))))
-  (define (binop op x y) (and x y (op (ev x) (ev y))))
-  (define (lsh x y) (ash x (- y)))
-  (define (cnot x) (if (eqv? x 0) 1 0))
-  (define (cand x y) (if (or (eqv? x 0) (eqv? y 0)) 0 1))
-  (define (cor x y) (if (and (eqv? x 0) (eqv? y 0)) 0 1))
+  (define (unop op x) (and-let1 v (ev x) (op v)))
+  (define (binop op x y) (and-let* ([a (ev x)] [b (ev y)]) (op a b)))
+  (define (nop op xs) (let1 vs (map ev xs) (and (every values vs) (apply op vs))))
+  ;; Wrap an operator that is only valid on integers.
+  (define (int-op op) (^ vs (and (every exact-integer? vs) (apply op vs))))
+  (define (rsh x y) (ash x (- y)))
+  ;; C division truncates if both operands are integers.
+  (define (cdiv x y)
+    (if (and (exact? x) (exact? y))
+      (and (not (zero? y)) (quotient x y))
+      (/ (inexact x) (inexact y))))
+  (define (cmod x y) (and (not (zero? y)) (remainder x y)))
+  (define (cnot x) (if (zero? x) 1 0))
+  ;; && and || short-circuit, so the operands are evaluated in turn.
+  (define (cand xs)
+    (let loop ([xs xs])
+      (cond [(null? xs) 1]
+            [(ev (car xs)) => (^v (if (zero? v) 0 (loop (cdr xs))))]
+            [else #f])))
+  (define (cor xs)
+    (let loop ([xs xs])
+      (cond [(null? xs) 0]
+            [(ev (car xs)) => (^v (if (zero? v) (loop (cdr xs)) 1))]
+            [else #f])))
   (define (ev expr)
     (match expr
       [('const (or 'int 'u-int 'long 'u-long 'long-long 'u-long-long) s)
-       (let1 v (string->number s) (and v (exact-integer? v) v))]
-      [('const (or 'float 'double) s)
-       (let1 v (string->number s) (and v (inexact v)))]
+       (c-integer-literal->number s)]
+      [('const (or 'float 'double 'long-double) s)
+       (c-floating-literal->number s)]
       [('paren x) (ev x)]
       [('+ a b) (binop + a b)]
       [('- a b) (binop - a b)]
       [('* a b) (binop * a b)]
-      [('/ a b) (binop / a b)]
-      [('<< a b) (binop ash a b)]
-      [('>> a b) (binop lsh a b)]
+      [('/ a b) (binop cdiv a b)]
+      [('% a b) (binop (int-op cmod) a b)]
+      [('<< a b) (binop (int-op ash) a b)]
+      [('>> a b) (binop (int-op rsh) a b)]
       [('- a) (unop - a)]
       [('+ a) (ev a)]
       [('! a) (unop cnot a)]
-      [('and a b) (binop cand a b)]
-      [('or a b) (binop cor a b)]
-      [('~ a) (unop lognot a)]
-      [('logand a b) (binop logand a b)]
-      [('logior a b) (binop logior a b)]
-      [('logxor a b) (binop logxor a b)]
+      [('and . xs) (cand xs)]
+      [('or . xs) (cor xs)]
+      [('~ a) (unop (int-op lognot) a)]
+      [('logand . xs) (nop (int-op logand) xs)]
+      [('logior . xs) (nop (int-op logior) xs)]
+      [('logxor . xs) (nop (int-op logxor) xs)]
       [('ident v) (c-variable-initial-value ctx v)]
       [#f #f]                           ;no initializer
       [_ (warn "Unevaluatable initializer: ~s\n" initializer) #f]))

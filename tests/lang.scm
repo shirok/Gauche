@@ -446,4 +446,65 @@
            (sort (hash-table-keys (~ ctx'globals)))))
   )
 
+(let ()
+  (define (t expected init)
+    (test* #"initial value: ~init" expected
+           (let1 ctx (c-grok-string #"const long x = ~|init|;")
+             (c-variable-initial-value ctx 'x))))
+  ;; literals
+  (t 22 "22")
+  (t 0 "0")
+  (t 64 "0100")
+  (t #x5413 "0x5413")
+  (t #xff "0XFFu")
+  (t 1 "1L")
+  (t 18446744073709551615 "18446744073709551615UL")
+  (t #x7fffffffffffffff "0x7fffffffffffffffLL")
+  (t 1.5 "1.5f")
+  (t 0.5 ".5")
+  (t 100.0 "1e2")
+  (t 12.0 "0x1.8p3")
+  (t 1.0 "0x.8p1")
+  (t 0.25 "0x1p-2")
+  (t 12.0 "0X1.8P+3L")
+  ;; operators
+  (t 448 "(0400|0200|0100)")
+  (t 2 "7 & 3 & 2")
+  (t 5 "1 ^ 2 ^ 6")
+  (t -9223372036854775808 "(-0x7fffffffffffffffL - 1L)")
+  (t 3 "7 / 2")
+  (t -3 "-7 / 2")
+  (t 3.5 "7.0 / 2")
+  (t 1 "7 % 3")
+  (t -1 "-7 % 3")
+  (t 16 "1 << 4")
+  (t 1 "16 >> 4")
+  (t -1 "~0")
+  (t 1 "!0")
+  (t 0 "1 && 2 && 0")
+  (t 1 "1 && 2 && 3")
+  (t 1 "0 || 0 || 5")
+  (t 0 "0 || 0")
+  ;; references
+  (test* "initial value: reference" 3
+         (let1 ctx (c-grok-string "const int y = 1; const int x = y + 2;")
+           (c-variable-initial-value ctx 'x)))
+  ;; unevaluatable
+  (test* "initial value: undefined" #f
+         (let1 ctx (c-grok-string "const int x = - undefined_id;")
+           (c-variable-initial-value ctx 'x)))
+  (test* "initial value: undefined (binary)" #f
+         (let1 ctx (c-grok-string "const int x = undefined_id - 1;")
+           (c-variable-initial-value ctx 'x)))
+  (test* "initial value: undefined (n-ary)" #f
+         (let1 ctx (c-grok-string "const int x = 1 | undefined_id | 2;")
+           (c-variable-initial-value ctx 'x)))
+  (test* "initial value: short-circuit" 0
+         (let1 ctx (c-grok-string "const int x = 0 && undefined_id;")
+           (c-variable-initial-value ctx 'x)))
+  (test* "initial value: division by zero" #f
+         (let1 ctx (c-grok-string "const int x = 1 / 0;")
+           (c-variable-initial-value ctx 'x)))
+  )
+
 (test-end)
