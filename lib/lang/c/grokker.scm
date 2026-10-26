@@ -40,7 +40,8 @@
           c-grok-file
           c-grok-string
 
-          c-variable-initial-value)
+          c-variable-initial-value
+          <c-unevaluatable-initializer>)
   )
 (select-module lang.c.grokker)
 
@@ -156,15 +157,24 @@
      (string->number ds 10 'inexact)]
     [else #f]))
 
+;; Condition raised when an initializer can't be evaluated.
+;;   initializer - the whole initializer expression being evaluated
+;;   expression  - the offending part of the initializer
+(define-condition-type <c-unevaluatable-initializer> <error> #f
+  (initializer)
+  (expression))
+
 ;; Evaluate initializer expression.  INITIALIZER is what the parser
 ;; returned in the initializer slot.
 ;; As the representation of parser output hasn't been finalized, the
 ;; implementation here is provisional.  The API remains same.
-;; Returns #f if there's no initializer, or it can't be evaluated.
+;; Raises <c-unevaluatable-initializer> if it can't be evaluated.
 (define-method c-eval-initializer ((ctx <c-context>) initializer)
-  (define (unop op x) (and-let1 v (ev x) (op v)))
-  (define (binop op x y) (and-let* ([a (ev x)] [b (ev y)]) (op a b)))
-  (define (nop op xs) (let1 vs (map ev xs) (and (every values vs) (apply op vs))))
+  ;; The operators return #f if they can't compute the value from
+  ;; the operands; ev raises an error then.
+  (define (unop op x) (op (ev x)))
+  (define (binop op x y) (op (ev x) (ev y)))
+  (define (nop op xs) (apply op (map ev xs)))
   ;; Wrap an operator that is only valid on integers.
   (define (int-op op) (^ vs (and (every exact-integer? vs) (apply op vs))))
   (define (rsh x y) (ash x (- y)))
@@ -179,14 +189,14 @@
   (define (cand xs)
     (let loop ([xs xs])
       (cond [(null? xs) 1]
-            [(ev (car xs)) => (^v (if (zero? v) 0 (loop (cdr xs))))]
-            [else #f])))
+            [(zero? (ev (car xs))) 0]
+            [else (loop (cdr xs))])))
   (define (cor xs)
     (let loop ([xs xs])
       (cond [(null? xs) 0]
-            [(ev (car xs)) => (^v (if (zero? v) (loop (cdr xs)) 1))]
-            [else #f])))
-  (define (ev expr)
+            [(zero? (ev (car xs))) (loop (cdr xs))]
+            [else 1])))
+  (define (ev1 expr)
     (match expr
       [('const (or 'int 'u-int 'long 'u-long 'long-long 'u-long-long) s)
        (c-integer-literal->number s)]
@@ -209,17 +219,37 @@
       [('logand . xs) (nop (int-op logand) xs)]
       [('logior . xs) (nop (int-op logior) xs)]
       [('logxor . xs) (nop (int-op logxor) xs)]
+      ;; Returns #f if V is undefined or has no initializer.
       [('ident v) (c-variable-initial-value ctx v)]
-      [#f #f]                           ;no initializer
-      [_ (warn "Unevaluatable initializer: ~s\n" initializer) #f]))
+      [_ #f]))
+  (define (ev expr)
+    (or (ev1 expr)
+        (error <c-unevaluatable-initializer>
+               :initializer initializer :expression expr
+               "Unevaluatable initializer:" expr)))
 
   (ev initializer))
 
 ;; API
 ;;   Lookup the initial value of the named variable.  Returns #f if
-;;   no initializer, or the initializer can't be evaluated.
-(define-method c-variable-initial-value ((ctx <c-context>) name)
+;;   the variable isn't defined or has no initializer.
+;;   If the initializer can't be evaluated, the behavior depends on
+;;   ON-FAILURE:
+;;     :error    - Raises <c-unevaluatable-initializer>.
+;;     #f        - Returns #f.
+;;     procedure - Called with the condition, and its result is returned.
+(define-method c-variable-initial-value ((ctx <c-context>) name
+                                         :key (on-failure :error))
+  (define (eval-init init)
+    (if (eq? on-failure :error)
+      (c-eval-initializer ctx init)
+      (guard (e [(<c-unevaluatable-initializer> e)
+                 (and on-failure (on-failure e))])
+        (c-eval-initializer ctx init))))
+  (unless (or (memv on-failure '(:error #f)) (procedure? on-failure))
+    (error "on-failure must be :error, #f or a procedure, but got:"
+           on-failure))
   (and-let* ([vv (c-get-definition-or-declaration ctx name)]
              [ (is-a? vv <c-variable>) ]
              [init (~ vv'initializer)])
-    (c-eval-initializer ctx init)))
+    (eval-init init)))

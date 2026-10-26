@@ -489,22 +489,55 @@
   (test* "initial value: reference" 3
          (let1 ctx (c-grok-string "const int y = 1; const int x = y + 2;")
            (c-variable-initial-value ctx 'x)))
+  ;; nonexistent variable, or no initializer
+  (test* "initial value: no such variable" #f
+         (let1 ctx (c-grok-string "const int x = 1;")
+           (c-variable-initial-value ctx 'y)))
+  (test* "initial value: no initializer" #f
+         (let1 ctx (c-grok-string "extern const int x;")
+           (c-variable-initial-value ctx 'x)))
   ;; unevaluatable
-  (test* "initial value: undefined" #f
-         (let1 ctx (c-grok-string "const int x = - undefined_id;")
-           (c-variable-initial-value ctx 'x)))
-  (test* "initial value: undefined (binary)" #f
-         (let1 ctx (c-grok-string "const int x = undefined_id - 1;")
-           (c-variable-initial-value ctx 'x)))
-  (test* "initial value: undefined (n-ary)" #f
-         (let1 ctx (c-grok-string "const int x = 1 | undefined_id | 2;")
-           (c-variable-initial-value ctx 'x)))
+  (let ()
+    (define (t-fail expected init)
+      (let1 ctx (c-grok-string #"const int y; const int x = ~|init|;")
+        (test* #"initial value failure: ~init" expected
+               ($ c-variable-initial-value ctx 'x
+                  :on-failure (^e (list (~ e'initializer)
+                                        (~ e'expression)))))
+        (test* #"initial value failure: ~init (:on-failure #f)" #f
+               (c-variable-initial-value ctx 'x :on-failure #f))
+        (test* #"initial value failure: ~init (:on-failure :error)"
+               (test-error <c-unevaluatable-initializer>)
+               (c-variable-initial-value ctx 'x :on-failure :error))
+        (test* #"initial value failure: ~init (default)"
+               (test-error <c-unevaluatable-initializer>)
+               (c-variable-initial-value ctx 'x))))
+    (t-fail '((- (ident undefined_id)) (ident undefined_id))
+            "- undefined_id")
+    (t-fail '((- (ident undefined_id) (const int "1")) (ident undefined_id))
+            "undefined_id - 1")
+    (t-fail '((logior (const int "1") (ident undefined_id) (const int "2"))
+              (ident undefined_id))
+            "1 | undefined_id | 2")
+    (t-fail '((+ (ident y) (const int "1")) (ident y))
+            "y + 1")
+    (t-fail '((/ (const int "1") (const int "0"))
+              (/ (const int "1") (const int "0")))
+            "1 / 0")
+    (t-fail '((<< (const double "1.0") (const int "2"))
+              (<< (const double "1.0") (const int "2")))
+            "1.0 << 2"))
   (test* "initial value: short-circuit" 0
          (let1 ctx (c-grok-string "const int x = 0 && undefined_id;")
            (c-variable-initial-value ctx 'x)))
-  (test* "initial value: division by zero" #f
-         (let1 ctx (c-grok-string "const int x = 1 / 0;")
-           (c-variable-initial-value ctx 'x)))
+  (test* "initial value: nested failure" '(ident undefined_id)
+         (let1 ctx (c-grok-string
+                    "const int y = undefined_id; const int x = y + 1;")
+           ($ c-variable-initial-value ctx 'x
+              :on-failure (cut ~ <>'expression))))
+  (test* "initial value: invalid on-failure" (test-error)
+         (let1 ctx (c-grok-string "const int x = undefined_id;")
+           (c-variable-initial-value ctx 'x :on-failure 'oops)))
   )
 
 (test-end)
