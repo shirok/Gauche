@@ -374,6 +374,87 @@
           "typedef enum e T; T x;")
   )
 
+;; c-type -> native-type
+(let ()
+  (define (type-of code)
+    (let loop ((decls (c-parse-string (c-toplevel-parser) code)))
+      (match decls
+        [(('decl 'x _ type _) . _) type]
+        [(_ . r) (loop r)])))
+  ;; We only need to evaluate integer literals here.
+  (define (eval-const expr)
+    (match expr
+      [('const 'int s) (string->number s)]
+      [_ #f]))
+  (define (nt code) (c-type->native-type (type-of code) eval-const))
+  (define (t-prim expect code)
+    (test* #"native-type: ~code" expect (nt code)))
+  (define (t-shape expect code)
+    (test* #"native-type: ~code" expect
+           (and-let1 t (nt code)
+             (list (class-name (class-of t)) (~ t'size) (~ t'alignment)))))
+  (define (field-offsets t)
+    (let ([names (with-module gauche.native-type c-struct/union-type-field-names)]
+          [offset (with-module gauche.native-type c-struct/union-type-field-offset)])
+      (map (^n (cons n (offset t n))) (names t))))
+
+  (t-prim <c-char> "char x;")
+  (t-prim <int8> "signed char x;")
+  (t-prim <uint8> "unsigned char x;")
+  (t-prim <short> "short x;")
+  (t-prim <ushort> "unsigned short x;")
+  (t-prim <int> "const int x;")
+  (t-prim <uint> "unsigned x;")
+  (t-prim <long> "long x;")
+  (t-prim <ulong> "unsigned long x;")
+  (t-prim <int64> "long long x;")
+  (t-prim <uint64> "unsigned long long x;")
+  (t-prim <c-bool> "_Bool x;")
+  (t-prim <float> "float x;")
+  (t-prim <double> "double x;")
+  (t-prim <uint> "typedef unsigned int mode_t; mode_t x;")
+  (t-prim <void*> "void *x;")
+  (t-prim <void*> "const void *x;")
+  (t-prim #f "long double x;")
+  (t-prim #f "_Complex double x;")
+
+  (t-shape `(<c-pointer-type> ,(~ <void*>'size) ,(~ <void*>'alignment))
+           "char *x;")
+  (test* "native-type: char *x; pointee" <c-char>
+         (~ (nt "char *x;")'pointee-type))
+  (t-shape `(<c-pointer-type> ,(~ <void*>'size) ,(~ <void*>'alignment))
+           "struct foo *x;")
+  (t-shape '(<c-array-type> 24 4) "int x[3][2];")
+  (test* "native-type: int x[3][2]; dimensions" '(3 2)
+         (~ (nt "int x[3][2];")'dimensions))
+  (test* "native-type: int x[]; dimensions" '(*)
+         (~ (nt "int x[];")'dimensions))
+  (t-prim #f "int x[N];")
+  (t-shape '(<c-struct-type> 24 8) "struct s { char a; int b; double c[2]; } x;")
+  (test* "native-type: struct field offsets" '((a . 0) (b . 4) (c . 8))
+         (field-offsets (nt "struct s { char a; int b; double c[2]; } x;")))
+  (t-shape '(<c-union-type> 8 8) "union u { char a; int b; double c; } x;")
+  (t-prim #f "struct foo x;")             ;incomplete
+  (t-prim #f "struct s { int a : 3; } x;") ;bit field
+  (t-prim #f "struct s { long double a; } x;")
+  (test* "native-type: function" '(<int> (<int> <c-char*>) #t)
+         (let1 t (nt "int x(int, char *, ...);")
+           (list (~ t'return-type'name)
+                 (map (cut ~ <>'name) (~ t'argument-types))
+                 (~ t'variadic?))))
+  (test* "native-type: function (void)" '(() #f)
+         (let1 t (nt "int x(void);")
+           (list (~ t'argument-types) (~ t'variadic?))))
+  (test* "native-type: function ()" '(() #t)
+         (let1 t (nt "int x();")
+           (list (~ t'argument-types) (~ t'variadic?))))
+  (t-shape '(<c-enum-type> 4 4) "enum e { A, B = 5, C } x;")
+  (test* "native-type: enumerators" '((A . 0) (B . 5) (C . 6))
+         (~ (nt "enum e { A, B = 5, C } x;")'enumerator-alist))
+  (t-shape '(<c-enum-type> 4 4) "enum e x;") ;incomplete
+  (t-prim #f "enum e { A = N } x;")
+  )
+
 ;; We haven't fixed the format of the semantic value, so for now we just
 ;; see if it parses.
 (let ()

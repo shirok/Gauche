@@ -45,9 +45,17 @@
           c-basic-type-numeric?
           c-type-narrower?
           c-wider-type
-          c-actual-type)
+          c-actual-type
+          c-type->native-type)
   )
 (select-module lang.c.type)
+
+;; Avoid statically depending on gauche.native-type.
+(autoload gauche.native-type
+          make-c-pointer-type make-c-opaque-pointer-type
+          make-c-function-type make-c-array-type
+          make-c-struct-type make-c-union-type
+          make-c-enum-type default-c-enum-base-type)
 
 ;; Type representation
 ;;   We use plain S-expr rather than a bunch of records, for flexibility.
@@ -392,3 +400,102 @@
     [('.type _ quals inner)
      (attach-qualifier (c-actual-type inner) quals)]
     [_ c-type]))
+
+;;;
+;;; Conversion to native type
+;;;
+
+;; API
+;;   Returns a <native-type> corresponding to C-TYPE, or #f if it can't
+;;   be represented as a native type.
+;;
+;;   During conversion, we may need to evaluate constant expression
+;;   (e.g. array dimensions or enumerator values).  Evaluation needs
+;;   global knowledge of the program, so we delegate it to caller-provided
+;;   EVAL-CONST procedure---it takes parsed C expression form and must
+;;   return either a Scheme number, or #f when the expression doesn't
+;;   have constant value.  EVAL-CONST may throw an error; see lang.c.grokker.
+;;
+;;   Qualifiers are ignored.  Bit fields and anonymous members of
+;;   struct/union aren't supported yet.  Incomplete struct/union can only
+;;   be a pointee, and represented as an opaque pointer.
+(define (c-type->native-type c-type :optional (eval-const (^_ #f)))
+  (define (const-int expr)
+    (let1 v (eval-const expr)
+      (and (exact-integer? v) v)))
+  (define (field f)
+    (match f
+      [((? symbol? name) type) (and-let1 t (conv type) (list name t))]
+      [_ #f]))                          ;anonymous or bit field
+  (define (aggregate make tag fields)
+    (and (pair? fields)                 ;incomplete type
+         (let1 fs (map field fields)
+           (and (every values fs) (make tag fs)))))
+  (define (pointer pointee)
+    (match (c-actual-type pointee)
+      [('void _) <void*>]
+      [((and (or '.struct '.union) kind) tag _ ())
+       (make-c-opaque-pointer-type
+        (string->symbol (format "~a ~a" (if (eq? kind '.struct) 'struct 'union)
+                                (or tag 'anonymous))))]
+      [_ (and-let1 t (conv pointee) (make-c-pointer-type t))]))
+  ;; int x[3][2] is (.array (.array int 2) 3); we flatten it to
+  ;; an array of int with dimensions (3 2).  Only the first dimension
+  ;; can be unknown.
+  (define (array type)
+    (let loop ([type type] [dims '()] [first? #t])
+      (match (c-actual-type type)
+        [('.array elt _ dim)
+         (and-let1 d (cond [dim (const-int dim)]
+                           [first? '*]
+                           [else #f])
+           (loop elt (cons d dims) #f))]
+        [_ (and-let1 elt (conv type)
+             (make-c-array-type elt (reverse dims)))])))
+  (define (function ret args)
+    (and-let* ([r (conv ret)]
+               [as (match args
+                     ['unknown-args '(...)]
+                     [_ (map (^a (match a
+                                   ['... '...]
+                                   [(_ t) (conv t)]))
+                             args)])]
+               [ (every values as) ])
+      (make-c-function-type r as)))
+  (define (enum tag members)
+    (if (null? members)
+      ;; Incomplete enum.  We use the provisional base type.
+      (make-c-enum-type tag (default-c-enum-base-type) '())
+      (let1 es (map (^m (match m
+                          [(name #f) name]
+                          [(name expr) (and-let1 v (const-int expr)
+                                         (list name v))]))
+                    members)
+        (and (every values es) (make-c-enum-type tag #f es)))))
+  (define (conv type)
+    (match (c-actual-type type)
+      [('.pointer _ pointee) (pointer pointee)]
+      [('.array . _) (array type)]
+      [('.function _ ret args) (function ret args)]
+      [('.struct tag _ fields) (aggregate make-c-struct-type tag fields)]
+      [('.union tag _ fields) (aggregate make-c-union-type tag fields)]
+      [('.enum tag _ members) (enum tag members)]
+      ;; Basic types not listed here (e.g. long double, complex types)
+      ;; don't have native types.
+      [('char _) <c-char>]
+      [('s-char _) <int8>]
+      [('u-char _) <uint8>]
+      [('short _) <short>]
+      [('u-short _) <ushort>]
+      [('int _) <int>]
+      [('u-int _) <uint>]
+      [('long _) <long>]
+      [('u-long _) <ulong>]
+      [('long-long _) <int64>]
+      [('u-long-long _) <uint64>]
+      [('bool _) <c-bool>]
+      [('float _) <float>]
+      [('double _) <double>]
+      [('void _) <void>]
+      [_ #f]))
+  (conv c-type))
