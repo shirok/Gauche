@@ -37,7 +37,6 @@
 (define-module lang.c.type
   (use gauche.dictionary)
   (use util.match)
-  (use srfi.13)
   (export grok-c-type
           c-primary-type
           c-basic-type-integral?
@@ -56,7 +55,7 @@
 ;;
 ;;   <c-type> : (<basic-type> (<qual> ...))
 ;;            | (.pointer (<qual> ...) <c-type>)
-;;            | (.array <c-type> <size> (<aqual> ...))
+;;            | (.array <c-type> (<aqual> ...) <size>)
 ;;            | (.function (<fqual> ...>) <c-type> <args>)
 ;;            | (.struct <tag> (<qual> ...)
 ;;                   ((<field-name> <c-type> [<size>]) ...))
@@ -73,8 +72,7 @@
 ;;   <fqual>  : 'inline
 ;;
 ;;   <aqual> : <qual> | 'static
-;;   <size>  : scheme-integer
-;;           | c-constant-expression
+;;   <size>  : c-constant-expression
 ;;           | #f
 ;;
 ;;   <args>  : (<arg> ...)
@@ -90,11 +88,14 @@
 ;;   <type-name> : symbol
 ;;
 ;;   <enum-name> : symbol
-;;   <enum-value> : scheme-integer
-;;                | c-constant-expression
+;;   <enum-value> : c-constant-expression
 ;;                | #f
 ;;
 ;;   The (.type ...) form is used for typedef'ed types.
+;;
+;;   c-constant-expression is the expression as the parser returns, kept
+;;   unevaluated.  Evaluating it needs the knowledge of the constants
+;;   defined so far (including enumerators), so it is up to the grokker.
 
 
 ;; API
@@ -125,12 +126,7 @@
       [() '()]
       [(('* . quals) . rest) `(.pointer ,quals ,(rec rest))]
       [(('array-dimension quals size) . rest)
-       (match (fold-c-constant size)
-         [#f `(.array ,(rec rest) ,quals ,size)] ;variable size
-         [(val type)
-          (unless (c-basic-type-integral? type)
-            (error "non-integral array dimension not allowed:" type-specs))
-          `(.array ,(rec rest) ,quals ,val)])]
+       `(.array ,(rec rest) ,quals ,size)]
       [(('function params) . rest)
        ;; special handling of 'inline' - syntactically it is attached to
        ;; the return type, but we need to attach it to the function part.
@@ -214,16 +210,10 @@
   (define (aggregate-type quals core)
     (define (make-agg-type mark tag members)
       `(,mark ,(aggregate-tag tag) ,(reverse quals) ,members))
-    (define (enum-member mem)
-      (match-let1 (name init) mem
-        (match (fold-c-constant init)
-          [#f mem]
-          [(val type) `(,name ,val)])))
     (match core
       [('struct tag . members) (make-agg-type '.struct tag members)]
       [('union tag . members)  (make-agg-type '.union tag members)]
-      [('enum tag . members)   (make-agg-type '.enum tag
-                                              (map enum-member members))]))
+      [('enum tag . members)   (make-agg-type '.enum tag members)]))
 
   ;; we make quals appear in the order of the original code, just to make
   ;; testing and debugging easier---the caller shouldn't rely on that.
@@ -402,48 +392,3 @@
     [('.type _ quals inner)
      (attach-qualifier (c-actual-type inner) quals)]
     [_ c-type]))
-
-;;;
-;;;  Folding C constant
-;;;
-
-(define-constant *constant-folders*
-  `((+ .    ,(^[x y type] (+ x y)))
-    (- .    ,(^[x y type] (- x y)))
-    (* .    ,(^[x y type] (* x y)))
-    (/ .    ,(^[x y type] (if (c-basic-type-integral? type)
-                            (quotient x y)
-                            (/ x y))))
-    (% .    ,(^[x y type] (modulo x y)))
-    (& .    ,(^[x y type] (logand x y)))
-    (|\|| . ,(^[x y type] (logior x y)))
-    (^ .    ,(^[x y type] (logxor x y)))
-    (<< .   ,(^[x y type] (ash x y)))
-    (>> .   ,(^[x y type] (ash x (- y))))
-    ))
-
-;; If EXPR is foldable, returns (<scheme-value> <c-type>).
-;; Otherwise returns #f
-(define (fold-c-constant expr)
-  (match expr
-    [('const type lit)
-     (cond [(c-basic-type-integral? `(,type ()))
-            (let1 n (if (memq type '(char s-char u-char)) ;;TODO: wchar
-                      (char->integer (string-ref lit 0))
-                      (string->number (string-trim-right lit #[uUlL])))
-              (if (exact-integer? n)
-                `(,n (,type (const)))
-                (error "bad literal integer constant:" lit)))]
-           [(c-basic-type-flonum? `(,type ()))
-            (let1 n (string->number (string-trim-right lit #[lLfF]))
-              (if (real? n)
-                `(,n (,type (const)))
-                (error "bad floating-point number constant:" lit)))]
-           [else #f])]
-    [((? (cut assq <> *constant-folders*) op) x1 x2)
-     (and-let* ([v1 (fold-c-constant x1)]
-                [v2 (fold-c-constant x2)]
-                [proc (assq-ref *constant-folders* op)]
-                [type (c-wider-type (cadr v1) (cadr v2))])
-       `(,(proc (car v1) (car v2) type) ,type))]
-    [_ #f]))
