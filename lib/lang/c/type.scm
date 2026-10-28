@@ -480,8 +480,6 @@
       [('.struct tag _ fields) (aggregate make-c-struct-type tag fields)]
       [('.union tag _ fields) (aggregate make-c-union-type tag fields)]
       [('.enum tag _ members) (enum tag members)]
-      ;; Basic types not listed here (e.g. long double, complex types)
-      ;; don't have native types.
       [('char _) <c-char>]
       [('s-char _) <int8>]
       [('u-char _) <uint8>]
@@ -491,11 +489,15 @@
       [('u-int _) <uint>]
       [('long _) <long>]
       [('u-long _) <ulong>]
-      [('long-long _) <int64>]
-      [('u-long-long _) <uint64>]
+      [('long-long _) <longlong>]
+      [('u-long-long _) <ulonglong>]
       [('bool _) <c-bool>]
       [('float _) <float>]
       [('double _) <double>]
+      [('long-double _) <longdouble>]
+      [('float-complex _) <float-complex>]
+      [('double-complex _) <double-complex>]
+      [('long-double-complex _) <longdouble-complex>]
       [('void _) <void>]
       [_ #f]))
   (conv c-type))
