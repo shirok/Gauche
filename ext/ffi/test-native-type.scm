@@ -827,6 +827,30 @@
            (native* (native. h 'a))))
   )
 
+;; long long, long double and complex types
+(let ()
+  (define (roundtrip type val)
+    (let1 h (make-native-handle (make-c-pointer-type type))
+      (set! (native* h) val)
+      (native* h)))
+  (test* "longlong" (- (expt 2 63)) (roundtrip <longlong> (- (expt 2 63))))
+  (test* "ulonglong" (- (expt 2 64) 1) (roundtrip <ulonglong> (- (expt 2 64) 1)))
+  (test* "longlong out of range" (test-error)
+         (roundtrip <longlong> (expt 2 63)))
+  (test* "longdouble" 1.5 (roundtrip <longdouble> 1.5))
+  (test* "float-complex" 1.5+2.5i (roundtrip <float-complex> 1.5+2.5i))
+  (test* "double-complex" 1.1+2.2i (roundtrip <double-complex> 1.1+2.2i))
+  (test* "longdouble-complex" 1.1+2.2i
+         (roundtrip <longdouble-complex> 1.1+2.2i))
+  (test* "double-complex from real" 3.0 (real-part (roundtrip <double-complex> 3)))
+  (test* "double-complex non-number" (test-error)
+         (roundtrip <double-complex> 'a))
+  (test* "signature longlong" <longlong> (native-type 'longlong))
+  (test* "signature (long long)" <longlong> (native-type '(long long)))
+  (test* "signature double_complex" 'double_complex
+         (native-type->signature <double-complex>))
+  )
+
 ;; Nested struct
 (let* ([inner (make-c-struct-type 'inner `((a ,<c-char>) (b ,<int8>)))]
        [outer (make-c-struct-type 'outer `((c ,inner)))]

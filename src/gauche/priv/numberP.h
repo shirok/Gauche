@@ -66,4 +66,17 @@ static inline ScmDoubleComplex Scm__MakeDoubleComplex(double r, double i)
 #endif
 }
 
+static inline ScmLongDoubleComplex Scm__MakeLongDoubleComplex(long double r,
+                                                              long double i)
+{
+#if defined(CMPLXL)
+    return CMPLXL(r, i);
+#else
+    union { ScmLongDoubleComplex c; long double a[2]; } u;
+    u.a[0] = r;
+    u.a[1] = i;
+    return u.c;
+#endif
+}
+
 #endif /* GAUCHE_PRIV_NUMBERP_H */

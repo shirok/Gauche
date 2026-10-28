@@ -964,6 +964,20 @@ ScmDoubleComplex Scm_GetDoubleComplex(ScmObj z)
     return c;
 }
 
+ScmLongDoubleComplex Scm_GetLongDoubleComplex(ScmObj z)
+{
+    ScmLongDoubleComplex c = 0.0;
+    if (SCM_COMPNUMP(z)) {
+        c = Scm__MakeLongDoubleComplex((long double)SCM_COMPNUM_REAL(z),
+                                       (long double)SCM_COMPNUM_IMAG(z));
+    } else if (SCM_REALP(z)) {
+        c = Scm__MakeLongDoubleComplex((long double)Scm_GetDouble(z), 0.0);
+    } else {
+        Scm_Error("number required, but got %S", z);
+    }
+    return c;
+}
+
 ScmObj Scm_HalfComplexToComplex(ScmHalfComplex z)
 {
     return Scm_MakeComplex(Scm_HalfToDouble(z.r),
@@ -978,6 +992,13 @@ ScmObj Scm_FloatComplexToComplex(ScmFloatComplex z)
 ScmObj Scm_DoubleComplexToComplex(ScmDoubleComplex z)
 {
     return Scm_MakeComplex(creal(z), cimag(z));
+}
+
+ScmObj Scm_LongDoubleComplexToComplex(ScmLongDoubleComplex z)
+{
+    /* For now, we don't support long double in Scheme side, so we lose
+       precision. */
+    return Scm_MakeComplex((double)creall(z), (double)cimagl(z));
 }
 
 

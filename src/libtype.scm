@@ -1034,7 +1034,7 @@
  (define-cproc %builtin-native-type-table ()
    (return builtin-native-types))
 
- ;; define-native-type NAME CVAR SUPER CTYPE PRED BOX UNBOX
+ ;; define-native-type NAME CVAR SUPER CTYPE PRED BOX UNBOX UNSIGNEDP KEY
  ;;   NAME - Symbol for Scheme name
  ;;   CVAR - C variable name to store the ScmObj (e.g., Scm_NativeFixnumType)
  ;;   SUPER - C macro name for superclass
@@ -1043,9 +1043,16 @@
  ;;          (auto-wrapped into (ScmNativeType*, ScmObj) -> int)
  ;;   BOX - C function ctype -> ScmObj for boxing
  ;;   UNBOX - C function ScmObj -> ctype for unboxing
+ ;;   UNSIGNEDP - C boolean expression whether the type is unsigned
+ ;;   KEY - Optional.  The key for builtin-native-types table, which is
+ ;;         also the native type signature.  Defaults to CTYPE.  Must be
+ ;;         given if CTYPE consists of multiple words.
 
  (define-cise-stmt define-native-type
    [(_ name cvar super ctype pred box unbox unsignedp)
+    `(define-native-type ,name ,cvar ,super ,ctype ,pred ,box ,unbox
+       ,unsignedp ,ctype)]
+   [(_ name cvar super ctype pred box unbox unsignedp key)
     (define c-of-type-name (symbol-append name '-c-of-type))
     (define c-ref-name (symbol-append name '-ptr-ref))
     (define c-set-name (symbol-append name '-ptr-set))
@@ -1093,7 +1100,7 @@
                                  TRUE)])
        (set! ,priv-sym z)
        (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
-                         ',ctype (SCM_OBJ z) 0)
+                         ',key (SCM_OBJ z) 0)
        (Scm_MakeBinding (Scm_GaucheModule)
                         (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
                         SCM_BINDING_INLINABLE)
@@ -1148,6 +1155,15 @@
     SCM_INTEGER_FITS_INT64_P Scm_MakeInteger64 Scm_GetInteger64 FALSE)
   (define-native-type <uint64>  Scm_NativeUint64Type  SCM_CLASS_INTEGER uint64_t
     SCM_INTEGER_FITS_UINT64_P Scm_MakeIntegerU64 Scm_GetIntegerU64 TRUE)
+  ;; NB: We assume long long is 64bit.
+  (define-native-type <longlong>  Scm_NativeLongLongType  SCM_CLASS_INTEGER
+    "long long"
+    SCM_INTEGER_FITS_INT64_P Scm_MakeInteger64 Scm_GetInteger64 FALSE
+    longlong)
+  (define-native-type <ulonglong> Scm_NativeUlongLongType SCM_CLASS_INTEGER
+    "unsigned long long"
+    SCM_INTEGER_FITS_UINT64_P Scm_MakeIntegerU64 Scm_GetIntegerU64 TRUE
+    ulonglong)
 
   (define-native-type <size_t>    Scm_NativeSizetType    SCM_CLASS_INTEGER size_t
     Scm_IntegerFitsSizeP Scm_SizeToInteger Scm_IntegerToSize TRUE)
@@ -1166,6 +1182,24 @@
     SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE)
   (define-native-type <double>  Scm_NativeDoubleType  SCM_CLASS_REAL double
     SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE)
+  ;; NB: Our flonum is double, so the extra precision of long double is
+  ;; lost when it is converted to and from Scheme.
+  (define-native-type <longdouble> Scm_NativeLongDoubleType SCM_CLASS_REAL
+    "long double"
+    SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE
+    longdouble)
+  (define-native-type <float-complex> Scm_NativeFloatComplexType
+    SCM_CLASS_COMPLEX "float _Complex"
+    SCM_NUMBERP Scm_FloatComplexToComplex Scm_GetFloatComplex FALSE
+    float_complex)
+  (define-native-type <double-complex> Scm_NativeDoubleComplexType
+    SCM_CLASS_COMPLEX "double _Complex"
+    SCM_NUMBERP Scm_DoubleComplexToComplex Scm_GetDoubleComplex FALSE
+    double_complex)
+  (define-native-type <longdouble-complex> Scm_NativeLongDoubleComplexType
+    SCM_CLASS_COMPLEX "long double _Complex"
+    SCM_NUMBERP Scm_LongDoubleComplexToComplex Scm_GetLongDoubleComplex FALSE
+    longdouble_complex)
 
   ;; <ScmObj> is a reference to ScmObj---it is basically <top>, but
   ;; we provide a dedicated native type so that ScmObj is passed to and from
