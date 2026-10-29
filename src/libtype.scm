@@ -1296,8 +1296,10 @@
        (and (SCM_EQ (Scm_ClassOf (SCM_OBJ a)) (Scm_ClassOf (SCM_OBJ b)))
             (Scm_EqvP (-> (SCM_C_STRUCT_TYPE a) tag)
                       (-> (SCM_C_STRUCT_TYPE b) tag))
-            (native_type_list_equalP (-> (SCM_C_ARRAY_TYPE a) dimensions)
-                                     (-> (SCM_C_ARRAY_TYPE b) dimensions))))]
+            ;; fields is a list of (name type offset).  Union shares
+            ;; the same structure.
+            (native_type_list_equalP (-> (SCM_C_STRUCT_TYPE a) fields)
+                                     (-> (SCM_C_STRUCT_TYPE b) fields))))]
      [(SCM_C_ENUM_TYPE_P a)
       (return
        (and (SCM_C_ENUM_TYPE_P b)
