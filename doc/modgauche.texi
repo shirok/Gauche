@@ -9903,6 +9903,25 @@ Returns a number of dictionaries @var{smap} has.
 @c COMMON
 @end deffn
 
+@deffn {Method} stacked-map-top-get (smap <stacked-map>) key :optional default
+@c MOD gauche.dictionary
+@c EN
+Looks up @var{key} only in the topmost dictionary of @var{smap},
+ignoring the lower ones.  If the topmost dictionary doesn't have an entry
+with @var{key}, or @var{smap} has no dictionaries,
+@var{default} is returned if given, or an error is signaled otherwise.
+This is handy to check whether a name is already defined in
+the innermost scope.
+@c JP
+@var{smap}の一番上のディクショナリだけから@var{key}を探します。
+より下のディクショナリは見ません。
+一番上のディクショナリに@var{key}のエントリが無いか、@var{smap}が
+ディクショナリを持っていない場合、@var{default}が与えられていればそれを返し、
+そうでなければエラーを投げます。
+名前が最も内側のスコープで既に定義されているかどうかを調べるのに便利です。
+@c COMMON
+@end deffn
+
 @deffn {Method} stacked-map-entry-update! (smap <stacked-map>) key proc :optional fallback
 @c MOD gauche.dictionary
 @c EN

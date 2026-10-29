@@ -55,6 +55,7 @@
 
           <stacked-map> make-stacked-map stacked-map-stack
           stacked-map-push! stacked-map-pop! stacked-map-depth
+          stacked-map-top-get
           stacked-map-entry-update! stacked-map-entry-delete!
           ))
 (select-module gauche.dictionary)
@@ -329,6 +330,17 @@
   (slot-pop! smap 'stack))
 (define-method stacked-map-depth ((smap <stacked-map>))
   (length (slot-ref smap 'stack)))
+
+;; Like dict-get, but only looks at the topmost map.
+(define-method stacked-map-top-get ((smap <stacked-map>) key . maybe-default)
+  (let1 maps (slot-ref smap 'stack)
+    (cond [(and (pair? maps)
+                (let1 r (dict-get (car maps) key %unique)
+                  (and (not (eq? r %unique)) (list r))))
+           => car]
+          [(pair? maybe-default) (car maybe-default)]
+          [else (errorf "The top map of ~s doesn't have an entry for key ~s"
+                        smap key)])))
 
 ;; These two alters the specific map that contains the key.
 (define-method stacked-map-entry-update! ((smap <stacked-map>) key proc
