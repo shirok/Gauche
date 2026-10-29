@@ -1,3 +1,10 @@
+2026-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm, ext/ffi/native-type.scm: Allow native struct/union
+	  types created with incomplete state (lacking fields).  Later
+	  it can be completed with field information.  This allows user
+	  code to wire self-referential structs, for example.
+
 2026-10-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm (<longlong> etc.): Add native types for more

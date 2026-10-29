@@ -967,6 +967,68 @@
            (make-c-union-type 'bar `((x ,<int>))))
     ))
 
+;; incomplete struct/union
+(let* ([node (make-c-struct-type 'node #f)]
+       [node* (make-c-pointer-type node)])
+  (test* "incomplete struct" #f (c-struct/union-type-complete? node))
+  (test* "incomplete struct signature" '(.struct node)
+         (native-type->signature node))
+  (test* "incomplete struct needs tag" (test-error <error> #/must have a tag/)
+         (make-c-struct-type #f #f))
+  (test* "incomplete struct is only equal to itself" '(#t #f)
+         (list (equal? node node)
+               (equal? node (make-c-struct-type 'node #f))))
+  (test* "incomplete struct field names" (test-error <error> #/Incomplete/)
+         (c-struct/union-type-field-names node))
+  (test* "incomplete struct as a field" (test-error <error> #/Incomplete/)
+         (make-c-struct-type 'foo `((a ,<int>) (b ,node))))
+  (test* "incomplete struct as an array element"
+         (test-error <error> #/Incomplete/)
+         (make-c-array-type node '(2)))
+  (test* "incomplete struct handle" (test-error <error> #/Incomplete/)
+         (make-native-handle node))
+  (test* "incomplete struct pointer handle" (test-error <error> #/Incomplete/)
+         (make-native-handle node*))
+  (let1 h (make-native-handle node* (make-u8vector 16 0))
+    (test* "incomplete struct pointer handle with storage" #t
+           (is-a? h <native-handle>))
+    (test* "incomplete struct dereference" (test-error <error> #/Incomplete/)
+           (native* h))
+    (test* "incomplete struct pointer arithmetic"
+           (test-error <error> #/Incomplete/)
+           (native-pointer+ h 1)))
+
+  ;; self-referential struct
+  (test* "complete struct" node
+         (c-struct/union-type-complete! node `((value ,<int>) (next ,node*))))
+  (test* "completed struct" #t (c-struct/union-type-complete? node))
+  (test* "completed struct size/alignment"
+         (list (* 2 (~ <void*>'size)) (~ <void*>'alignment))
+         (list (~ node'size) (~ node'alignment)))
+  (test* "completed struct fields" '(value next)
+         (c-struct/union-type-field-names node))
+  (test* "completed struct pointee" node (c-pointer-type-pointee node*))
+  (test* "complete twice" (test-error <error> #/already been completed/)
+         (c-struct/union-type-complete! node `((value ,<int>))))
+  (test* "completed struct is equal to the same definition" #t
+         (equal? node (make-c-struct-type 'node
+                                          `((value ,<int>) (next ,node*)))))
+  (test* "completed struct, linked list" '(1 2)
+         (let* ([a (make-native-handle node*)]
+                [b (make-native-handle node*)])
+           (set! (native. a 'value) 1)
+           (set! (native. a 'next) b)
+           (set! (native. b 'value) 2)
+           (list (native. a 'value)
+                 (native. (native. a 'next) 'value)))))
+
+(let1 u (make-c-union-type 'u #f)
+  (test* "incomplete union" #f (c-struct/union-type-complete? u))
+  (c-struct/union-type-complete! u `((a ,<int8>) (b ,<double>)))
+  (test* "completed union size" (~ <double>'size) (~ u'size))
+  (test* "complete union with bad fields" (test-error)
+         (c-struct/union-type-complete! (make-c-union-type 'u2 #f) 'a)))
+
 ;;;----------------------------------------------------------
 (test-section "string handling")
 

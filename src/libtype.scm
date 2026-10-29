@@ -1292,8 +1292,12 @@
             (native_type_list_equalP (-> (SCM_C_ARRAY_TYPE a) dimensions)
                                      (-> (SCM_C_ARRAY_TYPE b) dimensions))))]
      [(or (SCM_C_STRUCT_TYPE_P a) (SCM_C_UNION_TYPE_P a))
+      ;; An incomplete type is only equal to itself, which is already
+      ;; checked above.  Note that it can be completed later.
       (return
        (and (SCM_EQ (Scm_ClassOf (SCM_OBJ a)) (Scm_ClassOf (SCM_OBJ b)))
+            (not (SCM_FALSEP (-> (SCM_C_STRUCT_TYPE a) fields)))
+            (not (SCM_FALSEP (-> (SCM_C_STRUCT_TYPE b) fields)))
             (Scm_EqvP (-> (SCM_C_STRUCT_TYPE a) tag)
                       (-> (SCM_C_STRUCT_TYPE b) tag))
             ;; fields is a list of (name type offset).  Union shares
@@ -1515,6 +1519,8 @@
     (return (SCM_OBJ z))))
 
 ;; For struct/union, we keep tag and field-list in dedicated fields.
+;; If field-list is #f, the type is incomplete; it can be completed later
+;; with %c-struct/union-type-complete!.
 (define-cproc %make-c-struct/union-type (klass::<class>
                                          type-name::<const-cstring>
                                          size::<fixnum>
@@ -1538,6 +1544,30 @@
     (set! (-> z tag) (?: tag-name (SCM_OBJ tag-name) SCM_FALSE))
     (set! (-> z fields) field-list)
     (return (SCM_OBJ z))))
+
+;; Complete an incomplete struct/union type in place.  The caller
+;; (gauche.native-type) computes the layout.
+(define-cproc %c-struct/union-type-complete! (type
+                                              size::<fixnum>
+                                              alignment::<fixnum>
+                                              bounded-p::<int>
+                                              field-list)
+  ::<void>
+  (unless (or (SCM_C_STRUCT_TYPE_P type) (SCM_C_UNION_TYPE_P type))
+    (SCM_TYPE_ERROR type "<c-struct-type> or <c-union-type>"))
+  (let* ([z::ScmCStructType* (SCM_C_STRUCT_TYPE type)]
+         [nt::ScmNativeType* (& (-> z common))])
+    (unless (SCM_FALSEP (-> z fields))
+      (Scm_Error "%S is already complete" type))
+    (SCM_ASSERT (SCM_LISTP field-list))
+    (set! (-> nt size) size)
+    (set! (-> nt alignment) alignment)
+    (set! (-> nt bounded-p) bounded-p)
+    (set! (-> z fields) field-list)))
+
+(define-cproc %c-struct/union-type-incomplete? (type) ::<boolean>
+  (return (and (or (SCM_C_STRUCT_TYPE_P type) (SCM_C_UNION_TYPE_P type))
+               (SCM_FALSEP (-> (SCM_C_STRUCT_TYPE type) fields)))))
 
 (inline-stub
  ;; Size of enum is implementation-dependent.  For our purpose, the external

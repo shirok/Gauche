@@ -48,6 +48,7 @@
           make-c-array-type
           make-c-struct-type
           make-c-union-type
+          c-struct/union-type-complete!
           make-c-enum-type
           c-enum-type-complete!
           default-c-enum-base-type
@@ -73,6 +74,7 @@
           c-struct-type?
           c-union-type?
           c-struct/union-type?
+          c-struct/union-type-complete?
           c-enum-type?
           c-aggregate-type?
           c-pointer-like-type?
@@ -248,6 +250,7 @@
   (define dims (if (list? dimensions) dimensions (list dimensions)))
   (set! element-type (%unproxy element-type))
   (assume-type element-type <native-type>)
+  (%check-complete-type element-type "array element type")
   (let loop ([dims dims])
     (cond [(null? dims)]
           [(not (pair? dims))
@@ -276,22 +279,18 @@
 (define (struct-size-roundup size alignment)
   (* alignment (quotient (+ size alignment -1) alignment)))
 
-(define (make-c-struct/union-type tag fields struct?)
+;; Compute the layout of struct/union fields.  Returns size, alignment,
+;; bounded? and the field descriptors ((name type offset) ...).
+(define (%struct/union-layout fields struct?)
   (let loop ([fs fields] [offset 0] [alignment 1] [descs '()] [bounded #t])
     (match fs
       [()
-       (let* ([size (struct-size-roundup offset alignment)]
-              [tname (if struct? "struct" "union")]
-              [name (if tag
-                      #"~tname ~tag"
-                      #"~tname anonymous")]) ;TODO: Give better name
-         ($ %register-native-tag! tag
-            (%make-c-struct/union-type
-             (if struct? <c-struct-type> <c-union-type>)
-             name size alignment (if bounded 1 0) tag (reverse descs))))]
+       (values (struct-size-roundup offset alignment) alignment bounded
+               (reverse descs))]
       [(((? symbol? fname) ftype0) . rest)
        (define ftype (%unproxy ftype0))
        (assume-type ftype <native-type>)
+       (%check-complete-type ftype #"type of field ~fname")
        (when (and (not bounded) struct?)
          (error "Struct type can have unbounded field only at the end:" fs))
        (let* ([falign (~ ftype'alignment)]
@@ -310,6 +309,35 @@
       [_
        (error "Bad native struct fields; must be a proper list, but got:"
               fields)])))
+
+;; FIELS can be #f for an incomplete struct/union type.  It can be completed
+;; later by c-struct/union-type-complete!.
+(define (make-c-struct/union-type tag fields struct?)
+  (let* ([tname (if struct? "struct" "union")]
+         [name (if tag
+                 #"~tname ~tag"
+                 #"~tname anonymous")] ;TODO: Give better name
+         [class (if struct? <c-struct-type> <c-union-type>)])
+    ($ %register-native-tag! tag
+       (if fields
+         (receive (size alignment bounded descs)
+             (%struct/union-layout fields struct?)
+           (%make-c-struct/union-type class name size alignment
+                                      (if bounded 1 0) tag descs))
+         (begin
+           (unless tag
+             (errorf "Incomplete ~a type must have a tag" tname))
+           (%make-c-struct/union-type class name 0 0 0 tag #f))))))
+
+;; Complete an incomplete struct/union type in place.
+(define (c-struct/union-type-complete! type fields)
+  (assume-type type (</> <c-struct-type> <c-union-type>))
+  (when (c-struct/union-type-complete? type)
+    (errorf "~s has already been completed" type))
+  (receive (size alignment bounded descs)
+      (%struct/union-layout fields (is-a? type <c-struct-type>))
+    (%c-struct/union-type-complete! type size alignment (if bounded 1 0) descs))
+  type)
 
 (define (make-c-struct-type tag fields)
   (make-c-struct/union-type tag fields #t))
@@ -415,6 +443,20 @@
   (or (is-a? type <c-struct-type>)
       (is-a? type <c-union-type>)))
 
+(define (c-struct/union-type-complete? type)
+  (assume-type type (</> <c-struct-type> <c-union-type>))
+  (not (%c-struct/union-type-incomplete? type)))
+
+;; An incomplete type can't be used where its size or members are needed.
+(define (%check-complete-type type what)
+  (when (%c-struct/union-type-incomplete? type)
+    (errorf "Incomplete type ~s can't be used as ~a" type what)))
+
+;; Fields of struct/union.  Raises an error if the type is incomplete.
+(define (%struct/union-fields type)
+  (%check-complete-type type "a complete type")
+  (~ type'fields))
+
 ;; C types that has some structure
 (define (c-aggregate-type? type)
   (or (is-a? type <c-array-type>)
@@ -453,17 +495,17 @@
 
 (define-inline (c-struct/union-type-field-names type)
   (assume-type type (</> <c-struct-type> <c-union-type>))
-  (map car (~ type'fields)))
+  (map car (%struct/union-fields type)))
 
 (define-inline (c-struct/union-type-field-type type field-name)
   (assume-type type (</> <c-struct-type> <c-union-type>))
-  (if-let1 e (assq field-name (~ type'fields))
+  (if-let1 e (assq field-name (%struct/union-fields type))
     (cadr e)
     (errorf "~s does not have a field named ~a" type field-name)))
 
 (define-inline (c-struct/union-type-field-offset type field-name)
   (assume-type type (</> <c-struct-type> <c-union-type>))
-  (if-let1 e (assq field-name (~ type'fields))
+  (if-let1 e (assq field-name (%struct/union-fields type))
     (caddr e)
     (errorf "~s does not have a field named ~a" type field-name)))
 
@@ -811,6 +853,11 @@
     "Init argument must be a string or a uvector, but got:" init)
   (assume (or init (zero? offset))
     "Non-zero offset is not allowed with uvector auto allocation:" offset)
+  (if (c-pointer-type? type)
+    (unless init
+      (%check-complete-type (c-pointer-type-pointee type)
+                            "a pointee of auto-allocated handle"))
+    (%check-complete-type type "a type of native handle"))
   (let1 buf (cond [(string? init)
                    ;; We include terminating NUL byte
                    (rlet1 buf (make-u8vector (+ (string-size init) 1) 0)
@@ -1227,7 +1274,7 @@
 (define (c-struct-field type selector)
   (assume-type type (</> <c-struct-type> <c-union-type>))
   (assume-type selector <symbol>)
-  (if-let1 field (assq selector (~ type'fields))
+  (if-let1 field (assq selector (%struct/union-fields type))
     field
     (errorf "Unknown native struct field ~s for ~s" selector type)))
 
@@ -1238,7 +1285,9 @@
     [<c-pointer-type>
      ;; Selector is a single element index, passed as a one-element list.
      (match selector
-       [((? fixnum? i)) (* i (~ type'pointee-type'size))]
+       [((? fixnum? i))
+        (%check-complete-type (~ type'pointee-type) "a pointee")
+        (* i (~ type'pointee-type'size))]
        [_
         (error "Pointer dereference requires a single integer index, but got:"
                selector)])]
@@ -1306,6 +1355,7 @@
     (assume-type t <c-pointer-type>
       "Attempt to dereferencing non-pointer type:" (cons handle t))
     (let1 pt (~ t'pointee-type)
+      (%check-complete-type pt "a pointee")
       ;; NB: We 'shortcut' pointer-to-aggregate handles; both
       ;; pointer-to-aggregaete and reference-to-aggregate handles have
       ;; ptr point to the aggregate, and only the type differs.
@@ -1319,6 +1369,7 @@
   (assume-type handle <native-handle>)
   (let* ([t (%handle-type handle type)])
     (assume-type t <c-pointer-type>)
+    (%check-complete-type (~ t'pointee-type) "a pointee")
     (%handle-set! (~ t'pointee-type) handle 0 val)))
 (set! (setter native*)
       (case-lambda
@@ -1460,6 +1511,7 @@
     (etypecase t
       [<c-pointer-type>
        (let1 pt (~ t'pointee-type)
+         (%check-complete-type pt "a pointee")
          (make-internal-handle handle
                                (* element-offset (~ pt'size))
                                (~ handle'type)))]
@@ -1967,11 +2019,11 @@
     ;; Struct
     [(is-a? type <c-struct-type>)
      `(.struct ,@(cond-list [(~ type'tag)])
-               ,(%unparse-field-specs (~ type'fields)))]
+               ,@(cond-list [(~ type'fields) => %unparse-field-specs]))]
     ;; Union
     [(is-a? type <c-union-type>)
      `(.union ,@(cond-list [(~ type'tag)])
-              ,(%unparse-field-specs (~ type'fields)))]
+              ,@(cond-list [(~ type'fields) => %unparse-field-specs]))]
     ;; Enum
     [(is-a? type <c-enum-type>)
      `(.enum ,@(cond-list [(~ type'tag)])
@@ -2063,12 +2115,12 @@
        (make <native-wrapper-meta>
          :name name :supers (list <wrapped-c-struct>)
          :native-type type
-         :slots (map build-slot (~ type'fields)))]
+         :slots (map build-slot (%struct/union-fields type)))]
       [<c-union-type>
        (make <native-wrapper-meta>
          :name name :supers (list <wrapped-c-union>)
          :native-type type
-         :slots (map build-slot (~ type'fields)))]
+         :slots (map build-slot (%struct/union-fields type)))]
       [<c-array-type>
        (make <native-wrapper-meta>
          :name name :supers (list <wrapped-c-array>)
