@@ -553,6 +553,13 @@
 
   (for-each test-uri-ref data))
 
+;; Long query string
+;; https://github.com/shirok/Gauche/issues/1345
+(let1 q (format "a=~a" (make-string 2048 #\x))
+  (test* "long query string" q
+         (uri-ref (format #f "https://www.example.com/test?~a" q)
+                  'query)))
+
 ;;--------------------------------------------------------------------
 (test-section "rfc.http")
 

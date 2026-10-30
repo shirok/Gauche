@@ -1,3 +1,8 @@
+2026-10-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uri.scm (uri-decompose-hierarchical): Avoid regexp overflow
+	  in url parsing.  https://github.com/shirok/Gauche/issues/1345
+
 2026-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/navite-type.scm (<native-tag-namespace>): Revise management
