@@ -79,9 +79,13 @@
           c-aggregate-type?
           c-pointer-like-type?
 
+          <native-tag-namespace>
           make-native-tag-namespace
-          current-native-tag-namespace
-          tag->native-type
+          native-tag-namespace?
+          native-tag-lookup
+          native-tag-ref
+          native-tag-declare!
+          native-tag-define!
 
           native-handle-type
           native-handle-owner
@@ -158,36 +162,113 @@
  )
 
 ;;;
-;;; Tag namespace registry
+;;; Tag namespace
 ;;;
 
-;; Tag namespace is an opaque dictionary to map struct/union/enum tags
-;; (symbol) to native-type.
+;; <native-tag-namespace> maintains scoped namespace of struct/union/enum
+;; tags.  It can be manually managed when you define C types in FFI,
+;; or automatically managed when lang.c module parses C code.
+;;
+;; Native type constructors don't register tags by themselves.  It can be
+;; done with the following procedures,
+;; KIND is one of the symbols struct, union or enum.
 
+;; Internally, scopes are represented by a stacked map; the topmost map
+;; is the innermost scope.  It's an implementation detail.
+(define-class <native-tag-namespace> ()
+  ((tags :init-keyword :tags)))         ;<stacked-map>
+
+;; API
 (define (make-native-tag-namespace :optional (parent #f))
-  (if parent
-    (make-stacked-map (make-hash-table 'eq?) parent)
-    (make-stacked-map (make-hash-table 'eq?))))
+  (assume-type parent (<?> <native-tag-namespace>))
+  (let1 tab (make-hash-table 'eq?)
+    (make <native-tag-namespace>
+      :tags (if parent
+              (stacked-map-stack (~ parent'tags) tab)
+              (make-stacked-map tab)))))
 
-;; Current namespace - by default it's #f, making the native
-;; aggregates not registered.
-(define current-native-tag-namespace
-  (make-parameter #f))
+;; API
+(define (native-tag-namespace? obj) (is-a? obj <native-tag-namespace>))
 
-(define (tag->native-type tag :optional (ns #f))
-  (and-let1 registry (or ns (current-native-tag-namespace))
-    (dict-get registry tag #f)))
+;; API.  Returns #f if not found
+(define (native-tag-lookup ns tag)
+  (assume-type ns <native-tag-namespace>)
+  (assume-type tag <symbol>)
+  (dict-get (~ ns'tags) tag #f))
 
-(define (%register-native-tag! tag type)
-  ;; TODO: We need to allow registering incomplete types.  Then it should
-  ;; be allowed to replace or augument it with a complete type.
-  (and-let* ([ tag ]
-             [registry (current-native-tag-namespace)])
-    (if-let1 t (dict-get registry tag #f)
-      (unless (equal? t type)
-        (errorf "struct/union/enum tag ~s is already used by ~s" tag type))
-      (set! (dict-get registry tag) type)))
+(define (%tag-kind type)
+  (cond [(is-a? type <c-struct-type>) 'struct]
+        [(is-a? type <c-union-type>) 'union]
+        [else 'enum]))
+
+(define (%check-tag-kind type kind tag)
+  (unless (eq? (%tag-kind type) kind)
+    (errorf "Tag ~s is used for ~s, but referred as ~a" tag type kind))
   type)
+
+(define (%tag-type-complete? type)
+  (if (is-a? type <c-enum-type>)
+    (not (null? (~ type'enumerator-alist)))
+    (c-struct/union-type-complete? type)))
+
+(define (%check-tag-args ns kind tag)
+  (assume-type ns <native-tag-namespace>)
+  (assume (memq kind '(struct union enum))
+    "Tag kind must be one of struct, union or enum, but got:" kind)
+  (assume-type tag <symbol>))
+
+;; API.  For declaration of struct/union/enum type---that is,
+;; no fields/enumerators are known.  It is allowed that the same tag
+;; is alredy registered with the same kind.
+(define (native-tag-declare! ns kind tag)
+  (%check-tag-args ns kind tag)
+  (if-let1 t (stacked-map-top-get (~ ns'tags) tag #f)
+    (%check-tag-kind t kind tag)
+    (rlet1 t (ecase kind
+               [(struct) (make-c-struct-type tag #f)]
+               [(union) (make-c-union-type tag #f)]
+               ;; Forward reference of enum isn't allowed in standard C,
+               ;; but some compilers allow it.  We use the provisional
+               ;; base type.
+               [(enum) (make-c-enum-type tag (default-c-enum-base-type) '())])
+      (dict-put! (~ ns'tags) tag t))))
+
+;; API.  Lookup tag, and if not found, register one.
+(define (native-tag-ref ns kind tag)
+  (%check-tag-args ns kind tag)
+  (if-let1 t (native-tag-lookup ns tag)
+    (%check-tag-kind t kind tag)
+    (native-tag-declare! ns kind tag)))
+
+;; API.  Complete struct/union/enum type with the tag.
+;; SPEC is fields/enumerators.  TYPESPEC is for base type of enum,
+;; when it is not the default base type.
+(define (native-tag-define! ns kind tag spec :optional (typespec #f))
+  (define (make-new)
+    (ecase kind
+      [(struct) (make-c-struct-type tag spec)]
+      [(union) (make-c-union-type tag spec)]
+      [(enum) (make-c-enum-type tag typespec spec)]))
+  (%check-tag-args ns kind tag)
+  (assume (list? spec)
+    "Field list or enumerator list required, but got:" spec)
+  (if-let1 t (stacked-map-top-get (~ ns'tags) tag #f)
+    (begin
+      (%check-tag-kind t kind tag)
+      (cond [(%tag-type-complete? t)
+             ;; Redefinition is allowed only if it's the same.
+             (unless (equal? t (make-new))
+               (errorf "Tag ~s is already defined as ~s" tag t))
+             t]
+            [(eq? kind 'enum)
+             (when (and typespec
+                        (not (equal? typespec (c-enum-type-base-type t))))
+               (errorf "Enum ~s is declared with base type ~s, but defined \
+                        with ~s" tag (c-enum-type-base-type t) typespec))
+             (c-enum-type-complete! t spec)]
+            [else (c-struct/union-type-complete! t spec)]))
+    (rlet1 t (make-new)
+      (dict-put! (~ ns'tags) tag t))))
 
 ;;;
 ;;; Aggregate type constructors
@@ -318,16 +399,15 @@
                  #"~tname ~tag"
                  #"~tname anonymous")] ;TODO: Give better name
          [class (if struct? <c-struct-type> <c-union-type>)])
-    ($ %register-native-tag! tag
-       (if fields
-         (receive (size alignment bounded descs)
-             (%struct/union-layout fields struct?)
-           (%make-c-struct/union-type class name size alignment
-                                      (if bounded 1 0) tag descs))
-         (begin
-           (unless tag
-             (errorf "Incomplete ~a type must have a tag" tname))
-           (%make-c-struct/union-type class name 0 0 0 tag #f))))))
+    (if fields
+      (receive (size alignment bounded descs)
+          (%struct/union-layout fields struct?)
+        (%make-c-struct/union-type class name size alignment
+                                   (if bounded 1 0) tag descs))
+      (begin
+        (unless tag
+          (errorf "Incomplete ~a type must have a tag" tname))
+        (%make-c-struct/union-type class name 0 0 0 tag #f)))))
 
 ;; Complete an incomplete struct/union type in place.
 (define (c-struct/union-type-complete! type fields)
@@ -394,9 +474,8 @@
                          [tag #"enum ~tag"]
                          [else (~ underlying'c-type-name)])]
             [pname (if tag #"enum ~tag" "enum anonymous")])
-        ($ %register-native-tag! tag
-           (%make-c-enum-type pname cname underlying size alignment
-                              tag typespec alist))))))
+        (%make-c-enum-type pname cname underlying size alignment
+                           tag typespec alist)))))
 
 ;; For stub/aot FFI backend, we need to have concrete enum type _before_
 ;; we compile & load the generated stub.  This returns a provisional
@@ -1714,10 +1793,10 @@
       (loop (make-c-pointer-type t) (- d 1)))))
 
 ;; Parse a struct/union field spec.
-(define (%parse-field-specs specs)
+(define (%parse-field-specs specs ns)
   (map (^e (match-let1 (member ':: type) e
              (if type
-               (list member (native-type type))
+               (list member (native-type type ns))
                (error "missing type for field:" member))))
        (cgen-canonical-typed-var-list specs #f)))
 
@@ -1794,16 +1873,16 @@
 ;;     => (make-c-enum-type 'flag <uint8> '(a (b 4) c))
 ;;
 ;; Parse the part following '.enum: [tag] [: signature] (enumerator ...)
-(define (%parse-enum-spec rest)
+(define (%parse-enum-spec rest ns)
   (match rest
     [(enumerators)
      (values #f #f enumerators)]
     [(': sig enumerators)
-     (values #f (native-type sig) enumerators)]
+     (values #f (native-type sig ns) enumerators)]
     [((? symbol? tag) enumerators)
      (values tag #f enumerators)]
     [((? symbol? tag) ': sig enumerators)
-     (values tag (native-type sig) enumerators)]
+     (values tag (native-type sig ns) enumerators)]
     [_ (error "Invalid .enum signature:" (cons '.enum rest))]))
 
 ;; A deferred proxy type can appear in type signature if the code is
@@ -1821,7 +1900,19 @@
              (cons a d)))]
         [else sig]))
 
-(define (native-type signature)
+(define (native-type signature :optional (ns #f))
+  ;; If NS is given, tagged struct/union/enum are defined or referred in it.
+  (define (tagged kind tag spec :optional (typespec #f))
+    (cond [(and ns spec) (native-tag-define! ns kind tag spec typespec)]
+          [ns (native-tag-ref ns kind tag)]
+          [else (ecase kind
+                  [(struct) (make-c-struct-type tag spec)]
+                  [(union) (make-c-union-type tag spec)]
+                  [(enum) (if spec
+                            (make-c-enum-type tag typespec spec)
+                            (make-c-enum-type tag (default-c-enum-base-type)
+                                              '()))])]))
+  (assume-type ns (<?> <native-tag-namespace>))
   (let rec ([signature (%unproxy-signature signature)]
             [signedness #f])
     (define (no-signedness)
@@ -1838,38 +1929,52 @@
       ;; (.array element-type (dim ...))
       [('.array etype (dims ...))
        (no-signedness)
-       (make-c-array-type (native-type etype) dims)]
+       (make-c-array-type (native-type etype ns) dims)]
 
       ;; (.struct tag (field-specs ...))
       [('.struct (? symbol? tag) (field-specs ...))
        (no-signedness)
-       (make-c-struct-type tag (%parse-field-specs field-specs))]
+       (tagged 'struct tag (%parse-field-specs field-specs ns))]
+      ;; (.struct tag)  -- reference, or incomplete type
+      [('.struct (? symbol? tag))
+       (no-signedness)
+       (tagged 'struct tag #f)]
       ;; (.struct (field-specs ...))  -- anonymous
       [('.struct (field-specs ...))
        (no-signedness)
-       (make-c-struct-type #f (%parse-field-specs field-specs))]
+       (make-c-struct-type #f (%parse-field-specs field-specs ns))]
 
       ;; (.union tag (field-specs ...))
       [('.union (? symbol? tag) (field-specs ...))
        (no-signedness)
-       (make-c-union-type tag (%parse-field-specs field-specs))]
+       (tagged 'union tag (%parse-field-specs field-specs ns))]
+      ;; (.union tag)  -- reference, or incomplete type
+      [('.union (? symbol? tag))
+       (no-signedness)
+       (tagged 'union tag #f)]
       ;; (.union (field-specs ...))  -- anonymous
       [('.union (field-specs ...))
        (no-signedness)
-       (make-c-union-type #f (%parse-field-specs field-specs))]
+       (make-c-union-type #f (%parse-field-specs field-specs ns))]
 
+      ;; (.enum tag)  -- reference, or incomplete type
+      [('.enum (? symbol? tag))
+       (no-signedness)
+       (tagged 'enum tag #f)]
       ;; (.enum [tag] [: signature] (enumerator ...))
       [('.enum . rest)
        (no-signedness)
-       (receive (tag typespec enumerators) (%parse-enum-spec rest)
-         (make-c-enum-type tag typespec enumerators))]
+       (receive (tag typespec enumerators) (%parse-enum-spec rest ns)
+         (if tag
+           (tagged 'enum tag enumerators typespec)
+           (make-c-enum-type tag typespec enumerators)))]
 
       ;; (.function (arg-types ...) return-type)
       [('.function (arg-types ...) ret-type)
        (no-signedness)
        (make-c-function-type
-        (native-type ret-type)
-        (map (^[a] (if (eq? a '...) '... (native-type a)))
+        (native-type ret-type ns)
+        (map (^[a] (if (eq? a '...) '... (native-type a ns)))
              arg-types))]
 
       ;; We ignore 'const' for now
@@ -1912,7 +2017,7 @@
       ;; (int **), (int* *).  Strip const and concatenate into a single
       ;; symbol, then re-parse.
       [((? symbol?) . (? (^r (every symbol? r))))
-       (native-type (%normalize-c-type-list signature))]
+       (native-type (%normalize-c-type-list signature) ns)]
 
       ;; Simple symbol types
       [(? symbol?)
@@ -1923,7 +2028,7 @@
          (hash-table-get (%extended-native-type-table) signature #f)
          ;; Pointer type (trailing *)
          (and-let* ([decomp (%pointer-type-decompose signature)])
-           (%wrap-pointer-type (native-type (car decomp)) (cdr decomp)))
+           (%wrap-pointer-type (native-type (car decomp) ns) (cdr decomp)))
          ;; c-string is a pseudo type name for <c-string> (NUL-terminated
          ;; C string).  It's not registered in the builtin table because
          ;; its C type name is "const char*".

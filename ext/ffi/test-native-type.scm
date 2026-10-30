@@ -951,21 +951,99 @@
            (list (native-aref (native. h 'data) 0)
                  (native-aref (native. h 'data) 3)))))
 
-;; native tag registry
-(parameterize ([current-native-tag-namespace
-                (make-native-tag-namespace)])
-  (let* ([t1 (make-c-struct-type 'foo `((x ,<int>)))]
-         [t2 (make-c-union-type 'bar `((x ,<int>)))])
-    (test* "tag->native-type" t1 (tag->native-type 'foo))
-    (test* "tag->native-type" t2 (tag->native-type 'bar))
+;; native tag namespace
+(let* ([ns (make-native-tag-namespace)]
+       [t1 (native-tag-define! ns 'struct 'foo `((x ,<int>)))]
+       [t2 (native-tag-define! ns 'union 'bar `((x ,<int>)))])
+  (test* "constructors don't register tags" #f
+         (begin (make-c-struct-type 'baz `((x ,<int>)))
+                (native-tag-lookup ns 'baz)))
+  (test* "native-tag-lookup" (list t1 t2 #f)
+         (list (native-tag-lookup ns 'foo)
+               (native-tag-lookup ns 'bar)
+               (native-tag-lookup ns 'nosuchtag)))
+  (test* "native-tag-ref" t1 (native-tag-ref ns 'struct 'foo))
+  (test* "native-tag-ref (kind mismatch)" (test-error <error> #/referred as/)
+         (native-tag-ref ns 'struct 'bar))
+  (test* "dupe tags (different kind)" (test-error <error> #/referred as/)
+         (native-tag-define! ns 'struct 'bar `((x ,<int>))))
+  (test* "dupe tags (different fields)" (test-error <error> #/already defined/)
+         (native-tag-define! ns 'union 'bar `((x ,<int8>))))
+  (test* "dupe tags (same definition allowed)" t2
+         (native-tag-define! ns 'union 'bar `((x ,<int>))))
+  (test* "bad kind" (test-error)
+         (native-tag-ref ns 'class 'foo))
 
-    (test* "dupe tags (different kind)" (test-error <error> #/already used/)
-           (make-c-struct-type 'bar `((x ,<int>))))
-    (test* "dupe tags (different fields)" (test-error <error> #/already used/)
-           (make-c-union-type 'bar `((x ,<int8>))))
-    (test* "dupe tags (equal allowed)" t2
-           (make-c-union-type 'bar `((x ,<int>))))
-    ))
+  ;; forward reference and completion
+  (let1 r (native-tag-ref ns 'struct 'fwd)
+    (test* "native-tag-ref declares incomplete type" #f
+           (c-struct/union-type-complete? r))
+    (test* "native-tag-ref returns the same declaration" r
+           (native-tag-ref ns 'struct 'fwd))
+    (test* "native-tag-declare! returns the same declaration" r
+           (native-tag-declare! ns 'struct 'fwd))
+    (test* "native-tag-define! completes declaration" r
+           (native-tag-define! ns 'struct 'fwd `((a ,<int>) (b ,<int>))))
+    (test* "completed size" (* 2 (~ <int>'size)) (~ r'size)))
+
+  ;; scopes
+  (let1 inner (make-native-tag-namespace ns)
+    (test* "inner scope sees outer tags" t1 (native-tag-lookup inner 'foo))
+    (test* "native-tag-ref in inner scope finds outer tag" t1
+           (native-tag-ref inner 'struct 'foo))
+    (let1 d (native-tag-declare! inner 'struct 'foo)
+      (test* "native-tag-declare! shadows outer tag" #t
+             (and (not (eq? d t1))
+                  (not (c-struct/union-type-complete? d))
+                  (eq? (native-tag-lookup inner 'foo) d)))
+      (test* "shadowing doesn't affect outer scope" t1
+             (native-tag-lookup ns 'foo)))
+    (test* "native-tag-define! in inner scope" #t
+           (let1 t (native-tag-define! inner 'union 'bar `((y ,<double>)))
+             (and (not (eq? t t2))
+                  (eq? (native-tag-lookup ns 'bar) t2))))
+    (test* "native-tag-ref declares in inner scope" #f
+           (begin (native-tag-ref inner 'struct 'innerfwd)
+                  (native-tag-lookup ns 'innerfwd))))
+
+  ;; enum
+  (let1 e (native-tag-ref ns 'enum 'color)
+    (test* "enum forward reference" '() (c-enum-type-enumerator-alist e))
+    (test* "enum definition completes declaration" e
+           (native-tag-define! ns 'enum 'color '(red green blue)))
+    (test* "enum completed" '((red . 0) (green . 1) (blue . 2))
+           (c-enum-type-enumerator-alist e)))
+  (test* "enum definition with base type" <uint8>
+         (c-enum-type-base-type
+          (native-tag-define! ns 'enum 'small '(a b) <uint8>)))
+  )
+
+;; native tag namespace and signatures
+(let1 ns (make-native-tag-namespace)
+  (test* "signature defines tag" #t
+         (let1 t (native-type '(.struct point (x::int y::int)) ns)
+           (eq? t (native-tag-lookup ns 'point))))
+  (test* "signature refers to tag" (native-tag-lookup ns 'point)
+         (native-type '(.struct point) ns))
+  (test* "signature, pointer to tag"
+         (native-tag-lookup ns 'point)
+         (c-pointer-type-pointee (native-type '((.struct point) *) ns)))
+  (test* "signature, self-referential struct" '(#t #t)
+         (let* ([t (native-type '(.struct node (value::int
+                                                next::((.struct node) *)))
+                                ns)]
+                [next (c-struct/union-type-field-type t 'next)])
+           (list (c-struct/union-type-complete? t)
+                 (eq? (c-pointer-type-pointee next) t))))
+  (test* "signature, enum" '((a . 0) (b . 1))
+         (begin
+           (native-type '(.enum e (a b)) ns)
+           (c-enum-type-enumerator-alist (native-type '(.enum e) ns))))
+  (test* "signature, tag reference without namespace" #f
+         (c-struct/union-type-complete? (native-type '(.struct point))))
+  (test* "signature, incomplete roundtrip" '(.struct node)
+         (native-type->signature (native-type '(.struct node))))
+  )
 
 ;; incomplete struct/union
 (let* ([node (make-c-struct-type 'node #f)]

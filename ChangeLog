@@ -1,3 +1,9 @@
+2026-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* ext/ffi/navite-type.scm (<native-tag-namespace>): Revise management
+	  of native tag space.  Instead of using parameter implicitly, allow
+	  caller to pass in namespace explicitly.
+
 2026-10-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm, ext/ffi/native-type.scm: Allow native struct/union
