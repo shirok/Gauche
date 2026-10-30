@@ -15580,49 +15580,79 @@ you access native data from Scheme world (@pxref{Native handles}).
 We have subclasses of @code{<native-type>}, which are classes
 of individual derived or aggregate native types.
 For example, ``pointer to int'' native type is an instance of
-@code{<c-pointer-type>} class.  Note that @code{<c-pointer-type>} itself
-is not an instance of @code{<native-type>}.
+@code{<c-pointer-type>} class.
 
 @subsubheading Tag namespace
 
 In C, tags of struct, union, and enum share the same namespace,
-and you cannot use the same tag to define different struct/union/enums.
+which follows block scoping.  A tag can be declared before its
+definition (e.g. @code{struct foo;}), in which case it denotes
+an incomplete type until the definition is seen.
 
-We don't automatically track tags by default.  It's up to the
-user to set up the tag namespace as required by the application.
-We have tools to help it.
+Native type constructors such as @code{make-c-struct-type} don't
+track tags.  If you want C's tag semantics, you can create a tag namespace.
+The followings are procedures to manipulate tag namespaces.
+The @var{kind} argument of those procedures must be one of the
+symbols @code{struct}, @code{union} or @code{enum}.
+It is an error if a tag is used with a different kind.
 
-@deffn {Parameter}  current-native-tag-namespace
-@c MOD gauche.native-type
-A parameter that holds the current tag namespace.  Its value must
-be @code{#f} or an object created by
-@code{make-native-tag-namespace} below.
-
-If it is @code{#f} (default), tags are not tracked.
-If it is a tag namespace object, whenever a new c-struct/c-union/c-enum
-type is created, its tag is registered.  If there's already
-a native type with the same tag, an error is signaled
-unless the type definition exactly matches.
-@end deffn
+The @code{native-type} procedure (@pxref{Native type signature}) takes
+an optional @var{tag-namespace} argument, which hanldes construction
+of tagged types and tag registration at once.
 
 @defun make-native-tag-namespace :optional parent
 @c MOD gauche.native-type
-Create a new native tag namespace object (which is actually
-an instance of  @code{<stacked-map>},
-@pxref{Generic dictionaries}).
-
-If @var{parent} is given and not @code{#f}, it must be another
-tag namespace object.  The new namespace is stacked on it---that is,
-all the tags registered in @var{parent} is visible, but newly
-added tags are put in the new namespace and do not affect @var{parent}.
+Create a new native tag namespace.  If @var{parent} is given and
+not @code{#f}, it must be another tag namespace.  The tags in @var{parent}
+are visible from the new namespace, but tags declared or defined
+in the new namespace don't affect @var{parent}.
 @end defun
 
-@defun tag->native-type tag :optional namespace
+@defun native-tag-namespace? obj
 @c MOD gauche.native-type
-Returns a c-struct/c-union/c-enum type associated with the @var{tag}
-(symbol) int the @var{namespace}.  If @var{namespace} is omitted
-or @code{#f}, the value of @code{current-native-tag-namespace}
-parameter is used.
+Returns @code{#t} iff @var{obj} is a native tag namespace.
+@end defun
+
+@defun native-tag-lookup namespace tag
+@c MOD gauche.native-type
+Returns a c-struct/c-union/c-enum type associated with @var{tag}
+(symbol) in @var{namespace} or its ancestors.  If @var{tag} isn't
+found, @code{#f} is returned.
+@end defun
+
+@defun native-tag-ref namespace kind tag
+@c MOD gauche.native-type
+Corresponds to a reference of a tag in C, e.g. @code{struct foo *p;}.
+If @var{tag} is found in @var{namespace} or its ancestors, its type
+is returned.  Otherwise, a new incomplete type is declared
+in @var{namespace} and returned.
+@end defun
+
+@defun native-tag-declare! namespace kind tag
+@c MOD gauche.native-type
+Corresponds to a declaration of a tag in C, e.g. @code{struct foo;}.
+If @var{namespace} itself has @var{tag}, its type is returned.
+Otherwise, a new incomplete type is declared in @var{namespace},
+shadowing the same tag in the ancestors, if any, and returned.
+@end defun
+
+@defun native-tag-define! namespace kind tag spec :optional base-type
+@c MOD gauche.native-type
+Corresponds to a definition of a tag in C, e.g.
+@code{struct foo @{ int a; @};}.
+
+For struct and union, @var{spec} is a list of fields, as the
+@var{fields} argument of @code{make-c-struct-type}.
+For enum, @var{spec} is a list of enumerators, and @var{base-type}
+is the base type, as the arguments of @code{make-c-enum-type}.
+
+If @var{namespace} itself has an incomplete type with @var{tag},
+it is completed with @var{spec} and returned; hence the types that
+refer to the incomplete type, such as a pointer to it,
+see the completed type.  If @var{namespace} has a complete type
+with @var{tag}, it is returned if it is the same as the type
+@var{spec} denotes; otherwise, an error is signaled.  If @var{tag}
+isn't in @var{namespace}, a new type is created and returned.
 @end defun
 
 @subsubheading C pointers
@@ -15826,6 +15856,40 @@ for untagged struct/union.
 
 When a struct/union type is constructed, its total size and each field's
 offset are computed (in unions, all the offsets are 0).
+
+If @var{fields} is @code{#f}, an incomplete type is created, which
+corresponds to a declaration like @code{struct foo;} in C.  @var{tag}
+must be a symbol in this case.  An incomplete type can't be used
+where its size or members are required (e.g. as a field of a struct,
+as an element of an array, or as the type of a native handle), but
+pointers to it can be used.  An incomplete type can be completed
+later with @code{c-struct/union-type-complete!}.
+
+Note that these procedures don't register the tag.
+@xref{Derived and aggregate native types}, for tag namespaces.
+@end defun
+
+@defun c-struct/union-type-complete! c-struct/union-type fields
+@c MOD gauche.native-type
+Completes the incomplete @var{c-struct/union-type} with @var{fields},
+which is the same as the argument of @code{make-c-struct-type}.
+The type is modified in place, so any types referring to it,
+e.g. a pointer to it, see the completed type.  An error is signaled
+if the type is already complete.  Returns @var{c-struct/union-type}.
+
+This allows self-referential structs:
+
+@example
+(define node (make-c-struct-type 'node #f))
+(c-struct/union-type-complete! node
+  `((value ,<int>) (next ,(make-c-pointer-type node))))
+@end example
+@end defun
+
+@defun c-struct/union-type-complete? c-struct/union-type
+@c MOD gauche.native-type
+Returns @code{#f} if @var{c-struct/union-type} is incomplete,
+@code{#t} otherwise.
 @end defun
 
 @defun c-struct/union-type-tag c-struct/union-type
@@ -15863,7 +15927,7 @@ from a signature with
 @c MOD gauche.native-type
 Creates and returns a new C enum type.  @var{tag} specifies the
 enum tag in symbol; it can be @code{#f} for untagged enum.
-@var{typespec} can be @code{#f} or an integer native type..  If it is
+@var{typespec} can be @code{#f} or an integer native type.  If it is
 a native type, it specifies the base type of the enum.
 If no @var{typespec} is given, the base type is inferred from the values
 of enumerators. Note that if you include a field of an enum type in a struct
@@ -15877,6 +15941,11 @@ is assigned from 0 and increasing order by default.  If an integer value
 is specified in the second form, the internal counter is ``reset'' to
 that value.
 
+If you pass @code{()} to @var{enumerators}, the returned enum type
+is incomplete.  You must give @var{typespec} so that the size is
+detemined.  An incomplete num type can be completed later
+by @code{c-enum-type-complete!}.
+
 If you create an C enum type for foreign functon call, you'd want
 to use @code{define-c-enum} in @code{gauche.ffi}, which creats
 c-enum type and synchronizing enum values of the given enum symbols
@@ -15885,6 +15954,18 @@ c-enum type and synchronizing enum values of the given enum symbols
 The created enum type object maintains mapping between enumerator
 names and values.  You can look it up with @code{c-enum-value}
 and @code{c-enum-symbol}.
+@end defun
+
+@defun c-enum-type-complete! type enumerators :optional (name #f)
+@c MOD gauche.native-type
+Complete an incomplete enum type instance @var{type} with @var{enumerators}.
+If @var{type} is already complete (has enumerator list), an error
+is signaled.
+
+Optional @var{name} argument is used in error messages; often, an
+untagged enum is @code{typede}-ed to a typename that users use.
+The enum type instance itself doesn't know that typename, and
+it is not much useful to display anonymous enum type in error messages.
 @end defun
 
 @defun c-enum-type-tag type
@@ -16109,13 +16190,20 @@ index varies fastest).
 @example
 (.struct @var{tag} (@var{field-spec} @dots{}))
 (.struct (@var{field-spec} @dots{}))
+(.struct @var{tag})
 (.union  @var{tag} (@var{field-spec} @dots{}))
 (.union  (@var{field-spec} @dots{}))
+(.union  @var{tag})
 @end example
 
 Denote a C struct or union type.  @var{tag}, when given, is a symbol
-that names the struct/union tag; the second form of each pair (with no
+that names the struct/union tag; the second form of each kind (with no
 tag) denotes an anonymous struct/union.
+
+The third form of each kind refers to a tag.  If a tag namespace
+is given to @code{native-type}, the tag is looked up in it
+(@pxref{Derived and aggregate native types}); otherwise, it denotes
+a new incomplete type.
 
 Each @var{field-spec} has the form
 @code{@var{name}::@var{type}}, using the typed-variable notation
@@ -16129,6 +16217,7 @@ for example, @code{a::int} and @code{a :: int} are equivalent.
 
 @example
 (.enum [@var{tag}] [: @var{typespec}] (@var{enumerator} @dots{}))
+(.enum @var{tag})
 @end example
 
 Denote a C enum type.  @var{tag}, when given, is a symbol that names
@@ -16139,6 +16228,11 @@ the size and alignment of the enum type follows the compiler settings
 with which Gauche runtime is compiled.
 
 @var{enumerator} is either a symbol, or @code{(symbol integer-value)}.
+
+The second form refers to a tag, as the tag-only form of struct
+and union.  Without a tag namespace, it denotes an enum
+type whose enumerators are yet to be given, using the default
+base type.
 
 @subsubheading Function types
 
@@ -16210,13 +16304,23 @@ to a variable, and inserting it in another type signature:
   @result{} #<c-function <c-char*> ... -> <int>>
 @end example
 
-@defun native-type signature-or-type
+@defun native-type signature-or-type :optional tag-namespace
 @c MOD gauche.native-type
 The argument must be an S-expression type signature or
 a native type instance.  If it is a type signature, a native
 type instance denoted by the type signature is returned.
 If the argument is already a native type instance, it is returned
 as is.
+
+If @var{tag-namespace} is given, tagged struct/union/enum types
+in the signature are defined in, or referred from, the namespace,
+as @code{native-tag-define!} and @code{native-tag-ref} do.
+It allows a self-referential struct to be written as a signature:
+
+@example
+(define ns (make-native-tag-namespace))
+(native-type '(.struct node (value::int next::((.struct node) *))) ns)
+@end example
 
 See above for the specification of a native type signature.
 @end defun
