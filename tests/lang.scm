@@ -534,7 +534,11 @@
   (test* "native-type: struct field offsets" '((a . 0) (b . 4) (c . 8))
          (field-offsets (nt "struct s { char a; int b; double c[2]; } x;")))
   (t-shape '(<c-union-type> 8 8) "union u { char a; int b; double c; } x;")
-  (t-prim #f "struct foo x;")             ;incomplete
+  (test* "native-type: struct foo x; (incomplete)" '(<c-struct-type> #f)
+         (let1 t (nt "struct foo x;")
+           (list (class-name (class-of t))
+                 ((with-module gauche.native-type c-struct/union-type-complete?)
+                  t))))
   (t-shape '(<c-struct-type> 16 8)
            "struct node { int v; struct node *next; } x;")
   (t-shape '(<c-struct-type> 4 4)
@@ -558,6 +562,59 @@
          (~ (nt "enum e { A, B = 5, C } x;")'enumerator-alist))
   (t-shape '(<c-enum-type> 4 4) "enum e x;") ;incomplete
   (t-prim #f "enum e { A = N } x;")
+  )
+
+;; c-type -> native-type, identity of struct/union/enum
+(let ()
+  ;; Converts the types of all toplevel declarations with one memo.
+  ;; Returns alist of (name . native-type).
+  (define (nts code)
+    (let1 memo (make-hash-table 'eq?)
+      (filter-map (^f (match f
+                        [('decl name _ type _)
+                         (cons name (c-type->native-type type (^_ #f) memo))]
+                        [_ #f]))
+                  (c-parse-string (c-toplevel-parser) code))))
+  (define complete? (with-module gauche.native-type c-struct/union-type-complete?))
+  (define field-type (with-module gauche.native-type c-struct/union-type-field-type))
+
+  (test* "native-type identity: self-reference" '(#t 16)
+         (let1 t (assq-ref (nts "struct node { int v; struct node *next; } x;") 'x)
+           (list (eq? t (~ (field-type t 'next)'pointee-type))
+                 (~ t'size))))
+  (test* "native-type identity: same tag" #t
+         (let1 r (nts "struct foo { int a; } x; struct foo y; struct foo *z;")
+           (and (eq? (assq-ref r 'x) (assq-ref r 'y))
+                (eq? (assq-ref r 'x) (~ (assq-ref r 'z)'pointee-type)))))
+  (test* "native-type identity: different tags" #f
+         (let1 r (nts "struct foo { int a; } x; struct bar { int a; } y;")
+           (eq? (assq-ref r 'x) (assq-ref r 'y))))
+  (test* "native-type identity: without shared memo" #f
+         (match (c-parse-string (c-toplevel-parser)
+                                "struct foo { int a; } x; struct foo y;")
+           [(('decl _ _ t1 _) ('decl _ _ t2 _))
+            (eq? (c-type->native-type t1) (c-type->native-type t2))]))
+  (test* "native-type identity: forward reference completed" '(#t #t 4)
+         (let* ([r (nts "struct foo *p; struct foo { int a; } x;")]
+                [pointee (~ (assq-ref r 'p)'pointee-type)])
+           (list (eq? pointee (assq-ref r 'x))
+                 (complete? pointee)
+                 (~ pointee'size))))
+  (test* "native-type identity: mutual reference" '(#t #t)
+         (let* ([r (nts "struct a; struct b { struct a *pa; } y; \
+                         struct a { struct b *pb; } x;")]
+                [a (assq-ref r 'x)]
+                [b (assq-ref r 'y)])
+           (list (eq? a (~ (field-type b 'pa)'pointee-type))
+                 (eq? b (~ (field-type a 'pb)'pointee-type)))))
+  (test* "native-type identity: enum forward reference completed" '(#t ((A . 0)))
+         (let* ([r (nts "enum e x; enum e { A } y;")])
+           (list (eq? (assq-ref r 'x) (assq-ref r 'y))
+                 (~ (assq-ref r 'x)'enumerator-alist))))
+  (test* "native-type identity: unconvertible member" '(#f #t)
+         (let1 r (nts "struct s { int a : 3; } x; struct s *p;")
+           (list (assq-ref r 'x)
+                 (not (complete? (~ (assq-ref r 'p)'pointee-type))))))
   )
 
 ;; We haven't fixed the format of the semantic value, so for now we just

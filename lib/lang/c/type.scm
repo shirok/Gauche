@@ -52,10 +52,11 @@
 
 ;; Avoid statically depending on gauche.native-type.
 (autoload gauche.native-type
-          make-c-pointer-type make-c-opaque-pointer-type
+          make-c-pointer-type
           make-c-function-type make-c-array-type
           make-c-struct-type make-c-union-type
-          make-c-enum-type default-c-enum-base-type)
+          c-struct/union-type-complete! c-struct/union-type-complete?
+          make-c-enum-type c-enum-type-complete! default-c-enum-base-type)
 
 ;; Type representation
 ;;   We use plain S-expr rather than a bunch of records, for flexibility.
@@ -424,11 +425,26 @@
 ;;   return either a Scheme number, or #f when the expression doesn't
 ;;   have constant value.  EVAL-CONST may throw an error; see lang.c.grokker.
 ;;
+;;   Struct, union and enum types have identity (see the comment at the
+;;   top), which is kept in the converted native types through MEMO,
+;;   a hash table that maps the last pair of the c-type to the native
+;;   type.  The same MEMO should be used throughout the conversion of
+;;   the types of one program, so that the same struct is converted to
+;;   the same native type.  If omitted, a new one is created for each call.
+;;
+;;   An incomplete struct/union is converted to an incomplete native type,
+;;   which can be completed in place when it is converted again with the
+;;   same MEMO after the definition is parsed.  A self-referencing struct
+;;   becomes a struct that contains a pointer to itself.  Likewise,
+;;   an incomplete enum is converted to an enum type with the provisional
+;;   base type, which may be completed later.
+;;
 ;;   Qualifiers are ignored.  Bit fields and anonymous members of
-;;   struct/union aren't supported yet.  Incomplete struct/union can only
-;;   be a pointee, and represented as an opaque pointer.  So is a pointer
-;;   to a struct/union being converted (e.g. self-referencing struct).
-(define (c-type->native-type c-type :optional (eval-const (^_ #f)))
+;;   struct/union aren't supported yet.  A struct/union whose members
+;;   can't be converted is converted to #f, but a pointer to it is
+;;   converted to a pointer to an incomplete type, as far as it's tagged.
+(define (c-type->native-type c-type :optional (eval-const (^_ #f))
+                                              (memo (make-hash-table 'eq?)))
   (define converting '())           ;last pairs of struct/union being converted
   (define (const-int expr)
     (let1 v (eval-const expr)
@@ -437,24 +453,43 @@
     (match f
       [((? symbol? name) type) (and-let1 t (conv type) (list name t))]
       [_ #f]))                          ;anonymous or bit field
-  (define (aggregate make tag cell)
-    (and-let1 fields (car cell)         ;#f if incomplete
-      (let1 saved converting
-        (push! converting cell)
-        (let1 fs (map field fields)
-          (set! converting saved)
-          (and (every values fs) (make tag fs))))))
+  (define (convert-fields cell)
+    (let1 saved converting
+      (push! converting cell)
+      (let1 fs (map field (car cell))
+        (set! converting saved)
+        (and (every values fs) fs))))
+  ;; CELL is the last pair of the c-type, whose car is the fields or #f.
+  ;; If POINTEE? is true, we return an incomplete type when we can't
+  ;; convert the fields.
+  (define (aggregate make tag cell pointee?)
+    (let1 nt (hash-table-get memo cell #f)
+      (cond
+       [(and nt (or (memq cell converting) (c-struct/union-type-complete? nt)))
+        nt]
+       [(not (car cell))                ;incomplete c-type
+        (or nt
+            (and tag                    ;anonymous one can't be incomplete
+                 (rlet1 nt (make tag #f) (hash-table-put! memo cell nt))))]
+       [(not tag)                       ;anonymous; can't be self-referenced
+        (and-let1 fs (convert-fields cell)
+          (rlet1 nt (make tag fs) (hash-table-put! memo cell nt)))]
+       [else
+        ;; We register an incomplete type first, then complete it, for
+        ;; the fields may refer to this type.
+        (let1 nt (or nt (rlet1 nt (make tag #f) (hash-table-put! memo cell nt)))
+          (if-let1 fs (convert-fields cell)
+            (begin (c-struct/union-type-complete! nt fs) nt)
+            (and pointee? nt)))])))
   (define (pointer pointee)
+    (define (pointer-to t) (and t (make-c-pointer-type t)))
     (match (c-actual-type pointee)
       [('void _) <void*>]
-      [((and (or '.struct '.union) kind) tag _ . cell)
-       (if (or (not (car cell)) (memq cell converting))
-         (make-c-opaque-pointer-type
-          (string->symbol (format "~a ~a"
-                                  (if (eq? kind '.struct) 'struct 'union)
-                                  (or tag 'anonymous))))
-         (and-let1 t (conv pointee) (make-c-pointer-type t)))]
-      [_ (and-let1 t (conv pointee) (make-c-pointer-type t))]))
+      [('.struct tag _ . cell)
+       (pointer-to (aggregate make-c-struct-type tag cell #t))]
+      [('.union tag _ . cell)
+       (pointer-to (aggregate make-c-union-type tag cell #t))]
+      [_ (pointer-to (conv pointee))]))
   ;; int x[3][2] is (.array (.array int 2) 3); we flatten it to
   ;; an array of int with dimensions (3 2).  Only the first dimension
   ;; can be unknown.
@@ -478,24 +513,37 @@
                              args)])]
                [ (every values as) ])
       (make-c-function-type r as)))
-  (define (enum tag members)
-    (if members
-      (let1 es (map (^m (match m
-                          [(name #f) name]
-                          [(name expr) (and-let1 v (const-int expr)
-                                         (list name v))]))
-                    members)
-        (and (every values es) (make-c-enum-type tag #f es)))
-      ;; Incomplete enum.  We use the provisional base type.
-      (make-c-enum-type tag (default-c-enum-base-type) '())))
+  (define (enumerators members)
+    (let1 es (map (^m (match m
+                        [(name #f) name]
+                        [(name expr) (and-let1 v (const-int expr)
+                                       (list name v))]))
+                  members)
+      (and (every values es) es)))
+  ;; CELL is the last pair of the c-type, whose car is the enumerators or #f.
+  (define (enum tag cell)
+    (let1 nt (hash-table-get memo cell #f)
+      (cond
+       [(and nt (not (null? (~ nt'enumerator-alist)))) nt]
+       [(not (car cell))
+        ;; Incomplete enum.  We use the provisional base type.
+        (or nt
+            (rlet1 nt (make-c-enum-type tag (default-c-enum-base-type) '())
+              (hash-table-put! memo cell nt)))]
+       [nt (and-let1 es (enumerators (car cell))
+             (c-enum-type-complete! nt es)
+             nt)]
+       [else (and-let1 es (enumerators (car cell))
+               (rlet1 nt (make-c-enum-type tag #f es)
+                 (hash-table-put! memo cell nt)))])))
   (define (conv type)
     (match (c-actual-type type)
       [('.pointer _ pointee) (pointer pointee)]
       [('.array . _) (array type)]
       [('.function _ ret args) (function ret args)]
-      [('.struct tag _ . cell) (aggregate make-c-struct-type tag cell)]
-      [('.union tag _ . cell) (aggregate make-c-union-type tag cell)]
-      [('.enum tag _ members) (enum tag members)]
+      [('.struct tag _ . cell) (aggregate make-c-struct-type tag cell #f)]
+      [('.union tag _ . cell) (aggregate make-c-union-type tag cell #f)]
+      [('.enum tag _ . cell) (enum tag cell)]
       [('char _) <c-char>]
       [('s-char _) <int8>]
       [('u-char _) <uint8>]
