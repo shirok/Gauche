@@ -524,6 +524,17 @@
            "struct s { enum e : 3; int x; } v;")
   )
 
+;; Some struct sizes and alignments depend on the platform (ILP32, LP64,
+;; LLP64), so we compute the expected values at runtime.
+(define (round-up n a) (* a (quotient (+ n a -1) a)))
+;; sizeof(struct { int v; T *p; })
+(define int+ptr-struct-size
+  (let ([ps (~ <void*>'size)] [pa (~ <void*>'alignment)])
+    (round-up (+ (round-up 4 pa) ps) (max 4 pa))))
+;; sizeof(struct { char a; double b; })
+(define char+double-struct-size
+  (round-up (+ (round-up 1 (~ <double>'alignment)) 8) (~ <double>'alignment)))
+
 ;; c-type -> native-type
 (let ()
   (define (type-of code)
@@ -582,16 +593,19 @@
   (test* "native-type: int x[]; dimensions" '(*)
          (~ (nt "int x[];")'dimensions))
   (t-prim #f "int x[N];")
-  (t-shape '(<c-struct-type> 24 8) "struct s { char a; int b; double c[2]; } x;")
+  (t-shape `(<c-struct-type> 24 ,(max 4 (~ <double>'alignment)))
+           "struct s { char a; int b; double c[2]; } x;")
   (test* "native-type: struct field offsets" '((a . 0) (b . 4) (c . 8))
          (field-offsets (nt "struct s { char a; int b; double c[2]; } x;")))
-  (t-shape '(<c-union-type> 8 8) "union u { char a; int b; double c; } x;")
+  (t-shape `(<c-union-type> 8 ,(max 4 (~ <double>'alignment)))
+           "union u { char a; int b; double c; } x;")
   (test* "native-type: struct foo x; (incomplete)" '(<c-struct-type> #f)
          (let1 t (nt "struct foo x;")
            (list (class-name (class-of t))
                  ((with-module gauche.native-type c-struct/union-type-complete?)
                   t))))
-  (t-shape '(<c-struct-type> 16 8)
+  (t-shape `(<c-struct-type> ,int+ptr-struct-size
+                              ,(max 4 (~ <void*>'alignment)))
            "struct node { int v; struct node *next; } x;")
   (t-shape '(<c-struct-type> 4 4)
            "struct foo *y; struct foo { int a; }; struct foo x;")
@@ -614,7 +628,8 @@
          (~ (nt "enum e { A, B = 5, C } x;")'enumerator-alist))
   (t-shape '(<c-enum-type> 4 4) "enum e x;") ;incomplete
   (t-shape '(<c-enum-type> 1 1) "enum e : unsigned char { A } x;")
-  (t-shape '(<c-enum-type> 8 8) "enum e : long long x;") ;incomplete, fixed type
+  (t-shape `(<c-enum-type> 8 ,(~ <longlong>'alignment))
+           "enum e : long long x;") ;incomplete, fixed type
   (t-prim #f "enum e { A = N } x;")
   )
 
@@ -632,7 +647,7 @@
   (define complete? (with-module gauche.native-type c-struct/union-type-complete?))
   (define field-type (with-module gauche.native-type c-struct/union-type-field-type))
 
-  (test* "native-type identity: self-reference" '(#t 16)
+  (test* "native-type identity: self-reference" `(#t ,int+ptr-struct-size)
          (let1 t (assq-ref (nts "struct node { int v; struct node *next; } x;") 'x)
            (list (eq? t (~ (field-type t 'next)'pointee-type))
                  (~ t'size))))
@@ -837,7 +852,7 @@
   (t (~ <longdouble>'size) "sizeof(long double)")
   (t (~ <float-complex>'size) "sizeof(float _Complex)")
   (t (~ <double-complex>'size) "sizeof(double _Complex)")
-  (t 16 "sizeof(struct {char a; double b;})")
+  (t char+double-struct-size "sizeof(struct {char a; double b;})")
   (t 3.0 "(long double)3" "double")
   ;; conversion to the declared type of the variable
   (t -1 "0xFFFFFFFFu" "int")
@@ -873,7 +888,8 @@
     (t2 16 "typedef struct {char a; int b[3];} s_t;" "sizeof(s_t)")
     ;; tagged types
     (t2 8 "struct s {char a; int b;};" "sizeof(struct s)")
-    (t2 16 "struct node {int v; struct node *next;};" "sizeof(struct node)")
+    (t2 int+ptr-struct-size "struct node {int v; struct node *next;};"
+        "sizeof(struct node)")
     (t2 12 "struct s *p; struct s {int a[3];};" "sizeof(struct s)")
     (t2 (~ <void*>'size) "struct s *p;" "sizeof(struct s *)")
     (t2 8 "union u {char a; double b;};" "sizeof(union u)")
