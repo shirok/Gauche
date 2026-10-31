@@ -259,7 +259,8 @@
         [((and (or '.struct '.union '.enum) k) tag qs . cell)
          (if (memq cell seen)
            `(,k ,tag ,qs)
-           `(,k ,tag ,qs ,(loop (car cell) (cons cell seen))))]
+           `(,k ,tag ,qs ,(loop (car cell) (cons cell seen))
+                ,@(loop (cdr cell) seen)))]
         [(a . d) (cons (loop a seen) (loop d seen))]
         [_ x])))
   (define (t-type expect code)
@@ -373,15 +374,16 @@
                           (b (.array (u-char ()) () (const int "16")))))
           "union { struct { int a; double b; } n; unsigned char b[16];} x;")
 
-  (t-type '(.enum e () ((X #f) (Y #f) (Z #f)))
+  (t-type '(.enum e () ((X #f) (Y #f) (Z #f)) #f)
           "enum e { X, Y, Z } x;")
-  (t-type '(.enum #f (const) ((X (const int "1")) (Y (const int "3")) (Z #f)))
+  (t-type '(.enum #f (const) ((X (const int "1")) (Y (const int "3")) (Z #f)) #f)
           "enum { X=1, Y=3, Z } const x;")
   (t-type '(.enum #f () ((A (const int "0x10"))
-                         (B (+ (ident A) (const int "1")))))
+                         (B (+ (ident A) (const int "1"))))
+                   #f)
           "enum { A = 0x10, B = A + 1 } x;")
   (t-type '(.array (int ()) () (const int "010")) "int x[010];")
-  (t-type '(.type T () (.enum e () #f))
+  (t-type '(.type T () (.enum e () #f #f))
           "typedef enum e T; T x;")
 
   ;; tags
@@ -395,7 +397,7 @@
           "struct foo { int a; }; struct foo x;")
   (t-type '(.union u () ((a (int ()))))
           "union u { int a; }; union u x;")
-  (t-type '(.enum e () ((A #f))) "enum e { A }; enum e x;")
+  (t-type '(.enum e () ((A #f)) #f) "enum e { A }; enum e x;")
   (t-type '(.struct a () ((b (.struct b () ((c (int ())))))))
           "struct a { struct b { int c; } b; }; struct b *y; struct a x;")
   )
@@ -470,6 +472,31 @@
                 [(_ (_ ('.pointer _ ('.struct _ _ . cell2))))
                  (list (eq? cell cell2)
                        (~ (c-type->native-type t2) 'size))])])))
+  )
+
+;; C23 enum with fixed underlying type
+(let ()
+  (define (t-decls expect code)
+    (test* code expect
+           (map (^f (match f
+                      [('decl id sc type init) (list id sc type init)]))
+                (c-parse-string (c-toplevel-parser) code))))
+  (t-decls '((x #f (.enum e () ((A #f)) (u-char ())) #f))
+           "enum e : unsigned char { A } x;")
+  (t-decls '((L typedef (long ()) #f)
+             (x #f (.enum e () ((A #f)) (.type L () (long ()))) #f))
+           "typedef long L; enum e : L { A } x;")
+  ;; The base type given by the forward declaration
+  (t-decls '((x #f (.enum e () ((A #f)) (long ())) #f))
+           "enum e : long; enum e { A } x;")
+  (test* "enum e : long; enum e : int { A };" (test-error)
+         (c-parse-string (c-toplevel-parser)
+                         "enum e : long; enum e : int { A };"))
+  ;; 'enum e : 3' is an unnamed bit field
+  (t-decls '((v #f (.struct s () ((#f (int ()) (const int "3"))
+                                  (x (int ()))))
+                #f))
+           "struct s { enum e : 3; int x; } v;")
   )
 
 ;; c-type -> native-type
@@ -561,6 +588,8 @@
   (test* "native-type: enumerators" '((A . 0) (B . 5) (C . 6))
          (~ (nt "enum e { A, B = 5, C } x;")'enumerator-alist))
   (t-shape '(<c-enum-type> 4 4) "enum e x;") ;incomplete
+  (t-shape '(<c-enum-type> 1 1) "enum e : unsigned char { A } x;")
+  (t-shape '(<c-enum-type> 8 8) "enum e : long long x;") ;incomplete, fixed type
   (t-prim #f "enum e { A = N } x;")
   )
 
@@ -818,6 +847,19 @@
            (((dir) << 30) | ((type) << 8) | (nr) | ((size) << 16))
          #define _IOR(type,nr,size) _IOC(2U,(type),(nr),(sizeof(size)))"
         "_IOR('E', 0x01, int)"))
+  ;; C23 enum with fixed underlying type
+  (test* "initial value: sizeof(enum e) with fixed type" 1
+         (let1 ctx (c-grok-string "enum e : unsigned char { X = 1 };\n\
+                                   const long x = sizeof(enum e);")
+           (c-variable-initial-value ctx 'x)))
+  (test* "initial value: sizeof(enum e) with fixed type, forward declaration"
+         '(8 8)
+         (let1 ctx (c-grok-string "enum e : long long;\n\
+                                   const long y = sizeof(enum e);\n\
+                                   enum e { X = 1 };\n\
+                                   const long x = sizeof(enum e);")
+           (list (c-variable-initial-value ctx 'y)
+                 (c-variable-initial-value ctx 'x))))
   ;; references
   (test* "initial value: reference" 3
          (let1 ctx (c-grok-string "const int y = 1; const int x = y + 2;")
@@ -865,8 +907,8 @@
     (t-fail '((sizeof (((struct foo #f)) (#f)))
               (sizeof (((struct foo #f)) (#f))))
             "sizeof(struct foo)")
-    (t-fail '((sizeof (((enum foo #f)) (#f)))
-              (sizeof (((enum foo #f)) (#f))))
+    (t-fail '((sizeof (((enum foo #f #f)) (#f)))
+              (sizeof (((enum foo #f #f)) (#f))))
             "sizeof(enum foo)")
     (t-fail '((sizeof ((int) (#f (array-dimension () (ident undefined_id)))))
               (ident undefined_id))

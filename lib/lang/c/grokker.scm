@@ -183,7 +183,9 @@
     [('.function . _) #f]
     [('.array _ _ #f) #f]
     [('void _) #f]
-    [((or '.struct '.union '.enum) _ _ #f) #f] ;incomplete
+    ;; incomplete.  An enum with fixed underlying type is complete (C23).
+    [((or '.struct '.union) _ _ #f) #f]
+    [('.enum _ _ #f #f) #f]
     [_ (and-let1 nt (c-context-native-type ctx type eval-const)
          (~ nt'size))]))
 

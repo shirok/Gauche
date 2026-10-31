@@ -68,7 +68,7 @@
 ;;            | (.function (<fqual> ...>) <c-type> <args>)
 ;;            | (.struct <tag> (<qual> ...) <fields>)
 ;;            | (.union <tag> (<qual> ...) <fields>)
-;;            | (.enum <tag> (<qual> ...) <enumerators>)
+;;            | (.enum <tag> (<qual> ...) <enumerators> <base-type>)
 ;;            | (.type <type-name> (<qual> ...) <c-type>)
 ;;
 ;;   <basic-type> : one of the symbols in *c-basic-types*
@@ -94,6 +94,8 @@
 ;;            | #f
 ;;   <enumerators> : ((<enum-name> <enum-value>) ...)
 ;;                 | #f
+;;   <base-type> : <c-type>     ; C23 fixed underlying type, enum e : T
+;;               | #f           ; not specified
 ;;   <field-name> : <symbol> | #f
 ;;   <type-name> : symbol
 ;;
@@ -105,14 +107,15 @@
 ;;
 ;;   Struct, union and enum types have identity.  The parser creates
 ;;   one for each tag in a scope (or each anonymous one), and every
-;;   occurrence of the type shares the last pair of the form, which holds
-;;   <fields> or <enumerators>.  That is, two such types are the same iff
-;;   their last pairs are eq?.  Code that rebuilds a type, e.g. to alter
-;;   qualifiers, must keep the last pair (see attach-qualifier).
+;;   occurrence of the type shares the tail of the form after <qual>s,
+;;   that is, (<fields>) or (<enumerators> <base-type>).  Two such types
+;;   are the same iff their tails are eq?.  Code that rebuilds a type,
+;;   e.g. to alter qualifiers, must keep the tail (see attach-qualifier).
 ;;   <fields> and <enumerators> are #f while the type is incomplete, and
-;;   the parser destructively fills the last pair when it sees the
-;;   definition.  So the c-type can be circular (e.g. self-referencing
-;;   struct).  Use write-shared to save it.
+;;   the parser destructively fills the tail when it sees the definition
+;;   (<base-type> may be filled by a forward declaration 'enum e : T;').
+;;   So the c-type can be circular (e.g. self-referencing struct).
+;;   Use write-shared to save it.
 ;;
 ;;   c-constant-expression is the expression as the parser returns, kept
 ;;   unevaluated.  Evaluating it needs the knowledge of the constants
@@ -136,8 +139,8 @@
 ;;   <core-type> : <basic-type>
 ;;               | (struct <tag> <fields>)
 ;;               | (union <tag> <fields>)
-;;               | (enum <tag> <enumerators>)
-;;     where the last pair of each form is shared, as described above.
+;;               | (enum <tag> <enumerators> <base-type>)
+;;     where the tail after <tag> is shared, as described above.
 ;;
 ;;  NB: attribute and asm may appear in both type-modifier and in core quals
 ;;
@@ -224,7 +227,7 @@
         (symbol-append base '-complex)
         base)))
 
-  ;; NB: We share the last pair of CORE; see the comment at the top.
+  ;; NB: We share the tail of CORE; see the comment at the top.
   (define (aggregate-type quals core)
     (match core
       [('struct tag . cell) `(.struct ,tag ,(reverse quals) . ,cell)]
@@ -325,7 +328,7 @@
       [else (bad)])))
 
 ;; Add qualifier to the 'main' type, which would be attached to the variable.
-;; NB: For struct/union/enum, the last pair must be shared.
+;; NB: For struct/union/enum, the tail after quals must be shared.
 (define (attach-qualifier c-type qual)
   (define (merge-quals new-qs qs)
     (if (null? new-qs)
@@ -427,7 +430,7 @@
 ;;
 ;;   Struct, union and enum types have identity (see the comment at the
 ;;   top), which is kept in the converted native types through MEMO,
-;;   a hash table that maps the last pair of the c-type to the native
+;;   a hash table that maps the tail of the c-type to the native
 ;;   type.  The same MEMO should be used throughout the conversion of
 ;;   the types of one program, so that the same struct is converted to
 ;;   the same native type.  If omitted, a new one is created for each call.
@@ -445,7 +448,7 @@
 ;;   converted to a pointer to an incomplete type, as far as it's tagged.
 (define (c-type->native-type c-type :optional (eval-const (^_ #f))
                                               (memo (make-hash-table 'eq?)))
-  (define converting '())           ;last pairs of struct/union being converted
+  (define converting '())           ;tails of struct/union being converted
   (define (const-int expr)
     (let1 v (eval-const expr)
       (and (exact-integer? v) v)))
@@ -459,7 +462,7 @@
       (let1 fs (map field (car cell))
         (set! converting saved)
         (and (every values fs) fs))))
-  ;; CELL is the last pair of the c-type, whose car is the fields or #f.
+  ;; CELL is the tail of the c-type, whose car is the fields or #f.
   ;; If POINTEE? is true, we return an incomplete type when we can't
   ;; convert the fields.
   (define (aggregate make tag cell pointee?)
@@ -520,21 +523,28 @@
                                        (list name v))]))
                   members)
       (and (every values es) es)))
-  ;; CELL is the last pair of the c-type, whose car is the enumerators or #f.
+  ;; CELL is the tail of the c-type, (<enumerators> <base-type>).
+  ;; Without the base type, the native type determines it from
+  ;; the enumerator values.
   (define (enum tag cell)
-    (let1 nt (hash-table-get memo cell #f)
+    (let ([nt (hash-table-get memo cell #f)]
+          [base (and-let1 b (cadr cell) (or (conv b) 'bad))])
       (cond
+       [(eq? base 'bad) #f]
        [(and nt (not (null? (~ nt'enumerator-alist)))) nt]
        [(not (car cell))
-        ;; Incomplete enum.  We use the provisional base type.
+        ;; Incomplete enum.  Unless the base type is given, we use
+        ;; the provisional base type.
         (or nt
-            (rlet1 nt (make-c-enum-type tag (default-c-enum-base-type) '())
+            (rlet1 nt (make-c-enum-type tag
+                                        (or base (default-c-enum-base-type))
+                                        '())
               (hash-table-put! memo cell nt)))]
        [nt (and-let1 es (enumerators (car cell))
              (c-enum-type-complete! nt es)
              nt)]
        [else (and-let1 es (enumerators (car cell))
-               (rlet1 nt (make-c-enum-type tag #f es)
+               (rlet1 nt (make-c-enum-type tag base es)
                  (hash-table-put! memo cell nt)))])))
   (define (conv type)
     (match (c-actual-type type)

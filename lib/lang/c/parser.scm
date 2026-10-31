@@ -488,7 +488,7 @@
 (define (tag-declare! kind name)
   (if-let1 spec (stacked-map-top-get (tag-names) name #f)
     (check-tag-kind spec kind)
-    (rlet1 spec (list kind name #f)
+    (rlet1 spec (make-tag-spec kind name)
       (dict-put! (tag-names) name spec))))
 
 ;; Definition, e.g. 'struct foo { ... }'.  Called before parsing the
@@ -499,7 +499,27 @@
     (rlet1 spec (tag-declare! kind name)
       (when (caddr spec)
         (errorf "redefinition of '~a ~a'" kind name)))
-    (list kind #f #f)))
+    (make-tag-spec kind #f)))
+
+;; Returns a new incomplete specifier,
+;; (<kind> <tag> <members>) or (enum <tag> <members> <base-type>).
+(define (make-tag-spec kind name)
+  (if (eq? kind 'enum)
+    (list kind name #f #f)
+    (list kind name #f)))
+
+;; Set the enum base type (C23), given as a list of type specifiers.
+;; It may already be set by a forward declaration, e.g. 'enum e : long;',
+;; in which case it must agree.
+(define (set-tag-base! spec base-specs)
+  (when base-specs
+    (let ([cell (cdddr spec)]
+          [base (grok-c-type (list base-specs) (typedef-names))])
+      (cond [(not (car cell)) (set-car! cell base)]
+            [(not (equal? (car cell) base))
+             (errorf "'enum ~a' declared with different underlying types"
+                     (cadr spec))])))
+  spec)
 
 (define (check-tag-kind spec kind)
   (unless (eq? (car spec) kind)
@@ -514,12 +534,20 @@
 
 ;; Common part of struct/union/enum specifier.
 ;; MEMBERS is a parser of the members, and GROK-MEMBERS takes its result
-;; to make <members>.  Returns (<kind> <tag> <members>).
-(define ($tagged-type-specifier kind members grok-members)
+;; to make <members>.  BASE is a parser of enum base type (C23); it
+;; returns a list of type specifiers, or #f.  Returns the specifier;
+;; see make-tag-spec.
+(define ($tagged-type-specifier kind members grok-members
+                                :optional (base ($return #f)))
   ($let* ([name ($optional ($lift cadr %identifier))]
+          [base-specs base]
           [def? ($optional ($assert %LC))]
-          [spec (cond [def? ($tag-action (cut tag-define! kind name))]
-                      [name ($tag-action (cut tag-ref! kind name))]
+          [spec (cond [def? ($tag-action
+                             (^[] (set-tag-base! (tag-define! kind name)
+                                                 base-specs)))]
+                      [name ($tag-action
+                             (^[] (set-tag-base! (tag-ref! kind name)
+                                                 base-specs)))]
                       [else ($fail #"~kind tag or members")])]
           [mems (if def? members ($return #f))])
     (if def?
@@ -559,11 +587,17 @@
 (define %enumerators
   ($between %LC ($sep-end-by %enumerator ($. '|,|)) %RC))
 
-;; returns (enum <tag> ((<symbol> <init-expr>) ...))
+;; C23 enum type specifier, e.g. 'enum e : long'.  We need $try, for
+;; 'enum e : 3' can be an unnamed bit field in a struct.
+(define %enum-type-specifier
+  ($optional ($try ($seq ($. '|:|) %type-specifier-qualifier-list))))
+
+;; returns (enum <tag> ((<symbol> <init-expr>) ...) <base-type>)
 (define %enum-specifier
   ($ $with-hook 'enum-specifier
      ($seq ($. 'enum)
-           ($tagged-type-specifier 'enum %enumerators identity))))
+           ($tagged-type-specifier 'enum %enumerators identity
+                                   %enum-type-specifier))))
 
 ;; 6.7.4 Function specifiers
 (define %function-specifier ($. 'inline))
