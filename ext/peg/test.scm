@@ -748,6 +748,44 @@
          (cut peg-parse-port ($->rope ($many ($. #\a))) <> cons)))
 
 ;;;============================================================
+;;; Finalizer
+;;;
+
+(test-section "finalizer")
+
+(let ()
+  (define p ($->rope ($many ($. #\a))))
+  (define (s) (x->lseq "aab"))
+  (define is-rope? (with-module parser.peg rope?))
+
+  (test* "peg-run-parser default finalizer" "aa"
+         (values-ref (peg-run-parser p (s)) 0))
+  (test* "peg-run-parser no finalizer" #t
+         (is-rope? (values-ref (peg-run-parser p (s) :finalizer identity) 0)))
+  (test* "peg-run-parser custom finalizer" 'aa
+         (values-ref (peg-run-parser p (s)
+                                     :finalizer (.$ string->symbol rope->string))
+                     0))
+  (test* "peg-parse-string default finalizer" "aa"
+         (peg-parse-string p "aab"))
+  (test* "peg-parse-string finalizer" #t
+         (is-rope? (peg-parse-string p "aab" #f :finalizer identity)))
+  (test* "peg-parse-string cont and finalizer" '(#t #\b)
+         (peg-parse-string p "aab" (^[r rest] (list (is-rope? r) (car rest)))
+                           :finalizer identity))
+  (test* "peg-parse-port finalizer" #t
+         (is-rope? (call-with-input-string "aab"
+                  (cut peg-parse-port p <> #f :finalizer identity))))
+  (test* "peg-parser->generator finalizer" '(#t #t)
+         (let1 g (peg-parser->generator ($->rope ($. #\a)) "aa"
+                                        :finalizer identity)
+           (list (is-rope? (g)) (is-rope? (g)))))
+  (test* "peg-parser->lseq finalizer" '(#t #t)
+         (map is-rope? (peg-parser->lseq ($->rope ($. #\a)) "aa"
+                                      :finalizer identity)))
+  )
+
+;;;============================================================
 ;;; Token parsing
 ;;;
 

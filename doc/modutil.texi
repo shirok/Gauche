@@ -16252,7 +16252,7 @@ Gauche source tree that use @code{parser.peg}:
 @subsection Parser drivers
 @c NODE PEGパーザドライバ, パーザドライバ
 
-@defun peg-run-parser parser list
+@defun peg-run-parser parser list :key finalizer
 @c MOD parser.peg
 @c EN
 Apply @var{parser} on the input @var{list}.   If @var{parser} accepts it,
@@ -16266,12 +16266,18 @@ the input.  If @var{parser} fails, raise @code{<parse-error>}.
 
 @c EN
 The result of @var{parse} is a value yielded by @var{parser}
-passed to @code{rope-finalize}, so any unfinalized rope is
+passed to @code{rope-finalize} by default, so any unfinalized rope is
 finalized before being returned.  @xref{PEG ropes}, for the details.
+You can pass an alternative procedire to @var{finalizer} keyword argument
+to replace @code{rope-finalizer}; if you want to get the paresr's result
+as is, pass @code{identity} to it.
 @c JP
-@var{parse}の結果は@code{rope-finalize}を通されるので、結果中の
+@var{parse}の結果はデフォルトで@code{rope-finalize}を通されるので、結果中の
 ファイナライズされていないロープは全てファイナライズされて返されます。
 ロープについては@ref{PEG ropes}を参照してください。
+@code{rope-finalize}ではない別の手続きを通したい場合は、
+@var{finalizer}にその手続きを渡してください。パーザの結果をそのまま
+受け取りたい場合は@code{identity}を渡すと良いでしょう。
 @c COMMON
 
 @c EN
@@ -16296,8 +16302,8 @@ parse them.
 @c COMMON
 @end defun
 
-@defun peg-parse-string parser string :optional cont
-@defunx peg-parse-port parser iport :optional cont
+@defun peg-parse-string parser string :optional cont :key finalizer
+@defunx peg-parse-port parser iport :optional cont :key finalizer
 @c MOD parser.peg
 @c EN
 Convenience wrappers of @code{peg-run-parser} that takes input from
@@ -16334,9 +16340,20 @@ It is an error to pass other values to @var{cont}.
 @c JP
 @var{cont}にそれ以外の値を渡すのはエラーです。
 @c COMMON
+
+@c EN
+The @var{finalizer} keyword argument specifies the procedure that receives
+the parser's raw result and returns a value suitable for the caller's purpose.
+By default, @code{rope-finalize} is used.  See @code{peg-run-parser}
+above, for the details.
+@c JP
+@var{finalizer}キーワード引数は、パーザの生の結果を受け取り、呼び出し側の
+欲するデータ形式を返す手続きです。デフォルトでは@code{rope-finalize}が呼ばれます。
+詳しくは上の@code{peg-run-parser}の項を参照してください。
+@c COMMON
 @end defun
 
-@defun peg-parser->generator parser list
+@defun peg-parser->generator parser list :key finalizer
 @c MOD parser.peg
 @c EN
 This is useful when you need to apply @var{parser} repeatedly over
@@ -16354,6 +16371,12 @@ won't return until all input is consumed.  On the other hand,
 @c JP
 @code{(peg-run-parser ($many parser) list)}としても同じ入力が受容されますが、
 こうした場合は全ての入力が消費されるまで戻ってきません。
+@c COMMON
+
+@c EN
+The @var{finalizer} keyword argument is same as @code{peg-run-parser}.
+@c JP
+@var{finalizer}キーワード引数は@code{peg-run-parser}と同じです。
 @c COMMON
 @end defun
 

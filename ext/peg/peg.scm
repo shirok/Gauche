@@ -291,10 +291,10 @@
 
 ;; API
 ;;   Default driver.  Returns parsed value and next stream
-(define (peg-run-parser parser s)
+(define (peg-run-parser parser s :key (finalizer rope-finalize))
   (receive (r v s1) (parser s)
     (if (parse-success? r)
-      (values (rope-finalize v) s1)
+      (values (finalizer v) s1)
       (raise (construct-peg-parser-error r v s s1)))))
 
 ;; Coerce something to lseq.  accepts generator.
@@ -313,23 +313,23 @@
 ;; API
 ;;   NB: We can consolidate peg-parse-string and peg-parse-port via
 ;;   x->generator, but should we?
-(define (peg-parse-string parser str :optional (cont #f))
+(define (peg-parse-string parser str :optional (cont #f) :key finalizer)
   (assume-type str <string>)
-  (receive (r rest) (peg-run-parser parser (x->lseq str))
+  (receive (r rest) (peg-run-parser parser (x->lseq str) :finalizer finalizer)
     (if cont
       (cont r rest)
       r)))
 ;; API
-(define (peg-parse-port parser port :optional (cont #f))
+(define (peg-parse-port parser port :optional (cont #f) :key finalizer)
   (assume (input-port? port))
-  (receive (r rest) (peg-run-parser parser (x->lseq port))
+  (receive (r rest) (peg-run-parser parser (x->lseq port) :finalizer finalizer)
     (if cont
       (cont r rest)
       r)))
 
 ;; API
 ;;  Returns a generator
-(define (peg-parser->generator parser src)
+(define (peg-parser->generator parser src :key (finalizer rope-finalize))
   (let1 s (%->lseq src)
     (^[] (if (null? s)
            (eof-object)
@@ -337,12 +337,12 @@
              (cond [(not (parse-success? r))
                     (raise (construct-peg-parser-error r v s s1))]
                    [(eof-object? v) (set! s '()) v]
-                   [else (set! s s1) (rope-finalize v)]))))))
+                   [else (set! s s1) (finalizer v)]))))))
 
 ;; API
 ;;  Returns an lseq
 ;;  Input position info is propagated if available
-(define (peg-parser->lseq parser src)
+(define (peg-parser->lseq parser src :key (finalizer rope-finalize))
   (let1 s (%->lseq src)
     (generator->lseq
      (^[] (if (null? s)
@@ -352,7 +352,7 @@
               (let1 val (cond [(not (parse-success? r))
                                (raise (construct-peg-parser-error r v s s1))]
                               [(eof-object? v) (set! s '()) v]
-                              [else (set! s s1) (rope-finalize v)])
+                              [else (set! s s1) (finalizer v)])
                 (if-let1 pos (lseq-position s)
                   (values val pos)
                   val))))))))

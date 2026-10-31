@@ -1,5 +1,8 @@
 2026-10-30  Shiro Kawai  <shiro@acm.org>
 
+	* ext/peg/peg.scm (peg-run-parser): Allow alternative finalizer
+	  procedure than rope-finalize.
+
 	* lib/rfc/uri.scm (uri-decompose-hierarchical): Avoid regexp overflow
 	  in url parsing.  https://github.com/shirok/Gauche/issues/1345
 
