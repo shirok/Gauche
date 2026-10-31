@@ -147,6 +147,8 @@
     (__inline__ inline)
     (__volatile volatile)
     (__volatile__ volatile)
+    (__signed signed)
+    (__signed__ signed)
     (asm asm)
     (__asm asm)
     (__asm__ asm)

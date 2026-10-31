@@ -36,6 +36,7 @@
 (define-module lang.c.grokker
   (use util.match)
   (use lang.c.parser)
+  (use lang.c.type)
   (export <c-context>
           c-grok-file
           c-grok-string
@@ -46,7 +47,13 @@
 (select-module lang.c.grokker)
 
 (define-class <c-context> ()
-  ((globals :init-form (make-hash-table 'eq?))))
+  ((globals :init-form (make-hash-table 'eq?))
+   ;; Global typedefs the parser has seen; symbol -> c-type.
+   ;; Used to resolve type names in casts and sizeof.
+   (typedefs :init-value #f)
+   ;; Memo table for c-type->native-type, so that the same struct/union/enum
+   ;; is converted to the same native type.
+   (native-types :init-form (make-hash-table 'eq?))))
 
 (define current-c-context (make-parameter (make <c-context>)))
 
@@ -118,7 +125,8 @@
      (let1 parser (c-toplevel-parser :cpp-include-paths cpp-include-paths
                                      :cpp-definitions cpp-definitions)
        (dolist [form (c-parse-file parser file)]
-         (c-grok-parser-output-1 form))))))
+         (c-grok-parser-output-1 form))
+       (set! (~ (current-c-context)'typedefs) (~ parser'typedefs))))))
 
 ;; API
 (define (c-grok-string string :key (cpp-include-paths '())
@@ -128,7 +136,8 @@
      (let1 parser (c-toplevel-parser :cpp-include-paths cpp-include-paths
                                      :cpp-definitions cpp-definitions)
        (dolist [form (c-parse-string parser string)]
-         (c-grok-parser-output-1 form))))))
+         (c-grok-parser-output-1 form))
+       (set! (~ (current-c-context)'typedefs) (~ parser'typedefs))))))
 
 ;; API
 ;;   Look up definition or declaration
@@ -156,6 +165,56 @@
     [#/^([0-9]*\.?[0-9]*(?:[eE][-+]?[0-9]+)?)[fFlL]?$/ (_ ds)
      (string->number ds 10 'inexact)]
     [else #f]))
+
+;;
+;; Type information for evaluation
+;;
+
+;; Convert c-type to native type, using the memo table in CTX.
+;; EVAL-CONST is to evaluate constant expressions in the type, e.g. array
+;; dimensions; see c-type->native-type.
+(define (c-context-native-type ctx type eval-const)
+  (c-type->native-type type eval-const (~ ctx'native-types)))
+
+;; Returns the size of c-type, or #f if we don't know it, or the type
+;; is incomplete.
+(define (c-type-size ctx type eval-const)
+  (match (c-actual-type type)
+    [('.function . _) #f]
+    [('.array _ _ #f) #f]
+    [('void _) #f]
+    [((or '.struct '.union '.enum) _ _ #f) #f] ;incomplete
+    [_ (and-let1 nt (c-context-native-type ctx type eval-const)
+         (~ nt'size))]))
+
+;; Wrap an exact integer V into BYTES-wide integer, as C conversion does.
+(define (wrap-integer v bytes unsigned?)
+  (let* ([bits (* bytes 8)]
+         [m (logand v (- (ash 1 bits) 1))])
+    (if (and (not unsigned?) (logbit? (- bits 1) m))
+      (- m (ash 1 bits))
+      m)))
+
+;; Convert a value V to C TYPE, as cast does.  Returns #f if we can't.
+;; NB: Conversion to float isn't rounded to single precision yet.
+(define (c-convert-value ctx type v eval-const)
+  (define (->integer bytes unsigned?)
+    (cond [(exact-integer? v) (wrap-integer v bytes unsigned?)]
+          [(and (real? v) (finite? v))
+           (wrap-integer (exact (truncate v)) bytes unsigned?)]
+          [else #f]))
+  (define (->native-integer)
+    (and-let1 nt (c-context-native-type ctx type eval-const)
+      (->integer (~ nt'size) (~ nt'unsigned?))))
+  (match (c-actual-type type)
+    [('bool _) (if (zero? v) 0 1)]
+    ;; We treat pointers as unsigned.
+    [('.pointer . _) (and (exact-integer? v) (->integer (~ <void*>'size) #t))]
+    [('.enum . _) (->native-integer)]
+    [(? c-basic-type-integral?) (->native-integer)]
+    [(? c-basic-type-flonum?) (and (real? v) (inexact v))]
+    [((or 'float-complex 'double-complex 'long-double-complex) _) (inexact v)]
+    [_ #f]))
 
 ;; Condition raised when an initializer can't be evaluated.
 ;;   initializer - the whole initializer expression being evaluated
@@ -185,6 +244,39 @@
       (/ (inexact x) (inexact y))))
   (define (cmod x y) (and (not (zero? y)) (remainder x y)))
   (define (cnot x) (if (zero? x) 1 0))
+  (define (cmp op) (^[x y] (if (op x y) 1 0)))
+  (define (cne x y) (if (= x y) 0 1))
+  ;; Type name in cast and sizeof is (<specs> (#f <modifier> ...)).
+  (define (type-name->c-type tn)
+    (match tn
+      [(specs (#f . mods))
+       (guard (e [(<error> e) #f])
+         (grok-c-type `(,@mods ,specs) (~ ctx'typedefs)))]
+      [_ #f]))
+  ;; Static type of an expression, used for sizeof.  We only handle
+  ;; simple cases.
+  (define (type-of expr)
+    (match expr
+      [('ident v) (and-let1 vv (c-get-definition-or-declaration ctx v)
+                    (and (is-a? vv <c-variable>) (~ vv'type)))]
+      [('paren x) (type-of x)]
+      [('cast tn _) (type-name->c-type tn)]
+      [('const 'char _) '(int ())]      ;character constant is int
+      [('const (? symbol? t) _) `(,t ())]
+      [_ #f]))
+  (define (csizeof x)
+    (and-let1 type (if (pair? (car x)) ; type name or expression
+                     (type-name->c-type x)
+                     (type-of x))
+      (c-type-size ctx type ev)))
+  ;; Character constant.  The lexer already decoded escape sequences.
+  ;; Multi-character constants are implementation-defined, so we reject.
+  (define (char-const s wide?)
+    (and (= (string-length s) 1)
+         (let1 code (char->integer (string-ref s 0))
+           (cond [wide? code]
+                 [(< code 256) (wrap-integer code 1 (~ <c-char>'unsigned?))]
+                 [else #f]))))
   ;; && and || short-circuit, so the operands are evaluated in turn.
   (define (cand xs)
     (let loop ([xs xs])
@@ -202,7 +294,12 @@
        (c-integer-literal->number s)]
       [('const (or 'float 'double 'long-double) s)
        (c-floating-literal->number s)]
+      [('const 'char s) (char-const s #f)]
+      [('const 'wchar s) (char-const s #t)]
       [('paren x) (ev x)]
+      [('cast tn x) (and-let1 type (type-name->c-type tn)
+                      (c-convert-value ctx type (ev x) ev))]
+      [('sizeof x) (csizeof x)]
       [('+ a b) (binop + a b)]
       [('- a b) (binop - a b)]
       [('* a b) (binop * a b)]
@@ -219,6 +316,13 @@
       [('logand . xs) (nop (int-op logand) xs)]
       [('logior . xs) (nop (int-op logior) xs)]
       [('logxor . xs) (nop (int-op logxor) xs)]
+      [('== a b) (binop (cmp =) a b)]
+      [('!= a b) (binop cne a b)]
+      [('< a b) (binop (cmp <) a b)]
+      [('> a b) (binop (cmp >) a b)]
+      [('<= a b) (binop (cmp <=) a b)]
+      [('>= a b) (binop (cmp >=) a b)]
+      [('?: c t e) (if (zero? (ev c)) (ev e) (ev t))]
       ;; Returns #f if V is undefined or has no initializer.
       [('ident v) (c-variable-initial-value ctx v)]
       [_ #f]))
