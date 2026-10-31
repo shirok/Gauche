@@ -425,9 +425,22 @@
       (~ e'type)
       '(int ()))))
 
+;; Evaluate the initializer INIT of a variable of TYPE, and convert the
+;; value to TYPE as C does, e.g. 'const int x = 0xffffffffu;' makes x -1.
+;; Raises <c-unevaluatable-initializer> if INIT can't be evaluated, or
+;; the value can't be converted to TYPE (e.g. TYPE is a struct).
+(define (c-eval-variable-initializer ctx type init)
+  (let1 v (c-eval-initializer ctx init)
+    (or (c-convert-value ctx type v (cut c-eval-initializer ctx <>))
+        (error <c-unevaluatable-initializer>
+               :initializer init :expression init
+               "Initializer value can't be converted to the declared type:"
+               v type))))
+
 ;; API
-;;   Lookup the initial value of the named variable.  Returns #f if
-;;   the variable isn't defined or has no initializer.
+;;   Lookup the initial value of the named variable, converted to the
+;;   declared type of the variable.  Returns #f if the variable isn't
+;;   defined or has no initializer.
 ;;   If the initializer can't be evaluated, the behavior depends on
 ;;   ON-FAILURE:
 ;;     :error    - Raises <c-unevaluatable-initializer>.
@@ -435,16 +448,16 @@
 ;;     procedure - Called with the condition, and its result is returned.
 (define-method c-variable-initial-value ((ctx <c-context>) name
                                          :key (on-failure :error))
-  (define (eval-init init)
+  (define (eval-init type init)
     (if (eq? on-failure :error)
-      (c-eval-initializer ctx init)
+      (c-eval-variable-initializer ctx type init)
       (guard (e [(<c-unevaluatable-initializer> e)
                  (and on-failure (on-failure e))])
-        (c-eval-initializer ctx init))))
+        (c-eval-variable-initializer ctx type init))))
   (unless (or (memv on-failure '(:error #f)) (procedure? on-failure))
     (error "on-failure must be :error, #f or a procedure, but got:"
            on-failure))
   (and-let* ([vv (c-get-definition-or-declaration ctx name)]
              [ (is-a? vv <c-variable>) ]
              [init (~ vv'initializer)])
-    (eval-init init)))
+    (eval-init (~ vv'type) init)))
