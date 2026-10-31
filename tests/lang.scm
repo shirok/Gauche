@@ -402,6 +402,17 @@
           "struct a { struct b { int c; } b; }; struct b *y; struct a x;")
   )
 
+;; Some struct sizes and alignments depend on the platform (ILP32, LP64,
+;; LLP64), so we compute the expected values at runtime.
+(define (round-up n a) (* a (quotient (+ n a -1) a)))
+;; sizeof(struct { int v; T *p; })
+(define int+ptr-struct-size
+  (let ([ps (~ <void*>'size)] [pa (~ <void*>'alignment)])
+    (round-up (+ (round-up 4 pa) ps) (max 4 pa))))
+;; sizeof(struct { char a; double b; })
+(define char+double-struct-size
+  (round-up (+ (round-up 1 (~ <double>'alignment)) 8) (~ <double>'alignment)))
+
 ;; tag scoping
 (let ()
   ;; Returns a list of types of declarations of identifier 'x', in order.
@@ -463,7 +474,7 @@
   (test* "tag: qualified type shares identity" #t
          (apply eq?* (map tag-of (xtypes "struct foo *x; const struct foo x; \
                                          struct foo { int a; } volatile x;"))))
-  (test* "tag: write-shared/read roundtrip" '(#t 16)
+  (test* "tag: write-shared/read roundtrip" `(#t ,int+ptr-struct-size)
          (let* ([t (car (xtypes "struct node { int v; struct node *next; } x;"))]
                 [t2 (read-from-string (write-to-string t write-shared))])
            (match t2
@@ -523,17 +534,6 @@
                 #f))
            "struct s { enum e : 3; int x; } v;")
   )
-
-;; Some struct sizes and alignments depend on the platform (ILP32, LP64,
-;; LLP64), so we compute the expected values at runtime.
-(define (round-up n a) (* a (quotient (+ n a -1) a)))
-;; sizeof(struct { int v; T *p; })
-(define int+ptr-struct-size
-  (let ([ps (~ <void*>'size)] [pa (~ <void*>'alignment)])
-    (round-up (+ (round-up 4 pa) ps) (max 4 pa))))
-;; sizeof(struct { char a; double b; })
-(define char+double-struct-size
-  (round-up (+ (round-up 1 (~ <double>'alignment)) 8) (~ <double>'alignment)))
 
 ;; c-type -> native-type
 (let ()
