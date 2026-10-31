@@ -65,12 +65,9 @@
 ;;            | (.pointer (<qual> ...) <c-type>)
 ;;            | (.array <c-type> (<aqual> ...) <size>)
 ;;            | (.function (<fqual> ...>) <c-type> <args>)
-;;            | (.struct <tag> (<qual> ...)
-;;                   ((<field-name> <c-type> [<size>]) ...))
-;;            | (.union <tag> (<qual> ...)
-;;                   ((<field-name> <c-type> [<size>]) ...))
-;;            | (.enum <tag> (<qual> ...)
-;;                   ((<enum-name> <enum-value>) ...))
+;;            | (.struct <tag> (<qual> ...) <fields>)
+;;            | (.union <tag> (<qual> ...) <fields>)
+;;            | (.enum <tag> (<qual> ...) <enumerators>)
 ;;            | (.type <type-name> (<qual> ...) <c-type>)
 ;;
 ;;   <basic-type> : one of the symbols in *c-basic-types*
@@ -92,6 +89,10 @@
 ;;   <rest-arg> : '...
 ;;
 ;;   <tag>    : <symbol> | #f
+;;   <fields> : ((<field-name> <c-type> [<size>]) ...)
+;;            | #f
+;;   <enumerators> : ((<enum-name> <enum-value>) ...)
+;;                 | #f
 ;;   <field-name> : <symbol> | #f
 ;;   <type-name> : symbol
 ;;
@@ -100,6 +101,17 @@
 ;;                | #f
 ;;
 ;;   The (.type ...) form is used for typedef'ed types.
+;;
+;;   Struct, union and enum types have identity.  The parser creates
+;;   one for each tag in a scope (or each anonymous one), and every
+;;   occurrence of the type shares the last pair of the form, which holds
+;;   <fields> or <enumerators>.  That is, two such types are the same iff
+;;   their last pairs are eq?.  Code that rebuilds a type, e.g. to alter
+;;   qualifiers, must keep the last pair (see attach-qualifier).
+;;   <fields> and <enumerators> are #f while the type is incomplete, and
+;;   the parser destructively fills the last pair when it sees the
+;;   definition.  So the c-type can be circular (e.g. self-referencing
+;;   struct).  Use write-shared to save it.
 ;;
 ;;   c-constant-expression is the expression as the parser returns, kept
 ;;   unevaluated.  Evaluating it needs the knowledge of the constants
@@ -121,9 +133,10 @@
 ;;            | 'unknown-args
 ;;   <core-type-spec> : mixed list of zero or more <qual>s, and <core-type>
 ;;   <core-type> : <basic-type>
-;;               | (struct <tag> <member-spec> ...)
-;;               | (union <tag> <member-spec> ...)
-;;               | (enum <tag> <member-id> ...)
+;;               | (struct <tag> <fields>)
+;;               | (union <tag> <fields>)
+;;               | (enum <tag> <enumerators>)
+;;     where the last pair of each form is shared, as described above.
 ;;
 ;;  NB: attribute and asm may appear in both type-modifier and in core quals
 ;;
@@ -210,18 +223,12 @@
         (symbol-append base '-complex)
         base)))
 
-  (define (aggregate-tag tag)
-    (match tag
-      [('ident x) x]
-     [#f #f]))
-
+  ;; NB: We share the last pair of CORE; see the comment at the top.
   (define (aggregate-type quals core)
-    (define (make-agg-type mark tag members)
-      `(,mark ,(aggregate-tag tag) ,(reverse quals) ,members))
     (match core
-      [('struct tag . members) (make-agg-type '.struct tag members)]
-      [('union tag . members)  (make-agg-type '.union tag members)]
-      [('enum tag . members)   (make-agg-type '.enum tag members)]))
+      [('struct tag . cell) `(.struct ,tag ,(reverse quals) . ,cell)]
+      [('union tag . cell)  `(.union ,tag ,(reverse quals) . ,cell)]
+      [('enum tag . cell)   `(.enum ,tag ,(reverse quals) . ,cell)]))
 
   ;; we make quals appear in the order of the original code, just to make
   ;; testing and debugging easier---the caller shouldn't rely on that.
@@ -317,6 +324,7 @@
       [else (bad)])))
 
 ;; Add qualifier to the 'main' type, which would be attached to the variable.
+;; NB: For struct/union/enum, the last pair must be shared.
 (define (attach-qualifier c-type qual)
   (define (merge-quals new-qs qs)
     (if (null? new-qs)
@@ -329,9 +337,9 @@
     [('.pointer qs inner) `(.pointer ,(merge-quals qual qs) ,inner)]
     [('.array inner . rest) `(.array ,(attach-qualifier inner qual) ,@rest)]
     [('.function qs . rest) `(.function ,(merge-quals qual qs) ,@rest)]
-    [('.struct tag qs . rest) `(.struct ,tag ,(merge-quals qual qs) ,@rest)]
-    [('.union tag qs . rest) `(.union ,tag ,(merge-quals qual qs) ,@rest)]
-    [('.enum tag qs . rest) `(.enum ,tag ,(merge-quals qual qs) ,@rest)]
+    [('.struct tag qs . cell) `(.struct ,tag ,(merge-quals qual qs) . ,cell)]
+    [('.union tag qs . cell) `(.union ,tag ,(merge-quals qual qs) . ,cell)]
+    [('.enum tag qs . cell) `(.enum ,tag ,(merge-quals qual qs) . ,cell)]
     [('.type name qs inner) `(.type ,name ,(merge-quals qual qs) ,inner)]
     [(btype qs) `(,btype ,(merge-quals qual qs))]))
 
@@ -418,8 +426,10 @@
 ;;
 ;;   Qualifiers are ignored.  Bit fields and anonymous members of
 ;;   struct/union aren't supported yet.  Incomplete struct/union can only
-;;   be a pointee, and represented as an opaque pointer.
+;;   be a pointee, and represented as an opaque pointer.  So is a pointer
+;;   to a struct/union being converted (e.g. self-referencing struct).
 (define (c-type->native-type c-type :optional (eval-const (^_ #f)))
+  (define converting '())           ;last pairs of struct/union being converted
   (define (const-int expr)
     (let1 v (eval-const expr)
       (and (exact-integer? v) v)))
@@ -427,17 +437,23 @@
     (match f
       [((? symbol? name) type) (and-let1 t (conv type) (list name t))]
       [_ #f]))                          ;anonymous or bit field
-  (define (aggregate make tag fields)
-    (and (pair? fields)                 ;incomplete type
-         (let1 fs (map field fields)
-           (and (every values fs) (make tag fs)))))
+  (define (aggregate make tag cell)
+    (and-let1 fields (car cell)         ;#f if incomplete
+      (let1 saved converting
+        (push! converting cell)
+        (let1 fs (map field fields)
+          (set! converting saved)
+          (and (every values fs) (make tag fs))))))
   (define (pointer pointee)
     (match (c-actual-type pointee)
       [('void _) <void*>]
-      [((and (or '.struct '.union) kind) tag _ ())
-       (make-c-opaque-pointer-type
-        (string->symbol (format "~a ~a" (if (eq? kind '.struct) 'struct 'union)
-                                (or tag 'anonymous))))]
+      [((and (or '.struct '.union) kind) tag _ . cell)
+       (if (or (not (car cell)) (memq cell converting))
+         (make-c-opaque-pointer-type
+          (string->symbol (format "~a ~a"
+                                  (if (eq? kind '.struct) 'struct 'union)
+                                  (or tag 'anonymous))))
+         (and-let1 t (conv pointee) (make-c-pointer-type t)))]
       [_ (and-let1 t (conv pointee) (make-c-pointer-type t))]))
   ;; int x[3][2] is (.array (.array int 2) 3); we flatten it to
   ;; an array of int with dimensions (3 2).  Only the first dimension
@@ -463,22 +479,22 @@
                [ (every values as) ])
       (make-c-function-type r as)))
   (define (enum tag members)
-    (if (null? members)
-      ;; Incomplete enum.  We use the provisional base type.
-      (make-c-enum-type tag (default-c-enum-base-type) '())
+    (if members
       (let1 es (map (^m (match m
                           [(name #f) name]
                           [(name expr) (and-let1 v (const-int expr)
                                          (list name v))]))
                     members)
-        (and (every values es) (make-c-enum-type tag #f es)))))
+        (and (every values es) (make-c-enum-type tag #f es)))
+      ;; Incomplete enum.  We use the provisional base type.
+      (make-c-enum-type tag (default-c-enum-base-type) '())))
   (define (conv type)
     (match (c-actual-type type)
       [('.pointer _ pointee) (pointer pointee)]
       [('.array . _) (array type)]
       [('.function _ ret args) (function ret args)]
-      [('.struct tag _ fields) (aggregate make-c-struct-type tag fields)]
-      [('.union tag _ fields) (aggregate make-c-union-type tag fields)]
+      [('.struct tag _ . cell) (aggregate make-c-struct-type tag cell)]
+      [('.union tag _ . cell) (aggregate make-c-union-type tag cell)]
       [('.enum tag _ members) (enum tag members)]
       [('char _) <c-char>]
       [('s-char _) <int8>]

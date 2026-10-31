@@ -87,6 +87,11 @@
    ;;    to track previously declared type names. This holds global typedef
    ;;    names; local ones are kept in a stacked map held in a parameter.
 
+   (tags :init-form (make-hash-table eq-comparator))
+   ;;  tags : symbol -> (<kind> <tag> <members>)
+   ;;    Global struct/union/enum tags.  Like typedefs, local ones are kept
+   ;;    in a stacked map held in a parameter.
+
    (hooks :init-form (make-hash-table eq-comparator))
    ))
 
@@ -97,12 +102,19 @@
 ;; separate parameter.
 (define typedef-names (make-parameter #f))
 
+;; Internal.  Struct/union/enum tags, symbol -> (<kind> <tag> <members>).
+;; The value is a stacked map whose top map is the innermost scope.
+(define tag-names (make-parameter #f))
+
 (define-syntax $with-scope
   (syntax-rules ()
     [(_ parser)
      ($parameterize ((typedef-names (make-stacked-map
                                      (make-hash-table eq-comparator)
-                                     (typedef-names))))
+                                     (typedef-names)))
+                     (tag-names (stacked-map-stack
+                                 (tag-names)
+                                 (make-hash-table eq-comparator))))
                     parser)]))
 
 (define ($with-hook name parser)
@@ -460,24 +472,73 @@
 (define %struct-members
   ($between %LC ($end-by %struct-declaration ($. '|\;|)) %RC))
 
+;; Struct/union/enum tags follow the block scope, maintained in
+;; tag-names parameter.
+;; 'kind' is a symbol one of struct, union, or enum.a
+
+;; Reference, e.g. 'struct foo *p'.  Searches enclosing scopes, and
+;; if not found, declares an incomplete type in the innermost scope.
+(define (tag-ref! kind name)
+  (if-let1 spec (dict-get (tag-names) name #f)
+    (check-tag-kind spec kind)
+    (tag-declare! kind name)))
+
+;; Declaration, e.g. 'struct foo;'.  Returns the type in the innermost
+;; scope, or declares a new incomplete type that shadows outer ones.
+(define (tag-declare! kind name)
+  (if-let1 spec (stacked-map-top-get (tag-names) name #f)
+    (check-tag-kind spec kind)
+    (rlet1 spec (list kind name #f)
+      (dict-put! (tag-names) name spec))))
+
+;; Definition, e.g. 'struct foo { ... }'.  Called before parsing the
+;; members, since they can refer to the type being defined.  Returns
+;; an incomplete type, to be completed by the caller.
+(define (tag-define! kind name)
+  (if name
+    (rlet1 spec (tag-declare! kind name)
+      (when (caddr spec)
+        (errorf "redefinition of '~a ~a'" kind name)))
+    (list kind #f #f)))
+
+(define (check-tag-kind spec kind)
+  (unless (eq? (car spec) kind)
+    (errorf "'~a' defined as wrong kind of tag (~a)" (cadr spec) kind))
+  spec)
+
+;; Returns a parser that calls THUNK, and returns its value as the
+;; semantic value.  An error raised by THUNK becomes a parse error.
+(define ($tag-action thunk)
+  (guard (e [(error? e) ($raise (condition-message e))])
+    ($return (thunk))))
+
+;; Common part of struct/union/enum specifier.
+;; MEMBERS is a parser of the members, and GROK-MEMBERS takes its result
+;; to make <members>.  Returns (<kind> <tag> <members>).
+(define ($tagged-type-specifier kind members grok-members)
+  ($let* ([name ($optional ($lift cadr %identifier))]
+          [def? ($optional ($assert %LC))]
+          [spec (cond [def? ($tag-action (cut tag-define! kind name))]
+                      [name ($tag-action (cut tag-ref! kind name))]
+                      [else ($fail #"~kind tag or members")])]
+          [mems (if def? members ($return #f))])
+    (if def?
+      ($tag-action (^[] (set-car! (cddr spec) (grok-members mems)) spec))
+      ($return spec))))
+
+;; mems := ((quals&spec decl ...) ...)
+(define (grok-struct-members mems)
+  (append-map (^m (map (cut grok-member-declaration (car m) <>) (cdr m)))
+              mems))
+
 (define %struct-or-union-specifier
   ($ $with-hook 'struct-or-union-specifier
-     ($binding ($: key ($one-of '(struct union)))
-               ($or ($seq ($: tag %identifier)
-                          ($optional ($: mem %struct-members)))
-                    ($: mem %struct-members))
-               (=> fail)
-               ;; need to catch error from grok-c-type
-               (guard (e [else (fail 'error (~ e'message))])
-                 ;; mem := (quals&spec decl ...)
-                 (let* ([tdict (typedef-names)]
-                        [member-decls
-                         (append-map
-                          (^m (map (cut grok-member-declaration (car m) <>)
-                                   (cdr m)))
-                          (if (undefined? mem) '() mem))])
-                   `(,key ,(if (undefined? tag) #f tag)
-                          ,@member-decls))))))
+     ($or ($seq ($. 'struct)
+                ($tagged-type-specifier 'struct %struct-members
+                                        grok-struct-members))
+          ($seq ($. 'union)
+                ($tagged-type-specifier 'union %struct-members
+                                        grok-struct-members)))))
 
 (define (grok-member-declaration specs decl)
   (match decl
@@ -501,12 +562,8 @@
 ;; returns (enum <tag> ((<symbol> <init-expr>) ...))
 (define %enum-specifier
   ($ $with-hook 'enum-specifier
-     ($binding ($. 'enum)
-               ($or ($seq ($: tag %identifier)
-                          ($optional ($: lis %enumerators)))
-                    ($: lis %enumerators))
-               `(enum ,(if (undefined? tag) #f tag)
-                      ,@(if (undefined? lis) '() lis)))))
+     ($seq ($. 'enum)
+           ($tagged-type-specifier 'enum %enumerators identity))))
 
 ;; 6.7.4 Function specifiers
 (define %function-specifier ($. 'inline))
@@ -615,6 +672,8 @@
               ;; need to catch error from grok-c-type
               (guard (e [else (fail 'error (~ e'message))])
                 (let ([decls (map (cut grok-declaration specs <>) declarators)])
+                  (when (null? declarators)
+                    (redeclare-tags! specs))
                   (when (memq 'typedef specs)
                     (map (^d (register-typedefs! specs d)) decls))
                   `(decls ,@decls))))))
@@ -633,6 +692,16 @@
     [((and ('decls . _) dcls) . xs)
      (append (expand-decls dcls) (splice-decls xs))]
     [(x . xs) (cons x (splice-decls xs))]))
+
+;; 'struct foo;' declares a new incomplete type in the current scope,
+;; even if 'foo' is visible from outer scope.  At the time we parse the
+;; specifier we don't know if declarators follow, so we fix it up here.
+(define (redeclare-tags! specs)
+  (dolist [spec specs]
+    (match spec
+      [((and (or 'struct 'union) kind) (? symbol? name) _)
+       (tag-declare! kind name)]
+      [_ #f])))
 
 (define (register-typedefs! specs decl)
   (match decl
@@ -902,14 +971,20 @@
   (file-check file)
   (let ([peg (~ c-parser'peg-parser)]
         [memoizer (make-peg-memoizer
-                   :keyed-parameters `(,typedef-names))])
+                   :keyed-parameters `(,typedef-names ,tag-names))])
     (parameterize ([current-c-parser c-parser]
                    [typedef-names (~ c-parser'typedefs)]
+                   [tag-names (make-stacked-map (~ c-parser'tags))]
                    [current-peg-memoizer memoizer])
+      ;; We don't need rope-finalize, for the lexer finalizes ropes.
+      ;; Furthermore, rope-finalize can't handle circular structure
+      ;; (e.g. self-referencing struct) in the result.
       (if (~ c-parser'use-concurrent-lexer)
         ($ peg-run-parser peg
-           (coroutine->cseq (c-tokenize-file-coroutine c-parser file)))
-        ($ peg-run-parser peg (c-tokenize-file c-parser file))))))
+           (coroutine->cseq (c-tokenize-file-coroutine c-parser file))
+           :finalizer identity)
+        ($ peg-run-parser peg (c-tokenize-file c-parser file)
+           :finalizer identity)))))
 
 ;; We create a temp file so that we can call cpp on it.
 (define (%operate-on-string string proc)

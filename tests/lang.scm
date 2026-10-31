@@ -251,11 +251,22 @@
 
 ;; grokking type
 (let ()
+  ;; A type can be circular through struct members.  To compare, we
+  ;; omit members of a struct/union that's already being expanded.
+  (define (expand type)
+    (let loop ([x type] [seen '()])
+      (match x
+        [((and (or '.struct '.union '.enum) k) tag qs . cell)
+         (if (memq cell seen)
+           `(,k ,tag ,qs)
+           `(,k ,tag ,qs ,(loop (car cell) (cons cell seen))))]
+        [(a . d) (cons (loop a seen) (loop d seen))]
+        [_ x])))
   (define (t-type expect code)
     (test* code expect
            (let loop ((decls (c-parse-string (c-toplevel-parser) code)))
              (match decls
-               [(('decl 'x _ type _) . _) type]
+               [(('decl 'x _ type _) . _) (expand type)]
                [(_ . r) (loop r)]))))
 
   (t-type '(int ()) "int x;")
@@ -370,8 +381,95 @@
                          (B (+ (ident A) (const int "1")))))
           "enum { A = 0x10, B = A + 1 } x;")
   (t-type '(.array (int ()) () (const int "010")) "int x[010];")
-  (t-type '(.type T () (.enum e () ()))
+  (t-type '(.type T () (.enum e () #f))
           "typedef enum e T; T x;")
+
+  ;; tags
+  (t-type '(.struct foo () #f) "struct foo x;")
+  (t-type '(.pointer () (.struct foo () ((a (int ())))))
+          "struct foo *x; struct foo { int a; };")
+  (t-type '(.struct node () ((v (int ()))
+                             (next (.pointer () (.struct node ())))))
+          "struct node { int v; struct node *next; } x;")
+  (t-type '(.struct foo () ((a (int ()))))
+          "struct foo { int a; }; struct foo x;")
+  (t-type '(.union u () ((a (int ()))))
+          "union u { int a; }; union u x;")
+  (t-type '(.enum e () ((A #f))) "enum e { A }; enum e x;")
+  (t-type '(.struct a () ((b (.struct b () ((c (int ())))))))
+          "struct a { struct b { int c; } b; }; struct b *y; struct a x;")
+  )
+
+;; tag scoping
+(let ()
+  ;; Returns a list of types of declarations of identifier 'x', in order.
+  (define (xtypes code)
+    (let loop ([forms (c-parse-string (c-toplevel-parser) code)])
+      (append-map (^f (match f
+                        [('decl 'x _ type _) (list type)]
+                        [('def _ _ _ ('begin . body)) (loop body)]
+                        [('begin . body) (loop body)]
+                        [_ '()]))
+                  forms)))
+  (define (eq?* x . ys) (every (cut eq? x <>) ys))
+  ;; Returns the last pair of struct/union/enum, which is its identity.
+  (define (tag-of type)
+    (match type
+      [((or '.struct '.union '.enum) _ _ . cell) cell]
+      [('.pointer _ t) (tag-of t)]))
+
+  (test* "tag: same tag, same type" #t
+         (apply eq? (map tag-of (xtypes "struct foo *x; struct foo { int a; } x;"))))
+  (test* "tag: anonymous structs differ" #f
+         (apply eq? (map tag-of (xtypes "struct { int a; } x; struct { int a; } x;"))))
+  (test* "tag: shared by declarators" #t
+         (match (c-parse-string (c-toplevel-parser) "struct { int a; } x, y;")
+           [(('decl _ _ t1 _) ('decl _ _ t2 _)) (eq? (tag-of t1) (tag-of t2))]))
+  (test* "tag: inner scope refers outer" #t
+         (apply eq? (map tag-of (xtypes "struct foo { int a; } x; \
+                                         void f(void) { struct foo x; }"))))
+  (test* "tag: inner definition shadows" '(#f (a) (b) (a))
+         (let1 ts (xtypes "struct foo { int a; } x; \
+                           void f(void) { struct foo x; \
+                                          { struct foo { int b; } x; } \
+                                          struct foo x; }")
+           (cons (eq? (tag-of (car ts)) (tag-of (caddr ts)))
+                 (map (^t (map car (car (tag-of t)))) (cdr ts)))))
+  (test* "tag: struct foo; declares new one" '(#f #f #t)
+         (match-let1 (t0 t1 t2)
+             (xtypes "struct foo { int a; } x; \
+                      void f(void) { struct foo; struct foo *x; \
+                                     struct foo { int b; }; struct foo x; }")
+           (list (eq? (tag-of t0) (tag-of t1))
+                 (eq? (tag-of t0) (tag-of t2))
+                 (eq? (tag-of t1) (tag-of t2)))))
+  (test* "tag: inner reference to undeclared tag is local" #f
+         (match-let1 (t0 t1)
+             (xtypes "void f(void) { struct foo *x; } struct foo x;")
+           (eq? (tag-of t0) (tag-of t1))))
+  (test* "tag: redefinition" #f
+         (guard (e [else #f])
+           (c-parse-string (c-toplevel-parser)
+                           "struct foo { int a; }; struct foo { int a; };")))
+  (test* "tag: wrong kind" #f
+         (guard (e [else #f])
+           (c-parse-string (c-toplevel-parser)
+                           "struct foo { int a; }; union foo x;")))
+  (test* "tag: different kind in inner scope" '.union
+         (car (cadr (xtypes "struct foo { int a; } x; \
+                             void f(void) { union foo { int b; } x; }"))))
+  (test* "tag: qualified type shares identity" #t
+         (apply eq?* (map tag-of (xtypes "struct foo *x; const struct foo x; \
+                                         struct foo { int a; } volatile x;"))))
+  (test* "tag: write-shared/read roundtrip" '(#t 16)
+         (let* ([t (car (xtypes "struct node { int v; struct node *next; } x;"))]
+                [t2 (read-from-string (write-to-string t write-shared))])
+           (match t2
+             [('.struct 'node () . cell)
+              (match (car cell)
+                [(_ (_ ('.pointer _ ('.struct _ _ . cell2))))
+                 (list (eq? cell cell2)
+                       (~ (c-type->native-type t2) 'size))])])))
   )
 
 ;; c-type -> native-type
@@ -437,6 +535,10 @@
          (field-offsets (nt "struct s { char a; int b; double c[2]; } x;")))
   (t-shape '(<c-union-type> 8 8) "union u { char a; int b; double c; } x;")
   (t-prim #f "struct foo x;")             ;incomplete
+  (t-shape '(<c-struct-type> 16 8)
+           "struct node { int v; struct node *next; } x;")
+  (t-shape '(<c-struct-type> 4 4)
+           "struct foo *y; struct foo { int a; }; struct foo x;")
   (t-prim #f "struct s { int a : 3; } x;") ;bit field
   (t-shape `(<c-struct-type> ,(~ <longdouble>'size) ,(~ <longdouble>'alignment))
            "struct s { long double a; } x;")
