@@ -556,8 +556,20 @@
 
 ;; mems := ((quals&spec decl ...) ...)
 (define (grok-struct-members mems)
-  (append-map (^m (map (cut grok-member-declaration (car m) <>) (cdr m)))
+  (append-map (^m (if (null? (cdr m))
+                    (grok-anonymous-member (car m))
+                    (map (cut grok-member-declaration (car m) <>) (cdr m))))
               mems))
+
+;; A member declaration without declarators.  If it is a struct/union,
+;; it's an anonymous member (C11), and we return ((#f type)).  Otherwise
+;; it has no effect on the layout, so we return ().
+;; NB: An enum defined here declares enumerators, but we drop it for now.
+(define (grok-anonymous-member specs)
+  (if (any (^s (match s [((or 'struct 'union) . _) #t] [_ #f])) specs)
+    (match-let1 (id storage type init) (grok-declaration specs '((#f)))
+      `((#f ,type)))
+    '()))
 
 (define %struct-or-union-specifier
   ($ $with-hook 'struct-or-union-specifier
@@ -705,12 +717,28 @@
               (=> fail)
               ;; need to catch error from grok-c-type
               (guard (e [else (fail 'error (~ e'message))])
-                (let ([decls (map (cut grok-declaration specs <>) declarators)])
-                  (when (null? declarators)
-                    (redeclare-tags! specs))
-                  (when (memq 'typedef specs)
-                    (map (^d (register-typedefs! specs d)) decls))
-                  `(decls ,@decls))))))
+                (if (null? declarators)
+                  (tag-only-declaration specs)
+                  (let ([decls (map (cut grok-declaration specs <>) declarators)])
+                    (when (memq 'typedef specs)
+                      (map (^d (register-typedefs! specs d)) decls))
+                    `(decls ,@decls)))))))
+
+;; A declaration without declarators, e.g. 'struct foo { ... };' or
+;; 'enum { A, B };'.  It is meaningful only if it declares tags or
+;; enumerators, in which case we return (decls (#f sc type #f)), so that
+;; the user of the parse result can see the type.  Otherwise returns
+;; (decls).
+(define (tag-only-declaration specs)
+  (let1 specs (redeclare-tags! specs)
+    (if (any tagged-type-spec? specs)
+      `(decls ,(grok-declaration specs '((#f))))
+      '(decls))))
+
+(define (tagged-type-spec? spec)
+  (match spec
+    [((or 'struct 'union 'enum) (or (? symbol?) #f) . _) #t]
+    [_ #f]))
 
 ;; (decls (id sc ty init) ...) -> ((decl id sc ty init) ...)
 ;; Each decl inherits source-info of decls.
@@ -730,12 +758,14 @@
 ;; 'struct foo;' declares a new incomplete type in the current scope,
 ;; even if 'foo' is visible from outer scope.  At the time we parse the
 ;; specifier we don't know if declarators follow, so we fix it up here.
+;; Returns specs with such tags replaced by the ones in the current scope.
 (define (redeclare-tags! specs)
-  (dolist [spec specs]
-    (match spec
-      [((and (or 'struct 'union) kind) (? symbol? name) _)
-       (tag-declare! kind name)]
-      [_ #f])))
+  (map (^[spec]
+         (match spec
+           [((and (or 'struct 'union) kind) (? symbol? name) _)
+            (tag-declare! kind name)]
+           [_ spec]))
+       specs))
 
 (define (register-typedefs! specs decl)
   (match decl

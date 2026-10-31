@@ -53,7 +53,10 @@
    (typedefs :init-value #f)
    ;; Memo table for c-type->native-type, so that the same struct/union/enum
    ;; is converted to the same native type.
-   (native-types :init-form (make-hash-table 'eq?))))
+   (native-types :init-form (make-hash-table 'eq?))
+   ;; Struct/union/enum types whose enumerators are already registered,
+   ;; keyed by the last pair of the c-type.  See register-enumerators!.
+   (scanned-tags :init-form (make-hash-table 'eq?))))
 
 (define current-c-context (make-parameter (make <c-context>)))
 
@@ -101,6 +104,46 @@
                  :storage-class storage-class :body body)
     (register-global! (current-c-context) e)))
 
+;; An enumerator constant.  The type slot holds the enum type,
+;; (.enum <tag> <quals> <enumerators> <base-type>), and INDEX is the
+;; position of this one in <enumerators>; the value may depend on the
+;; preceding ones.  Note that the type of the enumerator itself isn't
+;; always the enum type; see enumerator-type.
+(define-class <c-enumerator> (<c-global>)
+  ((index :init-keyword :index)))
+
+;; Enumerators are declared wherever the enum type is defined, e.g. in
+;; a typedef or in a member of a struct.  We scan the type of each
+;; toplevel declaration and register the enumerators of enum types
+;; defined in it.  A type can be shared or circular, so we remember
+;; the ones already scanned.
+;; NB: Enum types defined in parameter lists aren't scanned, since they're
+;; not in the file scope.
+(define (register-enumerators! ctx type si)
+  (define scanned (~ ctx'scanned-tags))
+  (define (scan-once cell proc)
+    (when (and (car cell) (not (hash-table-exists? scanned cell)))
+      (hash-table-put! scanned cell #t)
+      (proc (car cell))))
+  (let walk ([type type])
+    (match type
+      [('.enum _ _ . cell)
+       (scan-once cell
+                  (^[members]
+                    (for-each
+                     (^[i m]
+                       ($ register-global! ctx
+                          $ make <c-enumerator> :name (car m) :type type
+                          :storage-class #f :source-info si :index i))
+                     (iota (length members)) members)))]
+      [((or '.struct '.union) _ _ . cell)
+       (scan-once cell (^[fields] (for-each (^f (walk (cadr f))) fields)))]
+      [('.pointer _ t) (walk t)]
+      [('.array t . _) (walk t)]
+      [('.function _ ret _) (walk ret)]
+      [('.type _ _ t) (walk t)]
+      [_ #f])))
+
 (define (format-source-info si)
   (match si
     [(file line) (format "~s:~d:" file line)]
@@ -110,8 +153,13 @@
   (let1 si (c-source-info-of form)
     (match form
       [('decl identifier storage-class type init)
-       (add-variable identifier type storage-class init si)]
+       (register-enumerators! (current-c-context) type si)
+       ;; identifier is #f for a declaration only for tags,
+       ;; e.g. 'enum { A, B };'
+       (when identifier
+         (add-variable identifier type storage-class init si))]
       [('def identifier storage-class type body)
+       (register-enumerators! (current-c-context) type si)
        (add-function identifier type storage-class body si)]
       [_ (error "[internal] Unknown parser output:" form)])))
 
@@ -260,7 +308,9 @@
   (define (type-of expr)
     (match expr
       [('ident v) (and-let1 vv (c-get-definition-or-declaration ctx v)
-                    (and (is-a? vv <c-variable>) (~ vv'type)))]
+                    (cond [(is-a? vv <c-variable>) (~ vv'type)]
+                          [(is-a? vv <c-enumerator>) (enumerator-type ctx vv)]
+                          [else #f]))]
       [('paren x) (type-of x)]
       [('cast tn _) (type-name->c-type tn)]
       [('const 'char _) '(int ())]      ;character constant is int
@@ -326,7 +376,7 @@
       [('>= a b) (binop (cmp >=) a b)]
       [('?: c t e) (if (zero? (ev c)) (ev e) (ev t))]
       ;; Returns #f if V is undefined or has no initializer.
-      [('ident v) (c-variable-initial-value ctx v)]
+      [('ident v) (identifier-value ctx v)]
       [_ #f]))
   (define (ev expr)
     (or (ev1 expr)
@@ -335,6 +385,45 @@
                "Unevaluatable initializer:" expr)))
 
   (ev initializer))
+
+;; Value of an identifier in a constant expression.  It's either an
+;; enumerator or a variable with initializer.  Returns #f if NAME isn't
+;; defined, or has no initializer.
+(define (identifier-value ctx name)
+  (let1 g (c-get-definition-or-declaration ctx name)
+    (if (is-a? g <c-enumerator>)
+      (enumerator-value ctx g)
+      (c-variable-initial-value ctx name))))
+
+;; An enumerator without explicit value is the preceding one plus 1;
+;; the first one is 0.
+(define (enumerator-value ctx e)
+  (last (enumerator-values ctx (~ e'type) (+ (~ e'index) 1))))
+
+;; Returns the list of values of the first COUNT enumerators of ENUM-TYPE,
+;; or all of them if COUNT is #f.  We shouldn't evaluate the ones after
+;; what we need, since they may refer to it.
+(define (enumerator-values ctx enum-type :optional (count #f))
+  (match-let1 ('.enum _ _ members _) enum-type
+    (let loop ([members (if count (take members count) members)]
+               [prev -1]
+               [r '()])
+      (match members
+        [() (reverse r)]
+        [((_ expr) . rest)
+         (let1 v (if expr (c-eval-initializer ctx expr) (+ prev 1))
+           (loop rest v (cons v r)))]))))
+
+;; The type of an enumerator, as GCC does (and C23 specifies): if the
+;; enum has the fixed underlying type, it's the enum type.  Otherwise,
+;; it's int if all the values of the enum fit in int, or the enum type.
+(define (enumerator-type ctx e)
+  (match-let1 ('.enum _ _ _ base) (~ e'type)
+    (if (or base
+            (not (every (^v (= v (wrap-integer v (~ <int>'size) #f)))
+                        (enumerator-values ctx (~ e'type)))))
+      (~ e'type)
+      '(int ()))))
 
 ;; API
 ;;   Lookup the initial value of the named variable.  Returns #f if

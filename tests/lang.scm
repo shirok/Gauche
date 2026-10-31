@@ -474,6 +474,29 @@
                        (~ (c-type->native-type t2) 'size))])])))
   )
 
+;; declarations without declarators, and anonymous members
+(let ()
+  (define (t-decls expect code)
+    (test* code expect
+           (map (^f (match f
+                      [('decl id sc type init) (list id sc type init)]))
+                (c-parse-string (c-toplevel-parser) code))))
+  (t-decls '((#f #f (.struct foo () ((a (int ())))) #f))
+           "struct foo { int a; };")
+  (t-decls '((#f #f (.enum #f () ((A #f) (B (const int "5"))) #f) #f))
+           "enum { A, B = 5 };")
+  (t-decls '((#f #f (.struct foo () #f) #f)) "struct foo;")
+  (t-decls '() "int;")
+  (t-decls '((x #f (.struct s () ((a (int ()))
+                                  (#f (.union #f () ((b (int ()))
+                                                     (c (float ())))))))
+                #f))
+           "struct s { int a; union { int b; float c; }; } x;")
+  ;; enum without declarator in struct doesn't make a member
+  (t-decls '((x #f (.struct s () ((a (int ())))) #f))
+           "struct s { enum { P, Q }; int a; } x;")
+  )
+
 ;; C23 enum with fixed underlying type
 (let ()
   (define (t-decls expect code)
@@ -486,8 +509,10 @@
   (t-decls '((L typedef (long ()) #f)
              (x #f (.enum e () ((A #f)) (.type L () (long ()))) #f))
            "typedef long L; enum e : L { A } x;")
-  ;; The base type given by the forward declaration
-  (t-decls '((x #f (.enum e () ((A #f)) (long ())) #f))
+  ;; The base type given by the forward declaration.
+  ;; NB: The forward declaration shares the type, which is completed later.
+  (t-decls '((#f #f (.enum e () ((A #f)) (long ())) #f)
+             (x #f (.enum e () ((A #f)) (long ())) #f))
            "enum e : long; enum e { A } x;")
   (test* "enum e : long; enum e : int { A };" (test-error)
          (c-parse-string (c-toplevel-parser)
@@ -847,6 +872,43 @@
            (((dir) << 30) | ((type) << 8) | (nr) | ((size) << 16))
          #define _IOR(type,nr,size) _IOC(2U,(type),(nr),(sizeof(size)))"
         "_IOR('E', 0x01, int)"))
+  ;; enumerators
+  (let ()
+    (define (t-enum expected code)
+      (test* #"enumerator: ~code" expected
+             (let1 ctx (c-grok-string #"~code\nconst long x = X;")
+               (c-variable-initial-value ctx 'x))))
+    (define (t-enum-size expected code)
+      (test* #"enumerator: ~code" expected
+             (let1 ctx (c-grok-string #"~code\nconst long x = sizeof(X);")
+               (c-variable-initial-value ctx 'x))))
+    (t-enum 0 "enum { X };")
+    (t-enum 6 "enum { A, B = 5, X };")
+    (t-enum 5 "enum { A = 1 << 2, X };")
+    (t-enum 6 "enum { A = 2, X = A * 3 };")
+    (t-enum 3 "enum { A = 2 }; enum { X = A + 1 };")
+    (t-enum -1 "enum e { X = -1 } v;")
+    (t-enum 4 "typedef enum { W = 3, X } t;")
+    (t-enum 7 "struct s { enum { X = 7 } k; };")
+    (t-enum 8 "struct s { struct t { enum { X = 8 } k; } m; } v;")
+    (t-enum 30 "enum { _SC_X = 30 };\n#define X _SC_X")
+    ;; glibc idiom
+    (t-enum 30 "enum { X = 30 };\n#define X X")
+    (t-enum 4 "enum { X = sizeof(int) };")
+    (t-enum 1 "enum e { X = 1 }; enum e v; enum e w;")
+    (t-enum 1 "enum e : unsigned char { X = 1 };")
+    ;; The type of enumerator is int, unless the enum has a fixed underlying
+    ;; type, or some enumerator values don't fit in int.
+    (t-enum-size 4 "enum { X = 0x100 };")
+    (t-enum-size 1 "enum e : unsigned char { X = 1 };")
+    (t-enum-size 8 "enum e : long long { X = 1 };")
+    (t-enum-size 8 "enum e : long long; enum e { X = 1 };")
+    (t-enum-size 8 "enum { A = 0x100000000, X = 1 };")
+    (t-enum-size 4 "enum { A = 0x7fffffff, X = -0x7fffffff - 1 };")
+    (test* "enumerator: unevaluatable" (test-error <c-unevaluatable-initializer>)
+           (let1 ctx (c-grok-string "enum { A = undefined_id };\nconst long x = A;")
+             (c-variable-initial-value ctx 'x)))
+    )
   ;; C23 enum with fixed underlying type
   (test* "initial value: sizeof(enum e) with fixed type" 1
          (let1 ctx (c-grok-string "enum e : unsigned char { X = 1 };\n\
