@@ -46,7 +46,9 @@
   (test* "delay exception handling" '(foo #t)
          (begin
            (guard (e [else #f]) (force z))
-           (guard (e [(eq? e 'foo) (list e sentinel)]) (force z)))))
+           (guard (e [(<uncaught-exception> e)
+                      (list (uncaught-exception-condition-reason e) sentinel)])
+             (force z)))))
 
 
 ;; srfi.45 test suite

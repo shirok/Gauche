@@ -1,3 +1,10 @@
+2026-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/lazy.c (Scm_VMForce): If evaluation raises exception, wrap
+	  it with <uncaught-exception> (srfi-226).
+	* src/libexc.scm: Make thread exception family visible in Gauche,
+	  because their usage got widened.
+
 2026-10-30  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm (peg-run-parser): Allow alternative finalizer

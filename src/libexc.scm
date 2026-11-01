@@ -246,7 +246,9 @@
 
 ;; TODO - set metaclass of those exceptions to <condition-meta>
 
-(select-module gauche.threads)
+;; <uncaught-exception> can be thrown from force (SRFI-226), so we
+;; make those exceptions visible from Gauche.
+(select-module gauche)
 (inline-stub
  (define-cfn thread_exception_allocate (klass::ScmClass* _) :static
    (return (Scm_MakeThreadException klass NULL)))
