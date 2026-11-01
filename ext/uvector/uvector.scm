@@ -62,6 +62,7 @@
           s8vector->string u8vector->string
           s32vector->string u32vector->string
 
+          subuvector/shared
           uvector-alias uvector-segment/shared
           uvector-binary-search uvector-class-element-size
           uvector-copy uvector-copy! uvector-ref uvector-set! uvector-size
@@ -128,21 +129,31 @@
 
 ;; byte swapping
 (inline-stub
- (define-cise-stmt swap-bytes-common
-   [(_ c-fn v type)
+ ;; Binds C variable 'opt' according to TYPE and executes BODY.
+ (define-cise-stmt with-swap-bytes-option
+   [(_ type . body)
     `(let* ([opt::int SWAPB_STD])
        (cond [(== ,type NULL)]
              [(SCM_EQ (SCM_OBJ ,type) 'le:arm-le) (= opt SWAPB_ARM_LE)]
              [(SCM_EQ (SCM_OBJ ,type) 'be:arm-le) (= opt SWAPB_ARM_BE)]
              [else (Scm_TypeError "type" "#f or a symbol le:arm-le or be:arm-le"
                                   (SCM_OBJ ,type))])
-       (,c-fn ,v opt))])
+       ,@body)])
 
- (define-cproc uvector-swap-bytes (v::<uvector> :optional (type::<symbol>? #f)) ::<void>
-   (swap-bytes-common Scm_UVectorSwapBytes v type))
+ (define-cproc uvector-swap-bytes (v::<uvector>
+                                   :optional (start::<fixnum> 0)
+                                             (end::<fixnum> -1)
+                                             (type::<symbol>? #f))
+   (with-swap-bytes-option type
+     (return (Scm_UVectorSwapBytes v opt start end))))
 
- (define-cproc uvector-swap-bytes! (v::<uvector> :optional (type::<symbol>? #f)) ::<void>
-   (swap-bytes-common Scm_UVectorSwapBytesX v type))
+ (define-cproc uvector-swap-bytes! (v::<uvector>
+                                    :optional (start::<fixnum> 0)
+                                              (end::<fixnum> -1)
+                                              (type::<symbol>? #f))
+   ::<void>
+   (with-swap-bytes-option type
+     (Scm_UVectorSwapBytesX v opt start end)))
  )
 
 ;; uvector-size
@@ -247,9 +258,18 @@
 ;; generic copy
 (inline-stub
  (define-cproc uvector-copy (v::<uvector>
-                             :optional (start::<fixnum> 0)
-                                       (end::<fixnum> -1))
+                             :optional (start::<fixnum>? 0)
+                                       (end::<fixnum>? -1))
    (return (Scm_UVectorCopy v start end)))
+
+ (define-cproc subuvector/shared (v::<uvector>
+                                  :optional (start::<fixnum>? 0)
+                                            (end::<fixnum>? -1))
+   (if (and (== start 0)
+            (or (== end -1)
+                (== end (SCM_UVECTOR_SIZE v))))
+     (return (SCM_OBJ v))
+     (return (Scm_UVectorAlias (Scm_ClassOf (SCM_OBJ v)) v start end))))
  )
 
 ;; search
@@ -457,9 +477,9 @@
 (define-cproc u64? (v) ::<boolean> SCM_INTEGER_FITS_UINT64_P)
 (define-cproc s64? (v) ::<boolean> SCM_INTEGER_FITS_INT64_P)
 
-(define-cproc f16? (v) ::<boolean> :fast-flonum (return (SCM_REALP v)))
-(define-cproc f32? (v) ::<boolean> :fast-flonum (return (SCM_REALP v)))
-(define-cproc f64? (v) ::<boolean> :fast-flonum (return (SCM_REALP v)))
+(define-cproc f16? (v) ::<boolean> :fast-flonum (return (SCM_REAL_VALUED_P v)))
+(define-cproc f32? (v) ::<boolean> :fast-flonum (return (SCM_REAL_VALUED_P v)))
+(define-cproc f64? (v) ::<boolean> :fast-flonum (return (SCM_REAL_VALUED_P v)))
 
 (define-cproc c32? (v) ::<boolean> :fast-flonum (return (SCM_NUMBERP v)))
 (define-cproc c64? (v) ::<boolean> :fast-flonum (return (SCM_NUMBERP v)))
@@ -476,7 +496,8 @@
     [(SCM_UVECTOR_S32) (return (SCM_INTEGER_FITS_INT32_P v))]
     [(SCM_UVECTOR_U64) (return (SCM_INTEGER_FITS_UINT64_P v))]
     [(SCM_UVECTOR_S64) (return (SCM_INTEGER_FITS_INT64_P v))]
-    [(SCM_UVECTOR_F16 SCM_UVECTOR_F32 SCM_UVECTOR_F64) (return (SCM_REALP v))]
+    [(SCM_UVECTOR_F16 SCM_UVECTOR_F32 SCM_UVECTOR_F64)
+     (return (SCM_REAL_VALUED_P v))]
     [(SCM_UVECTOR_C32 SCM_UVECTOR_C64 SCM_UVECTOR_C128) (return (SCM_NUMBERP v))]
     [else (return FALSE)]
     ))
@@ -513,8 +534,8 @@
 
 (define (make-bytevector len :optional (fill 0))
   (make-u8vector len (%adjust-fill-arg fill)))
-(define (bytevector-fill! v fill)       ; scheme.bytevector
-  (u8vector-fill! v (%adjust-fill-arg fill)))
+(define (bytevector-fill! v fill :optional (start #f) (end #f)) ; scheme.bytevector
+  (u8vector-fill! v (%adjust-fill-arg fill) start end))
 
 (define-inline bytevector         u8vector)
 (define-inline bytevector?        u8vector?)
@@ -524,7 +545,7 @@
 (define-inline bytevector-copy    u8vector-copy)
 (define-inline bytevector-copy!   u8vector-copy!)
 (define-inline bytevector-append  u8vector-append)
-(define-inline bytevector=?       u8vector=?)
+(define-inline bytevector=?       u8vector=)  ; srfi-281 takes varargs
 
 (define (bytevector-s8-set! v k b)      ; scheme.bytevector
   (bytevector-u8-set! v k (logand b #xff)))
@@ -538,5 +559,7 @@
 (define (bytevector-copy!-r6 src sstart target tstart len) ; scheme.bytevector
   (u8vector-copy! target tstart src sstart (+ sstart len)))
 
-(define (bytevector->u8-list v) (u8vector->list v))     ; scheme.bytevector
-(define (u8-list->bytevector lis) (list->u8vector lis)) ; scheme.bytevector
+(define (bytevector->u8-list v :optional (start #f) (end #f)) ; scheme.bytevector
+  (u8vector->list (subuvector/shared v start end)))
+(define (u8-list->bytevector lis :optional (start #f) (end #f)) ; scheme.bytevector
+  (list->u8vector (sublist/shared lis start end)))

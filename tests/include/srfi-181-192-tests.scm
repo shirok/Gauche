@@ -378,12 +378,10 @@
 
  (set-port-position! p saved-pos)
  (test-eqv "rewind & peek" 3 (peek-u8 p))
- ;; TODO: We have to keep track of port position and peek.  Needs modification
- ;; in the core port code.  For now, this is a known bug.
- ;; (write-u8 100 p)
- ;; (set-port-position! p saved-pos)
- ;; (test-eqv "overwritten" 100 (read-u8 p))
- ;; (test-eqv "overwritten" 4 (read-u8 p))
+ (write-u8 100 p)
+ (set-port-position! p saved-pos)
+ (test-eqv "overwritten" 100 (read-u8 p))
+ (test-eqv "overwritten" 4 (read-u8 p))
  )
 
 (test-group
@@ -392,8 +390,8 @@
 
 (test-group
  "i/o-invalid-position-error"
- (test-assert "i/o-invalid-position-error" 
-              (i/o-invalid-position-error? 
+ (test-assert "i/o-invalid-position-error"
+              (i/o-invalid-position-error?
                (make-i/o-invalid-position-error 0))))
 
 (test-group

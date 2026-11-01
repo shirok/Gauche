@@ -100,6 +100,25 @@
   (^ args
     (apply string-interpolate args))) ;;lambda is required to delay loading
 
+(select-module gauche.internal)
+;; srfi.13, scheem.base
+(define-in-module gauche (string-copy! target tstart s . args)
+  (assume-type target <string>)
+  (assume-type tstart <ufixnum>)
+  (let* ([str (apply substring/shared s args)]
+         [slen (string-length str)]
+         [tlen (string-length target)])
+    (when (> (+ tstart slen) tlen)
+      (error "copy operation runs off the target string:" target))
+    (if (= slen tlen)
+      (%string-replace-body! target str)
+      (%string-replace-body! target
+                             (string-append (substring target 0 tstart)
+                                            str
+                                            (substring target
+                                                       (+ tstart slen)
+                                                       tlen))))))
+
 ;;
 ;; Conversions
 ;;
@@ -107,7 +126,10 @@
 (select-module scheme)
 (define-cproc string->list (str::<string> :optional start end)
   (return (Scm_StringToList (SCM_STRING (Scm_MaybeSubstring str start end)))))
-(define-cproc list->string (list::<list>) Scm_ListToString)
+(define-cproc list->string (list::<list>
+                            :optional (start::<fixnum>? 0)
+                                      (end::<fixnum>? -1))
+  Scm_ListToStringFull)
 
 ;;
 ;; Accessors
@@ -124,11 +146,13 @@
   (return (Scm_SubstringCursor str start end)))
 
 (select-module gauche)
+
+(define-cproc substring/shared (str::<string> :optional start end)
+  Scm_MaybeSubstring)
+(define opt-substring substring/shared) ;backward compatibility
+
 (define-cproc string-size (str::<string>) ::<fixnum> :constant
   (return (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
-
-(define-cproc opt-substring (str::<string> :optional start end)
-  Scm_MaybeSubstring)
 
 ;; bound argument is for SRFI-13
 (define-cproc %hash-string (str::<string> :optional bound) ::<ulong>
@@ -203,7 +227,7 @@
     (error "grammar argument must be one of (infix strict-infix prefix suffix), but got" grammar))
   (unless (or (not limit) (and (integer? limit) (>= limit 0)))
     (error "limit argument must be a nonnegative integer or #f, but got" limit))
-  (let1 s (opt-substring string start end)
+  (let1 s (substring/shared string start end)
     (if (equal? s "")
       (if (eq? grammar 'strict-infix)
         (error "string must not be empty with strict-infix grammar")
@@ -415,11 +439,11 @@
         [(or (integer? (car rest))
              (string-cursor? (car rest)))
          (if (null? (cdr rest))
-           (proc-single proc (opt-substring str (car rest) (undefined)))
+           (proc-single proc (substring/shared str (car rest) (undefined)))
            (if (or (integer? (cadr rest))
                    (string-cursor? (cadr rest)))
              (if (null? (cddr rest))
-               (proc-single proc (opt-substring str (car rest) (cadr rest)))
+               (proc-single proc (substring/shared str (car rest) (cadr rest)))
                (errorf "Too many arguments for SRFI-13 style ~a" name))
              (error "Integer or string-cursor expected, but got:" (cadr rest))))]
         [(string? (car rest))

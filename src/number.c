@@ -41,6 +41,7 @@
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/arith.h"
 #include "gauche/priv/bytesP.h"
+#include "gauche/priv/numberP.h"
 #include "gauche/priv/writerP.h"
 
 #include <limits.h>
@@ -585,21 +586,15 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
 
 /* Construct a double directly from the given bit patterns. This is
    an internal procedure; external procedure should use Scm_EncodeFlonum.
-
-   On 64bit architecture, only mant1 is used for mantissa.
-   On 32bit architecture, mant1 is for lower 32bits of mantissa, and
-   lower 20bits of mant0 is used for higher bits.
- */
-double Scm__EncodeDouble(u_long mant1,
-                         u_long mant0 SCM_UNUSED,
-                         int exp, int signbit)
+*/
+double Scm__EncodeDouble64(uint64_t mant, int exp, int signbit)
 {
     ScmIEEEDouble dd;
 #ifdef DOUBLE_ARMENDIAN
     ScmIEEEDoubleARM dd2;
     if (armendian_p) {
-        dd2.components.mant1 = mant1;
-        dd2.components.mant0 = mant0;
+        dd2.components.mant1 = (u_long)(mant & ULONG_MAX); /* lower bits */
+        dd2.components.mant0 = mant >> 32;
         dd2.components.exp = exp;
         dd2.components.sign = signbit;
         return dd2.d;
@@ -609,10 +604,10 @@ double Scm__EncodeDouble(u_long mant1,
     dd.components.exp = exp;
     dd.components.sign = signbit;
 #if SIZEOF_LONG >= 8
-    dd.components.mant = mant1;
+    dd.components.mant = mant;
 #else  /*SIZEOF_LONG==4*/
-    dd.components.mant1 = mant1;
-    dd.components.mant0 = mant0;
+    dd.components.mant1 = (u_long)(mant & ULONG_MAX);
+    dd.components.mant0 = mant >> 32;
 #endif /*SIZEOF_LONG==4*/
     return dd.d;
 }
@@ -654,13 +649,7 @@ double Scm_EncodeFlonum(ScmObj mant, int exp, int sign)
     }
 
     int expfield = exp + 0x3ff + 52;
-#if SIZEOF_LONG >= 8
-    return Scm__EncodeDouble(mant64, 0, expfield, signbit);
-#else
-    u_long hi = (mant64 >> 32);
-    u_long lo = (u_long)(mant64 & ULONG_MAX);
-    return Scm__EncodeDouble(lo, hi, expfield, signbit);
-#endif
+    return Scm__EncodeDouble64(mant64, expfield, signbit);
 }
 
 /*=====================================================================
@@ -839,26 +828,73 @@ ScmObj Scm_MakeCompnum(double r, double i)
     return SCM_OBJ(c);
 }
 
+/* NB: Up to 0.9.15, Scm_MakeComplex and Scm_MakeComplexPolar returned
+   a flonum if the imaginary part is 0.0.  We no longer do so, for the sign
+   of zero imaginary part matters on branch cuts (e.g. sqrt(-1+0.0i) vs
+   sqrt(-1-0.0i)).  Only an exact zero imaginary part makes a real number;
+   use Scm_MakeRectangular and Scm_MakePolar for that. */
 ScmObj Scm_MakeComplex(double r, double i)
 {
-    if (i == 0.0) return Scm_MakeFlonum(r);
-    else          return Scm_MakeCompnum(r, i);
+    return Scm_MakeCompnum(r, i);
 }
 
 ScmObj Scm_MakeComplexPolar(double mag, double angle)
 {
-    double real = mag * cos(angle);
-    double imag = mag * sin(angle);
-    if (imag == 0.0) return Scm_MakeFlonum(real);
-    else             return Scm_MakeCompnum(real, imag);
+    return Scm_MakeCompnum(mag * cos(angle), mag * sin(angle));
 }
 
 ScmObj Scm_MakeComplexPolarPI(double mag, double pi_angle)
 {
-    double real = mag * Scm_CosPi(pi_angle);
-    double imag = mag * Scm_SinPi(pi_angle);
-    if (imag == 0.0) return Scm_MakeFlonum(real);
-    else             return Scm_MakeCompnum(real, imag);
+    return Scm_MakeCompnum(mag * Scm_CosPi(pi_angle),
+                           mag * Scm_SinPi(pi_angle));
+}
+
+/* Real-domain functions accept a compnum with zero imaginary part,
+   treating it as its real part.  We check it in the slow path of those
+   functions after the fast type dispatch fails, so the common cases
+   don't pay the cost. */
+static inline int zero_imag_compnum_p(ScmObj obj)
+{
+    return SCM_COMPNUMP(obj) && SCM_COMPNUM_IMAG(obj) == 0.0;
+}
+
+/* If OBJ is a compnum with zero imaginary part, returns its real part
+   as a flonum.  Otherwise returns OBJ. */
+static inline ScmObj coerce_real_valued(ScmObj obj)
+{
+    if (zero_imag_compnum_p(obj)) {
+        return Scm_MakeFlonum(SCM_COMPNUM_REAL(obj));
+    }
+    return obj;
+}
+
+/* Scheme's make-rectangular and make-polar.  The arguments must be
+   real-valued.  If the imaginary part (or the angle) is an exact zero,
+   the result is real; otherwise it is a compnum.  */
+ScmObj Scm_MakeRectangular(ScmObj real, ScmObj imag)
+{
+    real = Scm_RealValuedToReal(real);
+    imag = Scm_RealValuedToReal(imag);
+    if (SCM_EXACT_ZERO_P(imag)) return real;
+    return Scm_MakeCompnum(Scm_GetDouble(real), Scm_GetDouble(imag));
+}
+
+ScmObj Scm_MakePolar(ScmObj mag, ScmObj angle)
+{
+    mag = Scm_RealValuedToReal(mag);
+    angle = Scm_RealValuedToReal(angle);
+    if (SCM_EXACT_ZERO_P(angle)) return mag;
+    return Scm_MakeComplexPolar(Scm_GetDouble(mag), Scm_GetDouble(angle));
+}
+
+/* If OBJ is real, returns it.  If OBJ is a compnum with zero imaginary
+   part, returns its real part as a flonum.  Otherwise, an error. */
+ScmObj Scm_RealValuedToReal(ScmObj obj)
+{
+    if (SCM_REALP(obj)) return obj;
+    if (zero_imag_compnum_p(obj)) return coerce_real_valued(obj);
+    Scm_Error("real number required, but got %S", obj);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /* NB: This isn't called by Scheme's real-part; see libnum.scm */
@@ -905,10 +941,10 @@ ScmFloatComplex Scm_GetFloatComplex(ScmObj z)
 {
     ScmFloatComplex c = 0.0f;
     if (SCM_COMPNUMP(z)) {
-        c = (float)SCM_COMPNUM_REAL(z)
-            + (float)SCM_COMPNUM_IMAG(z) * _Complex_I;
+        c = Scm__MakeFloatComplex((float)SCM_COMPNUM_REAL(z),
+                                  (float)SCM_COMPNUM_IMAG(z));
     } else if (SCM_REALP(z)) {
-        c = (float)Scm_GetDouble(z);
+        c = Scm__MakeFloatComplex((float)Scm_GetDouble(z), 0.0f);
     } else {
         Scm_Error("number required, but got %S", z);
     }
@@ -917,12 +953,25 @@ ScmFloatComplex Scm_GetFloatComplex(ScmObj z)
 
 ScmDoubleComplex Scm_GetDoubleComplex(ScmObj z)
 {
-    ScmDoubleComplex c = 0.0f;
+    ScmDoubleComplex c = 0.0;
     if (SCM_COMPNUMP(z)) {
-        c = SCM_COMPNUM_REAL(z)
-            + SCM_COMPNUM_IMAG(z) * _Complex_I;
+        c = Scm__MakeDoubleComplex(SCM_COMPNUM_REAL(z), SCM_COMPNUM_IMAG(z));
     } else if (SCM_REALP(z)) {
-        c = Scm_GetDouble(z);
+        c = Scm__MakeDoubleComplex(Scm_GetDouble(z), 0.0);
+    } else {
+        Scm_Error("number required, but got %S", z);
+    }
+    return c;
+}
+
+ScmLongDoubleComplex Scm_GetLongDoubleComplex(ScmObj z)
+{
+    ScmLongDoubleComplex c = 0.0;
+    if (SCM_COMPNUMP(z)) {
+        c = Scm__MakeLongDoubleComplex((long double)SCM_COMPNUM_REAL(z),
+                                       (long double)SCM_COMPNUM_IMAG(z));
+    } else if (SCM_REALP(z)) {
+        c = Scm__MakeLongDoubleComplex((long double)Scm_GetDouble(z), 0.0);
     } else {
         Scm_Error("number required, but got %S", z);
     }
@@ -945,6 +994,13 @@ ScmObj Scm_DoubleComplexToComplex(ScmDoubleComplex z)
     return Scm_MakeComplex(creal(z), cimag(z));
 }
 
+ScmObj Scm_LongDoubleComplexToComplex(ScmLongDoubleComplex z)
+{
+    /* For now, we don't support long double in Scheme side, so we lose
+       precision. */
+    return Scm_MakeComplex((double)creall(z), (double)cimagl(z));
+}
+
 
 /* NB: This isn't called by Scheme's magnitude; see libnum.scm */
 double Scm_Magnitude(ScmObj z)
@@ -956,9 +1012,7 @@ double Scm_Magnitude(ScmObj z)
         Scm_Error("number required, but got %S", z);
         return 0.0;                /* dummy */
     }
-    double r = SCM_COMPNUM_REAL(z);
-    double i = SCM_COMPNUM_IMAG(z);
-    return sqrt(r*r+i*i);
+    return hypot(SCM_COMPNUM_REAL(z), SCM_COMPNUM_IMAG(z));
 }
 
 double Scm_Angle(ScmObj z)
@@ -1622,6 +1676,7 @@ double Scm_GetDouble(ScmObj obj)
         double dquo = Scm_GetDouble(quo);
         return ldexp(dquo, -shift);
     }
+    else if (zero_imag_compnum_p(obj)) return SCM_COMPNUM_REAL(obj);
     else return 0.0;
 }
 
@@ -1659,6 +1714,7 @@ int Scm_OddP(ScmObj obj)
     if (SCM_FLONUMP(obj) && Scm_IntegerP(obj)) {
         return (fmod(SCM_FLONUM_VALUE(obj), 2.0) != 0.0);
     }
+    if (zero_imag_compnum_p(obj)) return Scm_OddP(coerce_real_valued(obj));
     Scm_Error("integer required, but got %S", obj);
     return FALSE;       /* dummy */
 
@@ -1726,10 +1782,7 @@ static ScmObj scm_abs(ScmObj obj, int vmp)
                                    SCM_RATNUM_DENOM(obj));
         }
     } else if (SCM_COMPNUMP(obj)) {
-        double r = SCM_COMPNUM_REAL(obj);
-        double i = SCM_COMPNUM_IMAG(obj);
-        double a = sqrt(r*r+i*i);
-        RETURN_FLONUM(a);
+        RETURN_FLONUM(hypot(SCM_COMPNUM_REAL(obj), SCM_COMPNUM_IMAG(obj)));
     } else {
         Scm_Error("number required: %S", obj);
     }
@@ -1757,6 +1810,11 @@ int Scm_Sign(ScmObj obj)
     }
     if (SCM_RATNUMP(obj)) {
         return Scm_Sign(SCM_RATNUM_NUMER(obj));
+    }
+    if (zero_imag_compnum_p(obj)) {
+        double v = SCM_COMPNUM_REAL(obj);
+        if (v == 0.0) return 0;
+        return (v > 0.0)? 1 : -1;
     }
     /* NB: zero? can accept a complex number, but it is processed in
        the stub function.   see libnum.scm */
@@ -1871,8 +1929,13 @@ ScmObj Scm_Exact(ScmObj obj)
             obj = Scm_ApplyRec1(real_to_rational, obj);
         }
     } else if (SCM_COMPNUMP(obj)) {
+        /* We don't have exact compnums.  If the imaginary part is zero,
+           we can return an exact real number. */
+        if (SCM_COMPNUM_IMAG(obj) == 0.0) {
+            return Scm_Exact(coerce_real_valued(obj));
+        }
         Scm_Error("exact complex is not supported: %S", obj);
-    } if (!SCM_EXACTP(obj)) {
+    } else if (!SCM_EXACTP(obj)) {
         Scm_Error("number required: %S", obj);
     }
     return obj;
@@ -2678,8 +2741,14 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
   DIVBYZERO:
     Scm_Error("attempt to calculate a quotient by zero");
   BADARGY:
+    if (zero_imag_compnum_p(y)) {
+        return Scm_Quotient(x, coerce_real_valued(y), rem);
+    }
     x = y;
   BADARG:
+    if (zero_imag_compnum_p(x)) {
+        return Scm_Quotient(coerce_real_valued(x), y, rem);
+    }
     SCM_FLONUM_ENSURE_MEM(x);
     Scm_Error("integer required, but got %S", x);
     return SCM_UNDEFINED;       /* dummy */
@@ -2786,8 +2855,14 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
   DIVBYZERO:
     Scm_Error("attempt to take a modulo or remainder by zero");
   BADARGY:
+    if (zero_imag_compnum_p(y)) {
+        return Scm_Modulo(x, coerce_real_valued(y), remp);
+    }
     x = y;
   BADARG:
+    if (zero_imag_compnum_p(x)) {
+        return Scm_Modulo(coerce_real_valued(x), y, remp);
+    }
     SCM_FLONUM_ENSURE_MEM(x);
     Scm_Error("integer required, but got %S", x);
     return SCM_UNDEFINED;       /* dummy */
@@ -2835,6 +2910,8 @@ static u_long gcd_bigfix(ScmBignum *x, u_long y)
 /* We don't provide Scm_VMGcd, assuming passing flonums to gcd is rare. */
 ScmObj Scm_Gcd(ScmObj x, ScmObj y)
 {
+    x = coerce_real_valued(x);
+    y = coerce_real_valued(y);
     if (!Scm_IntegerP(x)) {
         Scm_Error("integer required, but got %S", x);
     }
@@ -2964,8 +3041,8 @@ static ScmObj scm_expt(ScmObj x, ScmObj y, int vmp)
     /* NB: The exact case is handled by expt in libnum.scm; we check this case
        just for the backward compatibility. */
     if (SCM_EXACTP(x) && SCM_INTEGERP(y)) return Scm_ExactIntegerExpt(x, y);
-    if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
-    if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
+    if (!SCM_REALP(x)) x = Scm_RealValuedToReal(x);
+    if (!SCM_REALP(y)) y = Scm_RealValuedToReal(y);
     double dx = Scm_GetDouble(x);
     double dy = Scm_GetDouble(y);
     if (dy == 0.0) {
@@ -2981,6 +3058,58 @@ static ScmObj scm_expt(ScmObj x, ScmObj y, int vmp)
     }
 }
 DEFINE_DUAL_API2(Scm_Expt, Scm_VMExpt, scm_expt)
+
+/* expt where x or y is a compnum.  If y is a real, x must be a compnum.
+   The branch cut is the same as log(x); x on the negative real axis
+   has the angle pi or -pi depending on the sign of its imaginary part
+   (a real x is regarded as having +0.0 imaginary part.)
+   We don't simply use cpow(), for we want x^y to be exact when
+   possible, e.g. (expt 2 3.0+0.0i) => 8.0+0.0i. */
+ScmObj Scm__ComplexExpt(ScmObj x, ScmObj y)
+{
+    if (SCM_INTP(y)) return Scm_ExactIntegerExpt(x, y);
+
+    ScmDoubleComplex cx = Scm_GetDoubleComplex(x);
+    double yr, yi;
+    if (SCM_COMPNUMP(y)) {
+        yr = SCM_COMPNUM_REAL(y);
+        yi = SCM_COMPNUM_IMAG(y);
+    } else {
+        yr = Scm_GetDouble(y);
+        yi = 0.0;
+    }
+    if (yr == 0.5 && yi == 0.0) {
+        return Scm_DoubleComplexToComplex(csqrt(cx));
+    }
+
+    double magni = cabs(cx);
+    double angle = carg(cx);
+    if (magni == 0.0) {
+        if (yr > 0.0) return Scm_MakeCompnum(0.0, 0.0);
+        if (yr == 0.0 && yi == 0.0) return Scm_MakeCompnum(1.0, 0.0);
+        /* Otherwise the result is infinite or undefined; let it go. */
+    }
+
+    /* x^y = |x|^yr * exp(-yi*angle) * cis(yr*angle + yi*log|x|) */
+    double c, s;
+    if (fabs(angle) == M_PI) {
+        c = Scm_CosPi(yr);
+        s = copysign(1.0, angle) * Scm_SinPi(yr);
+    } else {
+        c = cos(yr * angle);
+        s = sin(yr * angle);
+    }
+    double r = pow(magni, yr);
+    if (yi != 0.0) {
+        double t = yi * log(magni);
+        double c2 = cos(t), s2 = sin(t);
+        double cc = c*c2 - s*s2;
+        s = s*c2 + c*s2;
+        c = cc;
+        r *= exp(-yi * angle);
+    }
+    return Scm_MakeCompnum(r * c, r * s);
+}
 
 /* If num is exact 2^s (s >= 0), returns s.  Otherwise returns -1. */
 long Scm_TwosPower(ScmObj n)
@@ -3050,7 +3179,9 @@ double Scm_TanPi(double x)
 
 static inline int nan_p(ScmObj arg)
 {
-    return (SCM_FLONUMP(arg) && SCM_IS_NAN(SCM_FLONUM_VALUE(arg)));
+    return ((SCM_FLONUMP(arg) && SCM_IS_NAN(SCM_FLONUM_VALUE(arg)))
+            || (SCM_COMPNUMP(arg) && SCM_COMPNUM_IMAG(arg) == 0.0
+                && SCM_IS_NAN(SCM_COMPNUM_REAL(arg))));
 }
 
 static inline int either_nan_p(ScmObj arg0, ScmObj arg1)
@@ -3065,9 +3196,11 @@ int Scm_NumEq(ScmObj arg0, ScmObj arg1)
             return ((SCM_COMPNUM_REAL(arg0) == SCM_COMPNUM_REAL(arg1))
                     && (SCM_COMPNUM_IMAG(arg0) == SCM_COMPNUM_IMAG(arg1)));
         }
-        return FALSE;
+        /* real vs compnum; = only cares the value, so x+0.0i = x. */
+        if (SCM_COMPNUM_IMAG(arg0) != 0.0) return FALSE;
+        return Scm_NumEq(coerce_real_valued(arg0), arg1);
     } else {
-        if (SCM_COMPNUMP(arg1)) return FALSE;
+        if (SCM_COMPNUMP(arg1)) return Scm_NumEq(arg1, arg0);
         if (either_nan_p(arg0, arg1)) return FALSE;
         return (Scm_NumCmp(arg0, arg1) == 0);
     }
@@ -3239,6 +3372,9 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
     }
     else badnum = arg0;
 
+    if (zero_imag_compnum_p(arg0) || zero_imag_compnum_p(arg1)) {
+        return Scm_NumCmp(coerce_real_valued(arg0), coerce_real_valued(arg1));
+    }
     SCM_FLONUM_ENSURE_MEM(badnum);
     Scm_Error("real number required: %S", badnum);
     return 0;                    /* dummy */
@@ -3246,7 +3382,7 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 
 void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
 {
-    if (!SCM_REALP(arg0)) Scm_Error("real number required, but got %S", arg0);
+    if (!SCM_REALP(arg0)) arg0 = Scm_RealValuedToReal(arg0);
     if (nan_p(arg0)) goto got_nan;
     int inexact = !SCM_EXACTP(arg0);
     ScmObj mi = arg0;
@@ -3254,7 +3390,7 @@ void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
 
     for (;SCM_PAIRP(args); args = SCM_CDR(args)) {
         ScmObj arg = SCM_CAR(args);
-        if (!SCM_REALP(arg)) Scm_Error("real number required, but got %S", arg);
+        if (!SCM_REALP(arg)) arg = Scm_RealValuedToReal(arg);
         if (nan_p(arg)) goto got_nan;
         if (!SCM_EXACTP(arg)) inexact = TRUE;
         if (min && Scm_NumCmp(mi, arg) > 0) mi = arg;
@@ -3333,6 +3469,9 @@ static ScmObj scm_round(ScmObj num, int mode, int vmp)
         case SCM_ROUND_TRUNC:
             offset = 0;
             break;
+        case SCM_ROUND_AWAY:
+            offset = (Scm_Sign(num) < 0)? -1 : 1;
+            break;
         case SCM_ROUND_ROUND: {
             ScmObj rem2 = Scm_Mul(Scm_Abs(rem), SCM_MAKE_INT(2));
             int cmp = Scm_NumCmp(SCM_RATNUM_DENOM(num), rem2);
@@ -3371,11 +3510,15 @@ static ScmObj scm_round(ScmObj num, int mode, int vmp)
 #else
         case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
 #endif
+        case SCM_ROUND_AWAY:  r = (v < 0.0)? floor(v) : ceil(v); break;
         case SCM_ROUND_ROUND: r = roundeven(v); break;
         default: Scm_Panic("something screwed up");
         }
         if (r == 0.0) r = 0.0;  /* Don't return -0.0 */
         RETURN_FLONUM(r);
+    }
+    if (zero_imag_compnum_p(num)) {
+        return scm_round(coerce_real_valued(num), mode, vmp);
     }
     Scm_Error("real number required, but got %S", num);
     return SCM_UNDEFINED;       /* dummy */
@@ -3409,6 +3552,7 @@ ScmObj Scm_RoundToExact(ScmObj num, int mode)
 #else
         case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
 #endif
+        case SCM_ROUND_AWAY: r = (v < 0.0)? floor(v) : ceil(v); break;
         case SCM_ROUND_ROUND: r = roundeven(v); break;
         default: Scm_Panic("something screwed up");
         }
@@ -3416,6 +3560,9 @@ ScmObj Scm_RoundToExact(ScmObj num, int mode)
     }
     if (SCM_INTEGERP(num)) return num;
     if (SCM_RATNUMP(num))  return Scm_Round(num, mode);
+    if (zero_imag_compnum_p(num)) {
+        return Scm_RoundToExact(coerce_real_valued(num), mode);
+    }
     Scm_Error("real number required, but got %S", num);
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -3829,7 +3976,7 @@ static double dexpt2_minus_53  = 0.0;  /* 2.0^-53 */
 
 /* max N where 10.0^N can be representable exactly in double.
    it is max N where N * log2(5) < 53. */
-#define MAX_EXACT_10_EXP  23
+#define MAX_EXACT_10_EXP  22
 
 /* fast 10^n for limited cases */
 static inline ScmObj iexpt10(int e)
@@ -3860,26 +4007,26 @@ static inline u_long ipow(int r, int n)
 
 /* X * 10.0^N by double.
    10.0^N can be represented _exactly_ in double-precision floating point
-   number in the range 0 <= N <= 23.
+   number in the range 0 <= N <= MAX_EXACT_10_EXP.
    If N is out of this range, a rounding error occurs, which will be
    corrected in the algorithmR routine below. */
 static double raise_pow10(double x, int n)
 {
-    static double dpow10[] = { 1.0, 1.0e1, 1.0e2, 1.0e3, 1.0e4,
-                               1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9,
-                               1.0e10, 1.0e11, 1.0e12, 1.0e13, 1.0e14,
-                               1.0e15, 1.0e16, 1.0e17, 1.0e18, 1.0e19,
-                               1.0e20, 1.0e21, 1.0e22, 1.0e23 };
+    static const double dpow10[MAX_EXACT_10_EXP + 1] = {
+        1.0,    1.0e1,  1.0e2,  1.0e3,  1.0e4,  1.0e5,  1.0e6,  1.0e7,  1.0e8,
+        1.0e9,  1.0e10, 1.0e11, 1.0e12, 1.0e13, 1.0e14, 1.0e15, 1.0e16, 1.0e17,
+        1.0e18, 1.0e19, 1.0e20, 1.0e21, 1.0e22,
+    };
     if (n >= 0) {
-        while (n > 23) {
-            x *= 1.0e24;
-            n -= 24;
+        while (n > MAX_EXACT_10_EXP) {
+            x *= dpow10[MAX_EXACT_10_EXP];
+            n -= MAX_EXACT_10_EXP;
         }
         return x*dpow10[n];
     } else {
-        while (n < -23) {
-            x /= 1.0e24;
-            n += 24;
+        while (n < -MAX_EXACT_10_EXP) {
+            x /= dpow10[MAX_EXACT_10_EXP];
+            n += MAX_EXACT_10_EXP;
         }
         return x/dpow10[-n];
     }
@@ -4908,37 +5055,28 @@ static ScmObj read_exponent(const char **strp, /* in/out */
     int exponent = 0;
     int exp_minusp = FALSE;
     int max_exponent = MAX_EXPONENT;
-    *exponent_char = '0';
     *exponent_overflow = FALSE;
-    switch (ctx->radix) {
-    case 10:
-        if (*lenp > 0 && strchr("eEsSfFdDlL", (int)**strp)) {
-            *exponent_char = tolower(**strp);
-            (*lenp)--;
-            (*strp)++;
-            break;
-        } else {
-            return SCM_MAKE_INT(0);
-        }
-    case 16:
-        if (*lenp > 0 && (**strp == 'p' || **strp == 'P')) {
-            /* It can be 'pi' suffix */
-            if (*lenp > 1 && ((*strp)[1] == 'i' || (*strp)[1] == 'I')) {
-                return SCM_MAKE_INT(0);
-            }
-            max_exponent = MAX_EXPONENT_TWOS_POWER;
-            *exponent_char = tolower(**strp);
-            (*lenp)--;
-            (*strp)++;
-            break;
-        } else {
-            return SCM_MAKE_INT(0);
-        }
-    default:
-        return numerr("(2's power exponent can only be used when radix is 16)", ctx);
-    }
 
+    if (*lenp <= 0) return SCM_MAKE_INT(0);
+
+    if (strchr("eEsSfFdDlL", (int)**strp)) {
+        *exponent_char = tolower(**strp);
+        (*lenp)--;
+        (*strp)++;
+    } else if (**strp == 'p' || **strp == 'P') {
+        /* It can be 'pi' suffix */
+        if (*lenp > 1 && ((*strp)[1] == 'i' || (*strp)[1] == 'I')) {
+            return SCM_MAKE_INT(0);
+        }
+        max_exponent = MAX_EXPONENT_TWOS_POWER;
+        *exponent_char = 'p';
+        (*lenp)--;
+        (*strp)++;
+    } else {
+        return SCM_MAKE_INT(0);
+    }
     if (*lenp <= 0) return SCM_FALSE;
+
     switch (**strp) {
     case '-': exp_minusp = TRUE;
         /*FALLTHROUGH*/
@@ -4983,6 +5121,7 @@ static ScmObj read_real(const char **strp, int *lenp,
     int minusp = FALSE;
     int sign_seen = FALSE;
     int fracdigs = 0;
+    int point_seen = FALSE;
     ScmObj intpart, fraction;
     const char *mark;           /* will point (*strp)[1] if there's a sign,
                                    otherwise (*strp)[0], to check if the
@@ -5096,6 +5235,7 @@ static ScmObj read_real(const char **strp, int *lenp,
         }
 
         (*strp)++; (*lenp)--;
+        point_seen = TRUE;
         const char *fracp = *strp;
         fraction = read_uint(strp, lenp, ctx, intpart);
 
@@ -5136,8 +5276,19 @@ static ScmObj read_real(const char **strp, int *lenp,
     if (ctx->strict && ctx->radix == 16) {
         return numerr("hexadecimal float isn't allowed in R7RS strict mode", ctx);
     }
-    if (ctx->radix == 16 && exponent_char != 'p') {
-        return numerr("hexadecimal float requires 'p' exponent", ctx);
+
+    if (exponent_char != 0) {
+        switch (ctx->radix) {
+        case 10:
+            if (exponent_char == 'p') {
+                return  numerr("invalid exponent for decimal float", ctx);
+            }
+            break;
+        case 16:
+            if (exponent_char != 'p') {
+                return numerr("invalid exponent for hexadecimal float", ctx);
+            }
+        }
     }
 
     if (exp_overflow) {
@@ -5156,6 +5307,15 @@ static ScmObj read_real(const char **strp, int *lenp,
     }
 
     /*Scm_Printf(SCM_CURERR, "fraction=%S, exponent=%d\n", fraction, exponent);*/
+
+    /* A plain integer followed by other characters, e.g. the parts of
+       "1+0i".  It's exact unless specified otherwise.  We need this to
+       distinguish exact zero imaginary part (1+0i is real) from inexact
+       one (1+0.0i is a compnum). */
+    if (!point_seen && exponent_char == 0 && !ctx->padread
+        && ctx->exactness != INEXACT && SCM_INTEGERP(fraction)) {
+        return minusp? Scm_Negate(fraction) : fraction;
+    }
 
     /* Compose the number. */
     if (ctx->exactness == EXACT) {
@@ -5183,7 +5343,7 @@ static ScmObj read_real(const char **strp, int *lenp,
     }
 
     /* Hex notation doesn't need approximation business. */
-    if (exponent_char == 'p') {
+    if (ctx->radix == 16) {
         int digs = Scm_IntegerLength(fraction);
         if (digs == 0) {
             return Scm_MakeFlonum(minusp? -0.0 : 0.0);
@@ -5364,6 +5524,7 @@ static ScmObj read_number(struct numread_packet *ctx)
             /* Gauche extension: X@Ypi */
             int pi_angle = (len == 2 && str[0] == 'p' && str[1] == 'i');
             if (!pi_angle && len != 0) return SCM_FALSE;
+            if (SCM_EXACT_ZERO_P(angle)) return realpart;
             CHK_EXACT_COMPLEX();
             double dmag = Scm_GetDouble(realpart);
             double dangle = Scm_GetDouble(angle);
@@ -5385,8 +5546,9 @@ static ScmObj read_number(struct numread_packet *ctx)
                 || (*str != 'i' && *str != 'I')) {
                 return SCM_FALSE;
             }
+            /* NB: x+0.0i and x-0.0i are compnums. */
+            if (SCM_EXACT_ZERO_P(imagpart)) return realpart;
             CHK_EXACT_COMPLEX();
-            if (Scm_Sign(imagpart) == 0) return realpart;
             return Scm_MakeComplex(Scm_GetDouble(realpart),
                                    Scm_GetDouble(imagpart));
         }
@@ -5395,7 +5557,7 @@ static ScmObj read_number(struct numread_packet *ctx)
         /* '+' <ureal> 'i'  or '-' <ureal> 'i' */
         if (!sign_seen || len != 1) return SCM_FALSE;
         CHK_EXACT_COMPLEX();
-        if (Scm_Sign(realpart) == 0) return Scm_MakeFlonum(0.0);
+        if (SCM_EXACT_ZERO_P(realpart)) return Scm_MakeFlonum(0.0);
         else return Scm_MakeComplex(0.0, Scm_GetDouble(realpart));
     default:
         return SCM_FALSE;

@@ -40,7 +40,8 @@
   (export <cgen-type> cgen-type-from-name make-cgen-type
           cgen-boxer-name cgen-unboxer-name cgen-pred-name
           cgen-box-expr cgen-box-tail-expr cgen-unbox-expr cgen-pred-expr
-          cgen-type-maybe? cgen-return-stmt
+          cgen-type-maybe? cgen-type-nullable-maybe? cgen-type-maybe-base
+          cgen-return-stmt
           ;; Re-export from gauche.cgen.type.parse
           cgen-canonical-typed-var-1
           cgen-canonical-typed-var-list)
@@ -76,11 +77,19 @@
 ;;    (e.g. <integer> can be a fixnum or ScmBignum*, so the stub generator
 ;;    passes through it, and the C routine handles the internals.)
 ;;
-;;  - Maybe types.  (<?> TYPE).  In stub context, we only concern maybe type
-;;    that can be unboxed into a C pointer type.  In addition to the objects
-;;    of TYPE, it maps Scheme's #f to C's NULL and vice versa.
-;;    For the convenience, maybe type can be notated as TYPE? in the stub,
-;;    e.g. <port>?
+;;  - Maybe types.  (<?> TYPE).  In addition to the objects of TYPE, it
+;;    accepts Scheme's #f.  For the convenience, maybe type can be notated
+;;    as TYPE? in the stub, e.g. <port>?
+;;    How #f is represented in C depends on the base type.  If TYPE is
+;;    unboxed into a C pointer type, NULL stands for #f, and the boxer and
+;;    the unboxer map them to each other (SCM_MAKE_MAYBE/SCM_MAYBE).  We
+;;    call such type a "null-maybe" type.
+;;    Otherwise, the C type has no room to represent #f (e.g. every value
+;;    of C's int is a valid <fixnum>).  Such maybe type can only be used
+;;    for a cproc argument that has a default value, and #f selects the
+;;    default value---see emit-arg-unbox-rec in gauche.cgen.stub.  The
+;;    stub type itself has no boxer/unboxer/predicate to offer, so the
+;;    routines below raise an error if one is asked for.
 ;;
 ;; In general, types defined in extensions can't be directly accesible from
 ;; other extensions at C level.  So we don't need to carry around stub types
@@ -135,6 +144,10 @@
       (and-let* ((m (#/\?$/ (symbol->string name)))
                  (basename (string->symbol (m 'before)))
                  (basetype (cgen-type-from-name basename)))
+        (when (eq? basename '<boolean>)
+          ;; #f is already a valid <boolean> value, so the maybe qualifier
+          ;; can't tell "the value #f" from "no value".
+          (errorf "<boolean> can't be qualified with 'maybe': ~a" name))
         (make <cgen-type>
           :name name
           :scheme-type #f ;; can be (<?> TYPE) after 0.9.11 release
@@ -148,6 +161,29 @@
 ;; accessor
 (define (cgen-type-maybe? type)
   (boolean (~ type'%maybe)))
+
+;; Returns the base type of a maybe-qualified type, or #f if TYPE isn't
+;; maybe-qualified.
+(define (cgen-type-maybe-base type)
+  (~ type'%maybe))
+
+;; True if TYPE is a maybe type whose C type can use NULL to represent #f.
+(define (cgen-type-nullable-maybe? type)
+  (and (cgen-type-maybe? type)
+       ;; NB: c-type may be given as a symbol (e.g. ext/ffi).
+       ;; Kludge - We might have typedef'ed name of pointers, so this heuristics
+       ;; isn't robust.  Ultimately we should have nullable property in
+       ;; types.
+       (let1 ctype (string-trim-right (x->string (~ type'c-type)))
+         (or (string-suffix? "*" ctype)
+             (equal? ctype "ScmObj")))))
+
+;; Called from the boxer/unboxer/predicate generators below, for the maybe
+;; types that can't represent #f in C.
+(define (%maybe-type-error type)
+  (errorf "stub type ~a can't be boxed/unboxed without the default value \
+           to map #f."
+          (~ type'name) (~ type'c-type)))
 
 ;; These could be #f
 (define (cgen-boxer-name type) (~ type'%boxer))
@@ -210,8 +246,8 @@
     (%native <uint16>  "SCM_INTEGER_FITS_UINT16_P" "Scm_GetIntegerU16" "Scm_MakeIntegerU")
     (%native <uint32>  "SCM_INTEGER_FITS_UINT32_P" "Scm_GetIntegerU32" "Scm_MakeIntegerU")
     (%native <uint64>  "SCM_INTEGER_FITS_UINT64_P" "Scm_GetIntegerU64" "Scm_MakeIntegerU")
-    (%native <float>   "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
-    (%native <double>  "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
+    (%native <float>   "SCM_REAL_VALUED_P" "(float)Scm_GetDouble" "Scm_MakeFlonum")
+    (%native <double>  "SCM_REAL_VALUED_P" "Scm_GetDouble" "Scm_VMReturnFlonum")
 
     (%native <size_t>  "Scm_IntegerFitsSizeP" "Scm_IntegerToSize" "Scm_SizeToInteger")
     (%native <ssize_t> "Scm_IntegerFitsSsizeP" "Scm_IntegerToSsize" "Scm_SsizeToInteger")
@@ -223,13 +259,13 @@
     (%native <void>    "" "" "SCM_VOID_RETURN_VALUE")]
    [else
     ;; After 0.9.16
-    (define (%native native-type)
+    (define (%native native-type :optional (pred #f))
       (make <cgen-type>
         :name (~ native-type'name)
         :scheme-type native-type
         :c-type (~ native-type'c-type-name)
         :description (~ native-type'c-type-name)
-        :c-predicate (~ native-type'c-typecheck-name)
+        :c-predicate (or pred (~ native-type'c-typecheck-name))
         :unboxer (~ native-type'c-unboxer-name)
         :boxer (~ native-type'c-boxer-name)
         :maybe #f))
@@ -250,8 +286,12 @@
     (%native <uint32>)
     (%native <int64>)
     (%native <uint64>)
-    (%native <float>)
-    (%native <double>)
+    ;; TRANSIENT: Gauche up to 0.9.16_pre3 has SCM_REALP as the
+    ;; typecheck of <float> and <double>, which rejects compnums with
+    ;; zero imaginary part.  We override it while BUILD_GOSH may be
+    ;; such a version.  Remove this after 0.9.16 release.
+    (%native <float>  "SCM_REAL_VALUED_P")
+    (%native <double> "SCM_REAL_VALUED_P")
     (%native <size_t>)
     (%native <ssize_t>)
     (%native <ptrdiff_t>)
@@ -271,7 +311,7 @@
 ;; or <float>.  We keep it so for the backward compatibility, but at some
 ;; point we'll change it to a pass-through type.
 (make-cgen-type '<real> <real> "double" "real number"
-                "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+                "SCM_REAL_VALUED_P" "Scm_GetDouble" "Scm_MakeFlonum")
 (make-cgen-type '<char> <char> "ScmChar" "character"
                 "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
 (make-cgen-type '<boolean> <boolean> "int" "boolean"
@@ -387,7 +427,9 @@
 (define (cgen-box-expr type c-expr)
   (let1 boxer (or (~ type'%boxer) "")
     (if (cgen-type-maybe? type)
-      #"SCM_MAKE_MAYBE(~|boxer|, ~c-expr)"
+      (begin
+        (unless (cgen-type-nullable-maybe? type) (%maybe-type-error type))
+        #"SCM_MAKE_MAYBE(~|boxer|, ~c-expr)")
       #"~|boxer|(~c-expr)")))
 
 (define (cgen-box-tail-expr type c-expr)
@@ -395,19 +437,25 @@
                 "Scm_VMReturnFlonum"
                 (or (~ type'%boxer) ""))
     (if (cgen-type-maybe? type)
-      #"SCM_MAKE_MAYBE(~|boxer|, ~c-expr)"
+      (begin
+        (unless (cgen-type-nullable-maybe? type) (%maybe-type-error type))
+        #"SCM_MAKE_MAYBE(~|boxer|, ~c-expr)")
       #"~|boxer|(~c-expr)")))
 
 (define (cgen-unbox-expr type c-expr)
   (let1 unboxer (or (~ type'%unboxer) "")
     (if (cgen-type-maybe? type)
-      #"SCM_MAYBE(~|unboxer|, ~c-expr)"
+      (begin
+        (unless (cgen-type-nullable-maybe? type) (%maybe-type-error type))
+        #"SCM_MAYBE(~|unboxer|, ~c-expr)")
       #"~|unboxer|(~c-expr)")))
 
 (define (cgen-pred-expr type c-expr)
   (if-let1 pred (~ type'%c-predicate)
     (if (cgen-type-maybe? type)
-      #"SCM_MAYBE_P(~|pred|, ~c-expr)"
+      (begin
+        (unless (cgen-type-nullable-maybe? type) (%maybe-type-error type))
+        #"SCM_MAYBE_P(~|pred|, ~c-expr)")
       #"~|pred|(~c-expr)")
     "TRUE"))
 

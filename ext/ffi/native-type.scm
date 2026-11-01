@@ -43,11 +43,15 @@
   (use gauche.uvector)
   (extend gauche.typeutil)              ;access internal routines
   (export make-c-pointer-type
+          make-c-opaque-pointer-type
           make-c-function-type
           make-c-array-type
           make-c-struct-type
           make-c-union-type
+          c-struct/union-type-complete!
           make-c-enum-type
+          c-enum-type-complete!
+          default-c-enum-base-type
 
           c-pointer-type-pointee
           c-array-type-dimensions
@@ -59,6 +63,7 @@
           c-struct/union-type-field-type
           c-struct/union-type-field-offset
           c-enum-type-tag
+          c-enum-type-base-type
           c-enum-type-enumerator-alist
           c-enum-value
           c-enum-symbol
@@ -69,13 +74,18 @@
           c-struct-type?
           c-union-type?
           c-struct/union-type?
+          c-struct/union-type-complete?
           c-enum-type?
           c-aggregate-type?
           c-pointer-like-type?
 
+          <native-tag-namespace>
           make-native-tag-namespace
-          current-native-tag-namespace
-          tag->native-type
+          native-tag-namespace?
+          native-tag-lookup
+          native-tag-ref
+          native-tag-declare!
+          native-tag-define!
 
           native-handle-type
           native-handle-owner
@@ -84,7 +94,6 @@
           native*
           native-aref
           native.
-          native->
           native&
 
           make-native-handle
@@ -92,6 +101,14 @@
           uvector->native-handle
           null-pointer-handle
           null-pointer-handle?
+
+          c-int->boolean
+          boolean->c-int
+          c-char*->string
+          c-char*->string/shared
+          string->c-char*
+          string->c-char*/shared
+          string->c-char*!
 
           c-pointer-handle?
           c-function-handle?
@@ -130,8 +147,10 @@
           <wrapped-c-array>
           <wrapped-c-struct>
           <wrapped-c-union>
+          define-native-wrapper-class
           make-native-wrapper-class
           wrap-native-handle
+          wrapped-handle
           ))
 (select-module gauche.native-type)
 
@@ -143,42 +162,133 @@
  )
 
 ;;;
-;;; Tag namespace registry
+;;; Tag namespace
 ;;;
 
-;; Tag namespace is an opaque dictionary to map struct/union/enum tags
-;; (symbol) to native-type.
+;; <native-tag-namespace> maintains scoped namespace of struct/union/enum
+;; tags.  It can be manually managed when you define C types in FFI,
+;; or automatically managed when lang.c module parses C code.
+;;
+;; Native type constructors don't register tags by themselves.  It can be
+;; done with the following procedures,
+;; KIND is one of the symbols struct, union or enum.
 
+;; Internally, scopes are represented by a stacked map; the topmost map
+;; is the innermost scope.  It's an implementation detail.
+(define-class <native-tag-namespace> ()
+  ((tags :init-keyword :tags)))         ;<stacked-map>
+
+;; API
 (define (make-native-tag-namespace :optional (parent #f))
-  (if parent
-    (make-stacked-map (make-hash-table 'eq?) parent)
-    (make-stacked-map (make-hash-table 'eq?))))
+  (assume-type parent (<?> <native-tag-namespace>))
+  (let1 tab (make-hash-table 'eq?)
+    (make <native-tag-namespace>
+      :tags (if parent
+              (stacked-map-stack (~ parent'tags) tab)
+              (make-stacked-map tab)))))
 
-;; Current namespace - by default it's #f, making the native
-;; aggregates not registered.
-(define current-native-tag-namespace
-  (make-parameter #f))
+;; API
+(define (native-tag-namespace? obj) (is-a? obj <native-tag-namespace>))
 
-(define (tag->native-type tag :optional (ns #f))
-  (and-let1 registry (or ns (current-native-tag-namespace))
-    (dict-get registry tag #f)))
+;; API.  Returns #f if not found
+(define (native-tag-lookup ns tag)
+  (assume-type ns <native-tag-namespace>)
+  (assume-type tag <symbol>)
+  (dict-get (~ ns'tags) tag #f))
 
-(define (%register-native-tag! tag type)
-  ;; TODO: We need to allow registering incomplete types.  Then it should
-  ;; be allowed to replace or augument it with a complete type.
-  (and-let* ([ tag ]
-             [registry (current-native-tag-namespace)])
-    (if-let1 t (dict-get registry tag #f)
-      (unless (equal? t type)
-        (errorf "struct/union/enum tag ~s is already used by ~s" tag type))
-      (set! (dict-get registry tag) type)))
+(define (%tag-kind type)
+  (cond [(is-a? type <c-struct-type>) 'struct]
+        [(is-a? type <c-union-type>) 'union]
+        [else 'enum]))
+
+(define (%check-tag-kind type kind tag)
+  (unless (eq? (%tag-kind type) kind)
+    (errorf "Tag ~s is used for ~s, but referred as ~a" tag type kind))
   type)
+
+(define (%tag-type-complete? type)
+  (if (is-a? type <c-enum-type>)
+    (not (null? (~ type'enumerator-alist)))
+    (c-struct/union-type-complete? type)))
+
+(define (%check-tag-args ns kind tag)
+  (assume-type ns <native-tag-namespace>)
+  (assume (memq kind '(struct union enum))
+    "Tag kind must be one of struct, union or enum, but got:" kind)
+  (assume-type tag <symbol>))
+
+;; API.  For declaration of struct/union/enum type---that is,
+;; no fields/enumerators are known.  It is allowed that the same tag
+;; is alredy registered with the same kind.
+(define (native-tag-declare! ns kind tag)
+  (%check-tag-args ns kind tag)
+  (if-let1 t (stacked-map-top-get (~ ns'tags) tag #f)
+    (%check-tag-kind t kind tag)
+    (rlet1 t (ecase kind
+               [(struct) (make-c-struct-type tag #f)]
+               [(union) (make-c-union-type tag #f)]
+               ;; Forward reference of enum isn't allowed in standard C,
+               ;; but some compilers allow it.  We use the provisional
+               ;; base type.
+               [(enum) (make-c-enum-type tag (default-c-enum-base-type) '())])
+      (dict-put! (~ ns'tags) tag t))))
+
+;; API.  Lookup tag, and if not found, register one.
+(define (native-tag-ref ns kind tag)
+  (%check-tag-args ns kind tag)
+  (if-let1 t (native-tag-lookup ns tag)
+    (%check-tag-kind t kind tag)
+    (native-tag-declare! ns kind tag)))
+
+;; API.  Complete struct/union/enum type with the tag.
+;; SPEC is fields/enumerators.  TYPESPEC is for base type of enum,
+;; when it is not the default base type.
+(define (native-tag-define! ns kind tag spec :optional (typespec #f))
+  (define (make-new)
+    (ecase kind
+      [(struct) (make-c-struct-type tag spec)]
+      [(union) (make-c-union-type tag spec)]
+      [(enum) (make-c-enum-type tag typespec spec)]))
+  (%check-tag-args ns kind tag)
+  (assume (list? spec)
+    "Field list or enumerator list required, but got:" spec)
+  (if-let1 t (stacked-map-top-get (~ ns'tags) tag #f)
+    (begin
+      (%check-tag-kind t kind tag)
+      (cond [(%tag-type-complete? t)
+             ;; Redefinition is allowed only if it's the same.
+             (unless (equal? t (make-new))
+               (errorf "Tag ~s is already defined as ~s" tag t))
+             t]
+            [(eq? kind 'enum)
+             (when (and typespec
+                        (not (equal? typespec (c-enum-type-base-type t))))
+               (errorf "Enum ~s is declared with base type ~s, but defined \
+                        with ~s" tag (c-enum-type-base-type t) typespec))
+             (c-enum-type-complete! t spec)]
+            [else (c-struct/union-type-complete! t spec)]))
+    (rlet1 t (make-new)
+      (dict-put! (~ ns'tags) tag t))))
 
 ;;;
 ;;; Aggregate type constructors
 ;;;
 
+;; precomp wraps compile-time type values with proxy-type, as they may
+;; need to be computed at runtime, and such proxies can be passed to
+;; make-c-pointer-type etc.  At runtime, we need to strip it.
+;; Note: "Pure" placholding proxy--awaiting the real type to be assigned
+;; at runrime--is marked as t == (proxy-type-ref t).  %unproxy returns
+;; the such proxy type as is.
+(define (%unproxy t)
+  (let loop ([t t])
+    (if (is-a? t <proxy-type>)
+      (let1 u (proxy-type-ref t)
+        (if (eq? u t) t (loop u)))
+      t)))
+
 (define (make-c-pointer-type pointee-type)
+  (set! pointee-type (%unproxy pointee-type))
   (assume-type pointee-type <native-type>)
   (let* ([bare-name (regexp-replace* (symbol->string (~ pointee-type'name))
                                      #/^</ ""
@@ -186,14 +296,28 @@
          [pointer-name #"<~|bare-name|*>"])
     (%make-c-pointer-type pointer-name pointee-type)))
 
+;; Opaque type stands for typedef'ed type whose internals are not
+;; supposed to be known for the users.  An example is FILE.
+;; It is only useful to be used as a pointee of C pointer type.
+;; TODO: Shall we allow optional super argument?
+(define (make-c-opaque-pointer-type name :optional (c-name #f))
+  (assume-type name <symbol>)
+  (assume-type c-name (<?> <string>))
+  (let1 opaque-type
+      (%make-c-opaque-type (symbol->string name)
+                           (or c-name (symbol->string name))
+                           <top>)
+    (make-c-pointer-type opaque-type)))
+
 ;; Argument-types are list of native types, optionally end with
 ;; a symbol ... for varargs.
 (define (make-c-function-type return-type argument-types)
+  (set! return-type (%unproxy return-type))
   (assume-type return-type <native-type>)
   (receive (arg-types variadic?)
       (if (and (pair? argument-types) (eq? (last argument-types) '...))
-        (values (drop-right argument-types 1) #t)
-        (values argument-types #f))
+        (values (map %unproxy (drop-right argument-types 1)) #t)
+        (values (map %unproxy argument-types) #f))
     (dolist [arg-type arg-types]
       (assume-type arg-type <native-type>))
     (%make-c-function-type
@@ -205,7 +329,9 @@
 (define (make-c-array-type element-type dimensions)
   ;; allow single integer or '* for 1-dim array
   (define dims (if (list? dimensions) dimensions (list dimensions)))
+  (set! element-type (%unproxy element-type))
   (assume-type element-type <native-type>)
+  (%check-complete-type element-type "array element type")
   (let loop ([dims dims])
     (cond [(null? dims)]
           [(not (pair? dims))
@@ -234,21 +360,18 @@
 (define (struct-size-roundup size alignment)
   (* alignment (quotient (+ size alignment -1) alignment)))
 
-(define (make-c-struct/union-type tag fields struct?)
+;; Compute the layout of struct/union fields.  Returns size, alignment,
+;; bounded? and the field descriptors ((name type offset) ...).
+(define (%struct/union-layout fields struct?)
   (let loop ([fs fields] [offset 0] [alignment 1] [descs '()] [bounded #t])
     (match fs
       [()
-       (let* ([size (struct-size-roundup offset alignment)]
-              [tname (if struct? "struct" "union")]
-              [name (if tag
-                      #"~tname ~tag"
-                      #"~tname anonymous")]) ;TODO: Give better name
-         ($ %register-native-tag! tag
-            (%make-c-struct/union-type
-             (if struct? <c-struct> <c-union>)
-             name size alignment (if bounded 1 0) tag (reverse descs))))]
-      [(((? symbol? fname) ftype) . rest)
+       (values (struct-size-roundup offset alignment) alignment bounded
+               (reverse descs))]
+      [(((? symbol? fname) ftype0) . rest)
+       (define ftype (%unproxy ftype0))
        (assume-type ftype <native-type>)
+       (%check-complete-type ftype #"type of field ~fname")
        (when (and (not bounded) struct?)
          (error "Struct type can have unbounded field only at the end:" fs))
        (let* ([falign (~ ftype'alignment)]
@@ -268,11 +391,54 @@
        (error "Bad native struct fields; must be a proper list, but got:"
               fields)])))
 
+;; FIELS can be #f for an incomplete struct/union type.  It can be completed
+;; later by c-struct/union-type-complete!.
+(define (make-c-struct/union-type tag fields struct?)
+  (let* ([tname (if struct? "struct" "union")]
+         [name (if tag
+                 #"~tname ~tag"
+                 #"~tname anonymous")] ;TODO: Give better name
+         [class (if struct? <c-struct-type> <c-union-type>)])
+    (if fields
+      (receive (size alignment bounded descs)
+          (%struct/union-layout fields struct?)
+        (%make-c-struct/union-type class name size alignment
+                                   (if bounded 1 0) tag descs))
+      (begin
+        (unless tag
+          (errorf "Incomplete ~a type must have a tag" tname))
+        (%make-c-struct/union-type class name 0 0 0 tag #f)))))
+
+;; Complete an incomplete struct/union type in place.
+(define (c-struct/union-type-complete! type fields)
+  (assume-type type (</> <c-struct-type> <c-union-type>))
+  (when (c-struct/union-type-complete? type)
+    (errorf "~s has already been completed" type))
+  (receive (size alignment bounded descs)
+      (%struct/union-layout fields (is-a? type <c-struct-type>))
+    (%c-struct/union-type-complete! type size alignment (if bounded 1 0) descs))
+  type)
+
 (define (make-c-struct-type tag fields)
   (make-c-struct/union-type tag fields #t))
 
 (define (make-c-union-type tag fields)
   (make-c-struct/union-type tag fields #f))
+
+;; Enum is tricky.  We can't extract each enumerator's value and the size
+;; of enum type itself from DSO file.  We have a few options:
+;;
+;; - Rely on the user to mirror enumerators and base type size precisely.
+;;   User can create enum type with `make-c-enum-type`.
+;;   We don't need to rely on external info.  If the user's descriptoin gets
+;;   out of sync with the binary, we're in trouble.
+;; - Run the compiler to figure out those info.  We can be sure the values
+;;   are in sync, even if the user omits some of enumerators.
+;;   `define-c-enum` with stub or aot backend adopts this.
+;; - Parse the header file to figure it out.  We can also be sure the enumerator
+;;   values are in sync.  The base type depends on the compiler, though.
+;;   We plan to implement this for `define-c-enum` with native backend.
+;;
 
 ;; make-c-enum-type tag typespec (enumerator ...)
 ;;   enumerator : symbol | (symbol integer-value)
@@ -308,93 +474,146 @@
                          [tag #"enum ~tag"]
                          [else (~ underlying'c-type-name)])]
             [pname (if tag #"enum ~tag" "enum anonymous")])
-        ($ %register-native-tag! tag
-           (%make-c-enum-type pname cname underlying size alignment
-                              tag typespec alist))))))
+        (%make-c-enum-type pname cname underlying size alignment
+                           tag typespec alist)))))
+
+;; For stub/aot FFI backend, we need to have concrete enum type _before_
+;; we compile & load the generated stub.  This returns a provisional
+;; enum base type.  It is updated with c-enum-type-complete!.
+(define (default-c-enum-base-type)
+  (%native-int-type-of-size (implicit-enum-size 32) #t))
+
+;; Complete the provisional enum type with the actual enumerators.
+;;
+;; NAME, if given, identifies the enum in error messages; it is the name the
+;; user knows the type by, which is more useful than the type itself.
+;;
+;; Since the representation was settled before the values were known, the
+;; values have to fit it; otherwise the generated code would box or unbox
+;; them wrongly.  We reject that rather than silently widening the type---the
+;; code that assumed the narrower one is already compiled.
+(define (c-enum-type-complete! type enumerators :optional (name #f))
+  (assume-type type <c-enum-type>)
+  (unless (null? (~ type'enumerator-alist))
+    (errorf "c-enum type ~s has already been completed" (or name type)))
+  (let ([alist (%build-enum-alist enumerators)]
+        [base (c-enum-type-base-type type)])
+    (dolist [e alist]
+      (unless (of-type? (cdr e) base)
+        (errorf "enumerator ~a of the enum ~a has the value ~s, which \
+                 doesn't fit in ~a, the type the enum is represented by; \
+                 give the enum an explicit base type that can represent it"
+                (car e) (or name type) (cdr e) (~ base'name))))
+    (set! (~ type'enumerator-alist) alist)
+    type))
 
 ;;;
 ;;; Additonal native type predicates/accessors
 ;;;
 
-(define-inline (c-pointer-type? type) (is-a? type <c-pointer>))
-(define-inline (c-array-type? type) (is-a? type <c-array>))
-(define-inline (c-function-type? type) (is-a? type <c-function>))
-(define-inline (c-struct-type? type) (is-a? type <c-struct>))
-(define-inline (c-union-type? type) (is-a? type <c-union>))
-(define-inline (c-enum-type? type) (is-a? type <c-enum>))
+(define-inline (c-pointer-type? type) (is-a? type <c-pointer-type>))
+(define-inline (c-array-type? type) (is-a? type <c-array-type>))
+(define-inline (c-function-type? type) (is-a? type <c-function-type>))
+(define-inline (c-struct-type? type) (is-a? type <c-struct-type>))
+(define-inline (c-union-type? type) (is-a? type <c-union-type>))
+(define-inline (c-enum-type? type) (is-a? type <c-enum-type>))
 
 (define-inline (c-struct/union-type? type)
-  (or (is-a? type <c-struct>)
-      (is-a? type <c-union>)))
+  (or (is-a? type <c-struct-type>)
+      (is-a? type <c-union-type>)))
+
+(define (c-struct/union-type-complete? type)
+  (assume-type type (</> <c-struct-type> <c-union-type>))
+  (not (%c-struct/union-type-incomplete? type)))
+
+;; An incomplete type can't be used where its size or members are needed.
+(define (%check-complete-type type what)
+  (when (%c-struct/union-type-incomplete? type)
+    (errorf "Incomplete type ~s can't be used as ~a" type what)))
+
+;; Fields of struct/union.  Raises an error if the type is incomplete.
+(define (%struct/union-fields type)
+  (%check-complete-type type "a complete type")
+  (~ type'fields))
 
 ;; C types that has some structure
 (define (c-aggregate-type? type)
-  (or (is-a? type <c-array>)
-      (is-a? type <c-struct>)
-      (is-a? type <c-union>)))
+  (or (is-a? type <c-array-type>)
+      (is-a? type <c-struct-type>)
+      (is-a? type <c-union-type>)))
 
 ;; C types that can be 'casted' to a poinetr
 (define (c-pointer-like-type? type)
-  (or (is-a? type <c-pointer>)
-      (is-a? type <c-array>)
-      (is-a? type <c-function>)))
+  (or (is-a? type <c-pointer-type>)
+      (is-a? type <c-array-type>)
+      (is-a? type <c-function-type>)))
 
 (define-inline (c-pointer-type-pointee type)
-  (assume-type type <c-pointer>)
+  (assume-type type <c-pointer-type>)
   (~ type'pointee-type))
 
 (define-inline (c-array-type-dimensions type)
-  (assume-type type <c-array>)
+  (assume-type type <c-array-type>)
   (~ type'dimensions))
 
 (define-inline (c-function-type-return-type type)
-  (assume-type type <c-function>)
+  (assume-type type <c-function-type>)
   (~ type'return-type))
 
 (define-inline (c-function-type-argument-types type)
-  (assume-type type <c-function>)
+  (assume-type type <c-function-type>)
   (~ type'argument-types))
 
 (define-inline (c-function-type-variadic? type)
-  (assume-type type <c-function>)
+  (assume-type type <c-function-type>)
   (~ type'variadic?))
 
 (define-inline (c-struct/union-type-tag type)
-  (assume-type type (</> <c-struct> <c-union>))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
   (~ type'tag))
 
 (define-inline (c-struct/union-type-field-names type)
-  (assume-type type (</> <c-struct> <c-union>))
-  (map car (~ type'fields)))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
+  (map car (%struct/union-fields type)))
 
 (define-inline (c-struct/union-type-field-type type field-name)
-  (assume-type type (</> <c-struct> <c-union>))
-  (if-let1 e (assq field-name (~ type'fields))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
+  (if-let1 e (assq field-name (%struct/union-fields type))
     (cadr e)
     (errorf "~s does not have a field named ~a" type field-name)))
 
 (define-inline (c-struct/union-type-field-offset type field-name)
-  (assume-type type (</> <c-struct> <c-union>))
-  (if-let1 e (assq field-name (~ type'fields))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
+  (if-let1 e (assq field-name (%struct/union-fields type))
     (caddr e)
     (errorf "~s does not have a field named ~a" type field-name)))
 
 (define-inline (c-enum-type-tag type)
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (~ type'tag))
 
+;; The integral native type the enum is actually represented by.  It is
+;; the explicitly given type-spec (C23's enum-type-specifier) if any,
+;; otherwise the one derived from the enumerator value range.  Unlike
+;; type-spec, this is never #f, so it can be used whenever the enum's
+;; representation is needed.
+(define-inline (c-enum-type-base-type type)
+  (assume-type type <c-enum-type>)
+  (or (~ type'type-spec)
+      (%native-int-type-of-size (~ type'size) (~ type'unsigned?))))
+
 (define-inline (c-enum-type-enumerator-alist type)
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (~ type'enumerator-alist))
 
 (define-inline (c-enum-value type symbol)
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (assume-type symbol <symbol>)
   (or (alist-ref (~ type'enumerator-alist) symbol)
       (errorf "Invalid enum symbol ~s for ~s" symbol type)))
 
 (define-inline (c-enum-symbol type value)
-  (assume-type type <c-enum>)
+  (assume-type type <c-enum-type>)
   (assume-type value <integer>)
   (or (alist-key (~ type'enumerator-alist) value)
       (errorf "Invalid enum value ~s for ~s" value type)))
@@ -680,15 +899,21 @@
                                        offset::<fixnum>)
   (let* ([p::void* (SCM_UVECTOR_ELEMENTS uv)]
          [vecsize::ScmSmallInt (Scm_UVectorSizeInBytes uv)]
-         [data-type::ScmNativeType* (?: (SCM_C_POINTER_P handle-type)
-                                        (-> (SCM_C_POINTER handle-type)
+         [data-type::ScmNativeType* (?: (SCM_C_POINTER_TYPE_P handle-type)
+                                        (-> (SCM_C_POINTER_TYPE handle-type)
                                             pointee_type)
                                         handle-type)]
          [datasize::ScmSmallInt (-> data-type size)]
          [max::void* (+ p (Scm_UVectorSizeInBytes uv))])
-    (unless (and (<= 0 offset) (<= (+ offset datasize) vecsize))
-      (Scm_Error "Offset %ld out of range, or type size %ld too big."
-                 offset datasize))
+    (if (SCM_C_POINTER_TYPE_P handle-type)
+      ;; NB: Pointer can point to zero-length array (or one element past
+      ;; the last one), so offset==vecsize can happen.  Dereferencing
+      ;; it triggers an error by the region boundary check.
+      (unless (and (<= 0 offset) (<= offset vecsize))
+        (Scm_Error "Offset %ld out of range for %S" offset uv))
+      (unless (and (<= 0 offset) (<= (+ offset datasize) vecsize))
+        (Scm_Error "Backing storage %S is too small for a nahdle of \
+                    an aggregate type %S" uv handle-type)))
     (return
      (Scm__MakeNativeHandle (+ p offset)
                             handle-type
@@ -707,7 +932,15 @@
     "Init argument must be a string or a uvector, but got:" init)
   (assume (or init (zero? offset))
     "Non-zero offset is not allowed with uvector auto allocation:" offset)
-  (let1 buf (cond [(string? init) (string->u8vector init)]
+  (if (c-pointer-type? type)
+    (unless init
+      (%check-complete-type (c-pointer-type-pointee type)
+                            "a pointee of auto-allocated handle"))
+    (%check-complete-type type "a type of native handle"))
+  (let1 buf (cond [(string? init)
+                   ;; We include terminating NUL byte
+                   (rlet1 buf (make-u8vector (+ (string-size init) 1) 0)
+                     (string->u8vector! buf 0 init))]
                   [(uvector? init) init]
                   [else (make-u8vector
                          (if (c-pointer-type? type)
@@ -797,9 +1030,9 @@
 (define-cproc null-pointer-handle (:optional (type::<native-type>? #f))
   (let* ([t::ScmNativeType*
           (?: type type (SCM_NATIVE_TYPE (Scm_NativeVoidPointerType)))])
-    (unless (or (SCM_C_POINTER_P t)
-                (SCM_C_ARRAY_P t)
-                (SCM_C_FUNCTION_P t))
+    (unless (or (SCM_C_POINTER_TYPE_P t)
+                (SCM_C_ARRAY_TYPE_P t)
+                (SCM_C_FUNCTION_TYPE_P t))
       (Scm_Error "Invalid type for a null pointer: %S" t))
     (return
      (Scm__MakeNativeHandle NULL
@@ -812,29 +1045,29 @@
                             0))))
 
 (define-cproc null-pointer-handle? (h::<native-handle>) ::<boolean>
-  (return (and (or (SCM_C_POINTER_P (-> h type))
-                   (SCM_C_ARRAY_P (-> h type)))
+  (return (and (or (SCM_C_POINTER_TYPE_P (-> h type))
+                   (SCM_C_ARRAY_TYPE_P (-> h type)))
                (== (-> h ptr) NULL))))
 
 (define (c-pointer-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-pointer>)))
+       (is-a? (native-handle-type obj) <c-pointer-type>)))
 
 (define (c-array-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-array>)))
+       (is-a? (native-handle-type obj) <c-array-type>)))
 
 (define (c-function-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-function>)))
+       (is-a? (native-handle-type obj) <c-function-type>)))
 
 (define (c-struct-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-struct>)))
+       (is-a? (native-handle-type obj) <c-struct-type>)))
 
 (define (c-union-handle? obj)
   (and (is-a? obj <native-handle>)
-       (is-a? (native-handle-type obj) <c-union>)))
+       (is-a? (native-handle-type obj) <c-union-type>)))
 
 (define (c-pointer-like-handle? obj)
   (and (is-a? obj <native-handle>)
@@ -891,7 +1124,7 @@
   (let* ([p::void* (+ (-> handle ptr) offset)])
     ;; If destination type is not a c-pointer, ensure the source handle's
     ;; known memory region (if any) covers the destination type's size.
-    (when (and (not (SCM_C_POINTER_P type))
+    (when (and (not (SCM_C_POINTER_TYPE_P type))
                (!= (-> handle region-min) NULL)
                (!= (-> handle region-max) NULL))
       (let* ([dsize::ScmSmallInt (-> type size)])
@@ -931,14 +1164,14 @@
 
 (define-cproc c-pointer-compare (a::<native-handle> b::<native-handle>)
   ::<fixnum>
-  (unless (or (SCM_C_POINTER_P (-> a type))
-              (SCM_C_ARRAY_P (-> a type))
-              (SCM_C_FUNCTION_P (-> a type)))
+  (unless (or (SCM_C_POINTER_TYPE_P (-> a type))
+              (SCM_C_ARRAY_TYPE_P (-> a type))
+              (SCM_C_FUNCTION_TYPE_P (-> a type)))
     (Scm_Error "c-pointer, c-array, or c-function handle expeced, but got: %S"
                a))
-  (unless (or (SCM_C_POINTER_P (-> b type))
-              (SCM_C_ARRAY_P (-> b type))
-              (SCM_C_FUNCTION_P (-> b type)))
+  (unless (or (SCM_C_POINTER_TYPE_P (-> b type))
+              (SCM_C_ARRAY_TYPE_P (-> b type))
+              (SCM_C_FUNCTION_TYPE_P (-> b type)))
     (Scm_Error "c-pointer, c-array, or c-function handle expeced, but got: %S"
                b))
   (cond [(== (-> a ptr) (-> b ptr)) (return 0)]
@@ -957,13 +1190,13 @@
 ;; Two types may differ.
 (define-cproc c-memwise-compare (a::<native-handle> b::<native-handle>)
   ::<fixnum>
-  (unless (or (SCM_C_ARRAY_P (-> a type))
-              (SCM_C_STRUCT_P (-> a type))
-              (SCM_C_UNION_P (-> a type)))
+  (unless (or (SCM_C_ARRAY_TYPE_P (-> a type))
+              (SCM_C_STRUCT_TYPE_P (-> a type))
+              (SCM_C_UNION_TYPE_P (-> a type)))
     (Scm_Error "c-array, c-struct, or c-union handle expected, but got: %S" a))
-  (unless (or (SCM_C_ARRAY_P (-> b type))
-              (SCM_C_STRUCT_P (-> b type))
-              (SCM_C_UNION_P (-> b type)))
+  (unless (or (SCM_C_ARRAY_TYPE_P (-> b type))
+              (SCM_C_STRUCT_TYPE_P (-> b type))
+              (SCM_C_UNION_TYPE_P (-> b type)))
     (Scm_Error "c-array, c-struct, or c-union handle expected, but got: %S" b))
   (let* ([a-size::ptrdiff_t (- (-> a region-max) (-> a region-min))]
          [b-size::ptrdiff_t (- (-> b region-max) (-> b region-min))])
@@ -1005,7 +1238,8 @@
       (Scm_Error "Cannot dereference type %S" element-type))
     (when (and (!= (-> handle region-max) NULL)
                (== offset 0)
-               (== (-> handle ptr) (-> handle region-max)))
+               (> (+ (-> handle ptr) (-> element-type size))
+                  (-> handle region-max)))
       ;; We allow a pointer points right past the end of array.
       ;; They are valid for pointer arithmetic, but cannot be dereferenced.
       ;; We distinguish it from offset-out-of-bound error.
@@ -1117,9 +1351,9 @@
     (%pset! type handle offset val)]))
 
 (define (c-struct-field type selector)
-  (assume-type type (</> <c-struct> <c-union>))
+  (assume-type type (</> <c-struct-type> <c-union-type>))
   (assume-type selector <symbol>)
-  (if-let1 field (assq selector (~ type'fields))
+  (if-let1 field (assq selector (%struct/union-fields type))
     field
     (errorf "Unknown native struct field ~s for ~s" selector type)))
 
@@ -1127,14 +1361,16 @@
 (define (native-type-offset type selector)
   (assume-type type <native-type>)
   (typecase type
-    [<c-pointer>
+    [<c-pointer-type>
      ;; Selector is a single element index, passed as a one-element list.
      (match selector
-       [((? fixnum? i)) (* i (~ type'pointee-type'size))]
+       [((? fixnum? i))
+        (%check-complete-type (~ type'pointee-type) "a pointee")
+        (* i (~ type'pointee-type'size))]
        [_
         (error "Pointer dereference requires a single integer index, but got:"
                selector)])]
-    [<c-array>
+    [<c-array-type>
      (unless (every (every-pred fixnum? (complement negative?)) selector)
        (error "Invalid native array selector:" selector))
      (let* ([etype (~ type'element-type)]
@@ -1164,7 +1400,7 @@
                       (+ (* (car ss) step) i))]
                [else
                 (error "Native array selector is out of range:" selector)])))]
-    [(</> <c-struct> <c-union>)
+    [(</> <c-struct-type> <c-union-type>)
      (caddr (c-struct-field type selector))]
     [else
      (error "Unsupported native aggregate type:" type)]))
@@ -1195,9 +1431,10 @@
 (define (native* handle :optional (type #f))
   (assume-type handle <native-handle>)
   (let1 t (%handle-type handle type)
-    (assume-type t <c-pointer>
+    (assume-type t <c-pointer-type>
       "Attempt to dereferencing non-pointer type:" (cons handle t))
     (let1 pt (~ t'pointee-type)
+      (%check-complete-type pt "a pointee")
       ;; NB: We 'shortcut' pointer-to-aggregate handles; both
       ;; pointer-to-aggregaete and reference-to-aggregate handles have
       ;; ptr point to the aggregate, and only the type differs.
@@ -1210,7 +1447,8 @@
 (define (%native*-set! handle type val)
   (assume-type handle <native-handle>)
   (let* ([t (%handle-type handle type)])
-    (assume-type t <c-pointer>)
+    (assume-type t <c-pointer-type>)
+    (%check-complete-type (~ t'pointee-type) "a pointee")
     (%handle-set! (~ t'pointee-type) handle 0 val)))
 (set! (setter native*)
       (case-lambda
@@ -1225,9 +1463,9 @@
   (let* ([t (%handle-type handle #f)]
          [offset (native-type-offset t indices)])
     (etypecase t
-      [<c-array>
+      [<c-array-type>
        (%handle-ref (%array-dereference-type t indices) handle offset)]
-      [<c-pointer>
+      [<c-pointer-type>
        (%handle-ref (~ t 'pointee-type) handle offset)])))
 
 (define (%native-aref-set! handle indices val)
@@ -1236,9 +1474,9 @@
   (let* ([t (%handle-type handle #f)]
          [offset (native-type-offset t indices)])
     (etypecase t
-      [<c-array>
+      [<c-array-type>
        (%handle-set! (%array-dereference-type t indices) handle offset val)]
-      [<c-pointer>
+      [<c-pointer-type>
        (%handle-set! (~ t'pointee-type) handle offset val)])))
 (set! (setter native-aref)
       (^[handle . args]
@@ -1246,94 +1484,280 @@
           (error "native-aref setter requires at least one index and a value"))
         (%native-aref-set! handle (drop-right args 1) (last args))))
 
-
 ;; Struct/union direct field access
-(define (native. handle slot :optional (type #f))
-  (assume-type handle <native-handle>)
-  (assume-type slot <symbol>)
-  (let* ([t (%handle-type handle type)])
-    (assume-type t (</> <c-struct> <c-union>))
-    (let* ([field (c-struct-field t slot)]
-           [ctype (cadr field)]
-           [offset (caddr field)])
-      (%handle-ref ctype handle offset))))
+(define native.
+  (case-lambda
+    [(handle slot)
+     (define (bad)
+       (error "native. requires a handle of struct/union or pointer to \
+            struct/union, but got" handle))
+     (assume-type handle <native-handle>)
+     (assume-type slot <symbol>)
+     (let* ([t (native-handle-type handle)])
+       (typecase t
+         [(</> <c-struct-type> <c-union-type>)
+          (let* ([field (c-struct-field t slot)]
+                 [ctype (cadr field)]
+                 [offset (caddr field)])
+            (%handle-ref ctype handle offset))]
+         [<c-pointer-type>
+          (let* ([pt (~ t'pointee-type)])
+            (unless (of-type? pt (</> <c-struct-type> <c-union-type>)) (bad))
+            (let* ([field (c-struct-field pt slot)]
+                   [ctype (cadr field)]
+                   [offset (caddr field)])
+              (%handle-ref ctype handle offset)))]
+         [else (bad)]))]
+    [(handle slot . more-slots)
+     (apply native. (native. handle slot) more-slots)]))
 
-(define (%native.-set! handle slot type val)
-  (assume-type handle <native-handle>)
-  (assume-type slot <symbol>)
-  (let* ([t (%handle-type handle type)])
-    (assume-type t (</> <c-struct> <c-union>))
-    (let* ([field (c-struct-field t slot)]
-           [ctype (cadr field)]
-           [offset (caddr field)])
-      (%handle-set! ctype handle offset val))))
-(set! (setter native.)
-      (case-lambda
-        [(handle slot type val) (%native.-set! handle slot type val)]
-        [(handle slot val) (%native.-set! handle slot #f val)]))
-
-;; Struct/union indirect field access
-(define (native-> handle slot :optional (type #f))
-  (assume-type handle <native-handle>)
-  (assume-type slot <symbol>)
-  (let* ([t (%handle-type handle type)])
-    (assume-type t <c-pointer>)
-    (let* ([pt (~ t'pointee-type)])
-      (assume-type pt (</> <c-struct> <c-union>))
-      (let* ([field (c-struct-field pt slot)]
-             [ctype (cadr field)]
-             [offset (caddr field)])
-        (%handle-ref ctype handle offset)))))
-
-(define (%native->-set! handle slot type val)
-  (assume-type handle <native-handle>)
-  (assume-type slot <symbol>)
-  (let* ([t (%handle-type handle type)])
-    (assume-type t <c-pointer>)
-    (let* ([pt (~ t'pointee-type)])
-      (assume-type pt (</> <c-struct> <c-union>))
-      (let* ([field (c-struct-field pt slot)]
-             [ctype (cadr field)]
-             [offset (caddr field)])
-        (%handle-set! ctype handle offset val)))))
-
-(set! (setter native->)
-      (case-lambda
-        [(handle slot type val) (%native->-set! handle slot type val)]
-        [(handle slot val) (%native->-set! handle slot #f val)]))
+(define %native.-set!
+  (case-lambda
+    [(handle slot val)
+     (define (bad)
+       (error "(setter native.) requires a handle of struct/union or pointer to \
+            struct/union, but got" handle))
+     (assume-type handle <native-handle>)
+     (assume-type slot <symbol>)
+     (let* ([t (native-handle-type handle)])
+       (typecase t
+         [(</> <c-struct-type> <c-union-type>)
+          (let* ([field (c-struct-field t slot)]
+                 [ctype (cadr field)]
+                 [offset (caddr field)])
+            (%handle-set! ctype handle offset val))]
+         [<c-pointer-type>
+          (let* ([pt (~ t'pointee-type)])
+            (unless (of-type? pt (</> <c-struct-type> <c-union-type>)) (bad))
+            (let* ([field (c-struct-field pt slot)]
+                   [ctype (cadr field)]
+                   [offset (caddr field)])
+              (%handle-set! ctype handle offset val)))]
+         [else (bad)]))]
+    [(handle slot slot2 . rest)
+     (apply %native.-set! (native. handle slot) slot2 rest)]))
+(set! (setter native.) %native.-set!)
 
 ;; Take an address of struct/union member or array element
-(define (native& handle selector)
+(define (native& handle :optional (selector #f))
+  (define (struct-field& type)
+    (assume-type selector <symbol>
+      "native& on c-struct or c-union requires a symbol selector, but got;"
+      selector)
+    (let ([off (native-type-offset type selector)]
+          [etype (c-struct/union-type-field-type type selector)])
+      (make-internal-handle handle off (make-c-pointer-type etype))))
+  (define (array& type)
+    (assume-type selector (</> <fixnum> (<List> <fixnum>))
+      "native& on c-struct or c-union requires a symbol selector, but got;"
+      selector)
+    (let ([off (native-type-offset type (if (list? selector)
+                                          selector
+                                          (list selector)))])
+      (make-internal-handle handle off
+                            (make-c-pointer-type (~ type'element-type)))))
+
+  (define (bad)
+    (error "native& requires aggregate type ahndle, or \
+            a pointer handle to aggregate type, but got:"
+           handle))
   (assume-type handle <native-handle>)
   (let1 type (~ handle'type)
     (typecase type
-      [(</> <c-struct> <c-union>)
-       (assume-type selector <symbol>
-         "native& on c-struct or c-union requires a symbol selector, but got;"
-         selector)
-       (let ([off (native-type-offset type selector)]
-             [etype (c-struct/union-type-field-type type selector)])
-         (make-internal-handle handle off (make-c-pointer-type etype)))]
-      [<c-array>
-       (assume-type selector (</> <fixnum> (<List> <fixnum>))
-         "native& on c-struct or c-union requires a symbol selector, but got;"
-         selector)
-       (let ([off (native-type-offset type (if (list? selector)
-                                             selector
-                                             (list selector)))])
-         (make-internal-handle handle off
-                               (make-c-pointer-type (~ type'element-type))))]
-      [else
-       (error "native& requires c-array, c-struct or c-union handle, but got:"
-              handle)])))
+      [(</> <c-struct-type> <c-union-type>)
+       (if selector
+         (struct-field& type)
+         (make-internal-handle handle 0 (make-c-pointer-type type)))]
+      [<c-array-type>
+       (if selector
+         (array& type)
+         (make-internal-handle handle 0 (make-c-pointer-type type)))]
+      [<c-pointer-type>
+       (if selector
+         ;; We let native& handle both &(foo.field) and &(foo->field)
+         (typecase (c-pointer-type-pointee type)
+           [(</> <c-struct-type> <c-union-type>) => struct-field&]
+           [<c-array-type> => array&]
+           [else (bad)])
+         (error "native& on c-pointer type needs a selector:" handle))]
+      [else (bad)])))
 
+;; handle can be c-pointer handle or c-array handle.  For the latter, it is
+;; cast to the pointer handle, like C.
 (define (native-pointer+ handle element-offset)
   (assume-type handle <native-handle>)
   (let1 t (~ handle'type)
-    (assume-type t <c-pointer>
-      "c-pointer handle required, but got:" (cons handle t))
-    (let1 pt (~ t'pointee-type)
-      (make-internal-handle handle (* element-offset (~ pt'size)) (~ handle'type)))))
+    (etypecase t
+      [<c-pointer-type>
+       (let1 pt (~ t'pointee-type)
+         (%check-complete-type pt "a pointee")
+         (make-internal-handle handle
+                               (* element-offset (~ pt'size))
+                               (~ handle'type)))]
+      [<c-array-type>
+       (let* ([et (~ t'element-type)]
+              [dims (~ t'dimensions)]
+              [pt (if (length=? dims 1)
+                    (make-c-pointer-type et)
+                    (make-c-pointer-type (make-c-array-type et (cdr dims))))])
+         (native-pointer+ (cast-handle pt handle) element-offset))])))
+
+;;;
+;;; Convenience converters
+;;;
+
+(define (c-int->boolean value) (not (zero? value)))
+(define (boolean->c-int value) (if value 1 0))
+
+;; "Octet type", which can be interpreted as a character of a string.
+(define-cfn octet-native-type? (t::ScmNativeType*) ::_Bool :static
+  (return (or (SCM_EQ (SCM_OBJ t) (Scm_NativeCCharType))
+              (SCM_EQ (SCM_OBJ t) (Scm_NativeInt8Type))
+              (SCM_EQ (SCM_OBJ t) (Scm_NativeUint8Type)))))
+
+;; size: >= 0 for explicit size
+;;       == -1 for NUL-terminated string
+;;       == -2 for array size
+(define-cfn handle->string (handle::ScmNativeHandle*
+                            size::ScmSmallInt
+                            shared?::_Bool)
+  :static
+  (let* ([t::ScmNativeType* (-> handle type)]
+         [size-explicit?::_Bool (>= size 0)])
+    (cond [(SCM_C_POINTER_TYPE_P t)
+           (let* ([pt::ScmNativeType* (-> (SCM_C_POINTER_TYPE t) pointee_type)])
+             (unless (octet-native-type? pt)
+               (goto bad))
+             (when (== size -2)
+               (goto bad)))]
+          [(SCM_C_ARRAY_TYPE_P t)
+           (let* ([et::ScmNativeType* (-> (SCM_C_ARRAY_TYPE t) element_type)])
+             (unless (and (== 1 (Scm_Length (-> (SCM_C_ARRAY_TYPE t) dimensions)))
+                          (octet-native-type? et))
+               (goto bad))
+             (let* ([dim (SCM_CAR (-> (SCM_C_ARRAY_TYPE t) dimensions))])
+               (cond
+                [(== size -1)
+                 (when (SCM_INTP dim)
+                   (set! size (SCM_INT_VALUE dim)))] ;implcit bound
+                [(== size -2)
+                 (unless (SCM_INTP dim) (goto bad))
+                 (set! size (SCM_INT_VALUE dim))
+                 (set! size-explicit? TRUE)]
+                [else
+                 (when (and (SCM_INTP dim)
+                            (< (SCM_INT_VALUE dim) size))
+                   (Scm_Error "Given size %ld exceeds array size of %S"
+                              size handle))])))]
+          [else (goto bad)])
+    (return (Scm_MakeString (-> handle ptr) size -1
+                            (logior (?: shared?
+                                        SCM_STRING_IMMUTABLE
+                                        SCM_STRING_COPYING)
+                                    (?: size-explicit?
+                                        0
+                                        SCM_STRING_LIMIT_SIZE))))
+    (label bad)
+    (Scm_Error "Can't convert to string from handle: %S"  handle)))
+
+;; size can be a fixnum, #f for NUL-terminated string, #t to use
+;; array size.
+(define-cproc c-char*->string/shared (handle::<native-handle>
+                                      :optional (size #f))
+  (let* ([csize::ScmSmallInt 0])
+    (cond [(SCM_FALSEP size) (set! csize -1)]
+          [(SCM_EQ size SCM_TRUE) (set! csize -2)]
+          [(SCM_INTP size) (set! csize (SCM_INT_VALUE size))]
+          [else (SCM_TYPE_ERROR size "fixnum or boolean")])
+    (return (handle->string handle csize TRUE))))
+
+(define-cproc c-char*->string (handle::<native-handle>
+                               :optional (size #f))
+  (let* ([csize::ScmSmallInt 0])
+    (cond [(SCM_FALSEP size) (set! csize -1)]
+          [(SCM_EQ size SCM_TRUE) (set! csize -2)]
+          [(SCM_INTP size) (set! csize (SCM_INT_VALUE size))]
+          [else (SCM_TYPE_ERROR size "fixnum or boolean")])
+    (return (handle->string handle csize FALSE))))
+
+(define-cproc %string->c-char*/shared (str::<string> type::<native-type>)
+  (let* ([size::ScmSmallInt 0]
+         [p::(const char *) (Scm_GetStringContent str (& size) NULL NULL)])
+    (return
+     (Scm__MakeNativeHandle (cast void* p)
+                            type
+                            (-> type name)
+                            (cast void* p)
+                            (cast void* (+ p size 1)) ; including terminating NUL
+                            SCM_FALSE
+                            SCM_NIL
+                            0))))
+
+(define (string->c-char*/shared str :optional (type #f))
+  (assume-type str <string>)
+  (assume-type type (<?> <native-type>))
+  ($ %string->c-char*/shared str
+     (or type
+         (make-c-array-type <c-char> `(,(+ 1 (string-size str)))))))
+
+(define-cproc string->c-char*! (dst-handle::<native-handle>
+                                str::<string>)
+  ::<void>
+  (let* ([t::ScmNativeType* (-> dst-handle type)]
+         [size::ScmSmallInt 0]
+         [src::(const char *) (Scm_GetStringContent str (& size) NULL NULL)]
+         [required::ScmSmallInt (+ size 1)] ;including the terminating NUL
+         [limit::ScmSmallInt 0]
+         [limit-known?::_Bool FALSE])
+    (when (== (-> dst-handle ptr) NULL)
+      (Scm_Error "Attempt to store a string into NULL pointer: %S"
+                 (SCM_OBJ dst-handle)))
+    ;; Type check.  An array of a known dimension also bounds the destination.
+    (cond
+     [(SCM_C_POINTER_TYPE_P t)
+      (unless (octet-native-type? (-> (SCM_C_POINTER_TYPE t) pointee_type))
+        (goto bad))]
+     [(SCM_C_ARRAY_TYPE_P t)
+      (let* ([ca::ScmCArrayType* (SCM_C_ARRAY_TYPE t)])
+        (unless (and (== 1 (Scm_Length (-> ca dimensions)))
+                     (octet-native-type? (-> ca element_type)))
+          (goto bad))
+        (let* ([dim (SCM_CAR (-> ca dimensions))])
+          (when (SCM_INTP dim)
+            (set! limit (SCM_INT_VALUE dim))
+            (set! limit-known? TRUE))))]
+     [else (goto bad)])
+    ;; Boundary check, if possible.
+    (when (and (!= (-> dst-handle region-min) NULL)
+               (!= (-> dst-handle region-max) NULL))
+      (let* ([room::ScmSmallInt
+              (cast ScmSmallInt
+                    (- (cast (const char*) (-> dst-handle region-max))
+                       (cast (const char*) (-> dst-handle ptr))))])
+        (when (or (not limit-known?) (< room limit))
+          (set! limit room)
+          (set! limit-known? TRUE))))
+    (when (and limit-known? (> required limit))
+      (Scm_Error "Can't store %ld octets into %S, which only has room \
+                  for %ld octets"
+                 required (SCM_OBJ dst-handle) (?: (> limit 0) limit 0)))
+    (let* ([dst::char* (cast char* (-> dst-handle ptr))])
+      (memcpy dst src size)
+      (set! (aref dst size) 0))         ;terminating NUL
+    (return)
+    (label bad)
+    (Scm_Error "Can't store a string into handle of type %S: %S"
+               (SCM_OBJ (-> dst-handle type)) (SCM_OBJ dst-handle))))
+
+(define (string->c-char* str :optional (allocator #f))
+  (assume-type str <string>)
+  (assume-type allocator (<?> (<^> <integer> -> <native-type>)))
+  (let* ([size (+ (string-size str) 1)]
+         [buf (if allocator
+                (allocator size)
+                (make-native-handle (make-c-array-type <c-char> `(,size))))])
+    (string->c-char*! buf str)
+    buf))
 
 ;;;
 ;;;  Convert type signatures to native-type instance
@@ -1349,11 +1773,17 @@
 ;; (char const*), (int **), (int* *).  Strip 'const' and concatenate
 ;; the remaining parts into a single symbol.
 (define (%normalize-c-type-list syms)
-  ($ string->symbol $ apply string-append
-     (filter-map (^s (rxmatch-case (symbol->string s)
-                       [#/^const(\**)$/ (#f ptrs) ptrs]
-                       [else => values]))
-                 syms)))
+  (match syms
+    [((or 'signed 'unsigned) . rest)
+     `(,(car syms) ,(%normalize-c-type-list rest))]
+    [('const . rest)
+     (%normalize-c-type-list rest)]
+    [_
+     ($ string->symbol $ apply string-append
+        (filter-map (^s (rxmatch-case (symbol->string s)
+                          [#/^const(\**)$/ (#f ptrs) ptrs]
+                          [else => values]))
+                    syms))]))
 
 ;; Wrap a native type in N layers of pointer type.
 (define (%wrap-pointer-type base-type depth)
@@ -1363,12 +1793,58 @@
       (loop (make-c-pointer-type t) (- d 1)))))
 
 ;; Parse a struct/union field spec.
-(define (%parse-field-specs specs)
+(define (%parse-field-specs specs ns)
   (map (^e (match-let1 (member ':: type) e
              (if type
-               (list member (native-type type))
+               (list member (native-type type ns))
                (error "missing type for field:" member))))
        (cgen-canonical-typed-var-list specs #f)))
+
+;; Handle signed/unsigned qualifier
+(define (%attach-signedness natype signedness)
+  (define (%s orig-type signed-type unsigned-type)
+    (and (eqv? natype orig-type)
+         (ecase signedness
+           [(signed) signed-type]
+           [(unsigned) unsigned-type])))
+  (cond
+   [(not signedness) natype]
+   [(and (%native-type-integral? natype)
+         (or (%s <c-char> <int8> <uint8>) ; map signed/unsigned char to [u]int8
+             (%s <short> <short> <ushort>)
+             (%s <ushort> <short> <ushort>)
+             (%s <int> <int> <uint>)
+             (%s <uint> <int> <uint>)
+             (%s <long> <long> <ulong>)
+             (%s <ulong> <long> <ulong>)
+             (%s <int8> <int8> <uint8>)
+             (%s <uint8> <int8> <uint8>)
+             (%s <int16> <int16> <uint16>)
+             (%s <uint16> <int16> <uint16>)
+             (%s <int32> <int32> <uint32>)
+             (%s <uint32> <int32> <uint32>)
+             (%s <int64> <int64> <uint64>)
+             (%s <uint64> <int64> <uint64>)
+             (%s <size_t> <ssize_t> <size_t>)
+             (%s <ssize_t> <ssize_t> <size_t>)
+             (%s <int16-be> <int16-be> <uint16-be>)
+             (%s <uint16-be> <int16-be> <uint16-be>)
+             (%s <int32-be> <int32-be> <uint32-be>)
+             (%s <uint32-be> <int32-be> <uint32-be>)
+             (%s <int64-be> <int64-be> <uint64-be>)
+             (%s <uint64-be> <int64-be> <uint64-be>)
+             (%s <int16-le> <int16-le> <uint16-le>)
+             (%s <uint16-le> <int16-le> <uint16-le>)
+             (%s <int32-le> <int32-le> <uint32-le>)
+             (%s <uint32-le> <int32-le> <uint32-le>)
+             (%s <int64-le> <int64-le> <uint64-le>)
+             (%s <uint64-le> <int64-le> <uint64-le>)))
+    ;; let unrecognized base type case handled by else clause
+    ]
+   [(c-pointer-type? natype)
+    (make-c-pointer-type (%attach-signedness (c-pointer-type-pointee natype)
+                                             signedness))]
+   [else (errorf "~a can't be attached to ~s" signedness natype)]))
 
 ;; (native-type signature) => <native-type> instance
 ;;
@@ -1397,98 +1873,188 @@
 ;;     => (make-c-enum-type 'flag <uint8> '(a (b 4) c))
 ;;
 ;; Parse the part following '.enum: [tag] [: signature] (enumerator ...)
-(define (%parse-enum-spec rest)
+(define (%parse-enum-spec rest ns)
   (match rest
     [(enumerators)
      (values #f #f enumerators)]
     [(': sig enumerators)
-     (values #f (native-type sig) enumerators)]
+     (values #f (native-type sig ns) enumerators)]
     [((? symbol? tag) enumerators)
      (values tag #f enumerators)]
     [((? symbol? tag) ': sig enumerators)
-     (values tag (native-type sig) enumerators)]
+     (values tag (native-type sig ns) enumerators)]
     [_ (error "Invalid .enum signature:" (cons '.enum rest))]))
 
-(define (native-type signature)
-  (match signature
-    ;; Pass-through if already a native type instance
-    [(? (cut is-a? <> <native-type>)) signature]
+;; A deferred proxy type can appear in type signature if the code is
+;; precompiled.  This unwraps such proxies at runtime.
+;; NB: If proxy is unresolvable (i.e. the type hasn't been actually
+;; defined at this point), %unproxy leaves the proxy type itself.  It'll
+;; rejected by later phases.
+(define (%unproxy-signature sig)
+  (cond [(is-a? sig <proxy-type>) (%unproxy sig)]
+        [(pair? sig)
+         (let ([a (%unproxy-signature (car sig))]
+               [d (%unproxy-signature (cdr sig))])
+           (if (and (eq? a (car sig)) (eq? d (cdr sig)))
+             sig                        ;avoid reallocating unchanged lists
+             (cons a d)))]
+        [else sig]))
 
-    ;; Compound types
+(define (native-type signature :optional (ns #f))
+  ;; If NS is given, tagged struct/union/enum are defined or referred in it.
+  (define (tagged kind tag spec :optional (typespec #f))
+    (cond [(and ns spec) (native-tag-define! ns kind tag spec typespec)]
+          [ns (native-tag-ref ns kind tag)]
+          [else (ecase kind
+                  [(struct) (make-c-struct-type tag spec)]
+                  [(union) (make-c-union-type tag spec)]
+                  [(enum) (if spec
+                            (make-c-enum-type tag typespec spec)
+                            (make-c-enum-type tag (default-c-enum-base-type)
+                                              '()))])]))
+  (assume-type ns (<?> <native-tag-namespace>))
+  (let rec ([signature (%unproxy-signature signature)]
+            [signedness #f])
+    (define (no-signedness)
+      (when signedness
+        (errorf "~a can't be used with ~s" signature signedness)))
 
-    ;; (.array element-type (dim ...))
-    [('.array etype (dims ...))
-     (make-c-array-type (native-type etype) dims)]
+    (match signature
+      ;; Pass-through if already a native type instance
+      [(? (cut is-a? <> <native-type>))
+       (%attach-signedness signature signedness)]
 
-    ;; (.struct tag (field-specs ...))
-    [('.struct (? symbol? tag) (field-specs ...))
-     (make-c-struct-type tag (%parse-field-specs field-specs))]
-    ;; (.struct (field-specs ...))  -- anonymous
-    [('.struct (field-specs ...))
-     (make-c-struct-type #f (%parse-field-specs field-specs))]
+      ;; Compound types
 
-    ;; (.union tag (field-specs ...))
-    [('.union (? symbol? tag) (field-specs ...))
-     (make-c-union-type tag (%parse-field-specs field-specs))]
-    ;; (.union (field-specs ...))  -- anonymous
-    [('.union (field-specs ...))
-     (make-c-union-type #f (%parse-field-specs field-specs))]
+      ;; (.array element-type (dim ...))
+      [('.array etype (dims ...))
+       (no-signedness)
+       (make-c-array-type (native-type etype ns) dims)]
 
-    ;; (.enum [tag] [: signature] (enumerator ...))
-    [('.enum . rest)
-     (receive (tag typespec enumerators) (%parse-enum-spec rest)
-       (make-c-enum-type tag typespec enumerators))]
+      ;; (.struct tag (field-specs ...))
+      [('.struct (? symbol? tag) (field-specs ...))
+       (no-signedness)
+       (tagged 'struct tag (%parse-field-specs field-specs ns))]
+      ;; (.struct tag)  -- reference, or incomplete type
+      [('.struct (? symbol? tag))
+       (no-signedness)
+       (tagged 'struct tag #f)]
+      ;; (.struct (field-specs ...))  -- anonymous
+      [('.struct (field-specs ...))
+       (no-signedness)
+       (make-c-struct-type #f (%parse-field-specs field-specs ns))]
 
-    ;; (.function (arg-types ...) return-type)
-    [('.function (arg-types ...) ret-type)
-     (make-c-function-type
-      (native-type ret-type)
-      (map (^[a] (if (eq? a '...) '... (native-type a)))
-           arg-types))]
+      ;; (.union tag (field-specs ...))
+      [('.union (? symbol? tag) (field-specs ...))
+       (no-signedness)
+       (tagged 'union tag (%parse-field-specs field-specs ns))]
+      ;; (.union tag)  -- reference, or incomplete type
+      [('.union (? symbol? tag))
+       (no-signedness)
+       (tagged 'union tag #f)]
+      ;; (.union (field-specs ...))  -- anonymous
+      [('.union (field-specs ...))
+       (no-signedness)
+       (make-c-union-type #f (%parse-field-specs field-specs ns))]
 
-    ;; We ignore 'const' for now
-    [('const type)
-     (native-type type)]
+      ;; (.enum tag)  -- reference, or incomplete type
+      [('.enum (? symbol? tag))
+       (no-signedness)
+       (tagged 'enum tag #f)]
+      ;; (.enum [tag] [: signature] (enumerator ...))
+      [('.enum . rest)
+       (no-signedness)
+       (receive (tag typespec enumerators) (%parse-enum-spec rest ns)
+         (if tag
+           (tagged 'enum tag enumerators typespec)
+           (make-c-enum-type tag typespec enumerators)))]
 
-    ;; List with an inserted <native-type> instance, e.g. (,foo *),
-    ;; (const ,foo *), (,foo **).  The remaining elements must be
-    ;; modifier symbols (const, *, **, etc.).
-    [(? (^l (and (list? l)
-                 (any (cut is-a? <> <native-type>) l)
-                 (every (^x (or (symbol? x) (is-a? x <native-type>))) l))))
-     (let ([instances (filter (cut is-a? <> <native-type>) signature)]
-           [modifiers (filter symbol? signature)])
-       (unless (null? (cdr instances))
-         (error "Native type signature can only contain one type instance:"
-                signature))
-       (let1 normalized (symbol->string (%normalize-c-type-list modifiers))
-         (unless (#/^\**$/ normalized)
-           (error "Invalid native type signature:" signature))
-         (%wrap-pointer-type (car instances) (string-length normalized))))]
+      ;; (.function (arg-types ...) return-type)
+      [('.function (arg-types ...) ret-type)
+       (no-signedness)
+       (make-c-function-type
+        (native-type ret-type ns)
+        (map (^[a] (if (eq? a '...) '... (native-type a ns)))
+             arg-types))]
 
-    ;; C-style list type form, e.g. (char*), (char *), (char const*),
-    ;; (int **), (int* *).  Strip const and concatenate into a single
-    ;; symbol, then re-parse.
-    [((? symbol?) . (? (^r (every symbol? r))))
-     (native-type (%normalize-c-type-list signature))]
+      ;; We ignore 'const' for now
+      [('const type)
+       (rec type signedness)]
 
-    ;; Simple symbol types
-    [(? symbol?)
-     (or
-      ;; Primitive types
-      (hash-table-get (%builtin-native-type-table) signature #f)
-      (hash-table-get (%extended-native-type-table) signature #f)
-      ;; Pointer type (trailing *)
-      (and-let* ([decomp (%pointer-type-decompose signature)])
-        (%wrap-pointer-type (native-type (car decomp)) (cdr decomp)))
-      ;; c-string is a pseudo type name for <c-string> (NUL-terminated
-      ;; C string).  It's not registered in the builtin table because
-      ;; its C type name is "const char*".
-      (and (eq? signature 'c-string) <c-string>)
-      ;; Error
-      (error "Unknown native type:" signature))]
+      ;; Signedness
+      [((and (or 'signed 'unsigned) s) type)
+       (no-signedness)
+       (rec type s)]
 
-    [_ (error "Invalid native type signature:" signature)]))
+      ;; List with an inserted <native-type> instance, e.g. (,foo *),
+      ;; (const ,foo *), (,foo **).  The remaining elements must be
+      ;; modifier symbols (const, *, **, etc.).
+      [(? (^l (and (list? l)
+                   (any (cut is-a? <> <native-type>) l)
+                   (every (^x (or (symbol? x) (is-a? x <native-type>))) l))))
+       (let ([instances (filter (cut is-a? <> <native-type>) signature)]
+             [modifiers (filter symbol? signature)])
+         (unless (null? (cdr instances))
+           (error "Native type signature can only contain one type instance:"
+                  signature))
+         (let1 normalized (symbol->string (%normalize-c-type-list modifiers))
+           (unless (#/^\**$/ normalized)
+             (error "Invalid native type signature:" signature))
+           (%wrap-pointer-type (car instances) (string-length normalized))))]
+
+      [((? list? main-t) suffix ...) (=> fail)
+       (no-signedness)
+       (let* ([suff (apply string-append (map x->string suffix))]
+              [ptrs (regexp-replace-all* suff #/const/ "")]
+              [m (#/^\**$/ ptrs)])
+         (if m
+           (let add-pointer ([t (rec main-t #f)]
+                             [n (string-length (m 0))])
+             (if (zero? n) t (add-pointer (make-c-pointer-type t) (- n 1))))
+           (fail)))]
+
+      ;; C-style list type form, e.g. (char*), (char *), (char const*),
+      ;; (int **), (int* *).  Strip const and concatenate into a single
+      ;; symbol, then re-parse.
+      [((? symbol?) . (? (^r (every symbol? r))))
+       (native-type (%normalize-c-type-list signature) ns)]
+
+      ;; Simple symbol types
+      [(? symbol?)
+       (%attach-signedness
+        (or
+         ;; Primitive types
+         (hash-table-get (%builtin-native-type-table) signature #f)
+         (hash-table-get (%extended-native-type-table) signature #f)
+         ;; Pointer type (trailing *)
+         (and-let* ([decomp (%pointer-type-decompose signature)])
+           (%wrap-pointer-type (native-type (car decomp) ns) (cdr decomp)))
+         ;; c-string is a pseudo type name for <c-string> (NUL-terminated
+         ;; C string).  It's not registered in the builtin table because
+         ;; its C type name is "const char*".
+         (and (eq? signature 'c-string) <c-string>)
+         ;; Error
+         (error "Unknown native type:" signature))
+        signedness)]
+
+      ;; Invalid signature.  We check typical errors for better
+      ;; error message.
+      [_
+       (if-let1 c (cond [(is-a? signature <class>) signature]
+                        [(and (list? signature)
+                              (any (cut is-a? <> <class>) signature))]
+                        [else #f])
+         (cond
+          [(eq? signature <char>)
+           (error "You cannot use Scheme <char> class in native type \
+                   signature.  Maybe you mean <c-char>?:" signature)]
+          [(eq? signature <string>)
+           (error "You cannot use Scheme <string> class in native type \
+                   signature. Maybe you meant <c-string>?:" signature)]
+          [else
+           (error "You cannot include a class other than <native-type> in \
+                   native type signature:" signature)])
+         (error "Invalid native type signature:" signature))])))
 
 ;; Reverse table: native-type instance -> C type name symbol
 (define %native-type->cname
@@ -1543,40 +2109,42 @@
     ;; Primitive types (including void and c-string)
     [(%native-type->cname type)]
     ;; Pointer: collect depth, build name*...*
-    [(is-a? type <c-pointer>)
+    [(is-a? type <c-pointer-type>)
      (let loop ([t type] [depth 0])
-       (if (is-a? t <c-pointer>)
+       (if (is-a? t <c-pointer-type>)
          (loop (~ t'pointee-type) (+ depth 1))
          (let1 base (native-type->signature t)
            (string->symbol
             (string-append (x->string base)
                            (make-string depth #\*))))))]
     ;; Array
-    [(is-a? type <c-array>)
+    [(is-a? type <c-array-type>)
      `(.array ,(native-type->signature (~ type'element-type))
               ,(~ type'dimensions))]
     ;; Struct
-    [(is-a? type <c-struct>)
+    [(is-a? type <c-struct-type>)
      `(.struct ,@(cond-list [(~ type'tag)])
-               ,(%unparse-field-specs (~ type'fields)))]
+               ,@(cond-list [(~ type'fields) => %unparse-field-specs]))]
     ;; Union
-    [(is-a? type <c-union>)
+    [(is-a? type <c-union-type>)
      `(.union ,@(cond-list [(~ type'tag)])
-              ,(%unparse-field-specs (~ type'fields)))]
+              ,@(cond-list [(~ type'fields) => %unparse-field-specs]))]
     ;; Enum
-    [(is-a? type <c-enum>)
+    [(is-a? type <c-enum-type>)
      `(.enum ,@(cond-list [(~ type'tag)])
              ,@(cond-list [(~ type'type-spec)
                            @ `(: ,(native-type->signature (~ type'type-spec)))])
              ,(%unparse-enumerators (~ type'enumerator-alist)))]
     ;; Function
-    [(is-a? type <c-function>)
+    [(is-a? type <c-function-type>)
      (let ([args (map native-type->signature (~ type'argument-types))]
            [ret (native-type->signature (~ type'return-type))])
        `(.function ,(if (~ type'variadic?)
                       (append args '(...))
                       args)
                    ,ret))]
+    ;; Opaque
+    [(is-a? type <c-opaque-type>) (~ type'c-type-name)]
     [else (error "Cannot produce signature for native type:" type)]))
 
 ;;;
@@ -1628,61 +2196,113 @@
 (define-class <wrapped-c-union> (<native-wrapper-mixin>)
   ())
 
-;; API
-;;  Creates a class that wraps a native type TYPE.
-;;  We keep 1-to-1 correspondence between the class and the type.
-;; TODO: We may be able to do a better job to synthesize the default name.
-(define (make-native-wrapper-class type :optional (name (gensym)))
-  (or (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
-              (^t (hash-table-get t type #f)))
-      (let1 c (%make-native-wrapper-class type name)
-        (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
-                (^t (or (hash-table-get t type #f)
-                        (begin (hash-table-put! t type c)
-                               c)))))))
+;; Slot-override qualifies
+;;
+;;  slot-override : (override-spec ...)
+;;  override-spec : (slot-name :field-name field-name
+;;                             :ref-converter expr
+;;                             :set!-converter expr
+;;                             :ref expr
+;;                             :set! expr)
+;;
+;;  All keyword parameters are optional.
+;;   :field-name specifies the original field name of struct/union.
+;;       Can be used to expose it with different slot name.
+;;   :ref-converter / :set!-converter specifies conversion procedure
+;;       from/to the stored value.
+;;   :ref / :set! is to completely override the virtual slot's
+;;       slot-ref and slot-set! handler.
 
-(define (%make-native-wrapper-class type name)
-  (etypecase type
-    [<c-struct>
-     (make <native-wrapper-meta>
-       :name name :supers (list <wrapped-c-struct>)
-       :native-type type
-       :slots (map (cut %build-slot type <>) (~ type'fields)))]
-    [<c-union>
-     (make <native-wrapper-meta>
-       :name name :supers (list <wrapped-c-union>)
-       :native-type type
-       :slots (map (cut %build-slot type <>) (~ type'fields)))]
-    [<c-array>
-     (make <native-wrapper-meta>
-       :name name :supers (list <wrapped-c-array>)
-       :native-type type)]
-    ))
-
-(define (%build-slot type slot)
-  (let ([slot-name (car slot)]
-        [slot-type (cadr slot)])
-    `(,slot-name :init-keyword ,(make-keyword slot-name)
-                 :allocation :virtual
-                 :slot-ref ,(^o (%wrap (native. (%wh o) slot-name)))
-                 :slot-set! ,(^[o v] (set! (native. (%wh o) slot-name)
-                                           (%unwrap v)))
-                 :type ,slot-type)))
+(define (%make-native-wrapper-class type name slot-overrides)
+  (define (make-class type)
+    (typecase type
+      [<c-struct-type>
+       (make <native-wrapper-meta>
+         :name name :supers (list <wrapped-c-struct>)
+         :native-type type
+         :slots (map build-slot (%struct/union-fields type)))]
+      [<c-union-type>
+       (make <native-wrapper-meta>
+         :name name :supers (list <wrapped-c-union>)
+         :native-type type
+         :slots (map build-slot (%struct/union-fields type)))]
+      [<c-array-type>
+       (make <native-wrapper-meta>
+         :name name :supers (list <wrapped-c-array>)
+         :native-type type)]
+      [else #f]))
+  ;; overrides : ((field-name slot-name kv-list ...) ...)
+  (define overrides
+    (map (^[spec]
+           (let* ([slot-name (car spec)]
+                  [kv-list (cdr spec)]
+                  [field-name (get-keyword :field-name kv-list slot-name)])
+             `(,field-name ,slot-name ,@kv-list)))
+         slot-overrides))
+  (define (get-slot-name field-name)
+    (if-let1 ovr (alist-ref overrides field-name)
+      (car ovr)
+      field-name))
+  (define (get-ref-proc field-name)
+    (or (and-let1 ovr (alist-ref overrides field-name)
+          (or (and-let1 cv (get-keyword :ref-converter (cdr ovr) #f)
+                (^o (%wrap (cv (native. (%wh o) field-name)))))
+              (get-keyword :ref (cdr ovr) #f)))
+        (^o (%wrap (native. (%wh o) field-name)))))
+  (define (make-set-proc field-name cv)
+    (^[o v] (set! (native. (%wh o) field-name) (cv v))))
+  (define (get-set-proc field-name)
+    (if-let1 ovr (alist-ref overrides field-name)
+      (or (and-let1 cv (get-keyword :set!-converter (cdr ovr) #f)
+            (make-set-proc field-name cv))
+          (let1 p (get-keyword :set! (cdr ovr) (undefined))
+            (cond [(eqv? p #f) #f]  ; expicit #f: make it read-only
+                  [(undefined? p) (make-set-proc field-name values)]
+                  [else p])))
+      (make-set-proc field-name values)))
+  ;; field : (field-name <type> <offset>)
+  (define (build-slot field)
+    (let* ([field-name (car field)]
+           [slot-name (get-slot-name field-name)])
+      `(,slot-name :init-keyword ,(make-keyword slot-name)
+                   :allocation :virtual
+                   :slot-ref ,(get-ref-proc field-name)
+                   :slot-set! ,(get-set-proc field-name))))
+  (or (cond
+       [(c-pointer-type? type)
+        (make-class (c-pointer-type-pointee type))]
+       [(c-aggregate-type? type)
+        (make-class type)]
+       [else #f])
+      (error "Cannot wrap a native handle with type" type)))
 
 (define (%wrap value)
   (if (is-a? value <native-handle>)
-    (cond [(null-pointer-handle? value) #f]
-          [(and-let* ([ (c-pointer-handle? value) ]
-                      [pt (c-pointer-type-pointee (native-handle-type value))]
-                      [ (c-aggregate-type? pt) ])
-             (wrap-native-handle (native* value)))]
-          [else (wrap-native-handle value)])
+    (wrap-native-handle value)
     value))
 
 (define (%unwrap value)
   (if (is-a? value <native-wrapper-mixin>)
     (%wh value)
     value))
+
+
+;; API
+;;  Creates a class that wraps a native type TYPE.
+(define (make-native-wrapper-class type
+                                   :key (name #f)
+                                        (slot-overrides '()))
+  (assume-type type <native-type>)
+  (assume-type slot-overrides <list>)
+  (unless name
+    (set! name (symbol-append '|wrapped | (~ type'name))))
+  (or (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
+              (^t (hash-table-get t type #f)))
+      (let1 c (%make-native-wrapper-class type name slot-overrides)
+        (atomic (class-slot-ref <native-wrapper-meta> 'type->class)
+                (^t (or (hash-table-get t type #f)
+                        (begin (hash-table-put! t type c)
+                               c)))))))
 
 (define-method make ((class <native-wrapper-meta>) . initargs)
   (let* ([storage (make-u8vector (~ class'native-type'size))]
@@ -1693,12 +2313,34 @@
 
 ;; API
 (define (wrap-native-handle handle)
-  (let* ([type (~ handle'type)])
-    (%wrap-native-handle (make-native-wrapper-class type) handle)))
+  (assume-type handle <native-handle>)
+  (cond [(null-pointer-handle? handle) #f]
+        [(and-let* ([ (c-pointer-handle? handle) ]
+                    [pt (c-pointer-type-pointee (native-handle-type handle))]
+                    [ (c-aggregate-type? pt) ])
+           (%wrap-native-handle (make-native-wrapper-class pt)
+                                (native* handle)))]
+        [else (%wrap-native-handle (make-native-wrapper-class
+                                    (native-handle-type handle))
+                                   handle)]))
 
 (define (%wrap-native-handle class handle)
   (rlet1 instance (allocate-instance class '())
     (set! (%wh instance) handle)))
+
+(define-method wrapped-handle ((obj <native-wrapper-mixin>)) (%wh obj))
+
+(define-syntax define-native-wrapper-class
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ id native-type . opts)
+        (let-keywords opts ([slot-overrides '()])
+          (quasirename r
+            `(define ,id (make-native-wrapper-class
+                          ,native-type
+                          :name ',id
+                          :slot-overrides ,slot-overrides))))]))))
 
 ;; wrapped-c-array implements sequence protocol.
 ;; As a sequence, we only consider the first dimension.

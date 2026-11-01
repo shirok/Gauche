@@ -82,7 +82,6 @@
           expt-mod inverse-mod
           gamma real-gamma log-gamma real-log-gamma
           lgamma real-log-abs-gamma
-          real-valued? rational-valued? integer-valued?
           div-and-mod div mod div0-and-mod0 div0 mod0
           floor/ floor-quotient floor-remainder
           truncate/ truncate-quotient truncate-remainder

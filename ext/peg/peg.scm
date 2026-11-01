@@ -39,6 +39,7 @@
   (use gauche.collection)
   (use gauche.generator)
   (use gauche.lazy)
+  (use gauche.record)
   (use text.tree)
   (use util.match)
   (export <parse-error>
@@ -65,6 +66,12 @@
           $lazy $parameterize
 
           $cut $raise
+
+          $memo
+          <peg-memoizer> make-peg-memoizer peg-memoizer?
+          peg-memoizer-table peg-memoizer-keyed-parameters
+          peg-memoizer-statistics peg-memoizer-show-statistics
+          current-peg-memoizer
 
           $any $eos $.
 
@@ -284,10 +291,10 @@
 
 ;; API
 ;;   Default driver.  Returns parsed value and next stream
-(define (peg-run-parser parser s)
+(define (peg-run-parser parser s :key (finalizer rope-finalize))
   (receive (r v s1) (parser s)
     (if (parse-success? r)
-      (values (rope-finalize v) s1)
+      (values (finalizer v) s1)
       (raise (construct-peg-parser-error r v s s1)))))
 
 ;; Coerce something to lseq.  accepts generator.
@@ -306,23 +313,23 @@
 ;; API
 ;;   NB: We can consolidate peg-parse-string and peg-parse-port via
 ;;   x->generator, but should we?
-(define (peg-parse-string parser str :optional (cont #f))
+(define (peg-parse-string parser str :optional (cont #f) :key finalizer)
   (assume-type str <string>)
-  (receive (r rest) (peg-run-parser parser (x->lseq str))
+  (receive (r rest) (peg-run-parser parser (x->lseq str) :finalizer finalizer)
     (if cont
       (cont r rest)
       r)))
 ;; API
-(define (peg-parse-port parser port :optional (cont #f))
+(define (peg-parse-port parser port :optional (cont #f) :key finalizer)
   (assume (input-port? port))
-  (receive (r rest) (peg-run-parser parser (x->lseq port))
+  (receive (r rest) (peg-run-parser parser (x->lseq port) :finalizer finalizer)
     (if cont
       (cont r rest)
       r)))
 
 ;; API
 ;;  Returns a generator
-(define (peg-parser->generator parser src)
+(define (peg-parser->generator parser src :key (finalizer rope-finalize))
   (let1 s (%->lseq src)
     (^[] (if (null? s)
            (eof-object)
@@ -330,12 +337,12 @@
              (cond [(not (parse-success? r))
                     (raise (construct-peg-parser-error r v s s1))]
                    [(eof-object? v) (set! s '()) v]
-                   [else (set! s s1) (rope-finalize v)]))))))
+                   [else (set! s s1) (finalizer v)]))))))
 
 ;; API
 ;;  Returns an lseq
 ;;  Input position info is propagated if available
-(define (peg-parser->lseq parser src)
+(define (peg-parser->lseq parser src :key (finalizer rope-finalize))
   (let1 s (%->lseq src)
     (generator->lseq
      (^[] (if (null? s)
@@ -345,7 +352,7 @@
               (let1 val (cond [(not (parse-success? r))
                                (raise (construct-peg-parser-error r v s s1))]
                               [(eof-object? v) (set! s '()) v]
-                              [else (set! s s1) (rope-finalize v)])
+                              [else (set! s s1) (finalizer v)])
                 (if-let1 pos (lseq-position s)
                   (values val pos)
                   val))))))))
@@ -1125,6 +1132,200 @@
               (build-parser parsers. vars body #f)))]
          [(parser . rest) (loop rest (cons parser ps))]
          [() (bad)])))))
+
+;;;============================================================
+;;; Memoization
+;;;
+
+;;   Using $memo allows memoization like Parsec, avoids a parser
+;;   called on the same input repeatedly due to backtrack.
+;;   We don't choose automatic memoization, for memoization overhead
+;;   is too much for simple parsers.
+;;
+;;   In order for memoization to work, a PEG memoizer needs to be set
+;;   in the parameter current-peg-memoizer:
+;;
+;;     (parameterize ([current-peg-memoizer (make-peg-memoizer)])
+;;       (peg-parse-string parser input))
+;;
+;;   If the memoizer isn't active, $memoed parsers just work as the
+;;   original ones.
+;;
+;;   In a pure form, the memoized result only depends on the parser and
+;;   the input stream, both compared by eq?.  However, some applications
+;;   alter the behavior of parsers by its own parameters (cf. $parameterize).
+;;   In such ases, the values of such parameters must be a part of the key,
+;;   too; pass the list of those parameters as KEYED-PARAMETERS of
+;;   make-peg-memoizer.  Those parameter values are compared with eqv?.
+;;
+;;   NB: If a parser relies on side-effects, memoization may interfere with
+;;   it.
+
+;; A memoization key is (parser stream keyed-parameter-value ...).
+;; PARSER and STREAM are compared with eq?, and the parameter values
+;; with eqv?.
+(define (%memo-key=? ka kb)
+  (and (eq? (car ka) (car kb))
+       (eq? (cadr ka) (cadr kb))
+       (let loop ([a (cddr ka)] [b (cddr kb)])
+         (cond [(null? a) (null? b)]
+               [(null? b) #f]
+               [(eqv? (car a) (car b)) (loop (cdr a) (cdr b))]
+               [else #f]))))
+
+(define (%memo-key-hash k)
+  (let loop ([h (combine-hash-value (eq-hash (car k)) (eq-hash (cadr k)))]
+             [vs (cddr k)])
+    (if (null? vs)
+      h
+      (loop (combine-hash-value h (eqv-hash (car vs))) (cdr vs)))))
+
+;; NB: We pass #t as the type test, for the keys are always constructed
+;; by $memo below.
+(define %memo-comparator
+  (make-comparator #t %memo-key=? #f %memo-key-hash 'peg-memo-comparator))
+
+;; API
+(define-record-type <peg-memoizer> %make-peg-memoizer peg-memoizer?
+  (table peg-memoizer-table)                 ;hashtable of key -> #(r v s)
+  (keyed-parameters peg-memoizer-keyed-parameters)
+  (statistics peg-memoizer-statistics)       ;hashtable of parser -> hit count
+                                             ;  or #f if stats isn't taken
+  (parser-names %peg-memoizer-parser-names)) ;hashtable of parser -> name
+                                             ;  or #f if stats isn't taken
+
+;; API
+(define (make-peg-memoizer :key (keyed-parameters '()) (statistics #f))
+  (assume (every applicable? keyed-parameters)
+          "list of parameters required, but got:" keyed-parameters)
+  (%make-peg-memoizer (make-hash-table %memo-comparator)
+                      (list-copy keyed-parameters)
+                      (and statistics (make-hash-table 'eq?))
+                      (and statistics (make-hash-table 'eq?))))
+
+;; API
+;;   Holds a <peg-memoizer> instance while memoization is active.
+(define current-peg-memoizer
+  ($ make-parameter #f
+     (^v (unless (or (not v) (peg-memoizer? v))
+           (error "The value of current-peg-memozier muse be either \
+                   a <peg-memoizer> or #f, but got:" v))
+         v)))
+
+;; API
+;; $memo parser
+;;   Returns a parser that behaves the same as PARSER, except that it
+;;   consults the active memoizer, if any.
+;;
+;;   In order to make the statistics human-reaadable (when peg-memoizer
+;;   is created with :statistics #t), we extract the current expression name
+;;   and keep the association between it and PARSER.  It is common that
+;;   the result of $memo is bound to a global variable, so each row of
+;;   the statistics can show which parser it is showing.
+(define ($memo parser)
+  (call-with-current-expression-name
+   (^[name]
+     (^s (if-let1 memo (current-peg-memoizer)
+           (let* ([tab (peg-memoizer-table memo)]
+                  [key (list* parser s
+                              (map (^p (p))
+                                   (peg-memoizer-keyed-parameters memo)))]
+                  [hit (hash-table-get tab key #f)])
+             (if hit
+               (begin
+                 (and-let1 stats (peg-memoizer-statistics memo)
+                   (hash-table-update! stats parser (cut + 1 <>) 0))
+                 (values (vector-ref hit 0) (vector-ref hit 1)
+                         (vector-ref hit 2)))
+               (receive (r v s1) (parser s)
+                 (hash-table-put! tab key (vector r v s1))
+                 ;; A hit is always preceded by a miss of the same parser,
+                 ;; so registering the name here covers every parser that
+                 ;; appears in the report.
+                 (if-let1 names (%peg-memoizer-parser-names memo)
+                   (hash-table-put! names parser name))
+                 (values r v s1))))
+           ;; memoizer is inactive.
+           (parser s))))))
+
+;; API
+;;   Show the memoization statistics of MEMO, which must be created with
+;;   :statistics #t.
+;;   For each memoized parser, we show # of calles and # of hits
+;;   (when the memoized result is used).
+(define (peg-memoizer-show-statistics memo
+                                      :key (port (current-output-port))
+                                           (sort-by 'hits)
+                                           (max-rows 50))
+  (assume-type memo <peg-memoizer>)
+  (if-let1 stats (peg-memoizer-statistics memo)
+    (%show-memo-stats (%gather-memo-stats memo stats) sort-by max-rows port)
+    (display "The memoizer statistics gathering was off.\n" port)))
+
+;; Returns a list of (name hits misses).
+(define (%gather-memo-stats memo stats)
+  (let1 misses (make-hash-table 'eq?)
+    (hash-table-for-each
+     (peg-memoizer-table memo)
+     (^[k _] (hash-table-update! misses (car k) (cut + 1 <>) 0)))
+    ;; Make sure every parser that has hits appears in the result, even if
+    ;; its entries are somehow gone from the table.
+    (hash-table-for-each
+     stats
+     (^[p _] (hash-table-update! misses p identity 0)))
+    (let1 names (%peg-memoizer-parser-names memo)
+      (hash-table-map misses
+                      (^[p m] (list (%parser-name p (hash-table-get names p #f))
+                                    (hash-table-get stats p 0)
+                                    m))))))
+
+(define (%show-memo-stats stats how max-rows port)
+  (define (hits e) (cadr e))
+  (define (calls e) (+ (cadr e) (caddr e)))
+  (define (hit-rate e) (if (zero? (calls e)) 0 (/ (hits e) (calls e))))
+  (define (rule)
+    (format port "~a+~a+~a+~a\n"
+            (make-string 44 #\-) (make-string 9 #\-)
+            (make-string 9 #\-) (make-string 6 #\-)))
+  (define (row name calls hits)
+    (format port "~44a ~9d ~9d ~5d%\n" name calls hits
+            (if (zero? calls) 0 (exact (round (* 100 (/ hits calls)))))))
+  (let* ([key (case how
+                [(hits) hits]
+                [(calls) calls]
+                [(hit-rate) hit-rate]
+                [else
+                 (error "peg-memoizer-show-statistics: sort-by argument must \
+                         be either one of hits, calls or hit-rate, but got:"
+                        how)])]
+         [sorted (sort-by stats key >)]
+         [nparsers (length stats)]
+         [total-calls (fold (^[e s] (+ (calls e) s)) 0 stats)]
+         [total-hits (fold (^[e s] (+ (hits e) s)) 0 stats)])
+    (format port "PEG memoization statistics (~d memoized parser~a)\n"
+            nparsers (if (= nparsers 1) "" "s"))
+    (format port "~44a ~9@a ~9@a ~6@a\n" "" "total" "memo" "hit")
+    (format port "~44a ~9@a ~9@a ~6@a\n" "Parser" "calls" "hits" "rate")
+    (rule)
+    (dolist [e (if (integer? max-rows) (take* sorted max-rows) sorted)]
+      (row (car e) (calls e) (hits e)))
+    (rule)
+    (row "Total" total-calls total-hits)))
+
+;; Returns a 'printable' name of the parser.  REGISTERED is the name $memo
+;; picked up when the parser is memoized, or #f.  If it isn't available,
+;; we fall back to the name of the parser closure itself; it may not be
+;; informative, though, for the parser passed to $memo is often anonymous.
+;; The last resort is an address-ish id, so that at least the rows can be
+;; distinguished.
+(define (%parser-name parser registered)
+  (define (anonymous? name)
+    (or (not name) (and (pair? name) (every anonymous? name))))
+  (let1 info (and (procedure? parser) (procedure-info parser))
+    (cond [registered]
+          [(and (pair? info) (not (anonymous? (car info)))) (car info)]
+          [else (format "#<parser ~6,'0x>" ;fallback
+                        (logand (eq-hash parser) #xffffff))])))
 
 ;;;============================================================
 ;;; String parsers

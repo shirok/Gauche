@@ -2,6 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2008-2025 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -301,10 +302,19 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
     }
 }
 
+#if defined(LINT2) || MAX_EXTRA_BYTES == 0
+# define SMALL_OBJ_LINT(lb) SMALL_OBJ(lb)
+#else
+  /* Workaround "array subscript 4096 is above array bounds" gcc warning. */
+# define SMALL_OBJ_LINT(lb) \
+            (EXPECT((lb) <= MAXOBJBYTES - MAX_EXTRA_BYTES, TRUE) \
+             || (lb) <= MAXOBJBYTES - (unsigned char)GC_all_interior_pointers)
+#endif
+
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
 {
     GC_ASSERT(k < MAXOBJKINDS);
-    if (SMALL_OBJ(lb)) {
+    if (SMALL_OBJ_LINT(lb)) {
         void *op;
         void **opp;
         size_t lg;
@@ -543,7 +553,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       size_t lb = strlen(s) + 1;
       char *result = (char *)REDIRECT_MALLOC_F(lb);
       if (result == 0) {
-        errno = ENOMEM;
+#       ifndef MSWINCE
+          errno = ENOMEM;
+#       endif
         return 0;
       }
       BCOPY(s, result, lb);
@@ -564,7 +576,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
         len = size;
       copy = (char *)REDIRECT_MALLOC_F(len + 1);
       if (copy == NULL) {
-        errno = ENOMEM;
+#       ifndef MSWINCE
+          errno = ENOMEM;
+#       endif
         return NULL;
       }
       if (EXPECT(len > 0, TRUE))
@@ -705,8 +719,7 @@ GC_API void GC_CALL GC_free(void * p)
 
   void free(void * p GC_ATTR_UNUSED)
   {
-#   ifndef IGNORE_FREE
-#     if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
+#   if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
         /* Don't bother with initialization checks.  If nothing         */
         /* has been initialized, the check fails, and that's safe,      */
         /* since we have not allocated uncollectible objects neither.   */
@@ -720,7 +733,8 @@ GC_API void GC_CALL GC_free(void * p)
           GC_free(p);
           return;
         }
-#     endif
+#   endif
+#   ifndef IGNORE_FREE
       REDIRECT_FREE_F(p);
 #   endif
   }

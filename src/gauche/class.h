@@ -472,13 +472,13 @@ typedef struct ScmNativeHandleRec ScmNativeHandle;
 #define SCM_NATIVE_HANDLE_P(obj)  (SCM_ISA(obj, SCM_CLASS_NATIVE_HANDLE))
 
 /* Public accessors.
-   NativeHandlePtr returns the pointer value if it is <c-pointer>,
+   NativeHandlePtr returns the pointer value if it is <c-pointer-type>,
    otherwise the pointer to the native object.
  */
 SCM_EXTERN void *Scm_NativeHandlePtr(ScmNativeHandle *h);
 
 /* Create a native handle wrapping a C pointer, with the given native type.
-   This is intended for generated code by stubgen FFI.
+   This is intended for generated code by the FFI stub subsystem.
    No region bounds or ownership information is recorded. */
 SCM_EXTERN ScmObj Scm_MakeNativeHandleSimple(void *ptr, ScmObj type);
 
@@ -486,8 +486,9 @@ SCM_EXTERN ScmObj Scm_MakeNativeHandleSimple(void *ptr, ScmObj type);
  * Proxy types
  */
 
-/* A proxy type is to hold a reference to a class.
-   Used in other descriptive types to handle redefinition of the original class.
+/* A proxy type is to hold a reference to a type, by the name it is bound to.
+   Used in other descriptive types to handle redefinition of the original
+   type, and to refer to a type that isn't created yet.
    The actual definition and construtor is in gauche/priv/classP.h */
 typedef struct ScmProxyTypeRec ScmProxyType;
 
@@ -504,12 +505,25 @@ SCM_CLASS_DECL(Scm_ProxyTypeClass);
    The REF argument is technically redundant, since it is a binding of ID.
    But the compile has looked up ID already, so we can just use it.
    We trust the caller giving the proer REF.
-   REF can be NULL when invoked from the initializer; in that case
-   we derive it from ID, but lazily (in Scm_ProxyTypeRef).
+
+   REF can be NULL, in which case we derive it from ID lazily (in
+   Scm_ProxyTypeGloc).  Such a proxy type is *deferred*: ID doesn't even
+   need to be bound yet when the proxy type is created.  Besides the
+   initializer of precompiled code, the compiler creates one when it sees
+   a type definition whose value can't be computed at the compile time
+   (see pass1/define-type).
  */
 SCM_EXTERN ScmObj    Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref);
-SCM_EXTERN ScmClass *Scm_ProxyTypeRef(ScmProxyType *p);
+SCM_EXTERN ScmObj    Scm_ProxyTypeRef(ScmProxyType *p);
+SCM_EXTERN void      Scm_ProxyTypeSetValue(ScmProxyType *p, ScmObj type);
 SCM_EXTERN ScmObj    Scm_ProxyTypeId(ScmProxyType *p);
+
+/* Returns the GLOC the proxy type refers to, or NULL if it isn't resolved
+   yet.  Unlike Scm_ProxyTypeRef, it never raises an error.  The GLOC is the
+   stable identity of what a proxy type refers to (it survives class
+   redefinition, and it is available before the type is created), so it is
+   used to key proxy types in the constructed-type memo table. */
+SCM_EXTERN ScmGloc  *Scm_ProxyTypeGloc(ScmProxyType *p);
 
 /*
  * SlotAccessor

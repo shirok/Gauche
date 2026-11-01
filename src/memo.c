@@ -33,7 +33,9 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/classP.h"
 #include "gauche/priv/configP.h"
+#include "gauche/priv/identifierP.h"
 #include "gauche/priv/memoP.h"
 
 /* See memoP.h for the design choices. */
@@ -44,22 +46,19 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_MemoTableClass, NULL);
 
 static ScmMemoTableStorage *new_storage(u_long capacity,
                                         int entry_size,
-                                        u_long flags)
+                                        u_long flags SCM_UNUSED)
 {
     ScmMemoTableStorage *s = SCM_NEW(ScmMemoTableStorage);
     s->capacity = capacity;
-    if (flags & SCM_MEMO_TABLE_WEAK) {
-        s->vec = SCM_NEW_ATOMIC_ARRAY(ScmAtomicVar,
-                                      capacity * entry_size);
-    } else {
-        s->vec = SCM_NEW_ARRAY(ScmAtomicVar,
-                               capacity * entry_size);
-    }
+    s->vec = SCM_NEW_ARRAY(ScmAtomicVar, capacity * entry_size);
     return s;
 }
 
 ScmObj Scm_MakeMemoTable(u_long capacity, int num_keys, u_long flags)
 {
+    /* Flags is for future extension.  See memoP.h */
+    SCM_ASSERT(flags == 0);
+
     ScmMemoTable *t = SCM_NEW(ScmMemoTable);
     SCM_SET_CLASS(t, SCM_CLASS_MEMO_TABLE);
     t->flags = flags;
@@ -103,9 +102,18 @@ static inline _Bool equal_1(ScmObj a, ScmObj b)
         }
         return TRUE;
     } else if (SCM_PROXY_TYPE_P(a)) {
-        return SCM_PROXY_TYPE_P(b)
-            && SCM_EQ(Scm_ProxyTypeRef(SCM_PROXY_TYPE(a)),
-                      Scm_ProxyTypeRef(SCM_PROXY_TYPE(b)));
+        /* A local proxy type shouldn't be entered to the memo table. */
+        SCM_ASSERT(!SCM_LOCAL_PROXY_TYPE_P(a));
+        if (!SCM_PROXY_TYPE_P(b)) return FALSE;
+        SCM_ASSERT(!SCM_LOCAL_PROXY_TYPE_P(b));
+        ScmGloc *ga = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(a));
+        ScmGloc *gb = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(b));
+        if (ga != NULL || gb != NULL) return ga == gb;
+        /* Both proxies are not bound yet (deferred proxy).  We use
+           identifier's identity as the fallback. */
+        ScmIdentifier *ia = Scm_OutermostIdentifier(SCM_PROXY_TYPE(a)->id);
+        ScmIdentifier *ib = Scm_OutermostIdentifier(SCM_PROXY_TYPE(b)->id);
+        return (SCM_EQ(ia->name, ib->name) && ia->module == ib->module);
     } else {
         return Scm_EqvP(a, b);
     }
@@ -124,7 +132,16 @@ static inline u_long hash_1(ScmObj key)
         }
         return h;
     } else if (SCM_PROXY_TYPE_P(key)) {
-        return hash_1(SCM_OBJ(Scm_ProxyTypeRef(SCM_PROXY_TYPE(key))));
+        SCM_ASSERT(!SCM_LOCAL_PROXY_TYPE_P(key)); /* see equal_1 */
+        ScmGloc *g = Scm_ProxyTypeGloc(SCM_PROXY_TYPE(key));
+        if (g != NULL) return Scm_EqvHash(SCM_OBJ(g));
+        /* If proxy hasn't been bound, we use identifier as the fallback.
+           Note that proxy can be bound after this, and its hash value
+           changes by using gloc.  That's okay for our purpose---memoization
+           table can have semantically duplicate entries. */
+        ScmIdentifier *id = Scm_OutermostIdentifier(SCM_PROXY_TYPE(key)->id);
+        return Scm_CombineHashValue(Scm_EqvHash(id->name),
+                                    Scm_EqvHash(SCM_OBJ(id->module)));
     } else {
         return Scm_EqvHash(key);
     }
@@ -380,15 +397,8 @@ static inline void dump_1(ScmAtomicWord entry, int valid, ScmPort *port)
    during interactive debugging. */
 void Scm__MemoTableDump(ScmMemoTable *tab, ScmPort *port)
 {
-    Scm_Printf(port, "memo-table %p (num_keys=%d entry_size=%d capacity=%d",
+    Scm_Printf(port, "memo-table %p (num_keys=%d entry_size=%d capacity=%d)",
                tab, tab->num_keys, tab->entry_size, tab->storage->capacity);
-    if (tab->flags & SCM_MEMO_TABLE_WEAK) {
-        Scm_Printf(port, " weak");
-    }
-    if (tab->flags & SCM_MEMO_TABLE_FIXED) {
-        Scm_Printf(port, " fixed");
-    }
-    Scm_Printf(port, ")\n");
     u_long num_entries = tab->storage->capacity * tab->entry_size;
     int rest_keys;
     int fixed_keys = get_numkeys(tab->num_keys, &rest_keys);

@@ -1,4 +1,4 @@
-;;;
+:;;;
 ;;; C Parser
 ;;;
 ;;;   Copyright (c) 2021-2025  Shiro Kawai  <shiro@acm.org>
@@ -35,51 +35,135 @@
   (use file.util)
   (use util.match)
   (use parser.peg)
-  (use gauche.process)
-  (use gauche.config)
   (use gauche.dictionary)
   (use gauche.lazy)
   (use control.cseq)
   (use lang.c.lexer)
   (use lang.c.type)
+  (use lang.c.toolchain)
   (use srfi.13)
-  (use lang.c.parameter)
 
-  (export c-tokenize-file
+  (export <c-parser>
+          c-toplevel-parser
+          c-statement-parser
+          c-expression-parser
+
+          c-tokenize-file
           c-tokenize-string
           c-parse-file
           c-parse-string
-          cpp-include-paths             ;re-export from lang.c.parameter
+
+          c-source-info-of
           )
   )
 (select-module lang.c.parser)
 
+;; We use a functional PEG paresr, but a class is convenient to put
+;; customizable values.  While PEG parser is running, its intance
+;; is accessible via a parameter.
+(define-class <c-parser> ()
+  ((peg-parser :init-form %translation-unit :init-keyword :peg-parser)
+   ;;  peg-parser : PEG parser to use.
+   ;;    For the time being, we don't export internal PEG parsers,
+   ;;    but we may provide alternative parsers or partial parsers (e.g. just
+   ;;    for expressions).
 
-;;
-;; Typename catalog.
-;;    symbol -> c-type
-;;
-;; C syntax is ambiguous that identifier can also be a type name.  We need
-;; to track previously declared type names.
-;;
-(define *default-typedef-table*
-  (make-hash-table eq-comparator))
+   (cpp-include-paths :init-form '() :init-keyword :cpp-include-paths)
+   ;;  cpp-include-paths : A list of strings to be considered for include file
+   ;;    search.
 
-(define (default-typedefs) (hash-table-copy *default-typedef-table*))
+   (cpp-definitions :init-form '() :init-keyword :cpp-definitions)
+   ;;  cpp-definitions : (def ...)
+   ;;    where each def may be VAR or (VAR VAL ...)
+   ;;    Single VAR becomes -DVAR, and the list becomes -DVAR=VAL ...
+   ;;    to be passed to cpp.
 
-(define typedef-names
-  (make-parameter (make-stacked-map (default-typedefs))))
+   (use-concurrent-lexer :init-form (> (sys-available-processors) 1))
+   ;;  A boolean value to specify whether we run lexer concurrently.
+
+   (typedefs :init-form (make-hash-table eq-comparator))
+   ;;  typedefs : symbol -> c-type
+   ;;    C syntax is ambiguous that identifier can also be a type name.  We need
+   ;;    to track previously declared type names. This holds global typedef
+   ;;    names; local ones are kept in a stacked map held in a parameter.
+
+   (tags :init-form (make-hash-table eq-comparator))
+   ;;  tags : symbol -> (<kind> <tag> <members>)
+   ;;    Global struct/union/enum tags.  Like typedefs, local ones are kept
+   ;;    in a stacked map held in a parameter.
+
+   (hooks :init-form (make-hash-table eq-comparator))
+   ))
+
+;; Internal
+(define current-c-parser (make-parameter #f))
+
+;; Internal.  Typedef names may be nested during parsing, so we have a
+;; separate parameter.
+(define typedef-names (make-parameter #f))
+
+;; Internal.  Struct/union/enum tags, symbol -> (<kind> <tag> <members>).
+;; The value is a stacked map whose top map is the innermost scope.
+(define tag-names (make-parameter #f))
 
 (define-syntax $with-scope
   (syntax-rules ()
     [(_ parser)
      ($parameterize ((typedef-names (make-stacked-map
                                      (make-hash-table eq-comparator)
-                                     (typedef-names))))
+                                     (typedef-names)))
+                     (tag-names (stacked-map-stack
+                                 (tag-names)
+                                 (make-hash-table eq-comparator))))
                     parser)]))
 
+(define ($with-hook name parser)
+  ($memo
+   (^s (receive (r v s1) (parser s)
+         (let1 hook (hash-table-get (~ (current-c-parser)'hooks) name identity)
+           (if (parse-success? r)
+             (values r (hook v) s1)
+             (values r v s1)))))))
+
+;; Attach (c-source-info . (filename line)) attribute to the parse result.
+(define ($source-info parser)
+  (^s (receive (r v s1) (parser s)
+        (if (and (parse-success? r) (not (c-source-info-of v)))
+          (values r (with-source-info v (token-source-info s)) s1)
+          (values r v s1)))))
+
+;; From token position, make (filename line)
+;; Note that the column info in the lseq-position is after cpp macro
+;; expansion, so we don't rely on it, at least for now.
+(define (token-source-info s)
+  (and-let1 pos (lseq-position s)
+    (list (sequence-position-source pos)
+          (sequence-position-line pos))))
+
+;; API
+(define (c-source-info-of x)
+  (and (extended-pair? x)
+       (pair-attribute-get x 'c-source-info #f)))
+
+;; Internal API
+;; Returns a copy of the head of X with c-source-info SI.
+;; The reader's source-info of literals in this file is dropped, for it
+;; is of no use for the user.
+(define (with-source-info x si)
+  (if (and si (pair? x))
+    (extended-cons (car x) (cdr x)
+                   `((c-source-info . ,si)
+                     ,@(if (extended-pair? x)
+                         (alist-delete 'source-info (pair-attributes x))
+                         '())))
+    x))
+
+;; Returns TO, with the source-info of FROM if FROM has one.
+(define (inherit-source-info from to)
+  (with-source-info to (c-source-info-of from)))
+
 ;;;
-;;; Parser
+;;; PEG Parser
 ;;;
 
 ;; Token recognition
@@ -108,12 +192,17 @@
               [xs `(,op ,@xs)])))
 
 ;; multiple choice infix.  assuming sep and op are the same.
+;;   x0 op1 x1 op2 x2 ... => left:  (... (op2 (op1 x0 x1) x2) ...)
+;;                           right: (op1 x0 (op2 x1 (... xn)))
 (define ($infix-n term associativity seps)
   ($binding ($: x term)
             ($: xs ($many ($list ($one-of seps) term)))
             (ecase associativity
-              [(left)  (fold (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)]
-              [(right) (fold-right (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)])))
+              [(left)  (fold (^[e r] `(,(car e) ,r ,(cadr e))) x xs)]
+              [(right) (let loop ([x x] [xs xs])
+                         (match xs
+                           [() x]
+                           [((op t) . xs) `(,op ,x ,(loop t xs))]))])))
 
 ;;
 ;; nonstandard elements
@@ -276,7 +365,7 @@
 
 ;; 6.5.9 Equality expression
 (define %equality-expression
-  ($infix-n %relational-expression 'right '(== !=)))
+  ($infix-n %relational-expression 'left '(== !=)))
 
 ;; 6.5.10 Bitwise AND operator
 (define %and-expression
@@ -383,31 +472,121 @@
 (define %struct-members
   ($between %LC ($end-by %struct-declaration ($. '|\;|)) %RC))
 
+;; Struct/union/enum tags follow the block scope, maintained in
+;; tag-names parameter.
+;; 'kind' is a symbol one of struct, union, or enum.a
+
+;; Reference, e.g. 'struct foo *p'.  Searches enclosing scopes, and
+;; if not found, declares an incomplete type in the innermost scope.
+(define (tag-ref! kind name)
+  (if-let1 spec (dict-get (tag-names) name #f)
+    (check-tag-kind spec kind)
+    (tag-declare! kind name)))
+
+;; Declaration, e.g. 'struct foo;'.  Returns the type in the innermost
+;; scope, or declares a new incomplete type that shadows outer ones.
+(define (tag-declare! kind name)
+  (if-let1 spec (stacked-map-top-get (tag-names) name #f)
+    (check-tag-kind spec kind)
+    (rlet1 spec (make-tag-spec kind name)
+      (dict-put! (tag-names) name spec))))
+
+;; Definition, e.g. 'struct foo { ... }'.  Called before parsing the
+;; members, since they can refer to the type being defined.  Returns
+;; an incomplete type, to be completed by the caller.
+(define (tag-define! kind name)
+  (if name
+    (rlet1 spec (tag-declare! kind name)
+      (when (caddr spec)
+        (errorf "redefinition of '~a ~a'" kind name)))
+    (make-tag-spec kind #f)))
+
+;; Returns a new incomplete specifier,
+;; (<kind> <tag> <members>) or (enum <tag> <members> <base-type>).
+(define (make-tag-spec kind name)
+  (if (eq? kind 'enum)
+    (list kind name #f #f)
+    (list kind name #f)))
+
+;; Set the enum base type (C23), given as a list of type specifiers.
+;; It may already be set by a forward declaration, e.g. 'enum e : long;',
+;; in which case it must agree.
+(define (set-tag-base! spec base-specs)
+  (when base-specs
+    (let ([cell (cdddr spec)]
+          [base (grok-c-type (list base-specs) (typedef-names))])
+      (cond [(not (car cell)) (set-car! cell base)]
+            [(not (equal? (car cell) base))
+             (errorf "'enum ~a' declared with different underlying types"
+                     (cadr spec))])))
+  spec)
+
+(define (check-tag-kind spec kind)
+  (unless (eq? (car spec) kind)
+    (errorf "'~a' defined as wrong kind of tag (~a)" (cadr spec) kind))
+  spec)
+
+;; Returns a parser that calls THUNK, and returns its value as the
+;; semantic value.  An error raised by THUNK becomes a parse error.
+(define ($tag-action thunk)
+  (guard (e [(error? e) ($raise (condition-message e))])
+    ($return (thunk))))
+
+;; Common part of struct/union/enum specifier.
+;; MEMBERS is a parser of the members, and GROK-MEMBERS takes its result
+;; to make <members>.  BASE is a parser of enum base type (C23); it
+;; returns a list of type specifiers, or #f.  Returns the specifier;
+;; see make-tag-spec.
+(define ($tagged-type-specifier kind members grok-members
+                                :optional (base ($return #f)))
+  ($let* ([name ($optional ($lift cadr %identifier))]
+          [base-specs base]
+          [def? ($optional ($assert %LC))]
+          [spec (cond [def? ($tag-action
+                             (^[] (set-tag-base! (tag-define! kind name)
+                                                 base-specs)))]
+                      [name ($tag-action
+                             (^[] (set-tag-base! (tag-ref! kind name)
+                                                 base-specs)))]
+                      [else ($fail #"~kind tag or members")])]
+          [mems (if def? members ($return #f))])
+    (if def?
+      ($tag-action (^[] (set-car! (cddr spec) (grok-members mems)) spec))
+      ($return spec))))
+
+;; mems := ((quals&spec decl ...) ...)
+(define (grok-struct-members mems)
+  (append-map (^m (if (null? (cdr m))
+                    (grok-anonymous-member (car m))
+                    (map (cut grok-member-declaration (car m) <>) (cdr m))))
+              mems))
+
+;; A member declaration without declarators.  If it is a struct/union,
+;; it's an anonymous member (C11), and we return ((#f type)).  Otherwise
+;; it has no effect on the layout, so we return ().
+;; NB: An enum defined here declares enumerators, but we drop it for now.
+(define (grok-anonymous-member specs)
+  (if (any (^s (match s [((or 'struct 'union) . _) #t] [_ #f])) specs)
+    (match-let1 (id storage type init) (grok-declaration specs '((#f)))
+      `((#f ,type)))
+    '()))
+
 (define %struct-or-union-specifier
-  ($binding ($: key ($one-of '(struct union)))
-            ($or ($seq ($: tag %identifier)
-                       ($optional ($: mem %struct-members)))
-                 ($: mem %struct-members))
-            (=> fail)
-            ;; need to catch error from grok-c-type
-            (guard (e [else (fail 'error (~ e'message))])
-              ;; mem := (quals&spec decl ...)
-              (let* ([tdict (typedef-names)]
-                     [member-decls
-                      (append-map
-                       (^m (map (cut grok-member-declaration (car m) <>)
-                                (cdr m)))
-                       (if (undefined? mem) '() mem))])
-                `(,key ,(if (undefined? tag) #f tag)
-                       ,@member-decls)))))
+  ($ $with-hook 'struct-or-union-specifier
+     ($or ($seq ($. 'struct)
+                ($tagged-type-specifier 'struct %struct-members
+                                        grok-struct-members))
+          ($seq ($. 'union)
+                ($tagged-type-specifier 'union %struct-members
+                                        grok-struct-members)))))
 
 (define (grok-member-declaration specs decl)
   (match decl
     [('bitfield #f size) `(#f (int ()) ,size)] ;padding
-    [('bitfield d size)  (match-let1 (id sorage type init)
+    [('bitfield d size)  (match-let1 (id storage type init)
                              (grok-declaration specs `(,d))
                            `(,id ,type ,size))]
-    [d (match-let1 (id sorage type init)
+    [d (match-let1 (id storage type init)
            (grok-declaration specs `(,d))
          `(,id ,type))]))
 
@@ -420,14 +599,17 @@
 (define %enumerators
   ($between %LC ($sep-end-by %enumerator ($. '|,|)) %RC))
 
-;; returns (enum <tag> ((<symbol> <init-expr>) ...))
+;; C23 enum type specifier, e.g. 'enum e : long'.  We need $try, for
+;; 'enum e : 3' can be an unnamed bit field in a struct.
+(define %enum-type-specifier
+  ($optional ($try ($seq ($. '|:|) %type-specifier-qualifier-list))))
+
+;; returns (enum <tag> ((<symbol> <init-expr>) ...) <base-type>)
 (define %enum-specifier
-  ($binding ($. 'enum)
-            ($or ($seq ($: tag %identifier)
-                       ($optional ($: lis %enumerators)))
-                 ($: lis %enumerators))
-            `(enum ,(if (undefined? tag) #f tag)
-                   ,@(if (undefined? lis) '() lis))))
+  ($ $with-hook 'enum-specifier
+     ($seq ($. 'enum)
+           ($tagged-type-specifier 'enum %enumerators identity
+                                   %enum-type-specifier))))
 
 ;; 6.7.4 Function specifiers
 (define %function-specifier ($. 'inline))
@@ -521,20 +703,69 @@
                       (fail "typedef name"))))))
 
 ;; 6.7 Declarations
-;;   Returns (decl (identifier storage-class type init) ...)
-;;   The type part is constructed by grok-declaration
+;;   Returns (decls (identifier storage-class type init) ...)
+;;   The type part is constructed by grok-declaration.
+;;   The (decls (id sc ty ini) ...) form will be spliced into
+;;   the outer forms as (decl id sc ty ini) ..., by splice-decls,
+;;   so 'decls' form won't appear in the final parse result.
 (define %declaration
-  ($lbinding ($: specs %declaration-specifiers)
-             ($: declarators ($sep-by %init-declarator ($. '|,|)))
-             %attribute-specifier-list  ;ignore for now
-             ($. '|\;|)
-             (=> fail)
-             ;; need to catch error from grok-c-type
-             (guard (e [else (fail 'error (~ e'message))])
-               (let ([decls (map (cut grok-declaration specs <>) declarators)])
-                 (when (memq 'typedef specs)
-                   (map (^d (register-typedefs! specs d)) decls))
-                 `(decl ,@decls)))))
+  ($source-info
+   ($lbinding ($: specs %declaration-specifiers)
+              ($: declarators ($sep-by %init-declarator ($. '|,|)))
+              %attribute-specifier-list  ;ignore for now
+              ($. '|\;|)
+              (=> fail)
+              ;; need to catch error from grok-c-type
+              (guard (e [else (fail 'error (~ e'message))])
+                (if (null? declarators)
+                  (tag-only-declaration specs)
+                  (let ([decls (map (cut grok-declaration specs <>) declarators)])
+                    (when (memq 'typedef specs)
+                      (map (^d (register-typedefs! specs d)) decls))
+                    `(decls ,@decls)))))))
+
+;; A declaration without declarators, e.g. 'struct foo { ... };' or
+;; 'enum { A, B };'.  It is meaningful only if it declares tags or
+;; enumerators, in which case we return (decls (#f sc type #f)), so that
+;; the user of the parse result can see the type.  Otherwise returns
+;; (decls).
+(define (tag-only-declaration specs)
+  (let1 specs (redeclare-tags! specs)
+    (if (any tagged-type-spec? specs)
+      `(decls ,(grok-declaration specs '((#f))))
+      '(decls))))
+
+(define (tagged-type-spec? spec)
+  (match spec
+    [((or 'struct 'union 'enum) (or (? symbol?) #f) . _) #t]
+    [_ #f]))
+
+;; (decls (id sc ty init) ...) -> ((decl id sc ty init) ...)
+;; Each decl inherits source-info of decls.
+(define (expand-decls dcls)
+  (match dcls
+    [('decls ds ...)
+     (map (^d (inherit-source-info dcls `(decl ,@d))) ds)]))
+
+;; Intersperse (decls (...) ...) as multiple (decl ...) into the given list
+(define (splice-decls xs)
+  (match xs
+    [() '()]
+    [((and ('decls . _) dcls) . xs)
+     (append (expand-decls dcls) (splice-decls xs))]
+    [(x . xs) (cons x (splice-decls xs))]))
+
+;; 'struct foo;' declares a new incomplete type in the current scope,
+;; even if 'foo' is visible from outer scope.  At the time we parse the
+;; specifier we don't know if declarators follow, so we fix it up here.
+;; Returns specs with such tags replaced by the ones in the current scope.
+(define (redeclare-tags! specs)
+  (map (^[spec]
+         (match spec
+           [((and (or 'struct 'union) kind) (? symbol? name) _)
+            (tag-declare! kind name)]
+           [_ spec]))
+       specs))
 
 (define (register-typedefs! specs decl)
   (match decl
@@ -543,6 +774,11 @@
     [else
      (error "something wrong with typedef decl" decl)]))
 
+;; Returns (id storage-class type init)
+;;   id - C identifier as a symbol
+;;   storage-class - Given stroage class (symbol) or #f
+;;   type - C type in S-expr
+;;   init - initialization expression, or #f
 (define (grok-declaration specs decl)
   (define (build-decl id type init)
     (let* ([sc (find (cut memq <> *storage-classes*) specs)]
@@ -622,13 +858,14 @@
 ;;  we need $try for %labeled-statement, for it may consume the first
 ;;  identifier before failing.
 (define %statement
-  ($lazy ($cut ($or %compound-statement
-                    %selection-statement
-                    %iteration-statement
-                    %jump-statement
-                    %asm-statement            ; gcc specific
-                    ($try %labeled-statement)
-                    %expression-statement))))
+  ($source-info
+   ($lazy ($cut ($or %compound-statement
+                     %selection-statement
+                     %iteration-statement
+                     %jump-statement
+                     %asm-statement            ; gcc specific
+                     ($try %labeled-statement)
+                     %expression-statement)))))
 
 ;; 6.8.1 Labeled statement
 (define %labeled-statement
@@ -642,11 +879,12 @@
 
 ;; 6.8.2 Compound statement
 (define %compound-statement
-  ($binding %LC
-            ($with-scope
-             ($: stmts ($many ($or %declaration %statement))))
-            %RC
-            `(begin ,stmts)))
+  ($source-info
+   ($binding %LC
+             ($with-scope
+              ($: stmts ($many ($or %declaration %statement))))
+             %RC
+             `(begin ,@(splice-decls stmts)))))
 
 ;; 6.8.3 Expression and null statements
 (define %expression-statement
@@ -682,7 +920,12 @@
                  %RP
                  ($: body %statement)
                  (if (undefined? init)
-                   `(for (,decl ,test ,update) ,body)
+                   ;; If new variables are declared in the init clause,
+                   ;; we create an explicit scope by lifting decls.
+                   (let1 decls (expand-decls decl)
+                     `(begin
+                        ,@decls
+                        (for (() ,test ,update) ,body)))
                    `(for (,init ,test ,update) ,body)))))
 
 ;; 6.8.6 Jump statement
@@ -692,68 +935,67 @@
                                ($list ($. '*) %expression))) ;gcc computed goto
                  ($. '|\;|)
                  `(goto ,dest))
-       ($seq ($. 'continue) ($. '|\;|) ($return 'continue))
-       ($seq ($. 'break) ($. '|\;|) ($return 'break))
+       ($seq ($. 'continue) ($. '|\;|) ($return '(continue)))
+       ($seq ($. 'break) ($. '|\;|) ($return '(break)))
        ($binding ($. 'return) ($: expr ($optional %expression)) ($. '|\;|)
                  `(return ,@(if expr `(,expr) '())))))
 
 ;; 6.9 External definitions
+;;   This leaves (decls ...) to the caller %translation-unit, which
+;;   splices it.
 (define %external-declaration
   ($lazy ($or ($try %function-definition) %declaration)))
 
-(define %translation-unit ($many1 %external-declaration))
+(define %translation-unit
+  ($binding ($: forms ($many1 %external-declaration))
+            (splice-decls forms)))
 
 ;; 6.9.1 Function definitions
 (define %function-definition
-  ($binding ($: spec %declaration-specifiers)
-            ($: decl %declarator)
-            ($: lis ($many %declaration))
-            ($assert ($. #\{))
-            ($: body ($cut %compound-statement))
-            `(,spec ,decl ,lis ,body)))
+  ($source-info
+   ($binding ($: spec %declaration-specifiers)
+             ($: decl %declarator)
+             ($: lis ($many %declaration)) ; K&E style argument decls
+             ($assert ($. #\{))
+             ($: body ($cut %compound-statement))
+             (match-let1 (name sc type init) (grok-declaration spec `(,decl))
+               (let1 ftype (integrate-k&r-argdecls type (splice-decls lis))
+                 `(def ,name ,sc ,ftype
+                       ,body))))))
+
+(define (integrate-k&r-argdecls type argdecls)
+  (if (null? argdecls)
+    type
+    (match-let1 ('.function sc rtype ((arg atype) ...)) type
+      (let1 arglist
+          (map (^[arg atype]
+                 (match (find (^e (eq? (cadr e) arg)) argdecls)
+                   [('decl _ _ type _) (list arg type)]
+                   [_ (if atype
+                        (list arg atype)
+                        (list arg '(int ())))])) ; int by default
+               arg atype)
+        `(.function ,sc ,rtype ,arglist)))))
 
 ;;;
 ;;; Preprocessor
 ;;;
 
-;; NB: We may eventually implement our own preprocessor, for we can do
-;; more things (such as caching), but for the time being, we call cpp.
-;;
-;; gcc exits with non-zero status if output isn't fully read, which happens
-;; when PROC throws an error.  We don't want to lose that error, so we set
-;; :on-abnormal-exit to :ignore.
-;;
-;; INCLUDES is a list of include paths, or #f to use the system default
-;; (gauche-config --incdirs).  DEFS is an list of (var val ...) which will
-;; be used as -Dvar=val -Dvar=val ..., or just var for -Dvar.
+;;;
+;;; Predefined parsers
+;;;
 
-(define (call-with-cpp file proc
-                       :key (includes #f)
-                            (defs '()))
-  (define Is
-    (cond [(list? includes)
-           (map (^d (shell-escape-string #"-I~d")) includes)]
-          [(not includes)
-           (map (^d #"-I~d")
-                (string-split (gauche-config "--incdirs") #\:))]
-          [else (error "includes keyword arg must be a list of \
-                        directories or #f, but got:" includes)]))
-  (define Ds
-    (append-map (^[def]
-                  (match def
-                    [(var val ...)
-                     (map (^[val] (shell-escape-string #"-D~|var|=~val")) val)]
-                    [var `(,#"-D~var")]))
-                defs))
-  ;; Kludge - gauche-config --cc may return something like "gcc --std=gnu23".
-  ;; We need to split the command and the argument.  However, the compiler
-  ;; pathname may include whitespaces, e.g. "c:\\Program Files\\...\\gcc.exe",
-  ;; so we use heuristics.
-  (define cc (string-split (gauche-config "--cc") #/\s(?=-)/))
+(define (make-parser-api peg-parser)
+  (^[:key (cpp-include-paths '())
+          (cpp-definitions '())]
+    (make <c-parser> :peg-parser peg-parser
+          :cpp-include-paths cpp-include-paths
+          :cpp-definitions cpp-definitions)))
 
-  (call-with-input-process `(,@cc "-E" ,@Is ,@Ds ,file)
-    proc
-    :on-abnormal-exit :ignore))
+;; APIs
+(define c-toplevel-parser (make-parser-api %translation-unit))
+(define c-statement-parser (make-parser-api %statement))
+(define c-expression-parser (make-parser-api %expression))
 
 ;;;
 ;;; Driver
@@ -765,16 +1007,16 @@
   (unless (file-is-readable? file)
     (error "file does not exist or unreadable:" file)))
 
-(define (c-tokenize-file file)
+(define (c-tokenize-file c-parser file)
   (file-check file)
   (call-with-cpp file
      (^p ($ lseq->list $ c-tokenize
             $ port->char-lseq/position p
             :source-name file :line-adjusters `((#\# . ,cc1-line-adjuster))))
-     :includes (cpp-include-paths)
-     :defs (cpp-definitions)))
+     :includes (~ c-parser'cpp-include-paths)
+     :defs (~ c-parser'cpp-definitions)))
 
-(define (c-tokenize-file-coroutine file)
+(define (c-tokenize-file-coroutine c-parser file)
   (^[yield]
     ($ call-with-cpp file
        (^p
@@ -786,26 +1028,40 @@
             (yield (car tokens)
                    (pair-attributes tokens))
             (loop (cdr tokens)))))
-       :includes (cpp-include-paths)
-       :defs (cpp-definitions))))
+       :includes (~ c-parser'cpp-include-paths)
+       :defs (~ c-parser'cpp-definitions))))
 
-(define (c-parse-file file :optional (parser %translation-unit))
+(define (c-parse-file c-parser file)
   (file-check file)
-  (parameterize ((typedef-names (default-typedefs)))
-    (if (use-concurrent-lexer)
-      (peg-run-parser parser (coroutine->cseq (c-tokenize-file-coroutine file)))
-      (peg-run-parser parser (c-tokenize-file file)))))
+  (let ([peg (~ c-parser'peg-parser)]
+        [memoizer (make-peg-memoizer
+                   :keyed-parameters `(,typedef-names ,tag-names))])
+    (parameterize ([current-c-parser c-parser]
+                   [typedef-names (~ c-parser'typedefs)]
+                   [tag-names (make-stacked-map (~ c-parser'tags))]
+                   [current-peg-memoizer memoizer])
+      ;; We don't need rope-finalize, for the lexer finalizes ropes.
+      ;; Furthermore, rope-finalize can't handle circular structure
+      ;; (e.g. self-referencing struct) in the result.
+      (if (~ c-parser'use-concurrent-lexer)
+        ($ peg-run-parser peg
+           (coroutine->cseq (c-tokenize-file-coroutine c-parser file))
+           :finalizer identity)
+        ($ peg-run-parser peg (c-tokenize-file c-parser file)
+           :finalizer identity)))))
 
+;; We create a temp file so that we can call cpp on it.
 (define (%operate-on-string string proc)
-  (let1 f (format "x~8,'0x.c" (receive (s us) (sys-gettimeofday)
-                                (modulo (* s us) 99999989)))
-    (with-output-to-file f (cut display string))
-    (unwind-protect
-        (proc f)
-      (sys-remove f))))
+  (call-with-temporary-file
+   (^[oport name]
+     (display string oport)
+     (close-output-port oport)
+     (proc name))
+   :prefix "c-parse"
+   :suffix ".c"))
 
-(define (c-tokenize-string string)
-  (%operate-on-string string c-tokenize-file))
+(define (c-tokenize-string c-parser string)
+  (%operate-on-string string (cut c-tokenize-file c-parser <>)))
 
-(define (c-parse-string string :optional (parser %translation-unit))
-  (%operate-on-string string (^f (c-parse-file f parser))))
+(define (c-parse-string c-parser string)
+  (%operate-on-string string (cut c-parse-file c-parser <>)))

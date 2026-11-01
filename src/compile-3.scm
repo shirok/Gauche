@@ -393,7 +393,10 @@
      [($const? (car iforms))
       (loop (cdr iforms) (cons ($const-value (car iforms)) args))]
      [(has-tag? (car iforms) $GREF)
-      (and-let1 gloc (gref-inlinable-gloc (car iforms))
+      ;; NB: If the global binding is a dummy byinding, we can't use
+      ;; it for constant folding.
+      (and-let* ([gloc (gref-inlinable-gloc (car iforms))]
+                 [ (not (gloc-dummy? gloc)) ])
         (loop (cdr iforms) (cons (gloc-ref gloc) args)))]
      [else #f])))
 

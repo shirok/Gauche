@@ -1,7 +1,7 @@
 ;;;
-;;; Parameters to control C parser
+;;; SRFI-277 Cyclic ports
 ;;;
-;;;   Copyright (c) 2021-2025  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2026  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -31,21 +31,38 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; This module consolidates various parameters to customize C parser
-;; behavior.
-;; This is an internal module.  Not to be directly used.
-(define-module lang.c.parameter
-  (export cpp-include-paths
-          cpp-definitions
-          use-concurrent-lexer)
-  )
-(select-module lang.c.parameter)
+(define-module srfi.277
+  (use gauche.vport)
+  (use gauche.uvector)
+  (export open-cyclic-input-string
+          open-cyclic-input-bytevector))
+(select-module srfi.277)
 
-;; A list of directory names to be searched by cpp.
-(define cpp-include-paths (make-parameter '()))
+(define (open-cyclic-input-bytevector bv)
+  (assume-type bv <u8vector>)
+  (let ([len (u8vector-length bv)]
+        [cur 0])
+    (make <virtual-input-port>
+      :getb (^[] (begin0 (u8vector-ref bv cur)
+                   (set! cur (modulo (+ cur 1) len))))
+      :seek (^[off whence]
+              (set! cur (modulo (cond
+                                 [(= whence SEEK_SET) off]
+                                 [(= whence SEEK_CUR) (+ cur off)]
+                                 [else (+ len off)])
+                                len))))))
 
-;; An assoc list of cpp variables and values.
-(define cpp-definitions (make-parameter '()))
-
-;; Whether using separate thread for lexer
-(define use-concurrent-lexer (make-parameter (> (sys-available-processors) 1)))
+(define (open-cyclic-input-string s)
+  (assume-type s <string>)
+  (let ([buf (string->vector s)]
+        [len (string-length s)]
+        [cur 0])
+    (make <virtual-input-port>
+      :getc (^[] (begin0 (vector-ref buf cur)
+                   (set! cur (modulo (+ cur 1) len))))
+      :seek (^[off whence]
+              (set! cur (modulo (cond
+                                 [(= whence SEEK_SET) off]
+                                 [(= whence SEEK_CUR) (+ cur off)]
+                                 [else (+ len off)])
+                                len))))))

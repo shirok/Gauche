@@ -87,8 +87,8 @@
         (inc! j)))))
 
 (define (make-random-integer-generator lb ub)
-  (assume-type lb <fixnum>)
-  (assume-type ub <fixnum>)
+  (assume-type lb <integer>)
+  (assume-type ub <integer>)
   (assume (< lb ub))
   (integers$ (- ub lb) lb))
 

@@ -172,7 +172,7 @@
 (define-method object-compare (a b)
   (if-let1 c (%choose-comparator-2 a b)
     (comparator-compare c a b)
-    (errorf "Object ~s and ~s are not comparable" a b)))
+    (next-method)))
 ;; NB: We 'catch-all' on one-arg object-hash, for two arg object-hash will
 ;; delegate to one-arg in order to maintain the backward compatibility.
 ;; See below for two-arg object-has base method.

@@ -513,12 +513,20 @@
 ;; CLOSURE <code>
 ;;  Create a closure capturing current environment.
 ;;  CODE is the compiled code.   Leaves created closure in val0.
+;;  If the created closure is to be bound to a toplevel identifier,
+;;  we attach the identifier as the name of the closure.  Otherwise
+;;  we take the name from CompiledCode.
+;;  NB: This naming feature relies on the fact that CLOSURE insn is
+;;  separated from RET insn, in order to check tail position.
 ;;
 (define-insn CLOSURE    0 code #f
-  (let* ((body))
+  (let* ((body) (clo))
     (FETCH-OPERAND body)
     INCR-PC
-    ($result (Scm_MakeClosure body (get_env vm)))))
+    (if (TAIL_POS)
+      (set! clo (make_tail_closure vm body (get_env vm)))
+      (set! clo (Scm_MakeClosure body (get_env vm))))
+    ($result clo)))
 
 ;; LOCAL-ENV(nlocals)
 ;;  Create a new environment frame from the current arg frame.
@@ -674,7 +682,10 @@
       ($type-check v0 SCM_NUMBERP "number")
       ($branch*
        (not (or (and (SCM_INTP v0)    (== (SCM_INT_VALUE v0) imm))
-                (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm))))))))
+                (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm))
+                (and (SCM_COMPNUMP v0)
+                     (== (SCM_COMPNUM_IMAG v0) 0.0)
+                     (== (SCM_COMPNUM_REAL v0) imm))))))))
 (define-insn BNEQC       0 obj+label #f
   (let* ([z]) (FETCH-OPERAND z) INCR-PC ($branch* (not (SCM_EQ VAL0 z)))))
 (define-insn BNEQVC      0 obj+label #f

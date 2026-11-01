@@ -40,7 +40,7 @@
   (use gauche.sequence)
   (use binary.io)
   (use util.match)
-  (import gauche.typeutil) ; <c-pointer> etc. We don't want to depend gauche.native-type.
+  (import gauche.typeutil) ; <c-pointer-type> etc. We don't want to depend gauche.native-type.
   (export <obj-fragment> make-obj-fragment obj-fragment?
           <obj-template> make-obj-template obj-template?
           <obj-template-labels> make-obj-template-labels obj-template-labels?
@@ -165,9 +165,9 @@
      [(eq? type <double>)  (put-f64! bytes offset value endian)]
      ;; NB: We always fill pointer with native endian, for the
      ;; raw address won't make sense for cross assembling.
-     [(or (of-type? type <c-pointer>)
-          (of-type? type <c-array>)
-          (of-type? type <c-function>)
+     [(or (of-type? type <c-pointer-type>)
+          (of-type? type <c-array-type>)
+          (of-type? type <c-function-type>)
           (eq? type <c-string>))
       (%native-ptr-fill! bytes offset size type value)]
      [else (bad)])]
@@ -234,9 +234,9 @@
         [(kw base (? integer? width))
          (dolist [entry (filter (^e (eq? (car e) kw)) params)]
            (match entry
-             [(_ (? (^x (of-type? x <c-array>)) atype) vals)
+             [(_ (? (^x (of-type? x <c-array-type>)) atype) vals)
               (fill-array! kw base atype vals)]
-             [(_ (? (^x (of-type? x <c-array>)) atype) vals (? integer? xoff))
+             [(_ (? (^x (of-type? x <c-array-type>)) atype) vals (? integer? xoff))
               (fill-array! kw (+ base xoff) atype vals)]
              [(_ ntype val (? integer? xoff))
               (checked-fill! kw (+ base xoff) ntype val)]

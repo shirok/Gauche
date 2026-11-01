@@ -85,7 +85,8 @@
 
 ;; make-native-handle & basic check
 (let* ([int8* (make-c-pointer-type <int8>)]
-       [int8** (make-c-pointer-type int8*)]
+       [int8*a (make-c-array-type int8* '(1))]
+       [int32* (make-c-pointer-type <int32>)]
        [s (native-type '(.struct (a::int8_t b::int8_t)))]
        [s* (make-c-pointer-type s)])
   (test* "make-native-handle int8*" #t
@@ -94,15 +95,30 @@
          (is-a? (make-native-handle s '#u8(0 0)) <native-handle>))
   (test* "make-native-handle s*" #t
          (is-a? (make-native-handle s* '#u8(0 0)) <native-handle>))
-  (test* "make-native-handle int8** (error)"
-         (test-error <error> #/type size \d too big/)
-         (is-a? (make-native-handle int8** '#u8(0)) <native-handle>))
+  (test* "make-native-handle int8*a (error)"
+         (test-error <error> #/Backing storage .* is too small/)
+         (is-a? (make-native-handle int8*a '#u8(0)) <native-handle>))
   (test* "make-native-handle s (error)"
-         (test-error <error> #/type size 2 too big/)
+         (test-error <error> #/Backing storage .* is too small/)
          (is-a? (make-native-handle s '#u8(0)) <native-handle>))
-  (test* "make-native-handle s* (error)"
-         (test-error <error> #/type size 2 too big/)
+  (test* "make-native-handle s* (error)" #t
          (is-a? (make-native-handle s* '#u8(0)) <native-handle>))
+  (test* "make-native-handle past-end poitner ref"
+         (test-error <error> #/Past-end pointer/)
+         (let1 h (make-native-handle int32* '#u8(0))
+           (native* h)))
+  (test* "make-native-handle past-end poitner ref"
+         (test-error <error> #/Past-end pointer/)
+         (let1 h (make-native-handle int32* '#u8(0 0))
+           (native* h)))
+  (test* "make-native-handle past-end poitner ref"
+         (test-error <error> #/Past-end pointer/)
+         (let1 h (make-native-handle int32* '#u8(0 0 0))
+           (native* h)))
+  (test* "make-native-handle past-end poitner ref"
+         0
+         (let1 h (make-native-handle int32* '#u8(0 0 0 0))
+           (native* h)))
   )
 
 (let* ([int16* (make-c-pointer-type <int16>)]
@@ -300,6 +316,45 @@
          (native-handle-belongs? h (native-pointer+ h 4)))
   (test* "native-pointer+ (past-end pointer)" (test-error <error> #/Past-end pointer cannot/)
          (native* (native-pointer+ h 4)))
+  )
+
+(let ([h (make-c-array-handle <int32> '(4) #s32(10 20 30 40))])
+  (test* "native-pointer+ (int[] auto-cast to int*)" #t
+         (c-pointer-handle? (native-pointer+ h 0)))
+  (test* "native-pointer+ (int[] auto-cast to int*) pointee" #t
+         (equal? <int32>
+                 (c-pointer-type-pointee
+                  (native-handle-type (native-pointer+ h 0)))))
+  (test* "native-pointer+ (int[] auto-cast to int*) deref" 30
+         (native* (native-pointer+ h 2)))
+  (test* "native-pointer+ (int[] auto-cast to int*) past-end" #t
+         (native-handle-belongs? h (native-pointer+ h 4)))
+  (test* "native-pointer+ (int[] auto-cast int*) past-end deref"
+         (test-error <error> #/Past-end pointer cannot/)
+         (native* (native-pointer+ h 4)))
+  (test* "native-pointer+ (int[] auto-cast to int*) out of range"
+         (test-error <error> #/Offset out of range/)
+         (native* (native-pointer+ h 5)))
+  )
+
+(let ([h (make-c-array-handle <int32> '(3 2) #s32(10 20 30 40 50 60))])
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*)" #t
+         (c-pointer-handle? (native-pointer+ h 0)))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) pointee" '(2)
+         (c-array-type-dimensions
+          (c-pointer-type-pointee
+           (native-handle-type (native-pointer+ h 0)))))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) deref row 0" '(10 20)
+         (let1 row (native* (native-pointer+ h 0))
+           (list (native-aref row 0) (native-aref row 1))))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) deref row 1" '(30 40)
+         (let1 row (native* (native-pointer+ h 1))
+           (list (native-aref row 0) (native-aref row 1))))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) deref row 2" '(50 60)
+         (let1 row (native* (native-pointer+ (native-pointer+ h 3) -1))
+           (list (native-aref row 0) (native-aref row 1))))
+  (test* "native-pointer+ (int[][2] auto-cast to (int[2])*) past-end" #t
+         (native-handle-belongs? h (native-pointer+ h 3)))
   )
 
 ;;;---------------------------------------------------
@@ -611,6 +666,15 @@
                  (native. (bc 0 s2) 'b)
                  (native. (bc 0 s2) 'c)))))
 
+(let* ([h (make-native-handle
+           (native-type '(.struct (x::(.struct (y::int8_t)))))
+           '#u8(11))])
+  (test* "cascading native." 11 (native. h 'x 'y))
+  (test* "cascading native.-set!" 22
+         (begin
+           (set! (native. h 'x 'y) 22)
+           (native. h 'x 'y))))
+
 (let* ([data (u8vector-copy *fobject-storage*)]
        [u16x2 (make-c-array-type <uint16> '(2))]
        [s3 (make-c-struct-type 's3
@@ -736,12 +800,12 @@
          (begin
            (set! (native. data-s 'a) #\A)
            (set! (native. data-s 'b) 1234)
-           (list (native-> data-p 'a)
-                 (native-> data-p 'b))))
+           (list (native. data-p 'a)
+                 (native. data-p 'b))))
   (test* "native-set! via pointer" '(#\B -5678)
          (begin
-           (set! (native-> data-p 'a) #\B)
-           (set! (native-> data-p 'b) -5678)
+           (set! (native. data-p 'a) #\B)
+           (set! (native. data-p 'b) -5678)
            (list (native. data-s 'a)
                  (native. data-s 'b))))
   )
@@ -761,6 +825,30 @@
            (set! (native* d) 3.14)
            (set! (native. h 'a) d)
            (native* (native. h 'a))))
+  )
+
+;; long long, long double and complex types
+(let ()
+  (define (roundtrip type val)
+    (let1 h (make-native-handle (make-c-pointer-type type))
+      (set! (native* h) val)
+      (native* h)))
+  (test* "longlong" (- (expt 2 63)) (roundtrip <longlong> (- (expt 2 63))))
+  (test* "ulonglong" (- (expt 2 64) 1) (roundtrip <ulonglong> (- (expt 2 64) 1)))
+  (test* "longlong out of range" (test-error)
+         (roundtrip <longlong> (expt 2 63)))
+  (test* "longdouble" 1.5 (roundtrip <longdouble> 1.5))
+  (test* "float-complex" 1.5+2.5i (roundtrip <float-complex> 1.5+2.5i))
+  (test* "double-complex" 1.1+2.2i (roundtrip <double-complex> 1.1+2.2i))
+  (test* "longdouble-complex" 1.1+2.2i
+         (roundtrip <longdouble-complex> 1.1+2.2i))
+  (test* "double-complex from real" 3.0 (real-part (roundtrip <double-complex> 3)))
+  (test* "double-complex non-number" (test-error)
+         (roundtrip <double-complex> 'a))
+  (test* "signature longlong" <longlong> (native-type 'longlong))
+  (test* "signature (long long)" <longlong> (native-type '(long long)))
+  (test* "signature double_complex" 'double_complex
+         (native-type->signature <double-complex>))
   )
 
 ;; Nested struct
@@ -797,8 +885,8 @@
            (set! (native. h 'd) (native& h 'c))
            (set! (native. (native. h 'c) 'a) #\@)
            (set! (native. (native. h 'c) 'b) 999)
-           (list (native-> (native. h 'd) 'a)
-                 (native-> (native. h 'd) 'b))))
+           (list (native. (native. h 'd) 'a)
+                 (native. (native. h 'd) 'b))))
   (test* "dereferencing pointer to a struct" #t
          (c-struct-handle? (native* (native. h 'd))))
   )
@@ -863,21 +951,336 @@
            (list (native-aref (native. h 'data) 0)
                  (native-aref (native. h 'data) 3)))))
 
-;; native tag registry
-(parameterize ([current-native-tag-namespace
-                (make-native-tag-namespace)])
-  (let* ([t1 (make-c-struct-type 'foo `((x ,<int>)))]
-         [t2 (make-c-union-type 'bar `((x ,<int>)))])
-    (test* "tag->native-type" t1 (tag->native-type 'foo))
-    (test* "tag->native-type" t2 (tag->native-type 'bar))
+;; native tag namespace
+(let* ([ns (make-native-tag-namespace)]
+       [t1 (native-tag-define! ns 'struct 'foo `((x ,<int>)))]
+       [t2 (native-tag-define! ns 'union 'bar `((x ,<int>)))])
+  (test* "constructors don't register tags" #f
+         (begin (make-c-struct-type 'baz `((x ,<int>)))
+                (native-tag-lookup ns 'baz)))
+  (test* "native-tag-lookup" (list t1 t2 #f)
+         (list (native-tag-lookup ns 'foo)
+               (native-tag-lookup ns 'bar)
+               (native-tag-lookup ns 'nosuchtag)))
+  (test* "native-tag-ref" t1 (native-tag-ref ns 'struct 'foo))
+  (test* "native-tag-ref (kind mismatch)" (test-error <error> #/referred as/)
+         (native-tag-ref ns 'struct 'bar))
+  (test* "dupe tags (different kind)" (test-error <error> #/referred as/)
+         (native-tag-define! ns 'struct 'bar `((x ,<int>))))
+  (test* "dupe tags (different fields)" (test-error <error> #/already defined/)
+         (native-tag-define! ns 'union 'bar `((x ,<int8>))))
+  (test* "dupe tags (same definition allowed)" t2
+         (native-tag-define! ns 'union 'bar `((x ,<int>))))
+  (test* "bad kind" (test-error)
+         (native-tag-ref ns 'class 'foo))
 
-    (test* "dupe tags (different kind)" (test-error <error> #/already used/)
-           (make-c-struct-type 'bar `((x ,<int>))))
-    (test* "dupe tags (different fields)" (test-error <error> #/already used/)
-           (make-c-union-type 'bar `((x ,<int8>))))
-    (test* "dupe tags (equal allowed)" t2
-           (make-c-union-type 'bar `((x ,<int>))))
-    ))
+  ;; forward reference and completion
+  (let1 r (native-tag-ref ns 'struct 'fwd)
+    (test* "native-tag-ref declares incomplete type" #f
+           (c-struct/union-type-complete? r))
+    (test* "native-tag-ref returns the same declaration" r
+           (native-tag-ref ns 'struct 'fwd))
+    (test* "native-tag-declare! returns the same declaration" r
+           (native-tag-declare! ns 'struct 'fwd))
+    (test* "native-tag-define! completes declaration" r
+           (native-tag-define! ns 'struct 'fwd `((a ,<int>) (b ,<int>))))
+    (test* "completed size" (* 2 (~ <int>'size)) (~ r'size)))
+
+  ;; scopes
+  (let1 inner (make-native-tag-namespace ns)
+    (test* "inner scope sees outer tags" t1 (native-tag-lookup inner 'foo))
+    (test* "native-tag-ref in inner scope finds outer tag" t1
+           (native-tag-ref inner 'struct 'foo))
+    (let1 d (native-tag-declare! inner 'struct 'foo)
+      (test* "native-tag-declare! shadows outer tag" #t
+             (and (not (eq? d t1))
+                  (not (c-struct/union-type-complete? d))
+                  (eq? (native-tag-lookup inner 'foo) d)))
+      (test* "shadowing doesn't affect outer scope" t1
+             (native-tag-lookup ns 'foo)))
+    (test* "native-tag-define! in inner scope" #t
+           (let1 t (native-tag-define! inner 'union 'bar `((y ,<double>)))
+             (and (not (eq? t t2))
+                  (eq? (native-tag-lookup ns 'bar) t2))))
+    (test* "native-tag-ref declares in inner scope" #f
+           (begin (native-tag-ref inner 'struct 'innerfwd)
+                  (native-tag-lookup ns 'innerfwd))))
+
+  ;; enum
+  (let1 e (native-tag-ref ns 'enum 'color)
+    (test* "enum forward reference" '() (c-enum-type-enumerator-alist e))
+    (test* "enum definition completes declaration" e
+           (native-tag-define! ns 'enum 'color '(red green blue)))
+    (test* "enum completed" '((red . 0) (green . 1) (blue . 2))
+           (c-enum-type-enumerator-alist e)))
+  (test* "enum definition with base type" <uint8>
+         (c-enum-type-base-type
+          (native-tag-define! ns 'enum 'small '(a b) <uint8>)))
+  )
+
+;; native tag namespace and signatures
+(let1 ns (make-native-tag-namespace)
+  (test* "signature defines tag" #t
+         (let1 t (native-type '(.struct point (x::int y::int)) ns)
+           (eq? t (native-tag-lookup ns 'point))))
+  (test* "signature refers to tag" (native-tag-lookup ns 'point)
+         (native-type '(.struct point) ns))
+  (test* "signature, pointer to tag"
+         (native-tag-lookup ns 'point)
+         (c-pointer-type-pointee (native-type '((.struct point) *) ns)))
+  (test* "signature, self-referential struct" '(#t #t)
+         (let* ([t (native-type '(.struct node (value::int
+                                                next::((.struct node) *)))
+                                ns)]
+                [next (c-struct/union-type-field-type t 'next)])
+           (list (c-struct/union-type-complete? t)
+                 (eq? (c-pointer-type-pointee next) t))))
+  (test* "signature, enum" '((a . 0) (b . 1))
+         (begin
+           (native-type '(.enum e (a b)) ns)
+           (c-enum-type-enumerator-alist (native-type '(.enum e) ns))))
+  (test* "signature, tag reference without namespace" #f
+         (c-struct/union-type-complete? (native-type '(.struct point))))
+  (test* "signature, incomplete roundtrip" '(.struct node)
+         (native-type->signature (native-type '(.struct node))))
+  )
+
+;; incomplete struct/union
+(let* ([node (make-c-struct-type 'node #f)]
+       [node* (make-c-pointer-type node)])
+  (test* "incomplete struct" #f (c-struct/union-type-complete? node))
+  (test* "incomplete struct signature" '(.struct node)
+         (native-type->signature node))
+  (test* "incomplete struct needs tag" (test-error <error> #/must have a tag/)
+         (make-c-struct-type #f #f))
+  (test* "incomplete struct is only equal to itself" '(#t #f)
+         (list (equal? node node)
+               (equal? node (make-c-struct-type 'node #f))))
+  (test* "incomplete struct field names" (test-error <error> #/Incomplete/)
+         (c-struct/union-type-field-names node))
+  (test* "incomplete struct as a field" (test-error <error> #/Incomplete/)
+         (make-c-struct-type 'foo `((a ,<int>) (b ,node))))
+  (test* "incomplete struct as an array element"
+         (test-error <error> #/Incomplete/)
+         (make-c-array-type node '(2)))
+  (test* "incomplete struct handle" (test-error <error> #/Incomplete/)
+         (make-native-handle node))
+  (test* "incomplete struct pointer handle" (test-error <error> #/Incomplete/)
+         (make-native-handle node*))
+  (let1 h (make-native-handle node* (make-u8vector 16 0))
+    (test* "incomplete struct pointer handle with storage" #t
+           (is-a? h <native-handle>))
+    (test* "incomplete struct dereference" (test-error <error> #/Incomplete/)
+           (native* h))
+    (test* "incomplete struct pointer arithmetic"
+           (test-error <error> #/Incomplete/)
+           (native-pointer+ h 1)))
+
+  ;; self-referential struct
+  (test* "complete struct" node
+         (c-struct/union-type-complete! node `((value ,<int>) (next ,node*))))
+  (test* "completed struct" #t (c-struct/union-type-complete? node))
+  (test* "completed struct size/alignment"
+         (list (* 2 (~ <void*>'size)) (~ <void*>'alignment))
+         (list (~ node'size) (~ node'alignment)))
+  (test* "completed struct fields" '(value next)
+         (c-struct/union-type-field-names node))
+  (test* "completed struct pointee" node (c-pointer-type-pointee node*))
+  (test* "complete twice" (test-error <error> #/already been completed/)
+         (c-struct/union-type-complete! node `((value ,<int>))))
+  (test* "completed struct is equal to the same definition" #t
+         (equal? node (make-c-struct-type 'node
+                                          `((value ,<int>) (next ,node*)))))
+  (test* "completed struct, linked list" '(1 2)
+         (let* ([a (make-native-handle node*)]
+                [b (make-native-handle node*)])
+           (set! (native. a 'value) 1)
+           (set! (native. a 'next) b)
+           (set! (native. b 'value) 2)
+           (list (native. a 'value)
+                 (native. (native. a 'next) 'value)))))
+
+(let1 u (make-c-union-type 'u #f)
+  (test* "incomplete union" #f (c-struct/union-type-complete? u))
+  (c-struct/union-type-complete! u `((a ,<int8>) (b ,<double>)))
+  (test* "completed union size" (~ <double>'size) (~ u'size))
+  (test* "complete union with bad fields" (test-error)
+         (c-struct/union-type-complete! (make-c-union-type 'u2 #f) 'a)))
+
+;;;----------------------------------------------------------
+(test-section "string handling")
+
+(let* ([data '#u8(#x41 #x42 #x43 #x44 #x00)]
+       [p-uint (make-native-handle (native-type 'uint8_t*) data)]
+       [p-int  (make-native-handle (native-type 'int8_t*) data)]
+       [p-char (make-native-handle (native-type 'char*) data)]
+       [a-uint-unb (make-native-handle (native-type '(.array uint8_t (*))) data)]
+       [a-int-unb  (make-native-handle (native-type '(.array int8_t (*))) data)]
+       [a-char-unb (make-native-handle (native-type '(.array char (*))) data)]
+       [a-uint (make-native-handle (native-type '(.array uint8_t (5))) data)]
+       [a-int  (make-native-handle (native-type '(.array int8_t (5))) data)]
+       [a-char (make-native-handle (native-type '(.array char (5))) data)]
+       [a-uint-less (make-native-handle (native-type '(.array uint8_t (2))) data)]
+       [a-int-less  (make-native-handle (native-type '(.array int8_t (2))) data)]
+       [a-char-less (make-native-handle (native-type '(.array char (2))) data)])
+  (define-syntax t*
+    (syntax-rules ()
+      [(_ expect size src ...)
+       (begin
+         (test* '(c-char*->string size src) expect
+                (c-char*->string src size))
+         ...
+         (test* '(c-char*->string/shared size src) expect
+                (c-char*->string/shared src size))
+         ...)]))
+
+  (t* "ABCD" #f p-uint p-int p-char)
+  (t* "ABCD\0" 5 p-uint p-int p-char)
+  (t* "ABCD" #f a-uint-unb a-int-unb a-char-unb)
+  (t* "ABCD\0" 5 a-uint-unb a-int-unb a-char-unb)
+  (t* "ABCD" #f a-uint a-int a-char)
+  (t* "ABCD\0" #t a-uint a-int a-char)
+  (t* "ABCD\0" 5 a-uint a-int a-char)
+  (t* (test-error <error> #/exceeds array size/) 7 a-uint a-int a-char)
+  (t* "AB" #f a-uint-less a-int-less a-char-less)
+  (t* (test-error <error> #/exceeds array size/) 4 a-uint-less a-int-less a-char-less)
+
+  (let1 c (string->c-char*/shared "abcde")
+    (test* "string->c-char*/shared default type"
+           (native-type `(.array ,<c-char> (6)))
+           (native-handle-type c))
+    (test* "string->c-char*/shared round trip" "abcde"
+           (c-char*->string c))
+    (test* "string->c-char*/shared round trip (including terminator" "abcde\0"
+           (c-char*->string c #t)))
+  (let1 c (string->c-char*/shared "" (native-type 'uint8_t*))
+    (test* "string->c-char*/shared custom type"
+           (native-type 'uint8_t*)
+           (native-handle-type c))
+    (test* "string->c-char*/shared round trip" ""
+           (c-char*->string c)))
+  )
+
+(let-syntax ([t* (syntax-rules ()
+                   [(_ msg expect type str)
+                    (test* msg expect
+                           (let* ([v (make-u8vector 6 #xff)]
+                                  [h (make-native-handle (native-type 'type) v)])
+                             (string->c-char*! h str)
+                             v))])])
+  (t* "string->c-char*! (char array)" '#u8(65 66 67 0 255 255)
+      (.array char (6)) "ABC")
+  (t* "string->c-char*! (uint8_t array)" '#u8(65 66 67 0 255 255)
+      (.array uint8_t (6)) "ABC")
+  (t* "string->c-char*! (int8_t array)" '#u8(65 66 67 0 255 255)
+      (.array int8_t (6)) "ABC")
+  (t* "string->c-char*! (unbounded array)" '#u8(65 66 67 0 255 255)
+      (.array char (*)) "ABC")
+  (t* "string->c-char*! (pointer)" '#u8(65 66 67 0 255 255)
+      char* "ABC")
+  (t* "string->c-char*! (exact fit)" '#u8(65 66 67 68 69 0)
+      (.array char (6)) "ABCDE")
+  (t* "string->c-char*! (empty string)" '#u8(0 255 255 255 255 255)
+      (.array char (6)) "")
+  (t* "string->c-char*! (embedded NUL)" '#u8(65 0 66 0 255 255)
+      (.array char (6)) "A\0B")
+  (t* "string->c-char*! (multibyte)" '#u8(227 129 130 0 255 255)
+      (.array char (6)) "あ")
+
+  (t* "string->c-char*! (array too small)"
+      (test-error <error> #/room for 6 octets/)
+      (.array char (6)) "ABCDEF")
+  (t* "string->c-char*! (region too small)"
+      (test-error <error> #/room for 6 octets/)
+      char* "ABCDEF")
+  (t* "string->c-char*! (non-octet array)"
+      (test-error <error> #/Can't store a string/)
+      (.array int16_t (3)) "A")
+  (t* "string->c-char*! (non-octet pointer)"
+      (test-error <error> #/Can't store a string/)
+      int16_t* "A")
+  (t* "string->c-char*! (multi-dimensional array)"
+      (test-error <error> #/Can't store a string/)
+      (.array char (2 3)) "A"))
+
+;; The array dimension bounds the copy, even when the handle's memory
+;; region covers the enclosing struct.
+(let* ([type (make-c-struct-type 'strbuf `((s ,(native-type '(.array char (4))))
+                                           (n ,<int>)))]
+       [h (make-native-handle type)])
+  (test* "string->c-char*! into a struct field" "abc"
+         (begin (string->c-char*! (native. h 's) "abc")
+                (c-char*->string (native. h 's))))
+  (test* "string->c-char*! into a struct field (overflow)"
+         (test-error <error> #/room for 4 octets/)
+         (string->c-char*! (native. h 's) "abcd")))
+
+(test* "string->c-char*! into NULL pointer" (test-error <error> #/NULL pointer/)
+       (string->c-char*! (null-pointer-handle (native-type 'char*)) "A"))
+
+(let-syntax ([t* (syntax-rules ()
+                   [(_ msg size str)
+                    (let1 c (string->c-char* str)
+                      (test* `("string->c-char*" msg "type")
+                             (native-type `(.array ,<c-char> (size)))
+                             (native-handle-type c))
+                      (test* `("string->c-char*" msg "content")
+                             (string-append str "\0")
+                             (c-char*->string c #t))
+                      (test* `("string->c-char*" msg "storage")
+                             size
+                             (u8vector-length (native-handle-owner c))))])])
+  (t* "simple" 6 "abcde")
+  (t* "empty string" 1 "")
+  (t* "multibyte" 4 "あ")
+  (t* "embedded NUL" 4 "a\0b"))
+
+(test* "string->c-char* (NUL terminates the result)" "a"
+       (c-char*->string (string->c-char* "a\0b")))
+
+;; The allocator receives the required octet count, including the
+;; terminating NUL, and returns a handle to store the string into.
+(let* ([requested #f]
+       [alloc (^[size]
+                (set! requested size)
+                (make-native-handle (native-type 'char*)
+                                    (make-u8vector (* size 2) #xff)))]
+       [c (string->c-char* "abc" alloc)])
+  (test* "string->c-char* (allocator's request)" 4 requested)
+  (test* "string->c-char* (allocator's handle is used as is)"
+         (native-type 'char*)
+         (native-handle-type c))
+  (test* "string->c-char* (allocator's storage)" '#u8(97 98 99 0 255 255 255 255)
+         (native-handle-owner c))
+  (test* "string->c-char* (allocator round trip)" "abc"
+         (c-char*->string c)))
+
+(test* "string->c-char* (allocator returns too small a buffer)"
+       (test-error <error> #/room for 2 octets/)
+       (string->c-char* "abc"
+                        (^[size]
+                          (make-native-handle
+                           (native-type '(.array char (2)))))))
+(test* "string->c-char* (allocator returns non-handle)" (test-error <error>)
+       (string->c-char* "abc" (^[size] <int>)))
+(test* "string->c-char* (bad allocator)" (test-error <error>)
+       (string->c-char* "abc" 42))
+(test* "string->c-char* (allocator of wrong arity)" (test-error <error>)
+       (string->c-char* "abc" (^[size extra] size)))
+(test* "string->c-char* (non-string)" (test-error <error>)
+       (string->c-char* 'abc))
+
+;; To store into the middle of a buffer, the caller adjusts the pointer.
+(let* ([v (make-u8vector 6 #xff)]
+       [h (make-native-handle (native-type 'char*) v)])
+  (test* "string->c-char*! with adjusted pointer" '#u8(255 255 65 66 67 0)
+         (begin (string->c-char*! (native-pointer+ h 2) "ABC") v))
+  (test* "string->c-char*! with adjusted pointer (overflow)"
+         (test-error <error> #/room for 4 octets/)
+         (string->c-char*! (native-pointer+ h 2) "ABCD"))
+  (test* "string->c-char*! into past-end pointer"
+         (test-error <error> #/room for 0 octets/)
+         (string->c-char*! (native-pointer+ h 6) "")))
 
 ;;;----------------------------------------------------------
 (test-section "enums")
@@ -1022,49 +1425,51 @@
                                    (b ,<uint32>)
                                    (c ,<uint16>)
                                    (d ,<uint8>)))]
-       [h (make-native-handle s)])
-  (set! (native. h 'a) -1)
-  (set! (native. h 'b) #x11223344)
-  (set! (native. h 'c) #xabcd)
-  (set! (native. h 'd) #xfe)
+       [h (make-native-handle s)]
+       [ph (native& h)])
+  (dolist [h (list h ph)]
+    (set! (native. h 'a) -1)
+    (set! (native. h 'b) #x11223344)
+    (set! (native. h 'c) #xabcd)
+    (set! (native. h 'd) #xfe)
 
-  (test* "native& on struct returns c-pointer handle" #t
-         (c-pointer-handle? (native& h 'a)))
-  (test* "native& on struct field 'a pointee type" #t
-         (equal? (~ (native-handle-type (native& h 'a)) 'pointee-type)
-                 <int8>))
-  (test* "native& on struct field 'b pointee type" #t
-         (equal? (~ (native-handle-type (native& h 'b)) 'pointee-type)
-                 <uint32>))
-  (test* "native& on struct field 'c pointee type" #t
-         (equal? (~ (native-handle-type (native& h 'c)) 'pointee-type)
-                 <uint16>))
+    (test* #"native& ~h returns c-pointer handle" #t
+           (c-pointer-handle? (native& h 'a)))
+    (test* #"native& ~h 'a" #t
+           (equal? (~ (native-handle-type (native& h 'a)) 'pointee-type)
+                   <int8>))
+    (test* #"native& ~h 'b" #t
+           (equal? (~ (native-handle-type (native& h 'b)) 'pointee-type)
+                   <uint32>))
+    (test* #"native& ~h 'c" #t
+           (equal? (~ (native-handle-type (native& h 'c)) 'pointee-type)
+                   <uint16>))
 
-  (test* "native& on struct: deref reads field value"
-         '(-1 #x11223344 #xabcd #xfe)
-         (list (native* (native& h 'a))
-               (native* (native& h 'b))
-               (native* (native& h 'c))
-               (native* (native& h 'd))))
+    (test* #"native& ~h deref reads field value"
+           '(-1 #x11223344 #xabcd #xfe)
+           (list (native* (native& h 'a))
+                 (native* (native& h 'b))
+                 (native* (native& h 'c))
+                 (native* (native& h 'd))))
 
-  (test* "native& on struct: write through pointer modifies field"
-         '(127 #x55667788 #x1234 #x80)
-         (begin
-           (set! (native* (native& h 'a)) 127)
-           (set! (native* (native& h 'b)) #x55667788)
-           (set! (native* (native& h 'c)) #x1234)
-           (set! (native* (native& h 'd)) #x80)
-           (list (native. h 'a)
-                 (native. h 'b)
-                 (native. h 'c)
-                 (native. h 'd))))
+    (test* #"native& ~h write through pointer modifies field"
+           '(127 #x55667788 #x1234 #x80)
+           (begin
+             (set! (native* (native& h 'a)) 127)
+             (set! (native* (native& h 'b)) #x55667788)
+             (set! (native* (native& h 'c)) #x1234)
+             (set! (native* (native& h 'd)) #x80)
+             (list (native. h 'a)
+                   (native. h 'b)
+                   (native. h 'c)
+                   (native. h 'd))))
 
-  (test* "native& on struct: error on non-symbol selector"
-         (test-error <error>)
-         (native& h 0))
-  (test* "native& on struct: error on unknown field"
-         (test-error <error>)
-         (native& h 'zzz)))
+    (test* #"native& ~h error on non-symbol selector"
+           (test-error <error>)
+           (native& h 0))
+    (test* #"native& ~h error on unknown field"
+           (test-error <error>)
+           (native& h 'zzz))))
 
 ;; native& on c-union: extract pointer to a field
 (let* ([u (make-c-union-type 'u `((a ,<int8>)
@@ -1456,22 +1861,22 @@
          (let1 sh (make-native-handle s1 data)
            (cast-handle uint8* sh)))
 
-  ;; Cast int* to pointer-to-struct, then dereference fields via native->
+  ;; Cast int* to pointer-to-struct, then dereference fields via native.
   (let1 psh (cast-handle s1* ph)
     (test* "cast-handle int* to s1* yields pointer handle" #t
            (c-pointer-handle? psh))
     (test* "cast-handle int* to s1*, deref field a" #x-80
-           (native-> psh 'a))
+           (native. psh 'a))
     (test* "cast-handle int* to s1*, deref field b"
            (case (native-endian)
              [(big-endian) #x04050607]
              [else         #x07060504])
-           (native-> psh 'b))
+           (native. psh 'b))
     ;; Modify through the cast pointer and read back via the original data
     (test* "cast-handle int* to s1*, set! field a"
            #x42
            (begin
-             (set! (native-> psh 'a) #x42)
+             (set! (native. psh 'a) #x42)
              (native* (cast-handle uint8* ph)))))
 
   ;; Aggregate-to-aggregate casts
@@ -1869,6 +2274,56 @@
 (test* "native-type (const int)" <int>
        (native-type '(const int)))
 
+;; Signed/unsigned qualifiers on integral types
+;; NB: signed/unsigned char maps to <int8>/<uint8>, not <c-char>.
+(test* "native-type signed char" <int8> (native-type '(signed char)))
+(test* "native-type unsigned char" <uint8> (native-type '(unsigned char)))
+(test* "native-type signed short" <short> (native-type '(signed short)))
+(test* "native-type unsigned short" <ushort> (native-type '(unsigned short)))
+(test* "native-type signed int" <int> (native-type '(signed int)))
+(test* "native-type unsigned int" <uint> (native-type '(unsigned int)))
+(test* "native-type signed long" <long> (native-type '(signed long)))
+(test* "native-type unsigned long" <ulong> (native-type '(unsigned long)))
+(test* "native-type signed int8_t" <int8> (native-type '(signed int8_t)))
+(test* "native-type unsigned int8_t" <uint8> (native-type '(unsigned int8_t)))
+(test* "native-type signed int16_t" <int16> (native-type '(signed int16_t)))
+(test* "native-type unsigned int16_t" <uint16> (native-type '(unsigned int16_t)))
+(test* "native-type signed int32_t" <int32> (native-type '(signed int32_t)))
+(test* "native-type unsigned int32_t" <uint32> (native-type '(unsigned int32_t)))
+(test* "native-type signed int64_t" <int64> (native-type '(signed int64_t)))
+(test* "native-type unsigned int64_t" <uint64> (native-type '(unsigned int64_t)))
+;; Signed/unsigned pushes through pointer types down to the pointee.
+(test* "native-type signed int *"
+       (make-c-pointer-type <int>)
+       (native-type '(signed int *)))
+(test* "native-type unsigned int *"
+       (make-c-pointer-type <uint>)
+       (native-type '(unsigned int *)))
+(test* "native-type unsigned char**"
+       (make-c-pointer-type (make-c-pointer-type <uint8>))
+       (native-type '(unsigned char**)))
+;; Mixed with const
+(test* "native-type unsigned const int*"
+       (make-c-pointer-type <uint>)
+       (native-type '(unsigned const int*)))
+(test* "native-type const unsigned int*"
+       (make-c-pointer-type <uint>)
+       (native-type '(const unsigned int*)))
+
+;; signed/unsigned on a signless type is an error.
+(test* "native-type signed float error"
+       (test-error <error> #/signed can't be attached to/)
+       (native-type '(signed float)))
+(test* "native-type unsigned double error"
+       (test-error <error> #/unsigned can't be attached to/)
+       (native-type '(unsigned double)))
+(test* "native-type signed void error"
+       (test-error <error> #/signed can't be attached to/)
+       (native-type '(signed void)))
+(test* "native-type unsigned c-string error"
+       (test-error <error> #/unsigned can't be attached to/)
+       (native-type '(unsigned c-string)))
+
 ;; Pointer types
 (test* "native-type int*" #t
        (equal? (native-type 'int*) (make-c-pointer-type <int>)))
@@ -1908,9 +2363,9 @@
        (equal? (native-type '(int* *))
                (make-c-pointer-type (make-c-pointer-type <int>))))
 
-;; Pointer type is a <c-pointer>
-(test* "native-type int* is <c-pointer>" #t
-       (is-a? (native-type 'int*) <c-pointer>))
+;; Pointer type is a <c-pointer-type>
+(test* "native-type int* is <c-pointer-type>" #t
+       (is-a? (native-type 'int*) <c-pointer-type>))
 (test* "native-type int* pointee-type" #t
        (eq? (c-pointer-type-pointee (native-type 'int*)) <int>))
 
@@ -1969,7 +2424,7 @@
          (eq? (~ a'element-type) <int>))
   (test* "native-type array dimensions" '(5)
          (c-array-type-dimensions a))
-  (test* "native-type array is <c-array>" #t
+  (test* "native-type array is <c-array-type>" #t
          (c-array-type? a)))
 
 ;; Array with unsized first dimension
@@ -1988,7 +2443,7 @@
 
 ;; Struct type properties
 (let1 s (native-type '(.struct pt (x::int y::int)))
-  (test* "native-type struct is <c-struct>" #t
+  (test* "native-type struct is <c-struct-type>" #t
          (c-struct-type? s))
   (test* "native-type struct tag" 'pt
          (c-struct/union-type-tag s)))
@@ -2058,9 +2513,38 @@
            (and (c-union-type? u)
                 (eq? (c-struct/union-type-field-type u 'x) foo)))))
 
+;; Pointer to structs
+(let* ([s (native-type '(.struct (x::int)))]
+       [ps (make-c-pointer-type s)]
+       [pps (make-c-pointer-type ps)]
+       [ppps (make-c-pointer-type pps)])
+  (test* "native-type pointer to struct" ps
+         (native-type '((.struct (x::int))*)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int))**)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int))* *)))
+  (test* "native-type pointer to struct" ppps
+         (native-type '((.struct (x::int))***)))
+  (test* "native-type pointer to struct" ps
+         (native-type '((.struct (x::int)) const*)))
+  (test* "native-type pointer to struct" ps
+         (native-type '((.struct (x::int)) const *)))
+  (test* "native-type pointer to struct" ps
+         (native-type '((.struct (x::int)) *const)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int)) **const)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int)) *const*)))
+  (test* "native-type pointer to struct" pps
+         (native-type '((.struct (x::int)) const**)))
+  (test* "native-type pointer to struct" ppps
+         (native-type '((.struct (x::int)) const*const*const*)))
+  )
+
 ;; Union type properties
 (let1 u (native-type '(.union val (i::int f::float)))
-  (test* "native-type union is <c-union>" #t
+  (test* "native-type union is <c-union-type>" #t
          (c-union-type? u))
   (test* "native-type union tag" 'val
          (c-struct/union-type-tag u)))
@@ -2074,7 +2558,7 @@
 
 ;; Enums
 (let1 e (native-type '(.enum color (red green blue)))
-  (test* "native-type .enum is <c-enum>" #t (c-enum-type? e))
+  (test* "native-type .enum is <c-enum-type>" #t (c-enum-type? e))
   (test* "native-type .enum tag" 'color (c-enum-type-tag e))
   (test* "native-type .enum alist" '((red . 0) (green . 1) (blue . 2))
          (c-enum-type-enumerator-alist e)))
@@ -2114,7 +2598,7 @@
 
 ;; Function type properties
 (let1 f (native-type '(.function (int double) float))
-  (test* "native-type function is <c-function>" #t
+  (test* "native-type function is <c-function-type>" #t
          (c-function-type? f))
   (test* "native-type function return-type" #t
          (eq? (c-function-type-return-type f) <float>))

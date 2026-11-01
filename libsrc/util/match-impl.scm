@@ -586,17 +586,17 @@
 (define (gen x sf plist erract eta)
   (if (null? plist)
     (erract x)
-    (let* ((v '())
-           (val (lambda (x) (cdr (assq x v))))
+    (let* ((val (lambda (x v) (cdr (assq x v))))
            (fail (lambda (sf)
                    (gen x sf (cdr plist) erract eta)))
-           (success (lambda (sf)
+           (success (lambda (sf v)
                       (set-car! (cddddr (car plist)) #t)
                       (let* ((code (cadr (car plist)))
                              (bv (caddr (car plist)))
                              (fail-sym (cadddr (car plist))))
                         (if fail-sym
-                          (let ((ap `(,code ,fail-sym ,@(map val bv))))
+                          (let ((ap `(,code ,fail-sym
+                                            ,@(map (cut val <> v) bv))))
                             `(call-with-current-continuation
                               (,lambda. (,fail-sym)
                                 (let ((,fail-sym
@@ -605,80 +605,84 @@
                                              (,lambda. () ,(fail sf))
                                            ,fail-sym))))
                                   ,ap))))
-                          `(,code ,@(map val bv)))))))
+                          `(,code ,@(map (cut val <> v) bv)))))))
       (let next ((p (caar plist))
                  (e x)
                  (sf sf)
+                 (v '())
                  (kf fail)
                  (ks success))
+        ;; KS* is KS with the current V, suitable to pass to EMIT.
+        (define (ks* sf) (ks sf v))
         (cond
-         ((eq? '_ p) (ks sf))
-         ((identifier? p) (set! v (cons (cons p e) v))
-          (ks sf))
-         ((null? p) (emit `(null? ,e) sf kf ks))
-         ((equal? p ''()) (emit `(null? ,e) sf kf ks))
-         ((string? p) (emit `(equal? ,e ,p) sf kf ks))
-         ((boolean? p) (emit `(equal? ,e ,p) sf kf ks))
-         ((char? p) (emit `(equal? ,e ,p) sf kf ks))
-         ((number? p) (emit `(equal? ,e ,p) sf kf ks))
+         ((eq? '_ p) (ks sf v))
+         ((identifier? p) (ks sf (acons p e v)))
+         ((null? p) (emit `(null? ,e) sf kf ks*))
+         ((equal? p ''()) (emit `(null? ,e) sf kf ks*))
+         ((string? p) (emit `(equal? ,e ,p) sf kf ks*))
+         ((boolean? p) (emit `(equal? ,e ,p) sf kf ks*))
+         ((char? p) (emit `(equal? ,e ,p) sf kf ks*))
+         ((number? p) (emit `(equal? ,e ,p) sf kf ks*))
          ((and (pair? p) (equal? 'quote (car p)))
-          (emit `(equal? ,e ,p) sf kf ks))
+          (emit `(equal? ,e ,p) sf kf ks*))
          ((and (pair? p) (eq? '? (car p)))
           (let ((tst `(,(cadr p) ,e)))
-            (emit tst sf kf ks)))
+            (emit tst sf kf ks*)))
          ((and (pair? p) (eq? '= (car p)))
           (if (and (pair? (cadr p))
                    (equal? (caadr p) 'quote))
-            (next (caddr p) `(ref ,(cadr p) ,e) sf kf ks)
-            (next (caddr p) `(,(cadr p) ,e) sf kf ks)))
+            (next (caddr p) `(ref ,(cadr p) ,e) sf v kf ks)
+            (next (caddr p) `(,(cadr p) ,e) sf v kf ks)))
          ((and (pair? p) (eq? 'and (car p)))
+          (let loop ((p (cdr p))
+                     (sf sf)
+                     (v v))
+            (if (null? p)
+              (ks sf v)
+              (next (car p) e sf v kf
+                    (lambda (sf v) (loop (cdr p) sf v))))))
+         ((and (pair? p) (eq? 'or (car p)))
+          ;; Every alternative starts with the same V.
           (let loop ((p (cdr p))
                      (sf sf))
             (if (null? p)
-              (ks sf)
-              (next (car p) e sf kf (lambda (sf) (loop (cdr p) sf))))))
-         ((and (pair? p) (eq? 'or (car p)))
-          (let ((or-v v))
-            (let loop ((p (cdr p))
-                       (sf sf))
-              (if (null? p)
-                (kf sf)
-                (begin (set! v or-v)
-                       (next (car p) e sf (lambda (sf) (loop (cdr p) sf))
-                             ks))))))
+              (kf sf)
+              (next (car p) e sf v (lambda (sf) (loop (cdr p) sf)) ks))))
          ((and (pair? p) (eq? 'not (car p)))
-          (next (cadr p) e sf ks kf))
+          ;; The subpattern doesn't bind variables (checked by BOUND).
+          ;; Its failure leads to our success with the current V.
+          (next (cadr p) e sf v ks* (lambda (sf _) (kf sf))))
          ((and (pair? p) (eq? '$ (car p)))
           (let* ((tag (cadr p))
                  (fields (cdr p))
                  (rlen (length fields))
                  (tst `(is-a? ,e ,tag)))
             (emit tst sf kf
-                  (let rloop ((n 1))
-                    (lambda (sf)
+                  (lambda (sf)
+                    (let rloop ((n 1) (sf sf) (v v))
                       (if (= n rlen)
-                        (ks sf)
+                        (ks sf v)
                         (next (list-ref fields n)
                               `(,match:$-ref. ,tag ,(- n 1) ,e)
-                              sf kf (rloop (+ 1 n)))))))))
+                              sf v kf
+                              (lambda (sf v) (rloop (+ 1 n) sf v)))))))))
          ((and (pair? p) (eq? 'object (car p)))  ;; Gauche extension
           (let* ((tag (cadr p))
                  (fields (cddr p))
                  (tst `(is-a? ,e ,tag)))
             (emit tst sf kf
-                  (let rloop ((fields fields))
-                    (lambda (sf)
+                  (lambda (sf)
+                    (let rloop ((fields fields) (sf sf) (v v))
                       (if (null? fields)
-                        (ks sf)
+                        (ks sf v)
                         (next (cadar fields)
                               `(ref ,e ',(caar fields))
-                              sf kf (rloop (cdr fields)))))))))
+                              sf v kf
+                              (lambda (sf v) (rloop (cdr fields) sf v)))))))))
          ((and (pair? p) (eq? 'set! (car p)))
-          (set! v (cons (cons (cadr p) (get-setter e p)) v))
-          (ks sf))
+          (ks sf (acons (cadr p) (get-setter e p) v)))
          ((and (pair? p) (eq? 'get! (car p)))
-          (set! v (cons (cons (cadr p) (get-getter e p)) v))
-          (ks sf))
+          (ks sf (acons (cadr p) (get-getter e p) v)))
          ((and (pair? p)
                (pair? (cdr p))
                (dot-dot-k? (cadr p)))
@@ -688,12 +692,12 @@
                          (ks (lambda (sf)
                                (let ((bound (list-ref p 2)))
                                  (cond
-                                  ((eq? (car p) '_) (ks sf))
+                                  ((eq? (car p) '_) (ks sf v))
                                   ((null? bound)
                                    (let* ((eta (gensym))
-                                          (ptst (next (car p) eta sf
+                                          (ptst (next (car p) eta sf v
                                                       (lambda (sf) #f)
-                                                      (lambda (sf) #t)))
+                                                      (lambda (sf v) #t)))
                                           (tst (if (and (pair? ptst)
                                                         (identifier? (car ptst))
                                                         (pair? (cdr ptst))
@@ -703,10 +707,10 @@
                                                  `(,lambda. (,eta) ,ptst))))
                                      (assm `(,every. ,tst ,e)
                                            (kf sf)
-                                           (ks sf))))
+                                           (ks sf v))))
                                   ((and (identifier? (car p))
                                         (equal? (list (car p)) bound))
-                                   (next (car p) e sf kf ks))
+                                   (next (car p) e sf v kf ks))
                                   (else
                                    (let* ((gloop (list-ref p 3))
                                           (ge (list-ref p 4))
@@ -714,29 +718,29 @@
                                           (p1 (next (car p)
                                                     `(car ,ge)
                                                     sf
+                                                    v
                                                     kf
-                                                    (lambda (sf)
+                                                    (lambda (sf v)
                                                       `(,gloop
                                                         (cdr ,ge)
                                                         ,@(map (lambda (b f)
-                                                                 `(cons ,(val b)
+                                                                 `(cons ,(val b v)
                                                                         ,f))
                                                                bound
-                                                               fresh))))))
-                                     (set! v
-                                           (append
-                                            (map cons
-                                                 bound
-                                                 (map (lambda (x)
-                                                        `(reverse ,x))
-                                                      fresh))
-                                            v))
+                                                               fresh)))))
+                                          (v (append
+                                              (map cons
+                                                   bound
+                                                   (map (lambda (x)
+                                                          `(reverse ,x))
+                                                        fresh))
+                                              v)))
                                      `(let ,gloop ((,ge ,e)
                                                    ,@(map (lambda (x)
                                                             `(,x '()))
                                                           fresh))
                                         (if (null? ,ge)
-                                          ,(ks sf)
+                                          ,(ks sf v)
                                           ,p1)))))))))
                     (case k
                       ((0) (ks sf))
@@ -749,9 +753,10 @@
                             (next (car p)
                                   (add-a e)
                                   sf
+                                  v
                                   kf
-                                  (lambda (sf)
-                                    (next (cdr p) (add-d e) sf kf ks))))))
+                                  (lambda (sf v)
+                                    (next (cdr p) (add-d e) sf v kf ks))))))
          ((and (vector? p)
                (>= (vector-length p) 6)
                (dot-dot-k? (vector-ref p (- (vector-length p) 5))))
@@ -765,45 +770,42 @@
                   (lambda (sf)
                     (assm `(>= (vector-length ,e) ,minlen)
                           (kf sf)
-                          ((let vloop ((n 0))
-                             (lambda (sf)
-                               (cond
-                                ((not (= n vlen))
-                                 (next (vector-ref p n)
-                                       `(vector-ref ,e ,n)
-                                       sf
-                                       kf
-                                       (vloop (+ 1 n))))
-                                ((eq? (vector-ref p vlen) '_)
-                                 (ks sf))
-                                (else
-                                 (let* ((gloop (vector-ref p (+ vlen 3)))
-                                        (ind (vector-ref p (+ vlen 4)))
-                                        (fresh (vector-ref p (+ vlen 5)))
-                                        (p1 (next (vector-ref p vlen)
-                                                  `(vector-ref ,e ,ind)
-                                                  sf
-                                                  kf
-                                                  (lambda (sf)
-                                                    `(,gloop
-                                                      (- ,ind 1)
-                                                      ,@(map (lambda (b f)
-                                                               `(cons ,(val b)
-                                                                      ,f))
-                                                             bound
-                                                             fresh))))))
-                                        (set! v
-                                              (append
-                                               (map cons bound fresh)
-                                               v))
-                                        `(let ,gloop
-                                           ((,ind (- (vector-length ,e) 1))
-                                            ,@(map (lambda (x) `(,x '()))
-                                                   fresh))
-                                           (if (> ,vlen ,ind)
-                                             ,(ks sf)
-                                             ,p1)))))))
-                           sf))))))
+                          (let vloop ((n 0) (sf sf) (v v))
+                            (cond
+                             ((not (= n vlen))
+                              (next (vector-ref p n)
+                                    `(vector-ref ,e ,n)
+                                    sf
+                                    v
+                                    kf
+                                    (lambda (sf v) (vloop (+ 1 n) sf v))))
+                             ((eq? (vector-ref p vlen) '_)
+                              (ks sf v))
+                             (else
+                              (let* ((gloop (vector-ref p (+ vlen 3)))
+                                     (ind (vector-ref p (+ vlen 4)))
+                                     (fresh (vector-ref p (+ vlen 5)))
+                                     (p1 (next (vector-ref p vlen)
+                                               `(vector-ref ,e ,ind)
+                                               sf
+                                               v
+                                               kf
+                                               (lambda (sf v)
+                                                 `(,gloop
+                                                   (- ,ind 1)
+                                                   ,@(map (lambda (b f)
+                                                            `(cons ,(val b v)
+                                                                   ,f))
+                                                          bound
+                                                          fresh)))))
+                                     (v (append (map cons bound fresh) v)))
+                                `(let ,gloop
+                                   ((,ind (- (vector-length ,e) 1))
+                                    ,@(map (lambda (x) `(,x '()))
+                                           fresh))
+                                   (if (> ,vlen ,ind)
+                                     ,(ks sf v)
+                                     ,p1)))))))))))
          ((vector? p)
           (let ((vlen (vector-length p)))
             (emit `(vector? ,e)
@@ -813,15 +815,17 @@
                     (emit `(equal? (vector-length ,e) ,vlen)
                           sf
                           kf
-                          (let vloop ((n 0))
-                            (lambda (sf)
+                          (lambda (sf)
+                            (let vloop ((n 0) (sf sf) (v v))
                               (if (= n vlen)
-                                (ks sf)
+                                (ks sf v)
                                 (next (vector-ref p n)
                                       `(vector-ref ,e ,n)
                                       sf
+                                      v
                                       kf
-                                      (vloop (+ 1 n)))))))))))
+                                      (lambda (sf v)
+                                        (vloop (+ 1 n) sf v)))))))))))
          (else (display "FATAL ERROR IN PATTERN MATCHER")
                (newline)
                (error #f "THIS NEVER HAPPENS")))))))

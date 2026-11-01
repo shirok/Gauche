@@ -12,4 +12,4 @@
 (select-module scheme.stream.derived)
 
 (define (stream-take n s) (stream-take-safe s n))
-(define (stream-drop n s) (stream-take-drop s n))
+(define (stream-drop n s) (stream-drop-safe s n))

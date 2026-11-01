@@ -86,11 +86,10 @@
           [(inline) (or (pass1/expand-inliner program id gval cenv)
                         (pass1/call program ($gref id) (cdr program) cenv))]
           [(type-ctor)
-           ;; Type constructor have to be called during compilation,
-           ;; and the resulting node becomes ($const <type-instance>).
-           (type/construct gval
-                           (pass1/call program ($gref id) (cdr program) cenv)
-                           cenv)])
+           ;; Type constructor call may be computed at runtime and foleded
+           ;; into ($const <type>), or expanded into runtime type construction
+           ;; code.
+           (type/construct gval id program cenv)])
         (pass1/call program ($gref id) (cdr program) cenv))))
 
   ;; main body of pass1
@@ -111,6 +110,11 @@
                (pass1 (call-macro-expander h program cenv) cenv)]
               [(syntax? h);; locally rebound syntax
                (call-syntax-handler h program cenv)]
+              [(is-a? h <type>) ;; internal type binding, used as an operator
+               (pass1/call program ($const h) (cdr program) cenv)]
+              [(local-type? h) ;; generative internal type binding, ditto
+               (pass1/call program (pass1 (local-type-value-name h) cenv)
+                           (cdr program) cenv)]
               [else (error "[internal] unknown resolution of head:" h)]))]
      [(pass1/detect-constant-setter-call (car program) cenv)
       => (^[setter]
@@ -141,6 +145,11 @@
              (unless (identifier-macro? r)
                (error "Non-identifier-macro can't appear in this context:" r))
              (pass1 (call-id-macro-expander r program cenv) cenv)]
+            [(is-a? r <type>) ;; internal type binding (see pass1/body)
+             ($const r)]
+            [(local-type? r) ;; generative internal type binding (ditto).
+             ;; A plain reference sees the value, not the proxy type.
+             (pass1 (local-type-value-name r) cenv)]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
 
@@ -306,12 +315,27 @@
       (pass1/body-rec
        (acons (call-macro-expander mac expr cenv) src rest)
        mframe vframe cenv)))
+  ;; internal define etc.  DEF := (var :rec init [srcinfo])
+  ;; rest is the rest of forms passed to process-form-1
+  (define (internal-env-expand def mframe vframe rest)
+    (dupe-check (car def) mframe vframe)
+    (if (not mframe)
+      (let* ([cenv (cenv-extend cenv '() SYNTAX)]
+             [mframe (car (cenv-frames cenv))]
+             [cenv (cenv-extend cenv `(,def) LEXICAL)]
+             [vframe (car (cenv-frames cenv))])
+        (pass1/body-rec rest mframe vframe cenv))
+      (begin
+        (push! (cdr vframe) def)
+        (pass1/body-rec rest mframe vframe cenv))))
   (define (process-form-1 op head args incsrc rest mframe vframe cenv)
     (unless (list? args)
       (error "proper list required for function application \
                      or macro use:" (caar exprs)))
     (cond
      [(lvar? head) (pass1/body-finish exprs mframe vframe cenv)]
+     [(is-a? head <type>) (pass1/body-finish exprs mframe vframe cenv)]
+     [(local-type? head) (pass1/body-finish exprs mframe vframe cenv)]
      [(macro? head)  ; locally defined macro
       (body-macro-expand head exprs mframe vframe cenv)]
      [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
@@ -332,16 +356,53 @@
                      (error "define without expression is not allowed in R7RS" (caar exprs))
                      `(,var :rec ,(undefined) . ,incsrc))]
                   [_ (error "malformed internal define:" (caar exprs))])
-        (dupe-check (car def) mframe vframe)
-        (if (not mframe)
-          (let* ([cenv (cenv-extend cenv '() SYNTAX)]
-                 [mframe (car (cenv-frames cenv))]
-                 [cenv (cenv-extend cenv `(,def) LEXICAL)]
-                 [vframe (car (cenv-frames cenv))])
-            (pass1/body-rec rest mframe vframe cenv))
-          (begin
-            (push! (cdr vframe) def)
-            (pass1/body-rec rest mframe vframe cenv))))]
+        (internal-env-expand def mframe vframe rest))]
+     [(global-syntax=? head define-type.)   ; internal type definition
+      (match args
+        [(var init)
+         (if-let1 type (type/compile-time-value init cenv)
+           ;; The type is known now, so we bind VAR in the macro frame, just
+           ;; like an internal define-syntax.  References to it compile into
+           ;; ($const type).
+           (begin
+             (dupe-check var mframe vframe)
+             (if (not mframe)
+               (let* ([cenv (cenv-extend cenv `((,var . ,type)) SYNTAX)]
+                      [mframe (car (cenv-frames cenv))]
+                      [cenv (cenv-extend cenv '() LEXICAL)]
+                      [vframe (car (cenv-frames cenv))])
+                 (pass1/body-rec rest mframe vframe cenv))
+               (begin
+                 (push! (cdr mframe) (cons var type))
+                 (pass1/body-rec rest mframe vframe cenv))))
+           ;; The value can only be known at runtime (a generative type).
+           ;; Usually this is from internal define-record-type etc.  We keep
+           ;; the value in a hidden internal definition, and add another one
+           ;; holding a local proxy type standing for it.  VAR itself is
+           ;; bound in the macro frame to a record tying the two, so that a
+           ;; plain reference to VAR sees the value, while a type expression
+           ;; mentioning VAR sees the proxy.
+           (let* ([vname (gensym #"~(variable-name var).")]
+                  [pname (gensym #"~(variable-name var).proxy.")]
+                  [vdef `(,vname :rec ,init . ,incsrc)]
+                  [pdef `(,pname :rec (,%make-local-proxy-type. ,vname)
+                                 . ,incsrc)]
+                  [ltype (make-local-type vname pname)])
+             (dupe-check var mframe vframe)
+             (if (not mframe)
+               (let* ([cenv (cenv-extend cenv `((,var . ,ltype)) SYNTAX)]
+                      [mframe (car (cenv-frames cenv))]
+                      ;; NB: The frame keeps the definitions in the reverse
+                      ;; order; pass1/body-finish reverses it back.
+                      [cenv (cenv-extend cenv `(,pdef ,vdef) LEXICAL)]
+                      [vframe (car (cenv-frames cenv))])
+                 (pass1/body-rec rest mframe vframe cenv))
+               (begin
+                 (push! (cdr mframe) (cons var ltype))
+                 (push! (cdr vframe) vdef)
+                 (push! (cdr vframe) pdef)
+                 (pass1/body-rec rest mframe vframe cenv)))))]
+        [_ (error "malformed internal define-type:" (caar exprs))])]
      [(global-syntax=? head define-syntax.) ; internal syntax definition
       (match args
         [(name trans-spec)
@@ -509,6 +570,7 @@
 ;; should be reffered, so we directly refer to them.
 (define (global-id id) (make-identifier id (find-module 'gauche) '()))
 (define (global-id% id) (make-identifier id (find-module 'gauche.internal) '()))
+(define (global-id: id) (make-identifier id (find-module 'gauche.keyword) '()))
 
 (define %expression-name-mark-key.     (global-id% '%expression-name-mark-key))
 (define %exception-handler-mark-key.   (global-id% '%exception-handler-mark-key))
@@ -517,11 +579,15 @@
 (define %make-id-transformer.          (global-id% '%make-id-transformer))
 (define %make-id-macro-dispatcher.     (global-id% '%make-id-macro-dispatcher))
 (define %with-inline-transformer.      (global-id% '%with-inline-transformer))
+(define %make-local-proxy-type.        (global-id% '%make-local-proxy-type))
+(define construct-type.                (global-id% 'construct-type))
 
 (define =>.               (global-id '=>))
 (define apply.            (global-id 'apply))
+(define assume-type.      (global-id 'assume-type))
 (define begin.            (global-id 'begin))
 (define current-module.   (global-id 'current-module))
+(define define-type.      (global-id 'define-type))
 (define define-inline.    (global-id 'define-inline))
 (define define-syntax.    (global-id 'define-syntax))
 (define define.           (global-id 'define))
@@ -548,6 +614,11 @@
 (define unquote.          (global-id 'unquote))
 (define values.           (global-id 'values))
 (define with-module.      (global-id 'with-module))
+(define <type>.           (global-id '<type>))
+
+(define :has-inject?.       (global-id: ':has-inject?))
+(define :identifier-macro?. (global-id: ':identifier-macro?))
+(define :info-alist.        (global-id: ':info-alist))
 
 ;; Returns an IForm for (values) - useful for define-pass1-syntax that does
 ;; compile-time things and returns nothing.  The delay trick is to create
@@ -842,6 +913,53 @@
              (make-identifier name (cenv-module cenv) '()))
     ($define form '(inlinable) id iform)))
 
+;; define-type, in Gauche, is define-inline specialized for type values.
+;; TODO: We may allow parameterized types
+(define-pass1-syntax (define-type form cenv) :gauche
+  ;; Internal define-type is processed separately.
+  (check-toplevel form cenv)
+  (match form
+    [(_ name expr)
+     (unless (identifier? name) (error "syntax-error:" form))
+     ;; Whether the value of EXPR is a type is checked
+     ;;   - Statically if possible
+     ;;   - Deferred when proxy type is dereferenced
+     (rlet1 iform (pass1/define-inline form name expr cenv)
+       (pass1/insert-type-placeholder! iform))]
+    [_ (error "syntax-error: malformed define-type:" form)]))
+
+;; A type constructor expression such as (<?> <foo>) is evaluated at the
+;; compile time, so the value of <foo> must be known to the compiler.
+;; When the compile sees `define-type`, we insert a dummy binding
+;; with a deferred proxy type, so that the type expression evaluator
+;; knows the global variable reference is a type, though its concrete
+;; type hasn't been computed yet.
+(define (pass1/insert-type-placeholder! iform)
+  (and-let* ([def (%iform-toplevel-define iform)]
+             [id ($define-id def)]
+             [module (identifier-module id)]
+             [name (identifier->symbol id)]
+             ;; Only insert the placeholder when the module doesn't have a
+             ;; binding of its own yet.  If it does, either we already know
+             ;; the type (so we don't need a placeholder), or the binding is
+             ;; something the definition is going to supersede at the runtime
+             ;; (e.g. an autoload stub, or the previous definition of a class
+             ;; being redefined)---clobbering it here would lose it.
+             ;; NB: We use find-binding, not %insert-binding's 'fresh flag,
+             ;; for the latter would resolve an autoload binding.
+             [ (not (find-binding module name #t)) ])
+    (%insert-binding module name (%make-deferred-proxy-type id)
+                     '(inlinable dummy))))
+
+;; PASS1/DEFINE-INLINE returns either a $DEFINE node, or a $SEQ node whose
+;; last element is the $DEFINE node of the binding in question.
+(define (%iform-toplevel-define iform)
+  (cond [(has-tag? iform $DEFINE) iform]
+        [(has-tag? iform $SEQ)
+         (let1 body ($seq-body iform)
+           (and (pair? body) (%iform-toplevel-define (last body))))]
+        [else #f]))
+
 ;; Toplevel macro definitions
 
 (define-pass1-syntax (define-macro form cenv) :gauche
@@ -943,7 +1061,8 @@
     (or (global-head=? f define.)
         (global-head=? f r5rs-define.)
         (global-head=? f define-syntax.)
-        (global-head=? f define-inline.)))
+        (global-head=? f define-inline.)
+        (global-head=? f define-type.)))
   (define (begin-with-definitions? form)
     (and (global-head=? form begin.)
          (pair? (cdr form))
@@ -1027,16 +1146,16 @@
     (pass1 `(,%make-er-transformer/toplevel.
              ,xformer ,(cenv-module cenv) ',(cenv-exp-name cenv)
              ,@(cond-list
-                [has-inject? @ `(:has-inject? ',has-inject?)]
-                [(pair? info) @ `(:info-alist ',info)]
-                [id-macro? @ `(:identifier-macro? #t)]))
+                [has-inject? @ `(,:has-inject?. ',has-inject?)]
+                [(pair? info) @ `(,:info-alist. ',info)]
+                [id-macro? @ `(,:identifier-macro?. #t)]))
            cenv)
     (pass1 `(,%make-er-transformer.
              ,xformer ,cenv
              ,@(cond-list
-                [has-inject? @ `(:has-inject? ',has-inject?)]
-                [(pair? info) @ `(:info-alist ',info)]
-                [id-macro? @ `(:identifier-macro? #t)]))
+                [has-inject? @ `(,:has-inject?. ',has-inject?)]
+                [(pair? info) @ `(,:info-alist. ',info)]
+                [id-macro? @ `(,:identifier-macro? #t)]))
            cenv)))
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
@@ -1122,15 +1241,27 @@
   (match form
     [(_ (literal ...) rule ...)
      ($const (compile-syntax-rules (cenv-exp-name cenv) form #t literal rule
-                                   (cenv-module cenv)
-                                   (cenv-frames cenv)))]
+                                   (cenv-module cenv) (cenv-frames cenv) #f))]
     [(_ (? identifier? elli) (literal ...) rule ...)
      ;; NB: We allow keyword for ellipsis, so that something like ::: can be
      ;; used.
      ($const (compile-syntax-rules (cenv-exp-name cenv) form elli literal rule
-                                   (cenv-module cenv)
-                                   (cenv-frames cenv)))]
+                                   (cenv-module cenv) (cenv-frames cenv) #f))]
     [_ (error "syntax-error: malformed syntax-rules:" form)]))
+
+;; Like syntax-rules but enable enhanced matching.
+;;  - The first element of pattern participates in matching
+;;  - A pattern can be a single identifier, matching identifier.
+;; This is useful to write identifier macro.
+(define-pass1-syntax (syntax-rules+ form cenv) :gauche
+  (match form
+    [(_ (literal ...) rule ...)
+     ($const (compile-syntax-rules (cenv-exp-name cenv) form #t literal rule
+                                   (cenv-module cenv) (cenv-frames cenv) #t))]
+    [(_ (? identifier? elli) (literal ...) rule ...)
+     ($const (compile-syntax-rules (cenv-exp-name cenv) form elli literal rule
+                                   (cenv-module cenv) (cenv-frames cenv) #t))]
+    [_ (error "syntax-error: malformed syntax-rules+:" form)]))
 
 (define-pass1-syntax (syntax-parameterize form cenv) :gauche
   (match form
@@ -1606,7 +1737,14 @@
 (define (pass1-for-type-annotations types args cenv)
   (define (type-1 type arg cenv)
     (or (type/ensure (pass1 type cenv) cenv)
-        (errorf "Invalid type expression ~s for argument ~s" type arg)))
+        ;; A `::' annotation is resolved at the compile time, so a type that
+        ;; only exists per activation can't be used in one.
+        (if-let1 name (type/local-type-mention type cenv)
+          (errorf "Locally defined type ~a can't be used in a type \
+                   annotation for argument ~s, for its value is only known \
+                   at runtime"
+                  name arg)
+          (errorf "Invalid type expression ~s for argument ~s" type arg))))
   (define (type-n types args cenv)
     (if (null? types)
       '()
@@ -1857,9 +1995,11 @@
        (or (and-let* ([ (identifier? name) ]
                       [var (cenv-lookup cenv name)]
                       [val (pass1 expr cenv)])
-             (if (lvar? var)
-               ($lset var val)
-               ($gset (ensure-identifier var cenv) val)))
+             (cond [(lvar? var) ($lset var val)]
+                   [(or (is-a? var <type>) (local-type? var))
+                    (error "syntax-error: cannot assign to a type binding:"
+                           form)]
+                   [else ($gset (ensure-identifier var cenv) val)]))
            (error "syntax-error: malformed set!:" form)))]
     [_ (error "syntax-error: malformed set!:" form)]))
 

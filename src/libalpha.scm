@@ -43,6 +43,7 @@
            "gauche/priv/glocP.h"
            "gauche/priv/macroP.h"
            "gauche/priv/procP.h"
+           "gauche/priv/typeP.h"
            "gauche/priv/vmP.h"))
 
 ;; This is referred from the compiled code of toplevel definitions, so

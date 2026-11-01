@@ -68,6 +68,35 @@
            (~ iut 'b)))
   )
 
+(let ()
+  (define st (native-type '(.struct st (a::int b::int))))
+  (define h (make-native-handle st))
+  (define w)
+
+  (test* "wrapping pointer to struct" #t
+         (begin
+           (set! w (wrap-native-handle h))
+           (is-a? w <wrapped-c-struct>)))
+
+  (set! (native. h 'a) 1)
+  (set! (native. h 'b) 2)
+  (test* "accessing through wrapped pointer" '(1 2)
+         (list (~ w'a) (~ w'b)))
+
+  (test* "modifyhing through wrapperd pointer" '(3 4)
+         (begin
+           (set! (~ w'a) 3)
+           (set! (~ w'b) 4)
+           (list (native. h 'a) (native. h 'b))))
+  )
+
+(let ()
+  (define st (native-type '(.struct st (a::int b::int))))
+  (define h (null-pointer-handle (make-c-pointer-type st)))
+
+  (test* "wrapping null pointer yields #f" #f
+         (wrap-native-handle h)))
+
 ;; Nested structures
 (let ()
   (define s1 (native-type '(.struct (a::int b::char))))
@@ -89,6 +118,59 @@
   (test* "inner struct, pointed" '(0 #\null)
          (and (is-a? (~ w't) <wrapped-c-struct>)
               (list (~ w't'a) (~ w't'b))))
+  )
+
+;; slot overrides
+(let ()
+  (define s (native-type '(.struct
+                           test_struct
+                           (name::(.array (const char) (8))
+                            flag::int8_t))))
+  (define h0 (make-native-handle s (u8vector-copy '#u8"abcdefgh\0")))
+  (define h1 (make-native-handle s '#u8"ABCDEFGH\x01;"))
+
+  (define c
+    ($ make-native-wrapper-class s
+       :slot-overrides `((flag :ref ,(^o
+                                      (c-int->boolean
+                                       (native. (wrapped-handle o) 'flag)))
+                               :set! ,(^[o v]
+                                        (set! (native. (wrapped-handle o) 'flag)
+                                              (boolean->c-int v))))
+                         (name :ref ,(^o
+                                      (c-char*->string
+                                       (native. (wrapped-handle o) 'name)
+                                       #f))
+                               :set! #f))))
+
+  (test* "wrapper slot overrides h0" '(#f "abcdefgh")
+         (let1 obj (wrap-native-handle h0)
+           (list (~ obj'flag) (~ obj'name))))
+  (test* "wrapper slot overrides h0 set!" '(#t 1)
+         (let1 obj (wrap-native-handle h0)
+           (set! (~ obj'flag) #t)
+           (list (~ obj'flag)
+                 (native. (wrapped-handle obj) 'flag))))
+  (test* "wrapper slot overrides h1" '(#t "ABCDEFGH")
+         (let1 obj (wrap-native-handle h1)
+           (list (~ obj'flag) (~ obj'name))))
+  )
+
+(let ()
+  (define s (native-type '(.struct (f::int8_t))))
+  (define h0 (make-native-handle s '#u8(0)))
+  (define-native-wrapper-class <s> s
+    :slot-overrides `((flag :field-name f
+                            :ref-converter ,c-int->boolean
+                            :set!-converter ,boolean->c-int)))
+
+  (test* "wrapper slot overrides (rename, converter) ref" #f
+         (~ (wrap-native-handle h0)'flag))
+  (test* "wrapper slot overrides (rename, converter) set!" '(#t 1)
+         (begin
+           (set! (~ (wrap-native-handle h0)'flag) #t)
+           (list (~ (wrap-native-handle h0)'flag)
+                 (native. h0 'f))))
   )
 
 ;; arrays

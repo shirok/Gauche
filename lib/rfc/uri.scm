@@ -80,11 +80,25 @@
         [else (values #f uri)]))
 
 (define (uri-decompose-hierarchical specific)
-  (cond
-   [(and (string? specific)
-         (#/^(?:\/\/([^\/?#]*))?([^?#]+)?(?:\?([^#]*))?(?:#(.*))?$/ specific))
-    => (^m (values (m 1) (m 2) (m 3) (m 4)))]
-   [else (values #f #f #f #f)]))
+  (define (split-authority s)
+    (if-let1 m (#/^\/\/([^\/?#]*)/ s)
+      (values (m 1) (m 'after))
+      [values #f s]))
+  (define (split-path s)
+    (if-let1 m (#/^[^?#]+/ s)
+      (values (m 0) (m 'after))
+      (values #f s)))
+  (define (split-query&fragment s)
+    (define (snull s) (if (string-null? s) #f s))
+    (let1 s (if (string-prefix? "?" s) (string-drop s 1) s)
+      (receive (q f) (string-scan s #\# 'both)
+        (if (not q)
+          (values (snull s) #f)
+          (values (snull q) (snull f))))))
+  (let*-values ([(auth rest) (split-authority specific)]
+                [(path rest) (split-path rest)]
+                [(query frag) (split-query&fragment rest)])
+    (values auth path query frag)))
 
 (define (uri-decompose-authority authority)
   (cond

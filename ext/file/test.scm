@@ -665,6 +665,29 @@
                      (file-exists? name))))
          (remove-files '("test.o"))))
 
+(test* "call-with-temporary-file (suffix)" '(#t #t #f ())
+       (unwind-protect
+           (begin
+             (remove-files '("test.o"))
+             (make-directory* "test.o")
+             (receive (exists name)
+                 (call-with-temporary-file
+                  (^[oport name]
+                    (display "int x;" oport)
+                    (values (file-exists? name) name))
+                  :directory "test.o"
+                  :prefix "ooo"
+                  :suffix ".c")
+               (list exists
+                     (boolean (#/test.o[\/\\]ooo\w+\.c$/ name))
+                     (file-exists? name)
+                     ;; the base file reserved by mkstemp is also removed
+                     (directory-list "test.o" :children? #t))))
+         (remove-files '("test.o"))))
+
+(test* "call-with-temporary-file (bad suffix)" (test-error)
+       (call-with-temporary-file (^[o n] n) :suffix "/../x"))
+
 (test* "call-with-temporary-directory" '(#t #t #f)
        (unwind-protect
            (begin

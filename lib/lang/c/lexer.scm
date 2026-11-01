@@ -147,6 +147,8 @@
     (__inline__ inline)
     (__volatile volatile)
     (__volatile__ volatile)
+    (__signed signed)
+    (__signed__ signed)
     (asm asm)
     (__asm asm)
     (__asm__ asm)
@@ -217,7 +219,7 @@
      [else ($fail "malformed numeric constant")])))
 
 (define %hex-numeric-constant
-  ($let ([ ($. "0x") ]
+  ($let ([ ($or ($. "0x") ($. "0X")) ]
          [integral   ($many ($. #[[:xdigit:]]))]
          [point      ($optional ($. "."))]
          [fractional ($many ($. #[[:xdigit:]]))]

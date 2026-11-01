@@ -118,11 +118,34 @@
 
 (define (call-with-temporary-file proc
                                   :key (directory (temporary-directory))
-                                       (prefix "gtemp"))
-  (receive (oport name) (sys-mkstemp (build-path directory prefix))
+                                       (prefix "gtemp")
+                                       (suffix #f))
+  (receive (oport name) (%make-temporary-file (build-path directory prefix)
+                                              suffix)
     (unwind-protect (proc oport name)
       (close-output-port oport)
       (sys-unlink name))))
+
+(define (%make-temporary-file template suffix)
+  (define max-retry 32)
+  (cond
+   [(or (not suffix) (equal? suffix "")) (sys-mkstemp template)]
+   [(not (string? suffix))
+    (error "suffix must be a string or #f, but got:" suffix)]
+   [(or (string-scan suffix #\/) (string-scan suffix (path-separator)))
+    (error "suffix must not contain a path separator:" suffix)]
+   [else
+    (let loop ([retry 0])
+      (receive (oport0 name0) (sys-mkstemp template)
+        (close-output-port oport0)
+        (let* ([name (string-append name0 suffix)]
+               [oport (unwind-protect
+                          (open-output-file name :if-exists #f :mode #o600)
+                        (sys-unlink name0))])
+          (cond [oport (values oport name)]
+                [(< retry max-retry) (loop (+ retry 1))]
+                [else (error "couldn't create a temporary file:"
+                             #"~|template|XXXXXX~|suffix|")]))))]))
 
 (define (call-with-temporary-directory proc
                                        :key (directory (temporary-directory))

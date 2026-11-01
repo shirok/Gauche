@@ -114,6 +114,22 @@
           (list (condition-ref s 'message) (condition-ref s 'errno)))
          ))
 
+;; When we have multiple conditions with message slot in a compound condition,
+;; get the first one with the actual message.
+;; Cf. https://github.com/shirok/Gauche/issues/1343
+(test* "condition-message (single)" "foo"
+       (condition-message (make-condition <message-condition> 'message "foo")))
+(test* "condition-message (single, none)" #f
+       (condition-message (make-condition <message-condition>)))
+(test* "condition-message (compound, one message)" "boo"
+       (condition-message (make-compound-condition
+                           (make-condition <condition>)
+                           (make-condition <message-condition> 'message "boo"))))
+(test* "condition-message (compound, ignore no message)" "qoo"
+       (condition-message (make-compound-condition
+                           (make-condition <error>)
+                           (make-condition <message-condition> 'message "qoo"))))
+
 ;;--------------------------------------------------------------------
 (test-section "SRFI-35 style condition definitions")
 
@@ -165,6 +181,17 @@
                     (slot-ref e 'a)))
            (lambda () (error &c1 :a "ok"))))
   )
+
+;; Ensure built-in predicate works for compond condition
+;; https://github.com/shirok/Gauche/issues/1343
+(test* "error? on compond condition w/message" #t
+       (error? (condition (&error) (&message (message "!")))))
+(test* "error? on compond condition w/custom" #t
+       (error? (condition (&c) (&error))))
+(test* "message-condition? on compond condition w/custom" #t
+       (message-condition? (condition (&c) (&message (message "!")))))
+(test* "serious-condition? on compond condition w/custom" #t
+       (serious-condition? (condition (&c) (<serious-condition>))))
 
 ;;--------------------------------------------------------------------
 (test-section "with-exception-handler")

@@ -470,7 +470,7 @@
                field-specs))
      (define (build-def typename parent opts field-specs)
        (quasirename r
-         `(define-inline ,typename
+         `(define-type ,typename
             (make-rtd ',typename ',(build-field-spec field-specs) ,parent
                       ':module (current-module)
                       ,@opts))))

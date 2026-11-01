@@ -290,7 +290,7 @@
 
 (select-module gauche)
 (define-cproc length+ (list) ::<integer>? :constant ;; SRFI-1
-  (let* ([i::int (Scm_Length list)])
+  (let* ([i::int (Scm_Length2 list SCM_LENGTH_ALLOW_DOTTED)])
     (if (< i 0) (return SCM_FALSE) (return (Scm_MakeInteger i)))))
 
 ;; Like length, but works on dotted and circular lists.
@@ -321,7 +321,35 @@
 (define-cproc acons (caa cda cd) ::<pair>
   (return (SCM_PAIR (Scm_Acons caa cda cd))))
 (define-cproc last-pair (list) :constant Scm_LastPair)
-(define-cproc list-copy (list) Scm_CopyList)
+
+(define-cfn %list-range-copy (list start::ScmSmallInt end::ScmSmallInt)
+  :static
+  (let* ([k::ScmSmallInt (- end start)]
+         [xs (Scm_ListTail list start SCM_UNBOUND)]
+         [h SCM_NIL] [t SCM_NIL])
+    (when (< k 0)
+      (Scm_Error "end index %ld is smaller than start index %ld" end start))
+    (while (> k 0)
+      (unless (SCM_PAIRP xs)
+        (Scm_Error "end index %ld is out of range" end))
+      (SCM_APPEND1 h t (SCM_CAR xs))
+      (set! xs (SCM_CDR xs))
+      (set! k (- k 1)))
+    (return h)))
+
+(define-cproc list-copy (list :optional (start::<fixnum>? 0) (end::<fixnum>? -1))
+  (if (== end -1)
+    (if (== start 0)
+      (return (Scm_CopyList list))
+      (return (Scm_CopyList (Scm_ListTail list start SCM_UNBOUND))))
+    (return (%list-range-copy list start end))))
+
+;; like list-copy, but shares pairs whenever possible
+(define-cproc sublist/shared (list :optional (start::<fixnum>? 0)
+                                             (end::<fixnum>? -1))
+  (if (== end -1)
+    (return (Scm_ListTail list start SCM_UNBOUND))
+    (return (%list-range-copy list start end))))
 
 (define-cproc list* (arg :rest args)
   (inliner LIST-STAR)

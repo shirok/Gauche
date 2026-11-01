@@ -114,6 +114,10 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Data type checking::          srfi.253
 * Uninterned symbols (SRFI)::   srfi.258
 * Tagged procedures with type safety::  srfi.259
+* Hexadecimal floating-point constants::  srfi.270
+* Random port libraries::       srfi.271
+* Extended list conversion procedures::  srfi.274
+* Cyclic ports::                srfi.277
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -804,69 +808,6 @@ if given, becomes the suffix of result, and the result of
 @node SRFI-13 String selection, SRFI-13 String comparison, SRFI-13 String constructors, String library
 @subsection String selection
 @c NODE 文字列の選択
-
-@defun substring/shared s start :optional end
-[SRFI-13]
-@c MOD srfi.13
-@c EN
-In Gauche, this is the same as @code{substring}, except
-that the @var{end} argument is optional.
-@c JP
-Gaucheでは、引数@var{end}がオプショナルであることを除いて、
-@code{substring}と同じです。
-@c COMMON
-@example
-(substring/shared "abcde" 2) @result{} "cde"
-@end example
-@end defun
-
-@defun string-copy! target tstart s :optional start end
-[SRFI-13]
-@c MOD srfi.13
-@c EN
-Copies a string @var{s} into a string
-@var{target} from the position @var{tstart}.
-The @var{target} string must be mutable.
-Optional @var{start} and @var{end} arguments limits the range of @var{s}.
-If the copied string run over the end of @var{target}, an error is
-signaled.
-@c JP
-文字列@var{s}を、文字列@var{target}の@var{tstart}番目以降へコピーします。
-@var{target}文字列は変更可能でなければなりません。
-オプションの引数@var{start}と@var{end}は、@var{s}の範囲を制限します。
-コピーされた文字列が@var{target}の終端を越えたらエラーが通知されます。
-@c COMMON
-@example
-(define s (string-copy "abcde"))
-(string-copy! s 2 "ZZ")
-s @result{} "abZZe"
-@end example
-
-@c EN
-It is ok to pass the same string to @var{target} and @var{s}; this
-always work even if the regions of source and destination are overlapping.
-@c JP
-@var{target}と@var{s}に同じ文字列を渡しても構いません。コピー元とコピー先の
-領域が重なっていても、コピーは常に正しく行われます。
-@c COMMON
-
-@c EN
-Note that Gauche encourages you to treat strings as immutable objects.
-Internally, a string is an indirect pointer to a immutable entity, and
-mutating a string means copying the original entity and creating a new one.
-It doesn't ``save allocations''.
-Always use the functional version @code{string-copy} unless you
-absolutely need to replace a string in-place.
-@xref{String utilities}.
-@c JP
-Gaucheでは、文字列を変更不可なオブジェクトとして扱うことを強く推奨しています。
-内部的に、文字列オブジェクトは変更不可な文字列の実体へのポインタとなっています。
-文字列を変更すると、新たな文字列実体がアロケートされそれが変更されるので、
-破壊的手続きを使えばメモリアロケーションが節約できるということはありません。
-どうしても文字列そのものを破壊的変更したい場合でない限りは、
-非破壊版の@code{string-copy}を使いましょう。@ref{String utilities}参照。
-@c COMMON
-@end defun
 
 @defun string-take s nchars
 @defunx string-drop s nchars
@@ -2578,13 +2519,13 @@ character, such as @code{~@@a}.
 @deftp {Module} srfi.27
 @mdindex srfi.27
 @c EN
-This module provides SRFI-27 pseudo random generator interface,
-using Mersenne Twister algorithm
-(@pxref{Mersenne-Twister random number generator}) as the backbone.
+This module provides SRFI-27 pseudo random generator interface.
+Currently we build this on Mersenne Twister PRNG
+(@pxref{Mersenne-Twister random number generator}).
 @c JP
-このモジュールはメルセンヌツイスタアルゴリズム
-(@ref{Mersenne-Twister random number generator} 参照)
-を基礎に用いたSRFI-27疑似乱数発生器インタフェースを提供します。
+このモジュールはSRFI-27疑似乱数発生器インタフェースを提供します。
+現在のところ、これはメルセンヌツイスタPRNGの上に実装されています
+(@ref{Mersenne-Twister random number generator} 参照)。
 @c COMMON
 
 @c EN
@@ -2593,6 +2534,15 @@ can use the same random source without breaking its internal state.
 @c JP
 このモジュールが提供する乱数発生源はスレッドセーフです。
 複数のスレッドが同じ乱数発生源を使っても内部状態を壊してしまうことはありません。
+@c COMMON
+
+@c EN
+@xref{Random port libraries}, for an alternative way to get random
+numbers---it also provides access to system-provided high-entropy random
+source.
+@c JP
+乱数を得る別の方法には@ref{Random port libraries}もあります。
+そちらはシステムが提供する高エントロピー乱数源へのアクセスもカバーしています。
 @c COMMON
 @end deftp
 
@@ -19743,7 +19693,7 @@ and string in @var{prefix}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Tagged procedures with type safety,  , Uninterned symbols (SRFI), Library modules - SRFIs
+@node Tagged procedures with type safety, Hexadecimal floating-point constants, Uninterned symbols (SRFI), Library modules - SRFIs
 @section @code{srfi.259} - Tagged procedures with type safety
 @c NODE 型安全な手続きタグ, @code{srfi.259} - 型安全な手続きタグ
 
@@ -19859,6 +19809,336 @@ tag type name.
 @c COMMON
 @end defmac
 
+@c ----------------------------------------------------------------------
+@node Hexadecimal floating-point constants, Random port libraries, Tagged procedures with type safety, Library modules - SRFIs
+@section @code{srfi.270} - Hexadecimal floating-point constants
+@c NODE 十六進浮動小数点定数, @code{srfi.270} - 十六進浮動小数点定数
+
+@deftp {Module} srfi.270
+@mdindex srfi.270
+@c EN
+Gauche's built-in procedures understand hexadecimal floating-point
+consntants:
+@c JP
+Gaucheの組み込み手続きは十六進浮動小数点数を扱えます。
+@c COMMON
+
+@example
+(string->number "#x1.fp-1")  @result{} 0.96875
+(string->number "1.fp-1" 16) @result{} 0.96875
+
+(number->string 3.14 16) @result{} "1.91eb851eb851fp1"
+@end example
+
+@c EN
+@xref{Numeric literal syntax}, for the details.
+@c JP
+詳しくは@ref{Numeric literal syntax}を参照してください。
+@c COMMON
+
+@c EN
+This module exports one auxiliary procedure defined in srfi-270.
+@c JP
+このモジュールは、srfi-270で定義されているひとつの補助手続きをエクスポートします。
+@c COMMON
+@end deftp
+
+@defun write-hexadecimal-float z :optional port
+[SRFI-270]
+@c MOD srfi.270
+@c EN
+First, @var{z} is converted to an inexact number, then
+it is written out using hexadecimal floating-poit number notation
+to the given port, or the current output port is @var{port} is omitted.
+@c JP
+@var{z}がまず非正確数に変換され、そして十六進浮動小数点表記でもって
+@var{port}に書き出されます。@var{port}が省略された場合は現在の出力ポートが
+使われます。
+@c COMMON
+
+@itemize @bullet
+@item
+@c EN
+No prefix (@code{#x} or @code{#e}) is written
+@c JP
+プレフィクス (@code{#x}や@code{#e}など) は書き出されません。
+@c COMMON
+@item
+@c EN
+If the number is @code{0.0} or @code{-0.0}, it is printed with
+a zero exponent, e.g. @code{0.0p0} or @code{-0.0p0}.
+@c JP
+数値が@code{0.0}もしくは@code{-0.0}の場合、指数部を0として
+@code{0.0p0}および@code{-0.0p0}と書き出されます。
+@c COMMON
+@item
+@c EN
+If the floating-point number is in normalized range, the mantissa
+part begins with ``@code{1.}''.
+@c JP
+浮動小数点数が正規化されている領域であれば、仮数部は ``@code{1.}'' で始まります。
+@c COMMON
+@item
+@c EN
+If the floating-point number is in denormalized range, the mantissa
+part begins with ``@code{0.}''.
+@c JP
+浮動小数点数が非正規化数の場合は、仮数部は ``@code{0.}'' で始まります。
+@c COMMON
+@item
+@c EN
+NaN and infinities are written normally, i.e. @code{+nan.0} etc.
+@c JP
+NaNおよび無限大は通常の表記 (@code{+nan.0}など) になります。
+@c COMMON
+@item
+@c EN
+If @var{z} is a complex number with an imaginary part, both real part
+and imaginary part are written in hexadecimal floating-point format.
+@c JP
+@var{z}が虚部を持つ複素数の場合は、実部虚部それぞれが十六進浮動小数点数で
+出力されます。
+@c COMMON
+@end itemize
+
+@example
+(write-hexadecimal-float 6.02e23) @result{} 1.fde9f10a8d361p78
+(write-hexadecimal-float 1e-310)  @result{} 0.93445b873158p-1029
+@end example
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Random port libraries, Extended list conversion procedures, Hexadecimal floating-point constants, Library modules - SRFIs
+@section @code{srfi.271} - Random port libraries
+@c NODE 乱数ポートライブラリ, @code{srfi.271} - 乱数ポートライブラリ
+
+@deftp {Module} srfi.271
+@mdindex srfi.271
+This module provides the means to create @emph{random ports}, an
+input port to return random bytes.
+
+This srfi has two submodules, both export @code{make-random-port}:
+@code{srfi.271.randomized} draws random bits from system's
+high-entropy random source (@file{/dev/urandom} on Unix-family, and
+@code{BCryptGenRandom} on MinGW), which is hard to predict and
+cannot reproduce, while @code{srfi.271.determinized} uses
+pseudo random number generator (PRNG), which is deterministic.
+The user can import either one depending on the purpose.
+@code{srfi.271.determinized}.
+
+The module @code{srfi.271} is an alias of @code{srfi.271.rnndomized},
+so its @code{make-random-port} takes system's random source.
+Unless you need cryptographic quality, you may want
+@code{srfi.271.determinized}, as it can procude large quantitiy
+of random bits quickly, without exhausting external entropy pool.
+
+@xref{Sources of random bits}, for an alternative PRNG interface.
+@end deftp
+
+
+@deftp {Module} srfi.271.randomized
+@mdindex srfi.271.randomized
+@end deftp
+
+@deftp {Module} srfi.271.determinized
+@mdindex srfi.271.determinized
+@end deftp
+
+
+@defun make-random-port :optional initializer
+[SRFI-271]
+@c MOD srfi.271.randomized srfi.271.determinized
+Returns an input port, from which you can read random octets.
+Note that the module @code{srfi.271.randomized} and
+@code{srfi.271.determinized} defines different procedures with the
+same name.
+
+@code{srfi.271.randomized#make-random-port} pulls from
+high-entropy random source provided by the system.  You can use it
+for the cryptgraphic purpose, but reading large number of bytes may
+be slow if it exhaust system's entropy pool.  The optional
+@var{initializer} argument is ignored.
+
+@code{srfi.271.determined#make-random-port} uses PRNG to generate
+random octets; it's fast, and reproducible from the same seed.
+The random seed can be provided with @var{initializer}, which may be
+either a binary input port or a @code{<random-port-state>} object
+retrieved from another determined random port.  If omitted, it uses
+@code{srfi.271.randomized#make-random-port} as an initializer, so
+the seed is quite random.
+
+To provide fixed seed, you can use @code{gauche.vport}'s
+@code{open-input-byte-list} (@pxref{Virtual ports}), or
+@code{srfi.277}'s @code{open-cyclic-input-bytevector}
+(@pxref{Cyclic ports}):
+
+@example
+(make-random-port (open-input-byte-list '#0=(1 2 3 4 . #0#)))
+
+(make-random-port (open-cyclic-input-bytevector '#u8"abcd"))
+@end example
+
+Providing a cicular list to @code{open-input-byte-list} ensures
+it provides enough seed values whatever the PRNG algorithm requires.
+If the initializer cannot provide enough seeds, a condition
+that satisfies @code{random-port-initialization-error?} is raised.
+@end defun
+
+
+@defun random-port? obj
+[SRFI-271]
+@c MOD srfi.271.determinized
+Returns @code{#t} iff @var{obj} is an input port
+created by @code{srfi.271.determined#make-random-port}.
+Note that the port returned by
+@code{srfi.271.randomized#make-random-port} does not satisfy
+this predicate.
+@end defun
+
+@defun random-port-state drport
+[SRFI-271]
+@c MOD srfi.271.determinized
+Returns an object that encapsulates the state of
+deteminized random port @var{drport}.
+Passing that state to @code{srfi.271.determined#make-random-port}
+yields a random port that produces exactly the same random sequence
+as @var{drport} would produce from this moment.
+@end defun
+
+@defun random-port-state? obj
+[SRFI-271]
+@c MOD srfi.271.determinized
+Returns @code{#t} iff @var{obj} is a random port state object
+returned by @code{random-port-state}.
+@end defun
+
+@defun random-port-state=? s1 s2 s3 @dots{}
+[SRFI-271]
+@c MOD srfi.271.determinized
+All the arguments must be random port states.  Returns @code{#t} iff
+all the states are equivalent, i.e. they will produce the same random
+sequence when passed to @code{srfi.271.determined#make-random-port}.
+@end defun
+
+@defun random-port-initialization-error? obj
+[SRFI-271]
+@c MOD srfi.271.determinized
+Returns @code{#t} iff @var{obj} is a condition raised
+from @code{srfi.271.determined#make-random-port} when
+the initializer is not adequate.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Extended list conversion procedures, Cyclic ports, Random port libraries, Library modules - SRFIs
+@section @code{srfi.274} - Extended list conversion procedures
+@c NODE リスト変換手続きの拡張, @code{srfi.274} - リスト変換手続きの拡張
+
+@deftp {Module} srfi.274
+@mdindex srfi.274
+@c EN
+This srfi extends existing @code{list->*} procedures by allowing
+optional start/end arguments.
+
+Since Gauche already provides srfi-274 conforming procedures,
+this module simply re-exports them, so that @code{(import (srfi 274))}
+works.
+@c JP
+このsrfiは既存の@code{list->*}手続きを、省略可能なstart/end引数を取るように
+拡張するものです。
+
+Gaucheの該当する手続きは既にSRFI-274をサポートするように拡張されています。
+このモジュールは、@code{(import (srfi 274))}が動くように
+それらを再エクスポートしているだけです。
+@c COMMON
+
+@table @code
+@item list-copy
+@c EN
+Builtin (@code{gauche.base}).  @xref{List constructors}.
+@c JP
+組み込みのもの (@code{gauche.base})。@ref{List constructors}参照。
+@c COMMON
+@item list->string
+@c EN
+Builtin (@code{gauche.base}).  @xref{String utilities}.
+@c JP
+組み込みのもの (@code{gauche.base})。@ref{String utilities}参照。
+@c COMMON
+@item list->vector
+@c EN
+Builtin (@code{gauche.base}).  @xref{Vectors}.
+@c JP
+組み込みのもの (@code{gauche.base})。  @ref{Vectors}参照。
+@c COMMON
+@item list->stream
+@c EN
+From @code{util.stream} (same binding as @code{scheme.stream}).
+@xref{Stream constructors}.
+@c JP
+@code{util.stream}および@code{scheme.stream}で提供されているものです。
+@ref{Stream constructors}参照。
+@c COMMON
+@item list->ideque
+@c EN
+From @code{scheme.ideque}.  @xref{R7RS immutable deques}.
+@c JP
+@code{scheme.ideque}で提供されているものです。@ref{R7RS immutable deques}参照。
+@c COMMON
+@item list->generator
+@c EN
+From @code{gauche.generator} (same binding as @code{scheme.generator}).
+@xref{Generator constructors}.
+@c JP
+@code{gauche.generator}および@code{scheme.generator}で提供されているものです。
+@ref{Generator constructors}参照。
+@c COMMON
+@item list->@@vector
+@c EN
+@code{@@} is for @code{u8}, @code{s8}, etc.
+From @code{gauche.uvector} (same bindings as @code{scheme.vector.@@}).
+@xref{Uvector conversion operations}.
+@c JP
+@code{@@}は@code{u8}, @code{s8}等です。
+@code{gauche.uvector}および@code{scheme.vector.@@}で提供されているものです。
+@ref{Uvector conversion operations}参照。
+@c COMMON
+@end table
+
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Cyclic ports,  , Extended list conversion procedures, Library modules - SRFIs
+@section @code{srfi.277} - Cyclic ports
+@c NODE 循環ポート, @code{srfi.277} - 循環ポート
+
+@deftp {Module} srfi.277
+@mdindex srfi.277
+Cyclic ports are input ports that produces infinite input,
+repeating the given sequence of data.
+@end deftp
+
+@defun open-cyclic-input-string string
+@defunx open-cyclic-input-bytevector bytevector
+[SRFI-277]
+@c MOD srfi.277
+Returns an input port that produces character/octet sequence
+that consists of repeating @var{string}/@var{bytevector} infinitely.
+
+The srfi defines that @code{open-cyclic-input-string} returns a textual
+port, and @code{open-cyclic-input-bytevector} returns a binary
+port.  Gauche does not distinguish textual/binary ports, but
+be aware of it when you write portable code.
+
+The returned input ports are positionable, that is,
+you can obtain the port position and later restart from the
+previously obtained position.  It can be portably done with
+SRFI-291 (@pxref{Port positioning}).
+
+You can also realize circular ports with passing a circular list
+to @code{open-input-char-list}/@code{open-input-byte-list}
+of @code{gauche.vport} (@pxref{Virtual ports}).
+@end defun
 
 
 @c Local variables:

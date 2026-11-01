@@ -1,7 +1,7 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
- * Copyright (c) 2009-2021 Ivan Maidanski
+ * Copyright (c) 2009-2024 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -167,10 +167,10 @@ GC_API void GC_CALL GC_add_roots(void *b, void *e)
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
     GC_ASSERT((word)b <= (word)e);
-    b = (ptr_t)(((word)b + (sizeof(word) - 1)) & ~(word)(sizeof(word) - 1));
-                                        /* round b up to word boundary */
-    e = (ptr_t)((word)e & ~(word)(sizeof(word) - 1));
-                                        /* round e down to word boundary */
+    b = (ptr_t)(((word)b + (ALIGNMENT - 1)) & ~(word)(ALIGNMENT - 1));
+                        /* round b up to pointer alignment boundary */
+    e = (ptr_t)((word)e & ~(word)(ALIGNMENT - 1));
+                        /* round e down to pointer alignment boundary */
     if ((word)b >= (word)e) return; /* nothing to do */
 
 #   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
@@ -346,8 +346,8 @@ GC_API void GC_CALL GC_remove_roots(void *b, void *e)
     DCL_LOCK_STATE;
 
     /* Quick check whether has nothing to do */
-    if ((((word)b + (sizeof(word) - 1)) & ~(word)(sizeof(word) - 1)) >=
-        ((word)e & ~(word)(sizeof(word) - 1)))
+    if ((((word)b + (ALIGNMENT - 1)) & ~(word)(ALIGNMENT - 1)) >=
+        ((word)e & ~(word)(ALIGNMENT - 1)))
       return;
 
     LOCK();
@@ -377,7 +377,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
 #   endif
 }
 
-#ifdef USE_PROC_FOR_LIBRARIES
+#if defined(USE_PROC_FOR_LIBRARIES) && defined(LINUX)
   /* Exchange the elements of the roots table.  Requires rebuild of     */
   /* the roots index table after the swap.                              */
   GC_INLINE void swap_static_roots(int i, int j)
@@ -404,7 +404,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
     GC_bool rebuild = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
-    GC_ASSERT((word)b % sizeof(word) == 0 && (word)e % sizeof(word) == 0);
+    GC_ASSERT((word)b % ALIGNMENT == 0 && (word)e % ALIGNMENT == 0);
     for (i = 0; i < n_root_sets; i++) {
       ptr_t r_start, r_end;
 
@@ -472,7 +472,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
     if (rebuild)
       GC_rebuild_root_index();
   }
-#endif /* USE_PROC_FOR_LIBRARIES */
+#endif
 
 #if !defined(NO_DEBUGGING)
   /* For the debugging purpose only.                                    */
@@ -570,7 +570,7 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
     struct exclusion * next;
     size_t next_index;
 
-    GC_ASSERT((word)start % sizeof(word) == 0);
+    GC_ASSERT((word)start % ALIGNMENT == 0);
     GC_ASSERT((word)start < (word)finish);
 
     if (0 == GC_excl_table_entries) {
@@ -612,10 +612,12 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
     if (b == e) return;  /* nothing to exclude? */
 
     /* Round boundaries (in direction reverse to that of GC_add_roots). */
-    b = (void *)((word)b & ~(word)(sizeof(word) - 1));
-    e = (void *)(((word)e + (sizeof(word) - 1)) & ~(word)(sizeof(word) - 1));
-    if (NULL == e)
-      e = (void *)(~(word)(sizeof(word) - 1)); /* handle overflow */
+#   if ALIGNMENT > 1
+      b = (void *)((word)b & ~(word)(ALIGNMENT - 1));
+      e = (void *)(((word)e + (ALIGNMENT - 1)) & ~(word)(ALIGNMENT - 1));
+      if (NULL == e)
+        e = (void *)(~(word)(ALIGNMENT - 1)); /* handle overflow */
+#   endif
 
     LOCK();
     GC_exclude_static_roots_inner(b, e);
@@ -688,9 +690,9 @@ GC_INNER void GC_push_all_stack_sections(
     while (traced_stack_sect != NULL) {
         GC_ASSERT((word)lo HOTTER_THAN (word)traced_stack_sect);
 #       ifdef STACK_GROWS_UP
-            GC_push_all_stack((ptr_t)traced_stack_sect, lo);
+            GC_push_all_stack(traced_stack_sect, lo);
 #       else /* STACK_GROWS_DOWN */
-            GC_push_all_stack(lo, (ptr_t)traced_stack_sect);
+            GC_push_all_stack(lo, traced_stack_sect);
 #       endif
         lo = traced_stack_sect -> saved_stack_ptr;
         GC_ASSERT(lo != NULL);
@@ -723,7 +725,7 @@ GC_INNER void GC_push_all_stack_sections(
  * GC_dirty() call.
  */
 STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
-                                              ptr_t cold_gc_frame)
+        ptr_t cold_gc_frame GC_ATTR_UNUSED)
 {
 #ifndef NEED_FIXUP_POINTER
   if (GC_all_interior_pointers) {

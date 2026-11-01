@@ -892,26 +892,28 @@
              ))))
   )
 
-(define (precomp-test-3)
-  (test* "running precomp 3" #t (do-precomp! '("types-test.scm") '("-e")))
-  (test* "compile 3" #t (do-compile! "types-test" '("types-test.c")))
+(define (precomp-test-type-reconstruction)
+  (test* "running precomp type-reconstruction" #t
+         (do-precomp! '("type-reconstruction.scm") '("-e")))
+  (test* "compile type-reconstruction" #t
+         (do-compile! "type-reconstruction" '("type-reconstruction.c")))
 
   (test* "type reconstruction" '(#t #t #f #t)
          (dynload-and-eval
-          "types-test"
+          "type-reconstruction"
           (list
-           (eq? (module-binding-ref 'types-test '<A>)
+           (eq? (module-binding-ref 'type-reconstruction '<A>)
                 (</> (<Tuple> (<?> <int8>) <string> <integer>)
                      (<List> <integer> 3 10)))
-           (eq? (module-binding-ref 'types-test '<A>)
-                (module-binding-ref 'types-test '<B>))
-           (eq? (module-binding-ref 'types-test '<A>)
-                (module-binding-ref 'types-test '<C>))
+           (eq? (module-binding-ref 'type-reconstruction '<A>)
+                (module-binding-ref 'type-reconstruction '<B>))
+           (eq? (module-binding-ref 'type-reconstruction '<A>)
+                (module-binding-ref 'type-reconstruction '<C>))
            ;; NB: The following may not be eq?, since (<List> <integer>) is
            ;; serialized as (<List> <integer> #f #f).  The memoization is
            ;; based on the argument list of the type constructor, so it
            ;; doesn't match with (<List> <integer>) at runtime.
-           (equal? (module-binding-ref 'types-test '<C>)
+           (equal? (module-binding-ref 'type-reconstruction '<C>)
                    (</> (<Tuple> (<?> <int8>) <string> <integer>)
                         (<List> <integer>)))
            )))
@@ -920,24 +922,86 @@
                                                (#f "ok" -8483958394)
                                                (1 2 3 4 5))
          (dynload-and-eval
-          "types-test"
+          "type-reconstruction"
           (list
-           ((module-binding-ref 'types-test 'foo) '(3 "ok" 8483958394))
-           ((module-binding-ref 'types-test 'foo) '(#f "ok" -8483958394))
-           ((module-binding-ref 'types-test 'foo) '(1 2 3 4 5)))))
+           ((module-binding-ref 'type-reconstruction 'foo) '(3 "ok" 8483958394))
+           ((module-binding-ref 'type-reconstruction 'foo) '(#f "ok" -8483958394))
+           ((module-binding-ref 'type-reconstruction 'foo) '(1 2 3 4 5)))))
 
   (test* "assertion with reconstructed type"
          #t
          (dynload-and-eval
-          "types-test"
+          "type-reconstruction"
           (guard (e ((<error> e)
                      (boolean (#/supposed to be of type/ (~ e'message)))))
-            ((module-binding-ref 'types-test 'foo) "ng"))))
+            ((module-binding-ref 'type-reconstruction 'foo) "ng"))))
   )
 
-(define (precomp-test-4)
-  (test* "running precomp 4" #t (do-precomp! '("literal-mutex.scm") '("-e")))
-  (test* "compile 4" #t (do-compile! "literal-mutex" '("literal-mutex.c")))
+(define (precomp-test-type-binding)
+  (test* "running precomp type-binding" #t
+         (do-precomp! '("type-binding.scm") '("-e")))
+  (test* "compile type-binding" #t
+         (do-compile! "type-binding" '("type-binding.c")))
+
+  ;; The types are constructed at the compile time, when the values of
+  ;; <myint_t>, <myclass> and <beginclass> aren't available yet.  Note that
+  ;; <maybe-myint> is named after <myint_t>, not after <int> it is aliased
+  ;; to---the compiler only had a deferred reference to the name.
+  (test* "types defined in the precompiled module"
+         '("#<? <myint_t>>" "#<? <myclass>>" "#<? <beginclass>>")
+         (dynload-and-eval
+          "type-binding"
+          (map (^s (write-to-string (module-binding-ref 'type-binding s)))
+               '(<maybe-myint> <maybe-myclass> <maybe-beginclass>))))
+
+  (test* "assertion with the deferred types"
+         '(3 #f #f #t #f #t)
+         (dynload-and-eval
+          "type-binding"
+          (let ([foo-myint (module-binding-ref 'type-binding 'foo-myint)]
+                [foo-myclass (module-binding-ref 'type-binding 'foo-myclass)]
+                [foo-beginclass (module-binding-ref 'type-binding 'foo-beginclass)]
+                [<myclass> (module-binding-ref 'type-binding '<myclass>)]
+                [<beginclass> (module-binding-ref 'type-binding '<beginclass>)])
+            (list (foo-myint 3)
+                  (foo-myint #f)
+                  (foo-myclass #f)
+                  (is-a? (foo-myclass (make <myclass>)) <myclass>)
+                  (foo-beginclass #f)
+                  (is-a? (foo-beginclass (make <beginclass>)) <beginclass>)))))
+
+  (test* "type error with the deferred types" '(#t #t)
+         (dynload-and-eval
+          "type-binding"
+          (let ([foo-myint (module-binding-ref 'type-binding 'foo-myint)]
+                [foo-myclass (module-binding-ref 'type-binding 'foo-myclass)])
+            (map (^p (guard (e [(<error> e)
+                                (boolean (#/supposed to be of type/
+                                          (~ e'message)))])
+                       (p "ng")))
+                 (list foo-myint foo-myclass)))))
+
+  ;; The placeholder binding the compiler leaves for a define-type must not
+  ;; be used to constant-fold.
+  (test* "define-type placeholder isn't constant-folded" '<myclass>
+         (dynload-and-eval
+          "type-binding"
+          ((module-binding-ref 'type-binding 'runtime-class-name))))
+
+  ;; A type expression mentioning an internal define-record-type is built at
+  ;; runtime, so precompiling it doesn't need to serialize anything.
+  (test* "local record type in a type expression" '((1 #t #t) (1 #t #f))
+         (dynload-and-eval
+          "type-binding"
+          (let1 f (module-binding-ref 'type-binding 'local-record-type)
+            (list (f #f) (f 3)))))
+  )
+
+(define (precomp-test-literal-mutex)
+  (test* "running precomp literal-mutex" #t
+         (do-precomp! '("literal-mutex.scm") '("-e")))
+  (test* "compile literal-mutex" #t
+         (do-compile! "literal-mutex" '("literal-mutex.c")))
 
   (test* "run-once" '(1 1 1 1 1)
          (dynload-and-eval
@@ -948,9 +1012,9 @@
             (map thread-join! thrs))))
   )
 
-(define (precomp-test-5)
-  (test* "running precomp 5" #t (do-precomp! '("macros.scm") '("-e")))
-  (test* "compile 5" #t (do-compile! "macros" '("macros.c")))
+(define (precomp-test-macros)
+  (test* "running precomp macros" #t (do-precomp! '("macros.scm") '("-e")))
+  (test* "compile macros" #t (do-compile! "macros" '("macros.c")))
 
   (test* "compiled macro"
          '(("compiled macro (er)" ((apple) (banana) bonk))
@@ -965,11 +1029,27 @@
                ,(im-state-test))))))
   )
 
+(define (precomp-test-discriminator)
+  (test* "running precomp precompiling-param" #t
+         (do-precomp! '("precompiling-param.scm") '("-e")))
+  (test* "compile precompiling-param" #t
+         (do-compile! "precompiling-param" '("precompiling-param.c")))
+
+  (test* "precomp-discriminator" '(#t #f)
+         (dynload-and-eval "precompiling-param"
+                           (begin
+                             (use precompiling-param)
+                             (list (call-inside)
+                                   (call-outside)))))
+  )
+
 (wrap-with-test-directory precomp-test-1 '("test.o"))
 (wrap-with-test-directory precomp-test-2 '("test.o"))
-(wrap-with-test-directory precomp-test-3 '("test.o"))
-(wrap-with-test-directory precomp-test-4 '("test.o"))
-(wrap-with-test-directory precomp-test-5 '("test.o"))
+(wrap-with-test-directory precomp-test-type-reconstruction '("test.o"))
+(wrap-with-test-directory precomp-test-type-binding '("test.o"))
+(wrap-with-test-directory precomp-test-literal-mutex '("test.o"))
+(wrap-with-test-directory precomp-test-macros '("test.o"))
+(wrap-with-test-directory precomp-test-discriminator '("test.o"))
 
 ;;=======================================================================
 (test-section "build-standalone")

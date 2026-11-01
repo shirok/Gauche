@@ -2,7 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
- * Copyright (c) 2009-2021 Ivan Maidanski
+ * Copyright (c) 2009-2025 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -479,7 +479,7 @@ sexpr ints(int low, int up)
 }
 
 #ifdef GC_GCJ_SUPPORT
-/* Return reverse(x) concatenated with y */
+/* Return gcj_reverse(x) concatenated with y */
 sexpr gcj_reverse1(sexpr x, sexpr y)
 {
     if (is_nil(x)) {
@@ -1413,16 +1413,14 @@ void run_one_test(void)
         FAIL;
       }
       AO_fetch_and_add1(&collectable_count);
-      x = (char*)GC_malloc(0);
-      CHECK_OUT_OF_MEMORY(x);
+      x = (char*)checkOOM(GC_malloc(0));
       if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc(0) failed: GC_size returns %lu\n",
                       (unsigned long)GC_size(x));
         FAIL;
       }
       AO_fetch_and_add1(&uncollectable_count);
-      x = (char*)GC_malloc_uncollectable(0);
-      CHECK_OUT_OF_MEMORY(x);
+      x = (char*)checkOOM(GC_malloc_uncollectable(0));
       if (GC_size(x) != MIN_WORDS * sizeof(GC_word)) {
         GC_printf("GC_malloc_uncollectable(0) failed\n");
         FAIL;
@@ -2369,10 +2367,6 @@ void * thr_run_one_test(void * arg GC_ATTR_UNUSED)
     run_one_test();
     return(0);
 }
-
-#ifdef GC_DEBUG
-#  define GC_free GC_debug_free
-#endif
 
 int main(void)
 {

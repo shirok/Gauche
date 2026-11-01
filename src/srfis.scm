@@ -1809,7 +1809,7 @@ srfi-252, srfi-252
 
 Property testing
 Supported by the module @code{srfi.252}
-(@pxref{Property testing}.
+(@pxref{Property testing}).
 
 プロパティテスト
 @code{srfi.252}でサポートされます
@@ -1850,3 +1850,57 @@ Supported by the module @code{srfi.259}
 型安全な手続きタグ
 @code{srfi.259}でサポートされます
 (@ref{型安全な手続きタグ}参照)。
+
+
+srfi-270, srfi-270
+()
+
+Hexadecimal Floating-Point Constants
+Reader and writer are supported by built-in procedures
+(@pxref{Numeric literal syntax}).  One auxiliary procedure,
+@code{write-hexadecimal-float}, is provided with the module @code{srfi.270}
+(@pxref{Hexadecimal floating-point constants}).
+
+十六進浮動小数点定数
+組み込み手続きがこのフォーマットを読み書きできます
+(@ref{Numeric literal syntax}参照)。
+補助手続き@code{write-hexadecimal-float}はモジュール@code{srfi.270}で
+提供されます(@ref{Hexadecimal floating-point constants}参照)。
+
+
+srfi-271, srfi-271
+()
+
+Random port libraries
+Supported by the module @code{srfi.271} (@pxref{Random port libraries}).
+
+乱数ポートライブラリ
+モジュール@code{srfi.271}でサポートされます (@ref{Random port libraries}参照)。
+
+
+srfi-274, srfi-274
+()
+
+Extended list conversion procedures
+This srfi extends existing @code{list->*} procedures by allowing
+optional start/end arguments.  Gauche already provides extended
+version from the relevant libraries.  For the portability,
+using @code{srfi.274} imports procedures defined in this srfi
+(@pxref{Extended list conversion procedures}).
+
+リスト変換手続きの拡張
+このsrfiは既存の@code{list->*}手続きを、省略可能なstart/end引数を取るように
+拡張するものです。Gaucheではそれぞれのライブラリの該当する関数は既に
+この拡張を備えています。移植性のために、@code{srfi.274}をuseすると
+このsrfiで定義される手続きがインポートされます
+(@ref{Extended list conversion procedures}参照)。
+
+
+srfi-277, srfi-277
+()
+
+Cyclic ports
+Supported by the module @code{srfi.277} (@pxref{Cyclic ports}).
+
+循環ポート
+モジュール@code{srfi.277}でサポートされます (@ref{Cyclic ports}参照)。

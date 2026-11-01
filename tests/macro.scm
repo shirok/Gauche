@@ -280,6 +280,18 @@
              (foo 4)
              bar))))
 
+;; er-macro-transformer hygiene
+;;  https://github.com/shirok/Gauche/issues/1335
+(test* "er-macro expander inserts internal keywords hygienically"
+       'ok
+       (eval
+        '(define-module er-macro-hygiene
+           (use gauche.base :only (er-macro-transformer))
+           (extend scheme)
+           (define-syntax foo (er-macro-transformer (lambda (f r c) ''ok)))
+           (foo))
+        (current-module)))
+
 ;; Mixing syntax-rules and er-macro requires unhygienic identifiers to be
 ;; explicitly "injected".
 ;; (This does not work with the current compiler)
@@ -338,7 +350,7 @@
   (define p (cons 4 5))
   (define-syntax p.car
     (make-id-transformer
-     (syntax-rules (set!)
+     (syntax-rules+ (set!)
        [(set! _ expr) (set-car! p expr)]
        [_ (car p)])))
 
@@ -352,6 +364,23 @@
     (set! p.car 99)
     (test "synrule global identifier macro hygiene" 99 (lambda () p.car))
     (test "synrule global identifier macro hygiene" '(6 . 7) (lambda () p)))
+  )
+
+;; Ensure syntax-rules+ looks at the head of the pattern
+(define-module id-macro-test-sr2
+  (use gauche.test)
+  (define q (cons 4 5))
+  (define-syntax q.car
+    (make-id-transformer
+     (syntax-rules+ (zzz)
+       [(zzz _ expr) (set-car! q expr)]
+       [_ (car q)])))
+
+  (test "synrule identifier macro, head not matched" 4 (lambda () q.car))
+  (test "synrule identifier macro, head not matched"
+        (test-error <error> #/malformed/)
+        (lambda () (eval '(set! q.car 15) (current-module))))
+  (test "synrule identifier macro, head not matched" '(4 . 5) (lambda () q))
   )
 
 ;; local
@@ -966,6 +995,45 @@
       (lambda ()
         (let-syntax ([if fi]) (if #f 'ok 'ng))))
 
+;; let-sytnax liteals
+;; https://github.com/shirok/Gauche/issues/1327 'no-match
+(test "let-syntax literal match" 'no-match
+      (lambda ()
+        (let-syntax ((m (syntax-rules ()
+                          ((m ignored)
+                           (let-syntax ((n (syntax-rules (k)
+                                             ((n k) 'matched-k)
+                                             ((n y) 'no-match))))
+                             (let ((k 99))
+                               (n k)))))))
+          (m anything))))
+
+;; The counterpart of the above: the literal and the input both refer to
+;; the binding that's visible where the inner syntax-rules appears, so
+;; they should match, even when they're introduced by the enclosing macro.
+(test "let-syntax literal match 2" 'matched-k
+      (lambda ()
+        (let-syntax ((m (syntax-rules ()
+                          ((m ignored)
+                           (let ((k 99))
+                             (let-syntax ((n (syntax-rules (k)
+                                               ((n k) 'matched-k)
+                                               ((n y) 'no-match))))
+                               (n k)))))))
+          (m anything))))
+
+;; A literal introduced by the enclosing macro's template refers to the
+;; global binding, and so does the input; they should match.
+(test "let-syntax literal match 3" 'matched-k
+      (lambda ()
+        (let-syntax ((m (syntax-rules ()
+                          ((m arg)
+                           (let-syntax ((n (syntax-rules (k)
+                                             ((n k) 'matched-k)
+                                             ((n y) 'no-match))))
+                             (n arg))))))
+          (m k))))
+
 ;; Macro-generating-macro scoping
 ;; Currently it's not working.
 (define-syntax mgm-bar
@@ -985,6 +1053,23 @@
 
 (test "macro-generating-macro scope" '(z y x)
       (lambda () (mgm-foo (x y z))))
+
+;; https://github.com/shirok/Gauche/issues/1326
+(let ()
+  (define-syntax b (syntax-rules () ((_) 'outer-b)))
+
+  (define-syntax gen
+    (syntax-rules ()
+      ((_) (let-syntax ((a (syntax-rules () ((_) (b))))
+                        (b (syntax-rules () ((_) 'sibling-b))))
+             (a)))))
+
+  (test* "let-syntax sibling scope"
+         '(generated outer-b written outer-b)
+         (list 'generated (gen)
+               'written (let-syntax ((a (syntax-rules () ((_) (b))))
+                                     (b (syntax-rules () ((_) 'sibling-b))))
+                          (a)))))
 
 ;;----------------------------------------------------------------------
 ;; macro and internal define

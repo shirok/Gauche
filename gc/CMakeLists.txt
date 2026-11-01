@@ -3,7 +3,7 @@
 # Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
 # Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
 # Copyright (c) 2000-2010 by Hewlett-Packard Company.  All rights reserved.
-# Copyright (c) 2010-2021 Ivan Maidanski
+# Copyright (c) 2010-2024 Ivan Maidanski
 ##
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -22,16 +22,16 @@
 #  this will generate gc.sln
 #
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
-set(PACKAGE_VERSION 8.2.8)
+set(PACKAGE_VERSION 8.2.12)
 # Version must match that in AC_INIT of configure.ac and that in README.
 # Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
 # Info (current:revision:age) for the Libtool versioning system.
 # These values should match those in cord/cord.am and Makefile.am.
 set(LIBCORD_VER_INFO    6:1:5)
-set(LIBGC_VER_INFO      6:4:5)
+set(LIBGC_VER_INFO      6:6:5)
 set(LIBGCCPP_VER_INFO   6:0:5)
 
 option(enable_cplusplus "C++ support" OFF)
@@ -138,17 +138,23 @@ endif()
 # Output all warnings.
 if (BORLAND)
   # All warnings except for particular ones.
-  add_compile_options(/w /w-pro /w-aus /w-par /w-ccc /w-inl /w-rch)
+  add_compile_options(/w /w-aus /w-ccc /w-inl /w-par /w-pro /w-rch /w-use)
 elseif (MSVC)
   # All warnings but ignoring "unreferenced formal parameter" and
   # "conditional expression is constant" ones.
   add_compile_options(/W4 /wd4100 /wd4127)
 elseif (WATCOM)
   add_compile_options(/wx)
-  if (NOT enable_threads)
-    # Suppress "unreachable code" warning in GC_ASSERT(I_HOLD_LOCK()).
+  if (enable_gc_assertions)
+    # Suppress "unreachable code" warning in GC_ASSERT() if some constant
+    # non-zero expression is given as the argument.
     add_compile_options(/wcd=201)
   endif()
+  if (enable_threads)
+    # Suppress "missing return value" wcc warning for AO_test_and_set_full()
+    # and AO_char_fetch_and_add_full() in AO msftc/x86.h file.
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wcd=107>)
+  endif(enable_threads)
 else()
   # TODO add -[W]pedantic -Wno-long-long
   add_compile_options(-Wall -Wextra)
@@ -190,6 +196,12 @@ if (enable_threads)
     set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} -l${CMAKE_DL_LIBS})
   else()
     set(THREADDLLIBS_LIST ${THREADDLLIBS_LIST} ${CMAKE_DL_LIBS})
+  endif()
+  if (BORLAND)
+    # Workaround "cannot locate assembly file" and "out of hash space"
+    # compilation errors, "restarting compile using assembly" warning.
+    add_definitions("-DAO_NO_ASM_XADD")
+    add_definitions("-DAO_NO_ASM_XCHG")
   endif()
 endif(enable_threads)
 
@@ -366,11 +378,6 @@ endif(enable_checksums)
 if (enable_werror)
   if (BORLAND)
     add_compile_options(/w!)
-    if (enable_threads)
-      # Workaround "function should return a value" warning for several
-      # asm functions in atomic_ops/sysdeps/msftc/x86.h.
-      add_compile_options(/w-rvl)
-    endif(enable_threads)
   elseif (MSVC)
     add_compile_options(/WX)
     # Workaround "typedef ignored on left of ..." warning reported in
@@ -380,10 +387,6 @@ if (enable_werror)
     add_compile_options(/we)
   else()
     add_compile_options(-Werror)
-    if (APPLE)
-      # _dyld_bind_fully_image_containing_address is deprecated in OS X 10.5+
-      add_compile_options(-Wno-deprecated-declarations)
-    endif()
   endif()
 endif(enable_werror)
 
@@ -393,9 +396,6 @@ if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
     set(SRC ${SRC} pthread_start.c)
   endif()
-elseif (BORLAND)
-  # Suppress "GC_push_contents_hdr() is declared but never used" warning.
-  add_compile_options(/w-use)
 endif()
 
 # Add implementation of backtrace() and backtrace_symbols().
@@ -571,6 +571,7 @@ if (EMSCRIPTEN AND enable_emscripten_asyncify)
 endif()
 
 add_library(gc ${SRC})
+add_library(bdwgc::gc ALIAS gc)
 target_link_libraries(gc PRIVATE ${THREADDLLIBS_LIST} ${ATOMIC_OPS_LIBS})
 target_include_directories(gc INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -578,6 +579,7 @@ target_include_directories(gc INTERFACE
 
 if (enable_cplusplus)
   add_library(gccpp gc_badalc.cc gc_cpp.cc)
+  add_library(bdwgc::gccpp ALIAS gccpp)
   target_link_libraries(gccpp PRIVATE gc)
   target_include_directories(gccpp INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -585,6 +587,7 @@ if (enable_cplusplus)
   if (enable_throw_bad_alloc_library)
     # The same as gccpp but contains only gc_badalc.
     add_library(gctba gc_badalc.cc)
+    add_library(bdwgc::gctba ALIAS gctba)
     target_link_libraries(gctba PRIVATE gc)
     target_include_directories(gctba INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -595,6 +598,7 @@ endif()
 if (build_cord)
   set(CORD_SRC cord/cordbscs.c cord/cordprnt.c cord/cordxtra.c)
   add_library(cord ${CORD_SRC})
+  add_library(bdwgc::cord ALIAS cord)
   target_link_libraries(cord PRIVATE gc)
   target_include_directories(cord INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -742,12 +746,11 @@ if (build_tests)
   # Compile some tests as C++ to test extern "C" in header files.
   if (enable_cplusplus)
     set_source_files_properties(tests/leak_test.c PROPERTIES LANGUAGE CXX)
-    if (NOT MSVC)
+    if (BORLAND OR MSVC OR WATCOM)
       # WinMain-based test hangs at startup if compiled by VC as C++ code.
+    else()
       set_source_files_properties(tests/test.c PROPERTIES LANGUAGE CXX)
-    endif()
-    # To avoid "treating 'c' input as 'c++' when in C++ mode" Clang warning.
-    if (NOT (BORLAND OR MSVC OR WATCOM))
+      # To avoid "treating 'c' input as 'c++' when in C++ mode" Clang warning.
       add_compile_options(-x c++)
     endif()
   endif(enable_cplusplus)
@@ -755,11 +758,9 @@ if (build_tests)
   add_executable(gctest WIN32 tests/test.c)
   target_link_libraries(gctest PRIVATE gc ${THREADDLLIBS_LIST})
   add_test(NAME gctest COMMAND gctest)
-  if (WATCOM)
-    # Suppress "conditional expression in if statement is always true/false"
-    # and "unreachable code" warnings in GC_MALLOC_[ATOMIC_]WORDS.
-    target_compile_options(gctest PRIVATE
-                           /wcd=13 /wcd=201 /wcd=367 /wcd=368 /wcd=726)
+  if (WATCOM AND NOT enable_gc_assertions)
+    # Suppress "unreachable code" warning in GC_MALLOC_[ATOMIC_]WORDS().
+    target_compile_options(gctest PRIVATE /wcd=201)
   endif()
 
   add_executable(hugetest tests/huge_test.c)

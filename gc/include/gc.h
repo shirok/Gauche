@@ -5,7 +5,7 @@
  * Copyright 1999 by Hewlett-Packard Company.  All rights reserved.
  * Copyright (C) 2007 Free Software Foundation, Inc
  * Copyright (c) 2000-2011 by Hewlett-Packard Development Company.
- * Copyright (c) 2009-2020 Ivan Maidanski
+ * Copyright (c) 2009-2025 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -179,7 +179,7 @@ GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void);
 #endif
 
 GC_API GC_ATTR_DEPRECATED int GC_find_leak;
-                        /* Set to true to turn on the leak-finding mode */
+                        /* Set to true to turn on the find-leak mode    */
                         /* (do not actually garbage collect, but simply */
                         /* report inaccessible memory that was not      */
                         /* deallocated with GC_FREE).  Initial value    */
@@ -196,7 +196,7 @@ GC_API GC_ATTR_DEPRECATED int GC_all_interior_pointers;
                         /* not be changed after GC initialization (in   */
                         /* case of calling it after the GC is           */
                         /* initialized, the setter acquires the GC lock */
-                        /* (to avoid data races).  The initial value    */
+                        /* to avoid data races).  The initial value     */
                         /* depends on whether the GC is built with      */
                         /* ALL_INTERIOR_POINTERS macro defined or not.  */
                         /* Unless DONT_ADD_BYTE_AT_END is defined, this */
@@ -266,7 +266,7 @@ GC_API int GC_CALL GC_get_dont_expand(void);
 GC_API GC_ATTR_DEPRECATED int GC_use_entire_heap;
                 /* Causes the non-incremental collector to use the      */
                 /* entire heap before collecting.  This sometimes       */
-                /* results in more large block fragmentation, since     */
+                /* results in more large-block fragmentation, since     */
                 /* very large blocks will tend to get broken up         */
                 /* during each GC cycle.  It is likely to result in a   */
                 /* larger working set, but lower collection             */
@@ -512,6 +512,7 @@ GC_API void GC_CALL GC_set_handle_fork(int);
 /* non-zero); GC_atfork_child is to be called immediately in the child  */
 /* branch (i.e., fork result is 0).  Note that GC_atfork_child() call   */
 /* should, of course, precede GC_start_mark_threads call (if any).      */
+/* Note that fork() could be called from an unregistered thread.        */
 GC_API void GC_CALL GC_atfork_prepare(void);
 GC_API void GC_CALL GC_atfork_parent(void);
 GC_API void GC_CALL GC_atfork_child(void);
@@ -610,8 +611,8 @@ GC_API size_t GC_CALL GC_size(const void * /* obj_addr */);
 /* opinion, it shouldn't have been invented, but now we're stuck. -HB   */
 /* The resulting object has the same kind as the original.              */
 /* It is an error to have changes enabled for the original object.      */
-/* It does not change the content of the object from its beginning to   */
-/* the minimum of old size and new_size_in_bytes; the content above in  */
+/* It does not change the contents of the object from its beginning to  */
+/* the minimum of old size and new_size_in_bytes; the contents above in */
 /* case of object size growth is initialized to zero (not guaranteed    */
 /* for atomic object type).  The function follows ANSI conventions for  */
 /* NULL old_object (i.e., equivalent to GC_malloc regardless of new     */
@@ -699,7 +700,7 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void);
 /* called with the allocation lock held and the world might be stopped; */
 /* it's not allowed for stop_func to manipulate pointers to the garbage */
 /* collected heap or call most of GC functions.)  This works even       */
-/* if virtual dirty bits, and hence incremental collection is not       */
+/* if no virtual dirty bits, and hence incremental collection is not    */
 /* available for this architecture.  Collections can be aborted faster  */
 /* than normal pause times for incremental collection.  However,        */
 /* aborted collections do no useful work; the next collection needs     */
@@ -1121,8 +1122,7 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * /* obj */,
         /* Thus cycles involving finalizable objects should     */
         /* be avoided, or broken by disappearing links.         */
         /* All but the last finalizer registered for an object  */
-        /* is ignored.                                          */
-        /* No-op in the leak-finding mode.                      */
+        /* is ignored.  No-op in the find-leak mode.            */
         /* Finalization may be removed by passing 0 as fn.      */
         /* Finalizers are implicitly unregistered when they are */
         /* enqueued for finalization (i.e. become ready to be   */
@@ -1149,7 +1149,7 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * /* obj */,
         /* by cd will be considered accessible until the        */
         /* finalizer is invoked.                                */
 
-/* Another versions of the above follow.  It ignores            */
+/* Another version of the above follows.  It ignores            */
 /* self-cycles, i.e. pointers from a finalizable object to      */
 /* itself.  There is a stylistic argument that this is wrong,   */
 /* but it's unavoidable for C++, since the compiler may         */
@@ -1260,7 +1260,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* explicitly deallocate the object containing link.    */
         /* Explicit deallocation of obj may or may not cause    */
         /* link to eventually be cleared.                       */
-        /* No-op in the leak-finding mode.                      */
+        /* No-op in the find-leak mode.                         */
         /* This function can be used to implement certain types */
         /* of weak pointers.  Note, however, this generally     */
         /* requires that the allocation lock is held (see       */
@@ -1282,7 +1282,7 @@ GC_API int GC_CALL GC_move_disappearing_link(void ** /* link */,
         /* GC_general_register_disappearing_link (or            */
         /* GC_register_disappearing_link).  Does not change the */
         /* target object of the weak reference.  Does not       */
-        /* change (*new_link) content.  May be called with      */
+        /* change contents of (*new_link).  May be called with  */
         /* new_link equal to link (to check whether link has    */
         /* been registered).  Returns GC_SUCCESS on success,    */
         /* GC_DUPLICATE if there is already another             */
@@ -1437,9 +1437,8 @@ GC_API void GC_CALL GC_abort_on_oom(void);
 /* (e.g. Java-like) finalization facility.  It is expected      */
 /* that finalization code will arrange for hidden pointers to   */
 /* disappear.  Otherwise objects can be accessed after they     */
-/* have been collected.                                         */
-/* Should not be used in the leak-finding mode.                 */
-/* Note that putting pointers in atomic objects or in           */
+/* have been collected.  Should not be used in the find-leak    */
+/* mode.  Note that putting pointers in atomic objects or in    */
 /* non-pointer slots of "typed" objects is equivalent to        */
 /* disguising them in this way, and may have other advantages.  */
 typedef GC_word GC_hidden_pointer;
@@ -2166,7 +2165,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 GC_API void GC_CALL GC_win32_free_heap(void);
 
 #if defined(__SYMBIAN32__)
-  void GC_init_global_static_roots(void);
+  GC_API void GC_CALL GC_init_global_static_roots(void);
 #endif
 
 #if defined(_AMIGA) && !defined(GC_AMIGA_MAKINGLIB)

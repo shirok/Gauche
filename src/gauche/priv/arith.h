@@ -86,8 +86,10 @@
 /* Portable version */
 #define UADD(r, c, x, y)                                        \
   do {                                                          \
-    (r) = (x) + (y) + (c);                                      \
-    (c) = ((r)<(x) || ((r)==(x) && ((y)>0||(c)>0)))? 1 : 0;     \
+    u_long x_ = (x), y_ = (y), c_ = (c);                        \
+    u_long r_ = x_ + y_ + c_;                                   \
+    (r) = r_;                                                   \
+    (c) = (r_<x_ || (r_==x_ && (y_>0||c_>0)))? 1 : 0;           \
   } while (0)
 #endif /*UADD*/
 
@@ -140,8 +142,10 @@
 /* Portable version */
 #define USUB(r, c, x, y)                                        \
   do {                                                          \
-    (r) = (x) - (y) - (c);                                      \
-    (c) = ((r)>(x) || ((r)==(x) && ((y)>0||(c)>0)))? 1 : 0;     \
+    u_long x_ = (x), y_ = (y), c_ = (c);                        \
+    u_long r_ = x_ - y_ - c_;                                   \
+    (r) = r_;                                                   \
+    (c) = (r_>x_ || (r_==x_ && (y_>0||c_>0)))? 1 : 0;           \
   } while (0)
 #endif /*USUB*/
 

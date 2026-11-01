@@ -46,13 +46,13 @@
   (syntax-rules (set!)
     [(_ template)
      (make-id-transformer
-      (syntax-rules (set!)
+      (syntax-rules+ (set!)
         [(set! _ expr)
          (syntax-error "Id macro can't be used with set!")]
         [_ template]))]
     [(_ (_ template1)
         ((set! _ pat2) template2))
      (make-id-transformer
-      (syntax-rules (set!)
+      (syntax-rules+ (set!)
         [(set! _ pat2) template2]
         [_ template1]))]))

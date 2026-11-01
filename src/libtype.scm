@@ -74,8 +74,9 @@
 ;;        the underlying `long` integer value.   Main use is for FFI.
 ;;
 ;;   <proxy-type>
-;;      - This is a wrapper of an prescriptive types, and as far as type
-;;        checking is concerened, it behaves just like the wrapped type.
+;;      - This is a wrapper of a type that is refered to by the name it is
+;;        bound to, and as far as type checking is concerened, it behaves
+;;        just like the wrapped type.
 ;;        We need this because classes can be redefined.  When a class
 ;;        is redefined, a new class instance is created and the class name
 ;;        is rebound to it.  We want that other aggregate descriptive types
@@ -85,6 +86,16 @@
 ;;        the redefined class.
 ;;        Proxy types are automatically created and handled under the hood;
 ;;        users doesn't need to deal with them explicity.
+;;
+;;        A proxy type can also be deferred---created before the type it
+;;        refers to exists.  The compiler creates one when it sees a type
+;;        definition whose value can't be computed at the compile time, e.g.
+;;        a `define-class' grouped with its uses in a `begin', or any type
+;;        definition in the precompiled code (precomp never executes the
+;;        toplevel forms).  A deferred proxy type is resolved when it is
+;;        first used; until then, dereferencing it is an error.  Since the
+;;        deferred value needn't be a class, a proxy type may resolve to
+;;        any type---a native type or another descriptive type included.
 
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -146,26 +157,32 @@
  (define-cfn Scm_TypeConstructorP (klass) ::int
    (return (SCM_ISA klass (& Scm_TypeConstructorMetaClass))))
 
- ;; The 'name' slot is computed by the initializer.
- ;; The 'constructorArgs' slot is #f by default.  If the instance is
- ;; reconstructed from the precompiled form, however, we delay the actual
- ;; initialization until the type is used.
+ ;; The 'name' slot is computed lazily.  An initializer stores a thunk in it,
+ ;; and the getter below forces the thunk on the first read and caches the
+ ;; result.
+ ;; The 'local' flag is TRUE iff this type is constructed from locally bound
+ ;; generative types---e.g. local define-record-type.  Such type bypasses
+ ;; memoization table, as they are created dynamically per scope.
  (define-ctype ScmDescriptiveType
    ::(.struct ScmDescriptiveTypeRec
               (SCM_INSTANCE_HEADER::||
-               name::ScmObj
-               constructorArgs::ScmObj)))
+               name::ScmObj                ;thunk or string
+               local::_Bool)))
 
  (define-cclass <descriptive-type> :base :private :no-meta
    "ScmDescriptiveType*" "Scm_DescriptiveTypeClass"
    (c "SCM_CLASS_METACLASS_CPL+1")
-   ((name))
+   ((name :getter (begin
+                    ;; lazily compute the name
+                    (when (SCM_PROCEDUREP (-> obj name))
+                      (set! (-> obj name) (Scm_ApplyRec0 (-> obj name))))
+                    (return (-> obj name)))))
    (metaclass <type-constructor-meta>)
    (allocator (let* ([z::ScmDescriptiveType*
                       (SCM_NEW_INSTANCE ScmDescriptiveType klass)])
                 (cast void initargs)    ;suppress unused warning
                 (set! (-> z name) SCM_FALSE)
-                (set! (-> z constructorArgs) SCM_FALSE)
+                (set! (-> z local) FALSE)
                 (return (SCM_OBJ z)))))
 
  ;; We memoize constructed types.  The type is keyed by the constructor class
@@ -216,6 +233,7 @@
  ;; CPA for native type subclasses
  (define-cvar native-type-cpa::(.array ScmClass* (*)) :static
    #((SCM_CLASS_STATIC_PTR Scm_NativeTypeClass)
+     (SCM_CLASS_STATIC_PTR Scm_TypeClass)
      (SCM_CLASS_STATIC_PTR Scm_TopClass)
      NULL))
 
@@ -224,54 +242,60 @@
  (define-cfn Scm_NativeHandleType (h::ScmNativeHandle*) ::ScmNativeType*
    (return (-> h type)))
 
- (define-cclass <c-pointer> :base :no-meta
-   "ScmCPointer*" "Scm_CPointerClass"
+ (define-cclass <c-pointer-type> :base :no-meta
+   "ScmCPointerType*" "Scm_CPointerTypeClass"
    (c "native_type_cpa")
    ((pointee-type :type <native-type> :c-name "pointee_type"))
-   (printer (Scm_Printf port "#<c-pointer %A>" (-> (& (-> (SCM_C_POINTER obj) common)) name)))
+   (printer (Scm_Printf port "#<c-pointer %A>" (-> (& (-> (SCM_C_POINTER_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-function> :base :no-meta
-   "ScmCFunction*" "Scm_CFunctionClass"
+ (define-cclass <c-function-type> :base :no-meta
+   "ScmCFunctionType*" "Scm_CFunctionTypeClass"
    (c "native_type_cpa")
    ((return-type :type <native-type> :c-name "return_type")
     (argument-types :c-name "argument_types")
     (variadic? :c-name "variadic" :type <boolean>))
-   (printer (Scm_Printf port "#<c-function%A>" (-> (& (-> (SCM_C_FUNCTION obj) common)) name)))
+   (printer (Scm_Printf port "#<c-function%A>" (-> (& (-> (SCM_C_FUNCTION_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-array> :base :no-meta
-   "ScmCArray*" "Scm_CArrayClass"
+ (define-cclass <c-array-type> :base :no-meta
+   "ScmCArrayType*" "Scm_CArrayTypeClass"
    (c "native_type_cpa")
    ((element-type :type <native-type> :c-name "element_type")
     (dimensions))
-   (printer (Scm_Printf port "#<c-array %A>" (-> (& (-> (SCM_C_ARRAY obj) common)) name)))
+   (printer (Scm_Printf port "#<c-array %A>" (-> (& (-> (SCM_C_ARRAY_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-struct> :base :no-meta
-   "ScmCStruct*" "Scm_CStructClass"
+ (define-cclass <c-struct-type> :base :no-meta
+   "ScmCStructType*" "Scm_CStructTypeClass"
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<c-struct %A>" (-> (& (-> (SCM_C_STRUCT obj) common)) name)))
+   (printer (Scm_Printf port "#<c-struct %A>" (-> (& (-> (SCM_C_STRUCT_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-union> :base :no-meta
-   "ScmCUnion*" "Scm_CUnionClass"
+ (define-cclass <c-union-type> :base :no-meta
+   "ScmCUnionType*" "Scm_CUnionTypeClass"
    (c "native_type_cpa")
    ((tag)
     (fields))
-   (printer (Scm_Printf port "#<c-union %A>" (-> (& (-> (SCM_C_UNION obj) common)) name)))
+   (printer (Scm_Printf port "#<c-union %A>" (-> (& (-> (SCM_C_UNION_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
 
- (define-cclass <c-enum> :base :no-meta
-   "ScmCEnum*" "Scm_CEnumClass"
+ (define-cclass <c-enum-type> :base :no-meta
+   "ScmCEnumType*" "Scm_CEnumTypeClass"
    (c "native_type_cpa")
    ((tag)
     (type-spec)
     (enumerator-alist))
-   (printer (Scm_Printf port "#<c-enum %A>" (-> (& (-> (SCM_C_ENUM obj) common)) name)))
+   (printer (Scm_Printf port "#<c-enum %A>" (-> (& (-> (SCM_C_ENUM_TYPE obj) common)) name)))
    (comparer (c Scm_ObjectCompare)))
+
+ (define-cclass <c-opaque-type> :base :no-meta
+   "ScmCOpaqueType*" "Scm_COpaqueTypeClass"
+   (c "native_type_cpa")
+   ()
+   (printer (Scm_Printf port "#<c-opaque %A>" (-> (SCM_C_OPAQUE_TYPE obj) name))))
  )
 
 (define-method initialize ((c <type-constructor-meta>) initargs)
@@ -313,32 +337,29 @@
   (return (SCM_ISA obj SCM_CLASS_TYPE)))
 
 ;;;
-;;; of-type? obj type
+;;; of-type?
 ;;;
 
-(inline-stub
- ;;  This may push C continuations on VM, so must be called on VM.
- (define-cfn Scm_VMOfType (obj type)
-   (cond [(SCM_PROXY_TYPE_P type)
-          (return (Scm_VMIsA obj (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))]
-         [(SCM_DESCRIPTIVE_TYPE_P type)
-          (let* ([k::ScmClass* (SCM_CLASS_OF type)])
-            (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
-            (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) validator)
-                                  type obj)))]
-         [(SCM_NATIVE_TYPE_P type)
-          (return (SCM_MAKE_BOOL
-                   (funcall (-> (SCM_NATIVE_TYPE type) c-of-type)
-                            (SCM_NATIVE_TYPE type)
-                            obj)))]
-         [(SCM_CLASSP type)
-          (return (Scm_VMIsA obj (SCM_CLASS type)))]
-         [else
-          (Scm_Error "Second argument of of-type? must be a type, but got: %S"
-                     type)]))
-
- (define-cproc of-type? (obj type) :constant Scm_VMOfType)
- )
+(define-cproc of-type? (obj type) :constant
+  ;; A proxy type stands for whatever type its binding holds, so strip it
+  ;; first and dispatch on the actual type.
+  (while (SCM_PROXY_TYPE_P type)
+    (set! type (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))
+  (cond [(SCM_DESCRIPTIVE_TYPE_P type)
+         (let* ([k::ScmClass* (SCM_CLASS_OF type)])
+           (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
+           (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) validator)
+                                 type obj)))]
+        [(SCM_NATIVE_TYPE_P type)
+         (return (SCM_MAKE_BOOL
+                  (funcall (-> (SCM_NATIVE_TYPE type) c-of-type)
+                           (SCM_NATIVE_TYPE type)
+                           obj)))]
+        [(SCM_CLASSP type)
+         (return (Scm_VMIsA obj (SCM_CLASS type)))]
+        [else
+         (Scm_Error "Second argument of of-type? must be a type, but got: %S"
+                    type)]))
 
 ;;;
 ;;; subtype? type-or-class type-or-class
@@ -357,9 +378,9 @@
    (cond
     ;; Strip proxy types first
     [(SCM_PROXY_TYPE_P sub)
-     (set! sub (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE sub))))]
+     (set! sub (Scm_ProxyTypeRef (SCM_PROXY_TYPE sub)))]
     [(SCM_PROXY_TYPE_P super)
-     (set! super (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE super))))]
+     (set! super (Scm_ProxyTypeRef (SCM_PROXY_TYPE super)))]
     ;; Filter out the trivial cases
     [(SCM_EQ super (SCM_OBJ SCM_CLASS_TOP)) (return SCM_TRUE)]
     [(SCM_EQ sub (SCM_OBJ SCM_CLASS_BOTTOM)) (return SCM_TRUE)]
@@ -420,15 +441,33 @@
 ;; This can also be called from initialization of precompiled code to recover
 ;; descripitve type instance.
 (inline-stub
+ ;; TRUE iff ARGS contain an locally bound generative type, which is either
+ ;; a local proxy type, or a type already built from one.  If a type constructor
+ ;; gets at least one such type, the resulting type won't be memoized.
+ ;; See %make-local-proxy-type.
+ (define-cfn args-have-local-type (args) ::_Bool :static
+   (dolist [arg args]
+     (when (or (SCM_LOCAL_PROXY_TYPE_P arg)
+               (and (SCM_DESCRIPTIVE_TYPE_P arg)
+                    (-> (SCM_DESCRIPTIVE_TYPE arg) local)))
+       (return TRUE)))
+   (return FALSE))
+
  (define-cfn Scm_ConstructType (ctor args)
    (SCM_ASSERT (!= ctor NULL))
    (unless (Scm_TypeConstructorP ctor)
      (SCM_TYPE_ERROR ctor "<type-constructor-meta>"))
    (let* ([ct::ScmTypeConstructor* (cast ScmTypeConstructor* ctor)]
-          [type (lookup-constructed-type ct args)])
-     (unless (SCM_FALSEP type) (return type))
+          [localp::_Bool (args-have-local-type args)]
+          [type SCM_FALSE])
+     (unless localp
+       (set! type (lookup-constructed-type ct args))
+       (unless (SCM_FALSEP type) (return type)))
      (set! type (Scm_NewInstance (SCM_CLASS ct) (sizeof ScmDescriptiveType)))
      (Scm_ApplyRec2 (-> ct initializer) type args)
+     (when localp
+       (set! (-> (SCM_DESCRIPTIVE_TYPE type) local) TRUE)
+       (return type))
      (return (register-constructed-type ct args type))))
  )
 ;; Public interface to construct a descriptive type.
@@ -452,11 +491,35 @@
     (SCM_TYPE_ERROR gloc "gloc"))
   (return (Scm_MakeProxyType (SCM_IDENTIFIER id) (SCM_GLOC gloc))))
 
+;; Creates a deferred proxy type, a proxy type for a type binding
+;; that isn't available yet.  Called from the compiler when it sees a
+;; define-type; whose value can't be computed at the compile time
+;; (see pass1/define-type).
+;; The optional VALUE is the type the proxy stands for, when the caller
+;; could compute it.  It lets the proxy be dereferenced before its binding
+;; is executed; it is not serialized into precompiled output.
+(define-cproc %make-deferred-proxy-type (id :optional (value #f))
+  (unless (SCM_IDENTIFIERP id)
+    (SCM_TYPE_ERROR id "identifier"))
+  (let* ([p (Scm_MakeProxyType (SCM_IDENTIFIER id) NULL)])
+    (unless (SCM_FALSEP value)
+      (Scm_ProxyTypeSetValue (SCM_PROXY_TYPE p) value))
+    (return p)))
+
+;; Creates a local proxy type, that is, a proxy type that holds the locally
+;; bound generative type, instead of referring to it through a global binding.
+;; This is called at runtime to wrap a generative type for the argument
+;; of type constructors.
+(define-cproc %make-local-proxy-type (type)
+  (return (Scm_MakeLocalProxyType type)))
+
 (define-cproc proxy-type-ref (type)
   (unless (SCM_PROXY_TYPE_P type)
     (SCM_TYPE_ERROR type "proxy-type"))
-  (return (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE type)))))
+  (return (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))
 
+;; Returns the identifier the proxy type refers to, or #f if TYPE is a local
+;; proxy type, which doesn't refer to a binding.
 (define-cproc proxy-type-id (type)
   (unless (SCM_PROXY_TYPE_P type)
     (SCM_TYPE_ERROR type "proxy-type"))
@@ -495,14 +558,18 @@
 ;;;
 
 (define (join-class-names classes)
-  (string-join (map (^k (x->string
-                         (cond [(is-a? k <class>) (class-name k)]
-                               [(is-a? k <descriptive-type>) (~ k'name)]
-                               [(is-a? k <native-type>) (~ k'name)]
-                               [(is-a? k <proxy-type>)
-                                (~ (proxy-type-id k) 'name)]
-                               [else k])))
-                    classes)
+  (define (type-name k)
+    (cond [(is-a? k <class>) (class-name k)]
+          [(is-a? k <descriptive-type>) (~ k'name)]
+          [(is-a? k <native-type>) (~ k'name)]
+          [(is-a? k <proxy-type>)
+           (if-let1 id (proxy-type-id k)
+             (~ id'name)
+             ;; A local proxy type has no name of its own; use the name of
+             ;; the type it stands for.
+             (type-name (proxy-type-ref k)))]
+          [else k]))
+  (string-join (map (^k (x->string (type-name k))) classes)
                " " 'prefix))
 
 (define (make-compound-type-name op-name classes)
@@ -564,7 +631,7 @@
       [_ (error "Invalid arguments:" xs)]))
 
   (receive (args results) (scan-args init-args '())
-    (slot-set! type 'name      (make-compound-type-name '^ init-args))
+    (slot-set! type 'name      (^[] (make-compound-type-name '^ init-args)))
     (slot-set! type 'arguments (construct-type <Tuple> args))
     (slot-set! type 'results   (construct-type <Tuple> results))))
 
@@ -683,7 +750,7 @@
   :metaclass <type-constructor-meta>
   :initializer (^[type args]
                  (assume (every (cut is-a? <> <type>) args))
-                 (slot-set! type 'name (make-compound-type-name '/ args))
+                 (slot-set! type 'name (^[] (make-compound-type-name '/ args)))
                  (slot-set! type 'members args))
   :deconstructor (^[type] (~ type'members))
   :validator (^[type obj] (any (cut of-type? obj <>) (~ type'members)))
@@ -701,7 +768,7 @@
   :initializer (^[type args]
                  (let1 ptype (car args)
                    (assume (is-a? ptype <type>))
-                   (slot-set! type 'name (make-compound-type-name '? `(,ptype)))
+                   (slot-set! type 'name (^[] (make-compound-type-name '? `(,ptype))))
                    (slot-set! type 'primary-type ptype)))
   :deconstructor (^[type] (list (~ type'primary-type)))
   :validator (^[type obj]
@@ -727,7 +794,7 @@
     (dolist [t types]
       (unless (is-a? t <type>)
         (error "Non-type parameter in <Tuple> constructor:" t)))
-    (slot-set! type 'name (make-compound-type-name 'Tuple args))
+    (slot-set! type 'name (^[] (make-compound-type-name 'Tuple args)))
     (slot-set! type 'elements types)
     (slot-set! type 'allow-rest? rest?)))
 
@@ -781,7 +848,8 @@
              (unless (or (not max) (real? max))
                (error "max argument must be a real number or #f, but got:" max))
              (slot-set! type 'name
-                        (make-min-max-len-type-name name (list etype) min max))
+                        (^[] (make-min-max-len-type-name name (list etype)
+                                                         min max)))
              (slot-set! type 'element-type etype)
              (slot-set! type 'min-length min)
              (slot-set! type 'max-length max))
@@ -868,9 +936,9 @@
   :initializer (^[type args]
                  (define objs (map unwrap-syntax args))
                  (slot-set! type 'name
-                            (string->symbol
-                             (string-append
-                              "<Assortment " (x->string objs) ">")))
+                            (^[] (string->symbol
+                                  (string-append
+                                   "<Assortment " (x->string objs) ">"))))
                  (slot-set! type 'instances (sort objs)))
   :deconstructor (^[type] (list (~ type'instances)))
   :validator (^[type obj] (boolean (memv obj (~ type'instances))))
@@ -939,6 +1007,22 @@
      (when c-set (set! (-> z c-set) c-set))
      (return (SCM_OBJ z))))
 
+ (define-cfn opaque-type-of-type (_::ScmNativeType* _) ::int
+   (return FALSE))
+
+ ;; To be called by gauche.native-type#make-c-opaque-pointer-type
+ (define-cproc %make-c-opaque-type (name::<const-cstring>
+                                    c-type-name::<const-cstring>
+                                    super::<class>)
+   (let* ([z::ScmCOpaqueType*
+           (SCM_NEW_INSTANCE ScmCOpaqueType (& Scm_COpaqueTypeClass))])
+     (init-native-type-common (SCM_NATIVE_TYPE z)
+                              name (SCM_OBJ super) c-type-name
+                              0 0 FALSE ;size, alignment bounded
+                              opaque-type-of-type
+                              NULL NULL) ;c-ref, c-set
+     (return (SCM_OBJ z))))
+
  ;; Primitive native type name -> native type instance
  ;; Used by gauche.native-type.  Can be used for other purposes, but
  ;; it's not official and the structure/interface may change.
@@ -950,7 +1034,7 @@
  (define-cproc %builtin-native-type-table ()
    (return builtin-native-types))
 
- ;; define-native-type NAME CVAR SUPER CTYPE PRED BOX UNBOX
+ ;; define-native-type NAME CVAR SUPER CTYPE PRED BOX UNBOX UNSIGNEDP KEY
  ;;   NAME - Symbol for Scheme name
  ;;   CVAR - C variable name to store the ScmObj (e.g., Scm_NativeFixnumType)
  ;;   SUPER - C macro name for superclass
@@ -959,9 +1043,16 @@
  ;;          (auto-wrapped into (ScmNativeType*, ScmObj) -> int)
  ;;   BOX - C function ctype -> ScmObj for boxing
  ;;   UNBOX - C function ScmObj -> ctype for unboxing
+ ;;   UNSIGNEDP - C boolean expression whether the type is unsigned
+ ;;   KEY - Optional.  The key for builtin-native-types table, which is
+ ;;         also the native type signature.  Defaults to CTYPE.  Must be
+ ;;         given if CTYPE consists of multiple words.
 
  (define-cise-stmt define-native-type
    [(_ name cvar super ctype pred box unbox unsignedp)
+    `(define-native-type ,name ,cvar ,super ,ctype ,pred ,box ,unbox
+       ,unsignedp ,ctype)]
+   [(_ name cvar super ctype pred box unbox unsignedp key)
     (define c-of-type-name (symbol-append name '-c-of-type))
     (define c-ref-name (symbol-append name '-ptr-ref))
     (define c-set-name (symbol-append name '-ptr-set))
@@ -1009,7 +1100,7 @@
                                  TRUE)])
        (set! ,priv-sym z)
        (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
-                         ',ctype (SCM_OBJ z) 0)
+                         ',key (SCM_OBJ z) 0)
        (Scm_MakeBinding (Scm_GaucheModule)
                         (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
                         SCM_BINDING_INLINABLE)
@@ -1064,6 +1155,15 @@
     SCM_INTEGER_FITS_INT64_P Scm_MakeInteger64 Scm_GetInteger64 FALSE)
   (define-native-type <uint64>  Scm_NativeUint64Type  SCM_CLASS_INTEGER uint64_t
     SCM_INTEGER_FITS_UINT64_P Scm_MakeIntegerU64 Scm_GetIntegerU64 TRUE)
+  ;; NB: We assume long long is 64bit.
+  (define-native-type <longlong>  Scm_NativeLongLongType  SCM_CLASS_INTEGER
+    "long long"
+    SCM_INTEGER_FITS_INT64_P Scm_MakeInteger64 Scm_GetInteger64 FALSE
+    longlong)
+  (define-native-type <ulonglong> Scm_NativeUlongLongType SCM_CLASS_INTEGER
+    "unsigned long long"
+    SCM_INTEGER_FITS_UINT64_P Scm_MakeIntegerU64 Scm_GetIntegerU64 TRUE
+    ulonglong)
 
   (define-native-type <size_t>    Scm_NativeSizetType    SCM_CLASS_INTEGER size_t
     Scm_IntegerFitsSizeP Scm_SizeToInteger Scm_IntegerToSize TRUE)
@@ -1079,18 +1179,51 @@
     Scm_IntegerFitsUintptrP Scm_UintptrToInteger Scm_IntegerToUintptr TRUE)
 
   (define-native-type <float>   Scm_NativeFloatType   SCM_CLASS_REAL float
-    SCM_REALP Scm_MakeFlonum Scm_GetDouble FALSE)
+    SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE)
   (define-native-type <double>  Scm_NativeDoubleType  SCM_CLASS_REAL double
-    SCM_REALP Scm_MakeFlonum Scm_GetDouble FALSE)
+    SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE)
+  ;; NB: Our flonum is double, so the extra precision of long double is
+  ;; lost when it is converted to and from Scheme.
+  (define-native-type <longdouble> Scm_NativeLongDoubleType SCM_CLASS_REAL
+    "long double"
+    SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE
+    longdouble)
+  (define-native-type <float-complex> Scm_NativeFloatComplexType
+    SCM_CLASS_COMPLEX "float _Complex"
+    SCM_NUMBERP Scm_FloatComplexToComplex Scm_GetFloatComplex FALSE
+    float_complex)
+  (define-native-type <double-complex> Scm_NativeDoubleComplexType
+    SCM_CLASS_COMPLEX "double _Complex"
+    SCM_NUMBERP Scm_DoubleComplexToComplex Scm_GetDoubleComplex FALSE
+    double_complex)
+  (define-native-type <longdouble-complex> Scm_NativeLongDoubleComplexType
+    SCM_CLASS_COMPLEX "long double _Complex"
+    SCM_NUMBERP Scm_LongDoubleComplexToComplex Scm_GetLongDoubleComplex FALSE
+    longdouble_complex)
+
+  ;; <ScmObj> is a reference to ScmObj---it is basically <top>, but
+  ;; we provide a dedicated native type so that ScmObj is passed to and from
+  ;; foreign functions.
+  (define-native-type <ScmObj>  Scm_NativeScmObjType  SCM_CLASS_TOP ScmObj
+    SCM_OBJP SCM_OBJ SCM_OBJ FALSE)
 
   ;; Technically, time_t can be a real numebr.
   (define-native-type <time_t>  Scm_UnixTimeType      SCM_CLASS_NUMBER time_t
     SCM_REALP Scm_MakeSysTime Scm_GetSysTime FALSE)
 
+  ;; Map C integer to Scheme boolean.  In stub, <boolean> is accepted,
+  ;; but to use within native type, we need a <native-type> equivalent.
+  ;; We also allow 'bool in native type signature.
+  (define-native-type <c-bool>  Scm_NativeBoolType    SCM_CLASS_INTEGER _Bool
+    SCM_BOOLP SCM_MAKE_BOOL SCM_BOOL_VALUE FALSE)
+  (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
+                    'bool (Scm_NativeBoolType) (sizeof _Bool))
+
   ;; We map C char to our character in 8-bit range.  If you want to use
   ;; char as a one-byte integer, use <c-int8> or <c-uint8>.
+  ;; The signedness of plain char is platform-dependent.
   (define-native-type <c-char>   Scm_NativeCCharType   SCM_CLASS_INTEGER char
-    SCM_CHAR_FITS_LATIN1_P SCM_MAKE_CHAR SCM_CHAR_VALUE FALSE)
+    SCM_CHAR_FITS_LATIN1_P SCM_MAKE_CHAR SCM_CHAR_VALUE (== CHAR_MIN 0))
   ;; A special case of NUL-terminated string.
   (define-native-type <c-string> Scm_NativeCStringType SCM_CLASS_STRING "const char*"
     SCM_STRINGP SCM_MAKE_STR_COPYING SCM_STRING_CONST_CSTRING FALSE)
@@ -1138,43 +1271,49 @@
  (define-cfn Scm_NativeTypeEqualP (a::ScmNativeType* b::ScmNativeType*) ::int
    (cond
     [(SCM_EQ a b) (return TRUE)]
-    [(SCM_C_POINTER_P a)
-     (return (and (SCM_C_POINTER_P b)
-                  (Scm_NativeTypeEqualP (-> (SCM_C_POINTER a) pointee-type)
-                                        (-> (SCM_C_POINTER b) pointee-type))))]
-    [(SCM_C_FUNCTION_P a)
+    [(SCM_C_POINTER_TYPE_P a)
+     (return (and (SCM_C_POINTER_TYPE_P b)
+                  (Scm_NativeTypeEqualP (-> (SCM_C_POINTER_TYPE a) pointee-type)
+                                        (-> (SCM_C_POINTER_TYPE b) pointee-type))))]
+    [(SCM_C_FUNCTION_TYPE_P a)
      (return
-      (and (SCM_C_FUNCTION_P b)
-           (Scm_NativeTypeEqualP (-> (SCM_C_FUNCTION a) return-type)
-                                 (-> (SCM_C_FUNCTION b) return-type))
-           (native_type_list_equalP (-> (SCM_C_FUNCTION a) argument-types)
-                                    (-> (SCM_C_FUNCTION b) argument-types))
-           (== (-> (SCM_C_FUNCTION a) variadic)
-               (-> (SCM_C_FUNCTION b) variadic))))]
-     [(SCM_C_ARRAY_P a)
+      (and (SCM_C_FUNCTION_TYPE_P b)
+           (Scm_NativeTypeEqualP (-> (SCM_C_FUNCTION_TYPE a) return-type)
+                                 (-> (SCM_C_FUNCTION_TYPE b) return-type))
+           (native_type_list_equalP (-> (SCM_C_FUNCTION_TYPE a) argument-types)
+                                    (-> (SCM_C_FUNCTION_TYPE b) argument-types))
+           (== (-> (SCM_C_FUNCTION_TYPE a) variadic)
+               (-> (SCM_C_FUNCTION_TYPE b) variadic))))]
+     [(SCM_C_ARRAY_TYPE_P a)
       (return
-       (and (SCM_C_ARRAY_P b)
-            (Scm_NativeTypeEqualP (-> (SCM_C_ARRAY a) element-type)
-                                  (-> (SCM_C_ARRAY b) element-type))
-            (native_type_list_equalP (-> (SCM_C_ARRAY a) dimensions)
-                                     (-> (SCM_C_ARRAY b) dimensions))))]
-     [(or (SCM_C_STRUCT_P a) (SCM_C_UNION_P a))
+       (and (SCM_C_ARRAY_TYPE_P b)
+            (Scm_NativeTypeEqualP (-> (SCM_C_ARRAY_TYPE a) element-type)
+                                  (-> (SCM_C_ARRAY_TYPE b) element-type))
+            (native_type_list_equalP (-> (SCM_C_ARRAY_TYPE a) dimensions)
+                                     (-> (SCM_C_ARRAY_TYPE b) dimensions))))]
+     [(or (SCM_C_STRUCT_TYPE_P a) (SCM_C_UNION_TYPE_P a))
+      ;; An incomplete type is only equal to itself, which is already
+      ;; checked above.  Note that it can be completed later.
       (return
        (and (SCM_EQ (Scm_ClassOf (SCM_OBJ a)) (Scm_ClassOf (SCM_OBJ b)))
-            (Scm_EqvP (-> (SCM_C_STRUCT a) tag)
-                      (-> (SCM_C_STRUCT b) tag))
-            (native_type_list_equalP (-> (SCM_C_ARRAY a) dimensions)
-                                     (-> (SCM_C_ARRAY b) dimensions))))]
-     [(SCM_C_ENUM_P a)
+            (not (SCM_FALSEP (-> (SCM_C_STRUCT_TYPE a) fields)))
+            (not (SCM_FALSEP (-> (SCM_C_STRUCT_TYPE b) fields)))
+            (Scm_EqvP (-> (SCM_C_STRUCT_TYPE a) tag)
+                      (-> (SCM_C_STRUCT_TYPE b) tag))
+            ;; fields is a list of (name type offset).  Union shares
+            ;; the same structure.
+            (native_type_list_equalP (-> (SCM_C_STRUCT_TYPE a) fields)
+                                     (-> (SCM_C_STRUCT_TYPE b) fields))))]
+     [(SCM_C_ENUM_TYPE_P a)
       (return
-       (and (SCM_C_ENUM_P b)
-            (Scm_EqvP (-> (SCM_C_ENUM a) tag)
-                      (-> (SCM_C_ENUM b) tag))
-            (enum_type_spec_equalP (-> (SCM_C_ENUM a) type-spec)
-                                   (-> (SCM_C_ENUM b) type-spec))
+       (and (SCM_C_ENUM_TYPE_P b)
+            (Scm_EqvP (-> (SCM_C_ENUM_TYPE a) tag)
+                      (-> (SCM_C_ENUM_TYPE b) tag))
+            (enum_type_spec_equalP (-> (SCM_C_ENUM_TYPE a) type-spec)
+                                   (-> (SCM_C_ENUM_TYPE b) type-spec))
             ;; enumerator-alist holds only symbols and integers
-            (Scm_EqualP (-> (SCM_C_ENUM a) enumerator-alist)
-                        (-> (SCM_C_ENUM b) enumerator-alist))))]
+            (Scm_EqualP (-> (SCM_C_ENUM_TYPE a) enumerator-alist)
+                        (-> (SCM_C_ENUM_TYPE b) enumerator-alist))))]
      [else (return FALSE)]))
 
  ) ;inline-stub
@@ -1222,7 +1361,7 @@
            (-> h flags) flags)
      (return (SCM_OBJ h))))
 
- ;; Public API for stubgen FFI
+ ;; Public API for the FFI stub subsystem
  (define-cfn Scm_MakeNativeHandleSimple (ptr::void* type::ScmObj) ::ScmObj
    (SCM_ASSERT (SCM_NATIVE_TYPE_P type))
    (return (Scm__MakeNativeHandle ptr
@@ -1282,15 +1421,15 @@
  (define-cfn c-pointer-set (_::ScmNativeType* ptr::void* obj)
    ::void :static
    (unless (and (SCM_NATIVE_HANDLE_P obj)
-                (SCM_C_POINTER_P (-> (SCM_NATIVE_HANDLE obj) type)))
+                (SCM_C_POINTER_TYPE_P (-> (SCM_NATIVE_HANDLE obj) type)))
      (Scm_Error "c-pointer handle required, bot got: %S" obj))
    (set! (* (cast void** ptr)) (-> (SCM_NATIVE_HANDLE obj) ptr)))
 
  (define-cfn %make-c-pointer-type-fn (pointer-type-name::(const char *)
                                       pointee-type)
    :static
-   (let* ([z::ScmCPointer*
-           (SCM_NEW_INSTANCE ScmCPointer (& Scm_CPointerClass))])
+   (let* ([z::ScmCPointerType*
+           (SCM_NEW_INSTANCE ScmCPointerType (& Scm_CPointerTypeClass))])
      ;; Fill in common fields
      (init-native-type-common (& (-> z common))
                               pointer-type-name
@@ -1321,8 +1460,8 @@
                                      return-type
                                      argument-types
                                      variadic?::<boolean>)
-  (let* ([z::ScmCFunction*
-          (SCM_NEW_INSTANCE ScmCFunction (& Scm_CFunctionClass))])
+  (let* ([z::ScmCFunctionType*
+          (SCM_NEW_INSTANCE ScmCFunctionType (& Scm_CFunctionTypeClass))])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1357,8 +1496,8 @@
                                   size::<fixnum>
                                   alignment::<fixnum>
                                   dimensions)
-  (let* ([z::ScmCArray*
-          (SCM_NEW_INSTANCE ScmCArray (& Scm_CArrayClass))])
+  (let* ([z::ScmCArrayType*
+          (SCM_NEW_INSTANCE ScmCArrayType (& Scm_CArrayTypeClass))])
     ;; Fill in common fields
     ;; If the first element of dimensions is no a fixnum
     ;; (then it must be '* --- checked by the caller), the array
@@ -1380,6 +1519,8 @@
     (return (SCM_OBJ z))))
 
 ;; For struct/union, we keep tag and field-list in dedicated fields.
+;; If field-list is #f, the type is incomplete; it can be completed later
+;; with %c-struct/union-type-complete!.
 (define-cproc %make-c-struct/union-type (klass::<class>
                                          type-name::<const-cstring>
                                          size::<fixnum>
@@ -1387,7 +1528,7 @@
                                          bounded-p::<int>
                                          tag-name::<symbol>?
                                          field-list)
-  (let* ([z::ScmCStruct* (SCM_NEW_INSTANCE ScmCStruct klass)])
+  (let* ([z::ScmCStructType* (SCM_NEW_INSTANCE ScmCStructType klass)])
     ;; Fill in common fields
     (init-native-type-common (& (-> z common))
                              type-name
@@ -1403,6 +1544,30 @@
     (set! (-> z tag) (?: tag-name (SCM_OBJ tag-name) SCM_FALSE))
     (set! (-> z fields) field-list)
     (return (SCM_OBJ z))))
+
+;; Complete an incomplete struct/union type in place.  The caller
+;; (gauche.native-type) computes the layout.
+(define-cproc %c-struct/union-type-complete! (type
+                                              size::<fixnum>
+                                              alignment::<fixnum>
+                                              bounded-p::<int>
+                                              field-list)
+  ::<void>
+  (unless (or (SCM_C_STRUCT_TYPE_P type) (SCM_C_UNION_TYPE_P type))
+    (SCM_TYPE_ERROR type "<c-struct-type> or <c-union-type>"))
+  (let* ([z::ScmCStructType* (SCM_C_STRUCT_TYPE type)]
+         [nt::ScmNativeType* (& (-> z common))])
+    (unless (SCM_FALSEP (-> z fields))
+      (Scm_Error "%S is already complete" type))
+    (SCM_ASSERT (SCM_LISTP field-list))
+    (set! (-> nt size) size)
+    (set! (-> nt alignment) alignment)
+    (set! (-> nt bounded-p) bounded-p)
+    (set! (-> z fields) field-list)))
+
+(define-cproc %c-struct/union-type-incomplete? (type) ::<boolean>
+  (return (and (or (SCM_C_STRUCT_TYPE_P type) (SCM_C_UNION_TYPE_P type))
+               (SCM_FALSEP (-> (SCM_C_STRUCT_TYPE type) fields)))))
 
 (inline-stub
  ;; Size of enum is implementation-dependent.  For our purpose, the external
@@ -1459,11 +1624,11 @@
                                   enumerator-alist)
    (SCM_ASSERT (SCM_NATIVE_TYPE_P underlying))
    (let* ([u::ScmNativeType* (SCM_NATIVE_TYPE underlying)]
-          [z::ScmCEnum* (SCM_NEW_INSTANCE ScmCEnum (& Scm_CEnumClass))]
+          [z::ScmCEnumType* (SCM_NEW_INSTANCE ScmCEnumType (& Scm_CEnumTypeClass))]
           [nt::ScmNativeType* (& (-> z common))])
      ;; Borrow integer accessors from the underlying integral native type.
      ;; (We copy field-by-field rather than the whole struct, to keep z's
-     ;; instance header pointing at Scm_CEnumClass.)
+     ;; instance header pointing at Scm_CEnumTypeClass.)
      (set! (-> nt name) (SCM_INTERN type-name))
      (set! (-> nt super) (SCM_OBJ SCM_CLASS_INTEGER))
      (set! (-> nt c-type-name) c-type-name)
@@ -1548,8 +1713,8 @@
 ;; We export those only to be used by selected library modules to
 ;; workaround dependency issues. User programs should use gauche.native-type
 ;; for these identifiers.
-(export <native-handle> <c-pointer> <c-array> <c-struct> <c-union> <c-function>
-        <c-enum>)
+(export <native-handle> <c-pointer-type> <c-array-type> <c-struct-type> <c-union-type> <c-function-type>
+        <c-enum-type> <c-opaque-type>)
 
 (let ((xfer (with-module gauche.internal %transfer-bindings)))
   (xfer (current-module)
@@ -1564,11 +1729,13 @@
         '(construct-type
           deconstruct-type
           wrap-with-proxy-type
+          %make-deferred-proxy-type
+          %make-local-proxy-type
           proxy-type-ref
           proxy-type-id
           ;; these are used by native-supp.scm, so make them visible from
           ;; gauche.internal
-          <c-pointer> <c-array> <c-struct> <c-union> <c-function>
+          <c-pointer-type> <c-array-type> <c-struct-type> <c-union-type> <c-function-type>
           ;; followings are called from procedure-type (libproc)
           reconstruct-procedure-type
           compute-procedure-type

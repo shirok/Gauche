@@ -59,6 +59,13 @@
 (test-assert (check-arg-true string? ""))
 (test-assert (check-arg-true string? "hello"))
 (test-assert (check-arg-true symbol? 'hello))
+;; Checks with check-impl? types
+(test-assert (check-arg-true (check-impl? <number>) 3))
+(test-assert (check-arg-true (check-impl? <number>) 3+2i))
+(test-assert (check-arg-true (check-impl? <number>) 3.8))
+(test-assert (check-arg-true (check-impl? <pair>) '(1 2 3)))
+(test-assert (check-arg-true (check-impl? <string>) "hello"))
+(test-assert (check-arg-true (check-impl? <symbol>) 'hello))
 ;; Only enable on implementations supporting symbol->keyword
 ;; (test-assert (check-arg-true keyword? (symbol->keyword 'hello)))
 (test-assert (check-arg-true vector? #(1 2 3)))
@@ -134,6 +141,11 @@
 (test-assert ((lambda-checked (a (b integer?)) #t) "hello" 3))
 (test-error ((lambda-checked ((a integer?)) #t) "hello"))
 (test-error ((lambda-checked (a (b integer?)) #t) "hello" "hi"))
+;; SRFI 273
+(test-assert ((lambda-checked ((b integer?)) => (integer?) 2) 1))
+(test-error ((lambda-checked ((b integer?)) => (integer?) #t) 1))
+(test-error ((lambda-checked () => (integer?) #t)))
+(test-error ((lambda-checked args => (integer?) #t) 1 2 3))
 ;; Rest args. Sample implementation doesn't reliably pass this.
 ;; (test-assert (lambda-checked (a . c) #t))
 ;; (test-assert (lambda-checked ((a integer?) . c) #t))
@@ -181,6 +193,23 @@
 (test-assert (checked-case-lambda 3 "hello"))
 (test-assert (checked-case-lambda "hi" "hello"))
 (test-error (checked-case-lambda 3 3 3))
+;; SRFI 273 return value checks
+(define good-return-checked-case-lambda
+  (case-lambda-checked
+   (() => (integer?) 1)
+   (((a integer?)) => (integer?) 1)
+   (args => (integer?) 1)))
+(test-assert (good-return-checked-case-lambda 1))
+(test-assert (good-return-checked-case-lambda))
+(test-assert (good-return-checked-case-lambda 1 2 3))
+(define bad-return-checked-case-lambda
+  (case-lambda-checked
+   (() => (integer?) #t)
+   (((a integer?)) => (integer?) #t)
+   (args => (integer?) #t)))
+(test-error (bad-return-checked-case-lambda 1))
+(test-error (bad-return-checked-case-lambda))
+(test-error (bad-return-checked-case-lambda 1 2 3))
 (test-end "case-lambda-checked")
 
 

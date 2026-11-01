@@ -40,10 +40,16 @@
           default-ffi-subsystem
           ffi-subsystem-available?
           define-c-function
-          <foreign-c-function>
-          <foreign-c-callback>
-          foreign-function-info)
-  )
+          define-c-callback
+          define-c-constant
+          define-c-enum
+          foreign-function-info
+
+          native-alloc
+          native-free
+          <FILE*>
+          port->FILE*
+          close-FILE*))
 (select-module gauche.ffi)
 
 ;; API
@@ -119,15 +125,46 @@
 ;;  handle can be passed to a foreign function expecting a function
 ;;  pointer.
 ;;
+;;  A C constant---typically a #define'd value, but an enum member works
+;;  as well---can be reified as a Scheme constant:
+;;
+;;    (define-c-constant <name> [<type>])
+;;
+;;  <name> is translated to the C identifier by the same rule as
+;;  define-c-function.  The header that defines it must be listed in the
+;;  :c-headers option of with-ffi.
+;;
+;;  <type> is an evaluated expression yielding a typespec, and tells how
+;;  the C value is boxed.  It defaults to <fixnum>.
+;;
+;;  A C enum can be reified as a whole:
+;;
+;;    (define-c-enum <enum-set-name> (<name> ...) [<base-type>])
+;;    (define-c-enum (<enum-set-name> <c-tag>) (<name> ...) [<base-type>])
+;;
+;;  Each <name> is bound as a Scheme constant, just as define-c-constant
+;;  does, and <enum-set-name> is bound to the <c-enum-type> native type that
+;;  collects them.  Use c-enum-value and c-enum-symbol to convert between
+;;  the enumerator symbols and their values.
+;;
+;;  In the first form the C tag is derived from <enum-set-name> by the
+;;  same name translation.  The second form gives the tag separately,
+;;  either as a symbol, or as #f for an anonymous enum.
+;;
+;;  <base-type> is an evaluated expression yielding a typespec; it fixes
+;;  the enum's size and alignment.  It must match how the compiler handles
+;;  the enum.  If no explicit <base-type> is given, we use
+;;  `gauche.native-type#default-c-enum-base-type`.
+;;
 
 ;;;
-;;; <foreign-c-function> - parsed representation of a define-c-function form
+;;; Classes to handle foreign declaratoins.
 ;;;
 
-;; Created by parse-define-c-function at macro-expansion time.
-;; Backend macros receive a list of its instances.
-;; 'Type' in arg-types and return-type should be either an instance
-;; of <native-type> or <top>.
+;; The with-*-ffi macros expands define-c-function etc. into an expression
+;; building an instance of these classes, e.g. (make <foreign-c-function> ...).
+;; Note that they are evaluated at runtime, so the isntances are not
+;; available at the macro-expansion time.
 
 (define-class <foreign-c-function> ()
   ((scheme-name  :init-keyword :scheme-name)  ; symbol
@@ -148,14 +185,46 @@
    (return-type  :init-keyword :return-type)  ; native-type
    ))
 
-;; Resolve a typespec to a <native-type> instance or <top> at runtime.
+(define-class <foreign-c-constant> ()
+  ((scheme-name  :init-keyword :scheme-name)  ; symbol
+   (c-name       :init-keyword :c-name)       ; string, C-safe name
+   (type         :init-keyword :type)         ; <native-type>
+   ))
+
+(define-class <foreign-c-enum> ()
+  ((scheme-name  :init-keyword :scheme-name)  ; symbol, bound to the <c-enum-type>
+   (tag          :init-keyword :tag)          ; symbol or #f (anonymous)
+   (enumerators  :init-keyword :enumerators)  ; ((scheme-name . c-name) ...)
+   (type         :init-keyword :type)         ; the (incomplete) <c-enum-type>
+   ))
+
+;; A helper class to manage code fragments passed to subsystem macros
+;; The instances are created during macro expansion.
+
+(define-class <cdef-spec> ()
+  ((name :init-keyword :name)
+   (kind :init-keyword :kind)  ; :function, :callbac, :constant or :enum
+   (expr :init-keyword :expr)  ; S-expr to create <foreign-*> class
+   (body-name :init-keyword :body-name)  ; for callbacks, keep body name
+   (enum-type-expr :init-keyword :enum-type-expr) ; (make-c-enum-type ...)
+   ))
+
+;; utility
+(define (of-kind? spec kind) (eq? (~ spec'kind) kind))
+
+;; Resolve a typespec to a <native-type> instance at runtime.
 ;; Reference to this procedure is inserted by macro expander.
-;; A typespec is either a <native-type> instance (returned as-is), <top>,
-;;  or a native-type signature.
+;; A typespec is either a <native-type> instance (returned as-is), <top>
+;;  (a synonym of <ScmObj>), or a native-type signature.
 (define (%resolve-typespec spec)
   (cond [(is-a? spec <native-type>) spec]
-        [(eq? spec <top>) spec]
+        [(eq? spec <top>) <ScmObj>]
         [else (native-type spec)]))
+
+;; Derive the C identifier from the Scheme name.  A leading '%' is
+;; dropped, so that a Scheme wrapper can bear the unprefixed name.
+(define (%ffi-c-name name)
+  (cgen-safe-name-friendly (regexp-replace #/^%/ (x->string name) "")))
 
 ;; Parse a define-c-function arg-types list.  The list may end with the
 ;; symbol '... to designate a variadic C function (the same convention as
@@ -167,15 +236,6 @@
     (values (drop-right specs 1) #t)
     (values specs #f)))
 
-;; This is to convert FFI type info to S-expr for documentation purpose
-;; (attached to foreign-function-info).  We convert <top> to ScmObj
-;; for the time being.  It is kludge, as it can't be converted back
-;; to <native-type>.
-(define (%signature-type type)
-  (if (eq? type <top>)
-    'ScmObj
-    (native-type->signature type)))
-
 ;;;
 ;;; Susbsystem selection
 ;;;
@@ -183,7 +243,7 @@
 ;; API
 (define (ffi-subsystem-available? kw)
   (case kw
-    [(:stubgen) #t]
+    [(:stub :aot) #t]
     [(:native) (boolean (#/^x86_64-.*/ (gauche-architecture)))]
     [else (error "Unrecognized FFI subsystem:" kw)]))
 
@@ -192,7 +252,7 @@
   (make-parameter
    (if (ffi-subsystem-available? :native)
      :native
-     :stubgen)))
+     :stub)))
 
 ;;;
 ;;; Syntax
@@ -203,9 +263,26 @@
     [(_ . _)
      (syntax-error "define-c-function used outside with-ffi")]))
 
-(autoload gauche.ffi.stubgen (:macro with-stubgen-ffi))
+(define-syntax define-c-callback
+  (syntax-rules ()
+    [(_ . _)
+     (syntax-error "define-c-callback used outside with-ffi")]))
+
+(define-syntax define-c-constant
+  (syntax-rules ()
+    [(_ . _)
+     (syntax-error "define-c-constant used outside with-ffi")]))
+
+(define-syntax define-c-enum
+  (syntax-rules ()
+    [(_ . _)
+     (syntax-error "define-c-enum used outside with-ffi")]))
+
+(autoload gauche.ffi.stub    (:macro with-stub-ffi))
+(autoload gauche.ffi.aot     (:macro with-aot-ffi))
 (autoload gauche.ffi.native  (:macro with-native-ffi))
-(autoload gauche.ffi.ffiaux  native-alloc native-free)
+(autoload gauche.ffi.ffiaux  native-alloc native-free
+                             <FILE*> port->FILE* close-FILE*)
 
 (define-syntax with-ffi
   (er-macro-transformer
@@ -215,33 +292,68 @@
         ;; Variable dlo-var is bound to the result of dlo-expr
         ;; in the expaneded with-*-ffi macros.
         (define dlo-var (gensym "dlo-"))
-        ;; Chain define-c-function and define-c-callback
-        (define cdefs '())
         ;; Chain scheme procedure definitions for c-callback body
         ;; procedure.
         ;;   (define <body-name> (lambda <vars> <body> ...))
         (define ccb-defines '())
-        ;; (name body-name) per callback, in declaration order.  Threaded
-        ;; through to with-native-ffi so it can pair each callback with
-        ;; its body procedure when batching them into one codepad.
-        (define ccb-info '())
-        (define subsystem
-          (get-keyword :subsystem (unwrap-syntax options)
-                       (default-ffi-subsystem)))
+
         (define ids (list (r'define-c-function)
-                          (r'define-c-callback)))
-        ;; Forms other than C FFIs or callbacks
-        (define extra-forms
-          (filter-map
-           (^[form]
-             (if (and (pair? form)
-                      (member (r (car form)) ids c)
-                      (pair? (cdr form)))
-               (begin
-                 (push! cdefs (unwrap-syntax form))
-                 #f)
-               form))
-           body))
+                          (r'define-c-callback)
+                          (r'define-c-constant)
+                          (r'define-c-enum)))
+        ;; cdefs - define-c-* forms, unwrap-syntaxed
+        ;; extra-forms - other than those
+        (define-values [cdefs extra-forms]
+          (receive [cdefs extra-forms]
+              (partition (^[form] (and (pair? form)
+                                       (member (r (car form)) ids c)
+                                       (pair? (cdr form))))
+                         body)
+            (values (map unwrap-syntax cdefs) extra-forms)))
+
+        ;; Determine which subsystem to use.  This has to be defined
+        ;; before we create cdef-specs.
+        (define subsystem
+          (cond [(get-keyword :subsystem (unwrap-syntax options) #f)]
+                [((with-module gauche.internal precompiling?)) :aot]
+                ;; TRANSIENT: native subsystem cannot handle constants and enums
+                ;; yet, so we force stub subsystem if we have any.
+                [(any (^[cdef] (memq (car cdef)
+                                     '(define-c-constant define-c-enum)))
+                      cdefs)
+                 :stub]
+                [else (default-ffi-subsystem)]))
+
+        ;; cfn-specs is ((name . cfn-expr) ...), where name is a symbol
+        ;; name of cfn, and cfn-expr is (make <foreivn-c-function> ...)
+        ;; constructed above.  The subsystem macro should rearrange
+        ;; cfn-specs so that cfn-expr is evaluated in proper context.
+        (define cdef-specs
+          (map (^[cdef]
+                 (define (cdef-name form)
+                   (match form
+                     [('define-c-enum (name _) . _) name]
+                     [(_ name . _) name]))
+                 (define (make-spec kind expr . args)
+                   (apply make <cdef-spec> :name (cdef-name cdef)
+                          :kind kind :expr expr args))
+                 (ecase (car cdef) ; forms are already unwrapped
+                   [(define-c-function)
+                    (make-spec :function (make-cfn-expr cdef))]
+                   [(define-c-callback)
+                    ;; body-name needs to be interned
+                    (let1 body-name
+                        (string->symbol
+                         (symbol->string (gensym "%c-callback-body-")))
+                      (make-spec :callback (make-ccb-expr cdef body-name)
+                                 :body-name body-name))]
+                   [(define-c-constant)
+                    (make-spec :constant (make-ccst-expr cdef))]
+                   [(define-c-enum)
+                    (make-spec :enum (make-cenum-expr cdef)
+                               :enum-type-expr (make-cenum-type-expr cdef))]))
+               (reverse cdefs)))
+
         ;; For each define-c-function form, build a runtime
         ;; (make <foreign-c-function> ...) expression.
         ;; define-c-function arg-types may end with '... to mark a variadic
@@ -250,9 +362,7 @@
         (define (make-cfn-expr cfn-form)
           (match cfn-form
             [(_ name arg-types-expr rettype-expr)
-             (define c-name
-               (cgen-safe-name-friendly
-                (regexp-replace #/^%/ (x->string name) "")))
+             (define c-name (%ffi-c-name name))
              (quasirename r
                `(receive (arg-types* variadic?*)
                     (%parse-ffi-arg-types ,arg-types-expr)
@@ -265,57 +375,126 @@
                       :return-type rtype
                       :variadic? variadic?*
                       :tag-info `((foreign-function-tag
-                                   :dlobj ,(~ ,dlo-var'path)
+                                   ;; The :aot subsystem evaluates this at
+                                   ;; macro-expansion time, where the dlobj
+                                   ;; doesn't exist yet.
+                                   :dlobj ,(and ,dlo-var (~ ,dlo-var'path))
                                    :subsystem ,',subsystem
-                                   :argtypes ,(map %signature-type atypes)
-                                   :rettype ,(%signature-type rtype)))))))]))
+                                   :argtypes ,(map native-type->signature atypes)
+                                   :rettype ,(native-type->signature rtype)))))))]))
         ;; For each define-c-callback form, build a runtime
         ;; (make <foreign-c-callback> ...) expression.
         ;; We also generate a definition of Scheme-side procedure
-        ;; with the generated body-name.
-        (define (make-ccb-expr ccb-form)
+        ;; which will be bound to body-name.
+        (define (make-ccb-expr ccb-form body-name)
           (match ccb-form
             [(_ name ((vars type-exprs) ...) rettype-expr . body)
-             ;; Use an interned symbol so the symbol the C stub interns via
-             ;; SCM_INTERN matches the binding made by `define' below.
-             (let ([body-name
-                    (string->symbol
-                     (symbol->string (gensym "%c-callback-body-")))])
-               (unless (every symbol? vars)
-                 (error "define-c-callback: arglist vars must be identifiers:"
-                        vars))
-               (push! ccb-defines
-                      (quasirename r
-                        `(define ,body-name (lambda ,vars ,@body))))
-               (push! ccb-info (list name body-name))
-               (quasirename r
-                 `(let ([atypes (list ,@(map (^t (quasirename r
-                                                   `(%resolve-typespec ,t)))
-                                             type-exprs))]
-                        [rtype (%resolve-typespec ,rettype-expr)])
-                    (make <foreign-c-callback>
-                      :scheme-name ',name
-                      :c-name ,(cgen-safe-name-friendly (x->string name))
-                      :body-name ',body-name
-                      :arg-vars ',vars
-                      :arg-types atypes
-                      :return-type rtype))))]
+             (unless (every symbol? vars)
+               (error "define-c-callback: arglist vars must be identifiers:"
+                      vars))
+             (push! ccb-defines
+                    (quasirename r
+                      `(define ,body-name (lambda ,vars ,@body))))
+             (quasirename r
+               `(let ([atypes (list ,@(map (^t (quasirename r
+                                                 `(%resolve-typespec ,t)))
+                                           type-exprs))]
+                      [rtype (%resolve-typespec ,rettype-expr)])
+                  (make <foreign-c-callback>
+                    :scheme-name ',name
+                    :c-name ,(cgen-safe-name-friendly (x->string name))
+                    :body-name ',body-name
+                    :arg-vars ',vars
+                    :arg-types atypes
+                    :return-type rtype)))]
             [_ (error "Malformed define-c-callback form:" ccb-form)]))
 
-        (define (make-cdef-expr form)
-          (ecase (car form) ; forms are already unwrapped
-            [(define-c-function) (make-cfn-expr form)]
-            [(define-c-callback) (make-ccb-expr form)]))
+        ;; For each define-c-constant form, build a runtime
+        ;; (make <foreign-c-constant> ...) expression.  The type is
+        ;; optional and defaults to <fixnum>.
+        ;; Example: (define-c-constant MAX-VALUE)
+        (define (make-ccst-expr ccst-form)
+          (match ccst-form
+            [(_ name . type-expr?)
+             (unless (symbol? name)
+               (error "define-c-constant: name must be an identifier:" name))
+             (let1 type-expr (match type-expr?
+                               [() (quasirename r `<fixnum>)]
+                               [(type-expr) type-expr]
+                               [_ (error "Malformed define-c-constant form:"
+                                         ccst-form)])
+               (quasirename r
+                 `(make <foreign-c-constant>
+                    :scheme-name ',name
+                    :c-name ',(%ffi-c-name name)
+                    :type (%resolve-typespec ,type-expr))))]))
 
-        ;; cfn-specs is ((name . cfn-expr) ...), where name is a symbol
-        ;; name of cfn, and cfn-expr is (make <foreivn-c-function> ...)
-        ;; constructed above.  The subsystem macro should rearrange
-        ;; cfn-specs so that cfn-expr is evaluated in proper context.
-        (define cdef-specs
-          (map (^[cdef]
-                 (cons (cadr cdef) ; name
-                       (make-cdef-expr cdef))) ;expr
-               (reverse cdefs)))
+        ;; Parse a define-c-enum form.
+        ;;   (define-c-enum <name> (<e> ...) [<base-type>])
+        ;;   (define-c-enum (<name> <tag>) (<e> ...) [<base-type>])
+        ;; When the tag isn't given, it is derived from <name> by the
+        ;; same name translation as the enumerators.  An explicit tag is
+        ;; used verbatim, and #f makes the enum anonymous.
+        ;; Returns four values: the Scheme name the enum set is bound to,
+        ;; the C tag, the enumerators as ((scheme-name . c-name) ...), and
+        ;; the base type expression, or #f when the form omits it.
+        (define (parse-cenum-form cenum-form)
+          (match cenum-form
+            [(_ head (enumerators ...) . base-type?)
+             (receive (name tag)
+                 (match head
+                   [(? symbol? name)
+                    (values name (string->symbol (%ffi-c-name name)))]
+                   [((? symbol? name) (? symbol? tag)) (values name tag)]
+                   [((? symbol? name) #f) (values name #f)]
+                   [_ (error "define-c-enum: malformed name and tag:" head)])
+               (unless (every symbol? enumerators)
+                 (error "define-c-enum: enumerators must be identifiers:"
+                        enumerators))
+               (values name tag
+                       (map (^e (cons e (%ffi-c-name e))) enumerators)
+                       (match base-type?
+                         [() #f]
+                         [(e) e]
+                         [_ (error "Malformed define-c-enum form:"
+                                   cenum-form)])))]
+            [_ (error "Malformed define-c-enum form:" cenum-form)]))
+
+        ;; Creates an expression that builds the enum's <c-enum-type>.  The subsystem
+        ;; macro binds <name> to its value ahead of the cdef instances, so
+        ;; that a typespec canmention the enum by name.
+        ;;
+        ;; Note that when we generate this form, enumerators aren't known yet.
+        ;; (We need to wait the form to be compiled to know that).
+        ;; So the <c-enum-type> created with this form is provisional.  Later we'll
+        ;; fill in enumerators.
+        (define (make-cenum-type-expr cenum-form)
+          (receive (name tag enumerators base-type-expr)
+              (parse-cenum-form cenum-form)
+            (quasirename r
+              `(make-c-enum-type ',tag
+                                 ,(if base-type-expr
+                                    (quasirename r
+                                      `(%resolve-typespec ,base-type-expr))
+                                    (quasirename r
+                                      `(default-c-enum-base-type)))
+                                 '()))))
+
+        ;; For each define-c-enum form, build a runtime
+        ;; (make <foreign-c-enum> ...) expression.
+        (define (make-cenum-expr cenum-form)
+          (receive (name tag enumerators base-type-expr)
+              (parse-cenum-form cenum-form)
+            (quasirename r
+              `(make <foreign-c-enum>
+                 :scheme-name ',name
+                 :tag ',tag
+                 :enumerators ',enumerators
+                 ;; The <c-enum-type> made by make-cenum-type-expr above; NAME
+                 ;; is already bound to it here.  It goes through
+                 ;; %resolve-typespec because a precompiled reference to a
+                 ;; type binding arrives wrapped in a proxy type.
+                 :type (%resolve-typespec ,name)))))
 
         ;; Body forms with synthesized callback body definitions prepended.
         ;; The body lambdas need to be visible by the time the FFI binding
@@ -323,7 +502,7 @@
         ;; load (the stub looks them up lazily via SCM_BIND_PROC).
         (define final-forms (reverse ccb-defines extra-forms))
 
-        ;; NB: with-stubgen-ffi should expand into definitions, so that
+        ;; NB: with-*-ffi should expand into definitions, so that
         ;; defined C functions (and other definitions) are visible
         ;; from the following expressions.  Be careful not to wrap
         ;; the expansion with let etc.
@@ -331,10 +510,79 @@
           [(:native)
            (quasirename r
              `(with-native-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
-                               ,(reverse ccb-info)
                                ,final-forms))]
-          [(:stubgen)
+          [(:stub :stubgen)
+           (when (eq? subsystem :stubgen)
+             (warn "FFI :stubgen subsystem is now called :stub subsystem.\n"))
            (quasirename r
-             `(with-stubgen-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
-                                ,final-forms))]
+             `(with-stub-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
+                             ,final-forms))]
+          [(:aot)
+           (quasirename r
+             `(with-aot-ffi ,dlo-var ,dlo-expr ,options ,cdef-specs
+                            ,final-forms))]
           )]))))
+
+;;;
+;;; Runtime support for the subsystems that generate a C stub
+;;;
+
+;; The :stub and :aot subsystems both drive the ffisetup procedure that
+;; gauche.ffi.stubgen generates.  These two helpers live here, rather than
+;; alongside the generator, so that the runtime path doesn't have to pull in
+;; the code-generation machinery.
+;;
+;; Compute the extra arguments the generated ffisetup takes, from the cdef
+;; instances.  Returns four values:
+;;
+;; pointer-ret-types   : return types of the pointer-returning functions, in
+;;                       order; ffisetup stores them in the per-function
+;;                       static type variables used when boxing the result.
+;; variadic-type-infos : (fixed-arg-types . ret-type) per variadic function,
+;;                       in order; these populate the sub-stub type variables
+;;                       %generate-float-substub needs at call time.
+;; callback-infos      : one entry per <foreign-c-callback>, in order, of
+;;                         (function-type ret-pointee-or-#f arg-pointee-or-#f ...)
+;;                       function-type is the <c-function-type> instance used to
+;;                       bind <name> as a native handle; the pointee entries
+;;                       are the c-pointer types needed to box raw C pointers,
+;;                       or #f for a non-pointer (the slot is consumed either
+;;                       way, to keep the order parallel).
+;; fn-tag-infos        : procedure tags of each <foreign-c-function>, in
+;;                       order; ffisetup attaches them to the subrs it makes.
+;;                       They are passed in rather than baked into the C code
+;;                       so that they can mention runtime values---notably
+;;                       the dlobj path, which the :aot subsystem doesn't
+;;                       know when the C code is generated.
+(define (ffi-setup-arguments cdef-instances)
+  (values
+   (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
+                             (c-pointer-like-type? (~ cdef'return-type))
+                             (~ cdef'return-type)))
+               cdef-instances)
+   (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
+                             (~ cdef'variadic?)
+                             (cons (~ cdef'arg-types)
+                                   (~ cdef'return-type))))
+               cdef-instances)
+   (filter-map
+    (^[cdef]
+      (and (is-a? cdef <foreign-c-callback>)
+           (let ([atypes (~ cdef'arg-types)]
+                 [rtype  (~ cdef'return-type)])
+             `(,(make-c-function-type rtype atypes)
+               ,(and (c-pointer-like-type? rtype) rtype)
+               ,@(map (^t (and (c-pointer-like-type? t) t)) atypes)))))
+    cdef-instances)
+   (map (^[cdef] (~ cdef'tag-info))
+        (filter (cut is-a? <> <foreign-c-function>) cdef-instances))))
+
+;; ffisetup returns the reified enumerator lists, one per <foreign-c-enum> in
+;; declaration order.  Fill each into the <c-enum-type> the enum-set name is
+;; already bound to---the same object the generated code was built against.
+(define (ffi-complete-enums! cdef-instances enumerator-lists)
+  (for-each (^[cen enumerators]
+              (c-enum-type-complete! (~ cen'type) enumerators
+                                     (~ cen'scheme-name)))
+            (filter (cut is-a? <> <foreign-c-enum>) cdef-instances)
+            enumerator-lists))

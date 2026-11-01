@@ -1771,6 +1771,10 @@
          (return '#f)
          (return (Scm_WinGetPipeName (cast HANDLE (_get_osfhandle fd)))))))
 
+   ;; Get random value from system's random source
+   (define-cproc sys-win-get-random ()
+     (return (Scm_MakeIntegerU64 (Scm_WinGetRandom))))
+
    ) ;; GAUCHE_WINDOWS
  )
 

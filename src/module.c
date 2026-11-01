@@ -426,7 +426,12 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
     }
 }
 
-/* See also Scm_GlobalIdentifierRef in compaux.c */
+/* Most basic global variable lookup.  This should be for internal use.
+   FLAGS can have SCM_BINDING_STAY_IN_MODULE.
+   This can return SCM_UNBOUND; it is not recommended for general use,
+   since SCM_UNBOUND must not bleed into Scheme world.
+   Use Scm_ModuleBindingRef() instead.
+   See also Scm_GlobalIdentifierRef in compaux.c */
 ScmObj Scm_GlobalVariableRef(ScmModule *module,
                              ScmSymbol *symbol,
                              int flags)
@@ -440,6 +445,31 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
         val = Scm_ResolveAutoload(SCM_AUTOLOAD(val), 0, NULL);
     }
     return val;
+}
+
+/* Public API */
+ScmObj Scm_ModuleBindingRef(ScmModule *module,
+                            ScmSymbol *symbol,
+                            ScmObj fallback,
+                            u_long flags)
+{
+    ScmObj r = Scm_GlobalVariableRef(module, symbol, (int)flags);
+    if (SCM_UNBOUNDP(r)) {
+        if (SCM_UNBOUNDP(fallback)) {
+            Scm_Error("global identifier %S is not bound in module %S",
+                      SCM_OBJ(symbol), SCM_OBJ(module));
+        }
+        return fallback;
+    }
+    return r;
+}
+
+/* Public API */
+int Scm_ModuleBindsP(ScmModule *module,
+                     ScmSymbol *symbol,
+                     u_long flags)
+{
+    return !SCM_UNBOUNDP(Scm_GlobalVariableRef(module, symbol, (int)flags));
 }
 
 /*

@@ -178,9 +178,6 @@
   (use gauche.uvector)
   (use gauche.record)
   (use gauche.unicode)
-  (use srfi.13)
-
-  (require "srfi/43")
 
   (import r7rs.aux)
   (export * + - ... / < <= = => > >= _ abs and append apply assoc assq

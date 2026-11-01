@@ -122,6 +122,73 @@
                (compare ay bx)
                (compare bx ay))))
 
+;; object-compare between distinct classes
+;; (https://github.com/shirok/Gauche/issues/1225)
+(define-class <compare-test-p> () ((v :init-keyword :v)))
+(define-class <compare-test-q> () ((v :init-keyword :v)))
+(define-method object-compare ((a <compare-test-p>) (b <compare-test-q>))
+  (compare (~ a'v) (~ b'v)))
+(define-method object-compare ((a <compare-test-q>) (b <compare-test-p>))
+  (compare (~ a'v) (~ b'v)))
+
+(let ([p1 (make <compare-test-p> :v 1)]
+      [p2 (make <compare-test-p> :v 2)]
+      [q1 (make <compare-test-q> :v 1)]
+      [q2 (make <compare-test-q> :v 2)])
+  (test* "object-compare between unrelated classes"
+         '(-1 1 0 0 1 -1)
+         (list (compare p1 q2) (compare q2 p1)
+               (compare p1 q1) (compare q1 p1)
+               (compare p2 q1) (compare q1 p2)))
+  (test* "object-compare between instances of a class w/o method"
+         (test-error)
+         (compare p1 p2)))
+
+;; Test cases from https://github.com/shirok/Gauche/pull/1315
+;; Compare objects of distinct classes, sharing base method
+(define-class <compare-test-base> () ((v :init-keyword :v)))
+(define-class <compare-test-sub1> (<compare-test-base>) ())
+(define-class <compare-test-sub2> (<compare-test-base>) ())
+(define-method object-compare ((a <compare-test-base>) (b <compare-test-base>))
+  (compare (~ a'v) (~ b'v)))
+
+(let ([a1 (make <compare-test-sub1> :v 1)]
+      [a2 (make <compare-test-sub1> :v 2)]
+      [b1 (make <compare-test-sub2> :v 1)]
+      [b2 (make <compare-test-sub2> :v 2)])
+  (test* "object-compare inherited from a common superclass"
+         '(-1 1 -1 1 0)
+         (list (compare a1 a2) (compare a2 a1)
+               (compare a1 b2) (compare b2 a1)
+               (compare a2 b2))))
+
+;; Compare objects of unrelated classes, but srfi-114 mechansim catches it
+(define-class <compare-test-r> () ((v :init-keyword :v)))
+(define-class <compare-test-s> () ((v :init-keyword :v)))
+(comparator-register-default!
+ (make-comparator (^x (or (is-a? x <compare-test-r>)
+                          (is-a? x <compare-test-s>)))
+                  (^[a b] (= (~ a'v) (~ b'v)))
+                  (^[a b] (< (~ a'v) (~ b'v)))
+                  #f))
+
+(let ([r1 (make <compare-test-r> :v 1)]
+      [s2 (make <compare-test-s> :v 2)]
+      [s0 (make <compare-test-s> :v 0)])
+  (test* "registered comparator for distinct classes"
+         '(-1 1 1 -1)
+         (list (compare r1 s2) (compare s2 r1)
+               (compare r1 s0) (compare s0 r1))))
+
+(let ([p (make <compare-test-p> :v 1)]
+      [x (make (with-module compare-test-a <compare-test-x>))])
+  (test* "object-compare fallback for distinct classes"
+         (list (compare p x) (compare x p))
+         (list (object-compare p x) (object-compare x p)))
+  (test* "object-compare fallback with builtin types"
+         '(-1 1)
+         (list (object-compare 'a p) (object-compare p 'a))))
+
 (test-section "builtin comparators")
 
 (let ()

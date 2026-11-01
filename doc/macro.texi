@@ -1634,7 +1634,7 @@ the closure and makes it look like a variable:
 
 (define-syntax the-state
   (make-id-transformer
-    (syntax-rules (set!)
+    (syntax-rules+ (set!)
       [(set! _ expr) (state-manager expr)]
       [_ (state-manager)])))
 
@@ -1650,13 +1650,16 @@ the-state @result{} on
 @end example
 
 @c EN
-(Note that the single @code{_} pattern in the second clause of
-@code{syntax-rules} above matches anything, so it should come
-after @code{set!} match.  It is Gauche's extension.)
+Note that we use @code{syntax-rules+}, a Gauche extention to @code{syntax-rules}
+to support identifier-macro: The first element of @var{pattern} can be used
+as literal identifier match (which is ignored in the ordinary
+@code{syntax-rules}), and also the single identifier pattern matches
+single identifier input.
 @c JP
-(上の@code{syntax-rules}の二番目の節のパターンは@code{_}のみから
-なりますが、これはGaucheの拡張で、任意のフォームにマッチします。
-したがって@code{set!}のマッチより後に置く必要があります)。
+ここで、@code{syntax-rules}のGauche独自拡張である@code{syntax-rules+}を使っている
+ことに注意してください。@code{syntax-rules+}ではパターンの最初の要素を
+リテラル識別子マッチに使えるほか、単一の識別子からなるパターンは
+単一の識別子にマッチします。
 @c COMMON
 
 @c EN

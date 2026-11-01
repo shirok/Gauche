@@ -121,6 +121,13 @@ struct ScmCompnumRec {
 #define SCM_COMPNUM_REAL(obj)      SCM_COMPNUM(obj)->real
 #define SCM_COMPNUM_IMAG(obj)      SCM_COMPNUM(obj)->imag
 
+/* A compnum with zero imaginary part (either +0.0 or -0.0) isn't real?,
+   but it is real-valued, and functions that take real numbers accept it,
+   treating it as its real part. */
+#define SCM_REAL_VALUED_P(obj) \
+    (SCM_REALP(obj)                                                    \
+     || (SCM_COMPNUMP(obj) && SCM_COMPNUM_IMAG(obj) == 0.0))
+
 /*
    Internal macros concerning FFX (fast flonum extension).  Normal
    users doesn't need to care about these.
@@ -341,12 +348,17 @@ SCM_EXTERN ScmHalfFloat Scm_DoubleToHalf(double v);
 SCM_EXTERN ScmObj Scm_MakeCompnum(double real, double imag);
 SCM_EXTERN ScmObj Scm_MakeComplex(double real, double imag);
 SCM_EXTERN ScmObj Scm_MakeComplexPolar(double magnitude, double angle);
+SCM_EXTERN ScmObj Scm_MakeRectangular(ScmObj real, ScmObj imag);
+SCM_EXTERN ScmObj Scm_MakePolar(ScmObj magnitude, ScmObj angle);
+SCM_EXTERN ScmObj Scm_RealValuedToReal(ScmObj obj);
 SCM_EXTERN ScmHalfComplex Scm_GetHalfComplex(ScmObj obj);
 SCM_EXTERN ScmFloatComplex  Scm_GetFloatComplex(ScmObj obj);
 SCM_EXTERN ScmDoubleComplex Scm_GetDoubleComplex(ScmObj obj);
+SCM_EXTERN ScmLongDoubleComplex Scm_GetLongDoubleComplex(ScmObj obj);
 SCM_EXTERN ScmObj Scm_HalfComplexToComplex(const ScmHalfComplex c);
 SCM_EXTERN ScmObj Scm_FloatComplexToComplex(const ScmFloatComplex c);
 SCM_EXTERN ScmObj Scm_DoubleComplexToComplex(const ScmDoubleComplex c);
+SCM_EXTERN ScmObj Scm_LongDoubleComplexToComplex(const ScmLongDoubleComplex c);
 
 SCM_EXTERN int    Scm_IntegerP(ScmObj obj);
 SCM_EXTERN int    Scm_OddP(ScmObj obj);
@@ -404,7 +416,8 @@ enum ScmRoundMode {
     SCM_ROUND_FLOOR,
     SCM_ROUND_CEIL,
     SCM_ROUND_TRUNC,
-    SCM_ROUND_ROUND
+    SCM_ROUND_ROUND,
+    SCM_ROUND_AWAY
 };
 SCM_EXTERN ScmObj Scm_Round(ScmObj num, int mode);
 SCM_EXTERN ScmObj Scm_RoundToExact(ScmObj num, int mode);

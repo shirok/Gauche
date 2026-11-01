@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 2001 by Hewlett-Packard Company. All rights reserved.
+ * Copyright (c) 2009-2025 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -63,7 +64,7 @@
 /* free list link field in the first word.  Thus mark procedures may    */
 /* not count on the presence of a type descriptor, and must handle this */
 /* case correctly somehow.  Also, a mark procedure should be prepared   */
-/* to be executed concurrently from the marker threads (the later ones  */
+/* to be executed concurrently from the marker threads (the latter ones */
 /* are created only if the client has called GC_start_mark_threads()    */
 /* or started a user thread previously).                                */
 typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
@@ -92,7 +93,7 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                         /* the first word is a pointer.                 */
                         /* (This unconventional ordering sometimes      */
                         /* makes the marker slightly faster.)           */
-                        /* Zeroes indicate definite nonpointers.  Ones  */
+                        /* Zeros indicate definite nonpointers.  Ones   */
                         /* indicate possible pointers.                  */
                         /* Only usable if pointers are word aligned.    */
 #define GC_DS_PROC   2

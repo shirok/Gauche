@@ -31,7 +31,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
 
     GC_ASSERT(I_HOLD_LOCK());
     /* A quick alignment check, since we need atomic stores */
-    GC_ASSERT((word)(&invalid_tse.next) % sizeof(tse *) == 0);
+    GC_ASSERT((word)(&invalid_tse.next) % ALIGNMENT == 0);
     result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
     if (NULL == result) return ENOMEM;
     ret = pthread_mutex_init(&result->lock, NULL);
@@ -132,6 +132,33 @@ GC_INNER void GC_remove_specific_after_fork(tsd * key, pthread_t t)
     if (pthread_mutex_unlock(&key->lock) != 0)
       ABORT("pthread_mutex_unlock failed (remove_specific after fork)");
 }
+
+#ifdef CAN_HANDLE_FORK
+  GC_INNER void
+  GC_update_specific_after_fork(tsd *key)
+  {
+    unsigned hash_val = HASH(GC_parent_pthread_self);
+    tse *entry;
+
+    GC_ASSERT(I_HOLD_LOCK());
+#   ifdef LINT2
+      pthread_mutex_lock(&key->lock);
+#   endif
+    entry = key->hash[hash_val].p;
+    if (EXPECT(entry != NULL, TRUE)) {
+      GC_ASSERT(THREAD_EQUAL(entry->thread, GC_parent_pthread_self));
+      GC_ASSERT(NULL == entry->next);
+      /* Remove the entry from the table. */
+      key->hash[hash_val].p = NULL;
+      entry->thread = pthread_self();
+      /* Then put the entry back to the table (based on new hash value). */
+      key->hash[HASH(entry->thread)].p = entry;
+    }
+#   ifdef LINT2
+      (void)pthread_mutex_unlock(&key->lock);
+#   endif
+  }
+#endif
 
 /* Note that even the slow path doesn't lock.   */
 GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,

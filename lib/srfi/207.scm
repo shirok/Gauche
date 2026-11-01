@@ -112,14 +112,16 @@
          (u8vector-copy! bv start uv)
          (loop uvs (+ start (u8vector-length uv)))]))))
 
-(define (bytevector->hex-string bv)
+(define (bytevector->hex-string bv :optional (start #f) (end #f))
   (assume-type bv <u8vector>)
   (with-output-to-string
-    (^[] (u8vector-for-each (^b (format #t "~2,'0x" b)) bv))))
+    (^[] (u8vector-for-each (^b (format #t "~2,'0x" b))
+                            (subuvector/shared bv start end)))))
 
-(define (hex-string->bytevector str)
-  (assume-type str <string>)
-  (let1 slen (string-length str)
+(define (hex-string->bytevector string :optional (start #f) (end #f))
+  (assume-type string <string>)
+  (let* ([str (substring/shared string start end)]
+         [slen (string-length str)])
     (assume (even? slen) <bytestring-error>
             "Hex string must have an even length:" str)
     (rlet1 bv (make-u8vector (ash slen -1))
@@ -135,17 +137,19 @@
                 (u8vector-set! bv i (+ (* aa 16) bb))
                 (loop (+ i 1))))))))))
 
-(define (bytevector->base64 bv :optional (digits #f))
+(define (bytevector->base64 bv :optional (digits #f) (start #f) (end #f))
   (assume-type bv <u8vector>)
   (assume-type digits (<?> <string>))
-  (base64-encode-bytevector bv :line-width #f :digits digits))
+  (base64-encode-bytevector (subuvector/shared bv start end)
+                            :line-width #f :digits digits))
 
-(define (base64->bytevector string :optional (digits #f))
+(define (base64->bytevector string :optional (digits #f) (start #f) (end #f))
   (assume-type string <string>)
   (assume-type digits (<?> <string>))
-  (guard (e [else (raise (make-condition <bytestring-error>
-                                         'message (~ e'message)))])
-    (base64-decode-bytevector string :digits digits :strict #t)))
+  (let1 str (substring/shared string start end)
+    (guard (e [else (raise (make-condition <bytestring-error>
+                                           'message (~ e'message)))])
+      (base64-decode-bytevector str :digits digits :strict #t))))
 
 (define (%byte->elt b)
   (if (<= 32 b 127)

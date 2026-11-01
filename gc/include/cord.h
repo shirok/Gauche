@@ -147,7 +147,7 @@ CORD_API CORD CORD_balance(CORD x);
 /* Function to iteratively apply to individual characters in cord.      */
 typedef int (* CORD_iter_fn)(char c, void * client_data);
 
-/* Function to apply to substrings of a cord.  Each substring is a      */
+/* Function to apply to substrings of a cord.  Each substring is        */
 /* a C character string, not a general cord.                            */
 typedef int (* CORD_batched_iter_fn)(const char * s, void * client_data);
 #define CORD_NO_FN ((CORD_batched_iter_fn)0)
@@ -308,7 +308,7 @@ CORD_API CORD CORD_from_char_star(const char *s);
 CORD_API const char * CORD_to_const_char_star(CORD x);
 
 /* Write a cord to a file, starting at the current position.            */
-/* No trailing NULs are newlines are added.                             */
+/* No trailing NULs and newlines are added.                             */
 /* Returns EOF if a write error occurs, 1 otherwise.                    */
 CORD_API int CORD_put(CORD x, FILE * f);
 
@@ -340,7 +340,7 @@ CORD_API size_t CORD_rchr(CORD x, size_t i, int c);
 /* 3. CORD_sprintf and CORD_vsprintf assign the result through the 1st  */
 /*    argument.  Unlike their ANSI C versions, there is no need to      */
 /*    guess the correct buffer size.                                    */
-/* 4. Most of the conversions are implement through the native          */
+/* 4. Most of the conversions are implemented through the native        */
 /*    vsprintf.  Hence they are usually no faster, and                  */
 /*    idiosyncrasies of the native printf are preserved.  However,      */
 /*    CORD arguments to CORD_sprintf and CORD_vsprintf are NOT copied;  */

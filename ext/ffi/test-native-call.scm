@@ -127,11 +127,11 @@
    [else
     (with-module gauche.internal assemble-callback-sysvx64)]))
 
-;; The handle's <c-function> tag is consulted by call-sysvx64 only to
+;; The handle's <c-function-type> tag is consulted by call-sysvx64 only to
 ;; satisfy the :func patch's pointer-type check; the explicit rettype
 ;; argument is what drives return-value handling.  We therefore reuse
 ;; fn-type-int-of-void — what matters is just that the trampoline's
-;; address is wrapped in *some* <c-function>-tagged native handle.
+;; address is wrapped in *some* <c-function-type>-tagged native handle.
 
 ;; Build, install, call, destroy.  Returns the value call-sysvx64 saw.
 (define (run-callback body arg-canons args rettype)

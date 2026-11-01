@@ -339,8 +339,17 @@
 ;; Expr -> CompiledCode
 ;;  target-params parameter is passed to 'compile'.
 (define (compile-in-current-tmodule expr)
-  (compile expr (~ (current-tmodule)'module)
-           :target-params (target-parameters)))
+  ;; TRANSIENT
+  ;;  While building 0.9.16 with 0.9.15, we can't pass :precompiing keyword
+  ;;  arg.
+  (cond-expand
+   [gauche-0.9.15
+    (compile expr (~ (current-tmodule)'module)
+             :target-params (target-parameters))]
+   [else
+    (compile expr (~ (current-tmodule)'module)
+             :precompiling #t
+             :target-params (target-parameters))]))
 
 ;;================================================================
 ;; Parameters
@@ -755,6 +764,8 @@
       (undefined))
     (define-macro (define-constant . f)
       ((with-module gauche.cgen.precomp handle-define-constant) f))
+    (define-macro (define-type . f)
+      ((with-module gauche.cgen.precomp handle-define-type) f))
     (define-macro (define-syntax . f)
       ((with-module gauche.cgen.precomp handle-define-syntax) f))
     (define-macro (define-macro . f)
@@ -860,6 +871,47 @@
                    other than er-macro-transformer in precompiled file"
                   form)))]
     [_ (error "Malformed define-hybrid-syntax" form)]))
+
+;; Precomp never executes the toplevel forms, so the compiler can only leave
+;; a deferred proxy type for a define-type---and that proxy can't be
+;; dereferenced, since its binding holds the proxy itself.  That is fine for
+;; compiling type expressions, but a macro expander that wants to use the
+;; type at precompile time is stuck.
+;;
+;; So we try to compute the value here and record it in the proxy.  We keep
+;; installing a proxy rather than the bare value: the binding stays a dummy
+;; one (so it isn't constant-folded, and type expressions mentioning the
+;; name still build types named after it rather than after whatever it
+;; is aliased to.
+;;
+;; We only do this when the value comes out as a type we can actually
+;; dereference.  A proxy is fine as long as it isn't the unresolved
+;; placeholder of its own binding---that lets a chain of aliases resolve.
+;; If the expression can't be evaluated yet (it mentions a class defined in
+;; this file, say) we leave the compiler's usual placeholder alone.  The
+;; recorded value is never serialized; the proxy reconstructed at runtime
+;; resolves through its binding as usual.
+(define (%resolvable-type? val)
+  (and ((with-module gauche.internal type?) val)
+       (or (not (is-a? val (with-module gauche.internal <proxy-type>)))
+           (not (eq? ((with-module gauche.internal proxy-type-ref) val)
+                     val)))))
+
+(define (handle-define-type form)
+  (match form
+    [((? symbol? name) expr)
+     (guard (e [else #f])
+       (let* ([mod (~ (current-tmodule)'module)]
+              [val (eval expr mod)])
+         (when (%resolvable-type? val)
+           ((with-module gauche.internal %insert-binding)
+            mod name
+            ((with-module gauche.internal %make-deferred-proxy-type)
+             ((with-module gauche.internal make-identifier) name mod '())
+             val)
+            '(inlinable dummy)))))]
+    [_ #f])
+  (cons '(with-module gauche define-type) form))
 
 (define (handle-define-constant form)
   (match form
@@ -1175,7 +1227,7 @@
       :c-name  (cgen-allocate-static-datum)
       :gf-name (cgen-literal (ref value 'name))))
   (init (self)
-    (format #t "  ~a = Scm_GlobalVariableRef(SCM_MODULE(~a), SCM_SYMBOL(~a), FALSE);\n"
+    (format #t "  ~a = Scm_ModuleBindingRef(SCM_MODULE(~a), SCM_SYMBOL(~a), SCM_UNBOUND, FALSE);\n"
             (~ self'c-name)
             (current-tmodule-cname)
             (~ self'gf-name'c-name)))

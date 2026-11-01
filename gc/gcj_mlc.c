@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2008-2024 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -40,7 +41,7 @@
 int GC_gcj_kind = 0;    /* Object kind for objects with descriptors     */
                         /* in "vtable".                                 */
 int GC_gcj_debug_kind = 0;
-                        /* The kind of objects that is always marked    */
+                        /* The kind of objects that are always marked   */
                         /* with a mark proc call.                       */
 
 STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr GC_ATTR_UNUSED,

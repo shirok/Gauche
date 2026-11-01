@@ -49,6 +49,14 @@ some_trick();
 (use gauche.cgen.type)
 (test-module 'gauche.cgen.literal)
 
+;; A local proxy type stands for a type created per activation, so there's
+;; nothing to serialize.
+(test* "cgen-literal of a local proxy type"
+       (test-error <error> #/Cannot serialize a proxy type of a local type binding/)
+       (parameterize ([cgen-current-unit (make <cgen-unit> :name "tmp.o")])
+         (cgen-literal ((with-module gauche.internal %make-local-proxy-type)
+                        <string>))))
+
 ;;====================================================================
 (test-section "gauche.cgen.type")
 (use gauche.cgen.type)
@@ -482,7 +490,24 @@ some_trick();
   (t '.type err "a " "a b " "a b c ")
 
   (t '?: err err err "((a)?(b):(c))")
-  (c '(?: a b c d) err))
+  (c '(?: a b c d) err)
+
+  ;; integer literals
+  (c 0 "0")
+  (c 2147483647 "2147483647")
+  (c -2147483647 "-2147483647")
+  (c -2147483648 "(-2147483647-1)")
+  (c 2147483648 "2147483648LL")
+  (c -2147483649 "-2147483649LL")
+  (c 4294967295 "4294967295LL")
+  (c 9223372036854775807 "9223372036854775807LL")
+  (c -9223372036854775807 "-9223372036854775807LL")
+  (c -9223372036854775808 "(-9223372036854775807LL-1)")
+  (c 9223372036854775808 "9223372036854775808ULL")
+  (c 18446744073709551615 "18446744073709551615ULL")
+  (c 18446744073709551616 err)
+  (c -9223372036854775809 err)
+  (c '(+ a 4294967295) "(a)+(4294967295LL)"))
 
 #;(test* "operator expressions should be rejected at toplevel"
        (test-error)
@@ -559,6 +584,41 @@ some_trick();
         (c "SCM_CLASS_TOP_CPL")
         ()
         (metaclass <class>)))
+  )
+
+;; A maybe type whose C type can't represent #f is only allowed where we
+;; have a default value to fall back to.  Make sure the invalid uses are
+;; rejected at stub compilation time, instead of emitting bogus C code.
+(let ()
+  (define (test-stub-error name form)
+    ($ test-with-temporary-directory "test.o"
+       (^[]
+         ($ test* #"stub-error ~name" (test-error <error>)
+            (let1 out.stub (build-path "test.o" "err.stub")
+              (with-output-to-file out.stub (^[] (write form) (newline)))
+              (cgen-genstub out.stub :output-directory "test.o"))))))
+
+  (test-stub-error "required arg"
+                   '(define-cproc foo (x::<fixnum>?) (return (SCM_MAKE_INT x))))
+  (test-stub-error "optional arg w/o default"
+                   '(define-cproc foo (:optional x::<fixnum>?)
+                      (return (SCM_MAKE_INT x))))
+  (test-stub-error "optional arg w/ #f default"
+                   '(define-cproc foo (:optional (x::<fixnum>? #f))
+                      (return (SCM_MAKE_INT x))))
+  (test-stub-error "keyword arg w/o default"
+                   '(define-cproc foo (:key x::<double>?)
+                      (return (Scm_MakeFlonum x))))
+  (test-stub-error "return type"
+                   '(define-cproc foo () ::<fixnum>? (return 1)))
+  (test-stub-error "cclass slot type"
+                   '(define-cclass foo :base :private :no-meta
+                      "Foo*" "FooClass"
+                      (c "SCM_CLASS_TOP_CPL")
+                      ((x :type <fixnum>?))))
+  (test-stub-error "maybe boolean"
+                   '(define-cproc foo (:optional (x::<boolean>? #t))
+                      (return (SCM_MAKE_BOOL x))))
   )
 
 ;;====================================================================

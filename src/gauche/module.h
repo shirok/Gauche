@@ -82,13 +82,13 @@ SCM_CLASS_DECL(Scm_ModuleClass);
 
 SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists);
 
-/* Flags for Scm_FindBinding (F), MakeBinding (M)
-   and Scm_GlobalVariableRef (R)*/
+/* Flags for Scm_FindBinding (F), MakeBinding (M),
+   Scm_ModuleBindingRef (R) and Scm_ModuleBinds (R) */
 enum {
     SCM_BINDING_STAY_IN_MODULE = (1L<<0), /*(F,R) do not search parent/imported*/
     SCM_BINDING_CONST = (1L<<1),          /*(M) constant binding */
     SCM_BINDING_INLINABLE = (1L<<2),      /*(M) inlinable binding */
-    SCM_BINDING_EXTERNAL = (1L<<3),       /*(F) only search externally visible
+    SCM_BINDING_EXTERNAL = (1L<<3),       /*(F, R) only search externally visible
                                             bindings, as if we're importing
                                             the module.  Currently used to
                                             create alias binding. */
@@ -109,9 +109,6 @@ SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                                     int flags);
 SCM_EXTERN ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
                                     ScmObj value, int flags);
-SCM_EXTERN ScmObj Scm_GlobalVariableRef(ScmModule *module,
-                                        ScmSymbol *symbol,
-                                        int flags);
 SCM_EXTERN void   Scm_HideBinding(ScmModule *module, ScmSymbol *symbol);
 SCM_EXTERN int    Scm_AliasBinding(ScmModule *target, ScmSymbol *targetName,
                                    ScmModule *origin, ScmSymbol *originName);
@@ -172,6 +169,19 @@ SCM_EXTERN ScmModule *Scm_CurrentModule(void);
     Scm_Define(SCM_MODULE(module),              \
                SCM_SYMBOL(SCM_INTERN(cstr)),    \
                SCM_OBJ(val))
+
+SCM_EXTERN ScmObj Scm_ModuleBindingRef(ScmModule *module,
+                                       ScmSymbol *symbol,
+                                       ScmObj fallback,
+                                       u_long flags);
+SCM_EXTERN int    Scm_ModuleBindsP(ScmModule *module,
+                                   ScmSymbol *symbol,
+                                   u_long flags);
+
+/* This will eventually moved to private API.  Use Scm_ModuleBindingRef(). */
+SCM_EXTERN ScmObj Scm_GlobalVariableRef(ScmModule *module,
+                                        ScmSymbol *symbol,
+                                        int flags);
 
 /* OBSOLETED */
 #define Scm_SymbolValue(m, s) Scm_GlobalVariableRef(m, s, FALSE)

@@ -375,6 +375,12 @@
 (test* "flonum reader (exp)" '(314.0 #t) (flonum-test ".314d3"))
 (test* "flonum reader (exp)" '(314.0 #t) (flonum-test ".314D3"))
 
+;; NB: "3.14p3" parses as a symbol |3.14p3|, b/c without an explicit
+;; number prefix, we allow it to be a symbol.
+(test* "flonum reader (decimal ^ p-exponent)"
+       (test-error <read-error> #/invalid exponent/)
+       (read-from-string "#i3.14p3"))
+
 (test* "flonum reader (minimum denormalized number 5.0e-324)" #t
        (let1 x (expt 2.0 -1074)
          (= x (string->number (number->string x)))))
@@ -399,6 +405,38 @@
 (test* "flonum reader (zero with big exponent)" '(#t #t)
        (list (= 0.0 (string->number "0e324"))
              (= 0.0 (string->number "0e325"))))
+
+;; The reader must return the double *nearest* the exact decimal value.
+;; See https://github.com/shirok/Gauche/pull/1302
+(define (correctly-rounded? s)
+  (let* ([got (string->number s)]
+         [ex  (string->number (string-append "#e" s))] ; exact, unrounded
+         [v   (decode-float got)]
+         [m   (vector-ref v 0)]
+         [k   (expt 2 (vector-ref v 1))]
+         [sgn (vector-ref v 2)]
+         ;; distance from the exact value to the double with significand mm
+         [d   (^[mm] (abs (- (* sgn mm k) ex)))])
+    (and (<= (d m) (d (+ m 1)))
+         (<= (d m) (d (- m 1))))))
+
+;; Three witnesses per exponent sign: raise_pow10 multiplies for e = +23 and
+;; divides for e = -23, and roughly half of all exact mantissas misround, so
+;; a single literal per branch is a thin net.
+(dolist [s '("1e-23"                    ; minimal case: one significant digit
+             "1.658087549245532e-08"
+             "-3.031704146171012e-08"
+             "1.375848893331631e+38"
+             "2.293669867200266e+38"
+             "-4.487259214067599e+38")]
+  (test* (format "flonum reader correctly rounded ~s" s) #t
+         (correctly-rounded? s)))
+
+;; Same defect seen from the other side: these name adjacent, distinct
+;; doubles, and used to collapse onto one value.
+(test* "flonum reader (adjacent doubles stay distinct)" #f
+       (= (string->number "1.658087549245532e-8")
+          (string->number "1.6580875492455322e-8")))
 
 ;; We used to allow 1#1 to be read as a symbol.  As of 0.9.4, it is an error.
 (test* "padding" '(10.0 #t) (flonum-test "1#"))
@@ -442,6 +480,17 @@
 (test* "no integral part" 0.5 (read-from-string ".5"))
 (test* "no integral part" -0.5 (read-from-string "-.5"))
 (test* "no integral part" 0.5 (read-from-string "+.5"))
+
+;;------------------------------------------------------------------
+(test-section "elementary functions")
+
+(test* "real-expt" -27 (real-expt -3 3))
+(test* "real-expt" -27.0 (real-expt -3.0 3.0))
+(test* "real-expt" (test-error) (real-expt -3.0 3.1))
+(test* "real-expt" -2.0 (real-expt -8.0 1/3) (cut approx=? <> <> 1e-7))
+(test* "real-expt" 4.0 (real-expt -8.0 2/3) (cut approx=? <> <> 1e-7))
+(test* "real-expt" 4.0 (real-expt -8.0 2/3) (cut approx=? <> <> 1e-7))
+(test* "real-expt" -27.0 (real-expt -243.0 3/5) (cut approx=? <> <> 1e-7))
 
 ;;------------------------------------------------------------------
 (test-section "exact fractional number")
@@ -527,11 +576,24 @@
 (test* "complex reader" '(0.0 -1.0) (decompose-complex '-1.i))
 (test* "complex reader" '(0.0 1.0) (decompose-complex '+1.0i))
 (test* "complex reader" '(0.0 -1.0) (decompose-complex '-1.0i))
-(test* "complex reader" 1.0 (decompose-complex '1+0.0i))
-(test* "complex reader" 1.0 (decompose-complex '1+.0i))
-(test* "complex reader" 1.0 (decompose-complex '1+0.i))
-(test* "complex reader" 1.0 (decompose-complex '1+0.0e-43i))
-(test* "complex reader" 100.0 (decompose-complex '1e2+0.0e-43i))
+;; Inexact zero imaginary part makes a compnum, while exact zero
+;; imaginary part makes a real.
+(test* "complex reader" '(1.0 0.0) (decompose-complex '1+0.0i))
+(test* "complex reader" '(1.0 0.0) (decompose-complex '1+.0i))
+(test* "complex reader" '(1.0 0.0) (decompose-complex '1+0.i))
+(test* "complex reader" '(1.0 0.0) (decompose-complex '1+0.0e-43i))
+(test* "complex reader" '(100.0 0.0) (decompose-complex '1e2+0.0e-43i))
+(test* "complex reader" '(1.0 -0.0) (decompose-complex '1-0.0i))
+(test* "complex reader" '(-0.0 -0.0) (decompose-complex '-0.0-0.0i))
+(test* "complex reader" '(0.0 0.0) (decompose-complex '+0.0i))
+(test* "complex reader" '(0.0 -0.0) (decompose-complex '-0.0i))
+(test* "complex reader" 1 (decompose-complex '1+0i))
+(test* "complex reader" 1 (decompose-complex '1-0i))
+(test* "complex reader" 1.0 (decompose-complex '1.0+0i))
+(test* "complex reader" 1 (decompose-complex '#e1+0i))
+(test* "complex reader" 1 (decompose-complex '#e1+0.0i))
+(test* "complex reader" '(1.0 0.0) (decompose-complex '#i1+0i))
+(test* "complex reader" '(1.0 2.0) (decompose-complex '1+2i))
 
 (test* "complex reader" 'i (decompose-complex 'i))
 (test* "complex reader" #f (decompose-complex (string->number ".i")))
@@ -557,7 +619,7 @@
 
 (test* "complex reader (padding)" '(100.0 234.5)
        (decompose-complex (string->number "1##+234.5###i")))
-(test* "complex reader (padding)" '100.0
+(test* "complex reader (padding)" '(100.0 0.0)
        (decompose-complex (string->number "1##@.0###")))
 (test* "complex reader (padding)" '(0.0 1.2)
        (decompose-complex (string->number "1.2##@.5###pi")))
@@ -624,8 +686,9 @@
 (t-hexflonum-reader "#x-.0p2" -0.0)
 (t-hexflonum-reader "#x-0.0p-100000" -0.0)
 
-(t-hexflonum-reader "#x1.23" (test-error <read-error> #/requires 'p' exponent/))
-(t-hexflonum-reader "#x1.23l0" (test-error <read-error> #/requires 'p' exponent/))
+(t-hexflonum-reader "#x1.23" 1.13671875)
+(t-hexflonum-reader "#x.1" 0.0625)
+(t-hexflonum-reader "#x1.23s1" (test-error <read-error> #/invalid exponent/))
 
 (t-hexflonum-reader "#x100" 256)               ;exact integer, not flonum
 (t-hexflonum-reader "#x100.p0" 256.0)          ;inexact
@@ -1693,8 +1756,8 @@
 (test* "compnum * 1" +i (* 1 +i) eqv?)
 (test* "1 * compnum" +i (* +i 1) eqv?)
 
-(test* "compnum * 0.0" 0.0 (* 0.0 +i) eqv?)
-(test* "0.0 * compnum" 0.0 (* +i 0.0) eqv?)
+(test* "compnum * 0.0" 0.0+0.0i (* 0.0 +i) eqv?)
+(test* "0.0 * compnum" 0.0+0.0i (* +i 0.0) eqv?)
 (test* "compnum * 1.0" +i (* 1.0 +i) eqv?)
 (test* "1.0 * compnum" +i (* +i 1.0) eqv?)
 
@@ -1797,7 +1860,7 @@
       (d-tester 13.0 4.0))
 
 ;; complex division
-(test* "complex division" 0.0
+(test* "complex division" 0.0+0.0i
        (let ((a 3)
              (b 4+3i)
              (c 7.3))
@@ -2044,40 +2107,44 @@
 ;;------------------------------------------------------------------
 (test-section "rounding")
 
-(define (round-tester value exactness cei flo tru rou)
+(define (round-tester value exactness cei flo tru rou awy)
   (test* (string-append "rounding " (number->string value))
-         (list exactness cei flo tru rou)
+         (list exactness cei flo tru rou awy)
          (let ((c (ceiling value))
                (f (floor value))
                (t (truncate value))
-               (r (round value)))
-           (list (and (exact? c) (exact? f) (exact? t) (exact? r))
-                 c f t r))))
+               (r (round value))
+               (a (round-away value)))
+           (list (and (exact? c) (exact? f) (exact? t) (exact? r) (exact? a))
+                 c f t r a))))
 
-(round-tester 0  #t 0 0 0 0)
-(round-tester 3  #t 3 3 3 3)
-(round-tester -3 #t -3 -3 -3 -3)
-(round-tester (expt 2 99) #t (expt 2 99) (expt 2 99) (expt 2 99) (expt 2 99))
+(round-tester 0  #t 0 0 0 0 0)
+(round-tester 3  #t 3 3 3 3 3)
+(round-tester -3 #t -3 -3 -3 -3 -3)
+(round-tester (expt 2 99) #t
+              (expt 2 99) (expt 2 99) (expt 2 99) (expt 2 99) (expt 2 99))
 (round-tester (- (expt 2 99)) #t
-              (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)))
+              (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)))
 
-(round-tester 9/4  #t 3 2 2 2)
-(round-tester -9/4 #t -2 -3 -2 -2)
+(round-tester 9/4  #t 3 2 2 2 3)
+(round-tester -9/4 #t -2 -3 -2 -2 -3)
 (round-tester 34985495387484938453495/17 #t
               2057970316910878732559
               2057970316910878732558
               2057970316910878732558
+              2057970316910878732559
               2057970316910878732559)
 (round-tester -34985495387484938453495/17 #t
               -2057970316910878732558
               -2057970316910878732559
               -2057970316910878732558
+              -2057970316910878732559
               -2057970316910878732559)
 
-(round-tester 35565/2 #t 17783 17782 17782 17782)
-(round-tester -35565/2 #t -17782 -17783 -17782 -17782)
-(round-tester 35567/2 #t 17784 17783 17783 17784)
-(round-tester -35567/2 #t -17783 -17784 -17783 -17784)
+(round-tester 35565/2 #t 17783 17782 17782 17782 17783)
+(round-tester -35565/2 #t -17782 -17783 -17782 -17782 -17783)
+(round-tester 35567/2 #t 17784 17783 17783 17784 17784)
+(round-tester -35567/2 #t -17783 -17784 -17783 -17784 -17784)
 
 ;; Ensure that rounding never yields -0.0.
 ;; It is not specified in R7RS, but having them return -0.0 complicates
@@ -2712,6 +2779,306 @@
   (test* "radians->degrees + degrees->radians" 90
          (radians->degrees (degrees->radians 90))
          approx=?))
+
+;;------------------------------------------------------------------
+(test-section "complex numbers with zero imaginary part")
+
+;; A complex number with inexact zero imaginary part is kept as a compnum,
+;; for the sign of the zero matters on branch cuts.  It isn't real?,
+;; but it is real-valued?, and real-domain procedures accept it.
+
+(define (complex-parts z)
+  (if (real? z)
+    z
+    (list 'C (real-part z) (imag-part z))))
+
+(let ()
+  (define-syntax t
+    (syntax-rules ()
+      [(_ expect expr) (test* 'expr expect (complex-parts expr))]))
+
+  (t '(C 1.0 0.0)  (make-rectangular 1.0 0.0))
+  (t '(C 1.0 -0.0) (make-rectangular 1.0 -0.0))
+  (t '(C 1.0 0.0)  (make-rectangular 1 0.0))
+  (t 1             (make-rectangular 1 0))
+  (t 1.0           (make-rectangular 1.0 0))
+  (t '(C 2.0 0.0)  (make-polar 2.0 0.0))
+  (t '(C 2.0 -0.0) (make-polar 2.0 -0.0))
+  (t 2             (make-polar 2 0))
+  (t '(C 1.0 -0.0) (string->number "1.0-0.0i"))
+  (t '(C 1.0 0.0)  (read-from-string "#c(1.0 0.0)"))
+  (t 1.0           (read-from-string "#c(1 0)"))
+
+  ;; Arithmetic.  Results are not normalized to reals.
+  (t '(C -1.0 0.0)  (* +i +i))
+  (t '(C 2.0 0.0)   (* 1+i 1-i))
+  (t '(C 2.0 0.0)   (+ 1.0+0.0i 1))
+  (t '(C 2.0 -0.0)  (+ 1 1.0-0.0i))
+  (t '(C 0.0 0.0)   (- 1.0+0.0i 1))
+  (t '(C 1.0 -0.0)  (- 1.0 0.0+0.0i))
+  (t '(C -1.0 -0.0) (- 1.0+0.0i))
+  (t '(C 2.0 -0.0)  (* 2.0 1.0-0.0i))
+  (t '(C -2.0 0.0)  (* -2 1.0-0.0i))
+  (t '(C 0.5 -0.0)  (/ 1.0-0.0i 2))
+  (t '(C 1.0 -0.0)  (/ 1.0+0.0i))
+  (t '(C 1.0 -0.0)  (conjugate 1.0+0.0i))
+  (t '(C 1.0 0.0)   (conjugate 1.0-0.0i))
+  (t '(C 1.0 0.0)   (inexact 1.0+0.0i))
+  )
+
+(test* "printing" "1.0+0.0i" (number->string 1.0+0.0i))
+(test* "printing" "1.0-0.0i" (number->string 1.0-0.0i))
+(test* "printing" "-0.0-0.0i" (number->string (make-rectangular -0.0 -0.0)))
+(test* "write/read roundtrip" #t
+       (every (^z (eqv? z (read-from-string (write-to-string z))))
+              (list 1.0+0.0i 1.0-0.0i -0.0+0.0i -0.0-0.0i
+                    +inf.0-0.0i -inf.0+0.0i)))
+
+(let ()
+  (define-syntax t
+    (syntax-rules ()
+      [(_ expect expr) (test* 'expr expect expr)]))
+
+  ;; predicates
+  (t #t (number? 1.0+0.0i))
+  (t #t (complex? 1.0+0.0i))
+  (t #f (real? 1.0+0.0i))
+  (t #f (real? 1.0-0.0i))
+  (t #f (rational? 1.0+0.0i))
+  (t #f (integer? 3.0+0.0i))
+  (t #t (real-valued? 1.0+0.0i))
+  (t #t (real-valued? 1.0-0.0i))
+  (t #t (real-valued? 1.0))
+  (t #f (real-valued? 1.0+1.0i))
+  (t #f (real-valued? 'a))
+  (t #t (rational-valued? 1.5-0.0i))
+  (t #f (rational-valued? +inf.0+0.0i))
+  (t #f (rational-valued? +nan.0+0.0i))
+  (t #t (rational-valued? 1/2))
+  (t #t (integer-valued? 3.0+0.0i))
+  (t #f (integer-valued? 3.5+0.0i))
+  (t #t (integer-valued? 3))
+  (t #f (integer-valued? 3+1i))
+  (t #f (exact? 1.0+0.0i))
+  (t #t (inexact? 1.0+0.0i))
+  (t #t (zero? 0.0+0.0i))
+  (t #t (zero? -0.0-0.0i))
+  (t #f (zero? 0.0+1.0i))
+  (t #f (zero? 1.0+0.0i))
+  (t #t (positive? 1.0-0.0i))
+  (t #f (positive? -1.0+0.0i))
+  (t #t (negative? -1.0+0.0i))
+  (t #f (negative? 0.0-0.0i))
+  (t #t (odd? 3.0+0.0i))
+  (t #t (even? 4.0-0.0i))
+  (t #t (finite? 1.0+0.0i))
+  (t #t (infinite? +inf.0+0.0i))
+  (t #t (nan? +nan.0-0.0i))
+
+  ;; equivalence
+  (t #t (eqv? 1.0+0.0i 1.0+0.0i))
+  (t #f (eqv? 1.0+0.0i 1.0-0.0i))
+  (t #f (eqv? 1.0+0.0i 1.0))
+  (t #f (eqv? 1.0 1.0-0.0i))
+  (t #f (eqv? 0.0+1.0i -0.0+1.0i))
+  (t #t (eqv? -0.0+1.0i -0.0+1.0i))
+  (t #f (equal? 1.0+0.0i 1.0-0.0i))
+  (t #f (equal? '(1.0+0.0i) '(1.0)))
+  (t #t (= 1.0+0.0i 1.0-0.0i))
+  (t #t (= 1.0+0.0i 1.0))
+  (t #t (= 1 1.0+0.0i))
+  (t #t (= 1.0-0.0i 1))
+  (t #t (= 1/2 0.5+0.0i 0.5))
+  (t #f (= 1.0+0.0i 2))
+  (t #f (= 1.0+0.0i 1+i))
+  (t #f (= +nan.0+0.0i +nan.0+0.0i))
+  ;; this exercises BNUMNEI instruction
+  (t 'yes (let ([x (make-rectangular 10.0 0.0)]) (if (= x 10) 'yes 'no)))
+  (t 'no  (let ([x (make-rectangular 10.0 1.0)]) (if (= x 10) 'yes 'no)))
+  (t 2 (let ([h (make-hash-table 'eqv?)])
+         (hash-table-put! h 1.0+0.0i 'a)
+         (hash-table-put! h 1.0-0.0i 'b)
+         (hash-table-num-entries h)))
+
+  ;; comparison
+  (t #t (< 1.0+0.0i 2))
+  (t #t (< 1 2.0-0.0i 3.0+0.0i))
+  (t #f (< 1.0+0.0i 1.0-0.0i))
+  (t #t (<= 1.0+0.0i 1.0-0.0i))
+  (t #t (> 2.0+0.0i 1/2))
+  (t #t (>= 2.0+0.0i 2))
+  (t #f (< +nan.0+0.0i 1))
+  (t #f (> +nan.0+0.0i 1))
+  (t 3.0 (max 1.0+0.0i 3))
+  (t 1.0 (min 1.0+0.0i 3))
+  (t 3.0 (clamp 5.0+0.0i 0 3))
+  (t 0.5 (clamp 0.5-0.0i 0 3))
+  (t (test-error) (< 1.0+1.0i 2))
+  (t (test-error) (max 1.0+1.0i 2))
+
+  ;; real-domain procedures
+  (t 1.0  (floor 1.5+0.0i))
+  (t 2.0  (ceiling 1.5-0.0i))
+  (t 1.0  (truncate 1.5+0.0i))
+  (t 2.0  (round 2.5+0.0i))
+  (t 2    (round->exact 2.5-0.0i))
+  (t 1    (floor->exact 1.5+0.0i))
+  (t 3/2  (exact 1.5+0.0i))
+  (t 1    (exact 1.0-0.0i))
+  (t (test-error) (exact 1.0+2.0i))
+  (t 3.0  (quotient 7.0+0.0i 2))
+  (t 3.0  (quotient 7 2.0-0.0i))
+  (t 1.0  (remainder 7.0+0.0i 2))
+  (t 1.0  (modulo 7 2.0-0.0i))
+  (t 2.0  (gcd 6.0+0.0i 4))
+  (t 12.0 (lcm 6 4.0-0.0i))
+  (t 2.0  (abs -2.0+0.0i))
+  (t 3.0  (div 7.0+0.0i 2))
+  (t 1.0  (mod 7.0+0.0i 2))
+  (t 2.0  (real-sqrt 4.0+0.0i))
+  (t 0.0  (real-ln 1.0-0.0i))
+  (t 1.0  (real-exp 0.0+0.0i))
+  (t 0.0  (real-sin 0.0+0.0i))
+  (t 0.7853981633974483 (atan 1 1.0+0.0i))
+  (t 0.7853981633974483 (atan 1.0-0.0i 1))
+  (t 1.0  (real-part 1.0-0.0i))
+  (t -0.0 (imag-part 1.0-0.0i))
+  (t -3.141592653589793 (angle -1.0-0.0i))
+  (t 3.141592653589793 (angle -1.0+0.0i))
+  (t (test-error) (real-sqrt 4.0+1.0i))
+  )
+
+;;------------------------------------------------------------------
+(test-section "complex transcendental functions and branch cuts")
+
+;; Compnum arguments follow C99 Annex G, so the sign of a zero imaginary
+;; (or real) part selects the side of a branch cut.
+
+(let ()
+  ;; Each part must be approx=?, and zeros must agree in sign.
+  (define (part=? a b)
+    (if (zero? a)
+      (eqv? a b)
+      (or (and (nan? a) (nan? b))
+          (approx=? a b 1e-14 1e-300))))
+  (define (cnum=? expected got)
+    (and (number? got)
+         (eq? (real? expected) (real? got))
+         (part=? (real-part expected) (real-part got))
+         (or (real? expected)
+             (part=? (imag-part expected) (imag-part got)))))
+  (define-syntax t
+    (syntax-rules ()
+      [(_ expect expr) (test* 'expr expect expr cnum=?)]))
+
+  (define pi 3.141592653589793)
+  (define pi/2 1.5707963267948966)
+
+  ;; sqrt
+  (t 0.0+2.0i  (sqrt -4.0))
+  (t 0.0+2.0i  (sqrt -4))
+  (t 0.0+2.0i  (sqrt -4.0+0.0i))
+  (t (make-rectangular 0.0 -2.0) (sqrt -4.0-0.0i))
+  (t 2.0+0.0i  (sqrt 4.0+0.0i))
+  (t (make-rectangular 2.0 -0.0) (sqrt 4.0-0.0i))
+  (t 1.272019649514069+0.7861513777574233i (sqrt 1+2i))
+  (t (make-rectangular +inf.0 +inf.0) (sqrt (make-rectangular 1.0 +inf.0)))
+
+  ;; exp and log
+  (t 1.0+0.0i  (exp 0.0+0.0i))
+  (t (make-rectangular 1.0 -0.0) (exp 0.0-0.0i))
+  (t 1.4686939399158851+2.2873552871788423i (exp 1+i))
+  (t (make-rectangular +inf.0 0.0) (exp +inf.0+0.0i))
+  (t (make-rectangular 0.0 pi)  (log -1.0))
+  (t (make-rectangular 0.0 pi)  (log -1.0+0.0i))
+  (t (make-rectangular 0.0 (- pi)) (log -1.0-0.0i))
+  (t (make-rectangular 0.0 0.0) (log 1.0+0.0i))
+  (t (make-rectangular 0.0 -0.0) (log 1.0-0.0i))
+  (t (make-rectangular 0.34657359027997264 0.7853981633974483) (log 1+i))
+  (t (make-rectangular 691.1221014884936 0.7853981633974483)
+     (log 1e300+1e300i))
+
+  ;; expt
+  (t 8.0+0.0i  (expt 2.0+0.0i 3))
+  (t (make-rectangular 8.0 -0.0) (expt 2.0-0.0i 3))
+  (t 8.0+0.0i  (expt 2 3.0+0.0i))
+  (t 0.0+2.0i  (expt 1+i 2))
+  (t (make-rectangular 0.0 -0.5) (expt 1+i -2))
+  (t 1.0+1.7320508075688772i (expt -8.0+0.0i 1/3))
+  (t (make-rectangular 1.0 -1.7320508075688772) (expt -8.0-0.0i 1/3))
+  (t 0.0+2.0i  (expt -4.0+0.0i 1/2))
+  (t (make-rectangular 0.0 -2.0) (expt -4.0-0.0i 0.5))
+  (t -0.06648365401771332-0.05522404073666603i (expt -2 1+i))
+  (t 0.20787957635076193 (real-part (expt +i +i)))
+  (t 0    (expt 0 1+i))
+  (t 0.0  (expt 0.0 1+i))
+  (t 1.0  (expt 0.0 0.0+0.0i))
+  (t 1    (expt 1+i 0))
+
+  ;; trigonometric and hyperbolic functions
+  (t 1.2984575814159773+0.6349639147847361i (sin 1+i))
+  (t 0.8337300251311491-0.9888977057628651i (cos 1+i))
+  (t 0.2717525853195117+1.0839233273386946i (tan 1+i))
+  (t 0.6349639147847361+1.2984575814159773i (sinh 1+i))
+  (t 0.8337300251311491+0.9888977057628651i (cosh 1+i))
+  (t 1.0839233273386946+0.2717525853195117i (tanh 1+i))
+  (t 0.0+1.0i  (tan 1+1000i))
+  (t (make-rectangular 0.0 -1.0) (tan 1-1000i))
+  (t 1.0+0.0i  (tanh 1000+i))
+  (t 0.0+0.0i  (sin 0.0+0.0i))
+  (t (make-rectangular 0.0 -0.0) (sin 0.0-0.0i))
+
+  ;; asin and acos: cuts on the real axis outside of [-1, 1]
+  (t (make-rectangular pi/2 -1.3169578969248166) (asin 2.0))
+  (t (make-rectangular pi/2 -1.3169578969248166) (asin 2))
+  (t (make-rectangular pi/2 1.3169578969248166)  (asin 2.0+0.0i))
+  (t (make-rectangular pi/2 -1.3169578969248166) (asin 2.0-0.0i))
+  (t (make-rectangular (- pi/2) 1.3169578969248166)  (asin -2.0))
+  (t (make-rectangular (- pi/2) 1.3169578969248166)  (asin -2.0+0.0i))
+  (t (make-rectangular (- pi/2) -1.3169578969248166) (asin -2.0-0.0i))
+  (t (make-rectangular 0.0 1.3169578969248166)  (acos 2.0))
+  (t (make-rectangular 0.0 -1.3169578969248166) (acos 2.0+0.0i))
+  (t (make-rectangular 0.0 1.3169578969248166)  (acos 2.0-0.0i))
+  (t (make-rectangular pi -1.3169578969248166)  (acos -2.0))
+  (t (make-rectangular pi -1.3169578969248166)  (acos -2.0+0.0i))
+  (t (make-rectangular pi 1.3169578969248166)   (acos -2.0-0.0i))
+  (t 0.6662394324925153+1.0612750619050357i (asin 1+i))
+  (t 0.9045568943023814-1.0612750619050357i (acos 1+i))
+  (t (make-rectangular 0.7853981633974483 691.8152486690535)
+     (asin 1e300+1e300i))
+
+  ;; atan and asinh: cuts on the imaginary axis outside of [-i, i]
+  (t (make-rectangular pi/2 0.5493061443340549)     (atan 0.0+2.0i))
+  (t (make-rectangular (- pi/2) 0.5493061443340549) (atan -0.0+2.0i))
+  (t (make-rectangular pi/2 -0.5493061443340549)     (atan 0.0-2.0i))
+  (t (make-rectangular (- pi/2) -0.5493061443340549) (atan -0.0-2.0i))
+  (t 1.0172219678978514+0.4023594781085251i (atan 1+i))
+  (t (make-rectangular 1.3169578969248166 pi/2)     (asinh 0.0+2.0i))
+  (t (make-rectangular -1.3169578969248166 pi/2)    (asinh -0.0+2.0i))
+  (t (make-rectangular 1.3169578969248166 (- pi/2))  (asinh 0.0-2.0i))
+  (t (make-rectangular -1.3169578969248166 (- pi/2)) (asinh -0.0-2.0i))
+
+  ;; acosh: cut on the real axis less than 1
+  (t (make-rectangular 0.0 1.0471975511965976)  (acosh 0.5))
+  (t (make-rectangular 0.0 1.0471975511965976)  (acosh 0.5+0.0i))
+  (t (make-rectangular 0.0 -1.0471975511965976) (acosh 0.5-0.0i))
+  (t (make-rectangular 1.3169578969248166 pi)     (acosh -2.0))
+  (t (make-rectangular 1.3169578969248166 pi)     (acosh -2.0+0.0i))
+  (t (make-rectangular 1.3169578969248166 (- pi)) (acosh -2.0-0.0i))
+  (t 1.3169578969248166 (acosh 2.0))
+  (t 0.0 (acosh 1))
+
+  ;; atanh: cuts on the real axis outside of [-1, 1]
+  (t (make-rectangular 0.5493061443340549 (- pi/2)) (atanh 2.0))
+  (t (make-rectangular 0.5493061443340549 pi/2)     (atanh 2.0+0.0i))
+  (t (make-rectangular 0.5493061443340549 (- pi/2)) (atanh 2.0-0.0i))
+  (t (make-rectangular -0.5493061443340549 pi/2)     (atanh -2.0))
+  (t (make-rectangular -0.5493061443340549 pi/2)     (atanh -2.0+0.0i))
+  (t (make-rectangular -0.5493061443340549 (- pi/2)) (atanh -2.0-0.0i))
+  (t 0.5493061443340549 (atanh 0.5))
+  (t +inf.0 (atanh 1.0))
+  (t +nan.0 (atanh +nan.0))
+  )
 
 ;;------------------------------------------------------------------
 (test-section "ffx optimization")

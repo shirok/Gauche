@@ -50,6 +50,7 @@
 /* We avoid to use C macro 'complex' for C++ extensions. */
 typedef float _Complex ScmFloatComplex;
 typedef double _Complex ScmDoubleComplex;
+typedef long double _Complex ScmLongDoubleComplex;
 
 /*
  * Half float support

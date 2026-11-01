@@ -98,6 +98,7 @@ SCM_EXTERN int    Scm_GlocPhantomBindingP(ScmGloc *g);
 SCM_EXTERN int    Scm_GlocConstP(ScmGloc *g);
 SCM_EXTERN int    Scm_GlocInlinableP(ScmGloc *g);
 SCM_EXTERN int    Scm_GlocSyntaxP(ScmGloc *g);
+SCM_EXTERN int    Scm_GlocDummyP(ScmGloc *g);
 SCM_EXTERN int    Scm_GlocSupersedableP(ScmGloc *g, u_long flags, ScmObj val);
 
 #endif /* GAUCHE_GLOC_H */

@@ -20,10 +20,9 @@
  * data structures; the code is not used during normal garbage collection.
  *
  * One restriction is that we drop all back-edges from nodes with very
- * high in-degree, and simply add them add them to a list of such
- * nodes.  They are then treated as permanent roots.  If this by itself
- * doesn't introduce a space leak, then such nodes can't contribute to
- * a growing space leak.
+ * high in-degree, and simply add them to a list of such nodes.  They are
+ * then treated as permanent roots.  If this by itself doesn't introduce
+ * a space leak, then such nodes can't contribute to a growing space leak.
  */
 
 #ifdef MAKE_BACK_GRAPH
@@ -207,7 +206,7 @@ static void ensure_struct(ptr_t p)
 }
 
 /* Add the (forward) edge from p to q to the backward graph.  Both p    */
-/* q are pointers to the object base, i.e. pointers to an oh.           */
+/* and q are pointers to the object base, i.e. pointers to an oh.       */
 static void add_edge(ptr_t p, ptr_t q)
 {
     ptr_t pred = GET_OH_BG_PTR(q);
@@ -276,7 +275,13 @@ static void add_edge(ptr_t p, ptr_t q)
 #   ifdef DEBUG_PRINT_BIG_N_EDGES
       if (GC_print_stats == VERBOSE && be -> n_edges == 100) {
         GC_err_printf("The following object has big in-degree:\n");
-        GC_print_heap_obj(q);
+#       ifdef THREADS
+          /* We cannot call the debug version of GC_print_heap_obj here */
+          /* because the allocator lock is held.                        */
+          GC_default_print_heap_obj_proc(q);
+#       else
+          GC_print_heap_obj(q);
+#       endif
       }
 #   endif
 }

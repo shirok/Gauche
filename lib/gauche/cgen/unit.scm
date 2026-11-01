@@ -40,7 +40,7 @@
   (export <cgen-unit> cgen-current-unit
           cgen-unit-c-file cgen-unit-init-name cgen-unit-h-file
           cgen-unit-toplevel-nodes cgen-add!
-          cgen-emit-h cgen-emit-c
+          cgen-emit-h cgen-emit-c cgen-emit-part->string
 
           <cgen-node> cgen-with-cpp-condition cgen-cpp-conditions cgen-emit
           cgen-emit-xtrn cgen-emit-decl cgen-emit-body cgen-emit-init
@@ -158,6 +158,16 @@
       (cond [(~ unit'init-epilogue) => emit-raw]
             [else (print "}")])
       )))
+
+;; API
+;; Render the named part into a string instead of a file.  A special
+;; part name, 'static-data, can be used to emit the static data
+;; section---it should come between the decl and body sections.
+(define-method cgen-emit-part->string ((unit <cgen-unit>) part)
+  (with-output-to-string
+    (^[] (if (eq? part 'static-data)
+           (cgen-emit-static-data unit)
+           (cgen-emit-part unit part)))))
 
 ;; NB: temporary solution for inter-module dependency.
 ;; The real procedure is defined in gauche.cgen.literal.

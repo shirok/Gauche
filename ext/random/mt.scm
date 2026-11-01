@@ -1,5 +1,5 @@
 ;;;
-;;; mt-random - Mersenne Twister interface
+;;; math.random.mt - Mersenne Twister interface
 ;;;
 ;;;   Copyright (c) 2000-2025  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module math.mt-random
+(define-module math.random.mt
   (export <mersenne-twister>
           make-mersenne-twister
           mt-random-get-seed
@@ -42,10 +42,11 @@
           mt-random-real0
           mt-random-integer
           mt-random-fill-u32vector!
+          mt-random-fill-u64vector!
           mt-random-fill-f32vector!
           mt-random-fill-f64vector!)
   )
-(select-module math.mt-random)
+(select-module math.random.mt)
 
 (inline-stub
  (declcode
@@ -96,6 +97,9 @@
    Scm_MTGenrandU32)
 
  (define-cproc mt-random-fill-u32vector! (mt::<mersenne-twister> v::<u32vector>)
+   (return (Scm_MTFillUvector mt (SCM_OBJ v))))
+
+ (define-cproc mt-random-fill-u64vector! (mt::<mersenne-twister> v::<u64vector>)
    (return (Scm_MTFillUvector mt (SCM_OBJ v))))
 
  (define-cproc mt-random-fill-f32vector! (mt::<mersenne-twister> v::<f32vector>)

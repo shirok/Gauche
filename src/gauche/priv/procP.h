@@ -41,6 +41,12 @@ void Scm__ProcedureInit(ScmProcedure *proc,
                         int optional,
                         ScmObj info);
 
+/* Same as Scm_MakeClosure, except that the closure is named NAME instead of
+   the name recorded in CODE.  NAME shouldn't be #f.
+ */
+SCM_EXTERN ScmObj Scm__MakeNamedClosure(ScmObj code, ScmEnvFrame *env,
+                                        ScmObj name, ScmObj tags);
+
 /* Copying procedure.  Procedures must be treated as an immutable entity
    and user code shouldn't attempt to copy a procedure object.  This is
    used only for internal purpose.

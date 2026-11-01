@@ -37,7 +37,6 @@
 (define-module lang.c.type
   (use gauche.dictionary)
   (use util.match)
-  (use srfi.13)
   (export grok-c-type
           c-primary-type
           c-basic-type-integral?
@@ -46,9 +45,18 @@
           c-basic-type-numeric?
           c-type-narrower?
           c-wider-type
-          c-actual-type)
+          c-actual-type
+          c-type->native-type)
   )
 (select-module lang.c.type)
+
+;; Avoid statically depending on gauche.native-type.
+(autoload gauche.native-type
+          make-c-pointer-type
+          make-c-function-type make-c-array-type
+          make-c-struct-type make-c-union-type
+          c-struct/union-type-complete! c-struct/union-type-complete?
+          make-c-enum-type c-enum-type-complete! default-c-enum-base-type)
 
 ;; Type representation
 ;;   We use plain S-expr rather than a bunch of records, for flexibility.
@@ -56,14 +64,11 @@
 ;;
 ;;   <c-type> : (<basic-type> (<qual> ...))
 ;;            | (.pointer (<qual> ...) <c-type>)
-;;            | (.array <c-type> <size> (<aqual> ...))
+;;            | (.array <c-type> (<aqual> ...) <size>)
 ;;            | (.function (<fqual> ...>) <c-type> <args>)
-;;            | (.struct <tag> (<qual> ...)
-;;                   ((<field-name> <c-type> [<size>]) ...))
-;;            | (.union <tag> (<qual> ...)
-;;                   ((<field-name> <c-type> [<size>]) ...))
-;;            | (.enum <tag> (<qual> ...)
-;;                   ((<enum-name> <enum-value>) ...))
+;;            | (.struct <tag> (<qual> ...) <fields>)
+;;            | (.union <tag> (<qual> ...) <fields>)
+;;            | (.enum <tag> (<qual> ...) <enumerators> <base-type>)
 ;;            | (.type <type-name> (<qual> ...) <c-type>)
 ;;
 ;;   <basic-type> : one of the symbols in *c-basic-types*
@@ -73,8 +78,7 @@
 ;;   <fqual>  : 'inline
 ;;
 ;;   <aqual> : <qual> | 'static
-;;   <size>  : scheme-integer
-;;           | c-constant-expression
+;;   <size>  : c-constant-expression
 ;;           | #f
 ;;
 ;;   <args>  : (<arg> ...)
@@ -86,15 +90,36 @@
 ;;   <rest-arg> : '...
 ;;
 ;;   <tag>    : <symbol> | #f
+;;   <fields> : ((<field-name> <c-type> [<size>]) ...)
+;;            | #f
+;;   <enumerators> : ((<enum-name> <enum-value>) ...)
+;;                 | #f
+;;   <base-type> : <c-type>     ; C23 fixed underlying type, enum e : T
+;;               | #f           ; not specified
 ;;   <field-name> : <symbol> | #f
 ;;   <type-name> : symbol
 ;;
 ;;   <enum-name> : symbol
-;;   <enum-value> : scheme-integer
-;;                | c-constant-expression
+;;   <enum-value> : c-constant-expression
 ;;                | #f
 ;;
 ;;   The (.type ...) form is used for typedef'ed types.
+;;
+;;   Struct, union and enum types have identity.  The parser creates
+;;   one for each tag in a scope (or each anonymous one), and every
+;;   occurrence of the type shares the tail of the form after <qual>s,
+;;   that is, (<fields>) or (<enumerators> <base-type>).  Two such types
+;;   are the same iff their tails are eq?.  Code that rebuilds a type,
+;;   e.g. to alter qualifiers, must keep the tail (see attach-qualifier).
+;;   <fields> and <enumerators> are #f while the type is incomplete, and
+;;   the parser destructively fills the tail when it sees the definition
+;;   (<base-type> may be filled by a forward declaration 'enum e : T;').
+;;   So the c-type can be circular (e.g. self-referencing struct).
+;;   Use write-shared to save it.
+;;
+;;   c-constant-expression is the expression as the parser returns, kept
+;;   unevaluated.  Evaluating it needs the knowledge of the constants
+;;   defined so far (including enumerators), so it is up to the grokker.
 
 
 ;; API
@@ -112,9 +137,10 @@
 ;;            | 'unknown-args
 ;;   <core-type-spec> : mixed list of zero or more <qual>s, and <core-type>
 ;;   <core-type> : <basic-type>
-;;               | (struct <tag> <member-spec> ...)
-;;               | (union <tag> <member-spec> ...)
-;;               | (enum <tag> <member-id> ...)
+;;               | (struct <tag> <fields>)
+;;               | (union <tag> <fields>)
+;;               | (enum <tag> <enumerators> <base-type>)
+;;     where the tail after <tag> is shared, as described above.
 ;;
 ;;  NB: attribute and asm may appear in both type-modifier and in core quals
 ;;
@@ -125,12 +151,7 @@
       [() '()]
       [(('* . quals) . rest) `(.pointer ,quals ,(rec rest))]
       [(('array-dimension quals size) . rest)
-       (match (fold-c-constant size)
-         [#f `(.array ,(rec rest) ,quals ,size)] ;variable size
-         [(val type)
-          (unless (c-basic-type-integral? type)
-            (error "non-integral array dimension not allowed:" type-specs))
-          `(.array ,(rec rest) ,quals ,val)])]
+       `(.array ,(rec rest) ,quals ,size)]
       [(('function params) . rest)
        ;; special handling of 'inline' - syntactically it is attached to
        ;; the return type, but we need to attach it to the function part.
@@ -206,24 +227,12 @@
         (symbol-append base '-complex)
         base)))
 
-  (define (aggregate-tag tag)
-    (match tag
-      [('ident x) x]
-     [#f #f]))
-
+  ;; NB: We share the tail of CORE; see the comment at the top.
   (define (aggregate-type quals core)
-    (define (make-agg-type mark tag members)
-      `(,mark ,(aggregate-tag tag) ,(reverse quals) ,members))
-    (define (enum-member mem)
-      (match-let1 (name init) mem
-        (match (fold-c-constant init)
-          [#f mem]
-          [(val type) `(,name ,val)])))
     (match core
-      [('struct tag . members) (make-agg-type '.struct tag members)]
-      [('union tag . members)  (make-agg-type '.union tag members)]
-      [('enum tag . members)   (make-agg-type '.enum tag
-                                              (map enum-member members))]))
+      [('struct tag . cell) `(.struct ,tag ,(reverse quals) . ,cell)]
+      [('union tag . cell)  `(.union ,tag ,(reverse quals) . ,cell)]
+      [('enum tag . cell)   `(.enum ,tag ,(reverse quals) . ,cell)]))
 
   ;; we make quals appear in the order of the original code, just to make
   ;; testing and debugging easier---the caller shouldn't rely on that.
@@ -319,6 +328,7 @@
       [else (bad)])))
 
 ;; Add qualifier to the 'main' type, which would be attached to the variable.
+;; NB: For struct/union/enum, the tail after quals must be shared.
 (define (attach-qualifier c-type qual)
   (define (merge-quals new-qs qs)
     (if (null? new-qs)
@@ -331,9 +341,9 @@
     [('.pointer qs inner) `(.pointer ,(merge-quals qual qs) ,inner)]
     [('.array inner . rest) `(.array ,(attach-qualifier inner qual) ,@rest)]
     [('.function qs . rest) `(.function ,(merge-quals qual qs) ,@rest)]
-    [('.struct tag qs . rest) `(.struct ,tag ,(merge-quals qual qs) ,@rest)]
-    [('.union tag qs . rest) `(.union ,tag ,(merge-quals qual qs) ,@rest)]
-    [('.enum tag qs . rest) `(.enum ,tag ,(merge-quals qual qs) ,@rest)]
+    [('.struct tag qs . cell) `(.struct ,tag ,(merge-quals qual qs) . ,cell)]
+    [('.union tag qs . cell) `(.union ,tag ,(merge-quals qual qs) . ,cell)]
+    [('.enum tag qs . cell) `(.enum ,tag ,(merge-quals qual qs) . ,cell)]
     [('.type name qs inner) `(.type ,name ,(merge-quals qual qs) ,inner)]
     [(btype qs) `(,btype ,(merge-quals qual qs))]))
 
@@ -404,46 +414,164 @@
     [_ c-type]))
 
 ;;;
-;;;  Folding C constant
+;;; Conversion to native type
 ;;;
 
-(define-constant *constant-folders*
-  `((+ .    ,(^[x y type] (+ x y)))
-    (- .    ,(^[x y type] (- x y)))
-    (* .    ,(^[x y type] (* x y)))
-    (/ .    ,(^[x y type] (if (c-basic-type-integral? type)
-                            (quotient x y)
-                            (/ x y))))
-    (% .    ,(^[x y type] (modulo x y)))
-    (& .    ,(^[x y type] (logand x y)))
-    (|\|| . ,(^[x y type] (logior x y)))
-    (^ .    ,(^[x y type] (logxor x y)))
-    (<< .   ,(^[x y type] (ash x y)))
-    (>> .   ,(^[x y type] (ash x (- y))))
-    ))
-
-;; If EXPR is foldable, returns (<scheme-value> <c-type>).
-;; Otherwise returns #f
-(define (fold-c-constant expr)
-  (match expr
-    [('const type lit)
-     (cond [(c-basic-type-integral? `(,type ()))
-            (let1 n (if (memq type '(char s-char u-char)) ;;TODO: wchar
-                      (char->integer (string-ref lit 0))
-                      (string->number (string-trim-right lit #[uUlL])))
-              (if (exact-integer? n)
-                `(,n (,type (const)))
-                (error "bad literal integer constant:" lit)))]
-           [(c-basic-type-flonum? `(,type ()))
-            (let1 n (string->number (string-trim-right lit #[lLfF]))
-              (if (real? n)
-                `(,n (,type (const)))
-                (error "bad floating-point number constant:" lit)))]
-           [else #f])]
-    [((? (cut assq <> *constant-folders*) op) x1 x2)
-     (and-let* ([v1 (fold-c-constant x1)]
-                [v2 (fold-c-constant x2)]
-                [proc (assq-ref *constant-folders* op)]
-                [type (c-wider-type (cadr v1) (cadr v2))])
-       `(,(proc (car v1) (car v2) type) ,type))]
-    [_ #f]))
+;; API
+;;   Returns a <native-type> corresponding to C-TYPE, or #f if it can't
+;;   be represented as a native type.
+;;
+;;   During conversion, we may need to evaluate constant expression
+;;   (e.g. array dimensions or enumerator values).  Evaluation needs
+;;   global knowledge of the program, so we delegate it to caller-provided
+;;   EVAL-CONST procedure---it takes parsed C expression form and must
+;;   return either a Scheme number, or #f when the expression doesn't
+;;   have constant value.  EVAL-CONST may throw an error; see lang.c.grokker.
+;;
+;;   Struct, union and enum types have identity (see the comment at the
+;;   top), which is kept in the converted native types through MEMO,
+;;   a hash table that maps the tail of the c-type to the native
+;;   type.  The same MEMO should be used throughout the conversion of
+;;   the types of one program, so that the same struct is converted to
+;;   the same native type.  If omitted, a new one is created for each call.
+;;
+;;   An incomplete struct/union is converted to an incomplete native type,
+;;   which can be completed in place when it is converted again with the
+;;   same MEMO after the definition is parsed.  A self-referencing struct
+;;   becomes a struct that contains a pointer to itself.  Likewise,
+;;   an incomplete enum is converted to an enum type with the provisional
+;;   base type, which may be completed later.
+;;
+;;   Qualifiers are ignored.  Bit fields and anonymous members of
+;;   struct/union aren't supported yet.  A struct/union whose members
+;;   can't be converted is converted to #f, but a pointer to it is
+;;   converted to a pointer to an incomplete type, as far as it's tagged.
+(define (c-type->native-type c-type :optional (eval-const (^_ #f))
+                                              (memo (make-hash-table 'eq?)))
+  (define converting '())           ;tails of struct/union being converted
+  (define (const-int expr)
+    (let1 v (eval-const expr)
+      (and (exact-integer? v) v)))
+  (define (field f)
+    (match f
+      [((? symbol? name) type) (and-let1 t (conv type) (list name t))]
+      [_ #f]))                          ;anonymous or bit field
+  (define (convert-fields cell)
+    (let1 saved converting
+      (push! converting cell)
+      (let1 fs (map field (car cell))
+        (set! converting saved)
+        (and (every values fs) fs))))
+  ;; CELL is the tail of the c-type, whose car is the fields or #f.
+  ;; If POINTEE? is true, we return an incomplete type when we can't
+  ;; convert the fields.
+  (define (aggregate make tag cell pointee?)
+    (let1 nt (hash-table-get memo cell #f)
+      (cond
+       [(and nt (or (memq cell converting) (c-struct/union-type-complete? nt)))
+        nt]
+       [(not (car cell))                ;incomplete c-type
+        (or nt
+            (and tag                    ;anonymous one can't be incomplete
+                 (rlet1 nt (make tag #f) (hash-table-put! memo cell nt))))]
+       [(not tag)                       ;anonymous; can't be self-referenced
+        (and-let1 fs (convert-fields cell)
+          (rlet1 nt (make tag fs) (hash-table-put! memo cell nt)))]
+       [else
+        ;; We register an incomplete type first, then complete it, for
+        ;; the fields may refer to this type.
+        (let1 nt (or nt (rlet1 nt (make tag #f) (hash-table-put! memo cell nt)))
+          (if-let1 fs (convert-fields cell)
+            (begin (c-struct/union-type-complete! nt fs) nt)
+            (and pointee? nt)))])))
+  (define (pointer pointee)
+    (define (pointer-to t) (and t (make-c-pointer-type t)))
+    (match (c-actual-type pointee)
+      [('void _) <void*>]
+      [('.struct tag _ . cell)
+       (pointer-to (aggregate make-c-struct-type tag cell #t))]
+      [('.union tag _ . cell)
+       (pointer-to (aggregate make-c-union-type tag cell #t))]
+      [_ (pointer-to (conv pointee))]))
+  ;; int x[3][2] is (.array (.array int 2) 3); we flatten it to
+  ;; an array of int with dimensions (3 2).  Only the first dimension
+  ;; can be unknown.
+  (define (array type)
+    (let loop ([type type] [dims '()] [first? #t])
+      (match (c-actual-type type)
+        [('.array elt _ dim)
+         (and-let1 d (cond [dim (const-int dim)]
+                           [first? '*]
+                           [else #f])
+           (loop elt (cons d dims) #f))]
+        [_ (and-let1 elt (conv type)
+             (make-c-array-type elt (reverse dims)))])))
+  (define (function ret args)
+    (and-let* ([r (conv ret)]
+               [as (match args
+                     ['unknown-args '(...)]
+                     [_ (map (^a (match a
+                                   ['... '...]
+                                   [(_ t) (conv t)]))
+                             args)])]
+               [ (every values as) ])
+      (make-c-function-type r as)))
+  (define (enumerators members)
+    (let1 es (map (^m (match m
+                        [(name #f) name]
+                        [(name expr) (and-let1 v (const-int expr)
+                                       (list name v))]))
+                  members)
+      (and (every values es) es)))
+  ;; CELL is the tail of the c-type, (<enumerators> <base-type>).
+  ;; Without the base type, the native type determines it from
+  ;; the enumerator values.
+  (define (enum tag cell)
+    (let ([nt (hash-table-get memo cell #f)]
+          [base (and-let1 b (cadr cell) (or (conv b) 'bad))])
+      (cond
+       [(eq? base 'bad) #f]
+       [(and nt (not (null? (~ nt'enumerator-alist)))) nt]
+       [(not (car cell))
+        ;; Incomplete enum.  Unless the base type is given, we use
+        ;; the provisional base type.
+        (or nt
+            (rlet1 nt (make-c-enum-type tag
+                                        (or base (default-c-enum-base-type))
+                                        '())
+              (hash-table-put! memo cell nt)))]
+       [nt (and-let1 es (enumerators (car cell))
+             (c-enum-type-complete! nt es)
+             nt)]
+       [else (and-let1 es (enumerators (car cell))
+               (rlet1 nt (make-c-enum-type tag base es)
+                 (hash-table-put! memo cell nt)))])))
+  (define (conv type)
+    (match (c-actual-type type)
+      [('.pointer _ pointee) (pointer pointee)]
+      [('.array . _) (array type)]
+      [('.function _ ret args) (function ret args)]
+      [('.struct tag _ . cell) (aggregate make-c-struct-type tag cell #f)]
+      [('.union tag _ . cell) (aggregate make-c-union-type tag cell #f)]
+      [('.enum tag _ . cell) (enum tag cell)]
+      [('char _) <c-char>]
+      [('s-char _) <int8>]
+      [('u-char _) <uint8>]
+      [('short _) <short>]
+      [('u-short _) <ushort>]
+      [('int _) <int>]
+      [('u-int _) <uint>]
+      [('long _) <long>]
+      [('u-long _) <ulong>]
+      [('long-long _) <longlong>]
+      [('u-long-long _) <ulonglong>]
+      [('bool _) <c-bool>]
+      [('float _) <float>]
+      [('double _) <double>]
+      [('long-double _) <longdouble>]
+      [('float-complex _) <float-complex>]
+      [('double-complex _) <double-complex>]
+      [('long-double-complex _) <longdouble-complex>]
+      [('void _) <void>]
+      [_ #f]))
+  (conv c-type))

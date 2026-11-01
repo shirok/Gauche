@@ -47,7 +47,7 @@
   /* library that may be shared between applications, since it affects    */
   /* the binary interface to the library.                                 */
 # if defined(__LP64__) || defined (_LP64) || defined(_WIN64) \
-        || defined(__s390x__) \
+        || defined(__s390x__) || defined(__sparcv9) \
         || (defined(__x86_64__) && !defined(__ILP32__)) \
         || defined(__alpha__) || defined(__powerpc64__) \
         || defined(__arch64__)
@@ -77,7 +77,7 @@
 # endif
 #endif /* !GC_TINY_FREELISTS */
 
-/* The ith free list corresponds to size i*GC_GRANULE_BYTES     */
+/* The ith free list corresponds to size i*GC_GRANULE_BYTES.    */
 /* Internally to the collector, the index can be computed with  */
 /* ROUNDED_UP_GRANULES.  Externally, we don't know whether      */
 /* DONT_ADD_BYTE_AT_END is set, but the client should know.     */

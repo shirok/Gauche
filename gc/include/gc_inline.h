@@ -2,6 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 2005 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2008-2024 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -94,12 +95,12 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
 #endif
 
 /* The ultimately general inline allocation macro.  Allocate an object  */
-/* of size granules, putting the resulting pointer in result.  Tiny_fl  */
+/* of size granules, putting the resulting pointer in result.  tiny_fl  */
 /* is a "tiny" free list array, which will be used first, if the size   */
 /* is appropriate.  If granules argument is too large, we allocate with */
 /* default_expr instead.  If we need to refill the free list, we use    */
 /* GC_generic_malloc_many with the indicated kind.                      */
-/* Tiny_fl should be an array of GC_TINY_FREELISTS void * pointers.     */
+/* tiny_fl should be an array of GC_TINY_FREELISTS void pointers.       */
 /* If num_direct is nonzero, and the individual free list pointers      */
 /* are initialized to (void *)1, then we allocate num_direct granules   */
 /* directly using generic_malloc before putting multiple objects into   */

@@ -47,17 +47,58 @@ SCM_EXTERN ScmObj Scm__GenericDispatcherInfo(ScmGeneric *gf);
 SCM_EXTERN void   Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port);
 
 
-/* A proxy type is a class to hold a reference to another class.
-   It is used to keep reference to a type in another compound type
-   structure.  We need an indirection because a class may be redefined.
+/* A proxy type holds a reference to another type, indirectly.  It is
+   used in the following cases:
+
+   - Global binding to a class appearing in a type expression: Since a class
+     can be redefined, we can't use the direct reference to the class object.
+     Instead we keep gloc of the binding---so that the type expression
+     always use the most recent class definition.
+   - Local binding appearing in a type expression: If the bound value
+     is a generative type, we can't compute it at compile time.
+     For every local-scope define-type, we create a shadow local
+     binding to a proxy type that stands for the type value to be computed
+     at runtime, and use that proxy type in a type expression.
+   - Deferred proxy type.  This is used when we need a global type
+     binding at compile time, before the binding is actually executed---
+     e.g.
+       (begin (define-class <foo> ...)
+              (define (f x) (of-type? x (<?> <foo>))))
+     Here, the global identifier <foo> would be bound when the entire begin
+     form is executed.  But before it, we need to compile the type expression
+     (<?> <foo>), and the compiler need to look up the compile-time binding
+     of <foo>.  We can't retrieve the actual bound value of <foo>, which would
+     be a class object computed at runtime, but we do know <foo> would be
+     bound to something that can be used as a type---so we insert deferred
+     proxy type in the compiling environment, which would be superseded
+     with the real value at runtime.
 */
 struct ScmProxyTypeRec {
     SCM_HEADER;
     ScmIdentifier *id;          /* Original Id (need to serialize in
-                                   precomp output. */
+                                   precomp output.
+                                   NULL iff this is a local proxy type. */
     ScmGloc *ref;               /* GLOC that holds the actual class.
                                    It can be NULL, if it is computed
-                                   from ID lazily. */
+                                   from ID lazily.  Always NULL in a local
+                                   proxy type. */
+    ScmObj value;               /* The type this proxy stands for.
+                                   Global proxy type - unused.
+                                   Local proxy type - local type value.
+                                   Deferred prox ytype - type value to
+                                   be bound, iff it is computable at
+                                   compile time.
+                                   This value needs not be serialized.
+                                */
 };
+
+#define SCM_LOCAL_PROXY_TYPE_P(obj) \
+    (SCM_PROXY_TYPE_P(obj) && SCM_PROXY_TYPE(obj)->id == NULL)
+
+/* Creates a local proxy type standing for TYPE.  TYPE must be a type, and
+   it is held directly, so this can only be called at runtime---the compiler
+   emits a call to it (via %make-local-proxy-type) instead of creating one
+   itself. */
+SCM_EXTERN ScmObj Scm_MakeLocalProxyType(ScmObj type);
 
 #endif /*GAUCHE_PRIV_CLASSP_H*/

@@ -19,12 +19,12 @@
   (use gauche.native-type)
   (use gauche.uvector)
 
-  (define foo (native-type
-               '(.struct foo (c::char i::int s::short
-                              l::long f::float d::double))))
-  (define foo* (make-c-pointer-type foo))
+  (define-type foo (native-type
+                    '(.struct foo (c::char i::int s::short
+                                           l::long f::float d::double))))
+  (define-type foo* (make-c-pointer-type foo))
 
-  (define bar (native-type `(.array int32_t (4))))
+  (define-type bar (native-type `(.array int32_t (4))))
 
   (define-syntax do-test-f
     (syntax-rules ::: ()
@@ -171,34 +171,34 @@
          (t "ok" (%say-ok))
 
          (let* ([p (make-native-handle foo*)])
-           (set! (native-> p 'c) #\a)
+           (set! (native. p 'c) #\a)
            (t #\b (let ([r (F-pstruct-c-pstruct p #\b)])
-                    (native-> r 'c)))
-           (set! (native-> p 's) 12345)
+                    (native. r 'c)))
+           (set! (native. p 's) 12345)
            (t -23456 (let ([r (F-pstruct-s-pstruct p -23456)])
-                       (native-> r 's)))
-           (set! (native-> p 'i) 123456789)
+                       (native. r 's)))
+           (set! (native. p 'i) 123456789)
            (t -987654321 (let ([r (F-pstruct-i-pstruct p -987654321)])
-                           (native-> r 'i)))
+                           (native. r 'i)))
            (cond
             [(>= (~ <long>'size) 8)
-             (set! (native-> p 'l) 123456789012)
+             (set! (native. p 'l) 123456789012)
              (t -987654321098
                 (let ([r (F-pstruct-l-pstruct p -987654321098)])
-                  (native-> r 'l)))]
+                  (native. r 'l)))]
             [else
-             (set! (native-> p 'l) 123456789)
+             (set! (native. p 'l) 123456789)
              (t -987654321
                 (let ([r (F-pstruct-l-pstruct p -987654321)])
-                  (native-> r 'l)))])
-           (set! (native-> p 'f) 0.5)
+                  (native. r 'l)))])
+           (set! (native. p 'f) 0.5)
            (t -0.25
               (let ([r (F-pstruct-f-pstruct p -0.25)])
-                (native-> r 'f)))
-           (set! (native-> p 'd) 0.5)
+                (native. r 'f)))
+           (set! (native. p 'd) 0.5)
            (t -0.25
               (let ([r (F-pstruct-d-pstruct p -0.25)])
-                (native-> r 'd))))
+                (native. r 'd))))
          )]))
 
   (define-syntax do-test-g
@@ -256,7 +256,7 @@
                     #t))
          )]))
 
-  ;; define-c-callback (currently only supported in :stubgen)
+  ;; define-c-callback (currently only supported in :stub)
   (define-syntax do-test-cb
     (syntax-rules ::: ()
       [(_ opts)
@@ -285,6 +285,19 @@
                    (current-module))
                   'ok))
 
+         (test* #"with-ffi cb - passing ScmObj as void*" 'ok
+                (begin
+                  (eval
+                   `(with-ffi (dlopen "./g") opts
+                      (define-c-function Fopaque_data
+                        `((.function (ScmObj) ScmObj)
+                          ScmObj)
+                        <top>)
+                      (define-c-callback cb-opaque ((obj 'ScmObj)) 'ScmObj
+                        (list obj obj)))
+                   (current-module))
+                  'ok))
+
          (t 7  (Fcb2-i cb-add 3 4))
          (t 12.5 (Fcb2-d cb-mul-d 2.5 5.0))
          (t 5  (begin (set! cb-noop-counter 0)
@@ -301,6 +314,9 @@
          ;; <name> is bound to a c-function native handle
          (t #t (c-function-handle? cb-add))
 
+         ;; Passing ScmObj through opaque pointer
+         (t '(can can) (Fopaque_data cb-opaque 'can))
+
          ;; exception propagates from callback through C and back
          (test* #"cb ~'opts exception propagation" 'caught
                 (guard (e [else 'caught])
@@ -309,7 +325,7 @@
 
   (define cb-noop-counter 0)
 
-  (parameterize ([default-ffi-subsystem :stubgen])
+  (parameterize ([default-ffi-subsystem :stub])
     (do-test-f ())
     (do-test-g ())
     (do-test-cb ()))
@@ -317,6 +333,241 @@
     (do-test-f (:subsystem :native))
     (do-test-g (:subsystem :native))
     (do-test-cb (:subsystem :native)))
+  )
+
+;;;----------------------------------------------------------
+(test-section "define-c-constant")
+
+(define-module ffi-const-sandbox
+  (use gauche.test)
+  (use gauche.ffi)
+  (use gauche.native-type)
+  (use file.util)
+
+  ;; Directory holding c/ffi-const.h.  Derived from the test file location
+  ;; so that it works with out-of-tree builds as well.
+  (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
+
+  (parameterize ([default-ffi-subsystem :stub])
+    ;; Constants from the system headers; no include path needed.
+    (eval '(with-ffi #f (:c-headers ("limits.h" "stdio.h"))
+             (define-c-constant CHAR-BIT)
+             (define-c-constant SEEK-END 'int)
+             (define-c-constant EOF 'int))
+          (current-module))
+    ;; Constants from our own header, reached via :c-include-paths.
+    (eval `(with-ffi #f (:c-headers ("ffi-const.h")
+                         :c-include-paths (,c-dir))
+             (define-c-constant FFI-TEST-MAX-VALUE)
+             (define-c-constant FFI-TEST-NEG)
+             (define-c-constant FFI-TEST-GREETING 'c-string)
+             (define-c-constant FFI-TEST-BLUE 'int)
+             (define-c-constant FFI-TEST-DOUBLE 'double)
+             (define-c-constant FFI-TEST-NEG-DOUBLE 'double)
+             (define-c-constant FFI-TEST-FLOAT 'float)
+             (define-c-constant FFI-TEST-TENTH-D 'double)
+             (define-c-constant FFI-TEST-TENTH-F 'float)
+             (define-c-constant FFI-TEST-INT-AS-DOUBLE 'double))
+          (current-module))
+    ;; Flonum constants from the system header.
+    (eval '(with-ffi #f (:c-headers ("float.h"))
+             (define-c-constant DBL-EPSILON 'double)
+             (define-c-constant FLT-EPSILON 'float)
+             (define-c-constant DBL-MAX <double>))
+          (current-module)))
+
+  (test* "define-c-constant, type omitted" 8 CHAR-BIT)
+  (test* "define-c-constant, name translation" 2 SEEK-END)
+  (test* "define-c-constant, negative value" -1 EOF)
+  (test* "define-c-constant, user header" 65535 FFI-TEST-MAX-VALUE)
+  (test* "define-c-constant, parenthesized macro" -3 FFI-TEST-NEG)
+  (test* "define-c-constant, c-string" "hello, ffi" FFI-TEST-GREETING)
+  (test* "define-c-constant, enum member" 2 FFI-TEST-BLUE)
+  (test* "define-c-constant, double" 2.5 FFI-TEST-DOUBLE)
+  (test* "define-c-constant, negative double" -0.125 FFI-TEST-NEG-DOUBLE)
+  (test* "define-c-constant, float" 0.75 FFI-TEST-FLOAT)
+  (test* "define-c-constant, float is a flonum" #t (flonum? FFI-TEST-FLOAT))
+  (test* "define-c-constant, double keeps double precision" 0.1
+         FFI-TEST-TENTH-D)
+  (test* "define-c-constant, float rounds to float precision"
+         (let1 v (make-f32vector 1 0.1) (f32vector-ref v 0))
+         FFI-TEST-TENTH-F)
+  (test* "define-c-constant, integer macro as double" 3.0
+         FFI-TEST-INT-AS-DOUBLE)
+  (test* "define-c-constant, integer macro as double is a flonum" #t
+         (flonum? FFI-TEST-INT-AS-DOUBLE))
+  (test* "define-c-constant, DBL_EPSILON" (flonum-epsilon) DBL-EPSILON)
+  (test* "define-c-constant, FLT_EPSILON" (expt 2.0 -23) FLT-EPSILON)
+  (test* "define-c-constant, DBL_MAX" (greatest-positive-flonum) DBL-MAX)
+
+  (test* "define-c-constant binds a constant" (test-error <error>)
+         (eval '(set! EOF 0) (current-module)))
+
+  (test* "define-c-constant rejects pointer type"
+         (test-error <error> #/pointer, array and function types/)
+         (eval '(with-ffi #f (:subsystem :stub :c-headers ("stdio.h"))
+                  (define-c-constant EOF 'int*))
+               (current-module)))
+
+  (test* "define-c-constant outside with-ffi" (test-error <error>)
+         (eval '(define-c-constant EOF) (current-module)))
+
+  (when (ffi-subsystem-available? :native)
+    (test* "define-c-constant is not supported in native subsystem yet"
+           (test-error <error> #/not supported in the native ffi subsystem/)
+           (eval '(with-ffi #f (:subsystem :native)
+                    (define-c-constant EOF 'int))
+                 (current-module))))
+  )
+
+;;;----------------------------------------------------------
+(test-section "define-c-enum")
+
+(define-module ffi-enum-sandbox
+  (use gauche.test)
+  (use gauche.ffi)
+  (use gauche.native-type)
+  (use file.util)
+
+  (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
+
+  (parameterize ([default-ffi-subsystem :stub])
+    (eval `(with-ffi #f (:c-headers ("ffi-const.h")
+                         :c-include-paths (,c-dir))
+             ;; tag derived from the name
+             (define-c-enum ffi-test-color
+               (FFI-TEST-RED FFI-TEST-GREEN FFI-TEST-BLUE))
+             ;; tag given explicitly
+             (define-c-enum (flags ffi_test_flags)
+               (FFI-TEST-F-A FFI-TEST-F-B FFI-TEST-F-WIDE))
+             ;; anonymous, with an explicit base type
+             (define-c-enum (anon #f) (FFI-TEST-ANON-X FFI-TEST-ANON-Y)
+               'uint8_t)
+             ;; signed base type
+             (define-c-enum (signed-e ffi_test_signed)
+               (FFI-TEST-S-LO FFI-TEST-S-HI) 'int16_t))
+          (current-module)))
+
+  (test* "define-c-enum binds enumerators" '(0 1 2)
+         (list FFI-TEST-RED FFI-TEST-GREEN FFI-TEST-BLUE))
+  (test* "define-c-enum enumerators are constants" (test-error <error>)
+         (eval '(set! FFI-TEST-RED 3) (current-module)))
+
+  (test* "define-c-enum binds the enum set" #t
+         (c-enum-type? ffi-test-color))
+  (test* "define-c-enum derives the tag from the name" 'ffi_test_color
+         (c-enum-type-tag ffi-test-color))
+  (test* "define-c-enum name->value" 1
+         (c-enum-value ffi-test-color 'FFI-TEST-GREEN))
+  (test* "define-c-enum value->name" 'FFI-TEST-BLUE
+         (c-enum-symbol ffi-test-color 2))
+  (test* "define-c-enum name->value, unknown" (test-error <error>)
+         (c-enum-value ffi-test-color 'FFI-TEST-MAUVE))
+  (test* "define-c-enum value->name, unknown" (test-error <error>)
+         (c-enum-symbol ffi-test-color 99))
+  (test* "define-c-enum enumerator alist"
+         '((FFI-TEST-RED . 0) (FFI-TEST-GREEN . 1) (FFI-TEST-BLUE . 2))
+         (c-enum-type-enumerator-alist ffi-test-color))
+
+  ;; A value beyond int; the reified value must still be exact.
+  (test* "define-c-enum explicit tag" 'ffi_test_flags (c-enum-type-tag flags))
+  (test* "define-c-enum wide enumerator" #x80000000 FFI-TEST-F-WIDE)
+  (test* "define-c-enum wide enumerator, via the set" #x80000000
+         (c-enum-value flags 'FFI-TEST-F-WIDE))
+
+  ;; Base type fixes size and alignment; no tag at all.
+  (test* "define-c-enum anonymous" #f (c-enum-type-tag anon))
+  (test* "define-c-enum base type" '(1 1 10 20)
+         (list (~ anon'size) (~ anon'alignment)
+               FFI-TEST-ANON-X FFI-TEST-ANON-Y))
+
+  ;; With a base type the boxer is chosen at code generation time from its
+  ;; signedness; without one, at runtime from the enumerator itself.  Both
+  ;; must reify the value exactly.
+  (test* "define-c-enum signed base type" '(2 -5 5)
+         (list (~ signed-e'size) FFI-TEST-S-LO FFI-TEST-S-HI))
+  (test* "define-c-enum signed base type, via the set" -5
+         (c-enum-value signed-e 'FFI-TEST-S-LO))
+
+  ;; The enum type is usable as an FFI argument type: it is passed as its
+  ;; base type, so the generated stub compiles without naming the tag.
+  (parameterize ([default-ffi-subsystem :stub])
+    (eval `(with-ffi (dlopen "./f") ()
+             (define-c-function Fi-i (list ffi-test-color) 'int))
+          (current-module)))
+  (test* "c-enum as an FFI argument type" 3 (Fi-i FFI-TEST-BLUE))
+
+  ;; The error names the enum and the enumerator at fault: the values come
+  ;; from the C compiler, so what the user got wrong is the base type.
+  (test* "define-c-enum rejects a base type that can't hold the values"
+         (test-error <error>
+                     #/enumerator FFI-TEST-F-WIDE of the enum narrow .* <uint8>/)
+         (eval `(with-ffi #f (:subsystem :stub
+                              :c-headers ("ffi-const.h")
+                              :c-include-paths (,c-dir))
+                  (define-c-enum (narrow ffi_test_flags)
+                    (FFI-TEST-F-A FFI-TEST-F-WIDE) 'uint8_t))
+               (current-module)))
+
+  (test* "define-c-enum, malformed name and tag" (test-error <error>)
+         (eval '(with-ffi #f (:subsystem :stub)
+                  (define-c-enum (a b c) (X)))
+               (current-module)))
+  (test* "define-c-enum, malformed enumerator" (test-error <error>)
+         (eval '(with-ffi #f (:subsystem :stub)
+                  (define-c-enum foo ("X")))
+               (current-module)))
+
+  (test* "define-c-enum outside with-ffi" (test-error <error>)
+         (eval '(define-c-enum foo (X)) (current-module)))
+
+  (when (ffi-subsystem-available? :native)
+    (test* "define-c-enum is not supported in native subsystem yet"
+           (test-error <error> #/not supported in the native ffi subsystem/)
+           (eval '(with-ffi #f (:subsystem :native)
+                    (define-c-enum foo (X)))
+                 (current-module))))
+  )
+
+;; A define-c-enum and a define-c-function that uses it, in one with-ffi
+;; form.  The enum-set name has to be bound before the C code and the cdef
+;; instances are built, so define-c-enum binds it to a <c-enum-type> that carries
+;; the declared representation but no enumerators yet, and the enumerators
+;; are filled in once the C compiler has reported them.
+;; Its own module, so the enumerator names don't collide with the ones above.
+(define-module ffi-enum-intra-sandbox
+  (use gauche.test)
+  (use gauche.ffi)
+  (use gauche.native-type)
+  (use file.util)
+
+  (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
+
+  (parameterize ([default-ffi-subsystem :stub])
+    (eval `(with-ffi (dlopen "./f") (:c-headers ("ffi-const.h")
+                                     :c-include-paths (,c-dir))
+             (define-c-enum (color ffi_test_color)
+               (FFI-TEST-RED FFI-TEST-GREEN FFI-TEST-BLUE))
+             (define-c-function Fi-i (list color) color))
+          (current-module)))
+
+  (test* "c-enum declared and used in one with-ffi form"
+         '(1 2 FFI-TEST-BLUE ffi_test_color)
+         (list (Fi-i FFI-TEST-RED)
+               (c-enum-value color 'FFI-TEST-BLUE)
+               (c-enum-symbol color 2)
+               (c-enum-type-tag color)))
+
+  ;; The representation is settled when the enum is declared, before the
+  ;; values are known, so an enum the default can't hold has to say so.
+  (test* "define-c-enum rejects negative enumerators without a base type"
+         (test-error <error> #/enumerator FFI-TEST-S-LO of the enum bare/)
+         (eval `(with-ffi #f (:subsystem :stub
+                              :c-headers ("ffi-const.h")
+                              :c-include-paths (,c-dir))
+                  (define-c-enum (bare ffi_test_signed)
+                    (FFI-TEST-S-LO FFI-TEST-S-HI)))
+               (current-module)))
   )
 
 ;;;----------------------------------------------------------
@@ -342,12 +593,12 @@
         (test* #"foreign-function-info ~subsystem :rettype" rettype
                (get-keyword :rettype info #f))))
 
-    (parameterize ([default-ffi-subsystem :stubgen])
+    (parameterize ([default-ffi-subsystem :stub])
       (eval
        `(with-ffi (dlopen "./f") ()
           (define-c-function Fi-i '(int) 'int))
        (current-module))
-      (check-info Fi-i #/^\.\/f/ :stubgen '(int) 'int))
+      (check-info Fi-i #/^\.\/f/ :stub '(int) 'int))
 
     (when (ffi-subsystem-available? :native)
       (eval

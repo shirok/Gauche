@@ -379,7 +379,7 @@ CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
 
 # define SUBSTR_LIMIT (10 * SHORT_LIMIT)
         /* Substrings of function nodes and flat strings shorter than   */
-        /* this are flat strings.  Othewise we use a functional         */
+        /* this are flat strings.  Otherwise we use a functional        */
         /* representation, which is significantly slower to access.     */
 
 /* A version of CORD_substr that assumes i >= 0, n > 0, and i + n < length(x).*/
@@ -657,7 +657,7 @@ void CORD_add_forest(ForestElement * forest, CORD x, size_t len)
         }
         i++;
     }
-    /* Sum has depth at most 1 greter than what would be required       */
+    /* Sum has depth at most 1 greater than what would be required      */
     /* for balance.                                                     */
     sum = CORD_cat(sum, x);
     sum_len += len;
@@ -739,7 +739,6 @@ CORD CORD_balance(CORD x)
 
 /* P contains a prefix of the  path to cur_pos. Extend it to a full     */
 /* path and set up leaf info.                                           */
-/* Return 0 if past the end of cord, 1 o.w.                             */
 void CORD__extend_path(CORD_pos p)
 {
      struct CORD_pe * current_pe = &(p[0].path[p[0].path_len]);

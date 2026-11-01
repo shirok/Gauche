@@ -461,6 +461,22 @@ global variables bount to types.  Classes defined with @code{define-class} and
 @c COMMON
 
 @c EN
+If you want to bind the constructed type to an identifier,
+you need to use @code{define-type} instead of @code{define}
+(@pxref{Definitions}).  It ensures the binding is inlinable,
+hence it can be used as arguments for other type constructors.
+@c JP
+構築された型を識別子に束縛したい場合は、
+@code{define}ではなく@code{define-type}を使う必要があります
+(@ref{Definitions}参照)。このフォームはインライン可能な束縛を作り、
+束縛された識別子を他の型コンストラクタの引数として使えるようにします。
+@c COMMON
+
+@example
+(define-type <int-list> (<List> <int>))
+@end example
+
+@c EN
 Type constructors are special classes whose instances are
 descriptive types.  Type constructors can be invoked as if they are
 a procedure, but <type-constructor-call> above is recognized by
@@ -911,7 +927,6 @@ and structs.
 @ref{Native type utilities}を参照してください。
 @c COMMON
 @end deftp
-
 
 @node Equality and comparison, Numbers, Types and classes, Core library
 @section Equality and comparison
@@ -2980,7 +2995,8 @@ Gaucheでは、数の集合は複素数の集合と同一であり、有理数�
 (complex? 3+4i)   @result{} #t
 (complex? 3)      @result{} #t
 (real? 3)         @result{} #t
-(real? -2.5+0.0i) @result{} #t
+(real? -2.5+0i)   @result{} #t
+(real? -2.5+0.0i) @result{} #f
 (real? #e1e10)    @result{} #t
 (integer? 3+0i)   @result{} #t
 (integer? 3.0)    @result{} #t
@@ -2992,20 +3008,44 @@ Gaucheでは、数の集合は複素数の集合と同一であり、有理数�
 @end example
 
 @c EN
-Note: R6RS adopts more strict definition on exactness,
-and notably, it defines a complex number with non-exact zero imaginary
-part is not a real number.   Currently Gauche doesn't have
-exact complex numbers, and automatically coerces complex
-numbers with zero imaginary part to a real number.
-Thus R6RS code that relies on the fact that @code{(real? 1+0.0i)} is
-@code{#f} won't work with Gauche.
+Note: A complex number with inexact zero imaginary part,
+such as @code{1.0+0.0i} or @code{1.0-0.0i}, is treated as a
+non-real complex number,
+since the sign of the zero imaginary part matters at branch cuts.
+@code{real?} returns @code{#f} for such complex numbers.
+
+However, as inexact zero is numerically equal to exact zero
+(@code{(= 0 0.0)} @result{} @code{#t}), a complex number
+with inexact zero imaginary part is numerically equal to
+its real part (@code{(= 1 1.0+0.0i)} @result{} @code{#t}),
+and can be passed to procedures that take real numbers,
+such as @code{<}, @code{floor}
+or @code{exact}.  Use @code{real-valued?} to check
+if a number can be treated as a real number.
+
+A complex number only becomes a real number if its imaginary part
+is an exact zero.  Gauche does not have exact complex numbers
+internally, but if the imaginary part is exact zero when
+a complex number is constructed, it results a real number; e.g.
+@code{1+0i} is read as @code{1},
+and @code{(make-rectangular 1.0 0)} returns @code{1.0}.
 @c JP
-R6RSでは正確性についてより厳密な定義がなされ、特に
-非正確なゼロを虚数部に持つ複素数は実数ではないと規定されています。
-Gaucheは今のところ正確な複素数を持たず、虚部がゼロの複素数は
-自動的に実数に変換されます。従ってR6RSのコードのうち、
-@code{(real? 1+0.0i)}が@code{#f}であることを当てにしているものは
-うまく動かないでしょう。
+註: @code{1.0+0.0i}や@code{1.0-0.0i}のように、非正確なゼロを虚部に持つ
+複素数は非実数の複素数として扱われます。
+ゼロの虚部の符号は分岐切断上で意味を持つことがあるためです。
+@code{real?}はそのような複素数に対して@code{#f}を返します。
+
+ただ、非正確なゼロと正確なゼロが数値的に等しい
+(@code{(= 0 0.0)} @result{} @code{#t})のと同様に、
+非正確なゼロの虚部を持つ複素数はその実部のみの実数と数値的に同値であり
+(@code{(= 1 1.0+0.0i)} @result{} @code{#t})、
+実数を期待する
+@code{<}、@code{floor}、@code{exact}などの手続きにもそのまま渡せます。
+数が実数として扱えるかどうかを調べるには@code{real-valued?}を使ってください。
+
+複素数が実数に変換されるのは、虚部が正確なゼロである場合のみです。
+例えば@code{1+0i}は@code{1}と読まれ、
+@code{(make-rectangular 1.0 0)}は@code{1.0}を返します。
 @c COMMON
 @end defun
 
@@ -3014,23 +3054,30 @@ Gaucheは今のところ正確な複素数を持たず、虚部がゼロの複�
 @defunx integer-valued? obj
 [R6RS]
 @c EN
-In Gauche these are just an alias of @code{real?}, @code{rational?}
-and @code{integer?}.  They are provided for R6RS compatibility.
+These are like @code{real?}, @code{rational?} and @code{integer?},
+except that they also return @code{#t} if @var{obj} is a complex number
+with inexact zero imaginary part whose real part satisfies the
+respective predicate.
 
-The difference of those and non @code{-valued} versions in R6RS is
-that these returns @code{#t} if @var{obj} is a complex number
-with nonexact zero imaginary part.   Since Gauche doesn't distinguish
-complex numbers with zero imaginary part and real numbers, we don't
-have the difference.
+@example
+(real? 1.0+0.0i)            @result{} #f
+(real-valued? 1.0+0.0i)     @result{} #t
+(real-valued? 1.0-0.0i)     @result{} #t
+(integer-valued? 3.0+0.0i)  @result{} #t
+(rational-valued? +inf.0+0.0i) @result{} #f
+@end example
 @c JP
-Gaucheではこれらの手続きはそれぞれ@code{real?}、@code{rational?}、
-および@code{integer?}の別名となっています。これらはR6RSコードとの互換性のために
-提供されています。
+これらは@code{real?}、@code{rational?}、@code{integer?}とほぼ同じですが、
+@var{obj}が非正確なゼロの虚部を持つ複素数で、その実部がそれぞれの述語を
+満たす場合にも@code{#t}を返します。
 
-R6RSで規定されている、これらの手続きと@code{-valued}がついていない手続きの違いは、
-これらの手続きは非正確なゼロの虚部を持つ複素数に対しても@code{#t}を返すという
-ことです。Gaucheではゼロの虚部を持つ複素数は実数とみなしているので、
-この違いは現れません。
+@example
+(real? 1.0+0.0i)            @result{} #f
+(real-valued? 1.0+0.0i)     @result{} #t
+(real-valued? 1.0-0.0i)     @result{} #t
+(integer-valued? 3.0+0.0i)  @result{} #t
+(rational-valued? +inf.0+0.0i) @result{} #f
+@end example
 @c COMMON
 @end defun
 
@@ -4106,6 +4153,18 @@ phrase @code{(exact (floor x))} etc.
 @c COMMON
 @end defun
 
+@defun round-away x
+@c [SRFI-278]
+@c EN
+Round a real numebr @var{x} toward the direction away from zero
+(opposite of @code{truncate}).
+@c JP
+実数@var{x}を、ゼロから遠い方向へと丸めます
+(@code{truncate}の逆です)。
+@c COMMON
+@end defun
+
+
 @defun clamp x :optional min max
 @c EN
 Returns
@@ -4177,6 +4236,43 @@ The two-argument version of @code{atan} returns
 @c COMMON
 
 @c EN
+The functions with branch cuts (@code{log}, @code{asin}, @code{acos},
+@code{atan}, and @code{sqrt}, @code{expt}, @code{asinh}, @code{acosh},
+and @code{atanh}) follow the C99 standard (Annex G) when given
+a non-real complex number.  Notably,
+the sign of a zero imaginary (or real) part determines
+which side of the branch cut the argument is on.
+On the other hand, a real number on a branch cut is regarded
+as continuous with the quadrant in counterclockwise direction,
+as in Common Lisp.  That is, a real number on a cut extending to
+negative infinity is treated as having @code{+0.0} imaginary part,
+and one on a cut extending to positive infinity is treated
+as having @code{-0.0} imaginary part.
+It is consistent to the definitions in R7RS, regarding a real number
+having exact zero imaginary part.
+@c JP
+分岐切断を持つ関数 (@code{log}、@code{asin}、@code{acos}、@code{atan}、
+および@code{sqrt}、@code{expt}、@code{asinh}、@code{acosh}、@code{atanh})
+に実数でない複素数を与えた場合、その分岐切断はC99規格 (Annex G) に従います。
+特に、虚部 (あるいは実部) のゼロの符号によって、引数が分岐切断の
+どちら側にあるかが決まります。
+一方、分岐切断上の実数は、Common Lispと同様に
+反時計回り方向の象限と連続しているとみなされます。
+すなわち、負の無限大へと伸びる分岐切断上の実数は虚部が@code{+0.0}であるかのように、
+正の無限大へと伸びる分岐切断上の実数は虚部が@code{-0.0}であるかのように扱われます。
+これは、実数を正確なゼロの虚部を持つ数とみなした場合のR7RSの定義と一致します。
+@c COMMON
+
+@example
+(log -1.0)       @result{} 0.0+3.141592653589793i
+(log -1.0+0.0i)  @result{} 0.0+3.141592653589793i
+(log -1.0-0.0i)  @result{} 0.0-3.141592653589793i
+(asin 2.0)       @result{} 1.5707963267948966-1.3169578969248166i
+(asin 2.0+0.0i)  @result{} 1.5707963267948966+1.3169578969248166i
+(asin 2.0-0.0i)  @result{} 1.5707963267948966-1.3169578969248166i
+@end example
+
+@c EN
 See also @code{real-exp} etc. below, for real-only version of these functions.
 @c JP
 実数に限定したこれらの関数については、下の@code{real-exp}等も参照してください。
@@ -4191,10 +4287,12 @@ See also @code{real-exp} etc. below, for real-only version of these functions.
 @defunx atanh z
 @c EN
 Hyperbolic trigonometric functions.  Work for complex numbers as well.
+See @code{exp} etc. above for the treatment of branch cuts.
 
 See also @code{real-sinh} etc. below, for real-only version of these functions.
 @c JP
 双曲線関数です。複素数も扱えます。
+分岐切断の扱いについては上の@code{exp}等の項を参照してください。
 
 実数に限定したこれらの関数については、下の@code{real-sinh}等も参照してください。
 @c COMMON
@@ -4214,13 +4312,15 @@ The argument must be a real number.
 [R7RS inexact]
 @c EN
 Returns a square root of a complex number @var{z}.
-The branch cut scheme is the same as Common Lisp.
+The branch cut is on the negative real axis; see @code{exp} etc. above
+for the treatment of the sign of zero imaginary part.
 For real numbers, it returns a positive root.
 
 If @var{z} is the square of an exact real number, the return value
 is also an exact number.
 @c JP
-複素数@var{z}の平方根のひとつを返します。枝刈りの定義はCommon Lispと同じです。
+複素数@var{z}の平方根のひとつを返します。分岐切断は負の実軸上にあります。
+虚部のゼロの符号の扱いについては上の@code{exp}等の項を参照してください。
 実数に対しては正の平方根を返します。
 
 @var{z}が正確な実数の平方である場合、戻り値は正確数となります。
@@ -4229,6 +4329,7 @@ is also an exact number.
 @example
 (sqrt 2)      @result{} 1.4142135623730951
 (sqrt -2)     @result{} 0.0+1.4142135623730951i
+(sqrt -2.0-0.0i) @result{} 0.0-1.4142135623730951i
 (sqrt 256)    @result{} 16
 (sqrt 256.0)  @result{} 16.0
 (sqrt 81/169) @result{} 9/13
@@ -4323,21 +4424,35 @@ M_74207281 (2^74207281 - 1)
 [SRFI-94]
 @c EN
 Real-only version of elementary functions.  An error is signaled
-unless the arguments are real numbers.
+unless the arguments or the result are real numbers.
 
 These are useful for performance-sensitive code, for they don't need to
 check whether the input is complex.  Furthermore, they are subject to
 constant folding.
+
+@code{real-expt} has some caveats.  If @var{x} is negative,
+the prodedure returns value only if @var{y} is an integer,
+or an exact rational whose denominator is odd.  It may not coincides
+with @code{(expt x y)} because of branches of complex functions.  For example,
+@code{(real-expt -8.0 1/3)} is @code{-2.0}, while @code{(expt -8.0 1/3)}
+is @code{2.0@@1/3pi}.
 
 Those names are defined in SRFI-94.  However, for the portable programs,
 you may want to use @code{scheme.flonum} module, which is a part of
 R7RS-large and defines
 flonum-only versions of elementary functions (@pxref{R7RS flonum}).
 @c JP
-実数の範囲に限定した初等関数です。引数が実数でなかったらエラーが投げられます。
+実数の範囲に限定した初等関数です。引数が実数でなかったり、
+結果が実数で表せなければエラーが投げられます。
 
 性能を気にするコードでは有用です。複素数の処理のためのチェックが省かれるのと、
 定数畳み込みが行われやすくなります。
+
+@code{real-expt}には注意が必要です。@var{x}が負の場合、
+@var{y}が整数であるか、奇数を分母とする正確な有理数である場合にのみ
+値を返します。複素関数の分岐のため、結果は@code{(expt x y)}と異なる
+場合があります。例えば@code{(real-expt -8.0 1/3)}は@code{-2.0}ですが、
+@code{(expt -8.0 1/3)}は@code{2.0@@1/3pi}を返します。
 
 これらの名前はSRFI-94で定義されています。ただ、今ポータブルなコードを書きたいなら、
 R7RS-largeの一部である@code{scheme.flonum}を使う方が良いでしょう。
@@ -4478,11 +4593,20 @@ Creates a complex number from two real numbers, @var{x1} and @var{x2}.
 @code{make-rectangular} returns @var{x1} + @b{i}@var{x2}.
 @code{make-polar} returns @var{x1}@b{e}^(@b{i}@var{x2}).
 
+If @var{x2} is an exact zero, @var{x1} is returned.  Otherwise,
+the result is a complex number, even if its imaginary part is
+an inexact zero: @code{(make-rectangular 1.0 -0.0)} is
+@code{1.0-0.0i}.
+
 In R7RS, these procedures are in the @code{(scheme complex)} library.
 @c JP
 二つの実数@var{x1}と@var{x2}から複素数を作ります。
 @code{make-rectangular} は @var{x1} + @b{i}@var{x2} を返します。
 @code{make-polar} は @var{x1}@b{e}^(@b{i}@var{x2}) を返します。
+
+@var{x2}が正確なゼロの場合は@var{x1}が返されます。そうでなければ、
+虚部が非正確なゼロであっても結果は複素数になります。
+例えば@code{(make-rectangular 1.0 -0.0)}は@code{1.0-0.0i}です。
 
 R7RSではこれらの手続きは@code{(scheme complex)}ライブラリにあります。
 @c COMMON
@@ -4506,6 +4630,16 @@ In R7RS, these procedures are in the @code{(scheme complex)} library.
 @code{magnitude}と@code{angle}は@var{z}の絶対値と偏角をそれぞれ返します。
 
 R7RSではこれらの手続きは@code{(scheme complex)}ライブラリにあります。
+@c COMMON
+@end defun
+
+@defun conjugate z
+@c [SRFI-278]
+@c EN
+Returns a conjugate of the given complex numebr @var{z}.  If @var{z} is
+a real number, the same value is returned.
+@c JP
+引数@var{z}の共役複素数を返します。@var{z}が実数であればそのまま返ります。
 @c COMMON
 @end defun
 
@@ -5948,18 +6082,31 @@ R7RS @code{(scheme ilist)} defines @code{ipair*}.
 @end example
 @end defun
 
-@defun list-copy list
+@defun list-copy list :optional start end
 [R7RS base]
 @c EN
 Shallow copies @var{list}.
-If @var{list} is circular, an error is thrown.
+If @var{list} is circular and no @var{end} is specified, an error is thrown.
 (Detecting circular list is Gauche's extension; R7RS allows
 the procedure to diverge.)
 @c JP
 @var{list}の浅いコピーを行います。
-@var{list}が循環リストの場合、エラーが投げられます。
+@var{list}が循環リストの場合、
+@var{end}引数が指定されていなければエラーが投げられます。
 (循環リストを検出するのはGaucheの拡張です。
 R7RSではこの手続きは停止しなくても良いことになっています。)
+@c COMMON
+
+@c EN
+The optional @var{start} and @var{end} are indexes to limit
+the region to be copied; @var{start} is inclusive, and @var{end}
+is exclusive.  This is an extension defined in SRFI-274
+(@pxref{Extended list conversion procedures}).
+@c JP
+省略可能な@var{start}と@var{end}引数は、コピーされる範囲を指定する
+インデックスです。@var{start}はそのインデックスの要素を含み、
+@var{end}は含みません。この拡張はSRFI-274で定義されています
+(@ref{Extended list conversion procedures}参照)。
 @c COMMON
 @end defun
 
@@ -6169,17 +6316,28 @@ If @var{list} is a circular list, this function diverges.
 [R7RS list]
 @c EN
 If @var{x} is a proper list, returns its length.
-For all other @var{x}, including a circular list,
-it returns @code{#f}.
+If it is a circular list, returns @code{#f}.
+Otherwise, i.e. if @var{x} is the dotted list,
+returns the number of pairs in the spine of the list.  Note that
+non-pair object is a dotted list with no pairs, hence 0 is returued.
 
-If you want a length of dotted list in terms of the number of pairs,
+Note: SRFI-1 and R7RS list do not specify what should be returned for
+the dotted list argument.  In 0.9.15 and before, we returned @code{#f},
+but returning the number of pairs seems more useful.
+
+If you want to count the distinct pairs in the circular list,
 use @var{num-pairs} below.
 @c JP
-@var{x} が真性リストなら、その長さを返します。
-@var{x} がそうでなければ(たとえ循環リストであっても)
-@code{#f} を返します。
+@var{x} が真性リストなら、その長さを返し、
+循環リストなら@code{#f}を返します。
+そうでなければ、つまりドットリストなら、リスト中のペアの数を返します。
+非リストオブジェクトは長さ0のドットリストなので0が返されることに注意してください。
 
-ドットリストの「長さ」を、構成するペアの数で知りたい場合は、
+註：SRFI-1とR7RS listは、引数がドットリストだった場合の振る舞いを指定していません。
+0.9.15までは@code{#f}を返していましたが、ペアの数を変えす方が有用なので
+0.9.16から動作が変わっています。
+
+循環リスト「長さ」を、構成するペアの数で知りたい場合は、
 下の@code{num-pairs}が使えます。
 @c COMMON
 @end defun
@@ -11298,12 +11456,12 @@ extension of Gauche.
 @c EN
 When @var{start} is zero and @var{end} is @var{N}, this procedure
 returns a copy of @var{string}.
-(See also @code{opt-substring} below, if you don't want to copy
+(See also @code{substring/shared} below, if you don't want to copy
 if not necessary.)
 @c JP
 @var{start}がゼロでかつ@var{end}が@var{N}の場合には、@var{string}のコ
 ピーが返ります。
-(不必要な時にコピーを避けたければ、下の@code{opt-substring}が使えます)。
+(不必要な時にコピーを避けたければ、下の@code{substring/shared}が使えます)。
 @c COMMON
 
 @c EN
@@ -11319,38 +11477,51 @@ for the generic version.
 @c COMMON
 @end defun
 
-@defun opt-substring string :optional start end
+@defun substring/shared string :optional start end
+[SRFI-13+]
 @c EN
 Like @code{substring}, returns a part of @var{string} between
 @var{start}-th character (inclusive) and @var{end}-th character (exclusive).
-However, if the entire @var{string} is used (e.g. @var{start} is 0 and
-@var{end} is the length of @var{string}, or the arguments are omitted, etc.),
-@var{string} is returned as is, without copying.
-
+Whenever possible, this one does not guarantee the returned string
+is freshly allocated, while @code{substring} always make a copy.
 This is a typical handling of optional @var{start}/@var{end} indexes
-for many string utilities.   Note that using @code{substring} forces
-copying the input string even when it's not necessary.
+for many string utilities.
 
 Besides exact integers, @code{#f} or @code{#<undef>} is allowed
 as @var{start} and @var{end}, to indicate the argument is missing.
 In that case, 0 is assumed for @var{start}, and
 the length of @var{string} is assumed for @var{end}.
+
+SRFI-13 defines @code{substring/shared}, but SRFI-13 does not allow
+to omit @var{start}, nor passing anything except exact integers to
+the @var{start}/@var{end} arguments.  Keep it in mind when
+you're writing a portable code.
 @c JP
 @code{substring}と同様に、@var{string}の@var{start}番目の文字(含む)から
 @var{end}番目の文字(含まない)までを切り取った文字列を返します。
-ただし、入力文字列全てが使われる場合(@var{start}が0で@var{end}が入力文字列長だとか、
-それらが省略された場合だとか)は、コピーせずに@var{string}がそのまま返されます。
-
+ただし、@code{substring}が常に新しいコピーを返すのに対し、
+@code{substring/shared}は常に新しいコピーを返すとは限りません。
 これは、多くの文字列処理関数で省略可能な@var{start}/@var{end}引数を扱う場合に
 共通する処理です。
-@code{substring}を使うと必ず文字列がコピーされることに注意してください。
 
 @var{start}/@var{end}引数には、正確な整数のほか、
 該当する引数が省略されたことを示すために@code{#f}と@code{#<undef>}が許されます。
 引数が省略された場合、@var{start}は0、@var{end}は@var{string}の長さが使われます。
+
+SRFI-13は@code{substring/shared}を定義していますが、
+@var{start}引数が必須で、また@var{start}/@var{end}引数は正確な整数でなければ
+なりません。移植性のあるコードを書いている時には注意してください。
 @c COMMON
 @end defun
 
+@defun opt-substring string :optional start end
+@c DEPRECATED
+@c EN
+Superseded by @code{substring/shared}.  Use it instead.
+@c JP
+@code{substring/shared}に置き換えられました。そちらを使ってください。
+@c COMMON
+@end defun
 
 @defun string-append string @dots{}
 [R7RS base]
@@ -11371,8 +11542,8 @@ See also @code{string-concatenate} in @ref{SRFI-13 String reverse & append}.
 @end defun
 
 @defun string->list string :optional start end
-@defunx list->string list
-[R7RS base]
+@defunx list->string list :optional start end
+[R7RS base+]
 @c EN
 Converts a string to a list of characters or vice versa.
 @c JP
@@ -11380,10 +11551,13 @@ Converts a string to a list of characters or vice versa.
 @c COMMON
 
 @c EN
-You can give an optional start/end indexes to @code{string->list}.
+You can give an optional start/end indexes.
+(R7RS's @code{list->string} does not take start/end arguments,
+but SRFI-274 extended it.  @xref{Extended list conversion procedures}.)
 @c JP
-@code{string->list}にはオプショナル引数として開始、終了位置のインデッ
-クスを渡せます。
+オプショナルのstart、end引数として開始、終了位置のインデックスを渡すこともできます。
+(但し、R7RSの@code{list->string}はstart、end引数を取りません。SRFI-274が
+その拡張を定義しています。@ref{Extended list conversion procedures}参照)
 @c COMMON
 
 @c EN
@@ -11428,13 +11602,51 @@ See @code{substring} above for the condition that @var{start} and
 それが返ります。@var{start}と@var{end}が満すべき条件については
 前述の@code{substring}の項を見てください。
 @c COMMON
+@end defun
+
+@defun string-copy! target tstart s :optional start end
+[R7RS base][SRFI-13]
+@c EN
+Copies a string @var{s} into a string
+@var{target} from the position @var{tstart}.
+The @var{target} string must be mutable.
+Optional @var{start} and @var{end} arguments limits the range of @var{s}.
+If the copied string run over the end of @var{target}, an error is
+signaled.
+@c JP
+文字列@var{s}を、文字列@var{target}の@var{tstart}番目以降へコピーします。
+@var{target}文字列は変更可能でなければなりません。
+オプションの引数@var{start}と@var{end}は、@var{s}の範囲を制限します。
+コピーされた文字列が@var{target}の終端を越えたらエラーが通知されます。
+@c COMMON
+@example
+(define s (string-copy "abcde"))
+(string-copy! s 2 "ZZ")
+s @result{} "abZZe"
+@end example
 
 @c EN
-Node: R7RS's destructive version @code{string-copy!} is provided
-by @code{srfi.13} module (@pxref{String library}).
+It is ok to pass the same string to @var{target} and @var{s}; this
+always work even if the regions of source and destination are overlapping.
 @c JP
-註: R7RSの破壊的バージョン@code{string-copy!}は@code{srfi.13}モジュールで
-提供されます (@ref{String library}参照)。
+@var{target}と@var{s}に同じ文字列を渡しても構いません。コピー元とコピー先の
+領域が重なっていても、コピーは常に正しく行われます。
+@c COMMON
+
+@c EN
+Note that Gauche encourages you to treat strings as immutable objects.
+Internally, a string is an indirect pointer to a immutable entity, and
+mutating a string means copying the original entity and creating a new one.
+It doesn't ``save allocations''.
+Always use the functional version @code{string-copy} unless you
+absolutely need to replace a string in-place.
+@c JP
+Gaucheでは、文字列を変更不可なオブジェクトとして扱うことを強く推奨しています。
+内部的に、文字列オブジェクトは変更不可な文字列の実体へのポインタとなっています。
+文字列を変更すると、新たな文字列実体がアロケートされそれが変更されるので、
+破壊的手続きを使えばメモリアロケーションが節約できるということはありません。
+どうしても文字列そのものを破壊的変更したい場合でない限りは、
+非破壊版の@code{string-copy}を使いましょう。
 @c COMMON
 @end defun
 
@@ -13929,13 +14141,15 @@ Converts a vector to a list, or vice versa.
 The optional @var{start} and @var{end} arguments
 limit the range of the source.
 (R7RS don't define @var{start} and @var{end} arguments
-for @code{list->vector}.)
+for @code{list->vector}; SRFI-274 defines that extension.
+@xref{Extended list conversion procedures}.)
 @c JP
 ベクタをリストに変換したり、その逆を行う手続きです。
 
 省略可能な引数@var{start}と@var{end}を与えることにより、
 値を取り出す範囲を制限することができます。
-(R7RSの@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
+(R7RSの@code{list->vector}は@var{start}と@var{end}引数を規定していません。
+SRFI-274がその拡張を定義しています。@ref{Extended list conversion procedures}参照)
 @c COMMON
 @example
 (vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
@@ -15209,7 +15423,7 @@ as a bytevector followed by a string.
 後方互換性のため、現在のバージョンでは@code{#*"..."}は不完全文字列として読まれます。
 リーダー字句モードが@code{warn-legacy}であれば、この形のリテラルに対して警告が出されます
 (@ref{Reader lexical mode})。
-将来的には@code{#*"..."}はビットベクタと文字列として読まれるように徐々に以降する予定です。
+将来的には@code{#*"..."}はビットベクタと文字列として読まれるように徐々に移行する予定です。
 @c COMMON
 @end deftp
 
@@ -28892,7 +29106,7 @@ When called outside of @code{load}, these procedures returns
 @subsection Load dynamic library
 @c NODE ダイナミックライブラリのロード
 
-@defun dynamic-load file :key init-function
+@defun dynamic-load file :key init-function paths versions
 @c EN
 Loads and links a dynamic loadable library (shared library) @var{file}.
 @var{File} shouldn't contain the suffix (``.so'' on most systems);
@@ -28903,10 +29117,13 @@ function name of the library in a string.  By default, if the file
 basename (without extension) is ``foo'', the initialization function
 name is ``Scm_Init_foo''.
 
-Usually a dynamic loadable library is provided with wrapping Scheme
-module, so the user doesn't have to call this function directly.
+This procedure can also be used to dynamically load general DSO, unrelated
+to Gauche, but you have to pass @code{#f} to @code{init-function} to
+suppress calling it.  For that purpose, you may want to use
+@code{dlopen} (@pxref{FFI support procedures}) instead.
 
-There's no way to unload the loaded libraries.
+
+
 @c JP
 ダイナミックローダブルライブラリ(共有ライブラリ)@var{file}をロードしてリンクします。
 @var{file}にはサフィックス(``.so'' 等) を含めないで下さい。システムによって
@@ -28916,10 +29133,49 @@ There's no way to unload the loaded libraries.
 指定します。デフォルトでは、サフィックスを除くファイル名が ``foo'' の場合、
 初期化関数名は ``Scm_Init_foo'' となります。
 
+この手続きはまた、Gaucheとは無関係なDSOファイルをロードするのにも使えます。
+ただその場合、Gauche特有の初期化手続きを呼ばないよう、
+@code{init-function}に@code{#f}を渡さなければなりません。
+この目的には@code{dlopen}を使った方がわかりやすいでしょう。
+@ref{FFI support procedures}を参照してください。
+@c COMMON
+
+@c EN
+The @var{paths} keyword argument can take a list of directories
+from which @var{file} is searched, if @var{file} is given with
+a relative path.  If omitted,
+the value of the parameter @code{dynamic-load-paths} is used.
+@c JP
+@var{paths}は、@var{file}が相対パスで与えられた場合にそれを探す
+ディレクトリのリストです。省略された場合はパラメータ@code{dynamic-load-paths}
+の値が使われます。
+@c COMMON
+
+@c EN
+The @var{versions} keyword argument is a list of exact integers and strings,
+to specify the extra version suffix of the DSO file to be searched.
+For example, the system's DSO suffix is @code{"so"} and @var{versions}
+is @code{("3.1" 3)}, attemt to dynamic-load @code{libfoo}
+caused to try @code{libfoo.so.3.1}, @code{libfoo.so.3}, then
+@code{libfoo.so}.
+@c JP
+@var{versions}キーワード引数は正確な整数もしくは文字列のリストで、
+DSOファイルを探す際に後ろに付け足すバージョン文字列を指定します。
+例えば、システムのDSOサフィックスが@code{"so"}である場合、
+@var{versons}に@code{("3.1" 3)}を指定して@code{libfoo}をロードしようとすると、
+@code{libfoo.so.3.1}、@code{libfoo.so.3}、@code{libfoo.so}が順に探されます。
+@c COMMON
+
+@c EN
+Usually a dynamic loadable library is provided with wrapping Scheme
+module, so the user doesn't have to call this function directly.
+
+Note that there's no way to unload the loaded libraries explicitly.
+@c JP
 通常、共有ライブラリはSchemeモジュール中でロードされるので、モジュールユーザが
 直接この手続きを呼ぶ必要はほとんどないでしょう。
 
-一度ロードされた共有ライブラリをアンロードすることはできません。
+なお、一度ロードされた共有ライブラリを明示的にアンロードすることはできません。
 @c COMMON
 @end defun
 

@@ -246,8 +246,15 @@ void Scm_SetCdr(ScmObj pair, ScmObj obj)
 
 /* Scm_Length
    return length of list in C integer.
-   If the argument is a dotted list, return -1.
-   If the argument is a circular list, return -2. */
+   If the argument is a dotted list, return -1 by default.
+   If the argument is a circular list, return -2.
+
+   If SCM_LENGTH_LAZY flag is given, returns SCM_LIST_LAZY (SCM_SMALL_INT_MAX)
+   without realizing it.
+
+   IF SCM_LENGTH_ALLOW_DOTTED flag is given, returns the # of pairs in the
+   spine even if the list is a dotted list.
+ */
 
 ScmSize Scm_Length2(ScmObj obj, u_long flags)
 {
@@ -258,13 +265,13 @@ ScmSize Scm_Length2(ScmObj obj, u_long flags)
     for (;;) {
         if (SCM_NULLP(obj)) break;
         if (leave_lazy && SCM_LAZY_PAIR_P(obj)) return SCM_LIST_LAZY;
-        if (!SCM_PAIRP(obj)) return SCM_LIST_DOTTED;
+        if (!SCM_PAIRP(obj)) goto dotted;
 
         obj = SCM_CDR(obj);
         len++;
         if (SCM_NULLP(obj)) break;
         if (leave_lazy && SCM_LAZY_PAIR_P(obj)) return SCM_LIST_LAZY;
-        if (!SCM_PAIRP(obj)) return SCM_LIST_DOTTED;
+        if (!SCM_PAIRP(obj)) goto dotted;
 
         obj = SCM_CDR(obj);
         slow = SCM_CDR(slow);
@@ -272,6 +279,9 @@ ScmSize Scm_Length2(ScmObj obj, u_long flags)
         len++;
     }
     return len;
+ dotted:
+    if (flags & SCM_LENGTH_ALLOW_DOTTED) return len;
+    else return SCM_LIST_DOTTED;
 }
 
 /* for the compatibility */

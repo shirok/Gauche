@@ -303,6 +303,12 @@
 (test* "make-ideque" '(a a a a a)
        (ideque->list (make-ideque 5 'a)))
 
+(test* "list->ideque (start)" '(b c d e)
+       (ideque->list (list->ideque '(a b c d e) 1)))
+(test* "list->ideque (start)" '()
+       (ideque->list (list->ideque '(a b c d e) 5)))
+(test* "list->ideque (start/end)" '(c d)
+       (ideque->list (list->ideque '(a b c d e) 2 4)))
 
 ;;;========================================================================
 (test-section "data.imap")

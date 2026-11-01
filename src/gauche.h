@@ -286,6 +286,12 @@ typedef struct ScmClassRec ScmClass;
 #define SCM_OBJ(obj)      ((ScmObj)(obj))
 #define SCM_WORD(obj)     ((ScmWord)(obj))
 
+/* A type predicate macro that always return TRUE for valid ScmObj
+   (We can't precisely check the validity, but we know NULL isn't valid).
+   Mainly used for code generators where predicate is required.
+ */
+#define SCM_OBJP(obj)     ((obj) != NULL)
+
 /*
  * PRIMARY TAG IDENTIFICATION
  */
@@ -838,7 +844,8 @@ SCM_CLASS_DECL(Scm_NullClass);
 
 /* flag bit for Scm_Length2 */
 enum {
-    SCM_LENGTH_LAZY = 1L<<0     /* don't realize lazy pairs */
+    SCM_LENGTH_LAZY = 1L<<0,          /* don't realize lazy pairs */
+    SCM_LENGTH_ALLOW_DOTTED = 1L<<1   /* ignore non-nil last CDR  */
 };
 
 /* special return value of Scm_Length */

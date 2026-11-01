@@ -41,6 +41,7 @@
 #include "gauche/priv/glocP.h"
 #include "gauche/priv/identifierP.h"
 #include "gauche/priv/parameterP.h"
+#include "gauche/priv/procP.h"
 #include "gauche/priv/promiseP.h"
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
@@ -1119,6 +1120,20 @@ static void local_env_shift(ScmVM *vm, int env_depth)
     else           { ENV = tenv; }
 }
 
+/* Called from the CLOSURE instruction when the closure is created in the
+   tail position.  If that tail position is to produce a value to be
+   bound toplevel define, we can extract the name to be bound
+   from DENV and attach it as the name of the closure. */
+static ScmObj make_tail_closure(ScmVM *vm, ScmObj code, ScmEnvFrame *env)
+{
+    ScmObj name =
+        Scm__FindImmediateDynamicEnv(vm,
+                                     Scm__GetDenvKey(SCM_DENV_KEY_EXPRESSION_NAME),
+                                     SCM_FALSE);
+    if (SCM_FALSEP(name)) return Scm_MakeClosure(code, env);
+    return Scm__MakeNamedClosure(code, env, name, SCM_NIL);
+}
+
 
 /*===================================================================
  * Main loop of VM
@@ -1640,6 +1655,18 @@ static ScmObj find_dynamic_env(ScmVM *vm, ScmObj key, ScmObj fallback)
     ScmObj p = Scm_Assq(key, vm->denv);
     if (SCM_PAIRP(p)) return SCM_CDR(p);
     else return fallback;
+}
+
+/* Like find_dynamic_env, but only looks into the extent of the current
+   continuation frame; that is, KEY must have been pushed after the current
+   cont frame was established.  This is the "immediate" continuation mark. */
+ScmObj Scm__FindImmediateDynamicEnv(ScmVM *vm, ScmObj key, ScmObj fallback)
+{
+    for (ScmObj p = vm->denv; SCM_PAIRP(p); p = SCM_CDR(p)) {
+        if (vm->cont != NULL && SCM_EQ(p, vm->cont->denv)) break;
+        if (SCM_EQ(SCM_CAAR(p), key)) return SCM_CDAR(p);
+    }
+    return fallback;
 }
 
 /* Public API */

@@ -381,6 +381,14 @@ ScmObj Scm_MTFillUvector(ScmMersenneTwister *mt, ScmObj v)
             SCM_U32VECTOR_ELEMENT(v, i) = genrand_u32(mt);
         }
         UNLOCK(mt);
+    } else if (SCM_U64VECTORP(v)) {
+        LOCK(mt);
+        for (int i = 0; i < SCM_U64VECTOR_SIZE(v); i++) {
+            uint64_t val = genrand_u32(mt);
+            val = (val << 32) + genrand_u32(mt);
+            SCM_U64VECTOR_ELEMENT(v, i) = val;
+        }
+        UNLOCK(mt);
     } else if (SCM_F32VECTORP(v)) {
         LOCK(mt);
         for (int i = 0; i < SCM_F32VECTOR_SIZE(v); i++) {

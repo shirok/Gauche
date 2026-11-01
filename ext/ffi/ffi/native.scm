@@ -34,7 +34,7 @@
 ;; Experimental.  Only available on selected platforms (OS/CPU)
 
 (define-module gauche.ffi.native
-  (use gauche.ffi)
+  (extend gauche.ffi)
   (use gauche.native-type)
   (use util.match)
   (export with-native-ffi))
@@ -46,13 +46,10 @@
 ;;; Main macro
 ;;;
 
-;; (with-native-ffi dlo-var dlo-expr options cdef-specs ccb-info forms)
+;; (with-native-ffi dlo-var dlo-expr options cdef-specs forms)
 ;;
 ;; cdef-specs is ((name . expr) ...) where expr evaluates to a
-;; <foreign-c-function> or <foreign-c-callback>.  ccb-info is a literal
-;; list ((ccb-name body-name-id) ...), one entry per callback in
-;; declaration order; body-name-id is the identifier of the lambda
-;; defined by with-ffi for that callback's body.
+;; <foreign-c-function> or <foreign-c-callback>.
 ;;
 ;; The provisional (define name) bindings and the body lambdas are
 ;; emitted as begin-level forms.  All callbacks are batched into a
@@ -68,38 +65,39 @@
      (define %require. ((with-module gauche.internal make-identifier)
                         '%require (find-module 'gauche.internal) '()))
      (match f
-       [(_ dlo-var dlo-expr options cdef-specs ccb-info forms)
-        (let* ([ccb-name-set (map car ccb-info)]
-               [cfn-specs (filter (^s (not (memq (car s) ccb-name-set)))
-                                  cdef-specs)]
-               [ccb-specs (filter (^s (memq (car s) ccb-name-set))
-                                  cdef-specs)]
+       [(_ dlo-var dlo-expr options cdef-specs forms)
+        (let* ([cfn-specs (filter (cut of-kind? <> :function) cdef-specs)]
+               [ccb-specs (filter (cut of-kind? <> :callback) cdef-specs)]
+               [cst-specs (filter (cut of-kind? <> :constant) cdef-specs)]
+               [cen-specs (filter (cut of-kind? <> :enum) cdef-specs)]
+               [ccb-body-names (map (cut ~ <>'body-name) ccb-specs)]
                [ctx-var   (gensym "%ffi-native-ctx-")]
                [instances-var (gensym "%ccbs-")])
           (define (emit-cfn-set! spec)
             (quasirename r
-              `(set! ,(car spec)
-                     (make-native-ffi-proc ,dlo-var ,(cdr spec)))))
+              `(set! ,(~ spec'name)
+                     (make-native-ffi-proc ,dlo-var ,(~ spec'expr)))))
           (define (emit-ccb-block)
             (if (null? ccb-specs)
               #f
               (quasirename r
-                `(let* ([,instances-var (list ,@(map cdr ccb-specs))]
-                        [bodies         (list ,@(map (^[name]
-                                                       (cadr (assq name ccb-info)))
-                                                     (map car ccb-specs)))]
+                `(let* ([,instances-var (list ,@(map (cut ~ <> 'expr)  ccb-specs))]
+                        [bodies         (list ,@ccb-body-names)]
                         [ctx (install-callback-context! ,instances-var bodies)])
                    ,@(map (^[i s]
                             (quasirename r
-                              `(set! ,(car s)
+                              `(set! ,(~ s'name)
                                      (callback-context-handle
                                       ctx ,i (list-ref ,instances-var ,i)))))
                           (iota (length ccb-specs)) ccb-specs)
                    ctx))))
+          (unless (and (null? cst-specs) (null? cen-specs))
+            (error "define-c-constant and define-c-enum are not supported \
+                    in the native ffi subsystem yet."))
           (quasirename r
             `(begin
                (,%require. "gauche/ffi/native")
-               ,@(map (^s (quasirename r `(define ,(car s)))) cdef-specs)
+               ,@(map (^s (quasirename r `(define ,(~ s'name)))) cdef-specs)
                ,@forms
                (define ,ctx-var
                  (let ([,dlo-var ,dlo-expr])
@@ -120,13 +118,13 @@
 ;;   <intptr_t>  - signed integer (all other integral types)
 (define (native-type->call-canon type)
   (cond
-    [(or (is-a? type <c-pointer>)
-         (is-a? type <c-function>)) type]
+    [(or (is-a? type <c-pointer-type>)
+         (is-a? type <c-function-type>)) type]
     ;; An array argument is treated the same way as a pointer.
-    [(is-a? type <c-array>)
+    [(is-a? type <c-array-type>)
      (make-c-pointer-type (~ type 'element-type))]
-    [(or (is-a? type <c-struct>)
-         (is-a? type <c-union>))
+    [(or (is-a? type <c-struct-type>)
+         (is-a? type <c-union-type>))
      (error "Directly passing struct or union isn't supported yet")]
     [(is-a? type <native-type>)
      (cond
@@ -134,9 +132,9 @@
       [(eq? type <double>)           <double>]
       [(eq? type <float>)            <float>]
       [(eq? type <c-string>)         <c-string>]
+      [(eq? type <ScmObj>)           <top>]
       [(~ type 'unsigned?)           <uintptr_t>]
       [else                          <intptr_t>])]
-    [(eq? type <top>)                <top>]
     [else (error "Invalid type for native call:" type)]))
 
 ;; <c-char> object needs to be passed as integer

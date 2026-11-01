@@ -3,7 +3,8 @@
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1997 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
- * Copyright (C) 2007 Free Software Foundation, Inc
+ * Copyright (c) 2007 Free Software Foundation, Inc.
+ * Copyright (c) 2008-2024 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -1008,7 +1009,7 @@ GC_INNER GC_bool GC_check_leaked(ptr_t base)
       GC_has_other_debug_info(base) >= 0)
     return TRUE; /* object has leaked */
 
-  /* Validate freed object's content. */
+  /* Validate freed object's contents. */
   p = (word *)(base + sizeof(oh));
   obj_sz = BYTES_TO_WORDS(HDR(base)->hb_sz - sizeof(oh));
   for (i = 0; i < obj_sz; ++i)

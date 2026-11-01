@@ -3773,13 +3773,29 @@ objects, or an object that can take multiple representations
 so the stub generator passes through it,
 and the C routine handles the internals.)
 @item
-Maybe stub types.  It is noted by a question mark suffix.
-In stub context, we only concern maybe type
-that can be unboxed into a C pointer type.  In addition to the objects
-of the origial type, it maps Scheme's @code{#f} to C's @code{NULL}
-and vice versa.  For example, @code{<port>?} maps Scheme's @code{<port>}
-instance to C's @code{ScmPort*},
-@emph{and} Scheme's @code{#f} to C's @code{NULL}.
+@emph{Maybe} stub types.  It is noted by a question mark suffix.
+In Scheme, this is a union of the base type and a singleton type of
+@code{#f}.  For example, an argument typed with @code{<string>?}
+can take a string or @code{#f}.
+From the C side, maybe stub type behaves differently depending on
+whether the type is indirect reference type (pointer) or
+immediate type.
+@itemize @bullet
+@item
+If it's a pointer type, @code{#f} is translated
+to @code{NULL}.   For example, Scheme strings are @code{ScmString*}
+in C, so when @code{#f} is passed to an argument with
+@code{<string>?} stub type, C side gets @code{NULL}.
+@item
+If it's an immediate type, e.g. @code{<fixnum>},
+maybe type is only appear in optional or keyword arguments,
+and must be accompanied with the default value.
+When @code{#f} is passed to @code{<fixnum>?} argument,
+it works as if the argument is not given at all---so the default
+value is used.  The stub generator raises an error if
+a maybe type of immediate stub type appears without
+a default value.
+@end itemize
 @end itemize
 
 @deftp {Class} <cgen-type>
@@ -9887,6 +9903,25 @@ Returns a number of dictionaries @var{smap} has.
 @c COMMON
 @end deffn
 
+@deffn {Method} stacked-map-top-get (smap <stacked-map>) key :optional default
+@c MOD gauche.dictionary
+@c EN
+Looks up @var{key} only in the topmost dictionary of @var{smap},
+ignoring the lower ones.  If the topmost dictionary doesn't have an entry
+with @var{key}, or @var{smap} has no dictionaries,
+@var{default} is returned if given, or an error is signaled otherwise.
+This is handy to check whether a name is already defined in
+the innermost scope.
+@c JP
+@var{smap}の一番上のディクショナリだけから@var{key}を探します。
+より下のディクショナリは見ません。
+一番上のディクショナリに@var{key}のエントリが無いか、@var{smap}が
+ディクショナリを持っていない場合、@var{default}が与えられていればそれを返し、
+そうでなければエラーを投げます。
+名前が最も内側のスコープで既に定義されているかどうかを調べるのに便利です。
+@c COMMON
+@end deffn
+
 @deffn {Method} stacked-map-entry-update! (smap <stacked-map>) key proc :optional fallback
 @c MOD gauche.dictionary
 @c EN
@@ -10488,13 +10523,13 @@ suidビットとsgidビットを無視します。
 
 @c ----------------------------------------------------------------------
 @node Foreign function interface, Generators, Low-level file operations, Library modules - Gauche extensions
-@section @code{gauche.FFI} - Foreign function interface
+@section @code{gauche.ffi} - Foreign function interface
 @c NODE FFI, @code{gauche.ffi} - FFI
 
 @deftp {Module} gauche.ffi
 @mdindex gauche.ffi
 This module provides the means to call compiled functions in other
-langauges via C ABI.  It allows user programs to use external libraries
+languages via C ABI.  It allows user programs to use external libraries
 without writing a custom extension.
 
 Although it is convenient, you need to keep in mind that
@@ -10504,12 +10539,32 @@ You can easily pass arguments of incorrect types, interpret
 the result incorrectly, or access objects outside of its lifetime.
 Small mistakes can eaisly cause access violation or memory corruption.
 
-We adopt pluggable subsystems; you can choose the underlying FFI layer
-depending on the architecture and your particular needs.
-For the time being, @code{stubgen} subsystem is available on
-all the architecture, and @code{native} subsystem on x86_64 with
-with Unix-like systems and MinGW/Windows.  Native subsytem will
-be enhanced to Aarch64 soon.
+We adopt pluggable subsystems; we have a few different FFI implementations.
+The system chooses one suitable for the situation, or you can specify
+which one ot use.  Here is the list of available subsystems:
+
+@table @code
+@item :native
+A machine-code trampoline stub is constructed at the runtime.
+The overhad is small, but this is architecture-dependent and only available
+on limited architecture (currently, x86_64 on Unix-family and MinGW.
+a plan to support Aarch64 in near future).  This is selected by default
+when you're running on the supported platform.
+
+@item :stub
+A stub C code is generated, compiled and dyamically linked when
+@code{with-ffi} form is evaluated.  It incurs one-time overhead when
+the compilation takes place; but once linked, calling the FFI functions
+are just as fast as calling C funcitons via extension modules.
+This is available on all platforms, and used as the fallback by default.
+
+@item :aot
+A variation of @code{:stub} subsystem, used when the file including
+@code{with-ffi} forms are precompiled.  The stub code generation is
+done at the same time of precompilation, so loading the compiled module
+does not incur extra overhead.   This is selected when
+you precompile the file, regardless of the underlying architecture.
+@end table
 
 The code that uses FFI looks like the following:
 
@@ -10517,7 +10572,7 @@ The code that uses FFI looks like the following:
 (use gauche.ffi)
 (use gauche.native-type)
 
-(with-ffi (dynamic-load "/path/to/library") ()
+(with-ffi (dlopen "/path/to/library") ()
   ;; Define C functions and callbacks
   (define-c-function foo '(int c-string) 'int)
   ...
@@ -10533,8 +10588,277 @@ The defined C functions are visible from the rest of the code,
 and you can call it as a Scheme function.
 @end deftp
 
+@menu
+* With-ffi form::
+* FFI support procedures::
+@end menu
+
+@node With-ffi form, FFI support procedures, Foreign function interface, Foreign function interface
+@subsection @code{with-ffi} form
+@c NODE @code{with-ffi}フォーム
+
+@defmac with-ffi dso options form @dots{}
+@c MOD gauche.ffi
+The @var{dso} form must be an expression that yields a dynamically
+loaded object (@code{dlopen}, @pxref{FFI support procedures}),
+@var{options} is a keyword-value form to tune the behavior
+of @code{with-ffi}, and @var{form} is a toplevel form
+to define foreign interface (see below) which accesses the external
+function provided by @var{dso}.
+
+@var{dso} can be @code{#f} if @var{form} @dots{} only refer to
+the values solely derived from the header files (you need to
+specify @code{:c-headers} option in that case).
+
+You can mix ordinary toplevel definitions like @code{defin} in
+@var{forms}.  However, @code{with-ffi} may reorder @var{forms}
+depending on its kind.
+
+This form does not create a scope; the toplevel definitions
+of @var{form} @dots{} are spliced into the surrounding scope.
+Some subsystem may need to insert the binding into the module's
+toplevel scope, so we recommend users to place @code{with-ffi} form
+at the toplevel scope as well, to avoid the confusion.
+
+@table @asis
+@item @code{:subsystem} @var{name}
+Specify the subsystem to use.  Available names are one of
+@code{:native}, @code{:stub}, or @code{:aot}.
+@xref{Foreign function interface}, for the description of
+each subsystem.
+
+Without this option, the most appropriate subsystem is
+automatically selected.  You need this only in special
+circumstances, such as working around issues
+in subsystems.
+
+@item @code{:c-headers} (@var{header-name} @dots{})
+Specify a list of headers of the library.
+If you only use C functions and C callbacks with standard
+types, you don't
+need this.  On the other hand, if you use C constants
+(@code{#define}d macro constants) or C enums,
+you need to specify this, as their information cannot
+be extracted from the DSO.
+
+You may also need headers if you use c opaque pointers
+(@pxref{Derived and aggregate native types}), as the opaque type
+name needs to be visible from the C compiler when the @code{:stub}
+or @code{:aot} subsystem is used.  In case if you don't have a header,
+however, you can workaround with setting @code{c-name} to @code{"void"};
+see @code{make-c-opaque-pointer-type} for the details.
+@end table
+@end defmac
 
 
+@defmac define-c-function name arg-types return-type
+@c MOD gauche.ffi
+Bind @code{name} to a Scheme procedure that calls C function
+with the name derived by @code{cgen-safe-name-friendly} from
+@code{name}.  Basically,
+hyphens in @code{name} becomes underbar in C name, e.g.
+you can call C function @code{gtk_init} with Scheme name
+@code{gtk-init}.   @xref{Generating C source files}, for
+more detailed transliteration rules.
+
+As a special case, if @var{name} begins with @code{%},
+the character is removed to derive the C name.  It is useful
+when you want to expose the Scheme function which is a wrapper
+of C function for convenience.  That is, you can define FFI to
+a C function @code{foo} with @code{(define-c-function %foo ...)},
+then define a wrapper Scheme function @code{foo}, which wraps
+@code{%fpp}, as an external API.
+
+@var{arg-types} is a list of native type signatures to
+specify types of the arguments, and @var{return-type} is a
+native type signature.
+@xref{Native type signature}), for the details of native
+type signatue.  The last element of @var{arg-types} can be
+a symbol @code{...}, to indicate the C function takes varargs.
+Both @var{arg-types} and @var{return-type} are evaluated,
+which allows you to mix expressoins that yields a native
+type in them.
+
+For example, a C function @code{foo} that takes an @code{int}
+and a pointer to @code{int}, and returns @code{double}, can be
+described as follows.  Note the quotes for @var{arg-types}
+and @var{return-type}, as they are evaluated:
+
+@example
+(define-c-function foo '(int int*) 'double)
+@end example
+
+Or, you can use native type objects.
+
+@example
+(define-c-function foo `(,<int> ,(make-c-pointer-type <int>)) <double>)
+
+;; You can mix native types and literal native type signatures as well:
+(define-c-function foo `(,<int> int*) <double>)
+@end example
+
+It is useful when you defines custom types and use them for
+arguments/return types.
+@end defmac
+
+
+@defmac define-c-callback name ((var type) @dots{}) return-type body @dots{}
+@c MOD gauche.ffi
+@end defmac
+
+@defmac define-c-constant name :optional type
+@c MOD gauche.ffi
+This form defines a Scheme constant @var{name}, bound to a
+@code{#define}-d constant of the same name in the C library.
+In order to use this form,
+you have to provide the library's header file to @code{:c-headers}
+option in @code{with-ffi} form, because @code{#define}-d constants
+cannot be extracted from the compiled binary.
+
+By default, the constant is assumed of type @code{<fixnum>}.  If the
+defined constant is of other types, you need to provide a native type
+object or native type signature to @var{type}
+(@pxref{Native type signature}).
+
+An error is signaled if @var{name} is not defined in C.
+
+The same effect can be achieved by bindng @var{name} to an explicit
+literal constant with @code{define-constant}.  If you do so, however,
+you have to change the literal value whenever a new revision of C API
+changes the value.  Also, it would be cumbersome if different platforms
+use different values.
+
+NB: Currently, this form does not work with the @code{:native} subsystem.
+If you use this form in @code{with-ffi} without specifying the subsystem,
+the @code{:stub} subsystem is used for the @code{with-ffi} form
+even if the platform supports @code{:native} subsystem.
+@end defmac
+
+@defmac define-c-enum name (enumerator @dots{}) :optional base-type
+@defmacx define-c-enum (name tag) (enumerator @dots{}) :optional base-type
+@c MOD gauche.ffi
+This form defines Scheme constants for C enum values, and also binds
+@code{name} to a C-enum native type.
+
+With the first form, @var{name} is also used as the enum tag name,
+modulo transliterations similar to @code{define-c-function} (e.g.
+@code{-} to @code{_}, etc.)  To specify a different tag name,
+you can use the second form.  If you want to specify no tags
+(i.e. anonymous enum), you can give @code{#f} to @code{tag}.
+
+Each @var{enumerator} is a symbol, corresponding to the C's
+enumerators.  The value of each @var{enumerator} is taken from the C
+definition, so its order doesn't matter, and it is allowed to
+list only a subset of enumerators.  However, an error is signaled
+if the name in @var{enumderator} isn't defined in C.
+
+The following example reflects one of Gauche's enums into Scheme:
+
+@example
+(with-ffi #f (:c-headers ("gauche.h"))
+  (define-c-enum (cmp-mode #f)
+    (SCM_CMP_EQ
+     SCM_CMP_EQV
+     SCM_CMP_EQUAL))
+@end example
+
+It binds Scheme constants @code{SCM_CMP_EQ}, @code{SCM_CMP_EQV},
+and @code{SCM_CMP_EQUAL} to the appropriate values defined in
+@file{gauche.h}, and also binds @code{cmp-mode} to a native
+c-enum type, which can be used to convert symbols and values
+(@code{c-enum-symbol} and @code{c-enum-value},
+@pxref{Derived and aggregate native types}).
+
+The same effect can be achieved by manually defining c-enum type
+and constants:
+
+@example
+(define-type cmp-mode
+  (native-type '(.enum (SCM_CMP_EQ SCM_CMP_EQV SCM_CMP_EQUAL))))
+(define-constant SCM_CMP_EQ 0)
+(define-constant SCM_CMP_EQV 1)
+(define-constant SCM_CMP_EQUAL 2)
+@end example
+
+If you do so, however, you need to keep the values in sync
+with the C API manually.
+
+It is up to the C compiler to choose which integer type to be used
+to store the enum value.  It matters when you define a C struct type with
+a field of the enum type, because it affects the layout of the struct.
+We try to guess the appropriate type as much as possible, with
+@code{<uint32>} as the fallback value.
+If it is not what you want, you can give
+a native type object or native type signatire to the optional
+@var{base-type} argument.
+
+NB: Currently, this form does not work with the @code{:native} subsystem.
+If you use this form in @code{with-ffi} without specifying the subsystem,
+the @code{:stub} subsystem is used for the @code{with-ffi} form
+even if the platform supports @code{:native} subsystem.
+@end defmac
+
+
+@node FFI support procedures,  , With-ffi form, Foreign function interface
+@subsection FFI support procedures
+@c NODE FFIサポート手続き
+
+@defun dlopen dsoname :key paths versions
+@c MOD gauche.ffi
+This is a convenience procedure, and simply calls
+@code{dynamic-load} with @code{:init-function #f}---that is,
+telling the dynamic loader not to call Gauche-specific initialization function.
+We find it worth to have this shortcut, because it aligns to the
+programmer's expectation.
+
+Returns @code{#<dlobj>} object, which can be given to @code{with-ffi}
+form.
+
+The keyword arguments are passed to @code{dynamic-load}.
+@var{Paths} specifies the list of directories to search @var{dsoname}
+if it is given in a relative path---when omitted, the value of
+the parameter @code{dynamic-load-paths} is used.
+@var{Versions} specifies a list of version suffixes, each of
+whose element may be an integer or a string.  The version number is
+attached @emph{after} DSO suffix.  @xref{Loading dynamic library}, for
+the details.
+@end defun
+
+@defun default-ffi-subsystem
+@c MOD gauche.ffi
+@end defun
+
+@defun ffi-subsystem-available? name
+@c MOD gauche.ffi
+@end defun
+
+@defun native-alloc size-or-type
+@c MOD gauche.ffi
+Returns a native pointer to a memory region allocated by system's malloc.
+The memory is not subject to Gauche's GC; you need to either free
+it by yourself, using @code{native-free}, or pass the pointer to
+a foreign function which will be responsible for freeing.
+
+It is mainly for foreign functions that take the owneship of the
+objects whose pointer is passed.  You should not pass a native handle
+pointing Gauche objects to such functions, since calling @code{free} on
+those objects will be a disaster.
+
+The @var{size-or-type} argument must be either nonnegative exact integer
+that specifies the size of the memory in bytes to allocate,
+or a @code{<native-type>} object, whose size is allocated.
+
+If a size is given, the returned handle has a type @code{<void*>}.
+If a native type is given, the returned handle has a pointer to that type.
+@end defun
+
+@defun native-free handle
+@c MOD gauche.ffi
+@var{handle} must be a native handle pointing a memory allocated by
+the system's malloc.  It can be the one created by @code{native-alloc},
+or the one which is returned by a foreign function and whose freeing
+is caller's responsibility.
+@end defun
 
 
 @c ----------------------------------------------------------------------
@@ -10889,6 +11213,16 @@ at the last element, and reverse generators ends at the first element.
 (generator->list (reverse-vector->generator '#(a b c d e) #f 2))
   @result{} (b a)
 @end example
+
+@c EN
+NB: @code{list->generator} in SRFI-158 (and @code{scheme.generator}) does not
+allow the optional @var{start} and @var{end} arguments.  It is the extension
+defined in SRFI-274.  @xref{Extended list conversion procedures}.
+@c JP
+註: SRFI-158(および@code{scheme.generator})の@code{list->generator}は
+@var{start}と@var{end}引数を取りません。これはSRFI-274で定義された拡張です。
+@ref{Extended list conversion procedures}参照。
+@c COMMON
 @end defun
 
 @defun bits->generator n :optional start end
@@ -15246,55 +15580,85 @@ you access native data from Scheme world (@pxref{Native handles}).
 We have subclasses of @code{<native-type>}, which are classes
 of individual derived or aggregate native types.
 For example, ``pointer to int'' native type is an instance of
-@code{<c-pointer>} class.  Note that @code{<c-pointer>} itself
-is not an instance of @code{<native-type>}.
+@code{<c-pointer-type>} class.
 
 @subsubheading Tag namespace
 
 In C, tags of struct, union, and enum share the same namespace,
-and you cannot use the same tag to define different struct/union/enums.
+which follows block scoping.  A tag can be declared before its
+definition (e.g. @code{struct foo;}), in which case it denotes
+an incomplete type until the definition is seen.
 
-We don't automatically track tags by default.  It's up to the
-user to set up the tag namespace as required by the application.
-We have tools to help it.
+Native type constructors such as @code{make-c-struct-type} don't
+track tags.  If you want C's tag semantics, you can create a tag namespace.
+The followings are procedures to manipulate tag namespaces.
+The @var{kind} argument of those procedures must be one of the
+symbols @code{struct}, @code{union} or @code{enum}.
+It is an error if a tag is used with a different kind.
 
-@deffn {Parameter}  current-native-tag-namespace
-@c MOD gauche.native-type
-A parameter that holds the current tag namespace.  Its value must
-be @code{#f} or an object created by
-@code{make-native-tag-namespace} below.
-
-If it is @code{#f} (default), tags are not tracked.
-If it is a tag namespace object, whenever a new c-struct/c-union/c-enum
-type is created, its tag is registered.  If there's already
-a native type with the same tag, an error is signaled
-unless the type definition exactly matches.
-@end deffn
+The @code{native-type} procedure (@pxref{Native type signature}) takes
+an optional @var{tag-namespace} argument, which hanldes construction
+of tagged types and tag registration at once.
 
 @defun make-native-tag-namespace :optional parent
 @c MOD gauche.native-type
-Create a new native tag namespace object (which is actually
-an instance of  @code{<stacked-map>},
-@pxref{Generic dictionaries}).
-
-If @var{parent} is given and not @code{#f}, it must be another
-tag namespace object.  The new namespace is stacked on it---that is,
-all the tags registered in @var{parent} is visible, but newly
-added tags are put in the new namespace and do not affect @var{parent}.
+Create a new native tag namespace.  If @var{parent} is given and
+not @code{#f}, it must be another tag namespace.  The tags in @var{parent}
+are visible from the new namespace, but tags declared or defined
+in the new namespace don't affect @var{parent}.
 @end defun
 
-@defun tag->native-type tag :optional namespace
+@defun native-tag-namespace? obj
 @c MOD gauche.native-type
-Returns a c-struct/c-union/c-enum type associated with the @var{tag}
-(symbol) int the @var{namespace}.  If @var{namespace} is omitted
-or @code{#f}, the value of @code{current-native-tag-namespace}
-parameter is used.
+Returns @code{#t} iff @var{obj} is a native tag namespace.
+@end defun
+
+@defun native-tag-lookup namespace tag
+@c MOD gauche.native-type
+Returns a c-struct/c-union/c-enum type associated with @var{tag}
+(symbol) in @var{namespace} or its ancestors.  If @var{tag} isn't
+found, @code{#f} is returned.
+@end defun
+
+@defun native-tag-ref namespace kind tag
+@c MOD gauche.native-type
+Corresponds to a reference of a tag in C, e.g. @code{struct foo *p;}.
+If @var{tag} is found in @var{namespace} or its ancestors, its type
+is returned.  Otherwise, a new incomplete type is declared
+in @var{namespace} and returned.
+@end defun
+
+@defun native-tag-declare! namespace kind tag
+@c MOD gauche.native-type
+Corresponds to a declaration of a tag in C, e.g. @code{struct foo;}.
+If @var{namespace} itself has @var{tag}, its type is returned.
+Otherwise, a new incomplete type is declared in @var{namespace},
+shadowing the same tag in the ancestors, if any, and returned.
+@end defun
+
+@defun native-tag-define! namespace kind tag spec :optional base-type
+@c MOD gauche.native-type
+Corresponds to a definition of a tag in C, e.g.
+@code{struct foo @{ int a; @};}.
+
+For struct and union, @var{spec} is a list of fields, as the
+@var{fields} argument of @code{make-c-struct-type}.
+For enum, @var{spec} is a list of enumerators, and @var{base-type}
+is the base type, as the arguments of @code{make-c-enum-type}.
+
+If @var{namespace} itself has an incomplete type with @var{tag},
+it is completed with @var{spec} and returned; hence the types that
+refer to the incomplete type, such as a pointer to it,
+see the completed type.  If @var{namespace} has a complete type
+with @var{tag}, it is returned if it is the same as the type
+@var{spec} denotes; otherwise, an error is signaled.  If @var{tag}
+isn't in @var{namespace}, a new type is created and returned.
 @end defun
 
 @subsubheading C pointers
 
-@deftp {Class} <c-pointer>
-@clindex c-pointer
+@deftp {Class} <c-pointer-type>
+@clindex c-pointer-type
 @c MOD gauche.native-type
 A class of native types representing pointers.  Can be created
 with @code{make-c-pointer-type}, or from a signature
@@ -15333,10 +15697,36 @@ Returns the pointee type of the given c-pointer type.
 @end example
 @end defun
 
+@defun make-c-opaque-pointer-type name :optional c-name
+@c MOD gauche.native-type
+Creates a c-pointer type that points to an @emph{c-opaque} type,
+that the user does not supposed to know the details except the name
+of the type.  It is useful to passing around pointers to the
+opaque types to/from foreign functions.
+
+The @var{name} argument is a symbol that names the type.  Typically
+it is a typedef-ed name in the foreign function API.
+
+@example
+(make-c-opaque-pointer-type 'FOO) @result{}  #<c-pointer <FOO*>>
+@end example
+
+The @var{c-name} argument, if given and not @code{#f}, must be
+a string specifying the C type name, if you want to use a different
+name from @var{name}.  It is rarely needed, but one possible
+scenario is that you want to use a pointer to a library-specific
+opaque type in FFI, but you don't have a header that defines the
+type; FFI backend may generate a C code fragement and compile it
+on-the-fly, and it needs to see the type nmae.  You can give @code{"void"}
+to the @var{c-name} to workaround it.  You can use @code{<void*>} type
+instead, but then the external representation of the pointer
+also shows @code{<void*>}, which is less convenient for development.
+@end defun
+
 @subsubheading C arrays
 
-@deftp {Class} <c-array>
-@clindex c-array
+@deftp {Class} <c-array-type>
+@clindex c-array-type
 @c MOD gauche.native-type
 A class of native types representing C-style arrays.  Can be created
 with @code{make-c-array-type}, or from a signature
@@ -15373,8 +15763,8 @@ Returns a list of lengths of dimensions of @var{c-array-type}.
 
 @subsubheading C functions
 
-@deftp {Class} <c-function>
-@clindex c-function
+@deftp {Class} <c-function-type>
+@clindex c-function-type
 @c MOD gauche.native-type
 A class of native types representing C function types.  Can be created
 with @code{make-c-function-type}, or from a signature
@@ -15382,10 +15772,10 @@ with @code{native-type} (e.g.
 @code{(native-type '(.function (int int) ::int))},
 @pxref{Native type signature}).
 
-Instances of @code{<c-function>} describe the signature of a C function:
+Instances of @code{<c-function-type>} describe the signature of a C function:
 its return type, argument types, and whether it accepts variable arguments.
 
-A native handle with a @code{<c-function>} type can be cast to and from
+A native handle with a @code{<c-function-type>} type can be cast to and from
 a pointer-to-function type with @code{cast-handle}
 (@pxref{Native handles}).
 @end deftp
@@ -15440,10 +15830,10 @@ argument-type list), @code{#f} otherwise.
 
 @subsubheading C structs and unions
 
-@deftp {Class} <c-struct>
-@deftpx {Class} <c-union>
-@clindex c-struct
-@clindex c-union
+@deftp {Class} <c-struct-type>
+@deftpx {Class} <c-union-type>
+@clindex c-struct-type
+@clindex c-union-type
 @c MOD gauche.native-type
 A class of native types representing C struct and union types, respectively.
 Can be created with @code{make-c-struct-type} and
@@ -15466,6 +15856,40 @@ for untagged struct/union.
 
 When a struct/union type is constructed, its total size and each field's
 offset are computed (in unions, all the offsets are 0).
+
+If @var{fields} is @code{#f}, an incomplete type is created, which
+corresponds to a declaration like @code{struct foo;} in C.  @var{tag}
+must be a symbol in this case.  An incomplete type can't be used
+where its size or members are required (e.g. as a field of a struct,
+as an element of an array, or as the type of a native handle), but
+pointers to it can be used.  An incomplete type can be completed
+later with @code{c-struct/union-type-complete!}.
+
+Note that these procedures don't register the tag.
+@xref{Derived and aggregate native types}, for tag namespaces.
+@end defun
+
+@defun c-struct/union-type-complete! c-struct/union-type fields
+@c MOD gauche.native-type
+Completes the incomplete @var{c-struct/union-type} with @var{fields},
+which is the same as the argument of @code{make-c-struct-type}.
+The type is modified in place, so any types referring to it,
+e.g. a pointer to it, see the completed type.  An error is signaled
+if the type is already complete.  Returns @var{c-struct/union-type}.
+
+This allows self-referential structs:
+
+@example
+(define node (make-c-struct-type 'node #f))
+(c-struct/union-type-complete! node
+  `((value ,<int>) (next ,(make-c-pointer-type node))))
+@end example
+@end defun
+
+@defun c-struct/union-type-complete? c-struct/union-type
+@c MOD gauche.native-type
+Returns @code{#f} if @var{c-struct/union-type} is incomplete,
+@code{#t} otherwise.
 @end defun
 
 @defun c-struct/union-type-tag c-struct/union-type
@@ -15488,8 +15912,8 @@ of @var{c-struct/union-type}.
 
 @subsubsection C enums
 
-@deftp {Class} <c-enum>
-@clindex c-enum
+@deftp {Class} <c-enum-type>
+@clindex c-enum-type
 @c MOD gauche.native-type
 A class of native types representing C enum types.
 C enum type is a subtype of @code{<integer>}.
@@ -15498,6 +15922,51 @@ from a signature with
 @code{native-type} (e.g.
 @code{(native-type '(.enum Color (Red Green Blue)))}.
 @end deftp
+
+@defun make-c-enum-type tag typespec enumerators
+@c MOD gauche.native-type
+Creates and returns a new C enum type.  @var{tag} specifies the
+enum tag in symbol; it can be @code{#f} for untagged enum.
+@var{typespec} can be @code{#f} or an integer native type.  If it is
+a native type, it specifies the base type of the enum.
+If no @var{typespec} is given, the base type is inferred from the values
+of enumerators. Note that if you include a field of an enum type in a struct
+or an array, the layout is affected by the base type of the enum, and it
+should match the compiler's settings when you make FFI calls.
+
+The @var{enumerators} argument is a list, each of which element
+can be either a symbol or @code{(<symbol> <integer-value>)}.
+The symbol names each enumerator.  The integer value of each enumerator
+is assigned from 0 and increasing order by default.  If an integer value
+is specified in the second form, the internal counter is ``reset'' to
+that value.
+
+If you pass @code{()} to @var{enumerators}, the returned enum type
+is incomplete.  You must give @var{typespec} so that the size is
+detemined.  An incomplete num type can be completed later
+by @code{c-enum-type-complete!}.
+
+If you create an C enum type for foreign functon call, you'd want
+to use @code{define-c-enum} in @code{gauche.ffi}, which creats
+c-enum type and synchronizing enum values of the given enum symbols
+(@pxref{With-ffi form}).
+
+The created enum type object maintains mapping between enumerator
+names and values.  You can look it up with @code{c-enum-value}
+and @code{c-enum-symbol}.
+@end defun
+
+@defun c-enum-type-complete! type enumerators :optional (name #f)
+@c MOD gauche.native-type
+Complete an incomplete enum type instance @var{type} with @var{enumerators}.
+If @var{type} is already complete (has enumerator list), an error
+is signaled.
+
+Optional @var{name} argument is used in error messages; often, an
+untagged enum is @code{typede}-ed to a typename that users use.
+The enum type instance itself doesn't know that typename, and
+it is not much useful to display anonymous enum type in error messages.
+@end defun
 
 @defun c-enum-type-tag type
 @c MOD gauche.native-type
@@ -15546,9 +16015,9 @@ with @var{value}.
 @defunx c-union-type? obj
 @defunx c-enum-type? obj
 @c MOD gauche.native-type
-Returns @code{#t} if @var{obj} is an instance of @code{<c-pointer>},
-@code{<c-array>}, @code{c-function>}, @code{c-struct}, @code{<c-union>},
-or @code{c-enum},
+Returns @code{#t} if @var{obj} is an instance of @code{<c-pointer-type>},
+@code{<c-array-type>}, @code{<c-function-type>}, @code{<c-struct-type>},
+@code{<c-union-type>}, or @code{<c-enum-type>},
 and @code{#f} otherwise, respectively.
 @end defun
 
@@ -15672,6 +16141,11 @@ The pseudo-name @code{c-string} denotes the @code{<c-string>} type
 C type @code{const char *} may simply mean a pointer to byte-sized
 numeric data, thus ambiguous.
 
+You can attach @code{unsigned} or @code{signed} to an integral
+primitive types.  It flips signedness of the type, e.g. @code{(unsigned int)}
+for @code{<uint>}.  Unlike C, you need the primary type specifier,
+i.e. you can't just say @code{unsigned} to mean unsigned int.
+
 The endian-specified types listed in @ref{Representation-specific types}
 are also accepted, by their underscore-separated names: @code{int16_le},
 @code{int16_be}, @code{uint16_le}, @code{uint16_be}, and likewise for
@@ -15681,7 +16155,7 @@ the 32-bit and 64-bit integer types and for @code{float} and @code{double}.
 
 A symbol whose name ends with one or more asterisks denotes a pointer
 type; each trailing asterisk wraps the rest of the type in one
-additional layer of @code{<c-pointer>}.  Thus @code{int*} is equivalent
+additional layer of @code{<c-pointer-type>}.  Thus @code{int*} is equivalent
 to @code{(make-c-pointer-type <int>)}, @code{char**} is a pointer to a
 pointer to @code{<c-char>}, and so on.
 
@@ -15716,13 +16190,20 @@ index varies fastest).
 @example
 (.struct @var{tag} (@var{field-spec} @dots{}))
 (.struct (@var{field-spec} @dots{}))
+(.struct @var{tag})
 (.union  @var{tag} (@var{field-spec} @dots{}))
 (.union  (@var{field-spec} @dots{}))
+(.union  @var{tag})
 @end example
 
 Denote a C struct or union type.  @var{tag}, when given, is a symbol
-that names the struct/union tag; the second form of each pair (with no
+that names the struct/union tag; the second form of each kind (with no
 tag) denotes an anonymous struct/union.
+
+The third form of each kind refers to a tag.  If a tag namespace
+is given to @code{native-type}, the tag is looked up in it
+(@pxref{Derived and aggregate native types}); otherwise, it denotes
+a new incomplete type.
 
 Each @var{field-spec} has the form
 @code{@var{name}::@var{type}}, using the typed-variable notation
@@ -15736,6 +16217,7 @@ for example, @code{a::int} and @code{a :: int} are equivalent.
 
 @example
 (.enum [@var{tag}] [: @var{typespec}] (@var{enumerator} @dots{}))
+(.enum @var{tag})
 @end example
 
 Denote a C enum type.  @var{tag}, when given, is a symbol that names
@@ -15746,6 +16228,11 @@ the size and alignment of the enum type follows the compiler settings
 with which Gauche runtime is compiled.
 
 @var{enumerator} is either a symbol, or @code{(symbol integer-value)}.
+
+The second form refers to a tag, as the tag-only form of struct
+and union.  Without a tag namespace, it denotes an enum
+type whose enumerators are yet to be given, using the default
+base type.
 
 @subsubheading Function types
 
@@ -15792,6 +16279,9 @@ to a variable, and inserting it in another type signature:
 (native-type '(char const *))
   @result{} #<c-pointer <c-char*>>
 
+(native-type '(const unsigned int64_t*))
+  @result{} #<c-pointer <uint64*>>
+
 (native-type 'c-string)
   @result{} #<native-type <c-string>>
 
@@ -15814,13 +16304,23 @@ to a variable, and inserting it in another type signature:
   @result{} #<c-function <c-char*> ... -> <int>>
 @end example
 
-@defun native-type signature-or-type
+@defun native-type signature-or-type :optional tag-namespace
 @c MOD gauche.native-type
 The argument must be an S-expression type signature or
 a native type instance.  If it is a type signature, a native
 type instance denoted by the type signature is returned.
 If the argument is already a native type instance, it is returned
 as is.
+
+If @var{tag-namespace} is given, tagged struct/union/enum types
+in the signature are defined in, or referred from, the namespace,
+as @code{native-tag-define!} and @code{native-tag-ref} do.
+It allows a self-referential struct to be written as a signature:
+
+@example
+(define ns (make-native-tag-namespace))
+(native-type '(.struct node (value::int next::((.struct node) *))) ns)
+@end example
 
 See above for the specification of a native type signature.
 @end defun
@@ -15874,8 +16374,8 @@ inner-ref @result{} #<native-handle struct anonymous@@0x77a1b10f51f0>
 (define inner-ptr (native. handle 'ptr)) ; inner* inner_ptr = handle.ptr
 inner-ptr @result{} #<native-handle <struct anonymous*>@@0x77a1b10f51f0>
 
-(native. inner-ref 'a)  @result{} 1           ; inner_ref.a
-(native-> inner-ptr 'a)  @result{} 1          ; inner_ptr->a
+(native. inner-ref 'a)  @result{} 1          ; inner_ref.a
+(native. inner-ptr 'a)  @result{} 1          ; inner_ptr->a
 
 (native. (native* inner-ptr) 'b) @result{} 2 ; (*inner_ptr).b
 @end example
@@ -15973,7 +16473,7 @@ the pointer.
 @defun native-pointer+ handle offset
 @c MOD gauche.native-type
 This corresponds to C pointer addition.  The @var{handle} argument
-must be a native handle of type @code{<c-pointer>} and @var{offset}
+must be a native handle of type @code{<c-pointer-type>} and @var{offset}
 must be a fixnum.  Returns a new c-pointer handle of the same pointer
 type, that points to @var{offset} elements away from @var{handle}.
 
@@ -16020,9 +16520,14 @@ responsibility to ensure @var{index} falls in a valid range.
 @defun native. handle slot
 @c MOD gauche.native-type
 Struct/union field reference.  @var{handle} must be a native handle
-of c-struct or c-union type, and @var{slot} must be a symbol
+of c-struct or c-union type, or a pointer type to a c-struct or c-union,
+and @var{slot} must be a symbol
 naming its slot.  An error is thrown if the struct/union doesn't
 have the named slot.
+
+Note: C distinguish direct field reference of a struct
+(@code{s.f}) and indirect field reference through a pointer to a struct
+(@code{ps->f}, e.g. @code{(*pf).f}).  @code{native.} can handle both.
 @end defun
 
 @defun (setter native.) handle slot val
@@ -16030,37 +16535,25 @@ have the named slot.
 Sets @var{val} to the field @var{slot} of c-struct or c-union @var{handle}.
 @end defun
 
-@defun native-> handle slot
-@c MOD gauche.native-type
-Indirect struct/union field reference.  @var{handle} must be
-a native handle of c-pointer to a c-struct or c-union.
-@code{(native-> handle slot)} is the same as
-@code{(native. (native* handle) slot)}, just like
-@code{s->a} and @code{(*s).a} are the same in C.
-@end defun
-
-@defun (setter native->) handle slot :optional type
-@c MOD gauche.native-type
-Sets @var{val} to the field @var{slot} of c-struct or c-union
-pointed by a c-pointer handle @code{handle}.
-@end defun
-
-@defun native& handle selector
+@defun native& handle :optional selector
 @c MOD gauche.native-type
 This takes the pointer to an element inside an aggregate data
 referenced by @var{handle}.  The @var{handle} must be a
-native handle fo type c-array, c-struct, or c-union.  An error
+native handle of an aggregate type (c-struct, c-union, or c-array),
+or of a poitner to an aggregate type.
 is signaled if other type of native handle is given.
 
 If @var{handle} is a c-struct or c-union, @var{selector} must
 be a symbol naming its field.  A c-poitner handle points to
-the field is returned.
+the field is returned.  If @var{selector} is omitted, a c-pointer
+handle to the struct/union itself is returned.
 
 If @var{handle} is a c-array, @var{selector} must be a fixnum,
 or a list of fixnums, as the index to the array.  If the array
 is 1-dimensional, a fixnum or a list of signle fixnum is
 accepted.  A c-pointer handle points to the element is
-returned.
+returned.  If @var{selector} is omitted, a c-pointer handle
+to the array itself is returned.
 
 @example
 (define ts (native-type '(.struct (a::int))))
@@ -16215,6 +16708,88 @@ a pointer is expected.)
 Returns @code{#t} if @code{obj} is a native handle representing
 NULL pointer (of any c-pointer type), @code{#f} otherwise.
 @end defun
+
+@defun c-char*->string handle :optional size
+@defunx c-char*->string/shared handle :optional size
+@c MOD gauche.native-type
+As C doesn't provide a dedicated string type, it's up to the user
+to ``interpret'' an octet arrays as a string.  These procedures
+do the interpretation.
+
+``Octet type'' is one of native type @code{<c-char>}, @code{<int8>},
+or @code{<uint8>}.  The @var{handle} argument must be either a pointer
+to an octet type, or a 1-dimensional array of an octet type.
+
+The @var{size} argument may be a nonnegative exact integer, or
+a boolean value.  When omitted, @code{#f} is assumed.
+
+@table @asis
+@item @code{#f} (default)
+It is regarded as @var{handle} points to a NUL-terminated octet string.
+If @var{handle} is an array of known length, it limits the maximum length
+of the string, even if there's no NUL characters in it.   Note that
+the returned string never contains NUL character.
+@item @code{#t}
+The @var{handle} must be an array of known length, and a string of
+that length is returned, regardless of whether it contains NUL characters
+or not.  Note that if the original array contains NUL-terminated string,
+the resulting string contains that terminating NUL character.
+@item non-negative integer
+A string of the given size is returned.  The returned string may contain
+NUL character in it.  It is an error if @var{handle} is an array and
+the given size is greater than its length.
+@end table
+
+@code{c-char*->string} copies the content of @var{handle} to Gauche-managed
+memory, while @code{c-char*->string/string} makes returned string directly
+refers to the memory of @var{handle}.  The latter should be used only if
+you know @var{handle}'s memory is managed by Gauche.
+@end defun
+
+@defun string->c-char*! handle string
+@c MOD gauche.native-type
+Copy the @var{string} contents as a byte array, including the terminating
+NUL byte, to the memory referred by @var{handle}.  The type of @var{handle}
+must be an array of octets or a pointer ot octets, with large enough to
+hold the byte array including NUL byte.
+@end defun
+
+@defun string->c-char* string :optional allocator
+@c MOD gauche.native-type
+Returns a native handle to a copy of the contents of @var{string}, including
+the terinating NUL byte.
+
+The resulting handle is allocated by @var{allocator}, which takes a
+required size of memory (including the terminating NUL byte) as nonnegative
+exact integer, and returns a native handle.  When omitted, an array
+of C character is allocated.
+
+Note that the default allocator
+allocates memory from Gauche-managed space---it will be GCed when
+all references from Gauche world are dropped.  If you pass the resulting
+C char array to a foreign function that requires malloc-ed memory,
+you can pass @code{native-alloc} as @var{allocator}.
+@end defun
+
+@defun string->c-char*/shared string :optional type
+@c MOD gauche.native-type
+Returns a native handle containing @code{<c-char>} array from the
+Scheme string @var{string}.  The handle directly refers to the
+memory of the string body, so (1) the memory is owned by Gauche,
+and (2) caller shouldn't modify the returned memory.
+
+By default, the handle's type is an array of @code{<c-char>}
+with the size to hold @var{string}'s content, including the terminating
+NUL byte.  You can give alternative type with the optional @var{type}
+argument.  The alternatie type must be one of the types
+@code{c-char*->string} accepts---that is, an array of an octet type
+or a pointer to an octet type.
+
+If you need to pass the ownership of a C char array, or the
+passed C char array can be modified, you can't use this procedure;
+use @code{string->c-char*!} or @code{string->c-char*} above.
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Networking, Package metainformation, Native type utilities, Library modules - Gauche extensions
@@ -33539,6 +34114,55 @@ and collects the elements that satisfies ('filter'), or doest not satisfy
 @end example
 @end deffn
 
+@defun uvector-swap-bytes vec :optional start end special-endianness
+@defunx uvector-swap-bytes! vec :optional start end special-endiannes
+@c MOD gauche.uvector
+@c EN
+Swaps the byte order of each element of a uniform vector @var{vec}
+between big- and little-endian.  @code{uvector-swap-bytes}
+returns a fresh uvector of the same type containing the swapped
+elements between @var{start} and @var{end}, while
+@code{uvector-swap-bytes!} swaps the elements of @var{vec} in place,
+returning an undefined value.
+For @code{u8vector} and @code{s8vector}, no swapping occurs.
+For complex uvectors, the real and imaginary parts are swapped individually.
+
+The @var{special-endianness} argument is only meaningful for
+@code{f64vector} and @code{c128vector}, and allows to specify
+a special case for ARM-specific IEEE double endianness.
+If it is @code{#f} (default), the byte swapping is applied to
+the entire 8-byte word.
+ @code{#f} (default) for the conversion above.
+It can also be a symbol @code{le:arm-le}, to convert between
+@code{little-endian} and @code{arm-little-endian}, or
+@code{be:arm-le}, to convert between @code{big-endian} and
+@code{arm-little-endian} (@pxref{Endianness}).
+@c JP
+ユニフォームベクタ@var{vec}の各要素のバイト順を、ビッグエンディアンと
+リトルエンディアンの間で入れ替えます。@code{uvector-swap-bytes}は
+@var{start}から@var{end}までの要素のバイト順を入れ替えた、
+同じ型の新たなユニフォームベクタを返します。
+@code{uvector-swap-bytes!}は@var{vec}の要素をその場で入れ替えます。
+@code{uvector-swap-bytes!}の戻り値は未定義値です。
+@code{u8vector}と@code{s8vector}については入れ替えは起こりません。
+複素数ベクタについては、実部と虚部がそれぞれ個別に入れ替えられます。
+
+引数@var{special-endianness}は@code{f64vector}と@var{c128vector}のみに対して
+意味を持ち、ARM特有のIEEE倍精度浮動小数点数のエンディアン変換を指定します。
+@code{#f}(デフォルト)の場合は8バイトワード全体の順序を入れ替えます。
+シンボル@code{le:arm-le}を渡すと@code{little-endian}と
+@code{arm-little-endian}の間の変換、
+@code{be:arm-le}を渡すと@code{big-endian}と
+@code{arm-little-endian}の間の変換を行います(@ref{Endianness}参照)。
+@c COMMON
+
+@example
+(uvector-swap-bytes '#u16(#x0102 #x0304))
+ @result{} #u16(513 1027)   ; #x0201 #x0403
+(uvector-swap-bytes '#u16(#x0102 #x0304 #x0506 #x0708) 1 3)
+ @result{} #u16(1027 1541)  ; #x0403 #x0605
+@end example
+@end defun
 
 @deffn {Function} make-@@vector-generator vec
 @findex make-u8vector-generator
@@ -33860,7 +34484,8 @@ optional arguments are the same as @code{@@vector->vector}.
 @c COMMON
 @end defun
 
-@deffn {Function} list->@@vector list :optional clamp
+@deffn {Function} list->@@vector list :optional start end clamp
+@deffnx {Function} list->@@vector list :optional clamp
 @findex list->s8vector
 @findex list->u8vector
 @findex list->s16vector
@@ -33875,21 +34500,41 @@ optional arguments are the same as @code{@@vector->vector}.
 @findex list->c32vector
 @findex list->c64vector
 @findex list->c128vector
-[R7RS vector.@@]
+[R7RS vector.@@][SRFI-274]
 @c MOD gauche.uvector
 @c EN
 Converts a list @var{list} to a @@vector.
+The optional argument @var{start}/@var{end} limits the range of
+@var{list} to be used.  These optoinal arguments are defined in SRFI-274
+(@pxref{Extended list conversion procedures}).
+
 Optional argument @var{clamp} specifies the behavior when
 the element of @var{list} is out of the valid range.
-(The @var{clamp} argument is Gauche's extension.)
+The @var{clamp} argument is Gauche's extension.
+
+NB: Originally this procedure only takes an optional @var{clamp}.
+After SRFI-274, we enhanced it to allow @var{start}/@var{end} arguments,
+but we still support the old API.
+If only one optional argument is given, it is @var{clamp} if it is a
+symbol or @code{#f}, and @var{start} if it is a number.
 
 Note that the generic function @code{coerce-to} can be used as well,
 if you import @code{gauche.collection}.
 @c JP
 リスト@var{list}を@@vectorに変換します。
-省略可能な引数@var{clamp}が、リスト内の要素が正しい範囲外の数であった場合の
+省略可能な@var{start}/@var{end}引数はリストの使われる範囲を制限する
+インデックスです。この引数はSRFI-274で導入されました
+(@ref{Extended list conversion procedures}参照)。
+
+省略可能な引数@var{clamp}は、リスト内の要素が正しい範囲外の数であった場合の
 動作を指定します。
-(@var{clamp}引数はGauche独自拡張です。)
+@var{clamp}引数はGauche独自拡張です。
+
+註: 元々は、この手続きは@var{clamp}のみを省略可能引数として取っていましたが、
+SRFI-274の決定に伴い、@var{start}/@var{end}引数を取るように変更されました。
+ただし、古い呼び出し方法もサポートされます。
+省略可能引数がひとつだけ渡された場合、それがシンボルか@code{#f}なら
+@var{clamp}、数値なら@var{start}と解釈されます。
 
 モジュール@code{gauche.collection}をインポートしていれば、
 総称関数@code{coerce-to}を使うこともできます。
@@ -36138,6 +36783,15 @@ This is an R7RS base procedure.
 @c JP
 @code{open-input-uvector}と似ていますが、引数はu8vectorでなければなりません。
 R7RS baseの手続きです。
+@c COMMON
+
+@c EN
+Cf. @code{open-cyclic-input-bytevector} (@pxref{Cyclic ports}) allows
+to create an infinite input port repeating to read from the
+given bytevector.
+@c JP
+参考: @code{open-cyclic-input-bytevector} (@ref{Cyclic ports})は
+与えたバイトベクタから繰り返し無限に読み込む入力ポートを作ります。
 @c COMMON
 @end defun
 

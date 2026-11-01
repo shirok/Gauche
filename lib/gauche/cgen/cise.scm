@@ -435,6 +435,7 @@
     [[? identifier?] (wrap-expr (cise-render-identifier (unwrap-syntax form))
                                 env)]
     [[? string?] (wrap-expr (write-to-string form) env)]
+    [[? exact-integer?] (wrap-expr (render-integer-literal form) env)]
     [[? real?]   (wrap-expr form env)]
     [()          '()]
     [#\'         (wrap-expr "'\\''"  env)]
@@ -450,6 +451,22 @@
                            (format "\\x~2,'0x" (char->integer form)))
                     "'") env))]
     [_           (error "Invalid CISE form: " form)]))
+
+;; render-integer-literal :: Integer -> String
+;;   Attach a suffix so that the C compiler will handle the literal with
+;;   the appropriate type.  We use 'LL' instead of 'L', as the size of long
+;;   can vary.
+(define (render-integer-literal n)
+  (cond [(<= (- (expt 2 31)) n (- (expt 2 31) 1))
+         (if (= n (- (expt 2 31)))
+           "(-2147483647-1)"
+           (number->string n))]
+        [(<= (- (expt 2 63)) n (- (expt 2 63) 1))
+         (if (= n (- (expt 2 63)))
+           "(-9223372036854775807LL-1)"
+           #"~|n|LL")]
+        [(<= 0 n (- (expt 2 64) 1)) #"~|n|ULL"]
+        [else (error "CISE: Integer literal out of range:" n)]))
 
 ;;
 ;; cise-translate inp outp &key enviroment
@@ -1490,6 +1507,7 @@
   [(_ a b c d e) `(Scm_Values5 ,a ,b ,c ,d ,e)]
   [(_ x ...)     `(Scm_Values ,(fold (^[elt r] `(Scm_cons ,elt ,r)) '() x))]
   )
+
 ;; Using quote is a convenient way to embed Scheme constant in C code.
 (define-cise-expr quote
   [(_ cst)
@@ -1497,6 +1515,40 @@
      (error "cise: quote can't be used unless cgen-current-unit is set: '"
             cst))
    (list (cgen-cexpr (cgen-literal cst)))])
+
+;; Eash run-time referencing
+
+;; (.module name-expr) - evaluates to ScmModule* of the given name; throws
+;; an error if named module is not found.  Lookup is only done once,
+;; and the result is cached.
+(define-cise-expr .module
+  [(_ name-expr)
+   (let ([mod-var (gensym "module_var_")])
+     (cise-push-static-decl!
+      (cise-render-to-string
+       `(define-cvar ,mod-var :: ScmModule* NULL)
+       'toplevel))
+     `(?: (== ,mod-var NULL)
+          (set! ,mod-var (Scm_FindModule (SCM_SYMBOL ,name-expr) 0))
+          ,mod-var))])
+
+;; (.cref name-expr module-expr) - Look up the value of the global variable
+;; name-expr in the module module-expr.  The variable is supposed to be
+;; constant once initialized, so it looks up the value the first time it is
+;; executed, and caches the result to be used subsequently.
+(define-cise-expr .cref
+  [(_ name-expr mod-expr)
+   (let ([val-var (gensym "constval_var_")])
+     (cise-push-static-decl!
+      (cise-render-to-string
+       `(define-cvar ,val-var SCM_UNBOUND)
+       'toplevel))
+     `(?: (SCM_UNBOUNDP ,val-var)
+          (set! ,val-var (Scm_ModuleBindingRef ,mod-expr
+                                               (SCM_SYMBOL ,name-expr)
+                                               SCM_UNBOUND
+                                               0))
+          ,val-var))])
 
 ;;=============================================================
 ;; Other utilities

@@ -36,7 +36,7 @@
           expt-mod inverse-mod
           gamma real-gamma log-gamma real-log-gamma
           lgamma real-log-abs-gamma
-          exact-integer-sqrt real-valued? rational-valued? integer-valued?
+          exact-integer-sqrt
           div-and-mod div mod
           div0-and-mod0 div0 mod0
           floor/ floor-quotient floor-remainder
@@ -360,25 +360,24 @@
     (error "exact nonnegative integer required, but got" k))
   ((with-module gauche.internal %exact-integer-sqrt) k))
 
-;; Since Gauche coerces complex number whose imag part is 0.0i into
-;; real, these procedures has no difference from real?, rational? and
-;; integer?
-(define real-valued?     real?)
-(define rational-valued? rational?)
-(define integer-valued?  integer?)
+;; NB: real-valued?, rational-valued? and integer-valued? are in core.
 
 ;; An extension of quotient&remainder to the real domain.  Their results
 ;; match with div/mod when divisor is positive.
 (define (%div&mod x y)
   (define (edom what)
     (error "real number required for integer division, but got" what))
-  (cond [(= y 0) (error "zero divisor is not allowed in integer division")]
-        [(and (integer? x) (integer? y)) (quotient&remainder x y)]
-        [(and (exact? x) (exact? y))    ;at least one of arg is rational
-         (let1 q (truncate (/ x y)) (values q (- x (* q y))))]
-        [(not (real? x)) (edom x)]
-        [(not (real? y)) (edom y)]
-        [else (receive (r q) (modf (/. x y)) (values q (- x (* q y))))]))
+  (define (->real z)
+    (cond [(real? z) z]
+          [(real-valued? z) (real-part z)]
+          [else (edom z)]))
+  (let ([x (->real x)]
+        [y (->real y)])
+    (cond [(= y 0) (error "zero divisor is not allowed in integer division")]
+          [(and (integer? x) (integer? y)) (quotient&remainder x y)]
+          [(and (exact? x) (exact? y))    ;at least one of arg is rational
+           (let1 q (truncate (/ x y)) (values q (- x (* q y))))]
+          [else (receive (r q) (modf (/. x y)) (values q (- x (* q y))))])))
 
 (define (div-and-mod x y)
   (if (>= x 0)

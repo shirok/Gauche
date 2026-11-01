@@ -2,8 +2,8 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
- * Copyright (C) 2007 Free Software Foundation, Inc
- * Copyright (c) 2008-2020 Ivan Maidanski
+ * Copyright (c) 2007 Free Software Foundation, Inc.
+ * Copyright (c) 2008-2025 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -70,10 +70,10 @@ struct finalizable_object {
 
 GC_API void GC_CALL GC_push_finalizer_structures(void)
 {
-  GC_ASSERT((word)(&GC_dl_hashtbl.head) % sizeof(word) == 0);
-  GC_ASSERT((word)(&GC_fnlz_roots) % sizeof(word) == 0);
+  GC_ASSERT((word)(&GC_dl_hashtbl.head) % ALIGNMENT == 0);
+  GC_ASSERT((word)(&GC_fnlz_roots) % ALIGNMENT == 0);
 # ifndef GC_LONG_REFS_NOT_NEEDED
-    GC_ASSERT((word)(&GC_ll_hashtbl.head) % sizeof(word) == 0);
+    GC_ASSERT((word)(&GC_ll_hashtbl.head) % ALIGNMENT == 0);
     GC_PUSH_ALL_SYM(GC_ll_hashtbl.head);
 # endif
   GC_PUSH_ALL_SYM(GC_dl_hashtbl.head);

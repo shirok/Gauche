@@ -101,7 +101,7 @@ SCM_CLASS_DECL(Scm_DLObjClass);
 SCM_EXTERN ScmObj Scm_PrelinkedPath(ScmString *dsoname);
 SCM_EXTERN ScmObj Scm_OpenDLO(ScmString *dsopath, ScmString **errmsg);
 SCM_EXTERN ScmObj Scm_CloseDLO(ScmDLObj *dlo, int force);
-SCM_EXTERN ScmObj Scm_CallInitFunction(ScmDLObj *dlo, ScmString *initfn);
+SCM_EXTERN ScmObj Scm_CallInitFunction(ScmDLObj *dlo, ScmString *initfn, ScmModule *mod);
 SCM_EXTERN ScmObj Scm_DLOSuffixes(void);
 SCM_EXTERN ScmObj Scm_DLObjPath(ScmDLObj *dlo);
 

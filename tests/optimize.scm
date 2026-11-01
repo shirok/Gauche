@@ -133,6 +133,23 @@
                             (define xs (list a b c))
                             (apply f xs))))
 
+;; pass2 inlining causes 'untailing' (local tail call becomes non-tail call)
+;; https://github.com/shirok/Gauche/issues/1333
+
+(let ()
+  (define (make-walk x)
+    (define (walk tree)
+      (define (recur tree) (walk tree))
+      (if (pair? tree)
+        (list x (recur (car tree)) (recur (cdr tree)))
+        (map (lambda (value) tree) '())))
+    (lambda (tree) (walk tree)))
+
+  (test* "local nontail calls doesn't break by inlining"
+         '(foo () (foo () ()))
+         ((make-walk 'foo) '(1 2)))
+  )
+
 ;; pass3/late-inline
 (define-inline (late-inline-test-1 ref) (cut ref <> 0))
 

@@ -123,8 +123,11 @@ char *Scm_StrdupPartial(const char *src, size_t size)
 /* We have multiple similar functions, due to performance reasons. */
 
 /* Calculate both length and size of C-string str.
-   If str is incomplete, *plen gets -1. */
+   If str is incomplete, *plen gets -1.
+   maxsize limits the maximum size.
+ */
 static inline ScmSmallInt count_size_and_length(const char *str,
+                                                ScmSmallInt maxsize,
                                                 ScmSmallInt *psize, /* out */
                                                 ScmSmallInt *plen)  /* out */
 {
@@ -134,6 +137,9 @@ static inline ScmSmallInt count_size_and_length(const char *str,
     ScmSmallInt size = 0, len = 0;
     while ((c = *p++) != 0) {
         int i = SCM_CHAR_NFOLLOWS(c);
+        if (size + i + 1 > maxsize) {
+            break;
+        }
         len++;
         size += i+1;
 
@@ -250,8 +256,14 @@ ScmObj Scm_MakeString(const char *str, ScmSmallInt size, ScmSmallInt len,
     flags &= ~SCM_STRING_TERMINATED;
 
     if (size < 0) {
-        count_size_and_length(str, &size, &len);
+        count_size_and_length(str, SCM_STRING_MAX_SIZE, &size, &len);
         flags |= SCM_STRING_TERMINATED;
+    } else if (flags & SCM_STRING_LIMIT_SIZE) {
+        ScmSmallInt maxsize = size;
+        count_size_and_length(str, maxsize, &size, &len);
+        if (size < maxsize && str[size] == 0) {
+            flags |= SCM_STRING_TERMINATED;
+        }
     } else {
         if (len < 0) len = count_length(str, size);
     }
@@ -281,9 +293,28 @@ ScmObj Scm_MakeFillString(ScmSmallInt len, ScmChar fill)
     return SCM_OBJ(make_str(len, csize*len, ptr, SCM_STRING_TERMINATED, NULL));
 }
 
+/* TRANSIENT: At next major API revision, make 3-argument version
+   Scm_ListToString(). */
 ScmObj Scm_ListToString(ScmObj chars)
 {
-    ScmSmallInt size = 0, len = 0;
+    return Scm_ListToStringFull(chars, 0, -1);
+}
+
+ScmObj  Scm_ListToStringFull(ScmObj chars,
+                             ScmSmallInt start,
+                             ScmSmallInt end)
+{
+    ScmSmallInt size = 0, len = 0, maxlen = -1;
+
+    if (start < 0 || (end >= 0 && end < start)) {
+        goto out_of_range;
+    }
+    if (start != 0) {
+        /* skip to start character */
+        chars = Scm_ListTail(chars, start, SCM_FALSE);
+        if (SCM_FALSEP(chars)) goto out_of_range;
+        maxlen = end - start;
+    }
 
     ScmObj cp;
     SCM_FOR_EACH(cp, chars) {
@@ -293,16 +324,29 @@ ScmObj Scm_ListToString(ScmObj chars)
         size += SCM_CHAR_NBYTES(ch);
         len++;
         CHECK_SIZE(size);
+        if (maxlen >= 0 && len >= maxlen) {
+            break;
+        }
     }
     char *buf = SCM_NEW_ATOMIC2(char *, size+1);
     char *bufp = buf;
+    len = 0;
     SCM_FOR_EACH(cp, chars) {
         ScmChar ch = SCM_CHAR_VALUE(SCM_CAR(cp));
         SCM_CHAR_PUT(bufp, ch);
         bufp += SCM_CHAR_NBYTES(ch);
+        len++;
+        if (maxlen >= 0 && len >= maxlen) {
+            break;
+        }
     }
     *bufp = '\0';
     return Scm_MakeString(buf, size, len, 0);
+
+ out_of_range:
+    Scm_Error("list->string: start/end index out of range: (%ld %ld)",
+              start, end);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /* Extract string as C-string.  This one guarantees to return
@@ -703,7 +747,9 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str,
     ScmSmallInt lenx = SCM_STRING_BODY_LENGTH(xb);
     u_long flags = 0;
 
-    if (sizey < 0) count_size_and_length(str, &sizey, &leny);
+    if (sizey < 0) {
+        count_size_and_length(str, SCM_STRING_MAX_SIZE, &sizey, &leny);
+    }
     else if (leny < 0) leny = count_length(str, sizey);
     CHECK_SIZE(sizex+sizey);
 
