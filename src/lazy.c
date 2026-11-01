@@ -163,7 +163,11 @@ static ScmObj force_exc_handler(ScmObj *argv, int argc, void *data)
 
     SCM_INTERNAL_MUTEX_LOCK(c->mutex);
     if (c->state == SCM_PROMISE_UNFORCED) {
-        c->code = argv[0];      /* condition object */
+        /* Wrap thrown exception with <uncaught-exception> (srfi-226) */
+        ScmObj exc =
+            Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, Scm_VM());
+        SCM_THREAD_EXCEPTION(exc)->data = argv[0]; /* thrown condition  */
+        c->code = exc;
         Scm_AtomicThreadFence();
         c->state = SCM_PROMISE_EXCEPTION;
     }
@@ -222,7 +226,9 @@ ScmObj Scm_VMForce(ScmObj obj)
         /* already forced. c->code has values. */
         return Scm_Values(c->code);
     case SCM_PROMISE_EXCEPTION:
-        /* evaluation of promise ended up exception. */
+        /* evaluation of promise ended up exception.
+           c->code contains <uncaught-exception> wrapping the original
+           condition. */
         return Scm_VMThrowException(vm, c->code, 0);
     case SCM_PROMISE_UNFORCED:
         {
