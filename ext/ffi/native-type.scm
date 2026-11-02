@@ -1817,6 +1817,8 @@
              (%s <uint> <int> <uint>)
              (%s <long> <long> <ulong>)
              (%s <ulong> <long> <ulong>)
+             (%s <longlong> <longlong> <ulonglong>)
+             (%s <ulonglong> <longlong> <ulonglong>)
              (%s <int8> <int8> <uint8>)
              (%s <uint8> <int8> <uint8>)
              (%s <int16> <int16> <uint16>)
