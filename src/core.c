@@ -221,6 +221,7 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm__InitCollection);
     CALL_INIT(Scm__InitExceptions);
     CALL_INIT(Scm__InitProc);
+    CALL_INIT(Scm__InitLazy);
     CALL_INIT(Scm__InitPort);
     CALL_INIT(Scm__InitWrite);
     CALL_INIT(Scm__InitMacro);

@@ -2,6 +2,10 @@
 
 	* src/lazy.c (Scm_VMForce): If evaluation raises exception, wrap
 	  it with <uncaught-exception> (srfi-226).
+	  Also ensure the user installed exception handler would be called
+	  in the continuation of force, so that in case when such handler
+	  returns, the result would be delivered to the caller of force.
+
 	* src/libexc.scm: Make thread exception family visible in Gauche,
 	  because their usage got widened.
 

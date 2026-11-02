@@ -513,8 +513,7 @@
           (parameterize ([p 2])
             (force s))))
 
-;; DIVERGE - delay raise simple error of unhandled exception.
-'(test '(0 10 1 10 1)
+(test '(0 10 1 10 1)
       (let* ([l '()]
              [x 0]
              [p (delay (begin (set! x (fx+ x 1))
@@ -544,8 +543,7 @@
                            (lambda ()
                              1000)))))
 
-;; DIVERGE - force raises simple error of unhandled exception.
-'(test 51
+(test 51
       (with-exception-handler
        (lambda (exc)
          (cond
@@ -884,8 +882,7 @@
                   (delay (p)))])
         (force q)))
 
-;; DIVERGE - force raises simple error of unhandled exception.
-'(test 1
+(test 1
       (let* ([x 0]
              (q (delay
                   (begin
