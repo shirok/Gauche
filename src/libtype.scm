@@ -1027,32 +1027,45 @@
  ;; Used by gauche.native-type.  Can be used for other purposes, but
  ;; it's not official and the structure/interface may change.
  (define-cvar builtin-native-types :static)
+ ;; Primitive native type -> primary native type signature
+ ;; Reverse map of builtin-native-types, but if a native type has multiple
+ ;; keys, returns the primary ones.
+ (define-cvar builtin-native-type-signatures :static)
 
  (initcode
-  (set! builtin-native-types (Scm_MakeHashTableSimple SCM_HASH_EQ 16)))
+  (set! builtin-native-types (Scm_MakeHashTableSimple SCM_HASH_EQ 16))
+  (set! builtin-native-type-signatures (Scm_MakeHashTableSimple SCM_HASH_EQ 16)))
 
  (define-cproc %builtin-native-type-table ()
    (return builtin-native-types))
+ (define-cproc %builtin-native-type-signature-table ()
+   (return builtin-native-type-signatures))
 
  ;; define-native-type NAME CVAR SUPER CTYPE PRED BOX UNBOX UNSIGNEDP KEY
  ;;   NAME - Symbol for Scheme name
  ;;   CVAR - C variable name to store the ScmObj (e.g., Scm_NativeFixnumType)
  ;;   SUPER - C macro name for superclass
- ;;   CTYPE - C type name
+ ;;   CTYPE - CiSE type as a list, used to generate CiSE type expression for
+ ;;           internal functions.  If the list consists of a single word,
+ ;;           the word is included in the keys to the native type lookup.
+ ;;           Unless it is included in the keys, the value of this field
+ ;;           is solely internal.
  ;;   PRED - single-argument C macro or function: ScmObj -> int
  ;;          (auto-wrapped into (ScmNativeType*, ScmObj) -> int)
  ;;   BOX - C function ctype -> ScmObj for boxing
  ;;   UNBOX - C function ScmObj -> ctype for unboxing
  ;;   UNSIGNEDP - C boolean expression whether the type is unsigned
- ;;   KEY - Optional.  The key for builtin-native-types table, which is
- ;;         also the native type signature.  Defaults to CTYPE.  Must be
- ;;         given if CTYPE consists of multiple words.
-
+ ;;   KEYS - list of type symbols that can be used to look up native type.
+ ;;          E.g. ulong and u_long are the keys for <ulong>, and can be
+ ;;          used like (native-type 'u_long) => #<native-type ulong>.
+ ;;          If CTYPE list consists of a single symbol, that symbol is
+ ;;          added at the head of KEYS list.  The first element of this
+ ;;          list is used to convert native-type to a signature.
  (define-cise-stmt define-native-type
    [(_ name cvar super ctype pred box unbox unsignedp)
     `(define-native-type ,name ,cvar ,super ,ctype ,pred ,box ,unbox
-       ,unsignedp ,ctype)]
-   [(_ name cvar super ctype pred box unbox unsignedp key)
+       ,unsignedp ())]
+   [(_ name cvar super ctype pred box unbox unsignedp keys)
     (define c-of-type-name (symbol-append name '-c-of-type))
     (define c-ref-name (symbol-append name '-ptr-ref))
     (define c-set-name (symbol-append name '-ptr-set))
@@ -1064,6 +1077,10 @@
     (define cvar-str (symbol->string cvar))
     (define priv-str (string-append cvar-str "_"))
     (define priv-sym (string->symbol priv-str))
+    (define primary-key (if (length=? ctype 1) (car ctype) (car keys)))
+    (define xkeys (if (length=? ctype 1)
+                    (cons (car ctype) keys)
+                    keys))
 
     (cgen-decl #"static ScmObj ~priv-str;")
     (cgen-decl #"ScmObj ~cvar-str(void) { return ~priv-str; }")
@@ -1075,21 +1092,22 @@
     (cgen-decl
      (cise-render-to-string
       `(define-cfn ,c-ref-name (_::ScmNativeType* ptr::void*) :static
-         (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
+         (let* ([pp :: (,@ctype *) (cast (,@ctype *) ptr)])
            (return (,box (* pp)))))
       'toplevel))
     (cgen-decl
      (cise-render-to-string
       `(define-cfn ,c-set-name (t::ScmNativeType* ptr::void* obj) ::void :static
-         (let* ([pp :: (,ctype *) (cast (,ctype *) ptr)])
+         (let* ([pp :: (,@ctype *) (cast (,@ctype *) ptr)])
            (unless (,c-of-type-name t obj)
              (SCM_TYPE_ERROR obj ,(x->string name)))
            (set! (* pp) (,unbox obj))))
       'toplevel))
     `(let* ([z (make_native_type ,(symbol->string name)
-                                 (SCM_OBJ ,super) ,(x->string ctype)
-                                 (sizeof (.type ,ctype))
-                                 (SCM_ALIGNOF (.type ,ctype))
+                                 (SCM_OBJ ,super)
+                                 ,(string-join (map x->string ctype) " ")
+                                 (sizeof (.type ,@ctype))
+                                 (SCM_ALIGNOF (.type ,@ctype))
                                  ,c-of-type-name
                                  ,c-ref-name
                                  ,c-set-name
@@ -1099,8 +1117,12 @@
                                  ,unsignedp
                                  TRUE)])
        (set! ,priv-sym z)
-       (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
-                         ',key (SCM_OBJ z) 0)
+       (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-type-signatures)
+                         ',primary-key (SCM_OBJ z) 0)
+       ,@(map (^[key]
+                `(Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
+                                  ',key (SCM_OBJ z) 0))
+              xkeys)
        (Scm_MakeBinding (Scm_GaucheModule)
                         (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
                         SCM_BINDING_INLINABLE)
@@ -1123,110 +1145,142 @@
  (define-cfn Scm_NativeVoidPointerType () ::ScmObj (return Scm_NativeVoidPointerType_))
 
  (initcode
-  (define-native-type <fixnum>  Scm_NativeFixnumType  SCM_CLASS_INTEGER ScmSmallInt
+  (define-native-type <fixnum>  Scm_NativeFixnumType  SCM_CLASS_INTEGER
+    (ScmSmallInt)
     SCM_INTP SCM_MAKE_INT SCM_INT_VALUE FALSE)
-  (define-native-type <ufixnum>  Scm_NativeUfixnumType  SCM_CLASS_INTEGER ScmSmallInt
+  (define-native-type <ufixnum>  Scm_NativeUfixnumType  SCM_CLASS_INTEGER
+    (ScmSmallInt)
     SCM_UINTP SCM_MAKE_INT SCM_INT_VALUE TRUE)
-  (define-native-type <short>   Scm_NativeShortType   SCM_CLASS_INTEGER short
+  (define-native-type <short>   Scm_NativeShortType   SCM_CLASS_INTEGER
+    (short)
     SCM_INTEGER_FITS_SHORT_P SCM_MAKE_INT SCM_INT_VALUE FALSE)
-  (define-native-type <ushort>  Scm_NativeUshortType  SCM_CLASS_INTEGER u_short
-    SCM_INTEGER_FITS_USHORT_P SCM_MAKE_INT SCM_INT_VALUE TRUE)
-  (define-native-type <int>     Scm_NativeIntType     SCM_CLASS_INTEGER int
+  (define-native-type <ushort>  Scm_NativeUshortType  SCM_CLASS_INTEGER
+    (u_short)
+    SCM_INTEGER_FITS_USHORT_P SCM_MAKE_INT SCM_INT_VALUE TRUE (ushort))
+  (define-native-type <int>     Scm_NativeIntType     SCM_CLASS_INTEGER
+    (int)
     SCM_INTEGER_FITS_INT_P Scm_MakeInteger Scm_GetInteger FALSE)
-  (define-native-type <uint>    Scm_NativeUintType    SCM_CLASS_INTEGER u_int
-    SCM_INTEGER_FITS_UINT_P Scm_MakeIntegerU Scm_GetIntegerU TRUE)
-  (define-native-type <long>    Scm_NativeLongType    SCM_CLASS_INTEGER long
+  (define-native-type <uint>    Scm_NativeUintType    SCM_CLASS_INTEGER
+    (u_int)
+    SCM_INTEGER_FITS_UINT_P Scm_MakeIntegerU Scm_GetIntegerU TRUE (uint))
+  (define-native-type <long>    Scm_NativeLongType    SCM_CLASS_INTEGER
+    (long)
     SCM_INTEGER_FITS_LONG_P Scm_MakeInteger Scm_GetInteger FALSE)
-  (define-native-type <ulong>   Scm_NativeUlongType   SCM_CLASS_INTEGER u_long
-    SCM_INTEGER_FITS_ULONG_P Scm_MakeIntegerU Scm_GetIntegerU TRUE)
-  (define-native-type <int8>    Scm_NativeInt8Type    SCM_CLASS_INTEGER int8_t
+  (define-native-type <ulong>   Scm_NativeUlongType   SCM_CLASS_INTEGER
+    (u_long)
+    SCM_INTEGER_FITS_ULONG_P Scm_MakeIntegerU Scm_GetIntegerU TRUE (ulong))
+  (define-native-type <int8>    Scm_NativeInt8Type    SCM_CLASS_INTEGER
+    (int8_t)
     SCM_INTEGER_FITS_INT8_P SCM_MAKE_INT SCM_INT_VALUE FALSE)
-  (define-native-type <uint8>   Scm_NativeUint8Type   SCM_CLASS_INTEGER uint8_t
+  (define-native-type <uint8>   Scm_NativeUint8Type   SCM_CLASS_INTEGER
+    (uint8_t)
     SCM_INTEGER_FITS_UINT8_P SCM_MAKE_INT SCM_INT_VALUE TRUE)
-  (define-native-type <int16>   Scm_NativeInt16Type   SCM_CLASS_INTEGER int16_t
+  (define-native-type <int16>   Scm_NativeInt16Type   SCM_CLASS_INTEGER
+    (int16_t)
     SCM_INTEGER_FITS_INT16_P SCM_MAKE_INT SCM_INT_VALUE FALSE)
-  (define-native-type <uint16>  Scm_NativeUint16Type  SCM_CLASS_INTEGER uint16_t
+  (define-native-type <uint16>  Scm_NativeUint16Type  SCM_CLASS_INTEGER
+    (uint16_t)
     SCM_INTEGER_FITS_UINT16_P SCM_MAKE_INT SCM_INT_VALUE TRUE)
-  (define-native-type <int32>   Scm_NativeInt32Type   SCM_CLASS_INTEGER int32_t
+  (define-native-type <int32>   Scm_NativeInt32Type   SCM_CLASS_INTEGER
+    (int32_t)
     SCM_INTEGER_FITS_INT32_P Scm_MakeInteger Scm_GetInteger FALSE)
-  (define-native-type <uint32>  Scm_NativeUint32Type  SCM_CLASS_INTEGER uint32_t
+  (define-native-type <uint32>  Scm_NativeUint32Type  SCM_CLASS_INTEGER
+    (uint32_t)
     SCM_INTEGER_FITS_UINT32_P Scm_MakeIntegerU Scm_GetIntegerU TRUE)
-  (define-native-type <int64>   Scm_NativeInt64Type   SCM_CLASS_INTEGER int64_t
+  (define-native-type <int64>   Scm_NativeInt64Type   SCM_CLASS_INTEGER
+    (int64_t)
     SCM_INTEGER_FITS_INT64_P Scm_MakeInteger64 Scm_GetInteger64 FALSE)
-  (define-native-type <uint64>  Scm_NativeUint64Type  SCM_CLASS_INTEGER uint64_t
+  (define-native-type <uint64>  Scm_NativeUint64Type  SCM_CLASS_INTEGER
+    (uint64_t)
     SCM_INTEGER_FITS_UINT64_P Scm_MakeIntegerU64 Scm_GetIntegerU64 TRUE)
   ;; NB: We assume long long is 64bit.
   (define-native-type <longlong>  Scm_NativeLongLongType  SCM_CLASS_INTEGER
-    "long long"
+    (long long)
     SCM_INTEGER_FITS_INT64_P Scm_MakeInteger64 Scm_GetInteger64 FALSE
-    longlong)
+    (longlong))
   (define-native-type <ulonglong> Scm_NativeUlongLongType SCM_CLASS_INTEGER
-    "unsigned long long"
+    (unsigned long long)
     SCM_INTEGER_FITS_UINT64_P Scm_MakeIntegerU64 Scm_GetIntegerU64 TRUE
-    ulonglong)
+    (ulonglong))
 
-  (define-native-type <size_t>    Scm_NativeSizetType    SCM_CLASS_INTEGER size_t
+  (define-native-type <size_t>    Scm_NativeSizetType    SCM_CLASS_INTEGER
+    (size_t)
     Scm_IntegerFitsSizeP Scm_SizeToInteger Scm_IntegerToSize TRUE)
-  (define-native-type <ssize_t>   Scm_NativeSsizetType   SCM_CLASS_INTEGER ssize_t
+  (define-native-type <ssize_t>   Scm_NativeSsizetType   SCM_CLASS_INTEGER
+    (ssize_t)
     Scm_IntegerFitsSsizeP Scm_SsizeToInteger Scm_IntegerToSsize FALSE)
-  (define-native-type <ptrdiff_t> Scm_NativePtrdifftType SCM_CLASS_INTEGER ptrdiff_t
+  (define-native-type <ptrdiff_t> Scm_NativePtrdifftType SCM_CLASS_INTEGER
+    (ptrdiff_t)
     Scm_IntegerFitsPtrdiffP Scm_PtrdiffToInteger Scm_IntegerToPtrdiff FALSE)
-  (define-native-type <off_t>     Scm_NativeOfftType     SCM_CLASS_INTEGER off_t
+  (define-native-type <off_t>     Scm_NativeOfftType     SCM_CLASS_INTEGER
+    (off_t)
     Scm_IntegerFitsOffsetP Scm_OffsetToInteger Scm_IntegerToOffset FALSE)
-  (define-native-type <intptr_t>  Scm_NativeIntptrtType  SCM_CLASS_INTEGER intptr_t
+  (define-native-type <intptr_t>  Scm_NativeIntptrtType  SCM_CLASS_INTEGER
+    (intptr_t)
     Scm_IntegerFitsIntptrP Scm_IntptrToInteger Scm_IntegerToIntptr FALSE)
-  (define-native-type <uintptr_t> Scm_NativeUintptrtType SCM_CLASS_INTEGER uintptr_t
+  (define-native-type <uintptr_t> Scm_NativeUintptrtType SCM_CLASS_INTEGER
+    (uintptr_t)
     Scm_IntegerFitsUintptrP Scm_UintptrToInteger Scm_IntegerToUintptr TRUE)
 
-  (define-native-type <float>   Scm_NativeFloatType   SCM_CLASS_REAL float
+  (define-native-type <float>   Scm_NativeFloatType   SCM_CLASS_REAL
+    (float)
     SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE)
-  (define-native-type <double>  Scm_NativeDoubleType  SCM_CLASS_REAL double
+  (define-native-type <double>  Scm_NativeDoubleType  SCM_CLASS_REAL
+    (double)
     SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE)
   ;; NB: Our flonum is double, so the extra precision of long double is
   ;; lost when it is converted to and from Scheme.
   (define-native-type <longdouble> Scm_NativeLongDoubleType SCM_CLASS_REAL
-    "long double"
+    (long double)
     SCM_REAL_VALUED_P Scm_MakeFlonum Scm_GetDouble FALSE
-    longdouble)
+    (longdouble))
   (define-native-type <float-complex> Scm_NativeFloatComplexType
-    SCM_CLASS_COMPLEX "float _Complex"
+    SCM_CLASS_COMPLEX
+    (float _Complex)
     SCM_NUMBERP Scm_FloatComplexToComplex Scm_GetFloatComplex FALSE
-    float_complex)
+    (float_complex))
   (define-native-type <double-complex> Scm_NativeDoubleComplexType
-    SCM_CLASS_COMPLEX "double _Complex"
+    SCM_CLASS_COMPLEX
+    (double _Complex)
     SCM_NUMBERP Scm_DoubleComplexToComplex Scm_GetDoubleComplex FALSE
-    double_complex)
+    (double_complex))
   (define-native-type <longdouble-complex> Scm_NativeLongDoubleComplexType
-    SCM_CLASS_COMPLEX "long double _Complex"
+    SCM_CLASS_COMPLEX
+    (long double _Complex)
     SCM_NUMBERP Scm_LongDoubleComplexToComplex Scm_GetLongDoubleComplex FALSE
-    longdouble_complex)
+    (longdouble_complex))
 
   ;; <ScmObj> is a reference to ScmObj---it is basically <top>, but
   ;; we provide a dedicated native type so that ScmObj is passed to and from
   ;; foreign functions.
-  (define-native-type <ScmObj>  Scm_NativeScmObjType  SCM_CLASS_TOP ScmObj
+  (define-native-type <ScmObj>  Scm_NativeScmObjType  SCM_CLASS_TOP
+    (ScmObj)
     SCM_OBJP SCM_OBJ SCM_OBJ FALSE)
 
   ;; Technically, time_t can be a real numebr.
-  (define-native-type <time_t>  Scm_UnixTimeType      SCM_CLASS_NUMBER time_t
+  (define-native-type <time_t>  Scm_UnixTimeType      SCM_CLASS_NUMBER
+    (time_t)
     SCM_REALP Scm_MakeSysTime Scm_GetSysTime FALSE)
 
   ;; Map C integer to Scheme boolean.  In stub, <boolean> is accepted,
   ;; but to use within native type, we need a <native-type> equivalent.
   ;; We also allow 'bool in native type signature.
-  (define-native-type <c-bool>  Scm_NativeBoolType    SCM_CLASS_INTEGER _Bool
-    SCM_BOOLP SCM_MAKE_BOOL SCM_BOOL_VALUE FALSE)
-  (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
-                    'bool (Scm_NativeBoolType) (sizeof _Bool))
+  (define-native-type <c-bool>  Scm_NativeBoolType    SCM_CLASS_INTEGER
+    (_Bool)
+    SCM_BOOLP SCM_MAKE_BOOL SCM_BOOL_VALUE FALSE
+    (bool))
 
   ;; We map C char to our character in 8-bit range.  If you want to use
   ;; char as a one-byte integer, use <c-int8> or <c-uint8>.
   ;; The signedness of plain char is platform-dependent.
-  (define-native-type <c-char>   Scm_NativeCCharType   SCM_CLASS_INTEGER char
+  (define-native-type <c-char>   Scm_NativeCCharType   SCM_CLASS_INTEGER
+    (char)
     SCM_CHAR_FITS_LATIN1_P SCM_MAKE_CHAR SCM_CHAR_VALUE (== CHAR_MIN 0))
   ;; A special case of NUL-terminated string.
-  (define-native-type <c-string> Scm_NativeCStringType SCM_CLASS_STRING "const char*"
-    SCM_STRINGP SCM_MAKE_STR_COPYING SCM_STRING_CONST_CSTRING FALSE)
+  (define-native-type <c-string> Scm_NativeCStringType SCM_CLASS_STRING
+    (const char*)
+    SCM_STRINGP SCM_MAKE_STR_COPYING SCM_STRING_CONST_CSTRING FALSE
+    (c-string))
 
   ;; <void> needs special care, as it doesn't have a real C type.
   (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"
@@ -1234,6 +1288,8 @@
                               "" "SCM_VOID_RETURN_VALUE" "" FALSE TRUE)])
     (set! Scm_NativeVoidType_ z)
     (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-types)
+                      'void z 0)
+    (Scm_HashTableSet (SCM_HASH_TABLE builtin-native-type-signatures)
                       'void z 0)
     (Scm_MakeBinding (Scm_GaucheModule) (SCM_SYMBOL '<void>) z
                      SCM_BINDING_INLINABLE))

@@ -2062,12 +2062,9 @@
 (define %native-type->cname
   (let1 tab (make-hash-table 'eq?)
     (hash-table-for-each
-     (%builtin-native-type-table)
-     (^[k v]
-       (unless (memq v (list <c-string>))
-         (hash-table-put! tab v k))))
-    ;; c-string is registered with a string key, not a symbol
-    (hash-table-put! tab <c-string> 'c-string)
+     (%builtin-native-type-signature-table)
+     (^[sig type]
+       (hash-table-put! tab type sig)))
     (hash-table-for-each
      (%extended-native-type-table)
      (^[k v]

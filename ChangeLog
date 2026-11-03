@@ -1,3 +1,11 @@
+2026-11-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm, ext/ffi/native-types.scm: Allow primitive type
+	  has multiple keys (signatures) to map to each type, e.g.
+	  both ulong and u_long is accepted as a signature of <ulong>
+	  For reverse mapping, one 'primary' signautre is used.
+	  Cf. https://github.com/shirok/Gauche/issues/1346
+
 2026-11-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/lazy.c (Scm_VMForce): If evaluation raises exception, wrap
