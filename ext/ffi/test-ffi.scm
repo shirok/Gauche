@@ -40,6 +40,7 @@
                       (define-c-function F-c () 'char)
                       (define-c-function F-i () 'int)
                       (define-c-function F-ul () 'u_long)
+                      (define-c-function F-ull () 'ulonglong)
                       (define-c-function F-f () 'float)
                       (define-c-function F-d () 'double)
                       (define-c-function F-v () 'void)
@@ -54,6 +55,7 @@
                       (define-c-function Fu_u16 '(u_int) 'uint16_t)
                       (define-c-function Fu_u32 '(u_int) 'uint32_t)
                       (define-c-function Fu_u64 '(u_int) 'uint64_t)
+                      (define-c-function Fll_ll '(longlong) 'longlong)
 
                       (define-c-function Ffff-f '(float float float) 'float)
                       (define-c-function Fd-d '(double) 'double)
@@ -105,6 +107,7 @@
          (t #\x09 (F-c))
          (t 42 (F-i))
          (t (- (expt 2 (* 8 (~ <ulong>'size))) 1) (F-ul))
+         (t (- (expt 2 (* 8 (~ <ulonglong>'size))) 1) (F-ull))
          (t 1.25 (F-f))
          (t 3.14 (F-d))
          (t (undefined) (F-v))
@@ -125,6 +128,10 @@
          (t 40000 (Fu_u16 40000))
          (t #x7fff_ffff (Fu_u32 #x7FFF_FFFF))
          (t #x7fff_ffff (Fu_u64 #x7FFF_FFFF))
+         (let* ([llmax (- (expt 2 (- (* 8 (~ <longlong>'size)) 1)) 1)]
+                [llmin (- (- llmax) 1)])
+           (t llmax (Fll_ll llmax))
+           (t llmin (Fll_ll llmin)))
 
          ;(test* "Foo_o" '(a . b) (Foo-o 'a 'b))
          (t 0.875 (Ffff-f 0.5 0.25 0.125))

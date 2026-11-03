@@ -20,6 +20,11 @@ unsigned long F_ul(void)
     return ULONG_MAX;
 }
 
+unsigned long long F_ull(void)
+{
+    return ULLONG_MAX;
+}
+
 float F_f(void)
 {
     return 1.25f;
@@ -278,6 +283,11 @@ uint32_t Fu_u32(unsigned int v)
 }
 
 uint64_t Fu_u64(unsigned int v)
+{
+    return v;
+}
+
+long long Fll_ll(long long v)
 {
     return v;
 }
