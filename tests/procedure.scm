@@ -634,6 +634,107 @@
 (test* "case-lambda-local-test-2" '(1 2)
        (case-lambda-local-test-2))
 
+;;-----------------------------------------------------------------------
+;; setter
+
+(test-section "setter")
+
+(define-module srfi-17-tests
+  (use gauche.test)
+
+  (define x (cons 1 2))
+  (test* "(setter car)" '((3 3) . 2)
+         (begin (set! (car x) (list 3 3)) x))
+  (test* "(setter cdr)" '((3 3) 4 5)
+         (begin (set! (cdr x) (list 4 5)) x))
+  (test* "(setter caar)" '(((8 9) 3) 4 5)
+         (begin (set! (caar x) (list 8 9)) x))
+  (test* "(setter cadr)" '(((8 9) 3) (7 6) 5)
+         (begin (set! (cadr x) (list 7 6)) x))
+  (test* "(setter cdar)" '(((8 9) 4 5) (7 6) 5)
+         (begin (set! (cdar x) (list 4 5)) x))
+  (test* "(setter cddr)" '(((8 9) 4 5) (7 6) 11 12)
+         (begin (set! (cddr x) (list 11 12)) x))
+  (test* "(setter caaar)" '((((13 14) 9) 4 5) (7 6) 11 12)
+         (begin (set! (caaar x) (list 13 14)) x))
+  (test* "(setter caadr)" '((((13 14) 9) 4 5) ((0 1) 6) 11 12)
+         (begin (set! (caadr x) (list 0 1)) x))
+  (test* "(setter cadar)" '((((13 14) 9) (2 3) 5) ((0 1) 6) 11 12)
+         (begin (set! (cadar x) (list 2 3)) x))
+  (test* "(setter caddr)" '((((13 14) 9) (2 3) 5) ((0 1) 6) (4 5) 12)
+         (begin (set! (caddr x) (list 4 5)) x))
+  (test* "(setter cdaar)" '((((13 14) 5 6) (2 3) 5) ((0 1) 6) (4 5) 12)
+         (begin (set! (cdaar x) (list 5 6)) x))
+  (test* "(setter cdadr)" '((((13 14) 5 6) (2 3) 5) ((0 1) 7 8) (4 5) 12)
+         (begin (set! (cdadr x) (list 7 8)) x))
+  (test* "(setter cddar)" '((((13 14) 5 6) (2 3) 9 10) ((0 1) 7 8) (4 5) 12)
+         (begin (set! (cddar x) (list 9 10)) x))
+  (test* "(setter cdddr)" '((((13 14) 5 6) (2 3) 9 10) ((0 1) 7 8) (4 5) -1 -2)
+         (begin (set! (cdddr x) (list -1 -2)) x))
+  (test* "(setter caaaar)" '(((((1 3) 14) 5 6) (2 3) 9 10) ((0 1) 7 8) (4 5) -1 -2)
+         (begin (set! (caaaar x) (list 1 3)) x))
+  (test* "(setter caaadr)" '(((((1 3) 14) 5 6) (2 3) 9 10) (((2 3) 1) 7 8) (4 5) -1 -2)
+         (begin (set! (caaadr x) (list 2 3)) x))
+  (test* "(setter caadar)" '(((((1 3) 14) 5 6) ((0 1) 3) 9 10) (((2 3) 1) 7 8) (4 5) -1 -2)
+         (begin (set! (caadar x) (list 0 1)) x))
+  (test* "(setter caaddr)" '(((((1 3) 14) 5 6) ((0 1) 3) 9 10) (((2 3) 1) 7 8) ((0 1) 5) -1 -2)
+         (begin (set! (caaddr x) (list 0 1)) x))
+  (test* "(setter cadaar)" '(((((1 3) 14) (0 1) 6) ((0 1) 3) 9 10) (((2 3) 1) 7 8) ((0 1) 5) -1 -2)
+         (begin (set! (cadaar x) (list 0 1)) x))
+  (test* "(setter cadadr)" '(((((1 3) 14) (0 1) 6) ((0 1) 3) 9 10) (((2 3) 1) (0 1) 8) ((0 1) 5) -1 -2)
+         (begin (set! (cadadr x) (list 0 1)) x))
+  (test* "(setter caddar)" '(((((1 3) 14) (0 1) 6) ((0 1) 3) (0 1) 10) (((2 3) 1) (0 1) 8) ((0 1) 5) -1 -2)
+         (begin (set! (caddar x) (list 0 1)) x))
+  (test* "(setter cadddr)" '(((((1 3) 14) (0 1) 6) ((0 1) 3) (0 1) 10) (((2 3) 1) (0 1) 8) ((0 1) 5) (0 1) -2)
+         (begin (set! (cadddr x) (list 0 1)) x))
+  (test* "(setter cdaaar)" '(((((1 3) 0 1) (0 1) 6) ((0 1) 3) (0 1) 10) (((2 3) 1) (0 1) 8) ((0 1) 5) (0 1) -2)
+         (begin (set! (cdaaar x) (list 0 1)) x))
+  (test* "(setter cdaadr)" '(((((1 3) 0 1) (0 1) 6) ((0 1) 3) (0 1) 10) (((2 3) 0 1) (0 1) 8) ((0 1) 5) (0 1) -2)
+         (begin (set! (cdaadr x) (list 0 1)) x))
+  (test* "(setter cdadar)" '(((((1 3) 0 1) (0 1) 6) ((0 1) 0 1) (0 1) 10) (((2 3) 0 1) (0 1) 8) ((0 1) 5) (0 1) -2)
+         (begin (set! (cdadar x) (list 0 1)) x))
+  (test* "(setter cdaddr)" '(((((1 3) 0 1) (0 1) 6) ((0 1) 0 1) (0 1) 10) (((2 3) 0 1) (0 1) 8) ((0 1) 0 1) (0 1) -2)
+         (begin (set! (cdaddr x) (list 0 1)) x))
+  (test* "(setter cddaar)" '(((((1 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 10) (((2 3) 0 1) (0 1) 8) ((0 1) 0 1) (0 1) -2)
+         (begin (set! (cddaar x) (list 0 1)) x))
+  (test* "(setter cddadr)" '(((((1 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 10) (((2 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) -2)
+         (begin (set! (cddadr x) (list 0 1)) x))
+  (test* "(setter cdddar)" '(((((1 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 0 1) (((2 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) -2)
+         (begin (set! (cdddar x) (list 0 1)) x))
+  (test* "(setter cddddr)" '(((((1 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 0 1) (((2 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 0 1)
+         (begin (set! (cddddr x) (list 0 1)) x))
+
+  (define x (vector 1 2 3 4 5))
+  (test* "(setter vector-ref)" '#(1 2 3 #f 5)
+         (begin (set! (vector-ref x 3) #f) x))
+
+  (define x (string-copy "abcde"))
+  (test* "(setter string-ref)" "abcQe"
+         (begin (set! (string-ref x 3) #\Q) x))
+
+  (define (set-kar! p v) (set-car! p v))
+  (define kar (getter-with-setter (^p (car p)) set-kar!))
+
+  (define x (cons 1 2))
+  (test* "(setter kar)" '(3 . 2) (begin (set! (kar x) 3) x))
+
+  ;; see if it works as the normal set!
+  (test* "set!" '#f (begin (set! x #f) x))
+  )
+
+;; This is not srfi, but need to be tested with getter-with-setter.
+;; Ensuring the procedure created with getter-with-setter gets the name.
+(define get-n-set-1 (getter-with-setter (^[] 1) (^_ 1)))
+(test* "getter-with-setter naming (closure)" '(get-n-set-1)
+       (procedure-info get-n-set-1))
+
+(define get-n-set-2 (getter-with-setter (make-parameter #f) (^_ 1)))
+(test* "getter-with-setter naming (parameter)" '(get-n-set-2)
+       (cdr (procedure-info get-n-set-2)))
+
+(define get-n-set-3 (getter-with-setter cons (^_ 1)))
+(test* "getter-with-setter naming (subr)" 'get-n-set-3
+       (car (procedure-info get-n-set-3)))
 
 ;;-----------------------------------------------------------------------
 ;; generator-*
