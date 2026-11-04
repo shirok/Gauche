@@ -736,6 +736,10 @@
 (test* "getter-with-setter naming (subr)" 'get-n-set-3
        (car (procedure-info get-n-set-3)))
 
+(define get-n-set-4 (getter-with-setter (case-lambda ([] 1) ([x] 2)) (^[x v] 3)))
+(test* "getter-with-setter naming (case-lambda)" 'get-n-set-4
+       (car (procedure-info get-n-set-4)))
+
 ;;-----------------------------------------------------------------------
 ;; generator-*
 (test-section "generator-*")

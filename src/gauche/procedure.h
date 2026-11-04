@@ -188,6 +188,10 @@ struct ScmProcedureRec {
                    insert reference to the proc, for it may not be
                    serializable for AOT compilation).
 
+           - (name arg-vector): A case-lambda procedure has a vector in
+             the second element.  Each element of ARG-VECTOR stands for
+             arglist of each clause.
+
            - A list of an uninterned symbol #:parameter and the name of
              the parameter (or #f if the name is unknown).
              This indicates this is a parameter procedure.  It is a subr,
