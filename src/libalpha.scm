@@ -42,6 +42,7 @@
            "gauche/vm.h"
            "gauche/priv/glocP.h"
            "gauche/priv/macroP.h"
+           "gauche/priv/parameterP.h"
            "gauche/priv/procP.h"
            "gauche/priv/typeP.h"
            "gauche/priv/vmP.h"))
@@ -132,7 +133,27 @@
                  method using the name (setter %S)."
                 (SCM_PROCEDURE_INFO proc))]
     [else (Scm_Error "You can't attach a setter to %S." (SCM_OBJ proc))])
-  (let* ([p (Scm__CopyProcedure proc SCM_FALSE)])
+  (let* ([name (Scm__FindImmediateDynamicEnv
+                (Scm_VM)
+                (Scm__GetDenvKey SCM_DENV_KEY_EXPRESSION_NAME)
+                SCM_FALSE)]
+         [p (Scm__CopyProcedure proc SCM_FALSE)])
+    ;; If the result of this call is to be bound to a variable, we attach
+    ;; its name to the resulting procedure.
+    ;; It is awkward; generally the procedure name is kept in info, but
+    ;; the info field may hold different formats.  See gauche/procedure.h.
+    (unless (SCM_FALSEP name)
+      (let* ([info (SCM_PROCEDURE_INFO p)])
+        (when (SCM_PAIRP info)
+          (if (SCM_EQ (SCM_CAR info) (Scm__GetParameterSymbol))
+            (when (and (SCM_PAIRP (SCM_CDR info))
+                       (SCM_FALSEP (SCM_CADR info)))
+              (set! (SCM_PROCEDURE_INFO p)
+                    (SCM_LIST2 (SCM_CAR info) ; #:parameter
+                               name)))
+            (set! (SCM_PROCEDURE_INFO p)
+                  (Scm_MakeExtendedPair name (SCM_CDR info)
+                                        (Scm_PairAttr (SCM_PAIR info))))))))
     ;; NB: We temporariy disable p->locked, so that Scm_SetterSet can work.
     ;; Scm_SetterSet locks p->setter.
     (set! (SCM_PROCEDURE_SETTER_LOCKED p) FALSE)

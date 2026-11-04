@@ -188,10 +188,15 @@ struct ScmProcedureRec {
                    insert reference to the proc, for it may not be
                    serializable for AOT compilation).
 
-           - A <primitive-parameter> or <parameter> object.  R7RS requires
-             parameters to be a procedure, responding #t to procedure?.
-             We need to adapt Gauche parameter into that, saving the
-             actual parameter instance here.
+           - A list of an uninterned symbol #:parameter and the name of
+             the parameter (or #f if the name is unknown).
+             This indicates this is a parameter procedure.  It is a subr,
+             and its data holds a <primitive-parameter> or <parameter>
+             object.  The parameter object can be extracted with
+             procedure-parameter (libparam.scm).  The uninterned
+             #:parameter symbol can be retrieved with Scm__GetParameterSymbol().
+             (This is kludgy and fragile---we need a better way to
+             mark parameter procedure!)
 
            - Subr's name, as a string or a symbol.  This is the old format.
              It may also the case that subr is created from C function

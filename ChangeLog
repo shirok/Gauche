@@ -1,3 +1,9 @@
+2026-11-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libalpha.scm (getter-with-setter): Set procedure name for
+	  a procedure created with getter-with-setter whenever possible.
+	  https://github.com/shirok/Gauche/issues/1256
+
 2026-11-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm, ext/ffi/native-types.scm: Allow primitive type

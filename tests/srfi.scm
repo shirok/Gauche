@@ -313,6 +313,20 @@
   (test "set!" '#f (^[] (set! x #f) x))
   )
 
+;; This is not srfi, but need to be tested with getter-with-setter.
+;; Ensuring the procedure created with getter-with-setter gets the name.
+(define get-n-set-1 (getter-with-setter (^[] 1) (^_ 1)))
+(test* "getter-with-setter naming (closure)" '(get-n-set-1)
+       (procedure-info get-n-set-1))
+
+(define get-n-set-2 (getter-with-setter (make-parameter #f) (^_ 1)))
+(test* "getter-with-setter naming (parameter)" '(get-n-set-2)
+       (cdr (procedure-info get-n-set-2)))
+
+(define get-n-set-3 (getter-with-setter cons (^_ 1)))
+(test* "getter-with-setter naming (subr)" 'get-n-set-3
+       (car (procedure-info get-n-set-3)))
+
 ;;-----------------------------------------------------------------------
 ;; Notation for specializing parameters without currying
 

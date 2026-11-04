@@ -115,7 +115,7 @@ void Scm__ProcedureInit(ScmProcedure *proc,
  */
 
 /* NAME, if not #f, is used to name the created closure.  If it's #f,
-   the name si derived from CODE. */
+   the name is derived from CODE. */
 static ScmObj make_closure(ScmObj code, ScmEnvFrame *env, ScmObj tags,
                            ScmObj name)
 {
