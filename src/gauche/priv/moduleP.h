@@ -34,6 +34,38 @@
 #ifndef GAUCHE_PRIV_MODULEP_H
 #define GAUCHE_PRIV_MODULEP_H
 
+/* Module */
+struct ScmModuleRec {
+    SCM_HEADER;
+    ScmObj name;                /* symbol or #f */
+    ScmObj imported;            /* list of imported modules. */
+    int    exportAll;           /* TRUE if (export-all) */
+    ScmObj parents;             /* direct parent modules */
+    ScmObj mpl;                 /* module precedence list */
+    ScmObj depended;            /* list of modules that are depended by this
+                                   module for compilation */
+    ScmHashTable *internal;     /* Symbol -> GLoc, looked up from this module
+                                   itself and inherited ones */
+    ScmHashTable *external;     /* Symbol -> GLoc, looked up from the modules
+                                   that imports this module.  This table only
+                                   holds exported symbols (it may have
+                                   different name if export renaming is in
+                                   effect) */
+    ScmObj origin;              /* if this module is an anonymous wrapper
+                                   module, this holds a original module.
+                                   this isn't used for resolving bindings,
+                                   but used to avoid duplicating imports. */
+    ScmObj prefix;              /* if symbol, all bindings in this module
+                                   appear to have the prefix.  used in an
+                                   anonymous wrapper modules. */
+    ScmObj info;                /* alist of metainfo; e.g.
+                                   (source-info . <string>) */
+    int    sealed;              /* if true, no modification is allowed */
+    int    placeholding;        /* if true, this module is created just for
+                                   hygienic identifiers, and the module body
+                                   isn't loaded. */
+};
+
 SCM_EXTERN ScmModule *Scm__KeywordModule(void);
 SCM_EXTERN ScmModule *Scm__GaucheKeywordModule(void);
 SCM_EXTERN ScmModule *Scm__RequireBaseModule(void);

@@ -266,6 +266,15 @@ static void err_sealed(ScmObj source, ScmModule *target)
 }
 
 /*----------------------------------------------------------------------
+ * Public accessors
+ */
+
+ScmObj Scm_ModuleName(ScmModule *m)
+{
+    return m->name;
+}
+
+/*----------------------------------------------------------------------
  * Finding and modifying bindings
  */
 

@@ -44,6 +44,7 @@
 #include "gauche/priv/glocP.h"
 #include "gauche/priv/identifierP.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/moduleP.h"
 #include "gauche/priv/readerP.h" /* for Scm_MakeReadReference */
 
 /*

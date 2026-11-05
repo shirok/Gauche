@@ -36,6 +36,7 @@
 #include "gauche.h"
 #include "gauche/priv/configP.h"
 #include "gauche/priv/compareP.h"
+#include "gauche/priv/moduleP.h"
 
 /*
  * Comparator

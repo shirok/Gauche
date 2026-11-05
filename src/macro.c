@@ -60,7 +60,7 @@ static void syntax_print(ScmObj obj, ScmPort *port,
         Scm_Printf(port, "#<syntax %A>", (name ? SCM_OBJ(name) : SCM_FALSE));
     } else {
         Scm_Printf(port, "#<syntax %A#%A>",
-                   mod->name,
+                   Scm_ModuleName(mod),
                    (name ? SCM_OBJ(name) : SCM_FALSE));
     }
 }

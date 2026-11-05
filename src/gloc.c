@@ -44,7 +44,7 @@ static void gloc_print(ScmObj obj, ScmPort *port,
                        ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmGloc *g = SCM_GLOC(obj);
-    Scm_Printf(port, "#<gloc %S#%S%s>", g->module->name,
+    Scm_Printf(port, "#<gloc %S#%S%s>", Scm_ModuleName(g->module),
                g->name,
                (Scm_GlocConstP(g)
                 ? " const"
@@ -117,14 +117,14 @@ int Scm_GlocPhantomBindingP(ScmGloc *gloc)
 ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val SCM_UNUSED)
 {
     Scm_Error("cannot change constant value of %S#%S",
-              gloc->module->name, gloc->name);
+              Scm_ModuleName(gloc->module), gloc->name);
     return SCM_UNDEFINED;       /* dummy */
 }
 
 ScmObj Scm_GlocInlinableSetter(ScmGloc *gloc, ScmObj val)
 {
     Scm_Warn("altering inlinable binding: %S#%S",
-             gloc->module->name, gloc->name);
+             Scm_ModuleName(gloc->module), gloc->name);
     return val;
 }
 
@@ -132,7 +132,7 @@ ScmObj Scm_GlocSyntaxSetter(ScmGloc *gloc, ScmObj val)
 {
     if (!(SCM_SYNTAXP(val) || SCM_MACROP(val))) {
         Scm_Warn("altering syntax/macro binding with normal binding: %S#%S",
-                 gloc->module->name, gloc->name);
+                 Scm_ModuleName(gloc->module), gloc->name);
     }
     return val;
 }
@@ -146,7 +146,7 @@ ScmObj Scm_GlocSyntaxSetter(ScmGloc *gloc, ScmObj val)
 static ScmObj gloc_dummy_inlinable_setter(ScmGloc *gloc, ScmObj val)
 {
     Scm_Warn("altering inlinable binding: %S#%S",
-             gloc->module->name, gloc->name);
+             Scm_ModuleName(gloc->module), gloc->name);
     return val;
 }
 
