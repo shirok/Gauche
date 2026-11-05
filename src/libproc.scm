@@ -342,7 +342,8 @@
   (return (and (SCM_PROCEDUREP obj)
                (SCM_PROCEDURE_CONSTANT obj))))
 
-(define-cproc %procedure-copy (p::<procedure> :optional (tags-alist #f))
+(define-cproc %procedure-copy (p::<procedure>
+                               :optional (tags-alist #f) alt-name)
   Scm__CopyProcedure)
 
 (define-cproc %procedure-tags-alist (p::<procedure>)

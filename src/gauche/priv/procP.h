@@ -51,7 +51,9 @@ SCM_EXTERN ScmObj Scm__MakeNamedClosure(ScmObj code, ScmEnvFrame *env,
    and user code shouldn't attempt to copy a procedure object.  This is
    used only for internal purpose.
  */
-SCM_EXTERN ScmObj Scm__CopyProcedure(ScmProcedure *proc, ScmObj tagsAlist);
+SCM_EXTERN ScmObj Scm__CopyProcedure(ScmProcedure *proc,
+                                     ScmObj tagsAlist,
+                                     ScmObj altName);
 
 /* Experimental implicit currying feature.
  */

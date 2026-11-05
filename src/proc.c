@@ -36,6 +36,7 @@
 #include "gauche/priv/configP.h"
 #include "gauche/code.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/parameterP.h"
 #include "gauche/priv/procP.h"
 
 /*=================================================================
@@ -234,7 +235,9 @@ ScmObj Scm_NullProc(void)
    make much sense.  However, sometimes we do need to mutate procedure
    instances to add various bookkeeping info during construction,
    and it comes handy to do "copy, then modify" workflow. */
-ScmObj Scm__CopyProcedure(ScmProcedure *proc , ScmObj tagsAlist)
+ScmObj Scm__CopyProcedure(ScmProcedure *proc,
+                          ScmObj tagsAlist,
+                          ScmObj altName) /* alternative name; #<undef> to keep */
 {
     ScmObj n = SCM_UNDEFINED;
 
@@ -248,6 +251,7 @@ ScmObj Scm__CopyProcedure(ScmProcedure *proc , ScmObj tagsAlist)
         SCM_SUBR_FLAGS(n) = SCM_SUBR_FLAGS(proc);
         break;
     case SCM_PROC_CLOSURE:
+        /* procedure-info is derived from code */
         n = Scm_MakeClosure(SCM_CLOSURE_CODE(proc),
                             SCM_CLOSURE_ENV(proc));
         break;
@@ -258,6 +262,24 @@ ScmObj Scm__CopyProcedure(ScmProcedure *proc , ScmObj tagsAlist)
            copying won't make much sense. */
         Scm_Error("procedure-copy can only copy subr or closure: %S",
                   SCM_OBJ(proc));
+    }
+    /* Procedure name is kept in info, in somewhat ad-hoc way (see procedure.h).
+       We may change the format in the future; so the knoledge is contained
+       here. */
+    if (!SCM_UNDEFINEDP(altName)) {
+        ScmObj info = SCM_PROCEDURE_INFO(n);
+        if (SCM_PAIRP(info)) {
+            if (SCM_EQ(SCM_CAR(info), Scm__GetParameterSymbol())) {
+                /* (#:parameter name).
+                   We only replace if it isn't named before.*/
+                if (SCM_PAIRP(SCM_CDR(info)) && SCM_FALSEP(SCM_CADR(info)))
+                    SCM_PROCEDURE_INFO(n) = SCM_LIST2(SCM_CAR(info), altName);
+            } else {
+                SCM_PROCEDURE_INFO(n) =
+                    Scm_MakeExtendedPair(altName, SCM_CDR(info),
+                                         Scm_PairAttr(SCM_PAIR(info)));
+            }
+        }
     }
     /* Copying common fields */
     SCM_PROCEDURE_INLINER(n) = SCM_PROCEDURE_INLINER(proc);
@@ -273,6 +295,7 @@ ScmObj Scm__CopyProcedure(ScmProcedure *proc , ScmObj tagsAlist)
         SCM_ASSERT(SCM_LISTP(tagsAlist));
         SCM_PROCEDURE(n)->tagsAlist = tagsAlist;
     }
+
 #endif /*GAUCHE_API_VERSION >= 98*/
     return n;
 }

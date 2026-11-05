@@ -1,3 +1,11 @@
+2026-11-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/proc.c (Scm__CopyProcedure): Add altName argument to replace
+	  procedure-name of the copied procedure.  This change shouldn't
+	  affect existing code, as this is an internal function.
+	  Cf. https://github.com/shirok/Gauche/issues/1347
+	* src/libproc.scm (%procedure-copy): Add optional alt-name arg.
+
 2026-11-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libalpha.scm (getter-with-setter): Set procedure name for
