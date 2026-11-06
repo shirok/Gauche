@@ -169,6 +169,7 @@ static void init_module(ScmModule *m, ScmObj name, ScmHashTable *internal)
         m->internal = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     }
     m->external = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
+    m->exports = NULL;
     m->origin = m->prefix = SCM_FALSE;
     m->sealed = FALSE;
     m->placeholding = FALSE;

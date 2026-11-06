@@ -51,6 +51,10 @@ struct ScmModuleRec {
                                    holds exported symbols (it may have
                                    different name if export renaming is in
                                    effect) */
+    struct export_list_rec *exports;
+                                /* Cached exports list.  NULL means we need
+                                   to rebuild one.  See below for the structure
+                                   and use of export list. */
     ScmObj origin;              /* if this module is an anonymous wrapper
                                    module, this holds a original module.
                                    this isn't used for resolving bindings,
@@ -73,5 +77,22 @@ SCM_EXTERN ScmModule *Scm__RequireBaseModule(void);
 SCM_EXTERN ScmObj Scm__MakeWrapperModule(ScmModule *origin, ScmObj prefix);
 
 SCM_EXTERN ScmGloc   *Scm__IdentifierToBoundGloc(ScmIdentifier*);
+
+/* This holds a list of exported symbols from the module *mod.  Export
+   list is inherited from the ancestor modules, so we keep this struct
+   for each ancestor module.
+
+   VISIBLE is a list of symbols as the outside world see it.  If the module
+   is prefixed, this contains prefixed symbol.
+   ORIGINAL is a pointer to the mod->visible at the time this is created.
+   With checking it against the current mod->visible, we can tell if we need
+   to rebuild our VISIBLE list.
+ */
+typedef struct export_list_rec {
+    ScmModule *mod;
+    ScmObj visible;
+    ScmObj original;
+    struct export_list_rec *next;
+} export_list;
 
 #endif /*GAUCHE_PRIV_MODULEP_H*/
