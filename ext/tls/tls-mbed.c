@@ -39,8 +39,11 @@
 #include <mbedtls/version.h>
 #include <mbedtls/error.h>
 #include <mbedtls/ssl.h>
+#if MBEDTLS_VERSION_MAJOR < 4
+/* Mbed TLS 4.x uses the PSA random generator internally */
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
+#endif
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/debug.h>
 #include <psa/crypto.h>         /* for psa_crypto_init */
@@ -85,8 +88,10 @@ typedef struct ScmMbedTLSRec {
     enum MbedState state;
     mbedtls_ssl_context ctx;
     mbedtls_net_context conn;
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
+#endif
     mbedtls_ssl_config conf;
     mbedtls_x509_crt ca;
     mbedtls_pk_context pk;
@@ -153,11 +158,14 @@ static ScmObj mbed_connect(ScmTLS *tls,
     ScmMbedTLS* t = (ScmMbedTLS*)tls;
 
     mbed_context_check(t, "connect");
+    int r;
+#if MBEDTLS_VERSION_MAJOR < 4
     const char* pers = "Gauche";
-    int r = mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func,
-                                  &t->entropy,
-                                  (const unsigned char *)pers, strlen(pers));
+    r = mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func,
+                              &t->entropy,
+                              (const unsigned char *)pers, strlen(pers));
     if (r != 0) mbed_error("mbedtls_ctr_drbg_seed() failed: %s (%d)", r);
+#endif
 
     int mbedtls_proto = MBEDTLS_NET_PROTO_TCP;
     if (proto == SCM_TLS_PROTO_UDP) {
@@ -172,7 +180,9 @@ static ScmObj mbed_connect(ScmTLS *tls,
                                     MBEDTLS_SSL_TRANSPORT_STREAM,
                                     MBEDTLS_SSL_PRESET_DEFAULT);
     if (r != 0) mbed_error("mbedtls_ssl_config_defaults() failed: %s (%d)", r);
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
+#endif
 
     ScmObj ca_bundle_path = SCM_UNDEFINED;
     SCM_BIND_PROC(ca_bundle_path, "tls-ca-bundle-path",
@@ -246,6 +256,7 @@ static ScmObj mbed_bind(ScmTLS *tls,
         mbed_error("mbedtls_net_bind() failed: %s (%d)", r);
     }
 
+#if MBEDTLS_VERSION_MAJOR < 4
     const char* pers = "Gauche";
     r = mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func,
                               &t->entropy,
@@ -253,6 +264,7 @@ static ScmObj mbed_bind(ScmTLS *tls,
     if (r != 0) {
         mbed_error("mbedtls_ctr_drbg_seed() failed: %s (%d)", r);
     }
+#endif
 
     r = mbedtls_ssl_config_defaults(&t->conf,
                                     MBEDTLS_SSL_IS_SERVER,
@@ -262,7 +274,9 @@ static ScmObj mbed_bind(ScmTLS *tls,
         mbed_error("mbedtls_ssl_config_defaults() failed: %s (%d)", r);
     }
 
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
+#endif
 
     r = mbedtls_ssl_conf_own_cert(&t->conf, &t->ca, &t->pk);
     if (r != 0) {
@@ -400,11 +414,15 @@ static void mbed_cleanup(ScmMbedTLS *t)
        idea.  Also, ssl_context should be cleaned up before ssl_config. */
     mbedtls_ssl_close_notify(&t->ctx);
     mbedtls_net_free(&t->conn);
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_entropy_free(&t->entropy);
+#endif
     mbedtls_pk_free(&t->pk);
     mbedtls_x509_crt_free(&t->ca);
     mbedtls_ssl_free(&t->ctx);
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_ctr_drbg_free(&t->ctr_drbg);
+#endif
     mbedtls_ssl_config_free(&t->conf);
 }
 
@@ -434,27 +452,28 @@ static ScmObj mbed_load_certificate(ScmTLS *tls,
     return SCM_OBJ(tls);
 }
 
-#if MBEDTLS_VERSION_MAJOR >= 3
+#if MBEDTLS_VERSION_MAJOR == 3
 static int rng_get(void *prng, unsigned char *output, size_t output_len)
 {
     mbedtls_ctr_drbg_context *rng = prng;
     return mbedtls_ctr_drbg_random(rng, output, output_len);
 }
-#endif /*MBEDTLS_VERSION_MAJOR >= 3*/
+#endif /*MBEDTLS_VERSION_MAJOR == 3*/
 
 static ScmObj mbed_load_private_key(ScmTLS *tls,
                                     const char *filename,
                                     const char *password)
 {
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
-#if MBEDTLS_VERSION_MAJOR < 3
+#if MBEDTLS_VERSION_MAJOR < 3 || MBEDTLS_VERSION_MAJOR >= 4
+    /* Mbed TLS 4.x dropped the RNG arguments again */
     int r = mbedtls_pk_parse_keyfile(&t->pk, filename, password);
-#else  /*MBEDTLS_VERSION_MAJOR >= 3*/
+#else  /*MBEDTLS_VERSION_MAJOR == 3*/
     mbedtls_ctr_drbg_context rng;
     mbedtls_ctr_drbg_init(&rng);
     int r = mbedtls_pk_parse_keyfile(&t->pk, filename, password,
                                      rng_get, &rng);
-#endif /*MBEDTLS_VERSION_MAJOR >= 3*/
+#endif /*MBEDTLS_VERSION_MAJOR == 3*/
     if (r != 0) {
         const int bufsiz = 4096;
         char buf[bufsiz];
@@ -545,12 +564,16 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 
     t->state = UNCONNECTED;
     mbedtls_ssl_config_init(&t->conf);
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_ctr_drbg_init(&t->ctr_drbg);
+#endif
     mbedtls_net_init(&t->conn);
     mbedtls_ssl_init(&t->ctx);
     mbedtls_x509_crt_init(&t->ca);
     mbedtls_pk_init(&t->pk);
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_entropy_init(&t->entropy);
+#endif
 
 #ifdef MBEDTLS_DEBUG_C
     mbedtls_ssl_conf_dbg(&t->conf, mbed_debug, stderr);
