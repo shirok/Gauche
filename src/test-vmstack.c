@@ -28,13 +28,6 @@ int is_valid_stack_outcome(ScmObj *pre_sp, ScmVM *post_vm)
 
     if (pre_sp == post_sp) return TRUE;
 
-    /* Boundary cont frame pushes ScmPromptData before it.  After boundary
-       cont frame is popped, ScmPromptData still remains.  (It will eventually
-       be GC-ed when active frames get moved to the heap.)
-    */
-    if (pre_sp + (sizeof(ScmPromptData)/sizeof(ScmObj)) == post_sp)
-        return TRUE;
-
     /* Stack has been emptied. */
     if (post_sp == post_vm->stack) return TRUE;
 

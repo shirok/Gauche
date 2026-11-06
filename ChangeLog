@@ -24,6 +24,10 @@
 
 	* src/lazy.c (Scm_VMForce): If evaluation raises exception, wrap
 	  it with <uncaught-exception> (srfi-226).
+	  Also ensure the user installed exception handler would be called
+	  in the continuation of force, so that in case when such handler
+	  returns, the result would be delivered to the caller of force.
+
 	* src/libexc.scm: Make thread exception family visible in Gauche,
 	  because their usage got widened.
 
@@ -591,6 +595,13 @@
 
 	* src/srfis.scm: Officially support srfi.270.
 
+2026-07-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMThrowException): If the exception is thrown
+	  with r7rs#raise, we add a continuation mark %non-continuable
+	  before calling the exception handler, so that the handler can
+	  dicern if they can safely return.
+
 2026-07-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/native-type.scm (native-type): Recognize signed/unsigned
@@ -612,6 +623,10 @@
 	  away.  Note that negating u_long never be UB.
 	* src/test-arith.c: Reflect test failures to the exit code.
 	  This failure has been missed in CI for several commits.
+
+	* src/vm.c (Scm_ApplyExceptionHandler, user_eval_inner): Allow
+	  prompt tags other than default tag when entering user_eval_inner.
+	  https://github.com/shirok/Gauche/issues/1297
 
 2026-07-08  Shiro Kawai  <shiro@acm.org>
 
@@ -690,6 +705,25 @@
 	* src/core.c (Scm_ExitWithMessage), src/libeval.scm (exit):
 	  Ensure calling exit-handler both from Scheme's exit and
 	  C's Scm_Exit.  https://github.com/shirok/Gauche/issues/1278
+
+2026-06-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c etc. Each continuation prompt 'segments' the slice of
+	  continuatin frame chain and dynamic environment.  Their link
+	  are solely kept in the meta continuation chain, so that when
+	  delimited continuation are captured and invoked, we only
+	  need to copy the metacont chain.
+
+2026-05-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c: Introduce meta continuation in C level.  The continuation
+	  frame chain is segmented by prompt tags, and the chain of meta
+	  continuation consists the continuation.  Capturing (full/partial)
+	  continuation needs to copy frames into the heap, but invoking
+	  them doesn't require copy back---only the meta continuation
+	  chain needs to be reconstructed.
+	  The semantics is closer to srfi-226 reference implementation
+	  (we still have a couple of divergence).
 
 2026-05-26  Shiro Kawai  <shiro@acm.org>
 

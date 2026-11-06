@@ -152,31 +152,46 @@ ScmObj Scm_MakePromise(ScmPromiseState state, ScmObj obj)
  * force
  */
 
-static ScmObj force_exc_handler(ScmObj *argv, int argc, void *data)
+/* Objects used by force.  Initialized by Scm__InitLazy. */
+static ScmObj force_prompt_tag = SCM_UNDEFINED;
+static ScmObj force_exc_handler_proc = SCM_UNDEFINED;
+static ScmObj force_abort_handler_proc = SCM_UNDEFINED;
+static ScmObj force_exc_marker = SCM_UNDEFINED;
+
+/* The exception handler active while evaluating the promise body.
+   It aborts to the nearest prompt installed by Scm_VMForce, passing
+   the thrown condition.  Then the prompt's abort handler
+   (force_abort_handler) marks it and passes it to force_cc, which
+   records it in the promise and re-forces it.
+
+   The reason of this juggling is to ensure the condition (which is
+   wrapped with <uncaught-exception> in force_cc) is raised in the
+   force's own continuation.  Then if the user-installed handler returns,
+   the returned value becomes the value of the force.  (srfi-226 semantics).
+*/
+static ScmObj force_exc_handler(ScmObj *argv, int argc,
+                                void *data SCM_UNUSED)
 {
     SCM_ASSERT(argc == 1);
-    SCM_ASSERT(SCM_PAIRP(SCM_OBJ(data)));
-    ScmPromise *p = (ScmPromise*)SCM_CAR(SCM_OBJ(data));
-    ScmObj prev_handler = SCM_CDR(SCM_OBJ(data));
-
-    ScmPromiseContent *c = p->content;
-
-    SCM_INTERNAL_MUTEX_LOCK(c->mutex);
-    if (c->state == SCM_PROMISE_UNFORCED) {
-        /* Wrap thrown exception with <uncaught-exception> (srfi-226) */
-        ScmObj exc =
-            Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, Scm_VM());
-        SCM_THREAD_EXCEPTION(exc)->data = argv[0]; /* thrown condition  */
-        c->code = exc;
-        Scm_AtomicThreadFence();
-        c->state = SCM_PROMISE_EXCEPTION;
-    }
-    SCM_INTERNAL_MUTEX_UNLOCK(c->mutex);
-
-    Scm_VMPushExceptionHandler(prev_handler);
-    SCM_RETURN(Scm_Raise(c->code, SCM_RAISE_NON_CONTINUABLE));
+    SCM_RETURN(Scm_VMAbortCurrentContinuation(force_prompt_tag,
+                                              SCM_LIST1(argv[0])));
 }
 
+/* Abort handler of the prompt installed by Scm_VMForce.  We mark the
+   thrown condition (passed from force_exc_handler) with force_exc_marker
+   and return to the continuation (force_cc) to handle it. */
+static ScmObj force_abort_handler(ScmObj *argv, int argc,
+                                  void *data SCM_UNUSED)
+{
+    SCM_ASSERT(argc == 1);
+    SCM_RETURN(Scm_Cons(force_exc_marker, argv[0]));
+}
+
+/* Continuation of promise's body evaluation.  The result may be the result
+   of body, or a (#:force-exc-marker . <condition>).  In the latter case,
+   we wrap the condition with <uncaught-exception>.
+   We set up the promise's state, and call VMForce again to deliver
+   the result. */
 static ScmObj force_cc(ScmObj result, void **data)
 {
     ScmPromise *p = (ScmPromise*)data[0];
@@ -189,7 +204,17 @@ static ScmObj force_cc(ScmObj result, void **data)
            check state first; if it's eitehr FORCED or EXCEPTION, it's sure
            that c->code holds results/exception.
          */
-        if (SCM_PROMISEP(result)) {
+        if (SCM_PAIRP(result) && SCM_EQ(SCM_CAR(result), force_exc_marker)) {
+            /* The body raised an exception.  Wrap thrown condition with
+               <uncaught-exception> (srfi-226) */
+            ScmObj exc =
+                Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION,
+                                        Scm_VM());
+            SCM_THREAD_EXCEPTION(exc)->data = SCM_CDR(result);
+            c->code = exc;
+            Scm_AtomicThreadFence();
+            c->state = SCM_PROMISE_EXCEPTION;
+        } else if (SCM_PROMISEP(result)) {
             /* Deal with a recursive promise introduced by lazy operation.
                See srfi-45 for the details. */
             ScmPromiseContent *cc = SCM_PROMISE(result)->content;
@@ -253,16 +278,23 @@ ScmObj Scm_VMForce(ScmObj obj)
             data[1] = Scm_VMGetDynamicHandlers();
             Scm_VMPushCC(force_cc, data, 2);
 
+            /* NB: The parameterization must be installed outside of the
+               prompt.  Parameter lookup continues into outer metacontinuation
+               segments if the parameter isn't found in the current segment,
+               so the parameterization installed inside the prompt can't
+               shadow bindings made outside of it.
+               The exception handler can be pushed here as well, for
+               it is inherited into the prompt's segment. */
             if (SCM_PARAMETERIZATIONP(c->parameterization)) {
                 Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
             }
-            ScmObj exc_handler =
-                Scm_MakeSubr(force_exc_handler,
-                             Scm_Cons(obj, Scm_VMCurrentExceptionHandler()),
-                             1, 0,
-                             SCM_INTERN("force-exc-handler"));
-            Scm_VMPushExceptionHandler(exc_handler);
-            SCM_RETURN(Scm_VMApply0(code));
+            Scm_VMPushExceptionHandler(force_exc_handler_proc);
+
+            /* Run the body inside a prompt, so that force_exc_handler can
+               escape from the body back to force_cc.  */
+            SCM_RETURN(Scm_VMCallWithContinuationPrompt(code,
+                                                        force_prompt_tag,
+                                                        force_abort_handler_proc));
         }
     }
     return SCM_UNDEFINED;       /* dummy */
@@ -689,4 +721,22 @@ int Scm_PairP(ScmObj x)
     } else {
         return FALSE;
     }
+}
+
+/*=================================================================
+ * Initialization
+ */
+
+void Scm__InitLazy(void)
+{
+    force_prompt_tag = Scm_MakePromptTag(SCM_INTERN("force"));
+    force_exc_handler_proc =
+        Scm_MakeSubr(force_exc_handler, NULL, 1, 0,
+                     SCM_INTERN("force-exc-handler"));
+    force_abort_handler_proc =
+        Scm_MakeSubr(force_abort_handler, NULL, 1, 0,
+                     SCM_INTERN("force-abort-handler"));
+    /* A unique object, never exposed to Scheme */
+    force_exc_marker =
+        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("force-exc-marker")), FALSE);
 }
