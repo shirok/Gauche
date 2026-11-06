@@ -6353,36 +6353,22 @@ Anonymous modules are not included.
 
 @defun module-name module
 @defunx module-imports module
-@defunx module-exports module
 @defunx module-table module
 @c EN
 Accessors of a module object.  Returns the name of the module (a symbol),
-list of imported modules, list of exported symbols, and a hash table
+list of imported modules, and a hash table
 that maps symbols to bindings, of the @var{module} are returned,
 respectively.
 @c JP
 モジュールオブジェクトのアクセスメソッドです。
 @var{module}の名前(シンボル)、@var{module}がインポートしているモジュールのリスト、
-エクスポートしているシンボルのリスト、そして
-シンボルから束縛へのマップを行うハッシュテーブルを返します。
+そしてシンボルから束縛へのマップを行うハッシュテーブルを返します。
 @c COMMON
 
 @c EN
 It is an error to pass a non-module object.
 @c JP
 モジュールオブジェクト以外が渡された場合はエラーになります。
-@c COMMON
-
-@c EN
-If you want to check if a specific symbol is exported from a module,
-use @code{module-exports?} below instead of taking all exported
-symbols with @code{module-exports} and search from it.  It is much
-faster to use @code{module-exports?}.
-@c JP
-特定のシンボルがモジュールからエキスポートされているかどうかを調べるには、
-下に説明する@code{module-exports?}を使ってください。
-@code{module-exports}で全エキスポートシンボルのリストを取ってそこから探すより
-ずっと速いです。
 @c COMMON
 @end defun
 
@@ -6398,6 +6384,43 @@ list of @var{module} (@pxref{Module inheritance}).
 a@code{module-parents}は@var{module}が直接継承しているモジュールのリストを
 返します。@code{module-precedence-list}は@var{module}のmodule precedence
 list (@ref{Module inheritance}参照) を返します。
+@c COMMON
+@end defun
+
+@defun module-exports module
+@c DEPRECATED
+@c EN
+Returns a list of exported symbols from @var{module}.  This is deprecated,
+for the following reasons:
+
+@itemize @bullet
+@item
+The list does not contain exports from inherited modules.
+@item
+The list does not reflect module prefix.
+@item
+The list is build every time it is called.
+@end itemize
+
+It is kept for the backward compatibility.
+To check if a certain symbol is exported form the module,
+use @code{module-exports?} below.
+@c JP
+@var{module}がエクスポートしているシンボルのリストを返します。
+これは以下の理由から、非推奨になりました。
+
+@itemize @bullet
+@item
+リストは、継承したモジュールからエクスポートされているシンボルを含みません。
+@item
+リストは、モジュールのプレフィクスを反映しません。
+@item
+呼ぶたびにリストが構築されます。
+@end itemize
+
+互換性のためだけに残してあります。
+特定のシンボルがエクスポートされているかどうかを調べるには、
+下の@code{module-exports?}を使ってください。
 @c COMMON
 @end defun
 
