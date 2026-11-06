@@ -6395,7 +6395,7 @@ from.  @code{Module-precedence-list} returns the module precedence
 list of @var{module} (@pxref{Module inheritance}).
 @c JP
 モジュールの継承に関する情報を返します。
-@code{module-parents}は@var{module}が直接継承しているモジュールのリストを
+a@code{module-parents}は@var{module}が直接継承しているモジュールのリストを
 返します。@code{module-precedence-list}は@var{module}のmodule precedence
 list (@ref{Module inheritance}参照) を返します。
 @c COMMON

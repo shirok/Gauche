@@ -436,11 +436,16 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
 }
 
 /* Most basic global variable lookup.  This should be for internal use.
-   FLAGS can have SCM_BINDING_STAY_IN_MODULE.
+   FLAGS can have SCM_BINDING_STAY_IN_MODULE and SCM_BINDING_EXTERNAL.
    This can return SCM_UNBOUND; it is not recommended for general use,
    since SCM_UNBOUND must not bleed into Scheme world.
    Use Scm_ModuleBindingRef() instead.
-   See also Scm_GlobalIdentifierRef in compaux.c */
+   See also Scm_GlobalIdentifierRef in compaux.c
+
+   Note that this lookup does not consider module->prefix.  The caller needs
+   to take account of it.  The public API, Scm_ModuleBindingRef, looks up
+   prefixed name.
+*/
 ScmObj Scm_GlobalVariableRef(ScmModule *module,
                              ScmSymbol *symbol,
                              int flags)
@@ -456,21 +461,38 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
     return val;
 }
 
-/* Public API */
+static ScmSymbol *maybe_strip_prefix(ScmSymbol *symbol, ScmObj maybe_prefix)
+{
+    if (SCM_SYMBOLP(maybe_prefix)) {
+        ScmObj sym = Scm_SymbolSansPrefix(symbol, SCM_SYMBOL(maybe_prefix));
+        if (SCM_SYMBOLP(sym)) return SCM_SYMBOL(sym);
+        else return NULL;
+    } else {
+        return symbol;
+    }
+}
+
+/* Public API
+   Autoload is resolved.
+   If fallback is SCM_UNBOUND, throws an error if binding not found.  Hence
+   never returns SCM_UNBOUND.
+   If module has prefix, symbol needs to have prefix to match.
+ */
 ScmObj Scm_ModuleBindingRef(ScmModule *module,
                             ScmSymbol *symbol,
                             ScmObj fallback,
                             u_long flags)
 {
+    symbol = maybe_strip_prefix(symbol, module->prefix);
+    if (symbol == NULL) goto notfound;
     ScmObj r = Scm_GlobalVariableRef(module, symbol, (int)flags);
-    if (SCM_UNBOUNDP(r)) {
-        if (SCM_UNBOUNDP(fallback)) {
-            Scm_Error("global identifier %S is not bound in module %S",
-                      SCM_OBJ(symbol), SCM_OBJ(module));
-        }
-        return fallback;
+    if (!SCM_UNBOUNDP(r)) return r;
+ notfound:
+    if (SCM_UNBOUNDP(fallback)) {
+        Scm_Error("global identifier %S is not bound in module %S",
+                  SCM_OBJ(symbol), SCM_OBJ(module));
     }
-    return r;
+    return fallback;
 }
 
 /* Public API */
@@ -478,6 +500,8 @@ int Scm_ModuleBindsP(ScmModule *module,
                      ScmSymbol *symbol,
                      u_long flags)
 {
+    symbol = maybe_strip_prefix(symbol, module->prefix);
+    if (symbol == NULL) return FALSE;
     return !SCM_UNBOUNDP(Scm_GlobalVariableRef(module, symbol, (int)flags));
 }
 

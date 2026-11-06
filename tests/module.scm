@@ -382,6 +382,19 @@
                      (module-binding-ref 'Of-7 s #f)))
              '(who foo-alias foo bah bar-alias bar))))
 
+(define-module Og-1 (export a) (define a 1) (define b 2))
+(define-module Og-2 (import (Og-1 :prefix x:)))
+
+(test "import-time prefixing with module-binds?/module-exports?"
+      '((a #f #f #f) (b #f #f #f) (x:a #t #t 1) (x:b #t #f 2))
+      (lambda ()
+        (let ([m (car (module-imports (find-module 'Og-2)))])
+          (map (lambda (s)
+                 (list s (module-binds? m s) (module-exports? m s)
+                       (module-binding-ref m s #f)))
+               '(a b x:a x:b)))))
+
+
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 
