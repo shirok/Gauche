@@ -251,6 +251,19 @@
                        (list->string suffix))))]
      [else ($fail "malformed numeric constant")])))
 
+;; C23 binary integer constant.  We only have integer constants.
+(define %bin-numeric-constant
+  ($let ([ ($or ($. "0b") ($. "0B")) ]
+         [integral ($many ($. #[01]))]
+         [suffix   ($many %idchar)])
+    (cond
+     [(null? integral) ($fail "malformed binary integer constant")]
+     [(check-int-suffix suffix)
+      => (^[suf]
+           ($return `(const ,suf ,(rope->string (list "0b" integral suffix)))))]
+     [else ($fail (format "malformed integer constant suffix: ~a"
+                          (list->string suffix)))])))
+
 ;; we need to reject invalid suffix, so we first gather suffix characters
 ;; then look at them, instead of using BNF rules.
 (define (check-float-suffix chars)
@@ -302,6 +315,7 @@
 ;; enum-constant is syntactically identical to %identifier
 (define %constant
   ($or %hex-numeric-constant
+       %bin-numeric-constant
        %dec-oct-numeric-constant
        %character-constant))
 
