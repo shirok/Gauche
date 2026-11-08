@@ -182,18 +182,36 @@
 
 ;; Constants (6.4.4)
 
+;; C23 allows a digit separator ' between digits, e.g. 1'000'000.
+;; %digit-sequence1 parses one or more digits in CSET and returns a list
+;; of digit characters with separators removed.
+(define (%digit-sequence1 cset)
+  ($let ([d0 ($. cset)]
+         [ds ($many ($or ($. cset)
+                         ($try ($seq ($. #\') ($. cset)))))]
+         [ ($or ($seq ($. #\') ($fail "misplaced digit separator"))
+                ($return #t)) ])
+    ($return (cons d0 ds))))
+
+;; Similar to %digit-sequence-1 but returns () if there's no digits.
+;; It also rejects a separator before the first digit.
+(define (%digit-sequence cset)
+  ($or (%digit-sequence1 cset)
+       ($seq ($. #\') ($fail "misplaced digit separator"))
+       ($return '())))
+
 ;; We handle integers and floating point numbers at once.
 ;; The initial assert is to rule out suffix-only match without consuming
 ;; input.
 (define %dec-oct-numeric-constant
   ($let ([ ($assert ($. #[0-9.])) ]
-         [integral   ($many ($. #[0-9]))]
+         [integral   (%digit-sequence #[0-9])]
          [point      ($optional ($. "."))]
-         [fractional ($many ($. #[0-9]))]
+         [fractional (%digit-sequence #[0-9])]
          [exponent   ($optional ($lift list
                                        ($. #[eE])
                                        ($optional ($. #[+-]))
-                                       ($many1 ($. #[0-9]))))]
+                                       (%digit-sequence1 #[0-9])))]
          [suffix     ($many %idchar)])
     (cond
      [(or point exponent) ;; must be flonum
@@ -220,13 +238,13 @@
 
 (define %hex-numeric-constant
   ($let ([ ($or ($. "0x") ($. "0X")) ]
-         [integral   ($many ($. #[[:xdigit:]]))]
+         [integral   (%digit-sequence #[[:xdigit:]])]
          [point      ($optional ($. "."))]
-         [fractional ($many ($. #[[:xdigit:]]))]
+         [fractional (%digit-sequence #[[:xdigit:]])]
          [bin-exp    ($optional ($lift list
                                        ($. #[pP])
                                        ($optional ($. #[+-]))
-                                       ($many1 ($. #[[:xdigit:]]))))]
+                                       (%digit-sequence1 #[0-9])))]
          [suffix     ($many %idchar)])
     (cond
      [(or point bin-exp) ;; must be flonum
@@ -254,7 +272,7 @@
 ;; C23 binary integer constant.  We only have integer constants.
 (define %bin-numeric-constant
   ($let ([ ($or ($. "0b") ($. "0B")) ]
-         [integral ($many ($. #[01]))]
+         [integral (%digit-sequence #[01])]
          [suffix   ($many %idchar)])
     (cond
      [(null? integral) ($fail "malformed binary integer constant")]
