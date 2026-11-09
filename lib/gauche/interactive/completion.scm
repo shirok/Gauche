@@ -103,18 +103,21 @@
       (if (string-scan word #\- 'index)
         (make-segmented-prefix-matcher word #\-)
         (cut string-prefix? word <>)))
-    (define (search m)
+    (define (check sym)
+      (let1 s (symbol->string sym)
+        (when (and (not (#/\(/ s)) ;heuristics to exclude verbose method names
+                   (matcher s))
+          (hash-table-put! hits s #t))))
+    (define (search-internal m)
       (unless (memq m visited)
         (push! visited m)
-        ($ hash-table-for-each (module-table m)
-           (^[sym _]
-             (let1 s (symbol->string sym)
-               (when (and (not (#/\(/ s)) ;heuristics to exclude verbose method names
-                          (matcher s))
-                 (hash-table-put! hits s #t)))))))
-    (search mod)
-    (dolist [m (module-imports mod)]
-      (for-each search (module-precedence-list m)))
+        ($ hash-table-for-each (module-table m) (^[sym _] (check sym)))))
+    (define (search-external m)
+      (unless (memq m visited)
+        (push! visited m)
+        (generator-for-each check (module->export-list-generator m))))
+    (for-each search-internal (module-precedence-list mod))
+    (for-each search-external (module-imports mod))
     (match (hash-table-keys hits)
       [(w) w]                           ;single final completion result
       [ws (sort ws)])))
