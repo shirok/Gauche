@@ -793,7 +793,8 @@
   ;; The value is converted to TYPE of the variable.
   (define (t expected init :optional (type "long"))
     (test* #"initial value: ~init" expected
-           (let1 ctx (c-grok-string #"const ~type x = ~|init|;")
+           (let1 ctx (c-grok-string #"const ~type x = ~|init|;"
+                                    :cpp (make <pass-through-cpp>))
              (c-variable-initial-value ctx 'x))))
   ;; literals
   (t 22 "22")
@@ -803,10 +804,8 @@
   (t #b0011 "0b0011")
   (t #b1010 "0B1010u")
   (t #b101 "0b101LL" "long long")
-  ;; C preprocesssor may not accept C23 digit separator.  So we disable
-  ;; these tests for now.
-  ;;(t 1000000 "1'000'000")
-  ;;(t #xdeadbeef "0xdead'beefu" "unsigned int")
+  (t 1000000 "1'000'000")
+  (t #xdeadbeef "0xdead'beefu" "unsigned int")
   (t #xff "0XFFu")
   (t 1 "1L")
   (t 18446744073709551615 "18446744073709551615ULL" "unsigned long long")

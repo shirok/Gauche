@@ -1007,18 +1007,18 @@
   (unless (file-is-readable? file)
     (error "file does not exist or unreadable:" file)))
 
-(define (c-tokenize-file c-parser file)
+(define (c-tokenize-file c-parser file :key (cpp #f))
   (file-check file)
-  (call-with-cpp file
+  ($ call-with-cpp cpp file
      (^p ($ lseq->list $ c-tokenize
             $ port->char-lseq/position p
             :source-name file :line-adjusters `((#\# . ,cc1-line-adjuster))))
      :includes (~ c-parser'cpp-include-paths)
      :defs (~ c-parser'cpp-definitions)))
 
-(define (c-tokenize-file-coroutine c-parser file)
+(define (c-tokenize-file-coroutine c-parser file :key (cpp #f))
   (^[yield]
-    ($ call-with-cpp file
+    ($ call-with-cpp cpp file
        (^p
         (let loop ([tokens ($ c-tokenize
                               $ port->char-lseq/position p
@@ -1031,7 +1031,7 @@
        :includes (~ c-parser'cpp-include-paths)
        :defs (~ c-parser'cpp-definitions))))
 
-(define (c-parse-file c-parser file)
+(define (c-parse-file c-parser file :key (cpp #f))
   (file-check file)
   (let ([peg (~ c-parser'peg-parser)]
         [memoizer (make-peg-memoizer
@@ -1045,9 +1045,9 @@
       ;; (e.g. self-referencing struct) in the result.
       (if (~ c-parser'use-concurrent-lexer)
         ($ peg-run-parser peg
-           (coroutine->cseq (c-tokenize-file-coroutine c-parser file))
+           (coroutine->cseq (c-tokenize-file-coroutine c-parser file :cpp cpp))
            :finalizer identity)
-        ($ peg-run-parser peg (c-tokenize-file c-parser file)
+        ($ peg-run-parser peg (c-tokenize-file c-parser file :cpp cpp)
            :finalizer identity)))))
 
 ;; We create a temp file so that we can call cpp on it.
@@ -1060,8 +1060,8 @@
    :prefix "c-parse"
    :suffix ".c"))
 
-(define (c-tokenize-string c-parser string)
-  (%operate-on-string string (cut c-tokenize-file c-parser <>)))
+(define (c-tokenize-string c-parser string :key (cpp #f))
+  (%operate-on-string string (cut c-tokenize-file c-parser <> :cpp cpp)))
 
-(define (c-parse-string c-parser string)
-  (%operate-on-string string (cut c-parse-file c-parser <>)))
+(define (c-parse-string c-parser string :key (cpp #f))
+  (%operate-on-string string (cut c-parse-file c-parser <> :cpp cpp)))

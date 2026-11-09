@@ -39,20 +39,29 @@
   (use scheme.list)
   (use srfi.13)
   (use util.match)
-  (export call-with-cpp
+  (export <external-cpp>
+          <pass-through-cpp>
+          call-with-cpp
           cpp-include-paths
           c-find-header))
 (select-module lang.c.toolchain)
 
-;; Returns command line list to invoke cc.
-;;
-;; Kludge - gauche-config --cc may return something like "gcc --std=gnu23".
-;; We need to split the command and the argument.  However, the compiler
-;; pathname may include whitespaces, e.g. "c:\\Program Files\\...\\gcc.exe",
-;; so we use heuristics.
-(define cc
-  (let1 cmd (delay (string-split (gauche-config "--cc") #/\s(?=-)/))
-    (^[] (force cmd))))
+(define-class <cpp> () ())
+
+;; Invoke external cc command as a preprocessor
+(define-class <external-cpp> (<cpp>)
+  (
+   ;; C compiler command + optional args.
+   ;; Kludge - gauche-config --cc may return something like "gcc --std=gnu23".
+   ;; We need to split the command and the argument.  However, the compiler
+   ;; pathname may include whitespaces, e.g. "c:\\Program Files\\...\\gcc.exe",
+   ;; so we use heuristics.
+   (cc :init-form (string-split (gauche-config "--cc") #/\s(?=-)/))
+   ))
+
+;; For testing.  No preprocessing.
+(define-class <pass-through-cpp> (<cpp>) ())
+
 
 ;; NB: We may eventually implement our own preprocessor, for we can do
 ;; more things (such as caching), but for the time being, we call cpp.
@@ -65,9 +74,9 @@
 ;; (gauche-config --incdirs).  DEFS is an list of (var val ...) which will
 ;; be used as -Dvar=val -Dvar=val ..., or just var for -Dvar.
 
-(define (call-with-cpp file proc
-                       :key (includes #f)
-                            (defs '()))
+(define-method call-with-cpp ((cpp <external-cpp>) file proc
+                              :key (includes #f)
+                                   (defs '()))
   (define Is
     (cond [(list? includes)
            (map (^d (shell-escape-string #"-I~d")) includes)]
@@ -84,9 +93,16 @@
                     [var `(,#"-D~var")]))
                 defs))
 
-  (call-with-input-process `(,@(cc) "-E" ,@Is ,@Ds ,file)
+  (call-with-input-process `(,@(~ cpp'cc) "-E" ,@Is ,@Ds ,file)
     proc
     :on-abnormal-exit :ignore))
+
+;; Default preprocessor
+(define-method call-with-cpp ((cpp <boolean>) file proc :rest keys)
+  (apply call-with-cpp (make <external-cpp>) file proc keys))
+
+(define-method call-with-cpp ((cpp <pass-through-cpp>) file proc :rest keys)
+  (call-with-input-file file proc))
 
 ;; API
 ;; Obtain built-in include paths for the system's compiler.
@@ -97,7 +113,8 @@
     (^[] (force paths))))
 
 (define (%try-get-include-paths)
-  (let* ([p (run-process `(,@(cc) -E -x c - -v)
+  (let* ([cpp (make <external-cpp>)]
+         [p (run-process `(,@(~ cpp'cc) -E -x c - -v)
                          :input :null :output :null :error :pipe)]
          [paths ($ map string-trim-both
                    $ take-while (complement #/End of search list/)
