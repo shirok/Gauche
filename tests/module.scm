@@ -755,25 +755,50 @@
   (export g)
   (define g 7))
 
-(test "module-exports"
-      '(a b c d e f g)
-      (lambda ()
-        ;; NB: We haven't tested 'sort', so we need to roll our own
-        (define (sym<? a b)
-          (string<? (symbol->string a) (symbol->string b)))
-        (define (sort-sym xs)
-          (if (or (null? xs) (null? (cdr xs)))
-            xs
-            (let loop ((pivot (car xs))
-                       (xs (cdr xs))
-                       (lt '())
-                       (ge '()))
-              (if (null? xs)
-                (append (sort-sym lt) (list pivot) (sort-sym ge))
-                (if (sym<? (car xs) pivot)
-                  (loop pivot (cdr xs) (cons (car xs) lt) ge)
-                  (loop pivot (cdr xs) lt (cons (car xs) ge)))))))
-        (sort-sym (module-exports (find-module 'exports-test-D)))))
+(define-module exports-test-E
+  (import (exports-test-B :prefix x:))
+  (define (get-prefixed)
+    (car (module-imports (current-module))))
+  )
+
+(let ()
+  ;; NB: We haven't tested 'sort' and generators, so we need to roll our own
+  (define (sym<? a b)
+    (string<? (symbol->string a) (symbol->string b)))
+  (define (sort-sym xs)
+    (if (or (null? xs) (null? (cdr xs)))
+      xs
+      (let loop ((pivot (car xs))
+                 (xs (cdr xs))
+                 (lt '())
+                 (ge '()))
+        (if (null? xs)
+          (append (sort-sym lt) (list pivot) (sort-sym ge))
+          (if (sym<? (car xs) pivot)
+            (loop pivot (cdr xs) (cons (car xs) lt) ge)
+            (loop pivot (cdr xs) lt (cons (car xs) ge)))))))
+  (define (gen->list gen)
+    (let ((x (gen)))
+      (if (eof-object? x)
+        '()
+        (cons x (gen->list gen)))))
+
+  (test "module->export-list-generator"
+        '(a b c d e f g)
+        (lambda ()
+          (sort-sym (gen->list (module->export-list-generator
+                                (find-module 'exports-test-D))))))
+  (test "module->export-generator (prefix)"
+        '(x:a x:b x:c x:d)
+        (lambda ()
+          (sort-sym (gen->list (module->export-list-generator
+                                (with-module exports-test-E (get-prefixed)))))))
+
+  ;; legacy API
+  (test "module-exports"
+        '(a b c d e f g)
+        (lambda () (sort-sym (module-exports (find-module 'exports-test-D)))))
+  )
 
 ;;-------------------------------------------------------------------
 ;; Macro and builtin inliner

@@ -51,11 +51,21 @@
 (define-cproc module-parents (mod::<module>) (return (-> mod parents)))
 (define-cproc module-precedence-list (mod::<module>) (return (-> mod mpl)))
 (define-cproc module-imports (mod::<module>) (return (-> mod imported)))
-(define-cproc module-exports (mod::<module>) Scm_ModuleExports)
 (define-cproc module-table (mod::<module>) (return (SCM_OBJ (-> mod internal))))
 
 (define-cproc find-module (name::<symbol>) ::<module>?
   (return (Scm_FindModule name SCM_FIND_MODULE_QUIET)))
+
+;; DEPRECATED
+(define (module-exports module)
+  (let1 gen (module->export-list-generator module)
+    ;; We avoid using generator->list, which would introduce a dependency
+    ;; on gauche.generator.
+    (let loop ([e (gen)]
+               [r '()])
+      (if (eof-object? e)
+        (reverse r)
+        (loop (gen) (cons e r))))))
 
 (define-cproc all-modules () Scm_AllModules)
 
@@ -151,6 +161,29 @@
 (define-cproc %export-all (module::<module>) Scm_ExportAll)
 (define-cproc %extend-module (module::<module> supers::<list>)
   Scm_ExtendModule)
+
+(define-cproc %get-module-exports (module::<module>)
+  (return (Scm__GetModuleExports module)))
+
+;; NB: The list of exported symbols are cached in each module,
+;; but appending prefix occurs for every iteration.  We hope it is
+;; relatively rare cases.  If it hits the performance, we may need
+;; more complex caching scheme.
+(define-in-module gauche (module->export-list-generator mod)
+  (let* ([m (if (module? mod) mod (find-module mod))]
+         [mpl (cdr (module-precedence-list m))]
+         [xl (%get-module-exports m)]
+         [p (~ m'prefix)])
+    (rec (gen)
+      (if (null? xl)
+        (if (null? mpl)
+          (eof-object)
+          (let1 m (pop! mpl)
+            (set! xl (%get-module-exports m))
+            (gen)))
+        (if p
+          (symbol-append p (pop! xl))
+          (pop! xl))))))
 
 ;; Insert binding into the given module.  flags may be a list of
 ;; one or more of the following symbols:

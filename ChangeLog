@@ -1,3 +1,8 @@
+2026-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c, src/libmod.scm (module->export-list-generator):
+	  Replacing module-exports.  This one handles prefixed imports.
+
 2026-11-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_ModuleBindingRef, Scm_ModuleBindsP),

@@ -169,7 +169,7 @@ static void init_module(ScmModule *m, ScmObj name, ScmHashTable *internal)
         m->internal = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     }
     m->external = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
-    m->exports = NULL;
+    m->exports = SCM_FALSE;
     m->origin = m->prefix = SCM_FALSE;
     m->sealed = FALSE;
     m->placeholding = FALSE;
@@ -724,6 +724,8 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 /*
  * Export
  */
+static void invalidate_exports_cache(ScmModule *mod);
+
 /* <spec>  :: <name> | (rename <name> <exported-name>) */
 ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj specs)
 {
@@ -805,6 +807,7 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj specs)
         }
     }
 
+    invalidate_exports_cache(module);
     return SCM_UNDEFINED;  /* we might want to return something more useful...*/
 }
 
@@ -856,7 +859,11 @@ static void add_parent_module_exports(ScmHashCore *syms,
     }
 }
 
-/* Returns list of exported symbols.   We assume this is infrequent
+/* DEPRECATED.  We're adopting generator-based walker to cope with
+   prefixes.  See Scm__GetModuleExports below, and module->export-list-generator
+   in libmod.scm.
+
+   Returns list of exported symbols.   We assume this is infrequent
    operation, so we build the list every call.  If it becomes a problem,
    we can cache the result. */
 ScmObj Scm_ModuleExports(ScmModule *module)
@@ -931,7 +938,52 @@ void Scm_ModuleSeal(ScmModule *module)
 }
 
 /*----------------------------------------------------------------------
- * Module destroying
+ * Exported symbols
+ */
+
+/* This supersedes Scm_ModuleExports. */
+
+static void ensure_exports(ScmModule *mod)
+{
+    if (SCM_LISTP(mod->exports)) return;
+    ScmHashCore syms;
+    Scm_HashCoreInitSimple(&syms, SCM_HASH_EQ, 0, NULL);
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    Scm_HashCoreCopy(&syms, SCM_HASH_TABLE_CORE(mod->external));
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+
+    ScmHashIter iter;
+    Scm_HashIterInit(&iter, &syms);
+
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmDictEntry *e;
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        intptr_t v = e->value;
+        if (!v || (SCM_GLOCP(v) && !(SCM_GLOC(v)->hidden))) {
+            SCM_APPEND1(h, t, SCM_OBJ(e->key));
+        }
+    }
+    mod->exports = h;
+}
+
+static void invalidate_exports_cache(ScmModule *mod)
+{
+    mod->exports = SCM_FALSE;
+}
+
+/* Returns the list of this module's exported symbols (not including
+   ancestores).
+   Scheme code will build a generator to walk all exported symbols;
+   see module->export-list-generator in libmod.scm. */
+ScmObj Scm__GetModuleExports(ScmModule *mod)
+{
+    ensure_exports(mod);
+    return mod->exports;
+}
+
+/*----------------------------------------------------------------------
+ * Module destruction
  */
 
 /* Destroying modules isn't a usual operation; it can break existing
