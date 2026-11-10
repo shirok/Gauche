@@ -70,6 +70,8 @@
 (define <hashmap> <hash-table>)
 (define (hashmap? m) (is-a? m <hashmap>))
 
+(define %key=? (with-module gauche.internal hash-table-key=?))
+
 (define-syntax dopairs
   (syntax-rules ()
     [(_ [k v lis] body ...)
@@ -259,9 +261,11 @@
                          (values m o)))
                (^[o] (values m o)))     ;ignore
       (success k v
-               (^[k v o] (let1 m (hash-table-copy m) ;update
-                           (hash-table-put! m k v)
-                           (values m o)))
+               (^[k2 v2 o] (let1 m (hash-table-copy m) ;update
+                             (unless (%key=? m k k2)
+                               (hash-table-delete! m k))
+                             (hash-table-put! m k2 v2)
+                             (values m o)))
                (^[o] (let1 m (hash-table-copy m) ;remove
                        (hash-table-delete! m k)
                        (values m o)))))))
@@ -272,8 +276,11 @@
     (if (eq? v %unique)
       (failure (^[v o] (hash-table-put! m k v) (values m o)) ;insert
                (^[o] (values m o)))                        ;ignore
-      (success v
-               (^[k v o] (hash-table-put! m k v) (values m o)) ;update
+      (success k v
+               (^[k2 v2 o] (unless (%key=? m k k2)
+                             (hash-table-delete! m k))
+                           (hash-table-put! m k2 v2)
+                           (values m o)) ;update
                (^[o] (hash-table-delete! m k) (values m o)))))) ;remove
 
 (define (hashmap-size m)

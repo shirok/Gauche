@@ -329,6 +329,22 @@
     (Scm_HashIterInit iter (SCM_HASH_TABLE_CORE hash))
     (return (Scm_MakeSubr hash_table_iter iter 1 0 '"hash-table-iterator"))))
 
+(define-cproc hash-table-key=? (hash::<hash-table> k1 k2) ::<boolean>
+  (case (-> hash type)
+    [(SCM_HASH_EQ) (return (== k1 k2))]
+    [(SCM_HASH_EQV) (return (Scm_EqvP k1 k2))]
+    [(SCM_HASH_EQUAL) (return (Scm_EqualP k1 k2))]
+    [(SCM_HASH_STRING) (return
+                        (and (SCM_STRINGP k1)
+                             (SCM_STRINGP k2)
+                             (Scm_StringEqual (SCM_STRING k1) (SCM_STRING k2))))]
+    [else
+     (let* ([hc::ScmHashCore* (SCM_HASH_TABLE_CORE hash)])
+       (SCM_ASSERT (-> hc cmpfn))
+       (return (funcall (-> hc cmpfn) hc
+                        (cast intptr_t k1)
+                        (cast intptr_t k2))))]))
+
 (select-module gauche)
 (define-cproc hash-table-copy (ht::<hash-table> :optional _)
   ;; we don't have immutable hash table, and ignore the optional
@@ -702,6 +718,17 @@
 
 (define-cproc tree-map-num-entries (tm::<tree-map>) ::<int>
   (return (Scm_TreeCoreNumEntries (SCM_TREE_MAP_CORE tm))))
+
+(select-module gauche.internal)
+(define-cproc tree-map-key-compare (tm::<tree-map> k1 k2) ::<int>
+  (let* ([tc::ScmTreeCore* (SCM_TREE_MAP_CORE tm)]
+         [i1::intptr_t (cast intptr_t k1)]
+         [i2::intptr_t (cast intptr_t k2)]
+         [r::int 0])
+    (if (-> tc cmp)
+      (set! r (funcall (-> tc cmp) tc i1 i2))
+      (set! r (?: (== i1 i2) 0 (?: (< i1 i2) -1 1))))
+    (return r)))
 
 (select-module gauche.internal)
 (define-cproc %tree-map-bound (tm::<tree-map> min::<boolean> pop::<boolean>)

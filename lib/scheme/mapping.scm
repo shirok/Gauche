@@ -82,6 +82,8 @@
 (define <mapping> <tree-map>)
 (define (mapping? m) (is-a? m <mapping>))
 
+(define %key-compare (with-module gauche.internal tree-map-key-compare))
+
 (define-syntax dopairs
   (syntax-rules ()
     [(_ [k v lis] body ...)
@@ -270,9 +272,11 @@
                          (values m o)))
                (^[o] (values m o)))     ;ignore
       (success k v
-               (^[k v o] (let1 m (tree-map-copy m) ;update
-                           (tree-map-put! m k v)
-                           (values m o)))
+               (^[k2 v2 o] (let1 m (tree-map-copy m) ;update
+                             (unless (zero? (%key-compare m k k2))
+                               (tree-map-delete! m k))
+                             (tree-map-put! m k2 v2)
+                             (values m o)))
                (^[o] (let1 m (tree-map-copy m) ;remove
                        (tree-map-delete! m k)
                        (values m o)))))))
@@ -283,8 +287,11 @@
     (if (eq? v %unique)
       (failure (^[v o] (tree-map-put! m k v) (values m o)) ;insert
                (^[o] (values m o)))                        ;ignore
-      (success v
-               (^[k v o] (tree-map-put! m k v) (values m o)) ;update
+      (success k v
+               (^[k2 v2 o] (unless (zero? (%key-compare m k k2)) ; update
+                             (tree-map-delete! m k))
+                           (tree-map-put! m k2 v2)
+                           (values m o))
                (^[o] (tree-map-delete! m k) (values m o)))))) ;remove
 
 (define (mapping-size m)

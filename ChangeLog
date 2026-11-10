@@ -1,3 +1,12 @@
+2026-11-10  Shiro Kawai  <shiro@acm.org>
+
+
+	* lib/scheme/mapping.scm (mapping-search, mapping-search!),
+	  lib/scheme/mapping/hash.scm (hashmap-search, hashmap-search!):
+	  Fix when update callback inserts a different key.
+	  https://github.com/shirok/Gauche/issues/1353
+	  https://github.com/shirok/Gauche/issues/1352
+
 2026-11-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/completion.scm (%complete-symbol):

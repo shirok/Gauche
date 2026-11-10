@@ -2522,6 +2522,28 @@
   (let ()
     (include "include/srfi-146-hash-tests.scm")
     (run-tests))
+
+  ;; When update callback inserts a different key, original key association
+  ;; should be removed.
+  ;; https://github.com/shirok/Gauche/issues/1353
+  (let-syntax
+      ([t (syntax-rules ()
+            [(_ search ctor ->alist)
+             (test* (format "~a inserting different key" 'search)
+                    '((1 . a) (3 . c) (4 . d))
+                    (let-values (((m x)
+                                  (search
+                                   (ctor real-comparator 1 'a 2 'b 3 'c)
+                                   2
+                                   (lambda (_ins ignore) (ignore #t))
+                                   (lambda (_k _v update _rem)
+                                     (update 4 'd #t)))))
+                      (sort-by (->alist m) car)))])])
+    (t mapping-search mapping mapping->alist)
+    (t mapping-search! mapping mapping->alist)
+    (t hashmap-search hashmap hashmap->alist)
+    (t hashmap-search! hashmap hashmap->alist)
+    )
   )
 
 ;;-----------------------------------------------------------------------
