@@ -1,5 +1,10 @@
 2026-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/module.c (ensure_exports),
+	  src/libmod.scm (module->export-list-generator):
+	  Handle hidden bindings so that the original name of renamed
+	  symbol won't appear in completion.
+	  https://github.com/shirok/Gauche/issues/1334
 
 	* lib/scheme/mapping.scm (mapping-search, mapping-search!),
 	  lib/scheme/mapping/hash.scm (hashmap-search, hashmap-search!):

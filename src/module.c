@@ -941,7 +941,14 @@ void Scm_ModuleSeal(ScmModule *module)
  * Exported symbols
  */
 
-/* This supersedes Scm_ModuleExports. */
+/* This supersedes Scm_ModuleExports.
+   module->export caches a list of exported symbols from that module
+   (does not include ancestors' exports).  It can also contain
+   (<symbol>) to indicate hidden binding, which should hide
+   <symbol> appearing in the ancestors' exports by
+   module->export-list-generator.  Hidden bindings are used for
+   renaming imports.
+ */
 
 static void ensure_exports(ScmModule *mod)
 {
@@ -962,6 +969,8 @@ static void ensure_exports(ScmModule *mod)
         intptr_t v = e->value;
         if (!v || (SCM_GLOCP(v) && !(SCM_GLOC(v)->hidden))) {
             SCM_APPEND1(h, t, SCM_OBJ(e->key));
+        } else if (SCM_GLOCP(v) && SCM_GLOC(v)->hidden) {
+            SCM_APPEND1(h, t, SCM_LIST1(SCM_OBJ(e->key)));
         }
     }
     mod->exports = h;

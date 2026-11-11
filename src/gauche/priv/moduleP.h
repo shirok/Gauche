@@ -54,7 +54,10 @@ struct ScmModuleRec {
     ScmObj exports;             /* Cached exports list.  This does not include
                                    exported symbols from inherited modules.
                                    #f indicates cache is invalidated and needs
-                                   to be rebuilt. */
+                                   to be rebuilt.
+                                   May contain (<symbol>) to indicate <symbol>
+                                   is a hidden export, hiding the ancestor's
+                                   export of <symbol>.  */
     ScmObj origin;              /* if this module is an anonymous wrapper
                                    module, this holds a original module.
                                    this isn't used for resolving bindings,

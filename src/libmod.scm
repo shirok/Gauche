@@ -173,7 +173,8 @@
   (let* ([m (if (module? mod) mod (find-module mod))]
          [mpl (cdr (module-precedence-list m))]
          [xl (%get-module-exports m)]
-         [p (~ m'prefix)])
+         [p (~ m'prefix)]
+         [hiders '()])
     (rec (gen)
       (if (null? xl)
         (if (null? mpl)
@@ -181,9 +182,13 @@
           (let1 m (pop! mpl)
             (set! xl (%get-module-exports m))
             (gen)))
-        (if p
-          (symbol-append p (pop! xl))
-          (pop! xl))))))
+        (let1 y (pop! xl)
+          (cond [(pair? y) (push! hiders (car y)) (gen)]
+                [(memq y hiders) (gen)]
+                [else
+                 (if p
+                   (symbol-append p y)
+                   y)]))))))
 
 ;; Insert binding into the given module.  flags may be a list of
 ;; one or more of the following symbols:
