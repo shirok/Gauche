@@ -1,3 +1,8 @@
+2026-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_ModuleExports): Rewrite to call Scheme's
+	  module-exports, which calls module->export-list-generator.
+
 2026-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (ensure_exports),

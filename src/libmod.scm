@@ -56,7 +56,7 @@
 (define-cproc find-module (name::<symbol>) ::<module>?
   (return (Scm_FindModule name SCM_FIND_MODULE_QUIET)))
 
-;; DEPRECATED
+;; Kept for the convenience.
 (define (module-exports module)
   (let1 gen (module->export-list-generator module)
     ;; We avoid using generator->list, which would introduce a dependency
