@@ -8,3 +8,9 @@ $ openssl req -x509 -newkey rsa:4096 -keyout test-key.pem -out test-cert.pem -da
 Set the private key password to 'cafebabe', and
 "Common Name (e.g. server FQDN or YOUR name)" to 'localhost', in order
 to run the test script successfully.
+
+test-key-aes.pem contains the same key, encrypted with AES-256-CBC
+instead of 3DES, because Mbed TLS 4.x doesn't support 3DES (and Mbed
+TLS 2.x can't decrypt AES-encrypted keys).  Regenerate it with:
+
+$ openssl pkcs8 -in test-key.pem -topk8 -v2 aes-256-cbc -v2prf hmacWithSHA256 -out test-key-aes.pem
