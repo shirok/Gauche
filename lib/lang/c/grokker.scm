@@ -340,13 +340,17 @@
                      (type-of x))
       (c-type-size ctx type ev)))
   ;; Character constant.  The lexer already decoded escape sequences.
-  ;; Multi-character constants are implementation-defined, so we reject.
+  ;; A narrow one is a byte sequence (possibly an incomplete string),
+  ;; and a wide one is a sequence of code points.
+  ;; Multi-character constants are implementation-defined, so we reject;
+  ;; that includes a narrow constant of a non-ASCII character, which
+  ;; takes more than one byte in UTF-8.
   (define (char-const s wide?)
-    (and (= (string-length s) 1)
-         (let1 code (char->integer (string-ref s 0))
-           (cond [wide? code]
-                 [(< code 256) (wrap-integer code 1 (~ <c-char>'unsigned?))]
-                 [else #f]))))
+    (if wide?
+      (and (= (string-length s) 1)
+           (char->integer (string-ref s 0)))
+      (and (= (string-size s) 1)
+           (wrap-integer (string-byte-ref s 0) 1 (~ <c-char>'unsigned?)))))
   ;; && and || short-circuit, so the operands are evaluated in turn.
   (define (cand xs)
     (let loop ([xs xs])

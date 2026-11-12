@@ -64,6 +64,17 @@
 ;;  <value> is a Scheme string as it appears in the source, except unicode
 ;;  character sequences and excape sequences are converted to corresponding
 ;;  characters.
+;;
+;;  For narrow string literals and character constants, octal and hex
+;;  escape sequences denote octets, not characters.  The value is
+;;  built as a byte sequence: characters in the source and \u / \U
+;;  escapes are encoded in UTF-8, and octal / hex escapes are taken as
+;;  bytes as they are.  So "\xe3\x81\x82" yields the same string as
+;;  "\u3042".  If the bytes don't form a valid UTF-8 sequence, the value
+;;  is an incomplete string, e.g. "\xff" yields #**"\xff;".
+;;
+;;  For wide string literals and character constants, octal and hex
+;;  escape sequences denote code points.
 
 ;; Intertoken stuff
 
@@ -313,21 +324,37 @@
              ($seq ($. #\r) ($return #\return))
              ($seq ($. #\t) ($return #\tab))
              ($seq ($. #\v) ($return #\x0b))
-             ($lift (^s (integer->char
-                         (string->number (list->string s) 8)))
+             ;; Octal and hex escapes yield integers; see narrow-literal
+             ;; and wide-literal below.
+             ($lift (^s (string->number (list->string s) 8))
                     ($many ($. #[0-7]) 1 3))
-             ($lift (^[_ s] (integer->char
-                             (string->number (list->string s) 16)))
-                    ($. #\x) ($many ($. #[[:xdigit:]])))
+             ($lift (^[_ s] (string->number (list->string s) 16))
+                    ($. #\x) ($many1 ($. #[[:xdigit:]])))
              %unichar-escaped)))
+
+;; Build the value of a narrow string literal or character constant.
+;; ITEMS is a list of characters and octets that
+;; %s-char-sequence or %c-char-sequence returns.
+;; The result may be an incomplete string.
+(define (narrow-literal items)
+  (call-with-output-string
+    (^p (dolist [x items]
+          (if (char? x)
+            (write-char x p)
+            (write-byte (logand x #xff) p))))))
+
+;; Same as narrow-literal, but for wide ones, where an integer is a
+;; code point.
+(define (wide-literal items)
+  (list->string (map (^x (if (char? x) x (integer->char x))) items)))
 
 
 (define %c-char-sequence ($many ($or ($. #[^'\\\n]) %escaped-sequence)))
 
 (define %character-constant
-  ($or ($lift (^c `(const char ,(list->string c)))
+  ($or ($lift (^c `(const char ,(narrow-literal c)))
               ($between ($. #\')  %c-char-sequence ($. #\')))
-       ($lift (^c `(const wchar ,(list->string c)))
+       ($lift (^c `(const wchar ,(wide-literal c)))
               ($between ($. "L'") %c-char-sequence ($. #\')))))
 
 ;; enum-constant is syntactically identical to %identifier
@@ -340,9 +367,9 @@
 (define %s-char-sequence ($many ($or ($. #[^\"\\\n]) %escaped-sequence)))
 
 (define %string-literal
-  ($or ($lift (^s `(string ,(list->string s)))
+  ($or ($lift (^s `(string ,(narrow-literal s)))
               ($between ($. #\")  %s-char-sequence ($. #\")))
-       ($lift (^s `(wstring ,(list->string s)))
+       ($lift (^s `(wstring ,(wide-literal s)))
               ($between ($. "L\"")  %s-char-sequence ($. #\")))))
 
 ;; NB: need to match %constant first, to recognize .0 as a number instead

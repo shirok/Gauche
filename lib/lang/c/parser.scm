@@ -169,8 +169,12 @@
 ;; Token recognition
 (define %identifier ($match1 ('ident _)))
 (define %constant   ($match1 ('const . _)))
+
+;; Adjacent string literals are concatenated.  May yield an incomplet
+;; string.
 (define %string-literal
-  ($lift string-concatenate
+  ($lift (^[ss] (let1 s (string-concatenate ss)
+                  (or (string-incomplete->complete s) s)))
          ($many1 ($match1 ((or 'string 'wstring) s) s))))
 
 (define %LP ($. #\( ))

@@ -218,13 +218,19 @@
   (t "'\\r';"   '((const char "\r")       |\;|))
   (t "'\\0';"   '((const char "\0")       |\;|))
   (t "'\"';"    '((const char "\"")       |\;|))
-  (t "'\\377';" '((const char "\xff;")    |\;|))
+  (t "'\\377';" '((const char #**"\xff;")  |\;|))
   (t "'%';"     '((const char "%")        |\;|))
   (t "'\\23';"  '((const char "\x13;")    |\;|))
   (t "'8';"     '((const char "8")        |\;|))
   (t "'\\\\';"  '((const char "\\")       |\;|))
   (t "'ABCD';"  '((const char "ABCD")     |\;|))
   (t "L'8';"    '((const wchar "8")       |\;|))
+  ;; Octal/hex escapes are octets in narrow constants, code points in wide
+  (t "'\\xff';"  '((const char #**"\xff;")  |\;|))
+  (t "'\\x41';"  '((const char "A")        |\;|))
+  (t "'\\u3042';" '((const char "\u3042")  |\;|))
+  (t "L'\\xff';" '((const wchar "\xff;")   |\;|))
+  (t "L'\\x3042';" '((const wchar "\u3042") |\;|))
 
   (t "0.;"       '((const double "0."     )       |\;|))
   (t "3e1;"      '((const double "3e1"    )       |\;|))
@@ -264,6 +270,19 @@
   (t "\"Copyright 2000 \\nTexas Instruments. \""
                    '((string "Copyright 2000 \nTexas Instruments. ")))
   (t "L\"abc\";" '((wstring "abc") |\;|))
+  ;; Narrow strings are byte sequences; valid UTF-8 makes a complete string
+  (t "\"\\xe3\\x81\\x82\";"     '((string "\u3042") |\;|))
+  (t "\"\\343\\201\\202\";"     '((string "\u3042") |\;|))
+  (t "\"a\\343\\201\\202b\";"   '((string "a\u3042b") |\;|))
+  ;; A hex escape takes as many hex digits as there are
+  (t "\"\\xe3\\x81\\x82b\";"   '((string #**"\xe3;\x81;\x2b;") |\;|))
+  (t "\"\u3042\";"               '((string "\u3042") |\;|))
+  (t "\"\\u3042\";"             '((string "\u3042") |\;|))
+  (t "\"\\xff\";"               '((string #**"\xff;") |\;|))
+  (t "\"\u3042\\xff\";"        '((string #**"\xe3;\x81;\x82;\xff;") |\;|))
+  (t "\"\\x41\\x42\";"          '((string "AB") |\;|))
+  (t "\"\\x141\";"              '((string "A") |\;|)) ; truncated, as gcc
+  (t "L\"\\xff\\x3042\";"        '((wstring "\xff;\u3042") |\;|))
 
   (t "X++Y;"     '((ident X) ++ (ident Y)  |\;|))
   (t "-12ul;"    '(- (const u-long  "12ul") |\;|))
@@ -853,6 +872,9 @@
   (t 65 "'\\101'")
   (t 0 "'\\0'")
   (t (if (~ <c-char>'unsigned?) 255 -1) "'\\xff'")
+  (t (if (~ <c-char>'unsigned?) 255 -1) "'\\377'")
+  (t #x3042 "L'\u3042'")
+  (t #x3042 "L'\\x3042'")
   (t 120 "L'x'")
   ;; casts
   (t 44 "(unsigned char)300")
@@ -1036,6 +1058,11 @@
     (t-fail '((/ (const int "1") (const int "0"))
               (/ (const int "1") (const int "0")))
             "1 / 0")
+    ;; A non-ASCII narrow character constant is multi-byte in UTF-8
+    (t-fail '((const char "\u3042") (const char "\u3042"))
+            "'\u3042'")
+    (t-fail '((const char "\u3042") (const char "\u3042"))
+            "'\\u3042'")
     (t-fail '((const char "ab") (const char "ab"))
             "'ab'")
     (t-fail '((cast (((struct foo #f)) (#f)) (const int "0"))
@@ -1080,6 +1107,13 @@
     (t-str "abcdef" "const char *x = \"ab\" \"cd\" \"ef\";")
     (t-str "a\tb\n" "const char *x = \"a\\tb\\n\";")
     (t-str "a\0b" "const char *x = \"a\\0b\";")
+    ;; Narrow strings are byte sequences
+    (t-str "\u3042" "const char *x = \"\u3042\";")
+    (t-str "\u3042" "const char *x = \"\\xe3\\x81\\x82\";")
+    (t-str "\u3042" "const char *x = \"\\xe3\" \"\\x81\" \"\\x82\";")
+    (t-str "a\u3042b" "const char *x = \"a\\xe3\" \"\\x81\\x82\" \"b\";")
+    (t-str #**"\xff;" "const char *x = \"\\xff\";")
+    (t-str #**"a\xff;" "const char *x = \"a\" \"\\xff\";")
     (t-str "abc" "const char *x = (\"abc\");")
     (t-str "abc" "const char *x = (const char *)\"abc\";")
     (t-str "abc" "const unsigned char *x = \"abc\";")
