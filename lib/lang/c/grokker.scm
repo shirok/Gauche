@@ -34,6 +34,7 @@
 ;;  Takes the output of c-parser and understands it.
 
 (define-module lang.c.grokker
+  (use gauche.uvector)
   (use util.match)
   (use lang.c.parser)
   (use lang.c.type)
@@ -205,15 +206,26 @@
     [#/^([1-9][0-9]*)[uUlL]*$/ (_ ds) (string->number ds 10)]
     [else #f]))
 
+;; Round a real number X to the nearest single-precision float value,
+;; returned as a (double) flonum.  This may be inefficent; if this turnes
+;; out to be a bottleneck, we'll support this in core.
+(define (round-to-float x)
+  (f32vector-ref (f32vector (inexact x)) 0))
+
 ;; Convert the string of C floating constant to a flonum.
 ;; Returns #f if the string isn't a valid floating constant.
-;; NB: Gauche's flonum is always double; we discard suffix information.
+;; NB: Gauche's flonum is always double.  A constant with 'f' suffix is
+;; rounded to single precision; 'l' suffix is treated as double.
 (define (c-floating-literal->number s)
+  (define (conv ds radix suf)
+    (and-let1 v (string->number ds radix 'inexact)
+      (if (member suf '("f" "F")) (round-to-float v) v)))
   (rxmatch-case s
-    [#/^0[xX]([[:xdigit:]]*\.?[[:xdigit:]]*[pP][-+]?[0-9]+)[fFlL]?$/ (_ ds)
-     (string->number ds 16 'inexact)]
-    [#/^([0-9]*\.?[0-9]*(?:[eE][-+]?[0-9]+)?)[fFlL]?$/ (_ ds)
-     (string->number ds 10 'inexact)]
+    [#/^0[xX]([[:xdigit:]]*\.?[[:xdigit:]]*[pP][-+]?[0-9]+)([fFlL]?)$/
+        (_ ds suf)
+     (conv ds 16 suf)]
+    [#/^([0-9]*\.?[0-9]*(?:[eE][-+]?[0-9]+)?)([fFlL]?)$/ (_ ds suf)
+     (conv ds 10 suf)]
     [else #f]))
 
 ;;
@@ -258,7 +270,6 @@
 ;; V is a number, or a Scheme string for a string literal.  A string
 ;; converts only to a pointer to char, and stays as is; this is the
 ;; heuristic to tell a string constant from other uses of char arrays.
-;; NB: Conversion to float isn't rounded to single precision yet.
 (define (c-convert-value ctx type v eval-const)
   (define (->integer bytes unsigned?)
     (cond [(exact-integer? v) (wrap-integer v bytes unsigned?)]
@@ -278,8 +289,12 @@
       [('.pointer . _) (and (exact-integer? v) (->integer (~ <void*>'size) #t))]
       [('.enum . _) (->native-integer)]
       [(? c-basic-type-integral?) (->native-integer)]
+      [('float _) (and (real? v) (round-to-float v))]
       [(? c-basic-type-flonum?) (and (real? v) (inexact v))]
-      [((or 'float-complex 'double-complex 'long-double-complex) _) (inexact v)]
+      [('float-complex _)
+       (make-rectangular (round-to-float (real-part v))
+                         (round-to-float (imag-part v)))]
+      [((or 'double-complex 'long-double-complex) _) (inexact v)]
       [_ #f])]))
 
 ;; Condition raised when an initializer can't be evaluated.

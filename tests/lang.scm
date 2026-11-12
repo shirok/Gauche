@@ -836,6 +836,22 @@
   (t 1.0 "0x.8p1" "double")
   (t 0.25 "0x1p-2" "double")
   (t 12.0 "0X1.8P+3L" "double")
+  ;; float constants are rounded to single precision
+  (t 0.10000000149011612 "0.1f" "double")
+  (t 0.10000000149011612 "0.1F" "double")
+  (t 0.1 "0.1" "double")
+  (t 0.1 "0.1L" "double")
+  (t 1.0000001192092896 "0x1.000002p0f" "double")
+  (t 1.0 "0x1.000001p0f" "double")      ;tie, round to even
+  (t 1.0000002384185791 "0x1.000003p0f" "double") ;tie, round to even
+  (t 1.0 "0x1.0000001p0f" "double")
+  ;; float-typed values are rounded to single precision
+  (t 0.10000000149011612 "0.1" "float")
+  (t 0.10000000149011612 "0.1f" "float")
+  (t 0.30000001192092896 "0.1 + 0.2" "float")
+  (t 0.10000000149011612 "(float)0.1" "double")
+  (t 16777216.0 "16777217" "float")
+  (t 0.1 "(double)0.1" "double")
   ;; operators
   (t 448 "(0400|0200|0100)")
   (t 2 "7 & 3 & 2")
@@ -933,6 +949,8 @@
     (t2 (- (expt 2 (* 8 (~ <void*>'size))) 1)
         "typedef void (*handler_t)(int);" "(handler_t)-1" "unsigned long long")
     (t2 #x2345 "typedef unsigned short u16;" "0x12345" "u16")
+    (t2 0.10000000149011612 "const float y = 0.1;" "y" "double")
+    (t2 0.10000000149011612 "typedef float real;" "0.1" "real")
     (t2 4294967295 "enum e { A };" "-1" "enum e")
     (t2 2 "short s;" "sizeof s")
     (t2 2 "short s;" "sizeof(s)")
