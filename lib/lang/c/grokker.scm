@@ -247,7 +247,17 @@
       (- m (ash 1 bits))
       m)))
 
+;; Whether C TYPE is a pointer to char (typedefs are resolved)
+(define (c-char-pointer-type? type)
+  (match (c-actual-type type)
+    [('.pointer _ pointee)
+     (boolean (memq (car (c-actual-type pointee)) '(char s-char u-char)))]
+    [_ #f]))
+
 ;; Convert a value V to C TYPE, as cast does.  Returns #f if we can't.
+;; V is a number, or a Scheme string for a string literal.  A string
+;; converts only to a pointer to char, and stays as is; this is the
+;; heuristic to tell a string constant from other uses of char arrays.
 ;; NB: Conversion to float isn't rounded to single precision yet.
 (define (c-convert-value ctx type v eval-const)
   (define (->integer bytes unsigned?)
@@ -258,15 +268,19 @@
   (define (->native-integer)
     (and-let1 nt (c-context-native-type ctx type eval-const)
       (->integer (~ nt'size) (~ nt'unsigned?))))
-  (match (c-actual-type type)
-    [('bool _) (if (zero? v) 0 1)]
-    ;; We treat pointers as unsigned.
-    [('.pointer . _) (and (exact-integer? v) (->integer (~ <void*>'size) #t))]
-    [('.enum . _) (->native-integer)]
-    [(? c-basic-type-integral?) (->native-integer)]
-    [(? c-basic-type-flonum?) (and (real? v) (inexact v))]
-    [((or 'float-complex 'double-complex 'long-double-complex) _) (inexact v)]
-    [_ #f]))
+  (cond
+   [(string? v) (and (c-char-pointer-type? type) v)]
+   [(not (number? v)) #f]
+   [else
+    (match (c-actual-type type)
+      [('bool _) (if (zero? v) 0 1)]
+      ;; We treat pointers as unsigned.
+      [('.pointer . _) (and (exact-integer? v) (->integer (~ <void*>'size) #t))]
+      [('.enum . _) (->native-integer)]
+      [(? c-basic-type-integral?) (->native-integer)]
+      [(? c-basic-type-flonum?) (and (real? v) (inexact v))]
+      [((or 'float-complex 'double-complex 'long-double-complex) _) (inexact v)]
+      [_ #f])]))
 
 ;; Condition raised when an initializer can't be evaluated.
 ;;   initializer - the whole initializer expression being evaluated
@@ -281,11 +295,13 @@
 ;; implementation here is provisional.  The API remains same.
 ;; Raises <c-unevaluatable-initializer> if it can't be evaluated.
 (define-method c-eval-initializer ((ctx <c-context>) initializer)
+  ;; The value is a number, or a Scheme string for a string literal.
   ;; The operators return #f if they can't compute the value from
-  ;; the operands; ev raises an error then.
-  (define (unop op x) (op (ev x)))
-  (define (binop op x y) (op (ev x) (ev y)))
-  (define (nop op xs) (apply op (map ev xs)))
+  ;; the operands; ev raises an error then.  Operands of the arithmetic
+  ;; and logical operators must be numbers; see evn.
+  (define (unop op x) (op (evn x)))
+  (define (binop op x y) (op (evn x) (evn y)))
+  (define (nop op xs) (apply op (map evn xs)))
   ;; Wrap an operator that is only valid on integers.
   (define (int-op op) (^ vs (and (every exact-integer? vs) (apply op vs))))
   (define (rsh x y) (ash x (- y)))
@@ -335,12 +351,12 @@
   (define (cand xs)
     (let loop ([xs xs])
       (cond [(null? xs) 1]
-            [(zero? (ev (car xs))) 0]
+            [(zero? (evn (car xs))) 0]
             [else (loop (cdr xs))])))
   (define (cor xs)
     (let loop ([xs xs])
       (cond [(null? xs) 0]
-            [(zero? (ev (car xs))) (loop (cdr xs))]
+            [(zero? (evn (car xs))) (loop (cdr xs))]
             [else 1])))
   (define (ev1 expr)
     (match expr
@@ -350,6 +366,9 @@
        (c-floating-literal->number s)]
       [('const 'char s) (char-const s #f)]
       [('const 'wchar s) (char-const s #t)]
+      ;; String literal.  The parser already concatenated adjacent
+      ;; literals and decoded escape sequences.
+      [(? string? s) s]
       [('paren x) (ev x)]
       [('cast tn x) (and-let1 type (type-name->c-type tn)
                       (c-convert-value ctx type (ev x) ev))]
@@ -376,7 +395,7 @@
       [('> a b) (binop (cmp >) a b)]
       [('<= a b) (binop (cmp <=) a b)]
       [('>= a b) (binop (cmp >=) a b)]
-      [('?: c t e) (if (zero? (ev c)) (ev e) (ev t))]
+      [('?: c t e) (if (zero? (evn c)) (ev e) (ev t))]
       ;; Returns #f if V is undefined or has no initializer.
       [('ident v) (identifier-value ctx v)]
       [_ #f]))
@@ -385,6 +404,13 @@
         (error <c-unevaluatable-initializer>
                :initializer initializer :expression expr
                "Unevaluatable initializer:" expr)))
+  ;; Like ev, but the value must be a number.
+  (define (evn expr)
+    (rlet1 v (ev expr)
+      (unless (number? v)
+        (error <c-unevaluatable-initializer>
+               :initializer initializer :expression expr
+               "Number required, but got:" expr))))
 
   (ev initializer))
 
@@ -443,6 +469,11 @@
 ;;   Lookup the initial value of the named variable, converted to the
 ;;   declared type of the variable.  Returns #f if the variable isn't
 ;;   defined or has no initializer.
+;;   The value is a number, except that a variable of pointer-to-char
+;;   type initialized with a string literal yields a Scheme string
+;;   (e.g. 'const char *s = "abc";').  The string is the literal's
+;;   content as is; it may contain NUL characters.  Char arrays aren't
+;;   handled, for they're often used as byte buffers rather than strings.
 ;;   If the initializer can't be evaluated, the behavior depends on
 ;;   ON-FAILURE:
 ;;     :error    - Raises <c-unevaluatable-initializer>.
