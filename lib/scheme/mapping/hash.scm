@@ -337,7 +337,8 @@
 (define (hashmap-filter! pred m)
   (assume-type m <hashmap>)
   (hash-table-for-each m (^[k v] (unless (pred k v)
-                                 (hash-table-delete! m k)))))
+                                 (hash-table-delete! m k))))
+  m)
 
 (define (hashmap-remove pred m)
   (assume-type m <hashmap>)
@@ -348,7 +349,8 @@
 (define (hashmap-remove! pred m)
   (assume-type m <hashmap>)
   (hash-table-for-each m (^[k v] (when (pred k v)
-                                 (hash-table-delete! m k)))))
+                                 (hash-table-delete! m k))))
+  m)
 
 (define (hashmap-partition pred m)
   (assume-type m <hashmap>)

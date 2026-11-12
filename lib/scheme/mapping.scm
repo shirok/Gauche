@@ -348,7 +348,8 @@
 (define (mapping-filter! pred m)
   (assume-type m <mapping>)
   (tree-map-for-each m (^[k v] (unless (pred k v)
-                                 (tree-map-delete! m k)))))
+                                 (tree-map-delete! m k))))
+  m)
 
 (define (mapping-remove pred m)
   (assume-type m <mapping>)
@@ -359,7 +360,8 @@
 (define (mapping-remove! pred m)
   (assume-type m <mapping>)
   (tree-map-for-each m (^[k v] (when (pred k v)
-                                 (tree-map-delete! m k)))))
+                                 (tree-map-delete! m k))))
+  m)
 
 (define (mapping-partition pred m)
   (assume-type m <mapping>)
