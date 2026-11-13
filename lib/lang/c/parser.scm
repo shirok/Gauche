@@ -45,6 +45,7 @@
 
   (export <c-parser>
           c-toplevel-parser
+          c-parser-add-typedefs!
           c-statement-parser
           c-expression-parser
 
@@ -94,6 +95,24 @@
 
    (hooks :init-form (make-hash-table eq-comparator))
    ))
+
+;; API
+;;   Inject typedef names into C-PARSER, as if they're declared by typedef
+;;   before the parsed source.  DEFS is a list of (name type-specifier ...),
+;;   e.g. ((u_long unsigned long) (int8 signed char)).  Type specifiers
+;;   can refer to typedef names already known, or appears in DEFS.
+(define (c-parser-add-typedefs! c-parser defs)
+  (let1 tab (~ c-parser'typedefs)
+    (dolist [def defs]
+      (match def
+        [((? symbol? name) (? symbol? specs) ..1)
+         ;; The parser passes typedef names as (ident NAME).
+         (let1 specs (map (^w (if (hash-table-contains? tab w) `(ident ,w) w))
+                          specs)
+           (hash-table-put! tab name (grok-c-type (list specs) tab)))]
+        [_ (error "Bad typedef spec; must be (name type-specifier ...):"
+                  def)])))
+  c-parser)
 
 ;; Internal
 (define current-c-parser (make-parameter #f))

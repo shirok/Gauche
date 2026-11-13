@@ -579,6 +579,26 @@
            "struct s { enum e : 3; int x; } v;")
   )
 
+;; c-parser-add-typedefs!
+(let ()
+  (define (parse-with defs code)
+    (let1 p (c-toplevel-parser)
+      (c-parser-add-typedefs! p defs)
+      (c-parse-string p code)))
+  (test* "c-parser-add-typedefs!"
+         '((decl x #f (.type u_long () (u-long ())) #f)
+           (decl y #f (.pointer () (.type cc () (char (const)))) #f)
+           (decl z #f (.type uz () (.type u_long () (u-long ()))) #f))
+         (parse-with '((u_long unsigned long)
+                       (cc const char)
+                       (uz u_long))
+                     "u_long x; cc *y; uz z;"))
+  (test* "c-parser-add-typedefs! (bad spec)" (test-error)
+         (c-parser-add-typedefs! (c-toplevel-parser) '((foo))))
+  (test* "c-parser-add-typedefs! (invalid type)" (test-error)
+         (c-parser-add-typedefs! (c-toplevel-parser) '((foo short char))))
+  )
+
 ;; c-type -> native-type
 (let ()
   (define (type-of code)
@@ -806,6 +826,21 @@
   (test* "grokker global names" '(d f i j k)
          (let1 ctx (c-grok-string input)
            (sort (hash-table-keys (~ ctx'globals)))))
+  )
+
+;; Injecting typedefs to the grokker
+(let ()
+  (define (t expected init type)
+    (test* #"initial value with typedefs: ~type x = ~init" expected
+           (let1 ctx (c-grok-string #"const ~type x = ~|init|;"
+                                    :cpp (make <pass-through-cpp>)
+                                    :typedefs '((u_char unsigned char)
+                                                (u8 u_char)
+                                                (i64 long long)))
+             (c-variable-initial-value ctx 'x))))
+  (t 44 "300" "u_char")
+  (t 255 "-1" "u8")
+  (t -1 "0xffffffffffffffff" "i64")
   )
 
 (let ()
