@@ -852,6 +852,23 @@
   (t 0.10000000149011612 "(float)0.1" "double")
   (t 16777216.0 "16777217" "float")
   (t 0.1 "(double)0.1" "double")
+  ;; gcc builtins
+  (t +inf.0 "__builtin_inf()" "double")
+  (t +inf.0 "__builtin_inff()" "float")
+  (t +inf.0 "__builtin_infl()" "double")
+  (t +inf.0 "__builtin_huge_val()" "double")
+  (t +inf.0 "__builtin_huge_valf()" "float")
+  (t +inf.0 "__builtin_huge_vall()" "double")
+  (t -inf.0 "-__builtin_inf()" "double")
+  (let ()
+    (define (tnan init type)
+      (test* #"initial value: ~init" #t
+             (let1 ctx (c-grok-string #"const ~type x = ~|init|;"
+                                      :cpp (make <pass-through-cpp>))
+               (nan? (c-variable-initial-value ctx 'x)))))
+    (tnan "__builtin_nan(\"\")" "double")
+    (tnan "__builtin_nanf(\"\")" "float")
+    (tnan "__builtin_nanl(\"0x1\")" "double"))
   ;; operators
   (t 448 "(0400|0200|0100)")
   (t 2 "7 & 3 & 2")

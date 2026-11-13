@@ -377,6 +377,20 @@
       (cond [(null? xs) 0]
             [(zero? (evn (car xs))) (loop (cdr xs))]
             [else 1])))
+  ;; gcc builtins, expanded from via INFINITY, HUGE_VAL and NAN macros.
+  ;; We wan to recognize them so that constant expressions using them
+  ;; can be computed.
+  (define (maybe-builtin-call f args)
+    (case f
+      [(__builtin_inf __builtin_inff __builtin_infl
+        __builtin_huge_val __builtin_huge_valf __builtin_huge_vall)
+       (and (null? args) +inf.0)]
+      [(__builtin_nan __builtin_nanf __builtin_nanl)
+       ;; We ignore NaN payload, just check it has one string argument.
+       (and (= (length args) 1)
+            (string? (ev (car args)))
+            +nan.0)]
+      [else #f]))
   (define (ev1 expr)
     (match expr
       [('const (or 'int 'u-int 'long 'u-long 'long-long 'u-long-long) s)
@@ -415,6 +429,7 @@
       [('<= a b) (binop (cmp <=) a b)]
       [('>= a b) (binop (cmp >=) a b)]
       [('?: c t e) (if (zero? (evn c)) (ev e) (ev t))]
+      [('call ('ident f) . args) (maybe-builtin-call f args)]
       ;; Returns #f if V is undefined or has no initializer.
       [('ident v) (identifier-value ctx v)]
       [_ #f]))
