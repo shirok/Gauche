@@ -582,9 +582,7 @@
 ;; c-parser-add-typedefs!
 (let ()
   (define (parse-with defs code)
-    (let1 p (c-toplevel-parser)
-      (c-parser-add-typedefs! p defs)
-      (c-parse-string p code)))
+    (c-parse-string (c-toplevel-parser :typedefs defs) code))
   (test* "c-parser-add-typedefs!"
          '((decl x #f (.type u_long () (u-long ())) #f)
            (decl y #f (.pointer () (.type cc () (char (const)))) #f)

@@ -1041,10 +1041,12 @@
 
 (define (make-parser-api peg-parser)
   (^[:key (cpp-include-paths '())
-          (cpp-definitions '())]
-    (make <c-parser> :peg-parser peg-parser
-          :cpp-include-paths cpp-include-paths
-          :cpp-definitions cpp-definitions)))
+          (cpp-definitions '())
+          (typedefs '())]
+    (rlet1 p (make <c-parser> :peg-parser peg-parser
+                   :cpp-include-paths cpp-include-paths
+                   :cpp-definitions cpp-definitions)
+      (c-parser-add-typedefs! p typedefs))))
 
 ;; APIs
 (define c-toplevel-parser (make-parser-api %translation-unit))
