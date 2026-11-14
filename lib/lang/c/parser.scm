@@ -46,6 +46,7 @@
   (export <c-parser>
           c-toplevel-parser
           c-parser-add-typedefs!
+          c-parser-gauche-typedefs
           c-statement-parser
           c-expression-parser
 
@@ -113,6 +114,36 @@
         [_ (error "Bad typedef spec; must be (name type-specifier ...):"
                   def)])))
   c-parser)
+
+;; API
+;;   Returns a list of typedefs, suitable to pass to c-parser-add-typedefs!,
+;;   for the C type names used by Gauche's primitive native types
+;;   (e.g. u_long for <ulong>, int8_t for <int8>, ScmSmallInt for <fixnum>).
+;;   This allows the parser to handle those type names without including
+;;   the headers that define them.  Each name is mapped to a basic C type
+;;   of the same size and signedness on the running platform.
+;;   Native types whose C types are basic or pointers (e.g. <int>, <c-string>,
+;;   <ScmObj>) are not included.
+(define (c-parser-gauche-typedefs)
+  (define long-size (~ <long>'size))
+  (define (basic-type ntype)
+    (let ([size (~ ntype'size)]
+          [unsigned? (~ ntype'unsigned?)])
+      (case size
+        [(1) (if unsigned? '(unsigned char) '(signed char))]
+        [(2) (if unsigned? '(unsigned short) '(short))]
+        [(4) (if unsigned? '(unsigned int) '(int))]
+        [(8) (if (= long-size 8)
+               (if unsigned? '(unsigned long) '(long))
+               (if unsigned? '(unsigned long long) '(long long)))]
+        [else (error "Unsupported integral type size:" ntype size)])))
+  (map (^[ntype]
+         (cons (string->symbol (~ ntype'c-type-name)) (basic-type ntype)))
+       (list <fixnum> <ushort> <uint> <ulong>
+             <int8> <uint8> <int16> <uint16> <int32> <uint32>
+             <int64> <uint64>
+             <size_t> <ssize_t> <ptrdiff_t> <off_t>
+             <intptr_t> <uintptr_t> <time_t>)))
 
 ;; Internal
 (define current-c-parser (make-parameter #f))

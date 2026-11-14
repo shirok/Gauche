@@ -843,6 +843,27 @@
   (t -1 "0xffffffffffffffff" "i64")
   )
 
+;; Gauche primitive typedefs
+(let ()
+  (define defs (c-parser-gauche-typedefs))
+  (define (grok code)
+    (c-grok-string code :cpp (make <pass-through-cpp>) :typedefs defs))
+  (test* "c-parser-gauche-typedefs: names" #t
+         (every (^n (boolean (assq n defs)))
+                '(ScmSmallInt u_short u_int u_long int8_t uint8_t
+                  int16_t uint16_t int32_t uint32_t int64_t uint64_t
+                  size_t ssize_t ptrdiff_t off_t intptr_t uintptr_t time_t)))
+  (test* "c-parser-gauche-typedefs: values" '(-56 65535 -1 18446744073709551615)
+         (let1 ctx (grok "const int8_t a = 200; const u_short b = -1;
+                          const int64_t c = 0xffffffffffffffff;
+                          const uint64_t d = -1;")
+           (map (cut c-variable-initial-value ctx <>) '(a b c d))))
+  ;; Headers may typedef the same names again
+  (test* "c-parser-gauche-typedefs: redefinition" -1
+         (let1 ctx (grok "typedef signed char int8_t; const int8_t a = 255;")
+           (c-variable-initial-value ctx 'a)))
+  )
+
 (let ()
   ;; The value is converted to TYPE of the variable.
   (define (t expected init :optional (type "long"))
