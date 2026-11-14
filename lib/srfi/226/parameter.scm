@@ -14,6 +14,9 @@
           temporarily))
 (select-module srfi.226.parameter)
 
+;; We don't allow compatible mode.
+;; Other than that, this is the same as parameterize in libparam.scm.
+;; Probably we want to refactor.
 (define-syntax parameterize-srfi-226
   (er-macro-transformer
    (^[f r c]
@@ -23,8 +26,6 @@
         (find-module 'gauche.internal)
         '()))
      (match f
-       [(_ () . body) (quasirename r `(let () ,@body))]
-       ;; TODO: shortcut for single-parameter case
        [(_ ((param val) ...) . body)
         (quasirename r
           `(,%parameterize (list ,@param) (list ,@val) (^[] ,@body) #f))]
