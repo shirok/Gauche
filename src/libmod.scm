@@ -380,6 +380,9 @@
 (define-cproc gloc-inlinable? (gloc::<gloc>) ::<boolean> Scm_GlocInlinableP)
 (define-cproc gloc-dummy? (gloc::<gloc>) ::<boolean> Scm_GlocDummyP)
 
+(define-cproc gloc-make-constant! (gloc::<gloc>) ::<void>
+  (Scm_GlocMark gloc SCM_BINDING_CONST))
+
 ;;;
 ;;; Identifier and binding
 ;;;

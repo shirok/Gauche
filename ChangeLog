@@ -1,3 +1,7 @@
+2026-11-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmod.scm (gloc-make-constant!): Added (not public API).
+
 2026-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_ModuleExports): Rewrite to call Scheme's
