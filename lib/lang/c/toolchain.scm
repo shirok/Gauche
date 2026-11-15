@@ -62,6 +62,8 @@
 ;; For testing.  No preprocessing.
 (define-class <pass-through-cpp> (<cpp>) ())
 
+;; Mixin condition for error during running cpp
+(define-condition-type <c-toolchain-error> <error> #f)
 
 ;; NB: We may eventually implement our own preprocessor, for we can do
 ;; more things (such as caching), but for the time being, we call cpp.
@@ -93,9 +95,16 @@
                     [var `(,#"-D~var")]))
                 defs))
 
-  (call-with-input-process `(,@(~ cpp'cc) "-E" ,@Is ,@Ds ,file)
-    proc
-    :on-abnormal-exit :ignore))
+  (let* ([p (run-process `(,@(~ cpp'cc) "-E" ,@Is ,@Ds ,file)
+                         :input :null :output :pipe :error :pipe)]
+         [r (proc (process-output p))])
+    (process-wait p)
+    (let1 s (process-exit-status p)
+      (unless (zero? s)
+        (let1 emsg (port->string (process-error p))
+          (errorf <c-toolchain-error>
+                  "cpp execution failed with: ~a" emsg)))
+      r)))
 
 ;; Default preprocessor
 (define-method call-with-cpp ((cpp <boolean>) file proc :rest keys)
