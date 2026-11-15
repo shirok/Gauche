@@ -65,16 +65,11 @@
 
 ;; A convenience procedure; safe for non-message condition objects.
 ;; (cf. error-object-message of r7rs)
-(define (condition-message e :optional (fallback #f))
-  (or (and (condition? e)
-           (cond
-            [(is-a? e <message-condition>) (~ e'message)]
-            [(is-a? e <compound-condition>)
-             (any (^e (and (is-a? e <message-condition>)
-                           (~ e'message)))
-                  (~ e'%conditions))]
-            [else #f]))
-      fallback))
+(define-cproc condition-message (e :optional (fallback #f))
+  (let* ([r (Scm_ConditionMessage e)])
+    (if (SCM_FALSEP r)
+      (return fallback)
+      (return r))))
 
 (define (print-default-error-heading exc out)
   (assume-type out <output-port>)
@@ -82,7 +77,7 @@
          (format out "*** ERROR: unhandled exception: ~s\n" exc)]
         [(condition-has-type? exc <message-condition>)
          (format out "*** ~a: ~,,,,200:a\n"
-                 (condition-type-name exc) (~ exc'message))]
+                 (condition-type-name exc) (condition-message exc))]
         [else
          (format out "*** ~a\n" (condition-type-name exc))]))
 

@@ -719,7 +719,9 @@ ScmObj Scm_ConditionMessage(ScmObj c)
         ScmObj cp;
         SCM_FOR_EACH(cp, SCM_COMPOUND_CONDITION(c)->conditions) {
             if (SCM_MESSAGE_CONDITION_P(SCM_CAR(cp))) {
-                return message_get(SCM_MESSAGE_CONDITION(SCM_CAR(cp)));
+                ScmObj m = message_get(SCM_MESSAGE_CONDITION(SCM_CAR(cp)));
+                /* Take first non-false message */
+                if (!SCM_FALSEP(m)) return m;
             }
         }
     }

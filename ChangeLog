@@ -1,3 +1,10 @@
+2026-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/libexc.scm (print-default-error-heading): Ensure message is
+	  shown if thrown one is a compound condition.
+	* src/error.c (Scm_ConditionMessage): Return first non-false message
+	  if the arg is a compound condition.
+
 2026-11-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmod.scm (gloc-make-constant!): Added (not public API).
