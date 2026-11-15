@@ -50,6 +50,8 @@
           c-statement-parser
           c-expression-parser
 
+          <c-parser-error>
+
           c-tokenize-file
           c-tokenize-string
           c-parse-file
@@ -97,6 +99,8 @@
    (hooks :init-form (make-hash-table eq-comparator))
    ))
 
+(define-condition-type <c-parser-error> <error> #f)
+
 ;; API
 ;;   Inject typedef names into C-PARSER, as if they're declared by typedef
 ;;   before the parsed source.  DEFS is a list of (name type-specifier ...),
@@ -111,7 +115,8 @@
          (let1 specs (map (^w (if (hash-table-contains? tab w) `(ident ,w) w))
                           specs)
            (hash-table-put! tab name (grok-c-type (list specs) tab)))]
-        [_ (error "Bad typedef spec; must be (name type-specifier ...):"
+        [_ (error <c-parser-error>
+                  "Bad typedef spec; must be (name type-specifier ...):"
                   def)])))
   c-parser)
 
@@ -136,7 +141,8 @@
         [(8) (if (= long-size 8)
                (if unsigned? '(unsigned long) '(long))
                (if unsigned? '(unsigned long long) '(long long)))]
-        [else (error "Unsupported integral type size:" ntype size)])))
+        [else (error <c-parser-error>
+                     "Unsupported integral type size:" ntype size)])))
   (map (^[ntype]
          (cons (string->symbol (~ ntype'c-type-name)) (basic-type ntype)))
        (list <fixnum> <ushort> <uint> <ulong>
@@ -552,7 +558,7 @@
   (if name
     (rlet1 spec (tag-declare! kind name)
       (when (caddr spec)
-        (errorf "redefinition of '~a ~a'" kind name)))
+        (errorf <c-parser-error> "redefinition of '~a ~a'" kind name)))
     (make-tag-spec kind #f)))
 
 ;; Returns a new incomplete specifier,
@@ -571,13 +577,15 @@
           [base (grok-c-type (list base-specs) (typedef-names))])
       (cond [(not (car cell)) (set-car! cell base)]
             [(not (equal? (car cell) base))
-             (errorf "'enum ~a' declared with different underlying types"
+             (errorf <c-parser-error>
+                     "'enum ~a' declared with different underlying types"
                      (cadr spec))])))
   spec)
 
 (define (check-tag-kind spec kind)
   (unless (eq? (car spec) kind)
-    (errorf "'~a' defined as wrong kind of tag (~a)" (cadr spec) kind))
+    (errorf <c-parser-error>
+            "'~a' defined as wrong kind of tag (~a)" (cadr spec) kind))
   spec)
 
 ;; Returns a parser that calls THUNK, and returns its value as the
@@ -689,7 +697,8 @@
              (match main
                [('ident id) `((ident ,id) ,@post ,@ptr)]
                [(('ident id) . specs) `((ident ,id) ,@ptr ,@specs ,@post)]
-               [else (errorf "something wrong with %declarator.  main=~s"
+               [else (errorf <c-parser-error>
+                             "something wrong with %declarator.  main=~s"
                              main)])))
 
 (define %pointer
@@ -826,7 +835,7 @@
     [((? symbol? typename) 'typedef type _)
      (dict-put! (typedef-names) typename type)]
     [else
-     (error "something wrong with typedef decl" decl)]))
+     (error <c-parser-error> "something wrong with typedef decl" decl)]))
 
 ;; Returns (id storage-class type init)
 ;;   id - C identifier as a symbol
@@ -1061,7 +1070,7 @@
 
 (define (file-check file)
   (unless (file-is-readable? file)
-    (error "file does not exist or unreadable:" file)))
+    (error <c-parser-error> "file does not exist or unreadable:" file)))
 
 (define (c-tokenize-file c-parser file :key (cpp #f))
   (file-check file)
@@ -1099,12 +1108,15 @@
       ;; We don't need rope-finalize, for the lexer finalizes ropes.
       ;; Furthermore, rope-finalize can't handle circular structure
       ;; (e.g. self-referencing struct) in the result.
-      (if (~ c-parser'use-concurrent-lexer)
-        ($ peg-run-parser peg
-           (coroutine->cseq (c-tokenize-file-coroutine c-parser file :cpp cpp))
-           :finalizer identity)
-        ($ peg-run-parser peg (c-tokenize-file c-parser file :cpp cpp)
-           :finalizer identity)))))
+      (guard (e [(<parse-error> e)
+                 (raise (make-compound-condition (make <c-parser-error>) e))]
+                [else (raise e)])
+        (if (~ c-parser'use-concurrent-lexer)
+          ($ peg-run-parser peg
+             (coroutine->cseq (c-tokenize-file-coroutine c-parser file :cpp cpp))
+             :finalizer identity)
+          ($ peg-run-parser peg (c-tokenize-file c-parser file :cpp cpp)
+             :finalizer identity))))))
 
 ;; We create a temp file so that we can call cpp on it.
 (define (%operate-on-string string proc)

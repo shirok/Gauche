@@ -38,7 +38,9 @@
   (use util.match)
   (use lang.c.parser)
   (use lang.c.type)
+  (use lang.c.toolchain)
   (export <c-context>
+          <c-grok-error>
           c-grok-file
           c-grok-string
 
@@ -64,6 +66,8 @@
 (define (with-fresh-c-context thunk)
   (rlet1 ctx (make <c-context>)
     (parameterize ([current-c-context ctx]) (thunk))))
+
+(define-condition-type <c-grok-error> <error> #f)
 
 (define-class <c-global> ()
   ((name :init-keyword :name)               ;symbol
@@ -166,33 +170,34 @@
 
 ;; TODO: Make parser returns lseq/cseq and run grokker concurrently
 
+(define (c-grok-body proc cpp-include-paths cpp-definitions typedefs)
+  (guard (e [(or (<c-parser-error> e)
+                 (<c-toolchain-error> e))
+             (raise (make-compound-condition (make <c-grok-error>) e))])
+    (with-fresh-c-context
+     (^[]
+       (let1 parser (c-toplevel-parser :cpp-include-paths cpp-include-paths
+                                       :cpp-definitions cpp-definitions
+                                       :typedefs typedefs)
+         (dolist [form (proc parser)]
+           (c-grok-parser-output-1 form))
+         (set! (~ (current-c-context)'typedefs) (~ parser'typedefs)))))))
+
 ;; API
 (define (c-grok-file file :key (cpp #f)
                                (cpp-include-paths '())
                                (cpp-definitions '())
                                (typedefs '()))
-  (with-fresh-c-context
-   (^[]
-     (let1 parser (c-toplevel-parser :cpp-include-paths cpp-include-paths
-                                     :cpp-definitions cpp-definitions
-                                     :typedefs typedefs)
-       (dolist [form (c-parse-file parser file :cpp cpp)]
-         (c-grok-parser-output-1 form))
-       (set! (~ (current-c-context)'typedefs) (~ parser'typedefs))))))
+  (c-grok-body (^[parser] (c-parse-file parser file :cpp cpp))
+               cpp-include-paths cpp-definitions typedefs))
 
 ;; API
 (define (c-grok-string string :key (cpp #f)
                                    (cpp-include-paths '())
                                    (cpp-definitions '())
                                    (typedefs '()))
-  (with-fresh-c-context
-   (^[]
-     (let1 parser (c-toplevel-parser :cpp-include-paths cpp-include-paths
-                                     :cpp-definitions cpp-definitions
-                                     :typedefs typedefs)
-       (dolist [form (c-parse-string parser string :cpp cpp)]
-         (c-grok-parser-output-1 form))
-       (set! (~ (current-c-context)'typedefs) (~ parser'typedefs))))))
+  (c-grok-body (^[parser] (c-parse-string parser string :cpp cpp))
+               cpp-include-paths cpp-definitions typedefs))
 
 ;; API
 ;;   Look up definition or declaration

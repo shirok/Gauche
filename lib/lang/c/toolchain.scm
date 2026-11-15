@@ -41,6 +41,7 @@
   (use util.match)
   (export <external-cpp>
           <pass-through-cpp>
+          <c-toolchain-error>
           call-with-cpp
           cpp-include-paths
           c-find-header))
