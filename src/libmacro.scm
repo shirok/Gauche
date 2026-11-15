@@ -47,7 +47,7 @@
                              ecase typecase etypecase cond-list
                              define-condition-type condition
                              with-continuation-marks
-                             unwind-protect
+                             unwind-protect unwind-protect/barrier
                              let-keywords let-keywords* let-optionals*
                              define-class define-generic define-method
                              lcons lcons* llist*
@@ -1309,6 +1309,25 @@
           (cleanup)
           (apply values r)))
       :rewind-before #t)))
+
+;; This is SRFI-226 version of unwind-protect.  It does not allow to
+;; 'jump out' from the body.
+;; As we have call-with-composable-continuation, we probably no longer
+;; need the original unwind-protect allowing jumping out and coming back.
+;; For a while, we'll have two unwind-protect in parallel.  Using
+;; srfi.226 shadows unwind-protect with this version.
+(select-module gauche)
+(define-syntax unwind-protect/barrier
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ body cleanup ...)
+        (quasirename r
+          `(dynamic-wind
+             (lambda () #f)
+             (lambda () (call-with-continuation-barrier
+                         (lambda () ,body)))
+             (lambda () ,@cleanup)))]))))
 
 ;;; Extended argument parsing
 
