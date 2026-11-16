@@ -36,3 +36,7 @@ enum ffi_test_signed {
     FFI_TEST_S_LO = -5,
     FFI_TEST_S_HI = 5
 };
+
+/* For <c-char> and <c-bool> constants. */
+#define FFI_TEST_CHAR      'A'
+#define FFI_TEST_TRUE      5

@@ -44,6 +44,7 @@
           c-grok-file
           c-grok-string
 
+          c-get-definition-or-declaration
           c-variable-initial-value
           <c-unevaluatable-initializer>)
   )

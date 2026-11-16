@@ -345,87 +345,182 @@
 ;;;----------------------------------------------------------
 (test-section "define-c-constant")
 
-(define-module ffi-const-sandbox
-  (use gauche.test)
-  (use gauche.ffi)
-  (use gauche.native-type)
-  (use file.util)
+;; The same set of tests is run under each subsystem, in its own module so
+;; that the constant bindings don't interfere.
+(define-macro (define-const-test-module modname subsystem)
+  `(define-module ,modname
+     (use gauche.test)
+     (use gauche.ffi)
+     (use gauche.native-type)
+     (use file.util)
 
-  ;; Directory holding c/ffi-const.h.  Derived from the test file location
-  ;; so that it works with out-of-tree builds as well.
-  (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
+     ;; Directory holding c/ffi-const.h.  Derived from the test file
+     ;; location so that it works with out-of-tree builds as well.
+     (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
 
-  (parameterize ([default-ffi-subsystem :stub])
-    ;; Constants from the system headers; no include path needed.
-    (eval '(with-ffi #f (:c-headers ("limits.h" "stdio.h"))
-             (define-c-constant CHAR-BIT)
-             (define-c-constant SEEK-END 'int)
-             (define-c-constant EOF 'int))
-          (current-module))
-    ;; Constants from our own header, reached via :c-include-paths.
-    (eval `(with-ffi #f (:c-headers ("ffi-const.h")
-                         :c-include-paths (,c-dir))
-             (define-c-constant FFI-TEST-MAX-VALUE)
-             (define-c-constant FFI-TEST-NEG)
-             (define-c-constant FFI-TEST-GREETING 'c-string)
-             (define-c-constant FFI-TEST-BLUE 'int)
-             (define-c-constant FFI-TEST-DOUBLE 'double)
-             (define-c-constant FFI-TEST-NEG-DOUBLE 'double)
-             (define-c-constant FFI-TEST-FLOAT 'float)
-             (define-c-constant FFI-TEST-TENTH-D 'double)
-             (define-c-constant FFI-TEST-TENTH-F 'float)
-             (define-c-constant FFI-TEST-INT-AS-DOUBLE 'double))
-          (current-module))
-    ;; Flonum constants from the system header.
-    (eval '(with-ffi #f (:c-headers ("float.h"))
-             (define-c-constant DBL-EPSILON 'double)
-             (define-c-constant FLT-EPSILON 'float)
-             (define-c-constant DBL-MAX <double>))
-          (current-module)))
+     (define (tname name) (format "~a (~s)" name ,subsystem))
 
-  (test* "define-c-constant, type omitted" 8 CHAR-BIT)
-  (test* "define-c-constant, name translation" 2 SEEK-END)
-  (test* "define-c-constant, negative value" -1 EOF)
-  (test* "define-c-constant, user header" 65535 FFI-TEST-MAX-VALUE)
-  (test* "define-c-constant, parenthesized macro" -3 FFI-TEST-NEG)
-  (test* "define-c-constant, c-string" "hello, ffi" FFI-TEST-GREETING)
-  (test* "define-c-constant, enum member" 2 FFI-TEST-BLUE)
-  (test* "define-c-constant, double" 2.5 FFI-TEST-DOUBLE)
-  (test* "define-c-constant, negative double" -0.125 FFI-TEST-NEG-DOUBLE)
-  (test* "define-c-constant, float" 0.75 FFI-TEST-FLOAT)
-  (test* "define-c-constant, float is a flonum" #t (flonum? FFI-TEST-FLOAT))
-  (test* "define-c-constant, double keeps double precision" 0.1
-         FFI-TEST-TENTH-D)
-  (test* "define-c-constant, float rounds to float precision"
-         (let1 v (make-f32vector 1 0.1) (f32vector-ref v 0))
-         FFI-TEST-TENTH-F)
-  (test* "define-c-constant, integer macro as double" 3.0
-         FFI-TEST-INT-AS-DOUBLE)
-  (test* "define-c-constant, integer macro as double is a flonum" #t
-         (flonum? FFI-TEST-INT-AS-DOUBLE))
-  (test* "define-c-constant, DBL_EPSILON" (flonum-epsilon) DBL-EPSILON)
-  (test* "define-c-constant, FLT_EPSILON" (expt 2.0 -23) FLT-EPSILON)
-  (test* "define-c-constant, DBL_MAX" (greatest-positive-flonum) DBL-MAX)
+     (parameterize ([default-ffi-subsystem ,subsystem])
+       ;; Constants from the system headers; no include path needed.
+       (eval '(with-ffi #f (:c-headers ("limits.h" "stdio.h"))
+                (define-c-constant CHAR-BIT)
+                (define-c-constant SEEK-END 'int)
+                (define-c-constant EOF 'int))
+             (current-module))
+       ;; Constants from our own header, reached via :c-include-paths.
+       (eval `(with-ffi #f (:c-headers ("ffi-const.h")
+                            :c-include-paths (,c-dir))
+                (define-c-constant FFI-TEST-MAX-VALUE)
+                (define-c-constant FFI-TEST-NEG)
+                (define-c-constant FFI-TEST-GREETING 'c-string)
+                (define-c-constant FFI-TEST-BLUE 'int)
+                (define-c-constant FFI-TEST-DOUBLE 'double)
+                (define-c-constant FFI-TEST-NEG-DOUBLE 'double)
+                (define-c-constant FFI-TEST-FLOAT 'float)
+                (define-c-constant FFI-TEST-TENTH-D 'double)
+                (define-c-constant FFI-TEST-TENTH-F 'float)
+                (define-c-constant FFI-TEST-INT-AS-DOUBLE 'double)
+                (define-c-constant FFI-TEST-GREEN
+                  (make-c-enum-type 'ffi_test_color <int16> '()))
+                (define-c-constant FFI-TEST-CHAR <c-char>)
+                (define-c-constant FFI-TEST-TRUE <c-bool>))
+             (current-module))
+       ;; Flonum constants from the system header.
+       (eval '(with-ffi #f (:c-headers ("float.h"))
+                (define-c-constant DBL-EPSILON 'double)
+                (define-c-constant FLT-EPSILON 'float)
+                (define-c-constant DBL-MAX <double>))
+             (current-module))
+       (eval '(with-ffi #f (:c-headers ("stdio.h"))
+                (define-c-constant SEEK-SET <c-bool>))
+             (current-module)))
 
-  (test* "define-c-constant binds a constant" (test-error <error>)
-         (eval '(set! EOF 0) (current-module)))
+     (test* (tname "define-c-constant, type omitted") 8 CHAR-BIT)
+     (test* (tname "define-c-constant, name translation") 2 SEEK-END)
+     (test* (tname "define-c-constant, negative value") -1 EOF)
+     (test* (tname "define-c-constant, user header") 65535 FFI-TEST-MAX-VALUE)
+     (test* (tname "define-c-constant, parenthesized macro") -3 FFI-TEST-NEG)
+     (test* (tname "define-c-constant, c-string") "hello, ffi"
+            FFI-TEST-GREETING)
+     (test* (tname "define-c-constant, enum member") 2 FFI-TEST-BLUE)
+     (test* (tname "define-c-constant, double") 2.5 FFI-TEST-DOUBLE)
+     (test* (tname "define-c-constant, negative double") -0.125
+            FFI-TEST-NEG-DOUBLE)
+     (test* (tname "define-c-constant, float") 0.75 FFI-TEST-FLOAT)
+     (test* (tname "define-c-constant, float is a flonum") #t
+            (flonum? FFI-TEST-FLOAT))
+     (test* (tname "define-c-constant, double keeps double precision") 0.1
+            FFI-TEST-TENTH-D)
+     (test* (tname "define-c-constant, float rounds to float precision")
+            (let1 v (make-f32vector 1 0.1) (f32vector-ref v 0))
+            FFI-TEST-TENTH-F)
+     (test* (tname "define-c-constant, integer macro as double") 3.0
+            FFI-TEST-INT-AS-DOUBLE)
+     (test* (tname "define-c-constant, integer macro as double is a flonum")
+            #t (flonum? FFI-TEST-INT-AS-DOUBLE))
+     (test* (tname "define-c-constant, enum type") 1 FFI-TEST-GREEN)
+     (test* (tname "define-c-constant, c-bool") '(#t #f)
+            (list FFI-TEST-TRUE SEEK-SET))
+     (test* (tname "define-c-constant, c-char") #\A FFI-TEST-CHAR)
+     (test* (tname "define-c-constant, DBL_EPSILON") (flonum-epsilon)
+            DBL-EPSILON)
+     (test* (tname "define-c-constant, FLT_EPSILON") (expt 2.0 -23)
+            FLT-EPSILON)
+     (test* (tname "define-c-constant, DBL_MAX") (greatest-positive-flonum)
+            DBL-MAX)
 
-  (test* "define-c-constant rejects pointer type"
-         (test-error <error> #/pointer, array and function types/)
-         (eval '(with-ffi #f (:subsystem :stub :c-headers ("stdio.h"))
-                  (define-c-constant EOF 'int*))
-               (current-module)))
+     (test* (tname "define-c-constant binds a constant") (test-error <error>)
+            (eval '(set! EOF 0) (current-module)))
+     (test* (tname "define-c-constant binding is constant") #t
+            ((with-module gauche.internal gloc-const?)
+             ((with-module gauche.internal find-binding)
+              (current-module) 'EOF #f)))
+     (test* (tname "define-c-constant, later-compiled reference") -1
+            ((eval '(lambda () EOF) (current-module))))
 
-  (test* "define-c-constant outside with-ffi" (test-error <error>)
-         (eval '(define-c-constant EOF) (current-module)))
+     (test* (tname "define-c-constant rejects pointer type")
+            (test-error <error> #/pointer, array and function types/)
+            (let1 m (make-module #f)
+              (parameterize ([default-ffi-subsystem ,subsystem])
+                (eval '(use gauche.ffi) m)
+                (eval '(with-ffi #f (:c-headers ("stdio.h"))
+                         (define-c-constant EOF 'int*))
+                      m))))
 
-  (when (ffi-subsystem-available? :native)
-    (test* "define-c-constant is not supported in native subsystem yet"
-           (test-error <error> #/not supported in the native ffi subsystem/)
-           (eval '(with-ffi #f (:subsystem :native)
-                    (define-c-constant EOF 'int))
-                 (current-module))))
-  )
+     (test* (tname "define-c-constant outside with-ffi") (test-error <error>)
+            (eval '(define-c-constant EOF) (current-module)))
+     ))
+
+(define-const-test-module ffi-const-stub-sandbox :stub)
+(when (ffi-subsystem-available? :native)
+  (eval '(define-const-test-module ffi-const-native-sandbox :native)
+        (current-module)))
+
+;; Tests specific to the native subsystem.
+(when (ffi-subsystem-available? :native)
+  (define-module ffi-const-native-error-sandbox
+    (use gauche.test)
+    (use gauche.ffi)
+    (use gauche.native-type)
+    (use file.util)
+
+    (define c-dir (build-path (sys-dirname (current-load-path)) "c"))
+
+    ;; The constants are available to the body forms at load time.
+    ;; (The stub subsystem evaluates the body before the constants.)
+    (let1 m (make-module #f)
+      (eval '(use gauche.ffi) m)
+      (eval '(with-ffi #f (:subsystem :native :c-headers ("stdio.h"))
+               (define-c-constant EOF 'int)
+               (define eof-in-body (list EOF)))
+            m)
+      (test* "define-c-constant (native), used in body" '(-1)
+             (eval 'eof-in-body m)))
+
+    (define-syntax native-const-error
+      (syntax-rules ()
+        [(_ name rx headers ccst ...)
+         (test* name (test-error <error> rx)
+                (eval `(with-ffi #f (:subsystem :native
+                                     :c-headers headers
+                                     :c-include-paths (,c-dir))
+                         ccst ...)
+                      (current-module)))]))
+
+    (native-const-error "define-c-constant (native), fixnum overflow"
+                        #/LONG-MAX \(C name: LONG_MAX\) doesn't fit in a fixnum/
+                        ("limits.h")
+                        (define-c-constant LONG-MAX))
+    (native-const-error "define-c-constant (native), non-string as c-string"
+                        #/FFI-TEST-MAX-VALUE .* is not a string constant/
+                        ("ffi-const.h")
+                        (define-c-constant FFI-TEST-MAX-VALUE 'c-string))
+    (native-const-error "define-c-constant (native), string as integer"
+                        #/FFI-TEST-GREETING .* is a string constant/
+                        ("ffi-const.h")
+                        (define-c-constant FFI-TEST-GREETING 'int))
+    (native-const-error "define-c-constant (native), undefined name"
+                        #/NO-SUCH-CONST \(C name: NO_SUCH_CONST\) is not found in the headers/
+                        ("stdio.h")
+                        (define-c-constant NO-SUCH-CONST))
+    (native-const-error "define-c-constant (native), function name"
+                        #/fopen \(C name: fopen\) is not a constant/
+                        ("stdio.h")
+                        (define-c-constant fopen))
+    (native-const-error "define-c-constant (native), variable name"
+                        #/stdin \(C name: stdin\) is not a constant/
+                        ("stdio.h")
+                        (define-c-constant stdin))
+    (native-const-error "define-c-constant (native), missing header"
+                        #/Can't process the headers given by :c-headers/
+                        ("stdio.h" "no-such-header-for-ffi-test.h")
+                        (define-c-constant EOF 'int))
+    (native-const-error "define-c-constant (native), multiple failures"
+                        #/NO-SUCH-1 .*\n.*NO-SUCH-2/
+                        ("stdio.h")
+                        (define-c-constant NO-SUCH-1)
+                        (define-c-constant NO-SUCH-2))
+    ))
 
 ;;;----------------------------------------------------------
 (test-section "define-c-enum")

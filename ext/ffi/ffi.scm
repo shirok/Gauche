@@ -135,7 +135,16 @@
 ;;  :c-headers option of with-ffi.
 ;;
 ;;  <type> is an evaluated expression yielding a typespec, and tells how
-;;  the C value is boxed.  It defaults to <fixnum>.
+;;  the C value is boxed.  It defaults to <fixnum>.  Integral types,
+;;  <c-char>, <c-bool>, <c-string>, flonum types and enum types are
+;;  supported.  Pointer, array, function, struct and union types, as well
+;;  as <ScmObj>, are not.
+;;
+;;  With the :stub subsystem, the values are taken by compiling a stub
+;;  with the C compiler.  With the :native subsystem, the headers are
+;;  preprocessed by the C preprocessor (same one with which Gauche is
+;;  compiled; see gauche-config) and parsed by lang.c at load time.
+;;  If lang.c can't parse the headers, use (:subsystem :stub) instead.
 ;;
 ;;  A C enum can be reified as a whole:
 ;;
@@ -155,6 +164,10 @@
 ;;  the enum's size and alignment.  It must match how the compiler handles
 ;;  the enum.  If no explicit <base-type> is given, we use
 ;;  `gauche.native-type#default-c-enum-base-type`.
+;;
+;;  The :native subsystem doesn't support define-c-enum yet; a with-ffi
+;;  form containing define-c-enum uses the :stub subsystem unless
+;;  :subsystem is given explicitly.
 ;;
 
 ;;;
@@ -316,11 +329,9 @@
         (define subsystem
           (cond [(get-keyword :subsystem (unwrap-syntax options) #f)]
                 [((with-module gauche.internal precompiling?)) :aot]
-                ;; TRANSIENT: native subsystem cannot handle constants and enums
-                ;; yet, so we force stub subsystem if we have any.
-                [(any (^[cdef] (memq (car cdef)
-                                     '(define-c-constant define-c-enum)))
-                      cdefs)
+                ;; TRANSIENT: native subsystem cannot handle enums yet,
+                ;; so we force stub subsystem if we have any.
+                [(any (^[cdef] (eq? (car cdef) 'define-c-enum)) cdefs)
                  :stub]
                 [else (default-ffi-subsystem)]))
 

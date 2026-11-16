@@ -49,10 +49,12 @@
 ;; (with-native-ffi dlo-var dlo-expr options cdef-specs forms)
 ;;
 ;; cdef-specs is ((name . expr) ...) where expr evaluates to a
-;; <foreign-c-function> or <foreign-c-callback>.
+;; <foreign-c-function>, <foreign-c-callback> or <foreign-c-constant>.
 ;;
 ;; The provisional (define name) bindings and the body lambdas are
-;; emitted as begin-level forms.  All callbacks are batched into a
+;; emitted as begin-level forms.  Constants are computed by a single call
+;; of %define-native-constants!, placed right after the provisional
+;; bindings and before the body forms.  All callbacks are batched into a
 ;; single ScmFFICallbackContext which is anchored in a hidden
 ;; module-level binding so the foreign side's invisible references
 ;; cannot dangle.
@@ -91,13 +93,31 @@
                                       ctx ,i (list-ref ,instances-var ,i)))))
                           (iota (length ccb-specs)) ccb-specs)
                    ctx))))
-          (unless (and (null? cst-specs) (null? cen-specs))
-            (error "define-c-constant and define-c-enum are not supported \
+          ;; Constants are computed at load time, right after the
+          ;; provisional defines, so that the body forms can use them.
+          ;; They don't need the dlobj.  The result is bound to a dummy
+          ;; variable to keep the expansion definitions-only.
+          (define (emit-cst-define)
+            (if (null? cst-specs)
+              '()
+              (list
+               (quasirename r
+                 `(define ,(gensym "%ffi-native-csts-")
+                    (%define-native-constants!
+                     (current-module)
+                     ;; cdef-specs come in reverse order of the source;
+                     ;; we restore it so that errors are reported in order.
+                     (list ,@(map (cut ~ <>'expr) (reverse cst-specs)))
+                     ',(get-keyword :c-headers options '())
+                     ',(get-keyword :c-include-paths options '())))))))
+          (unless (null? cen-specs)
+            (error "define-c-enum is not supported \
                     in the native ffi subsystem yet."))
           (quasirename r
             `(begin
                (,%require. "gauche/ffi/native")
                ,@(map (^s (quasirename r `(define ,(~ s'name)))) cdef-specs)
+               ,@(emit-cst-define)
                ,@forms
                (define ,ctx-var
                  (let ([,dlo-var ,dlo-expr])
@@ -228,6 +248,169 @@
                      arg-canons arg-coerce args)
                 ret-canon)))))
       (%procedure-copy raw-proc tag-info))))
+
+;;;
+;;; Constants
+;;;
+;;; define-c-constant is handled at load time.  For all the constants
+;;; in one with-ffi form, we synthesize a single translation unit
+;;;
+;;;    #include <hdr1>
+;;;    ...
+;;;    ScmSmallInt Scm__FFI_constant_0 = CHAR_BIT;
+;;;    const char* Scm__FFI_constant_1 = SOME_STRING;
+;;;    ...
+;;;
+;;; grok it with lang.c, take the initial value of each dummy variable,
+;;; and store it into the provisional binding, then make the binding
+;;; constant.  This requires C preprocessor at load time.
+
+(autoload lang.c.grokker c-grok-string c-variable-initial-value
+          c-get-definition-or-declaration
+          <c-grok-error> <c-unevaluatable-initializer>)
+(autoload lang.c.parser c-parser-gauche-typedefs <c-parser-error>)
+
+(define %find-binding (with-module gauche.internal find-binding))
+(define %gloc-set! (with-module gauche.internal gloc-set!))
+(define %gloc-make-constant! (with-module gauche.internal gloc-make-constant!))
+
+;; Returns the C type text to declare the dummy variable for the
+;; constant CCST.  The typedefs given by c-parser-gauche-typedefs cover
+;; the non-basic type names, e.g. ScmSmallInt or u_long.
+(define (%constant-c-type ccst)
+  (define (unsupported what)
+    (errorf "define-c-constant: ~a: ~a not supported"
+            (~ ccst'scheme-name) what))
+  (let1 type (~ ccst'type)
+    (cond
+     [(c-pointer-like-type? type)
+      (unsupported "pointer, array and function types are")]
+     ;; An enum is declared as its base type, as stubgen does.
+     [(is-a? type <c-enum-type>)
+      (~ (c-enum-type-base-type type)'c-type-name)]
+     [(or (memq type (list <fixnum> <c-char> <c-bool> <c-string>
+                           <float> <double> <longdouble>))
+          (and (not (eq? type <ScmObj>))
+               (not (eq? type <void>))
+               (not (is-a? type <c-struct-type>))
+               (not (is-a? type <c-union-type>))
+               (subtype? type <integer>)))
+      (~ type'c-type-name)]
+     [else (unsupported (format "type ~a is" (~ type'name)))])))
+
+;; Convert the value VAL, as c-variable-initial-value returns, to the
+;; Scheme value of the constant CCST.  Raises an error if it isn't
+;; appropriate for the constant's type.
+(define (%convert-constant-value ccst val)
+  (define type (~ ccst'type))
+  (define (bad msg)
+    (errorf "~a (C name: ~a) ~a, but got: ~s"
+            (~ ccst'scheme-name) (~ ccst'c-name) msg val))
+  (cond
+   [(eq? type <c-string>)
+    (if (string? val) val (bad "is not a string constant"))]
+   [(string? val) (bad "is declared as a non-string type")]
+   [(eq? type <c-bool>) (not (eqv? val 0))]
+   [(eq? type <c-char>) (integer->char val)]
+   [(eq? type <fixnum>)
+    (if (fixnum? val) val (bad "doesn't fit in a fixnum"))]
+   [else val]))
+
+;; Translate a <c-unevaluatable-initializer> condition E, raised while
+;; evaluating the dummy variable for CCST, to a message for the user.
+;; If the offending expression is the constant's C name itself, cpp
+;; didn't replace it, so it isn't a macro.  It's either not declared at
+;; all, or declared as a function or a variable.  (An enumerator would
+;; have been evaluated.)
+;; Returns the message and a flag whether to suggest :subsystem :stub.
+(define (%unevaluatable-constant-message ctx ccst e)
+  (define names #"~(~ ccst'scheme-name) (C name: ~(~ ccst'c-name))")
+  (match (~ e'expression)
+    [('ident (? (cut equal? <> (string->symbol (~ ccst'c-name)))))
+     (if (c-get-definition-or-declaration ctx (string->symbol (~ ccst'c-name)))
+       (values #"~names is not a constant" #f)
+       (values #"~names is not found in the headers given by :c-headers"
+               #f))]
+    ;; A string value can't be converted to a non-string type.
+    [(? string?)
+     (values #"~names is a string constant; declare its type as c-string"
+             #f)]
+    [_ (values #"Can't evaluate the value of ~|names|: ~(condition-message e)"
+               #t)]))
+
+;; Called at load time from the expansion of with-native-ffi.
+;; MOD is the module where the provisional bindings live.  CCST-INSTANCES
+;; is a list of <foreign-c-constant>.
+;; Returns the list of the constant names.
+(define (%define-native-constants! mod ccst-instances c-headers
+                                   c-include-paths)
+  (define c-types (map %constant-c-type ccst-instances))
+  (define dummy-names
+    (map (^i (string->symbol #"Scm__FFI_constant_~i"))
+         (iota (length ccst-instances))))
+  (define src
+    (with-output-to-string
+      (^[]
+        (dolist [hdr c-headers]
+          (print #"#include <~|hdr|>"))
+        (for-each (^[ccst ctype dname]
+                    (print #"~|ctype| ~|dname| = ~(~ ccst'c-name);"))
+                  ccst-instances c-types dummy-names))))
+  (define stub-hint
+    "If lang.c can't handle it, try :subsystem :stub in with-ffi.")
+  (define ctx
+    (guard (e [(<c-grok-error> e)
+               ;; If cpp fails, :stub won't help, so we suggest it only
+               ;; when lang.c fails to parse the headers.
+               (errorf "define-c-constant: Can't process the headers given \
+                        by :c-headers ~s: ~a~a"
+                       c-headers (condition-message e)
+                       (if (condition-has-type? e <c-parser-error>)
+                         #"\n~stub-hint"
+                         ""))])
+      (c-grok-string src
+                     :typedefs (c-parser-gauche-typedefs)
+                     :cpp-include-paths c-include-paths)))
+  ;; We collect all the failures and report them at once.
+  (define failures '())                 ; list of messages
+  (define suggest-stub? #f)
+  (define (fail! msg) (push! failures msg))
+  (define (unevaluatable! ccst e)
+    (receive (msg hint?) (%unevaluatable-constant-message ctx ccst e)
+      (when hint? (set! suggest-stub? #t))
+      (fail! msg)
+      #f))
+  ;; NB: We don't use map, for the failures should be in order.
+  (define vals
+    (let loop ([ccsts ccst-instances] [dnames dummy-names] [r '()])
+      (if (null? ccsts)
+        (reverse r)
+        (let* ([ccst (car ccsts)]
+               [v (c-variable-initial-value ctx (car dnames)
+                                            :on-failure (cut unevaluatable!
+                                                             ccst <>))]
+               [cv (and v
+                        (guard (e [(error? e)
+                                   (fail! (condition-message e)) #f])
+                          (list (%convert-constant-value ccst v))))])
+          (loop (cdr ccsts) (cdr dnames) (cons cv r))))))
+  (unless (null? failures)
+    (let1 msgs (reverse failures)
+      (errorf "define-c-constant: ~a~a"
+              (if (length=? msgs 1)
+                (car msgs)
+                (format "failed to define ~a constants:~a" (length msgs)
+                        (string-join msgs "\n  " 'prefix)))
+              (if suggest-stub? #"\n~stub-hint" ""))))
+  (for-each (^[ccst v]
+              (let1 g (%find-binding mod (~ ccst'scheme-name) #f)
+                (unless g
+                  (errorf "[internal] define-c-constant: provisional binding \
+                           of ~a isn't found in ~s" (~ ccst'scheme-name) mod))
+                (%gloc-set! g (car v))
+                (%gloc-make-constant! g)))
+            ccst-instances vals)
+  (map (cut ~ <>'scheme-name) ccst-instances))
 
 ;; Callbacks no longer flow through make-native-ffi-proc; with-native-ffi
 ;; batches them into a single ScmFFICallbackContext.  See the helpers
