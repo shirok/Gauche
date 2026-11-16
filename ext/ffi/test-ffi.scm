@@ -508,7 +508,7 @@
                         ("stdio.h")
                         (define-c-constant fopen))
     (native-const-error "define-c-constant (native), variable name"
-                        #/stdin \(C name: stdin\) is not a constant/
+                        #/\(C name: stdin\)( is not a constant|: Unevaluatable initializer)/
                         ("stdio.h")
                         (define-c-constant stdin))
     (native-const-error "define-c-constant (native), missing header"
