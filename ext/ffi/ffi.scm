@@ -164,11 +164,6 @@
 ;;  the enum's size and alignment.  It must match how the compiler handles
 ;;  the enum.  If no explicit <base-type> is given, we use
 ;;  `gauche.native-type#default-c-enum-base-type`.
-;;
-;;  The :native subsystem doesn't support define-c-enum yet; a with-ffi
-;;  form containing define-c-enum uses the :stub subsystem unless
-;;  :subsystem is given explicitly.
-;;
 
 ;;;
 ;;; Classes to handle foreign declaratoins.
@@ -220,6 +215,8 @@
    (expr :init-keyword :expr)  ; S-expr to create <foreign-*> class
    (body-name :init-keyword :body-name)  ; for callbacks, keep body name
    (enum-type-expr :init-keyword :enum-type-expr) ; (make-c-enum-type ...)
+   (enumerators :init-keyword :enumerators    ; for enums, Scheme names of
+                :init-value '())              ;  the enumerators
    ))
 
 ;; utility
@@ -329,10 +326,6 @@
         (define subsystem
           (cond [(get-keyword :subsystem (unwrap-syntax options) #f)]
                 [((with-module gauche.internal precompiling?)) :aot]
-                ;; TRANSIENT: native subsystem cannot handle enums yet,
-                ;; so we force stub subsystem if we have any.
-                [(any (^[cdef] (eq? (car cdef) 'define-c-enum)) cdefs)
-                 :stub]
                 [else (default-ffi-subsystem)]))
 
         ;; cfn-specs is ((name . cfn-expr) ...), where name is a symbol
@@ -362,7 +355,8 @@
                     (make-spec :constant (make-ccst-expr cdef))]
                    [(define-c-enum)
                     (make-spec :enum (make-cenum-expr cdef)
-                               :enum-type-expr (make-cenum-type-expr cdef))]))
+                               :enum-type-expr (make-cenum-type-expr cdef)
+                               :enumerators (cenum-scheme-names cdef))]))
                (reverse cdefs)))
 
         ;; For each define-c-function form, build a runtime
@@ -470,6 +464,13 @@
                          [_ (error "Malformed define-c-enum form:"
                                    cenum-form)])))]
             [_ (error "Malformed define-c-enum form:" cenum-form)]))
+
+        ;; Scheme names of the enumerators of a define-c-enum form.  The
+        ;; :native subsystem needs them to emit provisional bindings.
+        (define (cenum-scheme-names cenum-form)
+          (receive (name tag enumerators base-type-expr)
+              (parse-cenum-form cenum-form)
+            (map car enumerators)))
 
         ;; Creates an expression that builds the enum's <c-enum-type>.  The subsystem
         ;; macro binds <name> to its value ahead of the cdef instances, so

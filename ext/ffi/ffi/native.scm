@@ -52,9 +52,11 @@
 ;; <foreign-c-function>, <foreign-c-callback> or <foreign-c-constant>.
 ;;
 ;; The provisional (define name) bindings and the body lambdas are
-;; emitted as begin-level forms.  Constants are computed by a single call
-;; of %define-native-constants!, placed right after the provisional
-;; bindings and before the body forms.  All callbacks are batched into a
+;; emitted as begin-level forms.  Each define-c-enum's set name is bound
+;; to its provisional <c-enum-type> by define-type, as the :stub subsystem
+;; does.  Then constants and enums are computed by a single call of
+;; %native-ffi-setup!, placed right after those bindings and before the
+;; body forms.  All callbacks are batched into a
 ;; single ScmFFICallbackContext which is anchored in a hidden
 ;; module-level binding so the foreign side's invisible references
 ;; cannot dangle.
@@ -93,31 +95,46 @@
                                       ctx ,i (list-ref ,instances-var ,i)))))
                           (iota (length ccb-specs)) ccb-specs)
                    ctx))))
-          ;; Constants are computed at load time, right after the
+          ;; Provisional bindings of the enumerators, to be filled by
+          ;; %native-ffi-setup!.
+          (define (emit-enumerator-defines)
+            (append-map (^s (map (^n (quasirename r `(define ,n)))
+                                 (~ s'enumerators)))
+                        cen-specs))
+          ;; Bind each enum-set name to its provisional <c-enum-type>.
+          ;; The type is defined without enumerators; %native-ffi-setup!
+          ;; fills them in.
+          (define (emit-enum-type-defines)
+            (map (^s (quasirename r
+                       `(define-type ,(~ s'name) ,(~ s'enum-type-expr))))
+                 cen-specs))
+          ;; Constants and enums are computed at load time, right after the
           ;; provisional defines, so that the body forms can use them.
           ;; They don't need the dlobj.  The result is bound to a dummy
           ;; variable to keep the expansion definitions-only.
-          (define (emit-cst-define)
-            (if (null? cst-specs)
+          ;; NB: cdef-specs come in reverse order of the source; we restore
+          ;; it so that errors are reported in order.
+          (define (emit-setup-define)
+            (if (and (null? cst-specs) (null? cen-specs))
               '()
               (list
                (quasirename r
-                 `(define ,(gensym "%ffi-native-csts-")
-                    (%define-native-constants!
+                 `(define ,(gensym "%ffi-native-setup-")
+                    (%native-ffi-setup!
                      (current-module)
-                     ;; cdef-specs come in reverse order of the source;
-                     ;; we restore it so that errors are reported in order.
                      (list ,@(map (cut ~ <>'expr) (reverse cst-specs)))
+                     (list ,@(map (cut ~ <>'expr) (reverse cen-specs)))
                      ',(get-keyword :c-headers options '())
                      ',(get-keyword :c-include-paths options '())))))))
-          (unless (null? cen-specs)
-            (error "define-c-enum is not supported \
-                    in the native ffi subsystem yet."))
           (quasirename r
             `(begin
                (,%require. "gauche/ffi/native")
-               ,@(map (^s (quasirename r `(define ,(~ s'name)))) cdef-specs)
-               ,@(emit-cst-define)
+               ,@(filter-map (^s (and (not (of-kind? s :enum))
+                                      (quasirename r `(define ,(~ s'name)))))
+                             cdef-specs)
+               ,@(emit-enumerator-defines)
+               ,@(emit-enum-type-defines)
+               ,@(emit-setup-define)
                ,@forms
                (define ,ctx-var
                  (let ([,dlo-var ,dlo-expr])
@@ -264,9 +281,15 @@
 ;;; grok it with lang.c, take the initial value of each dummy variable,
 ;;; and store it into the provisional binding, then make the binding
 ;;; constant.  This requires C preprocessor at load time.
+;;;
+;;; define-c-enum shares the same grok.  The enum-set name is bound to a
+;;; provisional <c-enum-type> at expansion time, with the explicit base
+;;; type or the default one, as the :stub subsystem does; its enumerators
+;;; are filled from the grokked headers.
 
 (autoload lang.c.grokker c-grok-string c-variable-initial-value
-          c-get-definition-or-declaration
+          c-get-definition-or-declaration c-get-tag-type
+          c-context-native-type <c-enumerator>
           <c-grok-error> <c-unevaluatable-initializer>)
 (autoload lang.c.parser c-parser-gauche-typedefs <c-parser-error>)
 
@@ -338,12 +361,93 @@
     [_ (values #"Can't evaluate the value of ~|names|: ~(condition-message e)"
                #t)]))
 
+;; Set the value of the provisionally defined binding NAME in MOD, and
+;; make it constant.  WHAT is used in error messages.
+(define (%bind-native-constant! mod name val what)
+  (let1 g (%find-binding mod name #f)
+    (unless g
+      (errorf "[internal] ~a: provisional binding of ~a isn't found in ~s"
+              what name mod))
+    (%gloc-set! g val)
+    (%gloc-make-constant! g)))
+
+;; Look up the enum of CEN (<foreign-c-enum>) in the grokked context CTX.
+;; Returns the alist of (<scheme-name> <value>) of CEN's enumerators
+;; in its order, suitable to pass to c-enum-type-complete!.
+;; FAIL! is called with a message for each problem; returns #f if there's
+;; any.  HINT! is called if we'd better suggest :subsystem :stub.
+;;
+;; Unlike the :stub subsystem, the enum is identified by its tag (or, for
+;; an anonymous enum, by its first enumerator), and each name must be an
+;; enumerator of that very enum; a macro or an enumerator of another enum
+;; isn't accepted.
+(define (%native-enum-values ctx cen fail! hint!)
+  (define tag (~ cen'tag))
+  (define enumerators (~ cen'enumerators)) ; ((scheme-name . c-name) ...)
+  (define what (if tag #"enum ~tag" "the anonymous enum"))
+  (define (names e) #"~(car e) (C name: ~(cdr e))")
+  (define (lookup-global e)
+    (c-get-definition-or-declaration ctx (string->symbol (cdr e))))
+  ;; Returns the c-type of the enum, or #f
+  (define (find-enum-type)
+    (cond
+     [tag
+      (match (c-get-tag-type ctx tag)
+        [#f (fail! #"~what is not found in the headers given by :c-headers")
+            #f]
+        [('.enum _ _ #f . _)
+         (fail! #"~what is declared but not defined in the headers")
+         #f]
+        [(and ('.enum . _) ctype) ctype]
+        [(kind . _)
+         (fail! (format "~a is not found in the headers given by \
+                         :c-headers, but the tag is used for ~a"
+                        what (if (eq? kind '.struct) "a struct" "a union")))
+         #f])]
+     [(null? enumerators)
+      (fail! "an anonymous enum needs at least one enumerator to be located")
+      #f]
+     [else
+      (let1 g (lookup-global (car enumerators))
+        (if (is-a? g <c-enumerator>)
+          (~ g'type)
+          (begin
+            (fail! #"~(names (car enumerators)) is not an enumerator \
+                     in the headers given by :c-headers")
+            #f)))]))
+  (define (enum-alist ctype)
+    (guard (e [(<c-unevaluatable-initializer> e)
+               (hint!)
+               (fail! #"Can't evaluate the enumerators of ~|what|: \
+                        ~(condition-message e)")
+               #f])
+      (and-let1 nt (c-context-native-type ctx ctype)
+        (c-enum-type-enumerator-alist nt))))
+  (and-let* ([ctype (find-enum-type)]
+             [alist (enum-alist ctype)])
+    (let1 vals
+        (map (^e (if-let1 p (assq (string->symbol (cdr e)) alist)
+                   (list (car e) (cdr p))
+                   (let1 g (lookup-global e)
+                     (fail! (cond
+                             [(not g)
+                              #"~(names e) is not found as an enumerator \
+                                in the headers given by :c-headers"]
+                             [(is-a? g <c-enumerator>)
+                              #"~(names e) is not an enumerator of ~what, \
+                                but of another enum"]
+                             [else #"~(names e) is not an enumerator"]))
+                     #f)))
+             enumerators)
+      (and (every identity vals) vals))))
+
 ;; Called at load time from the expansion of with-native-ffi.
 ;; MOD is the module where the provisional bindings live.  CCST-INSTANCES
-;; is a list of <foreign-c-constant>.
-;; Returns the list of the constant names.
-(define (%define-native-constants! mod ccst-instances c-headers
-                                   c-include-paths)
+;; is a list of <foreign-c-constant>, and CENUM-INSTANCES is a list of
+;; <foreign-c-enum>.  The headers are grokked once for all of them.
+;; Returns the list of the defined names.
+(define (%native-ffi-setup! mod ccst-instances cenum-instances
+                            c-headers c-include-paths)
   (define c-types (map %constant-c-type ccst-instances))
   (define dummy-names
     (map (^i (string->symbol #"Scm__FFI_constant_~i"))
@@ -358,13 +462,18 @@
                   ccst-instances c-types dummy-names))))
   (define stub-hint
     "If lang.c can't handle it, try :subsystem :stub in with-ffi.")
+  ;; Prefix of error messages that aren't specific to a definition.
+  (define form-name
+    (cond [(null? cenum-instances) "define-c-constant"]
+          [(null? ccst-instances) "define-c-enum"]
+          [else "with-ffi"]))
   (define ctx
     (guard (e [(<c-grok-error> e)
                ;; If cpp fails, :stub won't help, so we suggest it only
                ;; when lang.c fails to parse the headers.
-               (errorf "define-c-constant: Can't process the headers given \
+               (errorf "~a: Can't process the headers given \
                         by :c-headers ~s: ~a~a"
-                       c-headers (condition-message e)
+                       form-name c-headers (condition-message e)
                        (if (condition-has-type? e <c-parser-error>)
                          #"\n~stub-hint"
                          ""))])
@@ -372,16 +481,16 @@
                      :typedefs (c-parser-gauche-typedefs)
                      :cpp-include-paths c-include-paths)))
   ;; We collect all the failures and report them at once.
-  (define failures '())                 ; list of messages
+  (define failures '())                 ; list of (form-name . message)
   (define suggest-stub? #f)
-  (define (fail! msg) (push! failures msg))
+  (define (hint!) (set! suggest-stub? #t))
   (define (unevaluatable! ccst e)
     (receive (msg hint?) (%unevaluatable-constant-message ctx ccst e)
-      (when hint? (set! suggest-stub? #t))
-      (fail! msg)
+      (when hint? (hint!))
+      (push! failures (cons "define-c-constant" msg))
       #f))
   ;; NB: We don't use map, for the failures should be in order.
-  (define vals
+  (define cst-vals
     (let loop ([ccsts ccst-instances] [dnames dummy-names] [r '()])
       (if (null? ccsts)
         (reverse r)
@@ -391,26 +500,55 @@
                                                              ccst <>))]
                [cv (and v
                         (guard (e [(error? e)
-                                   (fail! (condition-message e)) #f])
+                                   (push! failures
+                                          (cons "define-c-constant"
+                                                (condition-message e)))
+                                   #f])
                           (list (%convert-constant-value ccst v))))])
           (loop (cdr ccsts) (cdr dnames) (cons cv r))))))
+  ;; For each enum, the list of (scheme-name value), or #f on failure.
+  ;; The provisional <c-enum-type> is completed here; it checks that the
+  ;; values fit in the base type.
+  (define enum-vals
+    (let loop ([cens cenum-instances] [r '()])
+      (if (null? cens)
+        (reverse r)
+        (let* ([cen (car cens)]
+               [prefix #"define-c-enum ~(~ cen'scheme-name)"]
+               [fail! (^[msg] (push! failures (cons prefix msg)))]
+               [vals (%native-enum-values ctx cen fail! hint!)]
+               [vals (and vals
+                          (guard (e [(error? e)
+                                     (fail! (condition-message e)) #f])
+                            (c-enum-type-complete! (~ cen'type) vals
+                                                   (~ cen'scheme-name))
+                            vals))])
+          (loop (cdr cens) (cons vals r))))))
   (unless (null? failures)
-    (let1 msgs (reverse failures)
-      (errorf "define-c-constant: ~a~a"
-              (if (length=? msgs 1)
-                (car msgs)
-                (format "failed to define ~a constants:~a" (length msgs)
-                        (string-join msgs "\n  " 'prefix)))
+    (let* ([fs (reverse failures)]
+           [prefixes (delete-duplicates (map car fs))])
+      (errorf "~a: ~a~a"
+              (if (length=? prefixes 1) (car prefixes) form-name)
+              (cond [(length=? fs 1) (cdar fs)]
+                    [(length=? prefixes 1)
+                     (format "~a errors:~a" (length fs)
+                             (string-join (map cdr fs) "\n  " 'prefix))]
+                    [else
+                     (format "~a errors:~a" (length fs)
+                             (string-join (map (^f #"~(car f): ~(cdr f)") fs)
+                                          "\n  " 'prefix))])
               (if suggest-stub? #"\n~stub-hint" ""))))
   (for-each (^[ccst v]
-              (let1 g (%find-binding mod (~ ccst'scheme-name) #f)
-                (unless g
-                  (errorf "[internal] define-c-constant: provisional binding \
-                           of ~a isn't found in ~s" (~ ccst'scheme-name) mod))
-                (%gloc-set! g (car v))
-                (%gloc-make-constant! g)))
-            ccst-instances vals)
-  (map (cut ~ <>'scheme-name) ccst-instances))
+              (%bind-native-constant! mod (~ ccst'scheme-name) (car v)
+                                      "define-c-constant"))
+            ccst-instances cst-vals)
+  (for-each (^[cen vals]
+              (dolist [v vals]
+                (%bind-native-constant! mod (car v) (cadr v)
+                                        "define-c-enum")))
+            cenum-instances enum-vals)
+  (append (map (cut ~ <>'scheme-name) ccst-instances)
+          (append-map (^[vals] (map car vals)) enum-vals)))
 
 ;; Callbacks no longer flow through make-native-ffi-proc; with-native-ffi
 ;; batches them into a single ScmFFICallbackContext.  See the helpers
