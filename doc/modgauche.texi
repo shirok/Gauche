@@ -10727,11 +10727,6 @@ literal constant with @code{define-constant}.  If you do so, however,
 you have to change the literal value whenever a new revision of C API
 changes the value.  Also, it would be cumbersome if different platforms
 use different values.
-
-NB: Currently, this form does not work with the @code{:native} subsystem.
-If you use this form in @code{with-ffi} without specifying the subsystem,
-the @code{:stub} subsystem is used for the @code{with-ffi} form
-even if the platform supports @code{:native} subsystem.
 @end defmac
 
 @defmac define-c-enum name (enumerator @dots{}) :optional base-type
@@ -10791,11 +10786,6 @@ We try to guess the appropriate type as much as possible, with
 If it is not what you want, you can give
 a native type object or native type signatire to the optional
 @var{base-type} argument.
-
-NB: Currently, this form does not work with the @code{:native} subsystem.
-If you use this form in @code{with-ffi} without specifying the subsystem,
-the @code{:stub} subsystem is used for the @code{with-ffi} form
-even if the platform supports @code{:native} subsystem.
 @end defmac
 
 
