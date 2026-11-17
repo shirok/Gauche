@@ -44,7 +44,11 @@
           c-grok-file
           c-grok-string
 
+          <c-global> <c-variable> <c-function> <c-enumerator>
+
           c-get-definition-or-declaration
+          c-get-tag-type
+          c-context-native-type
           c-variable-initial-value
           <c-unevaluatable-initializer>)
   )
@@ -55,6 +59,10 @@
    ;; Global typedefs the parser has seen; symbol -> c-type.
    ;; Used to resolve type names in casts and sizeof.
    (typedefs :init-value #f)
+   ;; Global struct/union/enum tags the parser has seen;
+   ;; symbol -> tag spec, (<kind> <tag> <members>) or
+   ;; (enum <tag> <members> <base-type>).  See c-get-tag-type.
+   (tags :init-value #f)
    ;; Memo table for c-type->native-type, so that the same struct/union/enum
    ;; is converted to the same native type.
    (native-types :init-form (make-hash-table 'eq?))
@@ -182,7 +190,8 @@
                                        :typedefs typedefs)
          (dolist [form (proc parser)]
            (c-grok-parser-output-1 form))
-         (set! (~ (current-c-context)'typedefs) (~ parser'typedefs)))))))
+         (set! (~ (current-c-context)'typedefs) (~ parser'typedefs))
+         (set! (~ (current-c-context)'tags) (~ parser'tags)))))))
 
 ;; API
 (define (c-grok-file file :key (cpp #f)
@@ -201,9 +210,20 @@
                cpp-include-paths cpp-definitions typedefs))
 
 ;; API
-;;   Look up definition or declaration
+;;   Lookup definition or declaration.  Returns an instance of <c-global>
+;;   (<c-variable>, <c-function>, or <c-enumerator>) or #f.
 (define-method c-get-definition-or-declaration ((ctx <c-context>) name)
   (hash-table-get (~ ctx'globals) name #f))
+
+;; API
+;;   Look up a file-scope struct/union/enum tag NAME.  Returns its c-type,
+;;   (.struct NAME () ...), (.union NAME () ...) or (.enum NAME () ...),
+;;   or #f.  The returned type may be incomplete.
+;;   The type shares the identity with the ones in declarations.
+(define-method c-get-tag-type ((ctx <c-context>) name)
+  (and-let* ([tags (~ ctx'tags)]
+             [spec (hash-table-get tags name #f)])
+    (grok-c-type `((,spec)) (~ ctx'typedefs))))
 
 ;; Convert the string of C integer constant, as the lexer returns, to
 ;; an exact integer.  The suffix is already validated by the lexer.
@@ -242,10 +262,15 @@
 ;; Type information for evaluation
 ;;
 
-;; Convert c-type to native type, using the memo table in CTX.
-;; EVAL-CONST is to evaluate constant expressions in the type, e.g. array
-;; dimensions; see c-type->native-type.
-(define (c-context-native-type ctx type eval-const)
+;; API
+;;   Convert c-type TYPE to a native type, using the memo table in CTX.
+;;   Returns #f if TYPE can't be converted. Cf. c-type->native-type.
+;;   EVAL-CONST is to evaluate constant expressions in the type, e.g. array
+;;   dimensions and enumerator values.  By default, they're evaluated in
+;;   CTX. <c-unevaluatable-initializer> may be thrown.
+(define (c-context-native-type ctx type
+                               :optional (eval-const
+                                          (cut c-eval-initializer ctx <>)))
   (c-type->native-type type eval-const (~ ctx'native-types)))
 
 ;; Returns the size of c-type, or #f if we don't know it, or the type

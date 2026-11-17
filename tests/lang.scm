@@ -1237,4 +1237,76 @@
            (c-variable-initial-value ctx 'x :on-failure 'oops)))
   )
 
+;; Tags, global kinds, and native types
+(let ()
+  (define ctx
+    (c-grok-string
+     (string-join
+      '("enum color { RED, GREEN = 5, BLUE };"
+        "enum neg { N = -1, M };"
+        "enum big { B1 = 0xffffffffffffffffull };"
+        "enum fixed : unsigned char { F1 };"
+        "enum fwd_e : long;"
+        "struct s { int a; enum color c; };"
+        "struct fwd;"
+        "union u { int i; };"
+        "typedef enum { AX, AY = 3 } anon_t;"
+        "int v = 1;"
+        "int f(void) { return 0; }")
+      "\n")))
+  (define (tag-kind name)
+    (and-let1 t (c-get-tag-type ctx name) (car t)))
+  (define (tag-native name)
+    (c-context-native-type ctx (c-get-tag-type ctx name)))
+
+  (test* "tag lookup: kinds"
+         '(.enum .enum .struct .struct .union #f #f #f)
+         (map tag-kind '(color fwd_e s fwd u nosuch anon_t v)))
+  (test* "tag lookup: enum type"
+         '(.enum color () ((RED #f) (GREEN (const int "5")) (BLUE #f)) #f)
+         (c-get-tag-type ctx 'color))
+  (test* "tag lookup: incomplete" '(.struct fwd () #f)
+         (c-get-tag-type ctx 'fwd))
+
+  (test* "global kinds"
+         '(<c-enumerator> <c-enumerator> <c-variable> <c-function>)
+         (map (^n (class-name
+                   (class-of (c-get-definition-or-declaration ctx n))))
+              '(RED AX v f)))
+  (test* "global kinds: superclass" #t
+         (every (^n (is-a? (c-get-definition-or-declaration ctx n) <c-global>))
+                '(RED v f)))
+  (test* "enumerator's type" (c-get-tag-type ctx 'color)
+         (~ (c-get-definition-or-declaration ctx 'BLUE)'type))
+
+  (test* "native type of enum tag" '((RED . 0) (GREEN . 5) (BLUE . 6))
+         (~ (tag-native 'color)'enumerator-alist))
+  (test* "native type of enum tag: identity" #t
+         (eq? (tag-native 'color)
+              (c-context-native-type
+               ctx (~ (c-get-definition-or-declaration ctx 'RED)'type))))
+  (test* "native type of anonymous enum" '((AX . 0) (AY . 3))
+         (~ (c-context-native-type
+             ctx (~ (c-get-definition-or-declaration ctx 'AX)'type))
+            'enumerator-alist))
+  (test* "native type of enum tag: base types"
+         '((<uint32> 4) (<int32> 4) (<uint64> 8) (<uint8> 1))
+         (map (^n (let1 nt (tag-native n)
+                    (list (~ ((with-module gauche.native-type
+                                  c-enum-type-base-type)
+                               nt)
+                             'name)
+                          (~ nt'size))))
+              '(color neg big fixed)))
+  (test* "native type of struct tag: identity" #t
+         (eq? (tag-native 's) (tag-native 's)))
+  (test* "native type of enum member of struct" #t
+         (eq? (tag-native 'color)
+              (cadr (assq 'c (~ (tag-native 's)'fields)))))
+  (test* "native type: unevaluatable" '(ident undefined_id)
+         (let1 ctx (c-grok-string "enum e { A = undefined_id };")
+           (guard (e [(<c-unevaluatable-initializer> e) (~ e'expression)])
+             (c-context-native-type ctx (c-get-tag-type ctx 'e)))))
+  )
+
 (test-end)
