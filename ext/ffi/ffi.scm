@@ -183,7 +183,7 @@
 ;;  are not supported yet.  A NULL <c-string> is read as #f, and setting
 ;;  #f stores NULL.
 ;;
-;;  Currently only the :stub subsystem supports define-c-variable.
+;;  Currently the :stub and :aot subsystems support define-c-variable.
 
 ;;;
 ;;; Classes to handle foreign declaratoins.
@@ -279,18 +279,30 @@
 
 ;; Called by the subsystem macros.  Returns a form that binds the name of
 ;; a define-c-variable to an identifier macro, which turns a reference
-;; into a call of the getter, and set! into a call of the setter.  The
-;; accessor names are inserted as raw symbols, so that they refer to the
-;; bindings the subsystem creates in the with-ffi form's module.
+;; into a call of the getter, and set! into a call of the setter.
 ;; R is the renamer of the subsystem macro.
-(define (%cvar-macro-definition spec r)
+;;
+;; The accessors are bound by the subsystem in the with-ffi form's module,
+;; under the names (~ spec'getter-name) and (~ spec'setter-name).  The
+;; transformer renames them with its own renamer, so that they refer to
+;; that module even when the macro is imported and used elsewhere.
+;;
+;; RAW-DEFINE-SYNTAX? is #f for :stub subsystem and #t for :aot subsystem.
+;; If it is #t, it inserts the bare symbol define-syntax rather than
+;; renamed one, so that precomp's handler can see it.
+(define (%cvar-macro-definition spec r raw-define-syntax?)
   (assume (of-kind? spec :variable))
+  ;; NB: The symbols given to the transformer's renamer are inserted with
+  ;; unquote, so that they stay as plain symbols.
   (quasirename r
-    `(define-syntax ,(~ spec'name)
-       (make-id-transformer
-        (syntax-rules+ (set!)
-          [(set! x v) (,(~ spec'setter-name) v)]
-          [x (,(~ spec'getter-name))])))))
+    `(,(if raw-define-syntax? 'define-syntax (r 'define-syntax))
+      ,(~ spec'name)
+      (make-id-transformer
+       (er-macro-transformer
+        (^[f rename compare]
+          (if (and (pair? f) (compare (rename ','set!) (car f)))
+            (list (rename ',(~ spec'setter-name)) (caddr f))
+            (list (rename ',(~ spec'getter-name))))))))))
 
 ;;;
 ;;; Susbsystem selection

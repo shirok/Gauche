@@ -64,7 +64,7 @@
                (,%require. "gauche/ffi/stub")
                ;; The identifier macros of define-c-variable come first,
                ;; so that the body forms can refer to the variables.
-               ,@(map (cut %cvar-macro-definition <> r)
+               ,@(map (cut %cvar-macro-definition <> r #f)
                       (filter (cut of-kind? <> :variable) cdef-specs))
                ,@forms
                ;; We insert dummy binding so that expansion contanis

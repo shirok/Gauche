@@ -1,7 +1,7 @@
 2026-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/ffi.scm (define-c-variable): Support C variable access
-	  for stub subsystem.
+	  for stub and aot subsystem.
 
 2026-11-17  Shiro Kawai  <shiro@acm.org>
 

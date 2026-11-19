@@ -247,4 +247,48 @@
  '(-4 -5 2)
  '((with-module aotsigned probe)))
 
+;; Global C variables.  The identifier macros are precompiled, and have to
+;; work from the defining module, from a body procedure of the with-ffi form,
+;; and from another module that imports them.
+(test-aot-module
+ "aotvar"
+ `((define-module aotvar
+     (use gauche.ffi)
+     (use gauche.native-type)
+     (export probe f-var-int f-var-str))
+   (select-module aotvar)
+   (define-type foo (native-type
+                     '(.struct foo (c::char i::int s::short
+                                            l::long f::float d::double))))
+   (with-ffi (dlopen "./f") ()
+     (define-c-variable f-var-int 'int)
+     (define-c-variable f-var-double 'double)
+     (define-c-variable f-var-str 'c-string)
+     (define-c-variable f-var-null-str 'c-string)
+     (define-c-variable f-var-pfoo (make-c-pointer-type foo))
+     (define-c-function f-var-int-get () 'int)
+     (define (f-var-int-inc!) (set! f-var-int (+ f-var-int 1))))
+   (define (probe)
+     (let* ([init (list f-var-int f-var-double f-var-str f-var-null-str
+                        (native. f-var-pfoo 'i))]
+            [_ (begin (set! f-var-int 100)
+                      (f-var-int-inc!)
+                      (set! f-var-double -0.25)
+                      (set! f-var-str "changed"))])
+       (list init
+             (list f-var-int (f-var-int-get) f-var-double f-var-str)
+             (guard (e [else 'type-error]) (set! f-var-int "x"))))))
+ '(((42 1.5 "initial" #f 1) (101 101 -0.25 "changed") type-error)
+   (101 "changed" 5 5))
+ '(list ((with-module aotvar probe))
+        ;; NB: The import has to be evaluated before the expression
+        ;; using the imported macros is compiled.
+        (begin
+          (eval '(import aotvar) (current-module))
+          (eval '(begin
+                   (set! f-var-int (+ f-var-int -96))
+                   (list (+ f-var-int 96) f-var-str f-var-int
+                         ((with-module aotvar f-var-int-get))))
+                (current-module)))))
+
 (test-end)

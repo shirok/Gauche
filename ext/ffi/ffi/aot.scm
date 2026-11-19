@@ -100,10 +100,6 @@
                         '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs forms)
-        ;; TODO: Support define-c-variable.
-        (and-let1 spec (find (cut of-kind? <> :variable) cdef-specs)
-          (error "define-c-variable isn't supported by the :aot FFI \
-                  subsystem yet:" (~ spec'name)))
         (let1 tm (%current-tmodule)
           (unless tm
             (error "The FFI :aot subsystem can only be used in a source that \
@@ -147,6 +143,10 @@
                  ,@(if variadic?
                      (list (quasirename r `(,%require. "gauche/ffi/stubgen")))
                      '())
+                 ;; The identifier macros of define-c-variable come first,
+                 ;; so that the body forms can refer to the variables.
+                 ,@(map (cut %cvar-macro-definition <> r #t)
+                        (filter (cut of-kind? <> :variable) cdef-specs))
                  ,@forms
                  ;; The dlobj is a runtime value, so the setup call has to be
                  ;; a toplevel form.  That is fine: precomp emits the init
