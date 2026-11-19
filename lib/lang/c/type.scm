@@ -46,6 +46,7 @@
           c-type-narrower?
           c-wider-type
           c-actual-type
+          c-unqualified-type
           c-type->native-type)
   )
 (select-module lang.c.type)
@@ -70,6 +71,7 @@
 ;;            | (.union <tag> (<qual> ...) <fields>)
 ;;            | (.enum <tag> (<qual> ...) <enumerators> <base-type>)
 ;;            | (.type <type-name> (<qual> ...) <c-type>)
+;;            | (.typeof (<qual> ...) <expr>)
 ;;
 ;;   <basic-type> : one of the symbols in *c-basic-types*
 ;;
@@ -104,6 +106,10 @@
 ;;                | #f
 ;;
 ;;   The (.type ...) form is used for typedef'ed types.
+;;
+;;   The (.typeof ...) form is for typeof(<expr>) whose type can't be
+;;   determined by the parser.  It is kept unresolved, and can't be
+;;   converted to a native type.
 ;;
 ;;   Struct, union and enum types have identity.  The parser creates
 ;;   one for each tag in a scope (or each anonymous one), and every
@@ -140,6 +146,7 @@
 ;;               | (struct <tag> <fields>)
 ;;               | (union <tag> <fields>)
 ;;               | (enum <tag> <enumerators> <base-type>)
+;;               | (typeof <c-type>)
 ;;     where the tail after <tag> is shared, as described above.
 ;;
 ;;  NB: attribute and asm may appear in both type-modifier and in core quals
@@ -254,15 +261,18 @@
          (bad)
          `(buildin-va-list ,(reverse quals)))]
       [else
-       (if (symbol? core)
+       (cond
+        [(symbol? core)
          ;; typedef name
          (if-let1 def (and typedef-dict (dict-get typedef-dict core #f))
            `(.type ,core ,(reverse quals) ,def)
-           (error "Unknown typedef name:" core))
-         ;; aggregate
-         (if (or sign size complex?)
-           (bad)
-           (aggregate-type quals core)))]))
+           (error "Unknown typedef name:" core))]
+        [(or sign size complex?) (bad)]
+        [(eq? (car core) 'typeof)
+         (if (null? quals)
+           (cadr core)
+           (attach-qualifier (cadr core) (reverse quals)))]
+        [else (aggregate-type quals core)])]))
 
   (let loop ([words words]
              [quals '()]
@@ -323,6 +333,10 @@
       [(('ident name) . r) (loop r quals sign size complex? name)]
       [((and ((or 'struct 'union 'enum) . _) aggregate) . r)
        (loop r quals sign size complex? aggregate)]
+      [((and ('typeof _) typeof) . r)
+       (if core
+         (bad)
+         (loop r quals sign size complex? typeof))]
       [((and ((or 'attribute 'asm) . _) xqual) . r)
        (loop r (cons xqual quals) sign size complex? core)]
       [else (bad)])))
@@ -345,6 +359,7 @@
     [('.union tag qs . cell) `(.union ,tag ,(merge-quals qual qs) . ,cell)]
     [('.enum tag qs . cell) `(.enum ,tag ,(merge-quals qual qs) . ,cell)]
     [('.type name qs inner) `(.type ,name ,(merge-quals qual qs) ,inner)]
+    [('.typeof qs expr) `(.typeof ,(merge-quals qual qs) ,expr)]
     [(btype qs) `(,btype ,(merge-quals qual qs))]))
 
 ;; Types and its "weight".  The latter is used for type upgrading.
@@ -412,6 +427,34 @@
     [('.type _ quals inner)
      (attach-qualifier (c-actual-type inner) quals)]
     [_ c-type]))
+
+;; Drop the qualifiers of the 'main' type, as typeof_unqual does.
+;; For a typedef'ed type, we keep the typedef name unless the qualifiers
+;; come from the definition.
+;; NB: For struct/union/enum, the tail after quals must be shared.
+(define (c-unqualified-type c-type)
+  (match c-type
+    [('.pointer _ inner) `(.pointer () ,inner)]
+    [('.array inner . rest) `(.array ,(c-unqualified-type inner) ,@rest)]
+    [('.function _ . rest) c-type]      ;function qualifiers are not quals
+    [('.struct tag _ . cell) `(.struct ,tag () . ,cell)]
+    [('.union tag _ . cell) `(.union ,tag () . ,cell)]
+    [('.enum tag _ . cell) `(.enum ,tag () . ,cell)]
+    [('.type name _ inner)
+     (if (qualified? inner)
+       (c-unqualified-type inner)
+       `(.type ,name () ,inner))]
+    [('.typeof _ expr) `(.typeof () ,expr)]
+    [(btype _) `(,btype ())]))
+
+;; Whether the 'main' type has qualifiers
+(define (qualified? c-type)
+  (match c-type
+    [('.array inner . _) (qualified? inner)]
+    [('.function . _) #f]
+    [((or '.struct '.union '.enum) _ qs . _) (pair? qs)]
+    [('.type _ qs inner) (or (pair? qs) (qualified? inner))]
+    [(_ qs . _) (pair? qs)]))
 
 ;;;
 ;;; Conversion to native type

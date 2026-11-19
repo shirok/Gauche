@@ -1,3 +1,7 @@
+2026-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/lang/c: Suppor C23 typeof and nullptr keywords.
+
 2026-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/ffi.scm (define-c-variable): Support C variable access

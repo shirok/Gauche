@@ -344,6 +344,7 @@
 (define %primary-expression
   ($lazy
    ($or %va-arg                   ; gcc specific
+        ($seq ($. 'nullptr) ($return '(nullptr))) ; C23
         %identifier
         %constant
         %string-literal
@@ -496,7 +497,50 @@
                          ;; gcc additional floating types
                          __float128 _Float128 __float80 _Float64x __ibm128))
               %struct-or-union-specifier
-              %enum-specifier)))
+              %enum-specifier
+              %typeof-specifier)))
+
+;; 6.7.3.6 Typeof specifiers (C23)
+;;   The result is (typeof <c-type>), where <c-type> is already grokked.
+;;   If the operand is an expression whose type we can't determine
+;;   statically in the parser, <c-type> is (.typeof (<qual> ...) <expr>);
+;;   see lang.c.type.
+(define %typeof-specifier
+  ($lazy
+   ($lbinding ($: op ($one-of '(typeof typeof_unqual)))
+              ($: arg ($or ($try ($between %LP %type-name %RP))
+                           ($lift (^e `(expr ,e))
+                                  ($between %LP %expression %RP))))
+              (=> fail)
+              (guard (e [(<error> e) (fail 'error (~ e'message))])
+                (let1 type (match arg
+                             [('expr e) (static-expression-type e)]
+                             [tn (type-name->c-type tn)])
+                  `(typeof ,(if (eq? op 'typeof_unqual)
+                              (c-unqualified-type type)
+                              type)))))))
+
+;; Type name parsed by %type-name -> c-type
+(define (type-name->c-type tn)
+  (match tn
+    [(specs (#f . mods)) (grok-c-type `(,@mods ,specs) (typedef-names))]
+    [(specs #f)          (grok-c-type `(,specs) (typedef-names))]))
+
+;; Type of expression.  We don't track the types of identifiers, so
+;; there are cases when we can't determine the type.  In that case,
+;; we return (.typeof () <expr>).
+(define (static-expression-type expr)
+  (match expr
+    [('nullptr) '(.pointer () (void ()))] ; we treat nullptr_t as void*
+    [('const 'char _) '(int ())]          ; character constant is int
+    [('const (? symbol? t) _)
+     (if (memq t '(int u-int long u-long long-long u-long-long
+                   float double long-double))
+       `(,t ())
+       `(.typeof () ,expr))]
+    [('paren x) (static-expression-type x)]
+    [('cast tn _) (type-name->c-type tn)]
+    [_ `(.typeof () ,expr)]))
 
 ;; 6.7.3 Type qualifiers
 (define %type-qualifier

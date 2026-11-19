@@ -383,6 +383,7 @@
       [('cast tn _) (type-name->c-type tn)]
       [('const 'char _) '(int ())]      ;character constant is int
       [('const (? symbol? t) _) `(,t ())]
+      [('nullptr) '(.pointer () (void ()))] ;we treat nullptr_t as void*
       [_ #f]))
   (define (csizeof x)
     (and-let1 type (if (pair? (car x)) ; type name or expression
@@ -434,6 +435,7 @@
        (c-floating-literal->number s)]
       [('const 'char s) (char-const s #f)]
       [('const 'wchar s) (char-const s #t)]
+      [('nullptr) 0]
       ;; String literal.  The parser already concatenated adjacent
       ;; literals and decoded escape sequences.
       [(? string? s) s]

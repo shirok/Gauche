@@ -144,6 +144,8 @@
     return short signed sizeof static struct switch typedef
     union unsigned void volatile while
     _Bool _Complex _Imaginary
+    ;; C23 keywords
+    typeof typeof_unqual nullptr
     ;; nonstandard keywords
     _stdcall __declspec __builtin_va_list
     ;; gcc additional floating types
@@ -164,6 +166,10 @@
     (__asm asm)
     (__asm__ asm)
     (__alignof__ __alignof__)
+    (__typeof__ typeof)
+    (__typeof typeof)
+    (__typeof_unqual__ typeof_unqual)
+    (__typeof_unqual typeof_unqual)
     ;; clang additional keywords
     _Nullable _Nonnull _Null_unspecified _Nullable_result
     ))
