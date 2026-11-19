@@ -297,3 +297,15 @@ const char *say_ok()
 {
     return "ok";
 }
+
+/* Used to test define-c-variable */
+int f_var_int = 42;
+double f_var_double = 1.5;
+int8_t f_var_i8 = -3;
+const char *f_var_str = "initial";
+const char *f_var_null_str = NULL;
+struct foo f_var_foo = { 'a', 1, 2, 3, 4.0f, 5.0 };
+struct foo *f_var_pfoo = &f_var_foo;
+
+int f_var_int_get(void) { return f_var_int; }
+double f_var_double_get(void) { return f_var_double; }

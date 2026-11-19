@@ -43,6 +43,7 @@
           define-c-callback
           define-c-constant
           define-c-enum
+          define-c-variable
           foreign-function-info
 
           native-alloc
@@ -164,6 +165,25 @@
 ;;  the enum's size and alignment.  It must match how the compiler handles
 ;;  the enum.  If no explicit <base-type> is given, we use
 ;;  `gauche.native-type#default-c-enum-base-type`.
+;;
+;;  A global C variable exported from <dlobj> can be accessed as if it
+;;  were a Scheme variable:
+;;
+;;    (define-c-variable <name> <type>)
+;;
+;;  <name> is translated to the C identifier by the same rule as
+;;  define-c-function.  In Scheme world, it is bound to an identifier
+;;  maco, so that <name> can be used as if it is a variable.
+;;  Under the hood, the macro expands into calls of a getter and a setter
+;;  procedure.
+;;
+;;  <type> is an evaluated expression yielding a typespec.  It must
+;;  match the C type of the variable,.
+;;  Pointer types are allowed; array, function, struct and union types
+;;  are not supported yet.  A NULL <c-string> is read as #f, and setting
+;;  #f stores NULL.
+;;
+;;  Currently only the :stub subsystem supports define-c-variable.
 
 ;;;
 ;;; Classes to handle foreign declaratoins.
@@ -199,6 +219,14 @@
    (type         :init-keyword :type)         ; <native-type>
    ))
 
+(define-class <foreign-c-variable> ()
+  ((scheme-name  :init-keyword :scheme-name)  ; symbol
+   (c-name       :init-keyword :c-name)       ; string, C-safe name
+   (type         :init-keyword :type)         ; <native-type>
+   (getter-name  :init-keyword :getter-name)  ; symbol naming the getter
+   (setter-name  :init-keyword :setter-name)  ; symbol naming the setter
+   ))
+
 (define-class <foreign-c-enum> ()
   ((scheme-name  :init-keyword :scheme-name)  ; symbol, bound to the <c-enum-type>
    (tag          :init-keyword :tag)          ; symbol or #f (anonymous)
@@ -211,12 +239,15 @@
 
 (define-class <cdef-spec> ()
   ((name :init-keyword :name)
-   (kind :init-keyword :kind)  ; :function, :callbac, :constant or :enum
+   (kind :init-keyword :kind)  ; :function, :callback, :constant, :enum
+                               ;  or :variable
    (expr :init-keyword :expr)  ; S-expr to create <foreign-*> class
    (body-name :init-keyword :body-name)  ; for callbacks, keep body name
    (enum-type-expr :init-keyword :enum-type-expr) ; (make-c-enum-type ...)
    (enumerators :init-keyword :enumerators    ; for enums, Scheme names of
                 :init-value '())              ;  the enumerators
+   (getter-name :init-keyword :getter-name)   ; for variables, names of
+   (setter-name :init-keyword :setter-name)   ;  the accessor procedures
    ))
 
 ;; utility
@@ -245,6 +276,21 @@
   (if (and (pair? specs) (eq? (last specs) '...))
     (values (drop-right specs 1) #t)
     (values specs #f)))
+
+;; Called by the subsystem macros.  Returns a form that binds the name of
+;; a define-c-variable to an identifier macro, which turns a reference
+;; into a call of the getter, and set! into a call of the setter.  The
+;; accessor names are inserted as raw symbols, so that they refer to the
+;; bindings the subsystem creates in the with-ffi form's module.
+;; R is the renamer of the subsystem macro.
+(define (%cvar-macro-definition spec r)
+  (assume (of-kind? spec :variable))
+  (quasirename r
+    `(define-syntax ,(~ spec'name)
+       (make-id-transformer
+        (syntax-rules+ (set!)
+          [(set! x v) (,(~ spec'setter-name) v)]
+          [x (,(~ spec'getter-name))])))))
 
 ;;;
 ;;; Susbsystem selection
@@ -288,6 +334,11 @@
     [(_ . _)
      (syntax-error "define-c-enum used outside with-ffi")]))
 
+(define-syntax define-c-variable
+  (syntax-rules ()
+    [(_ . _)
+     (syntax-error "define-c-variable used outside with-ffi")]))
+
 (autoload gauche.ffi.stub    (:macro with-stub-ffi))
 (autoload gauche.ffi.aot     (:macro with-aot-ffi))
 (autoload gauche.ffi.native  (:macro with-native-ffi))
@@ -310,7 +361,8 @@
         (define ids (list (r'define-c-function)
                           (r'define-c-callback)
                           (r'define-c-constant)
-                          (r'define-c-enum)))
+                          (r'define-c-enum)
+                          (r'define-c-variable)))
         ;; cdefs - define-c-* forms, unwrap-syntaxed
         ;; extra-forms - other than those
         (define-values [cdefs extra-forms]
@@ -356,7 +408,20 @@
                    [(define-c-enum)
                     (make-spec :enum (make-cenum-expr cdef)
                                :enum-type-expr (make-cenum-type-expr cdef)
-                               :enumerators (cenum-scheme-names cdef))]))
+                               :enumerators (cenum-scheme-names cdef))]
+                   [(define-c-variable)
+                    ;; accessor names need to be interned, for the stub
+                    ;; binds them by name.
+                    (let ([getter-name (string->symbol
+                                        (symbol->string
+                                         (gensym "%c-variable-get-")))]
+                          [setter-name (string->symbol
+                                        (symbol->string
+                                         (gensym "%c-variable-set-")))])
+                      (make-spec :variable
+                                 (make-cvar-expr cdef getter-name setter-name)
+                                 :getter-name getter-name
+                                 :setter-name setter-name))]))
                (reverse cdefs)))
 
         ;; For each define-c-function form, build a runtime
@@ -433,6 +498,25 @@
                     :scheme-name ',name
                     :c-name ',(%ffi-c-name name)
                     :type (%resolve-typespec ,type-expr))))]))
+
+        ;; For each define-c-variable form, build a runtime
+        ;; (make <foreign-c-variable> ...) expression.  Unlike
+        ;; define-c-constant, the type is required, since it must match
+        ;; the C variable's storage.
+        (define (make-cvar-expr cvar-form getter-name setter-name)
+          (match cvar-form
+            [(_ name type-expr)
+             (unless (symbol? name)
+               (error "define-c-variable: name must be an identifier:" name))
+             (quasirename r
+               `(make <foreign-c-variable>
+                  :scheme-name ',name
+                  :c-name ',(%ffi-c-name name)
+                  :type (%resolve-typespec ,type-expr)
+                  :getter-name ',getter-name
+                  :setter-name ',setter-name))]
+            [_ (error "Malformed define-c-variable form \
+                       (name and type required):" cvar-form)]))
 
         ;; Parse a define-c-enum form.
         ;;   (define-c-enum <name> (<e> ...) [<base-type>])
@@ -548,8 +632,9 @@
 ;; instances.  Returns four values:
 ;;
 ;; pointer-ret-types   : return types of the pointer-returning functions, in
-;;                       order; ffisetup stores them in the per-function
-;;                       static type variables used when boxing the result.
+;;                       order, followed by the types of the pointer-typed
+;;                       variables, in order; ffisetup stores them in the
+;;                       static type variables used when boxing the values.
 ;; variadic-type-infos : (fixed-arg-types . ret-type) per variadic function,
 ;;                       in order; these populate the sub-stub type variables
 ;;                       %generate-float-substub needs at call time.
@@ -568,10 +653,15 @@
 ;;                       know when the C code is generated.
 (define (ffi-setup-arguments cdef-instances)
   (values
-   (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
-                             (c-pointer-like-type? (~ cdef'return-type))
-                             (~ cdef'return-type)))
-               cdef-instances)
+   (append
+    (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
+                              (c-pointer-like-type? (~ cdef'return-type))
+                              (~ cdef'return-type)))
+                cdef-instances)
+    (filter-map (^[cdef] (and (is-a? cdef <foreign-c-variable>)
+                              (c-pointer-like-type? (~ cdef'type))
+                              (~ cdef'type)))
+                cdef-instances))
    (filter-map (^[cdef] (and (is-a? cdef <foreign-c-function>)
                              (~ cdef'variadic?)
                              (cons (~ cdef'arg-types)

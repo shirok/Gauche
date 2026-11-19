@@ -276,6 +276,15 @@
 ;; The unit's setup function.
 (define (ffi-setup-fname) (ffi-cname "ffisetup"))
 
+;; Variable static-variable name helpers.  Each <foreign-c-variable> has
+;; a static pointer to the C variable, populated in ffisetup, and a pair
+;; of SUBRs to read and write it.
+(define (cvar-ptr-varname cvar)    (ffi-cname "ffi_var_~a" (~ cvar'c-name)))
+(define (cvar-getter-fname cvar)   (ffi-cname "ffi_getter_~a" (~ cvar'c-name)))
+(define (cvar-setter-fname cvar)   (ffi-cname "ffi_setter_~a" (~ cvar'c-name)))
+;; Only for pointer-typed variables: the type to box the value with.
+(define (cvar-type-varname cvar)   (ffi-cname "ffi_vartype_~a" (~ cvar'c-name)))
+
 ;; The name the runtime float sub-stub machinery keys off.  The generated
 ;; code passes it to %generate-float-substub, which derives from it both a C
 ;; identifier and a Scheme symbol registered in gauche.ffi.stubgen.  That
@@ -763,6 +772,100 @@
       (print "      enums_ = Scm_Cons(es_, enums_);")
       (print "    }"))))
 
+;;
+;; Variable emitters
+;;
+
+(define (check-cvar-type cvar)
+  (let1 type (~ cvar'type)
+    (when (or (c-aggregate-type? type)
+              (c-array-type? type)
+              (c-function-type? type))
+      (errorf "define-c-variable: ~a: array, function, struct and union \
+               types are not supported yet" (~ cvar'scheme-name)))
+    (when (eq? type <void>)
+      (errorf "define-c-variable: ~a: variable can't be void"
+              (~ cvar'scheme-name)))))
+
+;; Emit the static variables for one <foreign-c-variable> (decl section).
+;; e.g.: static int *ffi_var_my_counter = NULL;
+(define (emit-cvar-decls cvar)
+  (check-cvar-type cvar)
+  (cgen-decl (format "static ~a *~a = NULL;"
+                     (%type->c-type (~ cvar'type)) (cvar-ptr-varname cvar)))
+  (when (c-pointer-like-type? (~ cvar'type))
+    (cgen-decl (format "static ScmObj ~a = SCM_FALSE;"
+                       (cvar-type-varname cvar)))))
+
+;; Emit the getter and setter SUBRs for one <foreign-c-variable>.
+;; A NULL <c-string> is mapped to #f, both ways.
+(define (emit-cvar-subrs cvar)
+  (let* ([type     (~ cvar'type)]
+         [ptr-var  (cvar-ptr-varname cvar)]
+         ;; Passed as an argument of Scm_Error, not in the format string,
+         ;; for the name may contain '%'.
+         [name-lit (cgen-safe-string (symbol->string (~ cvar'scheme-name)))]
+         [cstring? (eq? type <c-string>)]
+         [type-var (and (c-pointer-like-type? type) (cvar-type-varname cvar))]
+         [guard    (format "    if (~a == NULL)\
+                         \n        Scm_Error(\"FFI: %s is not initialized; \
+                                             call with-ffi first\", ~a);"
+                           ptr-var name-lit)])
+    ;; Getter
+    (cgen-body
+     (format "static ScmObj ~a(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
+             (cvar-getter-fname cvar))
+     "{"
+     guard)
+    (when cstring?
+      (cgen-body (format "    if (*~a == NULL) return SCM_FALSE;" ptr-var)))
+    (cgen-body (format "    return ~a;"
+                       (%type->box-expr type (format "(*~a)" ptr-var) type-var))
+               "}")
+    ;; Setter
+    (cgen-body
+     (format "static ScmObj ~a(ScmObj *args, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
+             (cvar-setter-fname cvar))
+     "{"
+     guard
+     "    ScmObj v_ = args[0];")
+    (when cstring?
+      (cgen-body
+       (format "    if (SCM_FALSEP(v_)) { *~a = NULL; return SCM_UNDEFINED; }"
+               ptr-var)))
+    (cgen-body
+     (format "    if (!~a(v_))" (~ type'c-typecheck-name))
+     (format "        Scm_Error(\"FFI: %s: value of type %s required, but got: %S\", ~a, ~a, v_);"
+             name-lit (cgen-safe-string (x->string (~ type'name))))
+     (format "    *~a = ~a;" ptr-var (%type->unbox-expr type "v_"))
+     "    return SCM_UNDEFINED;"
+     "}")))
+
+;; Return a string with the setup code for one variable, emitted inside
+;; ffisetup: locate the variable in the dlobj, and bind the accessors in
+;; the target module.
+(define (setup-code-for-var cvar)
+  (let ([c-name (~ cvar'c-name)]
+        [define-subr
+          (^[name fname nargs]
+            (format "    Scm_Define(target_mod_, SCM_SYMBOL(SCM_INTERN(~a)),\
+                   \n               Scm_MakeSubr(~a, NULL, ~a, 0, SCM_INTERN(~a)));"
+                    (cgen-safe-string (symbol->string name))
+                    fname nargs
+                    (cgen-safe-string (symbol->string name))))])
+    (string-join
+     (list
+      (format "    fptr = Scm_DLOGetEntryAddress(dlo, SCM_STRING(SCM_MAKE_STR(~a)), SCM_FALSE);"
+              (cgen-safe-string #"_~c-name"))
+      (format "    if (!SCM_NATIVE_HANDLE_P(fptr))\
+             \n        Scm_Error(\"FFI setup: symbol ~a not found in library\");"
+              c-name)
+      (format "    ~a = Scm_NativeHandlePtr(SCM_NATIVE_HANDLE(fptr));"
+              (cvar-ptr-varname cvar))
+      (define-subr (~ cvar'getter-name) (cvar-getter-fname cvar) 0)
+      (define-subr (~ cvar'setter-name) (cvar-setter-fname cvar) 1))
+     "\n")))
+
 ;;;
 ;;; Generate C code from a list of <foreign-c-function> instances.
 ;;;
@@ -787,6 +890,12 @@
     (filter (cut is-a? <> <foreign-c-constant>) cdef-instances))
   (define cenum-instances
     (filter (cut is-a? <> <foreign-c-enum>) cdef-instances))
+  (define cvar-instances
+    (filter (cut is-a? <> <foreign-c-variable>) cdef-instances))
+  ;; Variables of pointer types need the type to box the value.  Their
+  ;; types follow those of pointer-return-cfns in ffisetup's argv[1].
+  (define pointer-cvars
+    (filter (^[cvar] (c-pointer-like-type? (~ cvar'type))) cvar-instances))
   (define unit
     (make <cgen-unit>
       :name unit-name
@@ -833,14 +942,18 @@
 
     ;; Per-callback statics.
     (for-each emit-callback-decls ccb-instances)
+    ;; Per-variable statics.
+    (for-each emit-cvar-decls cvar-instances)
 
     (cgen-body "")
     (for-each emit-subr-body cfn-instances)
     (for-each emit-callback-fn ccb-instances)
+    (for-each emit-cvar-subrs cvar-instances)
 
     ;; FFI setup function (body section) — called by compile-and-link-ffi-stub.
     ;;   argv[0] = DLObj
-    ;;   argv[1] = list of return-type ScmObjs for pointer-returning functions
+    ;;   argv[1] = list of return-type ScmObjs for pointer-returning functions,
+    ;;             followed by the types of pointer-typed variables
     ;;   argv[2] = list of (fixed-arg-types . ret-type) for variadic functions
     ;;   argv[3] = list of callback infos (one per callback)
     ;;   argv[4] = target module (where to Scm_Define each function)
@@ -856,7 +969,7 @@
                "    ScmObj fptr SCM_UNUSED;"
                "    ScmModule *target_mod_ = SCM_MODULE(argv[4]);"
                "    ScmObj enums_ = SCM_NIL;")
-    (when (pair? pointer-return-cfns)
+    (when (or (pair? pointer-return-cfns) (pair? pointer-cvars))
       (cgen-body "    ScmObj types = argv[1];"))
     (when (pair? variadic-cfns)
       (cgen-body "    ScmObj var_infos_ = argv[2];"))
@@ -870,6 +983,12 @@
     (dolist [cfn pointer-return-cfns]
       (cgen-body (format "    ~a = SCM_CAR(types); types = SCM_CDR(types);"
                          (ffi-rettype-varname cfn))))
+    (dolist [cvar pointer-cvars]
+      (cgen-body (format "    ~a = SCM_CAR(types); types = SCM_CDR(types);"
+                         (cvar-type-varname cvar))))
+    ;; Locate each variable and bind its accessors.
+    (dolist [cvar cvar-instances]
+      (cgen-body (setup-code-for-var cvar)))
     ;; Populate per-variadic-function argtypes/rettype variables.
     ;; var_infos_ is a list of (fixed-arg-types . ret-type) pairs.
     (dolist [cfn variadic-cfns]

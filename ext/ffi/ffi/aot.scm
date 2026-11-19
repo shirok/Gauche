@@ -100,6 +100,10 @@
                         '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs forms)
+        ;; TODO: Support define-c-variable.
+        (and-let1 spec (find (cut of-kind? <> :variable) cdef-specs)
+          (error "define-c-variable isn't supported by the :aot FFI \
+                  subsystem yet:" (~ spec'name)))
         (let1 tm (%current-tmodule)
           (unless tm
             (error "The FFI :aot subsystem can only be used in a source that \

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 
 struct foo {
     char c;
@@ -55,3 +56,14 @@ extern int Fcb_v_count(void (*cb)(void), int times);
 /* Callback test with pointer arg: cb receives a pointer and an int,
    returns int. */
 extern int Fcb_pi_i(int (*cb)(int *, int), int *p, int n);
+
+/* Variables to test define-c-variable */
+extern int f_var_int;
+extern double f_var_double;
+extern int8_t f_var_i8;
+extern const char *f_var_str;
+extern const char *f_var_null_str;
+extern struct foo f_var_foo;
+extern struct foo *f_var_pfoo;
+extern int f_var_int_get(void);
+extern double f_var_double_get(void);
