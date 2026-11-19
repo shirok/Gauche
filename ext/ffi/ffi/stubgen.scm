@@ -388,9 +388,10 @@
              (ffi-subr-varname c-name)))
     (cgen-body "{")
     ;; Guard: function pointer must have been set up
+    ;; NB: be careful that cgen-safe-string output may still contain '%'.
     (cgen-body (format "    if (~a == NULL)" (ffi-fn-varname c-name)))
-    (cgen-body (format "        Scm_Error(\"FFI: ~a is not initialized; call with-ffi first\");"
-                       (symbol->string scm-name)))
+    (cgen-body (format "        Scm_Error(\"FFI: %s is not initialized; call with-ffi first\", ~a);"
+                       (cgen-safe-string (symbol->string scm-name))))
     ;; Unbox each argument into a typed C local variable
     (for-each-with-index
      (lambda (i arg-type)
@@ -439,16 +440,17 @@
          [va-unbox    (%type->unbox-expr <intptr_t> "SCM_CAR(lst_)")]
          [table-var   (ffi-substub-table-varname cfn)]
          [mutex-var   (ffi-substub-mutex-varname cfn)]
-         [argtypes-var (ffi-substub-argtypes-varname cfn)]
-         [rettype-var  (ffi-substub-rettype-varname cfn)])
+         [argtypes-var(ffi-substub-argtypes-varname cfn)]
+         [rettype-var (ffi-substub-rettype-varname cfn)]
+         [name-lit    (cgen-safe-string (symbol->string scm-name))])
     (cgen-body
      (format "static ScmObj ~a(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
              (ffi-subr-varname c-name)))
     (cgen-body "{")
     ;; Guard: function pointer must have been set up
     (cgen-body #"    if (~(ffi-fn-varname c-name) == NULL)"
-               #"        Scm_Error(\"FFI: ~(symbol->string scm-name) \
-                                   is not initialized; call with-ffi first\");")
+               #"        Scm_Error(\"FFI: %s is not initialized; \
+                                     call with-ffi first\", ~name-lit);")
     ;; Unbox fixed arguments
     (for-each-with-index
      (^[i arg-type]
@@ -461,9 +463,9 @@
      #"    ScmObj vargs_ = args[~nfixed];"
      #"    int nvargs_ = Scm_Length(vargs_);"
      #"    if (nvargs_ > SCM_STUBGEN_MAX_VARIADIC_ARGS)"
-     #"        Scm_Error(\"FFI: ~(symbol->string scm-name): too many \
-                                   variadic arguments (max %d, got %d)\","
-     #"                  SCM_STUBGEN_MAX_VARIADIC_ARGS, nvargs_);"
+     #"        Scm_Error(\"FFI: %s: too many \
+                           variadic arguments (max %d, got %d)\","
+     #"                  ~name-lit, SCM_STUBGEN_MAX_VARIADIC_ARGS, nvargs_);"
      ;; Compute float mask by scanning the rest list
      #"    int float_mask_ = 0;"
      #"    {"
