@@ -253,6 +253,8 @@ static inline ScmSmallInt string_cursor_offset(ScmObj sc) {
 ScmObj Scm_MakeString(const char *str, ScmSmallInt size, ScmSmallInt len,
                       u_long flags)
 {
+    if (str == NULL) Scm_Error("NULL pointer passed to const char*");
+
     flags &= ~SCM_STRING_TERMINATED;
 
     if (size < 0) {
