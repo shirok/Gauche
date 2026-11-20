@@ -43,6 +43,7 @@ extern double Fddddddddd_d(double, double, double, double, double, double, doubl
 extern double Fiiiiiiidddd_d(int, int, int, int, int, int, int, double, double, double, double);
 extern int Fs_i(const char *);
 extern const char *Fi_s(int);
+extern const char *Fnull_s(void);
 extern double Fidfvar(int cnt, ...);
 extern int Fpnull_i(void *);
 
@@ -56,6 +57,7 @@ extern int Fcb_v_count(void (*cb)(void), int times);
 /* Callback test with pointer arg: cb receives a pointer and an int,
    returns int. */
 extern int Fcb_pi_i(int (*cb)(int *, int), int *p, int n);
+extern int Fcb_s_i(int (*cb)(const char *), const char *s);
 
 /* Variables to test define-c-variable */
 extern int f_var_int;

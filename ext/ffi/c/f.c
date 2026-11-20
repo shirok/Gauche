@@ -192,6 +192,12 @@ const char *Fi_s(int n)
     return "";
 }
 
+/* c-string: return NULL, which <c-string> doesn't allow */
+const char *Fnull_s(void)
+{
+    return NULL;
+}
+
 /* array */
 int Fia_i(int n, int32_t *a)
 {
@@ -229,6 +235,12 @@ int Fcb_v_count(void (*cb)(void), int times)
 int Fcb_pi_i(int (*cb)(int *, int), int *p, int n)
 {
     return cb(p, n);
+}
+
+/* Pass s (may be NULL) to a callback taking a c-string */
+int Fcb_s_i(int (*cb)(const char *), const char *s)
+{
+    return cb(s);
 }
 
 /* Mixed varargs: cnt pairs of (int n, double x); returns sum of n*x */

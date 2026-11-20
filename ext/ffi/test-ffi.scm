@@ -83,6 +83,7 @@
                       ;; c-string
                       (define-c-function Fs-i '(c-string) 'int)
                       (define-c-function Fi-s '(int) 'c-string)
+                      (define-c-function Fnull-s '() 'c-string)
 
                       ;; null pointer passing
                       (define-c-function Fpnull-i '(void*) 'int)
@@ -162,6 +163,8 @@
          ;; c-string passing and returning
          (t 5 (Fs-i "hello"))
          (t "two" (Fi-s 2))
+         (t (test-error <error> #/NULL pointer passed to const char\*/)
+            (Fnull-s))
 
          ;; null pointer passing
          (t 1 (Fpnull-i (null-pointer-handle)))
@@ -278,6 +281,7 @@
                       (define-c-function Fcb2-d '(void* double double) 'double)
                       (define-c-function Fcb-v-count '(void* int) 'int)
                       (define-c-function Fcb-pi-i '(void* int* int) 'int)
+                      (define-c-function Fcb-s-i '(void* void*) 'int)
 
                       (define-c-callback cb-add ((x 'int) (y 'int)) 'int
                         (+ x y))
@@ -287,6 +291,8 @@
                         (set! cb-noop-counter (+ cb-noop-counter 1)))
                       (define-c-callback cb-pderef ((p 'int*) (i 'int)) 'int
                         (native-aref p i))
+                      (define-c-callback cb-strlen ((s 'c-string)) 'int
+                        (string-length s))
                       (define-c-callback cb-bad ((x 'int) (y 'int)) 'int
                         (error "callback-failure")))
                    (current-module))
@@ -317,6 +323,10 @@
                 [p (make-native-handle (native-type 'int*) uv)])
            (t 30 (Fcb-pi-i cb-pderef p 2))
            (t 50 (Fcb-pi-i cb-pderef p 4)))
+
+         ;; NULL passed to a c-string arg of a callback
+         (t (test-error <error> #/NULL pointer passed to const char\*/)
+            (Fcb-s-i cb-strlen (null-pointer-handle)))
 
          ;; <name> is bound to a c-function native handle
          (t #t (c-function-handle? cb-add))
