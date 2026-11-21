@@ -1,3 +1,10 @@
+2026-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (<c-string?>): Support nullable c-string as
+	  a native type.  We don't adopt generic (<?> <c-string>), for
+	  generic native pointer type can already hanvle NULL.  c-string
+	  is the special case.
+
 2026-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_MakeString): Check if str argument is NULL.

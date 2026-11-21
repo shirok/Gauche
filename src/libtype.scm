@@ -315,13 +315,15 @@
    (return (-> np unsigned-p)))
  )
 
-;; Returns a class that's the basis of the native type
+;; Returns a class or a descriptive type that's the basis of the native type.
+;; Usually it is a class, but a nullable native type such as <c-string?>
+;; has a descriptive type (<?> <c-string>).
 (inline-stub
  (define-cfn Scm_NativeTypeBaseClass (np::ScmNativeType*)
    (let* ([t::ScmNativeType* np])
      (loop
       (let* ([sup (-> t super)])
-        (cond [(SCM_CLASSP sup) (return sup)]
+        (cond [(or (SCM_CLASSP sup) (SCM_DESCRIPTIVE_TYPE_P sup)) (return sup)]
               [(SCM_NATIVE_TYPE_P sup) (set! t (SCM_NATIVE_TYPE sup))]
               [else (Scm_Error "[internal] Bad inheritance setup: %S" np)])))))
  )
@@ -390,7 +392,8 @@
     ;; Native types can form single inheritance chain.
     [(and (SCM_NATIVE_TYPE_P sub)
           (SCM_CLASSP super))
-     ;; we fall back to class vs class comparison
+     ;; we fall back to class vs class comparison, or descriptive type
+     ;; vs class comparison if sub is a nullable native type.
      (let* ([klass (Scm_NativeTypeBaseClass (SCM_NATIVE_TYPE sub))])
        (set! sub klass))]        ; retry
     [(and (SCM_NATIVE_TYPE_P sub)
@@ -420,6 +423,27 @@
                [else
                 (Scm_Error "subtype? handler of %S returned invalid value: %S"
                            r)])))]
+    ;; A nullable native type, e.g. <c-string?>, has a descriptive type
+    ;; as its base, e.g. (<?> <c-string>).  We first ask SUPER with SUB
+    ;; itself, then retry with its base.
+    [(and (SCM_NATIVE_TYPE_P sub)
+          (SCM_DESCRIPTIVE_TYPE_P
+           (Scm_NativeTypeBaseClass (SCM_NATIVE_TYPE sub))))
+     (let1/cps r (delegate-to-super sub super)
+       [sub super]
+       (if (SCM_FALSEP r)
+         (let* ([base (Scm_NativeTypeBaseClass (SCM_NATIVE_TYPE sub))]
+                [k::ScmClass* (Scm_ClassOf base)])
+           (let1/cps r2 (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k)
+                                          subtypeP)
+                                      base super)
+             [base super]
+             (cond [(or (SCM_FALSEP r2) (SCM_EQ r2 SCM_TRUE)) (return r2)]
+                   [(SCM_EQ r2 'super) (return (delegate-to-super base super))]
+                   [else
+                    (Scm_Error "subtype? handler of %S returned invalid \
+                                value: %S" base r2)])))
+         (return r)))]
     [else (return (delegate-to-super sub super))])))
 
 ;;;
@@ -780,6 +804,15 @@
                      (subtype? (~ type'primary-type) super))))
   :supertype? (^[type sub] (subtype? sub (~ type'primary-type))))
 
+;; The native type <c-string?> is created before <?> is defined, so we set
+;; its super here.
+(inline-stub
+ (define-cproc %init-c-string-maybe-super! (ctor) ::<void>
+   (let* ([nt::ScmNativeType* (SCM_NATIVE_TYPE (Scm_NativeCStringMaybeType))])
+     (set! (-> nt super)
+           (Scm_ConstructType ctor (SCM_LIST1 (Scm_NativeCStringType)))))))
+(%init-c-string-maybe-super! <?>)
+
 ;;;
 ;;; Class: <Tuple>
 ;;;   Fixed-length list, each element having its own type constraints.
@@ -1128,7 +1161,7 @@
                         SCM_BINDING_INLINABLE)
        ;; TRANSIENT: See above about this alias.
        ;; We avoid defining <char>, which is used as Scheme type.
-       ,@(if (memq name-sans-c '(<char> <string>))
+       ,@(if (memq name-sans-c '(<char> <string> <string?>))
            '()
            `((Scm_MakeBinding (Scm_GaucheModule)
                               (SCM_SYMBOL ',name-sans-c) z
@@ -1281,6 +1314,14 @@
     (const char*)
     SCM_STRINGP SCM_MAKE_STR_COPYING SCM_STRING_CONST_CSTRING FALSE
     (c-string))
+  ;; Nullable variant of <c-string>; NULL is mapped to #f.  Its super is
+  ;; (<?> <c-string>), but <?> isn't available yet, so we set it later.
+  ;; See %init-c-string-maybe-super below.
+  (define-native-type <c-string?> Scm_NativeCStringMaybeType SCM_CLASS_TOP
+    (const char*)
+    SCM_MAYBE_STRINGP SCM_MAKE_STR_COPYING_MAYBE
+    SCM_STRING_CONST_CSTRING_MAYBE FALSE
+    (c-string?))
 
   ;; <void> needs special care, as it doesn't have a real C type.
   (let* ([z (make_native_type "<void>" (SCM_OBJ SCM_CLASS_TOP) "void"

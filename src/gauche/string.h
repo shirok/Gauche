@@ -240,6 +240,19 @@ SCM_EXTERN const char* Scm_GetStringContent(ScmString *str,
 
 #define SCM_STRING_CONST_CSTRING(obj) Scm_GetStringConst(SCM_STRING(obj))
 
+/* Variants that map C's NULL and Scheme's #f to each other.
+   Used by the native type <c-string?>.
+   NB: SCM_MAKE_STR_COPYING_MAYBE is a function, for its argument is often
+   a foreign function call, which must not be evaluated twice. */
+#define SCM_MAYBE_STRINGP(obj) \
+    (SCM_FALSEP(obj) || SCM_STRINGP(obj))
+#define SCM_STRING_CONST_CSTRING_MAYBE(obj) \
+    (SCM_FALSEP(obj) ? NULL : SCM_STRING_CONST_CSTRING(obj))
+static inline ScmObj SCM_MAKE_STR_COPYING_MAYBE(const char *cstr)
+{
+    return cstr ? SCM_MAKE_STR_COPYING(cstr) : SCM_FALSE;
+}
+
 /*
  * Conversions
  */

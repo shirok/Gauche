@@ -65,6 +65,19 @@
 (t-subtype <c-string> <c-string> #t)
 (t-subtype <c-string> <string> #t)
 (t-subtype <c-string> <boolean> #f)
+(t-subtype <c-string?> <c-string?> #t)
+(t-subtype <c-string?> <top> #t)
+(t-subtype <c-string?> <string> #f)
+(t-subtype <c-string?> (<?> <c-string>) #t)
+(t-subtype <c-string?> (<?> <string>) #t)
+(t-subtype <c-string?> (</> <c-string?> <integer>) #t)
+(t-subtype <c-string?> (</> <string> <boolean>) #t)
+(t-subtype <c-string?> <c-string> #f)
+
+(test* "<c-string?> super" #t
+       (eq? (~ <c-string?>'super) (<?> <c-string>)))
+(test* "of-type? <c-string?>" '(#t #t #f)
+       (map (cut of-type? <> <c-string?>) '("a" #f a)))
 
 
 (t-subtype <integer> (</> <integer> <string>) #t)
