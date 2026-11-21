@@ -222,7 +222,12 @@
                           (with-module gauche.internal call-sysvx64)])]
                        [else
                         (error "Native FFI is not supported on this platform")])]
-         [ptr        (dlobj-get-entry-address dlo #"_~(~ cfn'c-name)")]
+         [ptr        (begin
+                       (unless (is-a? dlo <dlobj>)
+                         (errorf "FFI: ~a needs a C symbol, but with-ffi is \
+                                  given #f instead of a dynamically loaded \
+                                  object" (~ cfn'scheme-name)))
+                       (dlobj-get-entry-address dlo #"_~(~ cfn'c-name)"))]
          [ret-type   (~ cfn'return-type)]
          [arg-types  (~ cfn'arg-types)]
          [variadic?  (~ cfn'variadic?)]

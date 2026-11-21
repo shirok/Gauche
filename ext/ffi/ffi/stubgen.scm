@@ -312,6 +312,17 @@
     [<c-enum-type> (%type->c-type (c-enum-type-base-type type))]
     [<native-type> (~ type'c-type-name)]))
 
+;; Emit a check that the Scheme value ARG-EXPR (a C expression yielding
+;; ScmObj) can be unboxed to TYPE, before unboxing it.
+;; NAME-LIT is the C string literal of the Scheme function name.
+(define (emit-arg-check type arg-expr name-lit i)
+  (cgen-body
+   (format "    if (!~a(~a))" (~ type'c-typecheck-name) arg-expr)
+   (format "        Scm_Error(\"FFI: %s: argument %d must be of type %s, \
+                                but got: %S\", ~a, ~a, ~a, ~a);"
+           name-lit (+ i 1) (cgen-safe-string (x->string (~ type'name)))
+           arg-expr)))
+
 ;; Generate a C expression that unboxes a Scheme value to a C value.
 ;; arg-expr: C string expression yielding ScmObj.
 ;; For <c-pointer-type> types, extracts the raw pointer from the native handle.
@@ -382,21 +393,24 @@
          ;; For <c-pointer-type> return types we use a per-function static ScmObj
          ;; variable (populated during ffisetup) to hold the type for boxing.
          [ret-typevar (and (c-pointer-like-type? ret-type)
-                           (ffi-rettype-varname cfn))])
+                           (ffi-rettype-varname cfn))]
+         ;; NB: be careful that cgen-safe-string output may still contain '%'.
+         [name-lit  (cgen-safe-string (symbol->string scm-name))])
     (cgen-body
      (format "static ScmObj ~a(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED, void *data SCM_UNUSED)"
              (ffi-subr-varname c-name)))
     (cgen-body "{")
     ;; Guard: function pointer must have been set up
-    ;; NB: be careful that cgen-safe-string output may still contain '%'.
     (cgen-body (format "    if (~a == NULL)" (ffi-fn-varname c-name)))
     (cgen-body (format "        Scm_Error(\"FFI: %s is not initialized; call with-ffi first\", ~a);"
-                       (cgen-safe-string (symbol->string scm-name))))
-    ;; Unbox each argument into a typed C local variable
+                       name-lit))
+    ;; Check and unbox each argument into a typed C local variable
     (for-each-with-index
      (lambda (i arg-type)
-       (let* ([c-type (%type->c-type arg-type)]
-              [unbox  (%type->unbox-expr arg-type (format "args[~a]" i))])
+       (let* ([arg    (format "args[~a]" i)]
+              [c-type (%type->c-type arg-type)]
+              [unbox  (%type->unbox-expr arg-type arg)])
+         (emit-arg-check arg-type arg name-lit i)
          (cgen-body (format "    ~a arg~a = ~a;" c-type i unbox))))
      arg-types)
     ;; Build the call expression and box the result
@@ -451,11 +465,16 @@
     (cgen-body #"    if (~(ffi-fn-varname c-name) == NULL)"
                #"        Scm_Error(\"FFI: %s is not initialized; \
                                      call with-ffi first\", ~name-lit);")
-    ;; Unbox fixed arguments
+    ;; Check and unbox fixed arguments.  The float path below passes args
+    ;; to the sub-stub, which unboxes them again; they're checked here.
+    ;; The variadic arguments are unboxed by Scm_GetDouble or
+    ;; Scm_IntegerToIntptr, both of which check the type.
     (for-each-with-index
      (^[i arg-type]
-       (let ([c-type (%type->c-type arg-type)]
-             [unbox  (%type->unbox-expr arg-type (format "args[~a]" i))])
+       (let* ([arg    (format "args[~a]" i)]
+              [c-type (%type->c-type arg-type)]
+              [unbox  (%type->unbox-expr arg-type arg)])
+         (emit-arg-check arg-type arg name-lit i)
          (cgen-body (format "    ~a arg~a = ~a;" c-type i unbox))))
      arg-types)
     ;; args[nfixed] is the rest list of variadic Scheme arguments
@@ -632,8 +651,16 @@
     (if void-ret?
       (cgen-body "    (void)_nres;"
                  "    return;")
-      (let1 unbox (%type->unbox-expr ret-type "_pkt.results[0]")
-        (cgen-body (format "    return ~a;" unbox))))
+      ;; Check the result type before unboxing
+      (let1 unbox (%type->unbox-expr ret-type "_r")
+        (cgen-body
+         "    ScmObj _r = (_nres > 0) ? _pkt.results[0] : SCM_UNDEFINED;"
+         (format "    if (!~a(_r))" (~ ret-type'c-typecheck-name))
+         (format "        Scm_Error(\"FFI: callback %s must return a value \
+                                     of type %s, but got: %S\", ~a, ~a, _r);"
+                 (cgen-safe-string (symbol->string (~ ccb'scheme-name)))
+                 (cgen-safe-string (x->string (~ ret-type'name))))
+         (format "    return ~a;" unbox))))
     (cgen-body "}")))
 
 ;; Setup-code fragment (string) for one callback.  Inserted into the
@@ -696,8 +723,7 @@
          [nfixed    (length (~ cfn'arg-types))]
          [optional  (if (~ cfn'variadic?) 1 0)])
     (string-append
-     (format "    fptr = Scm_DLOGetEntryAddress(dlo, SCM_STRING(SCM_MAKE_STR(~a)), SCM_FALSE);"
-             (cgen-safe-string #"_~c-name"))
+     (emit-dlo-lookup c-name scm-name)
      "\n"
      (format "    if (!SCM_NATIVE_HANDLE_P(fptr))\
             \n        Scm_Error(\"FFI setup: symbol ~a not found in library\");"
@@ -843,6 +869,18 @@
      "    return SCM_UNDEFINED;"
      "}")))
 
+;; Return a string of setup code to look up the C symbol C-NAME in dlo,
+;; setting fptr.  SCM-NAME is the Scheme name, used in the error message.
+;; with-ffi may be given #f instead of a dlobj, when the forms only need
+;; the headers; such forms can't refer to C functions or variables.
+(define (emit-dlo-lookup c-name scm-name)
+  (format "    if (dlo == NULL)\
+         \n        Scm_Error(\"FFI: %s needs a C symbol, but with-ffi is given #f \
+                             instead of a dynamically loaded object\", ~a);\
+         \n    fptr = Scm_DLOGetEntryAddress(dlo, SCM_STRING(SCM_MAKE_STR(~a)), SCM_FALSE);"
+          (cgen-safe-string (symbol->string scm-name))
+          (cgen-safe-string #"_~c-name")))
+
 ;; Return a string with the setup code for one variable, emitted inside
 ;; ffisetup: locate the variable in the dlobj, and bind the accessors in
 ;; the target module.
@@ -857,8 +895,7 @@
                     (cgen-safe-string (symbol->string name))))])
     (string-join
      (list
-      (format "    fptr = Scm_DLOGetEntryAddress(dlo, SCM_STRING(SCM_MAKE_STR(~a)), SCM_FALSE);"
-              (cgen-safe-string #"_~c-name"))
+      (emit-dlo-lookup c-name (~ cvar'scheme-name))
       (format "    if (!SCM_NATIVE_HANDLE_P(fptr))\
              \n        Scm_Error(\"FFI setup: symbol ~a not found in library\");"
               c-name)

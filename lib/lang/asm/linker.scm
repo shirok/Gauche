@@ -161,8 +161,14 @@
           [(4) (put-s32! bytes offset value endian)]
           [(8) (put-s64! bytes offset value endian)]
           [else (bad)]))]
-     [(eq? type <float>)   (put-f32! bytes offset value endian)]
-     [(eq? type <double>)  (put-f64! bytes offset value endian)]
+     ;; NB: put-f32! and put-f64! silently write 0.0 for a non-number.
+     [(memq type (list <float> <double>))
+      (unless (real? value)
+        (errorf "real number required for ~a, but got: ~s"
+                (~ type'name) value))
+      (if (eq? type <float>)
+        (put-f32! bytes offset value endian)
+        (put-f64! bytes offset value endian))]
      ;; NB: We always fill pointer with native endian, for the
      ;; raw address won't make sense for cross assembling.
      [(or (of-type? type <c-pointer-type>)

@@ -168,6 +168,13 @@
 
          ;; null pointer passing
          (t 1 (Fpnull-i (null-pointer-handle)))
+
+         ;; argument type check
+         (t (test-error <error>) (Fs-i 'oops))
+         (t (test-error <error>) (Fpnull-i 3))
+         (t (test-error <error>) (Fi-i "x"))
+         (t (test-error <error>) (Fd-d 'x))
+         (t (test-error <error>) (Fivar 'x 1 2))
          (t 1 (Fpnull-i (null-pointer-handle (native-type 'int*))))
          (t 0 (let1 data (make-u8vector (~ foo'size))
                 (Fpnull-i (make-native-handle foo* data))))
@@ -293,6 +300,8 @@
                         (native-aref p i))
                       (define-c-callback cb-strlen ((s 'c-string)) 'int
                         (string-length s))
+                      (define-c-callback cb-badret ((x 'int) (y 'int)) 'int
+                        "not an int")
                       (define-c-callback cb-bad ((x 'int) (y 'int)) 'int
                         (error "callback-failure")))
                    (current-module))
@@ -335,6 +344,8 @@
          (t '(can can) (Fopaque_data cb-opaque 'can))
 
          ;; exception propagates from callback through C and back
+         (test* #"cb ~'opts wrong return type" (test-error <error>)
+                (Fcb2-i cb-badret 1 2))
          (test* #"cb ~'opts exception propagation" 'caught
                 (guard (e [else 'caught])
                   (Fcb2-i cb-bad 1 2)))
@@ -350,6 +361,37 @@
     (do-test-f (:subsystem :native))
     (do-test-g (:subsystem :native))
     (do-test-cb (:subsystem :native)))
+
+  ;; Argument type check messages of the :stub subsystem.  (Also checks
+  ;; that the name with '%' doesn't break the message.)
+  (test* "with-ffi argument check" 'ok
+         (begin
+           (eval
+            `(with-ffi (dlopen "./f") (:subsystem :stub)
+               (define-c-function %Fs-i '(c-string) 'int)
+               (define-c-function Fi-i '(int) 'int))
+            (current-module))
+           'ok))
+  (test* "argument type check message"
+         (test-error <error>
+                     #/%Fs-i: argument 1 must be of type <c-string>, but got: oops/)
+         (%Fs-i 'oops))
+  (test* "argument range check" (test-error <error> #/argument 1 must be of type <int>/)
+         (Fi-i (expt 2 40)))
+
+  ;; with-ffi without dlobj can't define C functions
+  (dolist [subsystem '(:stub :native)]
+    (when (ffi-subsystem-available? subsystem)
+      (test* #"with-ffi #f with a C function (~subsystem)"
+             (test-error <error> #/needs a C symbol, but with-ffi is given #f/)
+             (eval `(with-ffi #f (:subsystem ,subsystem)
+                      (define-c-function F-i '() 'int))
+                   (current-module)))))
+  (test* "with-ffi #f with a C variable"
+         (test-error <error> #/needs a C symbol, but with-ffi is given #f/)
+         (eval `(with-ffi #f (:subsystem :stub)
+                  (define-c-variable f-var-int 'int))
+               (current-module)))
   )
 
 ;;;----------------------------------------------------------
