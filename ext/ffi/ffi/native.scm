@@ -173,6 +173,8 @@
       [(eq? type <double>)           <double>]
       [(eq? type <float>)            <float>]
       [(eq? type <c-string>)         <c-string>]
+      [(eq? type <c-string?>)
+       (error "<c-string?> isn't supported in the native FFI yet")]
       [(eq? type <ScmObj>)           <top>]
       [(~ type 'unsigned?)           <uintptr_t>]
       [else                          <intptr_t>])]

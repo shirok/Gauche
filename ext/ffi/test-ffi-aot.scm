@@ -158,6 +158,7 @@
      (define-c-function Fdvar '(int ...) 'double)
      (define-c-function Fcb2-i '(void* int int) 'int)
      (define-c-function Fnull-s '() 'c-string)
+     (define-c-function Fismaybe-s `(int ,(<?> <c-string>)) 'c-string?)
      (define-c-callback cb-add ((x 'int) (y 'int)) 'int
        (+ x y)))
    (with-ffi (dlopen "./f") (:c-headers ("limits.h" "stdio.h"))
@@ -172,9 +173,11 @@
            SEEK-END
            (c-enum-symbol seek-whence SEEK-END)
            (guard (e [(<error> e) (condition-message e)])
-             (Fnull-s)))))
+             (Fnull-s))
+           (Fismaybe-s 0 "abc")
+           (Fismaybe-s -1 "abc"))))
  '(42 7.5 42 8 2 SEEK-END
-   "NULL pointer passed to const char*")
+   "NULL pointer passed to const char*" "abc" #f)
  '((with-module aotfull probe)))
 
 ;; An enum declared in one with-ffi form, used as a type in a later one.

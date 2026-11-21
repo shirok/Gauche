@@ -198,6 +198,18 @@ const char *Fnull_s(void)
     return NULL;
 }
 
+/* c-string?: return the length of s, or -1 if s is NULL */
+int Fsmaybe_i(const char *s)
+{
+    return s ? (int)strlen(s) : -1;
+}
+
+/* c-string?: return s, or NULL if n is negative */
+const char *Fismaybe_s(int n, const char *s)
+{
+    return n < 0 ? NULL : s;
+}
+
 /* array */
 int Fia_i(int n, int32_t *a)
 {
@@ -241,6 +253,13 @@ int Fcb_pi_i(int (*cb)(int *, int), int *p, int n)
 int Fcb_s_i(int (*cb)(const char *), const char *s)
 {
     return cb(s);
+}
+
+/* Call a callback returning a c-string; returns its length, or -1 for NULL */
+int Fcb_i_s(const char *(*cb)(int), int n)
+{
+    const char *r = cb(n);
+    return r ? (int)strlen(r) : -1;
 }
 
 /* Mixed varargs: cnt pairs of (int n, double x); returns sum of n*x */
@@ -316,6 +335,7 @@ double f_var_double = 1.5;
 int8_t f_var_i8 = -3;
 const char *f_var_str = "initial";
 const char *f_var_null_str = NULL;
+const char *f_var_maybe_str = NULL;
 struct foo f_var_foo = { 'a', 1, 2, 3, 4.0f, 5.0 };
 struct foo *f_var_pfoo = &f_var_foo;
 

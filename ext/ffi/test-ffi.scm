@@ -392,6 +392,49 @@
          (eval `(with-ffi #f (:subsystem :stub)
                   (define-c-variable f-var-int 'int))
                (current-module)))
+
+  ;; Nullable c-string.  (Not yet for :native.)
+  (test* "with-ffi c-string?" 'ok
+         (begin
+           (eval
+            `(with-ffi (dlopen "./f") (:subsystem :stub)
+               (define-c-function Fsmaybe-i '(c-string?) 'int)
+               (define-c-function Fismaybe-s `(int ,(<?> <c-string>))
+                 (<?> <c-string>))
+               (define-c-function Fcb-s-i '(void* void*) 'int)
+               (define-c-function Fcb-i-s '(void* int) 'int)
+               (define-c-callback cb-strlen-maybe ((s 'c-string?)) 'int
+                 (if s (string-length s) -1))
+               (define-c-callback cb-maybe-str ((n 'int)) 'c-string?
+                 (and (>= n 0) (make-string n #\a))))
+            (current-module))
+           'ok))
+  (test* "c-string? arg" 5 (Fsmaybe-i "hello"))
+  (test* "c-string? arg #f" -1 (Fsmaybe-i #f))
+  (test* "c-string? arg type check"
+         (test-error <error> #/argument 1 must be of type <c-string\?>/)
+         (Fsmaybe-i 'oops))
+  (test* "c-string? return" "abc" (Fismaybe-s 0 "abc"))
+  (test* "c-string? return NULL" #f (Fismaybe-s -1 "abc"))
+  (test* "c-string? return #f passed through" #f (Fismaybe-s 0 #f))
+  (test* "c-string? callback arg NULL" -1
+         (Fcb-s-i cb-strlen-maybe (null-pointer-handle)))
+  (test* "c-string? callback return" 3 (Fcb-i-s cb-maybe-str 3))
+  (test* "c-string? callback return #f" -1 (Fcb-i-s cb-maybe-str -1))
+  (test* "c-string? foreign-function-info" '((int c-string?) c-string?)
+         (let1 info (foreign-function-info Fismaybe-s)
+           (list (get-keyword :argtypes info)
+                 (get-keyword :rettype info))))
+  (test* "nullable type other than c-string" (test-error <error> #/only supported for <c-string>/)
+         (eval `(with-ffi (dlopen "./f") (:subsystem :stub)
+                  (define-c-function Fi-i `(,(<?> <int>)) 'int))
+               (current-module)))
+  (when (ffi-subsystem-available? :native)
+    (test* "c-string? isn't supported in :native yet"
+           (test-error <error> #/isn't supported in the native FFI yet/)
+           (eval `(with-ffi (dlopen "./f") (:subsystem :native)
+                    (define-c-function Fsmaybe-i '(c-string?) 'int))
+                 (current-module))))
   )
 
 ;;;----------------------------------------------------------
@@ -830,6 +873,7 @@
              (define-c-variable f-var-i8 'int8_t)
              (define-c-variable f-var-str 'c-string)
              (define-c-variable f-var-null-str 'c-string)
+             (define-c-variable f-var-maybe-str 'c-string?)
              (define-c-variable f-var-pfoo (make-c-pointer-type foo))
              (define-c-function f-var-int-get () 'int)
              (define-c-function f-var-double-get () 'double)
@@ -850,6 +894,13 @@
   (tv "define-c-variable, int8_t" -3 f-var-i8)
   (tv "define-c-variable, c-string" "initial" f-var-str)
   (tv "define-c-variable, NULL c-string" #f f-var-null-str)
+  (tv "define-c-variable, c-string?" '(#f "set" #f)
+      (let* ([a f-var-maybe-str]
+             [b (begin (set! f-var-maybe-str "set") f-var-maybe-str)]
+             [c (begin (set! f-var-maybe-str #f) f-var-maybe-str)])
+        (list a b c)))
+  (tv "define-c-variable, set! type check (c-string?)" (test-error <error>)
+      (set! f-var-maybe-str 'oops))
 
   (tv "define-c-variable, set!" '(100 100)
          (begin (set! f-var-int 100)

@@ -44,6 +44,8 @@ extern double Fiiiiiiidddd_d(int, int, int, int, int, int, int, double, double, 
 extern int Fs_i(const char *);
 extern const char *Fi_s(int);
 extern const char *Fnull_s(void);
+extern int Fsmaybe_i(const char *s);
+extern const char *Fismaybe_s(int n, const char *s);
 extern double Fidfvar(int cnt, ...);
 extern int Fpnull_i(void *);
 
@@ -58,6 +60,7 @@ extern int Fcb_v_count(void (*cb)(void), int times);
    returns int. */
 extern int Fcb_pi_i(int (*cb)(int *, int), int *p, int n);
 extern int Fcb_s_i(int (*cb)(const char *), const char *s);
+extern int Fcb_i_s(const char *(*cb)(int), int n);
 
 /* Variables to test define-c-variable */
 extern int f_var_int;
@@ -65,6 +68,7 @@ extern double f_var_double;
 extern int8_t f_var_i8;
 extern const char *f_var_str;
 extern const char *f_var_null_str;
+extern const char *f_var_maybe_str;
 extern struct foo f_var_foo;
 extern struct foo *f_var_pfoo;
 extern int f_var_int_get(void);

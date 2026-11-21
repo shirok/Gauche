@@ -256,10 +256,16 @@
 ;; Resolve a typespec to a <native-type> instance at runtime.
 ;; Reference to this procedure is inserted by macro expander.
 ;; A typespec is either a <native-type> instance (returned as-is), <top>
-;;  (a synonym of <ScmObj>), or a native-type signature.
+;;  (a synonym of <ScmObj>), (<?> <c-string>) (a synonym of <c-string?>),
+;;  or a native-type signature.
 (define (%resolve-typespec spec)
   (cond [(is-a? spec <native-type>) spec]
         [(eq? spec <top>) <ScmObj>]
+        [(is-a? spec <?>)
+         (if (eq? (~ spec'primary-type) <c-string>)
+           <c-string?>
+           (error "Nullable type is only supported for <c-string>, but got:"
+                  spec))]
         [else (native-type spec)]))
 
 ;; Derive the C identifier from the Scheme name.  A leading '%' is

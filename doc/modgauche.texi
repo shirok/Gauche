@@ -10699,6 +10699,20 @@ Or, you can use native type objects.
 
 It is useful when you defines custom types and use them for
 arguments/return types.
+
+A C string is passed as @code{c-string} (@code{<c-string>}).  It doesn't
+allow @code{NULL}; if the foreign function returns @code{NULL} for
+@code{c-string}, an error is signaled.  If @code{NULL} is a valid value,
+use @code{c-string?} (@code{<c-string?>}) instead, which maps @code{NULL}
+to @code{#f} and vice versa.  The type @code{(<?> <c-string>)} can also
+be used as a synonym of @code{<c-string?>}.
+
+@example
+(define-c-function getenv '(c-string) 'c-string?)
+
+(getenv "HOME") @result{} "/home/user"
+(getenv "NO_SUCH_VARIABLE") @result{} #f
+@end example
 @end defmac
 
 
@@ -16129,7 +16143,10 @@ use @code{int8_t} or @code{uint8_t} (depending on signedness) instead.
 The pseudo-name @code{c-string} denotes the @code{<c-string>} type
 (NUL-terminated C string).  This special name is provided because
 C type @code{const char *} may simply mean a pointer to byte-sized
-numeric data, thus ambiguous.
+numeric data, thus ambiguous.  Similarly, @code{c-string?} denotes
+the @code{<c-string?>} type, which is the same as @code{<c-string>}
+except that C's @code{NULL} is mapped to Scheme's @code{#f} and
+vice versa.
 
 You can attach @code{unsigned} or @code{signed} to an integral
 primitive types.  It flips signedness of the type, e.g. @code{(unsigned int)}
