@@ -182,6 +182,7 @@
 ;; Returns a procedure to convert a Scheme value to pass it as the I-th
 ;; (0-based) argument of the foreign function NAME.
 ;; <c-char> object needs to be passed as integer.
+;; <c-bool> requires a boolean, as in :stub, and is passed as 1 or 0.
 ;; <c-string> and <c-string?> are both passed as <c-string>; lower layer
 ;; handles #f and NULL mapping.  We reject #f here if the type doesn't
 ;; allow it.
@@ -190,6 +191,7 @@
     (errorf "FFI: ~a: argument ~a must be of type ~a, but got: ~s"
             name (+ i 1) (~ type'name) v))
   (cond [(eq? type <c-char>) char->integer]
+        [(eq? type <c-bool>) (^v (case v [(#t) 1] [(#f) 0] [else (bad v)]))]
         [(eq? type <c-string>) (^v (if (string? v) v (bad v)))]
         [(eq? type <c-string?>) (^v (if (or (not v) (string? v)) v (bad v)))]
         [else values]))
@@ -201,12 +203,15 @@
 ;;
 ;; - The asm code maps NULL to #f for <c-string>; we reject it here, for
 ;;   the type doesn't allow it.  (<c-string?> allows it.)
+;; - <c-bool> is mapped to a boolean, as in :stub.  Only the lowest byte
+;;   is meaningful.
 ;; - The asm code boxes integers in the full register, but the upper bits
 ;;   are undefined if the C type is narrower than the register (e.g. an int
 ;;   argument -1 may come as #xffffffff).  We mask the value to the size of
 ;;   the type and sign-extend it if the type is signed.
 (define (native-type->from-c-coerce type who what)
   (cond [(eq? type <c-char>) (^v (integer->char (logand v #xff)))]
+        [(eq? type <c-bool>) (^v (not (zero? (logand v #xff))))]
         [(eq? type <c-string>)
          (^r (or r
                  (errorf "FFI: ~a: NULL pointer passed to const char* as \
@@ -623,11 +628,14 @@
    [else
     (^ _ (error "Native FFI callbacks not supported on this platform"))]))
 
-;; The asm trampoline maps NULL and #f to each other for <c-string> and
-;; <c-string?>.  If the callback has an argument of type <c-string>, or
-;; returns <c-string> or <c-string?>, we wrap the body to check the values.
-;; (Note that Scm_GetStringConst in the trampoline can't handle a non-string.)
-;; Other callbacks are used as is.
+;; If some arguments or the return value of a callback need conversion or
+;; check, we wrap the body.  Other callbacks are used as is.
+;;  - Arguments are converted by native-type->from-c-coerce, e.g. narrow
+;;    integers are sign-extended, <c-char> and <c-bool> are mapped to
+;;    a character and a boolean, and NULL is rejected for <c-string>.
+;;  - The return value of <c-string>, <c-string?> and <c-bool> is checked
+;;    (Scm_GetStringConst in the trampoline can't handle a non-string),
+;;    and a boolean is converted to 1 or 0.
 (define (%wrap-callback-body ccb body)
   (define name (~ ccb'scheme-name))
   (define ret-type (~ ccb'return-type))
@@ -636,20 +644,22 @@
            (native-type->from-c-coerce type #"callback ~name" #"argument ~var"))
          (~ ccb'arg-types) (~ ccb'arg-vars)))
   (define coerce-args? (any (^c (not (eq? c values))) arg-coerce))
-  (define ret-ok?
-    (cond [(eq? ret-type <c-string>) string?]
-          [(eq? ret-type <c-string?>) (^r (or (not r) (string? r)))]
+  ;; Check the return value, and convert it to what the asm code expects.
+  (define (bad-ret r)
+    (errorf "FFI: callback ~a must return a value of type ~a, but got: ~s"
+            name (~ ret-type'name) r))
+  (define ret-coerce
+    (cond [(eq? ret-type <c-string>) (^r (if (string? r) r (bad-ret r)))]
+          [(eq? ret-type <c-string?>)
+           (^r (if (or (not r) (string? r)) r (bad-ret r)))]
+          [(eq? ret-type <c-bool>)
+           (^r (case r [(#t) 1] [(#f) 0] [else (bad-ret r)]))]
           [else #f]))
   (define (coerce-args args) (map (^[c a] (c a)) arg-coerce args))
-  (define (check-ret r)
-    (unless (ret-ok? r)
-      (errorf "FFI: callback ~a must return a value of type ~a, but got: ~s"
-              name (~ ret-type'name) r))
-    r)
-  (cond [(and coerce-args? ret-ok?)
-         (^ args (check-ret (apply body (coerce-args args))))]
+  (cond [(and coerce-args? ret-coerce)
+         (^ args (ret-coerce (apply body (coerce-args args))))]
         [coerce-args? (^ args (apply body (coerce-args args)))]
-        [ret-ok? (^ args (check-ret (apply body args)))]
+        [ret-coerce (^ args (ret-coerce (apply body args)))]
         [else body]))
 
 (define (install-callback-context! ccb-instances body-procs)

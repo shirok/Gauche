@@ -84,6 +84,8 @@
                       (define-c-function Fs-i '(c-string) 'int)
                       (define-c-function Fi-s '(int) 'c-string)
                       (define-c-function Fnull-s '() 'c-string)
+                      ;; bool
+                      (define-c-function Fb-b '(bool) 'bool)
                       ;; nullable c-string
                       (define-c-function Fsmaybe-i '(c-string?) 'int)
                       (define-c-function Fismaybe-s `(int ,(<?> <c-string>))
@@ -169,6 +171,11 @@
          (t "two" (Fi-s 2))
          (t (test-error <error> #/NULL pointer passed to const char\*/)
             (Fnull-s))
+
+         ;; bool
+         (t '(#f #t) (list (Fb-b #t) (Fb-b #f)))
+         (t (test-error <error> #/argument 1 must be of type <c-bool>/)
+            (Fb-b 1))
 
          ;; nullable c-string
          (t 5 (Fsmaybe-i "hello"))
@@ -308,6 +315,7 @@
                       (define-c-function Fcb-s-i '(void* void*) 'int)
                       (define-c-function Fcb-i-s '(void* int) 'int)
                       (define-c-function Fcb-narrow '(void*) 'int)
+                      (define-c-function Fcb-b-b '(void* bool) 'bool)
 
                       (define-c-callback cb-add ((x 'int) (y 'int)) 'int
                         (+ x y))
@@ -327,6 +335,11 @@
                         (and (> n 0) (make-string n #\a)))
                       (define-c-callback cb-bad-str ((n 'int)) 'c-string?
                         'not-a-string)
+                      (define-c-callback cb-bool-id ((b 'bool)) 'bool
+                        (set! cb-bool-arg b)
+                        b)
+                      (define-c-callback cb-bool-bad ((b 'bool)) 'bool
+                        1)
                       (define-c-callback cb-narrow ((a 'int8_t) (b 'short)
                                                     (c 'uint8_t) (d 'u_short)
                                                     (e 'u_int) (f 'char))
@@ -370,6 +383,12 @@
          (t (test-error <error> #/NULL pointer passed to const char\*/)
             (Fcb-s-i cb-strlen (null-pointer-handle)))
 
+         ;; bool arguments and return values of callbacks
+         (t '(#f #t) (list (Fcb-b-b cb-bool-id #t) cb-bool-arg))
+         (t '(#t #f) (list (Fcb-b-b cb-bool-id #f) cb-bool-arg))
+         (t (test-error <error> #/must return a value of type <c-bool>/)
+            (Fcb-b-b cb-bool-bad #t))
+
          ;; narrow integral arguments of callbacks
          (t -1 (Fcb2-i cb-add -3 2))
          (t '(-5 -300 200 60000 3000000000 #\x)
@@ -401,6 +420,7 @@
 
   (define cb-noop-counter 0)
   (define cb-narrow-args #f)
+  (define cb-bool-arg 'unset)
 
   (parameterize ([default-ffi-subsystem :stub])
     (do-test-f ())

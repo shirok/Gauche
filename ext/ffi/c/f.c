@@ -255,6 +255,18 @@ int Fcb_s_i(int (*cb)(const char *), const char *s)
     return cb(s);
 }
 
+/* c-bool: negate the argument */
+_Bool Fb_b(_Bool b)
+{
+    return !b;
+}
+
+/* c-bool: pass b to a callback and return the negation of its result */
+_Bool Fcb_b_b(_Bool (*cb)(_Bool), _Bool b)
+{
+    return !cb(b);
+}
+
 /* Pass narrow integral values to a callback.  The upper bits of the
    registers holding them are undefined, so the callee must not rely on them. */
 int Fcb_narrow(int (*cb)(signed char, short, unsigned char, unsigned short,

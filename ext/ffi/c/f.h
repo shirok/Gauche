@@ -60,6 +60,8 @@ extern int Fcb_v_count(void (*cb)(void), int times);
    returns int. */
 extern int Fcb_pi_i(int (*cb)(int *, int), int *p, int n);
 extern int Fcb_s_i(int (*cb)(const char *), const char *s);
+extern _Bool Fb_b(_Bool b);
+extern _Bool Fcb_b_b(_Bool (*cb)(_Bool), _Bool b);
 extern int Fcb_narrow(int (*cb)(signed char, short, unsigned char,
                                 unsigned short, unsigned int, char));
 extern int Fcb_i_s(const char *(*cb)(int), int n);
