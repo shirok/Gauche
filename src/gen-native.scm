@@ -98,11 +98,18 @@
                 (jmp epilog:)
     void:       (movq (imm64 :SCM_UNDEFINED) %rax)
                 (jmp epilog:)
-    cstring:    (movq %rax %rdi)
+    cstring:    (cmpq 0 %rax)
+                (jz cstring-null:)
+                (movq %rax %rdi)
                 (movq -1 %rsi)
                 (movq -1 %rdx)
                 (movq (imm32 :SCM_STRING_COPYING) %rcx)
                 (call (fn-string:)) ; cstr, -1, -1, SCM_STRING_COPYING
+                (jmp epilog:)
+    cstring-null:
+                ;; Map NULl to #f to avoid crash.  Caller should check
+                ;; if it is allowed value.
+                (movq (imm64 :SCM_FALSE) %rax)
                 ;; fallthrough
     epilog:     (pop %rbx)
                 (ret)
@@ -203,11 +210,18 @@
                 (jmp epilog:)
     void:       (movq (imm64 :SCM_UNDEFINED) %rax)
                 (jmp epilog:)
-    cstring:    (movq %rax %rdi)
+    cstring:    (cmpq 0 %rax)
+                (jz cstring-null:)
+                (movq %rax %rdi)
                 (movq -1 %rsi)
                 (movq -1 %rdx)
                 (movq (imm32 :SCM_STRING_COPYING) %rcx)
                 (call (fn-string:)) ; cstr, -1, -1, SCM_STRING_COPYING
+                (jmp epilog:)
+    cstring-null:
+                ;; Map NULl to #f to avoid crash.  Caller should check
+                ;; if it is allowed value.
+                (movq (imm64 :SCM_FALSE) %rax)
                 ;; fallthrough
     epilog:     (addq (imm32 :epilogue-spill-size) %rsp)
                 (ret)
@@ -281,11 +295,19 @@
              (jmp epilog:)
     void:    (movq (imm64 :SCM_UNDEFINED) %rax)
              (jmp epilog:)
-    cstring: (movq %rax %rcx)          ; rcx=cstr
+    cstring: (cmpq 0 %rax)
+             (jz cstring-null:)
+             (movq %rax %rcx)          ; rcx=cstr
              (movq -1 %rdx)            ; rdx=size
              (movq -1 %r8)             ; r8=len
              (movq (imm32 :SCM_STRING_COPYING) %r9) ; r9=flags
              (call (fn-string:))
+             (jmp epilog:)
+    cstring-null:
+             ;; Map NULl to #f to avoid crash.  Caller should check
+             ;; if it is allowed value.
+             (movq (imm64 :SCM_FALSE) %rax)
+             ;; fallthrough
     epilog:  (addq 32 %rsp)
              (pop %rbx)
              (ret)
@@ -360,11 +382,19 @@
              (jmp epilog:)
     void:    (movq (imm64 :SCM_UNDEFINED) %rax)
              (jmp epilog:)
-    cstring: (movq %rax %rcx)
+    cstring: (cmpq 0 %rax)
+             (jz cstring-null:)
+             (movq %rax %rcx)
              (movq -1 %rdx)
              (movq -1 %r8)
              (movq (imm32 :SCM_STRING_COPYING) %r9)
              (call (fn-string:))
+             (jmp epilog:)
+    cstring-null:
+             ;; Map NULl to #f to avoid crash.  Caller should check
+             ;; if it is allowed value.
+             (movq (imm64 :SCM_FALSE) %rax)
+             ;; fallthrough
     epilog:  (addq 32 %rsp)
     epilogue:(addq (imm32 :epilogue-spill-size) %rsp) ; undo spills+pad before rbx
              (pop %rbx)
@@ -478,10 +508,15 @@
              (jmpl store-boxed:)
 
     box-cstring:
+             (cmpq 0 %rdi)
+             (jz box-cstring-null:)
              (movq -1 %rsi)
              (movq -1 %rdx)
              (movq (imm32 :SCM_STRING_COPYING) %rcx)
              (call (fn-string:))
+             (jmpl store-boxed:)
+    box-cstring-null:
+             (movq (SCM_FALSE:) %rax)
              (jmpl store-boxed:)
 
     box-pointer:
@@ -573,8 +608,13 @@
     ret-void:
              (jmp epilog:)
     ret-cstring:
+             (cmpq (SCM_FALSE:) %rax)
+             (jz ret-cstring-null:)
              (movq %rax %rdi)
              (call (fn-get-cstring:))
+             (jmp epilog:)
+    ret-cstring-null:
+             (xorq %rax %rax)
              ;; fallthrough
     epilog:
              (addq (imm32 176) %rsp)
@@ -597,6 +637,7 @@
     fn-get-cstring: (.dataq :Scm_GetStringConst)
     fn-handle-ptr:  (.dataq :Scm_NativeHandlePtr)
     SCM_NIL:        (.dataq :SCM_NIL)
+    SCM_FALSE:      (.dataq :SCM_FALSE)
     nargs:          (.datab :nargs)
     argkinds:       (.datab :argkind0)
                     (.datab :argkind1)
@@ -702,10 +743,15 @@
              (jmpl store-boxed:)
 
     box-cstring:
+             (cmpq 0 %rcx)
+             (jz box-cstring-null:)
              (movq -1 %rdx)
              (movq -1 %r8)
              (movq (imm32 :SCM_STRING_COPYING) %r9)
              (call (fn-string:))
+             (jmpl store-boxed:)
+    box-cstring-null:
+             (movq (SCM_FALSE:) %rax)
              (jmpl store-boxed:)
 
     box-pointer:
@@ -794,8 +840,13 @@
     ret-void:
              (jmp epilog:)
     ret-cstring:
+             (cmpq (SCM_FALSE:) %rax)
+             (jz ret-cstring-null:)
              (movq %rax %rcx)
              (call (fn-get-cstring:))
+             (jmp epilog:)
+    ret-cstring-null:
+             (xorq %rax %rax)
              ;; fallthrough
     epilog:
              (addq (imm32 128) %rsp)
@@ -818,6 +869,7 @@
     fn-get-cstring: (.dataq :Scm_GetStringConst)
     fn-handle-ptr:  (.dataq :Scm_NativeHandlePtr)
     SCM_NIL:        (.dataq :SCM_NIL)
+    SCM_FALSE:      (.dataq :SCM_FALSE)
     nargs:          (.datab :nargs)
     argkinds:       (.datab :argkind0)
                     (.datab :argkind1)
@@ -905,7 +957,9 @@
         (:SCM_STRING_COPYING         ,<int32>
          ,SCM_STRING_COPYING)
         (:SCM_UNDEFINED              ,<top>
-         ,(undefined))))
+         ,(undefined))
+        (:SCM_FALSE                  ,<top>
+         #f)))
    `(define (%asm-callback-patches gea)
       `((:Scm__FFINativeCallCallback ,<intptr_t>
          ,(gea "_Scm__FFINativeCallCallback"))
@@ -934,7 +988,9 @@
         (:SCM_STRING_COPYING         ,<int32>
          ,SCM_STRING_COPYING)
         (:SCM_NIL                    ,<top>
-         ,'())))
+         ,'())
+        (:SCM_FALSE                  ,<top>
+         #f)))
    )
 
   ;; (call-sysvx64 <native-handle> args rettype)

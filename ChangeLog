@@ -1,3 +1,11 @@
+2026-11-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-native.scm: Map NULL and #f for 'cstring' kind of
+	  arg/retval.  This avoids inadvertent crash when foreign entity
+	  passes NULL where Scheme side expects cstring, also allows to
+	  pass NULL for C-side char* arguments.  Whether it is allowed
+	  needs to be checked by the upper layer.
+
 2026-11-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm (<c-string?>): Support nullable c-string as

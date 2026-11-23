@@ -77,10 +77,15 @@
         [(SCM_EQ type (SCM_OBJ SCM_CLASS_TOP))
          (set! ptr-val (cast intptr_t obj))]
         [(SCM_EQ type (Scm_NativeCStringType))
-         (unless (SCM_STRINGP obj)
-           (Scm_Error "%%native-ptr-fill!: string required for <c-string>, \
-                       but got: %S" obj))
-         (set! ptr-val (cast intptr_t (Scm_GetStringConst (SCM_STRING obj))))]
+         ;; #f is mapped to NULL.  It is used for both <c-string> and
+         ;; <c-string?>; the caller checks if #f is allowed.
+         (cond [(SCM_FALSEP obj) (set! ptr-val 0)]
+               [(SCM_STRINGP obj)
+                (set! ptr-val
+                      (cast intptr_t (Scm_GetStringConst (SCM_STRING obj))))]
+               [else
+                (Scm_Error "%%native-ptr-fill!: string or #f required for \
+                            <c-string>, but got: %S" obj)])]
         [(or (SCM_C_POINTER_TYPE_P type)
              (SCM_C_ARRAY_TYPE_P type)
              (SCM_C_FUNCTION_TYPE_P type))
@@ -208,7 +213,9 @@
           [r::int (Scm_Apply fn args (& pkt))])
      (when (< r 0)
        (Scm_Raise (ref pkt exception) SCM_RAISE_NON_CONTINUABLE))
-     (return (aref (ref pkt results) 0))))
+     (if (> r 0)
+       (return (aref (ref pkt results) 0))
+       (return SCM_UNDEFINED))))
 
  ;; For JIT
  (define-cproc %%jit-compile-procedure (proc compiler)
