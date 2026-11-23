@@ -173,19 +173,38 @@
       [(eq? type <double>)           <double>]
       [(eq? type <float>)            <float>]
       [(eq? type <c-string>)         <c-string>]
-      [(eq? type <c-string?>)
-       (error "<c-string?> isn't supported in the native FFI yet")]
+      [(eq? type <c-string?>)        <c-string>]
       [(eq? type <ScmObj>)           <top>]
       [(~ type 'unsigned?)           <uintptr_t>]
       [else                          <intptr_t>])]
     [else (error "Invalid type for native call:" type)]))
 
-;; <c-char> object needs to be passed as integer
-(define (native-type->arg-coerce type)
-  (if (eq? type <c-char>) char->integer values))
+;; Returns a procedure to convert a Scheme value to pass it as the I-th
+;; (0-based) argument of the foreign function NAME.
+;; <c-char> object needs to be passed as integer.
+;; <c-string> and <c-string?> are both passed as <c-string>; lower layer
+;; handles #f and NULL mapping.  We reject #f here if the type doesn't
+;; allow it.
+(define (native-type->arg-coerce type name i)
+  (define (bad v)
+    (errorf "FFI: ~a: argument ~a must be of type ~a, but got: ~s"
+            name (+ i 1) (~ type'name) v))
+  (cond [(eq? type <c-char>) char->integer]
+        [(eq? type <c-string>) (^v (if (string? v) v (bad v)))]
+        [(eq? type <c-string?>) (^v (if (or (not v) (string? v)) v (bad v)))]
+        [else values]))
 
-(define (native-type->return-coerce type)
+;; Returns a procedure to convert the value returned from the foreign
+;; function NAME.
+;; The asm code maps NULL to #f for <c-string>; we reject it here if
+;; the type doesn't allow it.
+(define (native-type->return-coerce type name)
   (cond [(eq? type <c-char>) integer->char]
+        [(eq? type <c-string>)
+         (^r (or r
+                 (errorf "FFI: ~a: NULL pointer passed to const char* as \
+                          the return value (declare the return type as \
+                          c-string? if NULL is valid)" name)))]
         [(and (subtype? type <integer>)
               (not (~ type 'unsigned?)))
          (%sign-extender (~ type 'size))]
@@ -237,8 +256,9 @@
          [nfixed     (length arg-types)]
          [ret-canon  (native-type->call-canon ret-type)]
          [arg-canons (map native-type->call-canon arg-types)]
-         [arg-coerce (map native-type->arg-coerce arg-types)]
-         [ret-coerce (native-type->return-coerce ret-type)])
+         [arg-coerce (map (cut native-type->arg-coerce <> (~ cfn'scheme-name) <>)
+                          arg-types (iota nfixed))]
+         [ret-coerce (native-type->return-coerce ret-type (~ cfn'scheme-name))])
     (unless ptr
       (error "FFI (native): cannot find function in library:"
              (~ cfn'scheme-name)))
@@ -597,6 +617,37 @@
    [else
     (^ _ (error "Native FFI callbacks not supported on this platform"))]))
 
+;; The asm trampoline maps NULL and #f to each other for <c-string> and
+;; <c-string?>.  If the callback has an argument of type <c-string>, or
+;; returns <c-string> or <c-string?>, we wrap the body to check the values.
+;; (Note that Scm_GetStringConst in the trampoline can't handle a non-string.)
+;; Other callbacks are used as is.
+(define (%wrap-callback-body ccb body)
+  (define name (~ ccb'scheme-name))
+  (define arg-types (~ ccb'arg-types))
+  (define ret-type (~ ccb'return-type))
+  (define check-args? (memq <c-string> arg-types))
+  (define ret-ok?
+    (cond [(eq? ret-type <c-string>) string?]
+          [(eq? ret-type <c-string?>) (^r (or (not r) (string? r)))]
+          [else #f]))
+  (define (check-args args)
+    (for-each (^[type var arg]
+                (when (and (eq? type <c-string>) (not arg))
+                  (errorf "FFI: callback ~a: NULL pointer passed to \
+                           const char* as argument ~a" name var)))
+              arg-types (~ ccb'arg-vars) args))
+  (define (check-ret r)
+    (unless (ret-ok? r)
+      (errorf "FFI: callback ~a must return a value of type ~a, but got: ~s"
+              name (~ ret-type'name) r))
+    r)
+  (cond [(and check-args? ret-ok?)
+         (^ args (check-args args) (check-ret (apply body args)))]
+        [check-args? (^ args (check-args args) (apply body args))]
+        [ret-ok? (^ args (check-ret (apply body args)))]
+        [else body]))
+
 (define (install-callback-context! ccb-instances body-procs)
   (let1 specs
       (map (^[ccb body]
@@ -605,7 +656,8 @@
                     [ret-canon  (native-type->call-canon
                                  (~ ccb'return-type))])
                (receive (code entry win-pe win-fs)
-                   (assemble-callback body arg-canons ret-canon)
+                   (assemble-callback (%wrap-callback-body ccb body)
+                                      arg-canons ret-canon)
                  (list code entry win-pe win-fs))))
            ccb-instances body-procs)
     (%%install-ffi-callback-context specs)))

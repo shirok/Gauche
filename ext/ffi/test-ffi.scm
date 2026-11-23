@@ -84,6 +84,10 @@
                       (define-c-function Fs-i '(c-string) 'int)
                       (define-c-function Fi-s '(int) 'c-string)
                       (define-c-function Fnull-s '() 'c-string)
+                      ;; nullable c-string
+                      (define-c-function Fsmaybe-i '(c-string?) 'int)
+                      (define-c-function Fismaybe-s `(int ,(<?> <c-string>))
+                        (<?> <c-string>))
 
                       ;; null pointer passing
                       (define-c-function Fpnull-i '(void*) 'int)
@@ -165,6 +169,19 @@
          (t "two" (Fi-s 2))
          (t (test-error <error> #/NULL pointer passed to const char\*/)
             (Fnull-s))
+
+         ;; nullable c-string
+         (t 5 (Fsmaybe-i "hello"))
+         (t -1 (Fsmaybe-i #f))
+         (t (test-error <error> #/argument 1 must be of type <c-string\?>/)
+            (Fsmaybe-i 'oops))
+         (t "abc" (Fismaybe-s 0 "abc"))
+         (t #f (Fismaybe-s -1 "abc"))
+         (t #f (Fismaybe-s 0 #f))
+         (t '((int c-string?) c-string?)
+            (let1 info (foreign-function-info Fismaybe-s)
+              (list (get-keyword :argtypes info)
+                    (get-keyword :rettype info))))
 
          ;; null pointer passing
          (t 1 (Fpnull-i (null-pointer-handle)))
@@ -289,6 +306,7 @@
                       (define-c-function Fcb-v-count '(void* int) 'int)
                       (define-c-function Fcb-pi-i '(void* int* int) 'int)
                       (define-c-function Fcb-s-i '(void* void*) 'int)
+                      (define-c-function Fcb-i-s '(void* int) 'int)
 
                       (define-c-callback cb-add ((x 'int) (y 'int)) 'int
                         (+ x y))
@@ -300,6 +318,14 @@
                         (native-aref p i))
                       (define-c-callback cb-strlen ((s 'c-string)) 'int
                         (string-length s))
+                      (define-c-callback cb-strlen-maybe ((s 'c-string?)) 'int
+                        (if s (string-length s) -1))
+                      (define-c-callback cb-maybe-str ((n 'int)) 'c-string?
+                        (and (> n 0) (make-string n #\a)))
+                      (define-c-callback cb-str ((n 'int)) 'c-string
+                        (and (> n 0) (make-string n #\a)))
+                      (define-c-callback cb-bad-str ((n 'int)) 'c-string?
+                        'not-a-string)
                       (define-c-callback cb-badret ((x 'int) (y 'int)) 'int
                         "not an int")
                       (define-c-callback cb-bad ((x 'int) (y 'int)) 'int
@@ -336,6 +362,16 @@
          ;; NULL passed to a c-string arg of a callback
          (t (test-error <error> #/NULL pointer passed to const char\*/)
             (Fcb-s-i cb-strlen (null-pointer-handle)))
+
+         ;; nullable c-string in callbacks
+         (t -1 (Fcb-s-i cb-strlen-maybe (null-pointer-handle)))
+         (t 3 (Fcb-i-s cb-maybe-str 3))
+         (t -1 (Fcb-i-s cb-maybe-str 0))
+         (t 2 (Fcb-i-s cb-str 2))
+         (t (test-error <error> #/must return a value of type <c-string>/)
+            (Fcb-i-s cb-str 0))
+         (t (test-error <error> #/must return a value of type <c-string\?>/)
+            (Fcb-i-s cb-bad-str 0))
 
          ;; <name> is bound to a c-function native handle
          (t #t (c-function-handle? cb-add))
@@ -393,48 +429,11 @@
                   (define-c-variable f-var-int 'int))
                (current-module)))
 
-  ;; Nullable c-string.  (Not yet for :native.)
-  (test* "with-ffi c-string?" 'ok
-         (begin
-           (eval
-            `(with-ffi (dlopen "./f") (:subsystem :stub)
-               (define-c-function Fsmaybe-i '(c-string?) 'int)
-               (define-c-function Fismaybe-s `(int ,(<?> <c-string>))
-                 (<?> <c-string>))
-               (define-c-function Fcb-s-i '(void* void*) 'int)
-               (define-c-function Fcb-i-s '(void* int) 'int)
-               (define-c-callback cb-strlen-maybe ((s 'c-string?)) 'int
-                 (if s (string-length s) -1))
-               (define-c-callback cb-maybe-str ((n 'int)) 'c-string?
-                 (and (>= n 0) (make-string n #\a))))
-            (current-module))
-           'ok))
-  (test* "c-string? arg" 5 (Fsmaybe-i "hello"))
-  (test* "c-string? arg #f" -1 (Fsmaybe-i #f))
-  (test* "c-string? arg type check"
-         (test-error <error> #/argument 1 must be of type <c-string\?>/)
-         (Fsmaybe-i 'oops))
-  (test* "c-string? return" "abc" (Fismaybe-s 0 "abc"))
-  (test* "c-string? return NULL" #f (Fismaybe-s -1 "abc"))
-  (test* "c-string? return #f passed through" #f (Fismaybe-s 0 #f))
-  (test* "c-string? callback arg NULL" -1
-         (Fcb-s-i cb-strlen-maybe (null-pointer-handle)))
-  (test* "c-string? callback return" 3 (Fcb-i-s cb-maybe-str 3))
-  (test* "c-string? callback return #f" -1 (Fcb-i-s cb-maybe-str -1))
-  (test* "c-string? foreign-function-info" '((int c-string?) c-string?)
-         (let1 info (foreign-function-info Fismaybe-s)
-           (list (get-keyword :argtypes info)
-                 (get-keyword :rettype info))))
+  ;; Nullable type is only supported for <c-string>
   (test* "nullable type other than c-string" (test-error <error> #/only supported for <c-string>/)
          (eval `(with-ffi (dlopen "./f") (:subsystem :stub)
                   (define-c-function Fi-i `(,(<?> <int>)) 'int))
                (current-module)))
-  (when (ffi-subsystem-available? :native)
-    (test* "c-string? isn't supported in :native yet"
-           (test-error <error> #/isn't supported in the native FFI yet/)
-           (eval `(with-ffi (dlopen "./f") (:subsystem :native)
-                    (define-c-function Fsmaybe-i '(c-string?) 'int))
-                 (current-module))))
   )
 
 ;;;----------------------------------------------------------
