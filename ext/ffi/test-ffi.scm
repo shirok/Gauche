@@ -307,6 +307,7 @@
                       (define-c-function Fcb-pi-i '(void* int* int) 'int)
                       (define-c-function Fcb-s-i '(void* void*) 'int)
                       (define-c-function Fcb-i-s '(void* int) 'int)
+                      (define-c-function Fcb-narrow '(void*) 'int)
 
                       (define-c-callback cb-add ((x 'int) (y 'int)) 'int
                         (+ x y))
@@ -326,6 +327,12 @@
                         (and (> n 0) (make-string n #\a)))
                       (define-c-callback cb-bad-str ((n 'int)) 'c-string?
                         'not-a-string)
+                      (define-c-callback cb-narrow ((a 'int8_t) (b 'short)
+                                                    (c 'uint8_t) (d 'u_short)
+                                                    (e 'u_int) (f 'char))
+                                                   'int
+                        (set! cb-narrow-args (list a b c d e f))
+                        0)
                       (define-c-callback cb-badret ((x 'int) (y 'int)) 'int
                         "not an int")
                       (define-c-callback cb-bad ((x 'int) (y 'int)) 'int
@@ -363,6 +370,11 @@
          (t (test-error <error> #/NULL pointer passed to const char\*/)
             (Fcb-s-i cb-strlen (null-pointer-handle)))
 
+         ;; narrow integral arguments of callbacks
+         (t -1 (Fcb2-i cb-add -3 2))
+         (t '(-5 -300 200 60000 3000000000 #\x)
+            (begin (Fcb-narrow cb-narrow) cb-narrow-args))
+
          ;; nullable c-string in callbacks
          (t -1 (Fcb-s-i cb-strlen-maybe (null-pointer-handle)))
          (t 3 (Fcb-i-s cb-maybe-str 3))
@@ -388,6 +400,7 @@
          )]))
 
   (define cb-noop-counter 0)
+  (define cb-narrow-args #f)
 
   (parameterize ([default-ffi-subsystem :stub])
     (do-test-f ())

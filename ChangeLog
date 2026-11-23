@@ -1,5 +1,8 @@
 2026-11-22  Shiro Kawai  <shiro@acm.org>
 
+	* ext/ffi/ffi/native.scm (native-type->arg-coerce): Fix integer
+	  sign-extension.
+
 	* src/gen-native.scm: Map NULL and #f for 'cstring' kind of
 	  arg/retval.  This avoids inadvertent crash when foreign entity
 	  passes NULL where Scheme side expects cstring, also allows to

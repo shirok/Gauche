@@ -194,36 +194,42 @@
         [(eq? type <c-string?>) (^v (if (or (not v) (string? v)) v (bad v)))]
         [else values]))
 
-;; Returns a procedure to convert the value returned from the foreign
-;; function NAME.
-;; The asm code maps NULL to #f for <c-string>; we reject it here if
-;; the type doesn't allow it.
-(define (native-type->return-coerce type name)
-  (cond [(eq? type <c-char>) integer->char]
+;; Returns a procedure to convert a C value of TYPE, as boxed by the asm
+;; code, to Scheme.  Used for return values of foreign functions and
+;; arguments of callbacks.  WHO and WHAT are strings for the error message,
+;; e.g. "foo" and "the return value", or "callback bar" and "argument x".
+;;
+;; - The asm code maps NULL to #f for <c-string>; we reject it here, for
+;;   the type doesn't allow it.  (<c-string?> allows it.)
+;; - The asm code boxes integers in the full register, but the upper bits
+;;   are undefined if the C type is narrower than the register (e.g. an int
+;;   argument -1 may come as #xffffffff).  We mask the value to the size of
+;;   the type and sign-extend it if the type is signed.
+(define (native-type->from-c-coerce type who what)
+  (cond [(eq? type <c-char>) (^v (integer->char (logand v #xff)))]
         [(eq? type <c-string>)
          (^r (or r
                  (errorf "FFI: ~a: NULL pointer passed to const char* as \
-                          the return value (declare the return type as \
-                          c-string? if NULL is valid)" name)))]
-        [(and (subtype? type <integer>)
-              (not (~ type 'unsigned?)))
-         (%sign-extender (~ type 'size))]
+                          ~a (use c-string? if NULL is valid)" who what)))]
+        [(subtype? type <integer>)
+         (%int-normalizer (~ type'size) (~ type'unsigned?))]
         [else values]))
 
-(define (%sign-extender bytes)
-  (ecase bytes
-    [(1) (^v (if (< v 128)
-               v
-               (logior v (lognot #xff))))]
-    [(2) (^v (if (< v 32768)
-               v
-               (logior v (lognot #xffff))))]
-    [(4) (^v (if (< v #x8000_0000)
-               v
-               (logior v (lognot #xffff_ffff))))]
-    [(8) (^v (if (< v #x8000_0000_0000_0000)
-               v
-               (logior v (lognot #xffff_ffff_ffff_ffff))))]))
+(define (native-type->return-coerce type name)
+  (native-type->from-c-coerce type (x->string name) "the return value"))
+
+;; Returns a procedure to take the lower SIZE bytes of an integer, as
+;; signed or unsigned.  For the full size, returns values.
+(define (%int-normalizer size unsigned?)
+  (if (>= size 8)
+    values
+    (let* ([bits (* size 8)]
+           [mask (- (ash 1 bits) 1)]
+           [sign (ash 1 (- bits 1))])
+      (if unsigned?
+        (^v (logand v mask))
+        (^v (let1 u (logand v mask)
+              (if (logtest u sign) (- u (+ mask 1)) u)))))))
 
 ;;;
 ;;; Runtime procedure builder
@@ -624,27 +630,25 @@
 ;; Other callbacks are used as is.
 (define (%wrap-callback-body ccb body)
   (define name (~ ccb'scheme-name))
-  (define arg-types (~ ccb'arg-types))
   (define ret-type (~ ccb'return-type))
-  (define check-args? (memq <c-string> arg-types))
+  (define arg-coerce
+    (map (^[type var]
+           (native-type->from-c-coerce type #"callback ~name" #"argument ~var"))
+         (~ ccb'arg-types) (~ ccb'arg-vars)))
+  (define coerce-args? (any (^c (not (eq? c values))) arg-coerce))
   (define ret-ok?
     (cond [(eq? ret-type <c-string>) string?]
           [(eq? ret-type <c-string?>) (^r (or (not r) (string? r)))]
           [else #f]))
-  (define (check-args args)
-    (for-each (^[type var arg]
-                (when (and (eq? type <c-string>) (not arg))
-                  (errorf "FFI: callback ~a: NULL pointer passed to \
-                           const char* as argument ~a" name var)))
-              arg-types (~ ccb'arg-vars) args))
+  (define (coerce-args args) (map (^[c a] (c a)) arg-coerce args))
   (define (check-ret r)
     (unless (ret-ok? r)
       (errorf "FFI: callback ~a must return a value of type ~a, but got: ~s"
               name (~ ret-type'name) r))
     r)
-  (cond [(and check-args? ret-ok?)
-         (^ args (check-args args) (check-ret (apply body args)))]
-        [check-args? (^ args (check-args args) (apply body args))]
+  (cond [(and coerce-args? ret-ok?)
+         (^ args (check-ret (apply body (coerce-args args))))]
+        [coerce-args? (^ args (apply body (coerce-args args)))]
         [ret-ok? (^ args (check-ret (apply body args)))]
         [else body]))
 

@@ -255,6 +255,14 @@ int Fcb_s_i(int (*cb)(const char *), const char *s)
     return cb(s);
 }
 
+/* Pass narrow integral values to a callback.  The upper bits of the
+   registers holding them are undefined, so the callee must not rely on them. */
+int Fcb_narrow(int (*cb)(signed char, short, unsigned char, unsigned short,
+                         unsigned int, char))
+{
+    return cb(-5, -300, 200, 60000, 3000000000u, 'x');
+}
+
 /* Call a callback returning a c-string; returns its length, or -1 for NULL */
 int Fcb_i_s(const char *(*cb)(int), int n)
 {
