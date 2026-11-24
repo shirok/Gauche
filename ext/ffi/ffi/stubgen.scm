@@ -804,21 +804,10 @@
 ;; Variable emitters
 ;;
 
-(define (check-cvar-type cvar)
-  (let1 type (~ cvar'type)
-    (when (or (c-aggregate-type? type)
-              (c-array-type? type)
-              (c-function-type? type))
-      (errorf "define-c-variable: ~a: array, function, struct and union \
-               types are not supported yet" (~ cvar'scheme-name)))
-    (when (eq? type <void>)
-      (errorf "define-c-variable: ~a: variable can't be void"
-              (~ cvar'scheme-name)))))
-
 ;; Emit the static variables for one <foreign-c-variable> (decl section).
 ;; e.g.: static int *ffi_var_my_counter = NULL;
 (define (emit-cvar-decls cvar)
-  (check-cvar-type cvar)
+  (%check-cvar-type cvar)
   (cgen-decl (format "static ~a *~a = NULL;"
                      (%type->c-type (~ cvar'type)) (cvar-ptr-varname cvar)))
   (when (c-pointer-like-type? (~ cvar'type))

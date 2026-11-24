@@ -178,12 +178,11 @@
 ;;  procedure.
 ;;
 ;;  <type> is an evaluated expression yielding a typespec.  It must
-;;  match the C type of the variable,.
+;;  match the C type of the variable.
 ;;  Pointer types are allowed; array, function, struct and union types
 ;;  are not supported yet.  A NULL <c-string> is read as #f, and setting
 ;;  #f stores NULL.
 ;;
-;;  Currently the :stub and :aot subsystems support define-c-variable.
 
 ;;;
 ;;; Classes to handle foreign declaratoins.
@@ -282,6 +281,19 @@
   (if (and (pair? specs) (eq? (last specs) '...))
     (values (drop-right specs 1) #t)
     (values specs #f)))
+
+;; Called by the subsystems at runtime, to reject the variable types
+;; define-c-variable doesn't support.
+(define (%check-cvar-type cvar)
+  (let1 type (~ cvar'type)
+    (when (or (c-aggregate-type? type)
+              (c-array-type? type)
+              (c-function-type? type))
+      (errorf "define-c-variable: ~a: array, function, struct and union \
+               types are not supported yet" (~ cvar'scheme-name)))
+    (when (eq? type <void>)
+      (errorf "define-c-variable: ~a: variable can't be void"
+              (~ cvar'scheme-name)))))
 
 ;; Called by the subsystem macros.  Returns a form that binds the name of
 ;; a define-c-variable to an identifier macro, which turns a reference
