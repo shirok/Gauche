@@ -667,53 +667,69 @@
 
 ;;; Windows x64 ABI callback trampoline
 ;;;
-;;; Arg passing is positional: arg slot i lives in either %rcx/%rdx/%r8/%r9
-;;; (int-like) or %xmm0..%xmm3 (fp), so int_save and fp_save are indexed by
-;;; the *original* argument position — no need for a separate argsrcs
-;;; table.  Only 4 register-resident args; spilled args not yet handled.
+;;; Arg passing is positional: arg slot i (i < 4) lives in either
+;;; %rcx/%rdx/%r8/%r9 (int-like) or %xmm0..%xmm3 (fp); arg slot i >= 4 is
+;;; on the caller's stack.  The caller always reserves 32 bytes of home
+;;; space right above the return address, immediately followed by the
+;;; stack args.  We store the 4 int arg regs into that home space, so that
+;;; every int-like arg i is found at home[i] — no separate argsrcs table
+;;; needed.  Fp args i < 4 are read from fp_save[i]; fp args i >= 4 from
+;;; home[i] (a float occupies the low 32 bits of the slot).
 ;;;
-;;; Stack frame (entry rsp%16==8; we push %rbx then sub $128,%rsp):
+;;; Stack frame (entry rsp%16==8; we push %rbx then sub $80,%rsp):
 ;;;   %rsp+0..31     shadow space     — 32 bytes for outgoing helper calls
-;;;   %rsp+32..63    int_save[0..3]   — saved %rcx,%rdx,%r8,%r9
-;;;   %rsp+64..95    fp_save[0..3]    — saved %xmm0..%xmm3
-;;;   %rsp+96..127   boxed[0..3]      — boxed ScmObj per arg
+;;;   %rsp+32..63    fp_save[0..3]    — saved %xmm0..%xmm3
+;;;   %rsp+64..71    acc              — arg list being built (ScmObj)
+;;;   %rsp+72..79    (padding for alignment)
+;;;   %rsp+80        saved %rbx
+;;;   %rsp+88        return address
+;;;   %rsp+96..      home[0..3], then stack args home[4..] (caller's frame)
 ;;;
-;;; Total RSP delta from caller's frame = 8 (push %rbx) + 128 = 136.
+;;; Args are boxed from the last one to the first, consing each onto acc,
+;;; so the number of args is limited only by the size of the per-callback
+;;; metadata tables (MAX-ARGS in assemble-callback-winx64).
+;;;
+;;; Total RSP delta from caller's frame = 8 (push %rbx) + 80 = 88.
 ;;; The single-ALLOC unwind code in setup_codepad_pdata describes that
-;;; whole 136-byte adjustment; %rbx's saved value is not advertised, by
-;;; design — see memory/project_winx64_unwind.md.
+;;; whole 88-byte adjustment; %rbx's saved value is not advertised, by
+;;; design — see memory/project_winx64_unwind.md.  Writing to the home
+;;; space is outside our frame and doesn't affect unwinding.
 
 (define-asm-fragment winx64-callback x86_64
   '(entry:
              (push %rbx)                ; rsp%16: 8 -> 0
-             (subq (imm32 128) %rsp)    ; 128 % 16 == 0
+             (subq (imm32 80) %rsp)     ; 80 % 16 == 0
     prolog-end:
-             ;; Save 4 int arg regs into int_save[0..3] at rsp+32.
-             (movq %rcx (32 %rsp))
-             (movq %rdx (40 %rsp))
-             (movq %r8  (48 %rsp))
-             (movq %r9  (56 %rsp))
-             ;; Save 4 xmm arg regs into fp_save[0..3] at rsp+64.
-             (movsd %xmm0 (64 %rsp))
-             (movsd %xmm1 (72 %rsp))
-             (movsd %xmm2 (80 %rsp))
-             (movsd %xmm3 (88 %rsp))
-             ;; rbx = arg index, iterate while rbx < nargs.
-             (xorq %rbx %rbx)
+             ;; Save 4 int arg regs into the caller's home space, home[0..3]
+             ;; at rsp+96, so that home[i] is int arg i for all i.
+             (movq %rcx (96 %rsp))
+             (movq %rdx (104 %rsp))
+             (movq %r8  (112 %rsp))
+             (movq %r9  (120 %rsp))
+             ;; Save 4 xmm arg regs into fp_save[0..3] at rsp+32.
+             (movsd %xmm0 (32 %rsp))
+             (movsd %xmm1 (40 %rsp))
+             (movsd %xmm2 (48 %rsp))
+             (movsd %xmm3 (56 %rsp))
+             ;; acc = '()
+             (movq (SCM_NIL:) %rax)
+             (movq %rax (64 %rsp))
+             ;; rbx = nargs; iterate from the last arg down to the first.
+             (movzbq (nargs:) %rbx)
     box-loop:
-             (movzbq (nargs:) %rax)
-             (cmpq %rax %rbx)
-             (jgel build-args:)
+             (cmpq 0 %rbx)
+             (jel apply-it:)
+             (decq %rbx)
              ;; %al <- argkinds[rbx]
              (leaq (argkinds:) %r10)
              (movzbq (%r10 %rbx 1) %rax)
-             ;; Float kinds first; they read from fp_save.
+             ;; Float kinds first; they may read from fp_save.
              (cmpb 4 %al)
              (jel box-double:)
              (cmpb 5 %al)
              (jel box-float:)
-             ;; Int-like: load int_save[rbx] into %rcx (Win64 1st arg).
-             (movq (32 %rsp %rbx 8) %rcx)
+             ;; Int-like: load home[rbx] into %rcx (Win64 1st arg).
+             (movq (96 %rsp %rbx 8) %rcx)
              (cmpb 1 %al)
              (jel box-fixnum:)
              (cmpb 2 %al)
@@ -761,38 +777,37 @@
              (jmpl store-boxed:)
 
     box-double:
-             (movsd (64 %rsp %rbx 8) %xmm0)
+             ;; Arg 4 and after: home[rbx]; otherwise fp_save[rbx].
+             (movsd (96 %rsp %rbx 8) %xmm0)
+             (cmpq 4 %rbx)
+             (jgel box-double-go:)
+             (movsd (32 %rsp %rbx 8) %xmm0)
+    box-double-go:
              (call (fn-flonum:))
              (jmpl store-boxed:)
 
     box-float:
-             (movsd (64 %rsp %rbx 8) %xmm0)
+             ;; Reads 8 bytes; low 32 are the float.
+             (movsd (96 %rsp %rbx 8) %xmm0)
+             (cmpq 4 %rbx)
+             (jgel box-float-go:)
+             (movsd (32 %rsp %rbx 8) %xmm0)
+    box-float-go:
              (cvtss2sd %xmm0 %xmm0)
              (call (fn-flonum:))
              ;; fall through
 
     store-boxed:
-             (movq %rax (96 %rsp %rbx 8))
-             (incq %rbx)
-             (jmpl box-loop:)
-
-    build-args:
-             ;; acc = '() ; for i from nargs-1 downto 0:
-             ;; acc = (cons boxed[i] acc)
-             (movq (SCM_NIL:) %rax)
-             (movzbq (nargs:) %rbx)
-    build-loop:
-             (cmpq 0 %rbx)
-             (jel apply-it:)
-             (decq %rbx)
-             (movq %rax %rdx)              ; cdr (2nd arg)
-             (movq (96 %rsp %rbx 8) %rcx)  ; car (1st arg)
+             ;; acc = (cons boxed acc)
+             (movq %rax %rcx)           ; car (1st arg)
+             (movq (64 %rsp) %rdx)      ; cdr (2nd arg)
              (call (fn-cons:))
-             (jmpl build-loop:)
+             (movq %rax (64 %rsp))
+             (jmpl box-loop:)
 
     apply-it:
              (movq (proc:) %rcx)        ; ScmObj proc (1st arg)
-             (movq %rax %rdx)           ; args list   (2nd arg)
+             (movq (64 %rsp) %rdx)      ; args list   (2nd arg)
              (call (fn-callback:))      ; %rax = Scm__FFINativeCallCallback(...)
 
              ;; Return-side dispatch: unbox %rax into a C value.
@@ -849,7 +864,7 @@
              (xorq %rax %rax)
              ;; fallthrough
     epilog:
-             (addq (imm32 128) %rsp)
+             (addq (imm32 80) %rsp)
              (pop %rbx)
              (ret)
              (.endsection text)
@@ -870,15 +885,41 @@
     fn-handle-ptr:  (.dataq :Scm_NativeHandlePtr)
     SCM_NIL:        (.dataq :SCM_NIL)
     SCM_FALSE:      (.dataq :SCM_FALSE)
+    ;; The number of argkind/argtype entries must match MAX-ARGS
+    ;; in assemble-callback-winx64.
     nargs:          (.datab :nargs)
     argkinds:       (.datab :argkind0)
                     (.datab :argkind1)
                     (.datab :argkind2)
                     (.datab :argkind3)
+                    (.datab :argkind4)
+                    (.datab :argkind5)
+                    (.datab :argkind6)
+                    (.datab :argkind7)
+                    (.datab :argkind8)
+                    (.datab :argkind9)
+                    (.datab :argkind10)
+                    (.datab :argkind11)
+                    (.datab :argkind12)
+                    (.datab :argkind13)
+                    (.datab :argkind14)
+                    (.datab :argkind15)
     argtypes:       (.dataq :argtype0)
                     (.dataq :argtype1)
                     (.dataq :argtype2)
                     (.dataq :argtype3)
+                    (.dataq :argtype4)
+                    (.dataq :argtype5)
+                    (.dataq :argtype6)
+                    (.dataq :argtype7)
+                    (.dataq :argtype8)
+                    (.dataq :argtype9)
+                    (.dataq :argtype10)
+                    (.dataq :argtype11)
+                    (.dataq :argtype12)
+                    (.dataq :argtype13)
+                    (.dataq :argtype14)
+                    (.dataq :argtype15)
     end:))
 
 
@@ -1470,8 +1511,8 @@
   ;; arg slots, so argsrcs is implicit (= argument index) and is not
   ;; written to the data section.
   ;;
-  ;; The trampoline currently supports up to 4 register-resident args;
-  ;; spilled args are not yet handled.
+  ;; The trampoline supports up to MAX-ARGS args, including stack-passed
+  ;; ones (args 4 and after).
   (Ps
    `(define assemble-callback-winx64
       (let ([% (%%make-bootstrap-function-table '(%%get-entry-address))]
@@ -1486,13 +1527,15 @@
               (set! prelinked-tmpl
                     (prelink (winx64-callback-tmpl)
                              (%asm-callback-patches gea))))))
-        (define MAX-ARGS 4)
+        ;; Must match the number of argkind/argtype entries in the
+        ;; winx64-callback template.
+        (define MAX-ARGS 16)
         (^[proc arg-canons rettype]
           (when (not link-tmpl) (init!))
           (let* ([nargs (length arg-canons)])
             (when (> nargs MAX-ARGS)
-              (errorf "FFI native callback: more than ~a register-resident \
-                       args is not supported yet (got ~a)"
+              (errorf "FFI native callback: more than ~a args is not \
+                       supported (got ~a)"
                       MAX-ARGS nargs))
             (let* ([kinds (map %asm-boxkind arg-canons)]
                    [_ (when (memv 6 kinds)
@@ -1528,8 +1571,8 @@
                     (values bytes
                             entry-off
                             prolog-end
-                            ;; win-frame-size = push %rbx (8) + sub $128
-                            (+ 8 128)))))))))))
+                            ;; win-frame-size = push %rbx (8) + sub $80
+                            (+ 8 80)))))))))))
   )
 
 ;;;

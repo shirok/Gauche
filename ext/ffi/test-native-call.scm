@@ -233,19 +233,74 @@
                      `((,<double> 1.0) (,<intptr_t> 5) (,<double> 2.0))
                      <top>))
 
-;; SysV gives 6 int arg registers; Win64 only 4, and the winx64
-;; trampoline doesn't yet support spilled args.
+;; SysV gives 6 int arg registers; Win64 only 4, so args 4 and 5 are
+;; stack-passed on Win64.
+(test* "six int args"
+       '(1 2 3 4 5 6)
+       (run-callback (^[a b c d e f] (list a b c d e f))
+                     (list <intptr_t> <intptr_t> <intptr_t>
+                           <intptr_t> <intptr_t> <intptr_t>)
+                     `((,<intptr_t> 1) (,<intptr_t> 2) (,<intptr_t> 3)
+                       (,<intptr_t> 4) (,<intptr_t> 5) (,<intptr_t> 6))
+                     <top>))
+
+;; 4 int-like + 4 fp args fit in registers on SysV.  On Win64, args
+;; 4..7 are on the stack, exercising stack-passed double, float and
+;; c-string.
+(test* "eight mixed args"
+       '(1 2.5 3 4.5 5 6.5 7.25 "eight")   ; 7.25 is exact in float
+       (run-callback (^ args args)
+                     (list <intptr_t> <double> <intptr_t> <double>
+                           <intptr_t> <double> <float> <c-string>)
+                     `((,<intptr_t> 1) (,<double> 2.5)
+                       (,<intptr_t> 3) (,<double> 4.5)
+                       (,<intptr_t> 5) (,<double> 6.5)
+                       (,<float> 7.25) (,<c-string> "eight"))
+                     <top>))
+
+;; The SysV trampoline doesn't support stack-passed args yet.
 (cond-expand
- [gauche.os.windows]
- [else
-  (test* "six int args (full int reg file)"
-         '(1 2 3 4 5 6)
-         (run-callback (^[a b c d e f] (list a b c d e f))
+ [gauche.os.windows
+  (test* "stack-passed pointer arg"
+         #t
+         (let* ([ptype  (make-c-pointer-type <int>)]
+                [handle (make-native-handle ptype (u32vector 1 2 3))]
+                [result (run-callback (^[a b c d h] h)
+                                      (list <intptr_t> <intptr_t> <intptr_t>
+                                            <intptr_t> ptype)
+                                      `((,<intptr_t> 1) (,<intptr_t> 2)
+                                        (,<intptr_t> 3) (,<intptr_t> 4)
+                                        (,ptype ,handle))
+                                      <top>)])
+           (and (c-pointer-handle? result)
+                (c-pointer=? result handle))))
+
+  (test* "stack-passed float and double args"
+         '(1.5 2.5 3.5 4.5 5.5)             ; exact in float
+         (run-callback (^[a b c d . rest] rest)
                        (list <intptr_t> <intptr_t> <intptr_t>
-                             <intptr_t> <intptr_t> <intptr_t>)
-                       `((,<intptr_t> 1) (,<intptr_t> 2) (,<intptr_t> 3)
-                         (,<intptr_t> 4) (,<intptr_t> 5) (,<intptr_t> 6))
-                       <top>))])
+                             <intptr_t> <float> <double> <float>
+                             <double> <float>)
+                       `((,<intptr_t> 0) (,<intptr_t> 0)
+                         (,<intptr_t> 0) (,<intptr_t> 0)
+                         (,<float> 1.5) (,<double> 2.5)
+                         (,<float> 3.5) (,<double> 4.5)
+                         (,<float> 5.5))
+                       <top>))
+
+  (test* "sixteen args (max)"
+         (iota 16)
+         (run-callback (^ args args)
+                       (make-list 16 <intptr_t>)
+                       (map (^i `(,<intptr_t> ,i)) (iota 16))
+                       <top>))
+
+  (test* "seventeen args rejected"
+         (test-error <error> #/more than 16 args/)
+         (assemble-callback-sysvx64 (^ args args)
+                                    (make-list 17 <intptr_t>)
+                                    <top>))]
+ [else])
 
 ;;----------------------------------------------------------
 (test-section "Callback trampoline: per-kind return unboxing")
