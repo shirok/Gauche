@@ -10094,7 +10094,7 @@ A macro shorthand for @code{(regexp `(: @var{sre} ...))}.
 @defun regexp->sre @var{re}
 [R7RS regex]
 @c MOD scheme.regex
-Returns the SRE corresponding to the given given regexp object. Note
+Returns the SRE corresponding to the given regexp object. Note
 that if the regexp object is not created from an SRE, it may contain
 features that cannot be expressed in SRE and cause an error.
 @end defun
