@@ -17535,7 +17535,7 @@ the @var{memory-order} argument.
 Compare two values in atomic box @var{abox} with @var{expected1} and
 @var{expected2}, respectively.  If each corresponding values are
 the same (in @code{eq?} sense), store @var{desired1} and @var{desired2}
-to @var{abox}.  Always returns teh original values.
+to @var{abox}.  Always returns the original values.
 The whole operations are done atomically.
 
 You can know the values are altered by comparing returned values
