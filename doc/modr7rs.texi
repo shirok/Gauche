@@ -7191,7 +7191,7 @@ idequeとリストの間の変換を行います。
 @c COMMON
 
 @c EN
-The optional @var{start} and @var{end} index arguments are the extention
+The optional @var{start} and @var{end} index arguments are the extension
 defined in SRFI-274 to limit the range of @var{list} to be used.
 @xref{Extended list conversion procedures}.
 @c JP
