@@ -22852,7 +22852,7 @@ If an unhandled exception occurs within a thread other than the primordial
 one, it terminates the thread, and the thrown condition
 is wrapped by @code{<uncaught-exception>} condition and stored in the
 thread object.  If other thread calls @code{thread-join!} to retrieve
-result, the @code{<uncaught-exception>} is thrown in that thread.
+result, the the @code{<uncaught-exception>} is thrown in that thread.
 Note that no messages are displayed when the original uncaught exception
 is thrown.  @xref{Thread programming tips}, for the details.
 @c JP
@@ -28029,7 +28029,7 @@ Radix.  If the argument is an exact number,
 the directive @code{~@var{n}R} prints out the argument
 in radix @var{n}.  For example, @var{~10R} is the same as @code{~D}.
 The @var{radix} parameter must be between 2 and 36, inclusive.
-Other paramters are are the same as @code{~D} directive.
+Other parameters are are the same as @code{~D} directive.
 
 If the argument is other than an exact number, it is formatted
 just as @code{~A}.
