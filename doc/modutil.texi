@@ -16413,7 +16413,7 @@ This slot is inherited from @code{<error>}.  Contains string error message.
 
 @defivar <parse-error> position
 @c EN
-The position the failure occurred.
+The position the failure occured.
 @c JP
 失敗が起きた入力の場所です。
 @c COMMON
@@ -17556,7 +17556,7 @@ operator is parsed by @var{op}.
 @defmac $parameterize ((param expr) @dots{}) parser @dots{}
 @c MOD parser.peg
 Returns a parser that runs @var{parser} @dots{}, while altering
-the parameter values of @var{param} @dots{} with the reuslt of
+the parameter values of @var{param} @dots{} with the result of
 @var{expr} @dots{}, like @code{parameterize}.
 The @var{parser} @dots{} are run as if in @code{$seq}, so only the value
 of them is returned on success.
