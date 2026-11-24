@@ -133,7 +133,7 @@ are from the host environment, which means you can't use the feature
 added after the latest release of Gauche to build the current source.
 
 You can make sure that the source tree is buildable both by the latest
-relase _and_ the current built, by running `./DIST self-host-test`.
+release _and_ the current built, by running `./DIST self-host-test`.
 It also checks if out-of-tree build works.  It performs the following
 opertaions:
 
