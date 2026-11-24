@@ -17205,7 +17205,7 @@ Each @var{clause} is @code{(formals body @dots{})}, much like
 the ordinary @code{case-lambda}.
 
 First evaluates @var{expr}, and returns a procedure that is
-the same as @code{(case-lambda clause @dots{})}, excpet that
+the same as @code{(case-lambda clause @dots{})}, except that
 the value of @var{expr} is attached as a tag to the resulting
 procedure.   The tag can be retrieved with @code{procedure-tag}.
 @c JP
