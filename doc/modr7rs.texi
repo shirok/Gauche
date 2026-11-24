@@ -14855,7 +14855,7 @@ state.
 @subsubheading Standard State Variables
 
 @defvar port
-The current port output is written into, could be overriden to capture
+The current port output is written into, could be overridden to capture
 intermediate output.
 @end defvar
 
