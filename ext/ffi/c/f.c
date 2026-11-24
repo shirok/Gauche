@@ -361,3 +361,18 @@ struct foo *f_var_pfoo = &f_var_foo;
 
 int f_var_int_get(void) { return f_var_int; }
 double f_var_double_get(void) { return f_var_double; }
+
+/* Restore the initial values, so that the tests can run for each
+   subsystem in the same process. */
+void f_var_reset(void)
+{
+    static const struct foo foo_init = { 'a', 1, 2, 3, 4.0f, 5.0 };
+    f_var_int = 42;
+    f_var_double = 1.5;
+    f_var_i8 = -3;
+    f_var_str = "initial";
+    f_var_null_str = NULL;
+    f_var_maybe_str = NULL;
+    f_var_foo = foo_init;
+    f_var_pfoo = &f_var_foo;
+}

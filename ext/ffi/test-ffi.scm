@@ -456,11 +456,13 @@
              (eval `(with-ffi #f (:subsystem ,subsystem)
                       (define-c-function F-i '() 'int))
                    (current-module)))))
-  (test* "with-ffi #f with a C variable"
-         (test-error <error> #/needs a C symbol, but with-ffi is given #f/)
-         (eval `(with-ffi #f (:subsystem :stub)
-                  (define-c-variable f-var-int 'int))
-               (current-module)))
+  (dolist [subsystem '(:stub :native)]
+    (when (ffi-subsystem-available? subsystem)
+      (test* #"with-ffi #f with a C variable (~subsystem)"
+             (test-error <error> #/needs a C symbol, but with-ffi is given #f/)
+             (eval `(with-ffi #f (:subsystem ,subsystem)
+                      (define-c-variable f-var-int 'int))
+                   (current-module)))))
 
   ;; Nullable type is only supported for <c-string>
   (test* "nullable type other than c-string" (test-error <error> #/only supported for <c-string>/)
@@ -889,110 +891,121 @@
 ;;;----------------------------------------------------------
 (test-section "define-c-variable")
 
-(define-module ffi-var-stub-sandbox
-  (use gauche.test)
-  (use gauche.ffi)
-  (use gauche.native-type)
+(define-macro (define-var-test-module modname subsystem)
+  `(define-module ,modname
+     (use gauche.test)
+     (use gauche.ffi)
+     (use gauche.native-type)
 
-  (define-type foo (native-type
-                    '(.struct foo (c::char i::int s::short
-                                           l::long f::float d::double))))
+     (define-type foo (native-type
+                       '(.struct foo (c::char i::int s::short
+                                              l::long f::float d::double))))
 
-  (parameterize ([default-ffi-subsystem :stub])
-    (eval '(with-ffi (dlopen "./f") ()
-             (define-c-variable f-var-int 'int)
-             (define-c-variable f-var-double 'double)
-             (define-c-variable f-var-i8 'int8_t)
-             (define-c-variable f-var-str 'c-string)
-             (define-c-variable f-var-null-str 'c-string)
-             (define-c-variable f-var-maybe-str 'c-string?)
-             (define-c-variable f-var-pfoo (make-c-pointer-type foo))
-             (define-c-function f-var-int-get () 'int)
-             (define-c-function f-var-double-get () 'double)
-             ;; Body forms can refer to the variables.
-             (define (f-var-int-inc!) (set! f-var-int (+ f-var-int 1))))
-          (current-module)))
+     (parameterize ([default-ffi-subsystem ,subsystem])
+       (eval '(with-ffi (dlopen "./f") ()
+                (define-c-variable f-var-int 'int)
+                (define-c-variable f-var-double 'double)
+                (define-c-variable f-var-i8 'int8_t)
+                (define-c-variable f-var-str 'c-string)
+                (define-c-variable f-var-null-str 'c-string)
+                (define-c-variable f-var-maybe-str 'c-string?)
+                (define-c-variable f-var-pfoo (make-c-pointer-type foo))
+                (define-c-function f-var-int-get () 'int)
+                (define-c-function f-var-double-get () 'double)
+                (define-c-function f-var-reset () 'void)
+                ;; Body forms can refer to the variables.
+                (define (f-var-int-inc!) (set! f-var-int (+ f-var-int 1))))
+             (current-module)))
+     ;; f.so is shared by the test modules of all subsystems.
+     (f-var-reset)
 
-  ;; The test file is included by test.scm and compiled as a whole, so
-  ;; the expressions using the identifier macros have to be compiled
-  ;; after the with-ffi form is evaluated.
-  (define-syntax tv
-    (syntax-rules ()
-      [(_ name expected expr)
-       (test* name expected (eval 'expr (current-module)))]))
+     (define (tname name) (format "~a (~s)" name ,subsystem))
 
-  (tv "define-c-variable, int" 42 f-var-int)
-  (tv "define-c-variable, double" 1.5 f-var-double)
-  (tv "define-c-variable, int8_t" -3 f-var-i8)
-  (tv "define-c-variable, c-string" "initial" f-var-str)
-  (tv "define-c-variable, NULL c-string" #f f-var-null-str)
-  (tv "define-c-variable, c-string?" '(#f "set" #f)
-      (let* ([a f-var-maybe-str]
-             [b (begin (set! f-var-maybe-str "set") f-var-maybe-str)]
-             [c (begin (set! f-var-maybe-str #f) f-var-maybe-str)])
-        (list a b c)))
-  (tv "define-c-variable, set! type check (c-string?)" (test-error <error>)
-      (set! f-var-maybe-str 'oops))
+     ;; The test file is included by test.scm and compiled as a whole, so
+     ;; the expressions using the identifier macros have to be compiled
+     ;; after the with-ffi form is evaluated.
+     (define-syntax tv
+       (syntax-rules ()
+         [(_ name expected expr)
+          (test* name expected (eval 'expr (current-module)))]))
 
-  (tv "define-c-variable, set!" '(100 100)
-         (begin (set! f-var-int 100)
-                (list f-var-int (f-var-int-get))))
-  (tv "define-c-variable, set! from body procedure" '(101 101)
-         (begin (f-var-int-inc!)
-                (list f-var-int (f-var-int-get))))
-  (tv "define-c-variable, set! double" '(-0.25 -0.25)
-         (begin (set! f-var-double -0.25)
-                (list f-var-double (f-var-double-get))))
-  (tv "define-c-variable, set! c-string" "changed"
-         (begin (set! f-var-str "changed") f-var-str))
-  (tv "define-c-variable, set! c-string to #f" #f
-         (begin (set! f-var-str #f) f-var-str))
+     (tv (tname "define-c-variable, int") 42 f-var-int)
+     (tv (tname "define-c-variable, double") 1.5 f-var-double)
+     (tv (tname "define-c-variable, int8_t") -3 f-var-i8)
+     (tv (tname "define-c-variable, c-string") "initial" f-var-str)
+     (tv (tname "define-c-variable, NULL c-string") #f f-var-null-str)
+     (tv (tname "define-c-variable, c-string?") '(#f "set" #f)
+         (let* ([a f-var-maybe-str]
+                [b (begin (set! f-var-maybe-str "set") f-var-maybe-str)]
+                [c (begin (set! f-var-maybe-str #f) f-var-maybe-str)])
+           (list a b c)))
+     (tv (tname "define-c-variable, set! type check (c-string?)") (test-error <error>)
+         (set! f-var-maybe-str 'oops))
 
-  (tv "define-c-variable, set! type check" (test-error <error> #/value of type <int8> required/)
-         (set! f-var-i8 200))
-  (tv "define-c-variable, set! type check keeps value" -3 f-var-i8)
-  (tv "define-c-variable, set! type check (c-string)" (test-error <error>)
-         (set! f-var-str 'oops))
+     (tv (tname "define-c-variable, set!") '(100 100)
+            (begin (set! f-var-int 100)
+                   (list f-var-int (f-var-int-get))))
+     (tv (tname "define-c-variable, set! from body procedure") '(101 101)
+            (begin (f-var-int-inc!)
+                   (list f-var-int (f-var-int-get))))
+     (tv (tname "define-c-variable, set! double") '(-0.25 -0.25)
+            (begin (set! f-var-double -0.25)
+                   (list f-var-double (f-var-double-get))))
+     (tv (tname "define-c-variable, set! c-string") "changed"
+            (begin (set! f-var-str "changed") f-var-str))
+     (tv (tname "define-c-variable, set! c-string to #f") #f
+            (begin (set! f-var-str #f) f-var-str))
 
-  (tv "define-c-variable, pointer" '(#\a 1 5.0)
-         (let1 p f-var-pfoo
-           (list (native. p 'c) (native. p 'i) (native. p 'd))))
-  (tv "define-c-variable, set! pointer" '(#t 7)
-         (let1 p f-var-pfoo
-           (set! (native. p 'i) 7)
-           (set! f-var-pfoo p)
-           (list (is-a? f-var-pfoo <native-handle>) (native. f-var-pfoo 'i))))
+     (tv (tname "define-c-variable, set! type check") (test-error <error> #/value of type <int8> required/)
+            (set! f-var-i8 200))
+     (tv (tname "define-c-variable, set! type check keeps value") -3 f-var-i8)
+     (tv (tname "define-c-variable, set! type check (c-string)") (test-error <error>)
+            (set! f-var-str 'oops))
 
-  (tv "define-c-variable, in operator position" 2.0
-         (let ()
-           (set! f-var-double 2.0)
-           (abs f-var-double)))
+     (tv (tname "define-c-variable, pointer") '(#\a 1 5.0)
+            (let1 p f-var-pfoo
+              (list (native. p 'c) (native. p 'i) (native. p 'd))))
+     (tv (tname "define-c-variable, set! pointer") '(#t 7)
+            (let1 p f-var-pfoo
+              (set! (native. p 'i) 7)
+              (set! f-var-pfoo p)
+              (list (is-a? f-var-pfoo <native-handle>) (native. f-var-pfoo 'i))))
 
-  (test* "define-c-variable rejects struct type"
-         (test-error <error> #/struct and union types are not supported/)
-         (let1 m (make-module #f)
-           (eval '(use gauche.ffi) m)
-           (eval `(define-type foo ,foo) m)
-           (eval '(with-ffi (dlopen "./f") (:subsystem :stub)
-                    (define-c-variable f-var-foo foo))
-                 m)))
-  (test* "define-c-variable, undefined symbol"
-         (test-error <error> #/symbol no_such_var not found/)
-         (let1 m (make-module #f)
-           (eval '(use gauche.ffi) m)
-           (eval '(with-ffi (dlopen "./f") (:subsystem :stub)
-                    (define-c-variable no-such-var 'int))
-                 m)))
-  (test* "define-c-variable outside with-ffi" (test-error <error>)
-         (eval '(define-c-variable f-var-int 'int) (current-module)))
-  (test* "define-c-variable, type omitted"
-         (test-error <error> #/name and type required/)
-         (let1 m (make-module #f)
-           (eval '(use gauche.ffi) m)
-           (eval '(with-ffi (dlopen "./f") (:subsystem :stub)
-                    (define-c-variable f-var-int))
-                 m)))
-  )
+     (tv (tname "define-c-variable, in operator position") 2.0
+            (let ()
+              (set! f-var-double 2.0)
+              (abs f-var-double)))
+
+     (test* (tname "define-c-variable rejects struct type")
+            (test-error <error> #/struct and union types are not supported/)
+            (let1 m (make-module #f)
+              (eval '(use gauche.ffi) m)
+              (eval `(define-type foo ,foo) m)
+              (eval `(with-ffi (dlopen "./f") (:subsystem ,,subsystem)
+                       (define-c-variable f-var-foo foo))
+                    m)))
+     (test* (tname "define-c-variable, undefined symbol")
+            (test-error <error> #/symbol no_such_var not found/)
+            (let1 m (make-module #f)
+              (eval '(use gauche.ffi) m)
+              (eval `(with-ffi (dlopen "./f") (:subsystem ,,subsystem)
+                       (define-c-variable no-such-var 'int))
+                    m)))
+     (test* (tname "define-c-variable outside with-ffi") (test-error <error>)
+            (eval '(define-c-variable f-var-int 'int) (current-module)))
+     (test* (tname "define-c-variable, type omitted")
+            (test-error <error> #/name and type required/)
+            (let1 m (make-module #f)
+              (eval '(use gauche.ffi) m)
+              (eval `(with-ffi (dlopen "./f") (:subsystem ,,subsystem)
+                       (define-c-variable f-var-int))
+                    m)))
+     ))
+
+(define-var-test-module ffi-var-stub-sandbox :stub)
+(when (ffi-subsystem-available? :native)
+  (eval '(define-var-test-module ffi-var-native-sandbox :native)
+        (current-module)))
 
 ;;;----------------------------------------------------------
 (test-section "foreign-function-info")

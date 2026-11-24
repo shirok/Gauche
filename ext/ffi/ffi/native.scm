@@ -49,7 +49,8 @@
 ;; (with-native-ffi dlo-var dlo-expr options cdef-specs forms)
 ;;
 ;; cdef-specs is ((name . expr) ...) where expr evaluates to a
-;; <foreign-c-function>, <foreign-c-callback> or <foreign-c-constant>.
+;; <foreign-c-function>, <foreign-c-callback>, <foreign-c-constant>,
+;; <foreign-c-enum> or <foreign-c-variable>.
 ;;
 ;; The provisional (define name) bindings and the body lambdas are
 ;; emitted as begin-level forms.  Each define-c-enum's set name is bound
@@ -60,6 +61,11 @@
 ;; single ScmFFICallbackContext which is anchored in a hidden
 ;; module-level binding so the foreign side's invisible references
 ;; cannot dangle.
+;;
+;; Each define-c-variable is bound to an identifier macro, emitted before
+;; the body forms, which calls the getter and the setter.  The accessors
+;; are provisionally bound to procedures that raise an error, and the real
+;; ones are set along with the C functions, once the dlobj is available.
 (define-syntax with-native-ffi
   (er-macro-transformer
    (^[f r c]
@@ -70,14 +76,11 @@
                         '%require (find-module 'gauche.internal) '()))
      (match f
        [(_ dlo-var dlo-expr options cdef-specs forms)
-        ;; TODO: Support define-c-variable.
-        (and-let1 spec (find (cut of-kind? <> :variable) cdef-specs)
-          (error "define-c-variable isn't supported by the :native FFI \
-                  subsystem yet; use (:subsystem :stub):" (~ spec'name)))
         (let* ([cfn-specs (filter (cut of-kind? <> :function) cdef-specs)]
                [ccb-specs (filter (cut of-kind? <> :callback) cdef-specs)]
                [cst-specs (filter (cut of-kind? <> :constant) cdef-specs)]
                [cen-specs (filter (cut of-kind? <> :enum) cdef-specs)]
+               [cvar-specs (filter (cut of-kind? <> :variable) cdef-specs)]
                [ccb-body-names (map (cut ~ <>'body-name) ccb-specs)]
                [ctx-var   (gensym "%ffi-native-ctx-")]
                [instances-var (gensym "%ccbs-")])
@@ -85,6 +88,22 @@
             (quasirename r
               `(set! ,(~ spec'name)
                      (make-native-ffi-proc ,dlo-var ,(~ spec'expr)))))
+          ;; The accessors of each variable start as procedures that
+          ;; raise an error; the real ones are set once the dlobj is
+          ;; available.
+          (define (emit-cvar-accessor-defines)
+            (append-map
+             (^s (list (quasirename r
+                         `(define ,(~ s'getter-name)
+                            (%native-cvar-uninitialized ',(~ s'name))))
+                       (quasirename r
+                         `(define ,(~ s'setter-name)
+                            (%native-cvar-uninitialized ',(~ s'name))))))
+             cvar-specs))
+          (define (emit-cvar-set! spec)
+            (quasirename r
+              `(set!-values (,(~ spec'getter-name) ,(~ spec'setter-name))
+                 (make-native-cvar-accessors ,dlo-var ,(~ spec'expr)))))
           (define (emit-ccb-block)
             (if (null? ccb-specs)
               #f
@@ -133,7 +152,12 @@
           (quasirename r
             `(begin
                (,%require. "gauche/ffi/native")
+               ;; The identifier macros of define-c-variable come first,
+               ;; so that the body forms can refer to the variables.
+               ,@(map (cut %cvar-macro-definition <> r #f) cvar-specs)
+               ,@(emit-cvar-accessor-defines)
                ,@(filter-map (^s (and (not (of-kind? s :enum))
+                                      (not (of-kind? s :variable))
                                       (quasirename r `(define ,(~ s'name)))))
                              cdef-specs)
                ,@(emit-enumerator-defines)
@@ -143,6 +167,7 @@
                (define ,ctx-var
                  (let ([,dlo-var ,dlo-expr])
                    ,@(map emit-cfn-set! cfn-specs)
+                   ,@(map emit-cvar-set! (reverse cvar-specs))
                    ,(emit-ccb-block))))))]))))
 
 ;;;
@@ -307,6 +332,53 @@
                      arg-canons arg-coerce args)
                 ret-canon)))))
       (%procedure-copy raw-proc tag-info))))
+
+;;;
+;;; Variables
+;;;
+;;; define-c-variable is handled at load time as well.  The C symbol is
+;;; looked up as a pointer to the variable, and the getter and the setter
+;;; access the variable through the pointer handle.  It doesn't need
+;;; native calls.
+;;;
+
+(define (%native-cvar-uninitialized name)
+  (^ _ (errorf "FFI: ~a is not initialized; call with-ffi first" name)))
+
+;; Returns the getter and the setter of the C variable described by cvar.
+;; Called at load time from the set!-values forms emitted by with-native-ffi.
+;;
+;; - <c-string> is accessed as <c-string?>, as the c-ref of <c-string>
+;;   can't handle NULL.  As in :stub, a NULL <c-string> is read as #f,
+;;   and setting #f stores NULL.
+;; - The setter checks the value before storing, to give the same error
+;;   message as :stub.
+;; - NB: Setting a string stores the pointer to the string's content into
+;;   the C variable; the GC finds it, as it scans the data segment of the
+;;   dynamically loaded object.  This is the same as :stub.
+(define-method make-native-cvar-accessors (dlo (cvar <foreign-c-variable>))
+  (%check-cvar-type cvar)
+  (unless (is-a? dlo <dlobj>)
+    (errorf "FFI: ~a needs a C symbol, but with-ffi is given #f instead \
+             of a dynamically loaded object" (~ cvar'scheme-name)))
+  (let* ([name (~ cvar'scheme-name)]
+         [type (~ cvar'type)]
+         [access-type (if (eq? type <c-string>) <c-string?> type)]
+         [entry (dlobj-get-entry-address dlo #"_~(~ cvar'c-name)")]
+         [_ (unless entry
+              (errorf "FFI: ~a: symbol ~a not found in library ~s"
+                      name (~ cvar'c-name) dlo))]
+         ;; NB: dlobj caches the handle per symbol with the type of the
+         ;; first lookup, so we cast it.
+         [handle (cast-handle (make-c-pointer-type access-type) entry)])
+    (values
+     (^[] (native* handle))
+     (^[v]
+       (unless (or (of-type? v type)
+                   (and (eq? type <c-string>) (not v)))
+         (errorf "FFI: ~a: value of type ~a required, but got: ~s"
+                 name (~ type'name) v))
+       (set! (native* handle) v)))))
 
 ;;;
 ;;; Constants

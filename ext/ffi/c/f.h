@@ -77,3 +77,4 @@ extern struct foo f_var_foo;
 extern struct foo *f_var_pfoo;
 extern int f_var_int_get(void);
 extern double f_var_double_get(void);
+extern void f_var_reset(void);
