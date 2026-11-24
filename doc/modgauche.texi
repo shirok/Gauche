@@ -3650,7 +3650,7 @@ APIがまだ固まっていません。)
 In the C world, Scheme objects are uniformly represented
 as an opaque tagged pointer @code{ScmObj}.  In order to access
 the actual objects, you need to check its runtime type information
-and to retrive the actual C type out of it.
+and to retrieve the actual C type out of it.
 @c JP
 Cの世界では、Schemeオブジェクトは不透明なタグつきポインタ@code{ScmObj}として
 統一的に扱われます。オブジェクトの実体にアクセスするには、
