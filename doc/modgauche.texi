@@ -3650,7 +3650,7 @@ APIがまだ固まっていません。)
 In the C world, Scheme objects are uniformly represented
 as an opaque tagged pointer @code{ScmObj}.  In order to access
 the actual objects, you need to check its runtime type information
-and to retrieve the actual C type out of it.
+and to retrive the actual C type out of it.
 @c JP
 Cの世界では、Schemeオブジェクトは不透明なタグつきポインタ@code{ScmObj}として
 統一的に扱われます。オブジェクトの実体にアクセスするには、
@@ -13499,7 +13499,7 @@ See also @code{util.stream}, which as @code{stream-iterate}
 @c EN
 The @var{proc} procedure is called with one argument,
 @var{yield}, which is also a procedure that takes one argument.
-Whenever @var{yeild} is called, the value passed to it
+Whenever @var{yield} is called, the value passed to it
 becomes the next element of resulting lseq.
 When @var{proc} returns, lseq ends.
 @c JP
