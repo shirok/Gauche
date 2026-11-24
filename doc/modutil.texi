@@ -16413,7 +16413,7 @@ This slot is inherited from @code{<error>}.  Contains string error message.
 
 @defivar <parse-error> position
 @c EN
-The position the failure occured.
+The position the failure occurred.
 @c JP
 失敗が起きた入力の場所です。
 @c COMMON
