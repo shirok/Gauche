@@ -16411,7 +16411,7 @@ returns @code{#t}; otherwise, returns @code{#f}.
 A native handle may keep a memory region into which it references.
 If a handle is created from Scheme uvector
 (with @code{make-native-handle}), for example, the handle
-keeps the beginning and end addresses of the uvector.  Handles
+keeps the begining and end addresses of the uvector.  Handles
 derived from the handle (e.g. via @code{native.}) inherits the
 region info.  The region info is used to detect out-of-bound access.
 
@@ -30182,7 +30182,7 @@ last thread that reached to the barrier before everyone goes.
 A barrier can be in a ``broken'' state when any one of the threads
 timeout, or the action raises an uncaptured exception.  Once the barrier
 is broken, all threads waiting on it is released as if timeout has
-occured.  The broken barrier remains broken (so any thread that reaches
+occurred.  The broken barrier remains broken (so any thread that reaches
 it just passes through) until it is reset by @code{barrier-reset!}.
 @c JP
 待っているスレッドのいずれかがタイムアウトするか、アクションで捕捉されない例外が
