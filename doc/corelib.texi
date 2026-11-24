@@ -28029,7 +28029,7 @@ Radix.  If the argument is an exact number,
 the directive @code{~@var{n}R} prints out the argument
 in radix @var{n}.  For example, @var{~10R} is the same as @code{~D}.
 The @var{radix} parameter must be between 2 and 36, inclusive.
-Other parameters are are the same as @code{~D} directive.
+Other paramters are the same as @code{~D} directive.
 
 If the argument is other than an exact number, it is formatted
 just as @code{~A}.
