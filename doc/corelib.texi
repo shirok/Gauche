@@ -6174,7 +6174,7 @@ the last @var{expr} must be a list, and it is spliced into
 the resulting list, like unquote-splicing.
 @item (@var{test} => @@ @var{proc})
 Like @code{(test => proc)}, except that the result of
-@var{proc} must be a list, and it is spliced into
+@var{proc} must be a list, and and it is spliced into
 the resulting list, like unquote-splicing.
 @end table
 @c JP
@@ -22852,7 +22852,7 @@ If an unhandled exception occurs within a thread other than the primordial
 one, it terminates the thread, and the thrown condition
 is wrapped by @code{<uncaught-exception>} condition and stored in the
 thread object.  If other thread calls @code{thread-join!} to retrieve
-result, the the @code{<uncaught-exception>} is thrown in that thread.
+result, the @code{<uncaught-exception>} is thrown in that thread.
 Note that no messages are displayed when the original uncaught exception
 is thrown.  @xref{Thread programming tips}, for the details.
 @c JP
