@@ -416,7 +416,7 @@ If the new definition has different configuration of the instance,
 Types are first-class objects manipulatable at runtime in Gauche,
 but they must be known at compile-time
 in order to do optimizations or static analysis.  In certain places,
-Gauche requires the the value of type-yielding expressions to be statically
+Gauche requires the value of type-yielding expressions to be statically
 computable.  We call such expressions @emph{type expressions}.
 @c JP
 型はGaucheでは実行時に扱える第一級のオブジェクトですが、
