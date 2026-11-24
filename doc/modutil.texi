@@ -17556,7 +17556,7 @@ operator is parsed by @var{op}.
 @defmac $parameterize ((param expr) @dots{}) parser @dots{}
 @c MOD parser.peg
 Returns a parser that runs @var{parser} @dots{}, while altering
-the parameter values of @var{param} @dots{} with the result of
+the parameter values of @var{param} @dots{} with the reuslt of
 @var{expr} @dots{}, like @code{parameterize}.
 The @var{parser} @dots{} are run as if in @code{$seq}, so only the value
 of them is returned on success.
@@ -22679,7 +22679,7 @@ gosh tools/get-cacert
 
 @c EN
 You need curl installed on your system.  If you've installed
-Gauche with root priviledge, you'll be asked sudo password to install
+Gauche with root privilege, you'll be asked sudo password to install
 the CA bundle file.
 
 If you decided to do this, make sure you run the above command occasionally
