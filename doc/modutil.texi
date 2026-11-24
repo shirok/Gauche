@@ -16484,7 +16484,7 @@ but got the one in @var{token}.
 @item fail-compound
 @c EN
 The parser failed multiple options.  The @var{objects} slot contains
-a list of @code{(type . msg)} where @var{type} is one of the
+a list of of @code{(type . msg)} where @var{type} is one of the
 @code{<parse-error>} types, and
 @var{msg} is the message associated with it.
 @c JP
@@ -25520,7 +25520,7 @@ Note, @code{&lt;} and @code{&amp;} are not specially recognized (and are not exp
                   | '&#x' [0-9a-fA-F]+ ';'
 @end example
 @c EN
-This procedure must be called after we we have read "@code{&#}"
+This procedure must be called after we have read "@code{&#}"
 that introduces a char reference.
 The procedure reads this reference and returns the corresponding char.
 The current position in @var{port} will be after "@code{;}" that terminates
