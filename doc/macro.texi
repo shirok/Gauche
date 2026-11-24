@@ -1785,7 +1785,7 @@ binding, so you can pass the procedure to @code{map}, for example.
 @c EN
 Binds @var{variable} to both an ordinary Scheme value and a macro
 simultaneously.  At the compile time, @var{transformer-spec} is evaluated;
-it must yield a macro in the the compile-time environment, and bound
+it must yield a macro in the compile-time environment, and bound
 to @var{variable} to be used at macro expansion.  At the execution time,
 @var{expr} is evaluated and bound to @var{variable} to be used as
 a run-time value.
