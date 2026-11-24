@@ -9171,7 +9171,7 @@ is modified.
 @xref{Accessing environment variables}, for getting environment variables.
 This srfi defines the means to modify them.
 
-@defun set-enviroment-variable! name value
+@defun set-environment-variable! name value
 [SRFI-170]
 @c MOD srfi.170
 Gauche's @code{sys-setenv} with the third argument being @code{#t}
