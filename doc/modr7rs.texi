@@ -11186,7 +11186,7 @@ except those for which @var{pred} returns false.  The procedure
 @var{pred} gets to arguments, an entry's key and an entry's value.
 
 The functional version @code{mapping-filter} doesn't modify @var{m},
-while the linear-updating verison @code{mapping-filter!} may reuse
+while the linear-updating version @code{mapping-filter!} may reuse
 @var{m} to create a result.
 @end defun
 
@@ -11199,7 +11199,7 @@ except those for which @var{pred} returns a true value.  The procedure
 @var{pred} gets to arguments, an entry's key and an entry's value.
 
 The functional version @code{mapping-remove} doesn't modify @var{m},
-while the linear-updating verison @code{mapping-remove!} may reuse
+while the linear-updating version @code{mapping-remove!} may reuse
 @var{m} to create a result.
 @end defun
 
