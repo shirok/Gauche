@@ -43,7 +43,7 @@ a couple of ways to get out.
 1. Every night, an installable tarball is automatically created
 from HEAD.  You can download it using
 https://github.com/practical-scheme/get-gauche[`get-gauche` script].
-by specifing `--version bleeding` option.  If that doesn't work for
+by specifying `--version bleeding` option.  If that doesn't work for
 you, visit https://practical-scheme.net/vault and search
 `Gauche-X.X.X+YYYYMMDD.tgz`.  Note that it may contain unfixed bugs
 or incompatibilities.
