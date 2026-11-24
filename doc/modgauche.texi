@@ -30182,7 +30182,7 @@ last thread that reached to the barrier before everyone goes.
 A barrier can be in a ``broken'' state when any one of the threads
 timeout, or the action raises an uncaptured exception.  Once the barrier
 is broken, all threads waiting on it is released as if timeout has
-occurred.  The broken barrier remains broken (so any thread that reaches
+occured.  The broken barrier remains broken (so any thread that reaches
 it just passes through) until it is reset by @code{barrier-reset!}.
 @c JP
 待っているスレッドのいずれかがタイムアウトするか、アクションで捕捉されない例外が
@@ -31540,7 +31540,7 @@ This procedure first tries
 @code{u8vector->string} (@pxref{Uniform vectors}).
 If the input utf8 sequence is valid, this is the fastest way.
 If the input contains invalid utf8 sequence, the procedure falls
-back to construct a string by one character at at time,
+back to construct a string by one character at a time,
 replacing invalid sequence with Unicode replacement character @code{U+FFFD}.
 Hence it always returns a complete string.
 To know if the input contains invalid utf8 sequence, you can use
