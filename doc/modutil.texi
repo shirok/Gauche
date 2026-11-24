@@ -22679,7 +22679,7 @@ gosh tools/get-cacert
 
 @c EN
 You need curl installed on your system.  If you've installed
-Gauche with root privilege, you'll be asked sudo password to install
+Gauche with root priviledge, you'll be asked sudo password to install
 the CA bundle file.
 
 If you decided to do this, make sure you run the above command occasionally
@@ -23747,7 +23747,7 @@ operations on character sets).
 This module implements UUID defined in RFC9562.
 
 It provides generators of UUID version 1, 4, 6 and 7, and writer/parser
-of the string represenation of UUIDs.
+of the string representation of UUIDs.
 @c JP
 RFC9562で定義されたUUIDを実装しています。
 
