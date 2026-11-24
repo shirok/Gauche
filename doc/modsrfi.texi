@@ -14090,7 +14090,7 @@ Returns the number of enums the enum type @var{etype} has.
 @defunx enum-max etype
 [SRFI-209]
 @c MOD srfi.209
-Returns the minimun and maximum enum the enum type @var{etype} has.
+Returns the minimum and maximum enum the enum type @var{etype} has.
 
 @example
 (define fruits (make-enum-type '(apple orange banana mango papaya)))
