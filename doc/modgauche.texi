@@ -13499,7 +13499,7 @@ See also @code{util.stream}, which as @code{stream-iterate}
 @c EN
 The @var{proc} procedure is called with one argument,
 @var{yield}, which is also a procedure that takes one argument.
-Whenever @var{yield} is called, the value passed to it
+Whenever @var{yeild} is called, the value passed to it
 becomes the next element of resulting lseq.
 When @var{proc} returns, lseq ends.
 @c JP
@@ -16411,7 +16411,7 @@ returns @code{#t}; otherwise, returns @code{#f}.
 A native handle may keep a memory region into which it references.
 If a handle is created from Scheme uvector
 (with @code{make-native-handle}), for example, the handle
-keeps the begining and end addresses of the uvector.  Handles
+keeps the beginning and end addresses of the uvector.  Handles
 derived from the handle (e.g. via @code{native.}) inherits the
 region info.  The region info is used to detect out-of-bound access.
 
