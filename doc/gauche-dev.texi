@@ -1236,7 +1236,7 @@ Correspond to Scheme @code{logand}, @code{logior},
 
 @deftypefun ScmObj Scm_Ash (ScmObj @var{x}, int @var{cnt})
 Arithmetic left shift of a Scheme exact integer @var{x} by @var{cnt} bits.
-If @var{cnt} is negative, it it shifts to right by @var{-cnt} bits.
+If @var{cnt} is negative, it shifts to right by @var{-cnt} bits.
 Corresponds to Scheme @code{ash}.
 @end deftypefun
 
