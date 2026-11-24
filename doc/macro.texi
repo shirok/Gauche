@@ -1650,7 +1650,7 @@ the-state @result{} on
 @end example
 
 @c EN
-Note that we use @code{syntax-rules+}, a Gauche extention to @code{syntax-rules}
+Note that we use @code{syntax-rules+}, a Gauche extension to @code{syntax-rules}
 to support identifier-macro: The first element of @var{pattern} can be used
 as literal identifier match (which is ignored in the ordinary
 @code{syntax-rules}), and also the single identifier pattern matches
