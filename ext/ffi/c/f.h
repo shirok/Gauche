@@ -37,6 +37,7 @@ extern struct foo *F_pstruct_d_pstruct(struct foo*, double);
 
 extern int Fivar(int cnt, ...);
 extern double Fdvar(int cnt, ...);
+extern const char *Fsvar(const char *fmt, ...);
 
 extern int Fiiiiiii_i(int, int, int, int, int, int, int);
 extern double Fddddddddd_d(double, double, double, double, double, double, double, double, double);

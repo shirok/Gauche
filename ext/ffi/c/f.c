@@ -1,6 +1,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include "f.h"
 
@@ -151,6 +152,17 @@ double Fdvar(int cnt, ...)
     }
     va_end(ap);
     return r;
+}
+
+/* Varargs with non-numeric arguments: formats them into a static buffer. */
+const char *Fsvar(const char *fmt, ...)
+{
+    static char buf[256];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    return buf;
 }
 
 /* Spill tests: more args than fit in registers.

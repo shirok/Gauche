@@ -74,6 +74,7 @@
                       (define-c-function Fivar '(int ...) 'int)
                       (define-c-function Fdvar '(int ...) 'double)
                       (define-c-function Fidfvar '(int ...) 'double)
+                      (define-c-function Fsvar '(c-string ...) 'c-string)
 
                       ;; spill tests
                       (define-c-function Fiiiiiii-i '(int int int int int int int) 'int)
@@ -157,6 +158,24 @@
          ;; mixed varargs: cnt pairs of (int n, double x), returns sum of n*x
          ;; 1*2.0 + 2*3.0 + 3*4.0 = 20.0
          (t 20.0 (Fidfvar 3 1 2.0 2 3.0 3 4.0))
+
+         ;; varargs with type inferred from the values
+         (t "foo" (Fsvar "%s" "foo"))
+         (t "foo=3 Z bar" (Fsvar "%s=%d %c %s" "foo" 3 #\Z "bar"))
+         (t "a 1.50 b" (Fsvar "%s %.2f %s" "a" 1.5 "b"))
+         (t "18446744073709551615 -9223372036854775808"
+            (Fsvar "%llu %lld" (- (expt 2 64) 1) (- (expt 2 63))))
+         (t "hi!" (Fsvar "%s!" (make-native-handle (native-type 'char*)
+                                                   (u8vector 104 105 0))))
+         (t "x=1.0 y=hi z=2"
+            (Fsvar "x=%.1f y=%s z=%d" 1.0
+                   (make-native-handle (native-type 'char*)
+                                       (u8vector 104 105 0))
+                   2))
+         (t (test-error <error> #/variadic argument 2 must be/)
+            (Fsvar "%d" 'x))
+         (t (test-error <error> #/variadic argument 3 must be/)
+            (Fsvar "%f %d" 1.0 'x))
 
          ;; spill tests
          ;; 7 int args: a + 2b + 3c + ... + 7g with (1..7) => 140

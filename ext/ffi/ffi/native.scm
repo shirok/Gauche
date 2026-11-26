@@ -265,6 +265,30 @@
 ;;; Runtime procedure builder
 ;;;
 
+;; Returns (canon-type value) to pass a variadic argument VAL, inferring
+;; the C type from the Scheme value.
+;;   flonum        -> double
+;;   exact integer -> intptr_t (uintptr_t if it doesn't fit in intptr_t)
+;;   string        -> const char*
+;;   native handle -> pointer
+;;   character     -> int (its codepoint)
+;; NAME and I (1-based argument position) are for the error message.
+(define (%native-vararg-pair val name i)
+  (cond [(flonum? val) `(,<double> ,val)]
+        [(exact-integer? val)
+         (cond [(of-type? val <intptr_t>) `(,<intptr_t> ,val)]
+               [(of-type? val <uintptr_t>) `(,<uintptr_t> ,val)]
+               [else
+                (errorf "FFI: ~a: variadic argument ~a is out of range of \
+                  intptr_t/uintptr_t: ~s" name i val)])]
+        [(string? val) `(,<c-string> ,val)]
+        [(is-a? val <native-handle>) `(,<void*> ,val)]
+        [(char? val) `(,<intptr_t> ,(char->integer val))]
+        [else
+         (errorf "FFI: ~a: variadic argument ~a must be a number, \
+                  a string, a character or a native pointer, but got: ~s"
+                 name i val)]))
+
 ;; Build a Scheme procedure that calls the C function described by cfn via
 ;; call-sysvx64.  Called at load time from the set! forms emitted by
 ;; with-native-ffi.
@@ -302,18 +326,15 @@
         (if variadic?
           ;; For variadic functions, map fixed args with known types, then infer
           ;; types for the remaining variadic args from their runtime values.
-          ;; NB: For now, we just distinguish flonum values form the rest in
-          ;; the varargs list.  Eventually we want to check if all the varargs
-          ;; can be convertable to C objects.
           (^ args
              (let* ([fixed-args (take args nfixed)]
                     [var-args   (drop args nfixed)]
                     [fixed-pairs (map (^[canon coerce val] (list canon (coerce val)))
                                       arg-canons arg-coerce fixed-args)]
-                    [var-pairs   (map (^[val]
-                                        `(,(if (flonum? val) <double> <intptr_t>)
-                                          ,val))
-                                      var-args)])
+                    [var-pairs   (map (cut %native-vararg-pair <>
+                                           (~ cfn'scheme-name) <>)
+                                      var-args
+                                      (iota (length var-args) (+ nfixed 1)))])
                (parameterize
                    ([(with-module gauche.typeutil native-ptr-fill-enabled?) #t])
                  (ret-coerce

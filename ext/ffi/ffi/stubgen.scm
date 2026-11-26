@@ -64,6 +64,38 @@
 (define (ffi-cname fmt . args)
   (string-append (ffi-c-name-prefix) (apply format fmt args)))
 
+;; Emits (to the decl part of the current unit) a C helper that converts
+;; a non-flonum variadic argument to intptr_t.  The C type is inferred
+;; from the Scheme value: an exact integer is passed as intptr_t (or
+;; uintptr_t if it's beyond intptr_t), a string as const char*, a native
+;; handle as its pointer, and a character as its codepoint.  On all the
+;; ABIs we support, a pointer is passed as a variadic argument in the same
+;; way as intptr_t, so we don't need separate call variants for them.
+(define (emit-vararg-unboxer-decl)
+  (cgen-decl
+   ;; This may be emitted more than once in the generated c code, hence guard.
+   "#ifndef SCM_STUBGEN_VARARG_UNBOXER"
+   "#define SCM_STUBGEN_VARARG_UNBOXER"
+   "static intptr_t Scm__FFIVarargToIntptr(ScmObj obj, const char *name, int i)"
+   "{"
+   "    if (SCM_INTEGERP(obj)) {"
+   "        if (SCM_BIGNUMP(obj) && Scm_Sign(obj) > 0)"
+   "            return (intptr_t)Scm_IntegerToUintptr(obj);"
+   "        return Scm_IntegerToIntptr(obj);"
+   "    }"
+   "    if (SCM_STRINGP(obj))"
+   "        return (intptr_t)Scm_GetStringConst(SCM_STRING(obj));"
+   "    if (SCM_NATIVE_HANDLE_P(obj))"
+   "        return (intptr_t)Scm_NativeHandlePtr(SCM_NATIVE_HANDLE(obj));"
+   "    if (SCM_CHARP(obj))"
+   "        return (intptr_t)SCM_CHAR_VALUE(obj);"
+   "    Scm_Error(\"FFI: %s: variadic argument %d must be a number, \""
+   "              \"a string, a character or a native pointer, but got: %S\","
+   "              name, i, obj);"
+   "    return 0;                   /* dummy */"
+   "}"
+   "#endif /*SCM_STUBGEN_VARARG_UNBOXER*/"))
+
 ;;;
 ;;; On-the-fly sub-stub generation for float variadic arguments
 ;;;
@@ -138,6 +170,7 @@
         :init-name unit-name))
     (parameterize ([cgen-current-unit unit])
       (cgen-decl "#include <gauche.h>")
+      (emit-vararg-unboxer-decl)
       ;; Static rettype variable for pointer return boxing (populated in init)
       (when ptr-ret?
         (cgen-decl "static ScmObj ss_rettype_ = SCM_FALSE;"))
@@ -159,8 +192,11 @@
                  [c-type   (if is-float "double" "intptr_t")]
                  [unbox    (if is-float
                              (format "Scm_GetDouble(args[~a])" (+ nfixed i))
-                             (%type->unbox-expr <intptr_t>
-                                                (format "args[~a]" (+ nfixed i))))])
+                             ;; The outer SUBR has already checked the
+                             ;; argument, so the name is just for safety.
+                             (format "Scm__FFIVarargToIntptr(args[~a], ~a, ~a)"
+                                     (+ nfixed i) (cgen-safe-string c-name)
+                                     (+ nfixed i 1)))])
             (cgen-body (format "    ~a va~a = ~a;" c-type i unbox)))
           (loop (+ i 1))))
       ;; Build the call: cast data to the variadic fn ptr type and call it
@@ -451,7 +487,9 @@
          [nfixed      (length arg-types)]
          [ret-typevar (and (c-pointer-like-type? ret-type)
                            (ffi-rettype-varname cfn))]
-         [va-unbox    (%type->unbox-expr <intptr_t> "SCM_CAR(lst_)")]
+         [va-unbox    (format "Scm__FFIVarargToIntptr(SCM_CAR(lst_), ~a, ~a + i_ + 1)"
+                              (cgen-safe-string (symbol->string scm-name))
+                              nfixed)]
          [table-var   (ffi-substub-table-varname cfn)]
          [mutex-var   (ffi-substub-mutex-varname cfn)]
          [argtypes-var(ffi-substub-argtypes-varname cfn)]
@@ -468,7 +506,7 @@
     ;; Check and unbox fixed arguments.  The float path below passes args
     ;; to the sub-stub, which unboxes them again; they're checked here.
     ;; The variadic arguments are unboxed by Scm_GetDouble or
-    ;; Scm_IntegerToIntptr, both of which check the type.
+    ;; Scm__FFIVarargToIntptr, both of which check the type.
     (for-each-with-index
      (^[i arg-type]
        (let* ([arg    (format "args[~a]" i)]
@@ -485,12 +523,15 @@
      #"        Scm_Error(\"FFI: %s: too many \
                            variadic arguments (max %d, got %d)\","
      #"                  ~name-lit, SCM_STUBGEN_MAX_VARIADIC_ARGS, nvargs_);"
-     ;; Compute float mask by scanning the rest list
+     ;; Compute float mask by scanning the rest list.  We also check
+     ;; non-flonum arguments here, so that the error message has the
+     ;; Scheme name even if we take the float path.
      #"    int float_mask_ = 0;"
      #"    {"
      #"        ScmObj lst_ = vargs_;"
      #"        for (int i_ = 0; i_ < nvargs_; i_++) {"
      #"            if (SCM_FLONUMP(SCM_CAR(lst_))) float_mask_ |= (1 << i_);"
+     #"            else (void)~|va-unbox|;"
      #"            lst_ = SCM_CDR(lst_);"
      #"        }"
      "    }")
@@ -946,6 +987,8 @@
     (cgen-decl #"#ifndef SCM_STUBGEN_MAX_VARIADIC_ARGS"
                #"#define SCM_STUBGEN_MAX_VARIADIC_ARGS ~*max-variadic-args*"
                #"#endif")
+    (when (pair? variadic-cfns)
+      (emit-vararg-unboxer-decl))
     (dolist [hdr c-headers]
       (cgen-decl #"#include <~|hdr|>"))
 
