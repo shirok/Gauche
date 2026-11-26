@@ -161,6 +161,22 @@
 (t-subtype (</> (<Assortment> #f) <char>) (<?> <char>) #t)
 (t-subtype (<?> <char>) (</> (<Assortment> #f) <char>) #t)
 
+(test-section "native integer type ranges")
+
+;; Checks the boundary values of each integer native type of BITS width.
+(define (t-int-range type bits signed?)
+  (let* ([lo (if signed? (- (expt 2 (- bits 1))) 0)]
+         [hi (if signed? (- (expt 2 (- bits 1)) 1) (- (expt 2 bits) 1))])
+    (test* #"of-type? range ~(~ type'name)" '(#t #t #f #f #f)
+           (map (cut of-type? <> type) (list lo hi (- lo 1) (+ hi 1) 0.0)))))
+
+(let ([pbits (* 8 (~ <intptr_t>'size))])
+  (t-int-range <intptr_t>  pbits #t)
+  (t-int-range <uintptr_t> pbits #f)
+  (t-int-range <ssize_t>   (* 8 (~ <ssize_t>'size)) #t)
+  (t-int-range <size_t>    (* 8 (~ <size_t>'size)) #f)
+  (t-int-range <ptrdiff_t> (* 8 (~ <ptrdiff_t>'size)) #t))
+
 (test-section "built-in type constructors")
 
 (define (validation-test type alist)

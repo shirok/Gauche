@@ -1,3 +1,8 @@
+2026-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm__InitNumber): Fix min/max values of
+	  <intptr_t> etc.
+
 2026-11-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/ffi/ffi/native.scm (native-type->arg-coerce): Fix integer
