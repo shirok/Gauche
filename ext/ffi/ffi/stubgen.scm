@@ -71,6 +71,10 @@
 ;; handle as its pointer, and a character as its codepoint.  On all the
 ;; ABIs we support, a pointer is passed as a variadic argument in the same
 ;; way as intptr_t, so we don't need separate call variants for them.
+;; TODO: Passing 64bit integer on ILP32 platform needs more than this
+;; (currently integers not fitting 32bit are rejected on ILP32).
+;; It requires caller-side annoation, as the value itself can't determine
+;; which strategy should be used.
 (define (emit-vararg-unboxer-decl)
   (cgen-decl
    ;; This may be emitted more than once in the generated c code, hence guard.

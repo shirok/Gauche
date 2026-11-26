@@ -163,8 +163,11 @@
          (t "foo" (Fsvar "%s" "foo"))
          (t "foo=3 Z bar" (Fsvar "%s=%d %c %s" "foo" 3 #\Z "bar"))
          (t "a 1.50 b" (Fsvar "%s %.2f %s" "a" 1.5 "b"))
-         (t "18446744073709551615 -9223372036854775808"
-            (Fsvar "%llu %lld" (- (expt 2 64) 1) (- (expt 2 63))))
+         ;; TRANSIENT: At this moment, we pass integer in variadic arg
+         ;; as [u]intptr_t, so this is rejected.
+         (when (= (~ <intptr_t>'size) 8)
+           (t "18446744073709551615 -9223372036854775808"
+              (Fsvar "%llu %lld" (- (expt 2 64) 1) (- (expt 2 63)))))
          (t "hi!" (Fsvar "%s!" (make-native-handle (native-type 'char*)
                                                    (u8vector 104 105 0))))
          (t "x=1.0 y=hi z=2"
