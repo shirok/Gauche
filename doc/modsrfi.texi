@@ -9171,7 +9171,7 @@ is modified.
 @xref{Accessing environment variables}, for getting environment variables.
 This srfi defines the means to modify them.
 
-@defun set-enviroment-variable! name value
+@defun set-environment-variable! name value
 [SRFI-170]
 @c MOD srfi.170
 Gauche's @code{sys-setenv} with the third argument being @code{#t}
@@ -14090,7 +14090,7 @@ Returns the number of enums the enum type @var{etype} has.
 @defunx enum-max etype
 [SRFI-209]
 @c MOD srfi.209
-Returns the minimun and maximum enum the enum type @var{etype} has.
+Returns the minimum and maximum enum the enum type @var{etype} has.
 
 @example
 (define fruits (make-enum-type '(apple orange banana mango papaya)))
@@ -17205,7 +17205,7 @@ Each @var{clause} is @code{(formals body @dots{})}, much like
 the ordinary @code{case-lambda}.
 
 First evaluates @var{expr}, and returns a procedure that is
-the same as @code{(case-lambda clause @dots{})}, excpet that
+the same as @code{(case-lambda clause @dots{})}, except that
 the value of @var{expr} is attached as a tag to the resulting
 procedure.   The tag can be retrieved with @code{procedure-tag}.
 @c JP
@@ -17535,7 +17535,7 @@ the @var{memory-order} argument.
 Compare two values in atomic box @var{abox} with @var{expected1} and
 @var{expected2}, respectively.  If each corresponding values are
 the same (in @code{eq?} sense), store @var{desired1} and @var{desired2}
-to @var{abox}.  Always returns teh original values.
+to @var{abox}.  Always returns the original values.
 The whole operations are done atomically.
 
 You can know the values are altered by comparing returned values

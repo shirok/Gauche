@@ -53,7 +53,7 @@ compiler name `configure.in` finds.
 CXX      = @CXX@
 ----
 
-3. Also in link:Makefile.in[], when builing `mqueue_cpp.so`, give `--c++=$(CXX)`
+3. Also in link:Makefile.in[], when building `mqueue_cpp.so`, give `--c++=$(CXX)`
 option to the `gauche-package` script to have it use the {cpp} compiler
 instead of the default C compiler.
 +

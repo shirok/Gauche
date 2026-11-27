@@ -7191,7 +7191,7 @@ idequeとリストの間の変換を行います。
 @c COMMON
 
 @c EN
-The optional @var{start} and @var{end} index arguments are the extention
+The optional @var{start} and @var{end} index arguments are the extension
 defined in SRFI-274 to limit the range of @var{list} to be used.
 @xref{Extended list conversion procedures}.
 @c JP
@@ -10094,7 +10094,7 @@ A macro shorthand for @code{(regexp `(: @var{sre} ...))}.
 @defun regexp->sre @var{re}
 [R7RS regex]
 @c MOD scheme.regex
-Returns the SRE corresponding to the given given regexp object. Note
+Returns the SRE corresponding to the given regexp object. Note
 that if the regexp object is not created from an SRE, it may contain
 features that cannot be expressed in SRE and cause an error.
 @end defun
@@ -11186,7 +11186,7 @@ except those for which @var{pred} returns false.  The procedure
 @var{pred} gets to arguments, an entry's key and an entry's value.
 
 The functional version @code{mapping-filter} doesn't modify @var{m},
-while the linear-updating verison @code{mapping-filter!} may reuse
+while the linear-updating version @code{mapping-filter!} may reuse
 @var{m} to create a result.
 @end defun
 
@@ -11199,7 +11199,7 @@ except those for which @var{pred} returns a true value.  The procedure
 @var{pred} gets to arguments, an entry's key and an entry's value.
 
 The functional version @code{mapping-remove} doesn't modify @var{m},
-while the linear-updating verison @code{mapping-remove!} may reuse
+while the linear-updating version @code{mapping-remove!} may reuse
 @var{m} to create a result.
 @end defun
 
@@ -14855,7 +14855,7 @@ state.
 @subsubheading Standard State Variables
 
 @defvar port
-The current port output is written into, could be overriden to capture
+The current port output is written into, could be overridden to capture
 intermediate output.
 @end defvar
 

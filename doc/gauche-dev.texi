@@ -1236,7 +1236,7 @@ Correspond to Scheme @code{logand}, @code{logior},
 
 @deftypefun ScmObj Scm_Ash (ScmObj @var{x}, int @var{cnt})
 Arithmetic left shift of a Scheme exact integer @var{x} by @var{cnt} bits.
-If @var{cnt} is negative, it it shifts to right by @var{-cnt} bits.
+If @var{cnt} is negative, it shifts to right by @var{-cnt} bits.
 Corresponds to Scheme @code{ash}.
 @end deftypefun
 
@@ -3236,7 +3236,7 @@ is destroyed.  It is OK to pass uninitialized @code{ScmHashCore} as @var{dst}.
 @end deftypefun
 
 @deftypefun {ScmDictEntry *} Scm_HashCoreSearch (ScmHashCore *@var{core}, intptr_t @var{key}, ScmDictOp @var{op})
-Searches an entry with the given @var{key}, and and perform the operation
+Searches an entry with the given @var{key}, and perform the operation
 specified by @var{op}, which must be either @code{SCM_DICT_GET},
 @code{SCM_DICT_CREATE}, or @code{SCM_DICT_DELETE}.
 

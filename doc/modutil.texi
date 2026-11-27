@@ -25520,7 +25520,7 @@ Note, @code{&lt;} and @code{&amp;} are not specially recognized (and are not exp
                   | '&#x' [0-9a-fA-F]+ ';'
 @end example
 @c EN
-This procedure must be called after we we have read "@code{&#}"
+This procedure must be called after we have read "@code{&#}"
 that introduces a char reference.
 The procedure reads this reference and returns the corresponding char.
 The current position in @var{port} will be after "@code{;}" that terminates

@@ -43,7 +43,7 @@ a couple of ways to get out.
 1. Every night, an installable tarball is automatically created
 from HEAD.  You can download it using
 https://github.com/practical-scheme/get-gauche[`get-gauche` script].
-by specifing `--verison bleeding` option.  If that doesn't work for
+by specifying `--version bleeding` option.  If that doesn't work for
 you, visit https://practical-scheme.net/vault and search
 `Gauche-X.X.X+YYYYMMDD.tgz`.  Note that it may contain unfixed bugs
 or incompatibilities.
@@ -133,7 +133,7 @@ are from the host environment, which means you can't use the feature
 added after the latest release of Gauche to build the current source.
 
 You can make sure that the source tree is buildable both by the latest
-relase _and_ the current built, by running `./DIST self-host-test`.
+release _and_ the current built, by running `./DIST self-host-test`.
 It also checks if out-of-tree build works.  It performs the following
 opertaions:
 
