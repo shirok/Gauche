@@ -110,8 +110,10 @@ AS_IF([test $use_mbed = yes], [
     LIBS_SAVE=${LIBS}
     LDFLAGS="${LDFLAGS} ${MBEDTLS_LDFLAGS}"
     MBEDTLS_LIBS=""
-    AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto-3 mbedcrypto],
-     [MBEDTLS_LIBS="$ac_cv_search_mbedtls_ctr_drbg_init ${MBEDTLS_LIBS}"],
+    dnl Mbed TLS 4.x moved the crypto library to TF-PSA-Crypto, and the
+    dnl CTR-DRBG functions are private there.
+    AC_SEARCH_LIBS([psa_crypto_init], [mbedcrypto-3 mbedcrypto tfpsacrypto],
+     [MBEDTLS_LIBS="$ac_cv_search_psa_crypto_init ${MBEDTLS_LIBS}"],
      [mbedtls_unavailable=yes])
     AC_SEARCH_LIBS([mbedtls_x509_crt_init], [mbedx509-3 mbedx509],
      [MBEDTLS_LIBS="$ac_cv_search_mbedtls_x509_crt_init ${MBEDTLS_LIBS}"],
