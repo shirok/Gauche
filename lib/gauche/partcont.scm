@@ -11,7 +11,7 @@
      (%reset (^[] expr ...))]))
 
 (define (call/pc proc)
-  (%call/pc (^k (proc (^ args (reset (apply k args)))))))
+  (%call/pc (^k (proc (^ args (%reset (^[] (apply k args))))))))
 
 (define-syntax shift
   (syntax-rules ()
